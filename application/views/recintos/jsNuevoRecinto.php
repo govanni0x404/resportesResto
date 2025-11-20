@@ -75,9 +75,15 @@
 
 	function grabarNuevoRecinto() {
 		if ($('#nombreRecinto').val() == 0) {
-			swal("ERROR!", "No Ingreso El Nombre Del Recinto!", "error");
+			showAppAlert('error',"- No Ingreso El Nombre Del Recinto!", {
+            	duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($('#cboIdDestinoDeImpresion').val() == null) {
-			swal("ERROR!", "No Selecciono El Destino De Impresion!", "error");
+			showAppAlert('error',"- No Selecciono El Destino De Impresion!", {
+            	duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else {
 			IdRecinto = $('#idRecinto').val();
 			NombreRecinto = $('#nombreRecinto').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -96,12 +102,18 @@
 			$.post(base_url + "index.php/Recintos/grabarNuevoRecinto", {
 					'prod': miJson
 				}).done(function() {
-					swal("Listo", "Se registro Exitosamente El Nuevo Recinto", "success");
+					showAppAlert('success', "Se registro Exitosamente El Nuevo Recinto!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
 					$('#ModalNuevoRecinto').modal('hide');
 					tablaRecinto.ajax.reload();
 				})
 				.fail(function() {
-					swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+            			duration: 5000,
+                		image: base_url+ 'assets/img/errorGif.gif'
+            		});
 				})
 				.always(function() {});
 		}

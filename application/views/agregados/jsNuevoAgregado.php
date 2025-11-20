@@ -104,11 +104,20 @@
 		CantidadAgregado = $('#cantidadAgregado').val();
 
 		if (ProductoMaestro == null) {
-			swal("ERROR!", "No Selecciono El Producto De Venta Con Agregado!", "error");
+			showAppAlert('error',"- No Selecciono El Producto De Venta Con Agregado!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+			});
 		} else if (ProductoAgregado == null) {
-			swal("ERROR!", "No Selecciono El Agregado!", "error");
+			showAppAlert('error',"- No Selecciono El Agregado!", {
+            	duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+			});
 		} else if (CantidadAgregado == 0) {
-			swal("ERROR!", "No Ingreso La Cantidad Del Agregado!", "error");
+			showAppAlert('error',"- No Ingreso La Cantidad Del Agregado!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+			});
 		} else {
 			//grabar datos
 			IdAgregado = $('#idAgregado').val();
@@ -136,12 +145,18 @@
 			$.post(base_url + "index.php/Agregados/grabarNuevoAgregado", {
 					'prod': miJson
 				}).done(function() {
-					swal("Listo", "Se registro Exitosamente El Nuevo Agregado", "success");
+					showAppAlert('success', "Se registro Exitosamente El Nuevo Agregado!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
 					$('#ModalNuevoAgregado').modal('hide');
 					tablaAgregados.ajax.reload();
 				})
 				.fail(function() {
-					swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador.", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+					});
 				})
 				.always(function() {});
 		}

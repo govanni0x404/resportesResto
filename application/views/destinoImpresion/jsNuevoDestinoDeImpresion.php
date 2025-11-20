@@ -163,9 +163,15 @@
 
 	function grabarNuevoDestinoDeImpresion() {
 		if ($('#nombreDestinoDeImpresion').val() == 0) {
-			swal("ERROR!", "No Ingreso El Nombre Del Destino De Impresion!", "error");
+			showAppAlert('error',"- No Ingreso El Nombre Del Destino De Impresion!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		}else if ($('#RutaWindowsImpresora').val() == 0) {
-			swal("ERROR!", "No Ingreso La Ruta De Impresion!", "error");
+			showAppAlert('error',"- No Ingreso La Ruta De Impresion!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else {
 			IdDestinoDeImpresion = $('#idDestinoDeImpresion').val();
 			NombreDestinoDeImpresion = $('#nombreDestinoDeImpresion').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -221,12 +227,18 @@
 			$.post(base_url + "index.php/DestinoDeImpresion/grabarNuevoDestinoDeImpresion", {
 					'prod': miJson
 				}).done(function() {
-					swal("Listo", "Se registro Exitosamente El Nuevo Destino De Impresion", "success");
+					showAppAlert('success', "Se registro Exitosamente El Nuevo Destino De Impresion!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
 					$('#ModalNuevoDestinoDeImpresion').modal('hide');
 					tablaDestinoImpresion.ajax.reload();
 				})
 				.fail(function() {
-					swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                		duration: 5000,
+                		image: base_url+ 'assets/img/errorGif.gif'
+            		});
 				})
 				.always(function() {});
 		}

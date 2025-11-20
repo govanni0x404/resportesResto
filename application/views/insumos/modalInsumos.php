@@ -514,7 +514,10 @@
 			msg = "-> Tipo Unidad Medida Receta\n";
 		}
 		if (msg.length) {
-			swal("Error", "Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, "error");
+		    showAppAlert('error',"- Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, "error", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else {
 			//grabar datos
 
@@ -572,10 +575,16 @@
 									$("#idInsumo").val(id_insumo2);
 									$('#modalInsumo').modal('hide');
 									tableInsumos.ajax.reload();
-									swal("Listo", "Se registro Exitosamente El Nuevo Insumo", "success");
+									showAppAlert('success', "Se registro Exitosamente El Nuevo Insumo!", {
+                                    	duration: 4000,
+                                    	image: base_url + 'assets/img/success.gif'
+                                	});
 								})
 								.fail(function() {
-									swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+									showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                                    	duration: 5000,
+                                    	image: base_url+ 'assets/img/errorGif.gif'
+                                	});
 								})
 						} else {
 							$.each(obj, function(index, v) { // recorro el array
@@ -586,27 +595,29 @@
 											$("#idInsumo").val(id_insumo2);
 											$('#modalInsumo').modal('hide');
 											tableInsumos.ajax.reload();
-											swal("Listo", "Se Actualizó Exitosamente El Insumo", "success");
-
-											showAppAlert('success', "Los datos se grabaron correctamente", {
+											showAppAlert('success', "Se Actualizó Exitosamente El Insumo", {
           									duration: 4000,
           									image: base_url+ 'assets/img/success.gif'
         									});
 										})
 										.fail(function() {
-											swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
-
-											showAppAlert('error', "- El valor indicado en la comisión no es válido", 
+											showAppAlert('error', "- Se produjo un error al realizar el proceso, favor contacte a su administrador", 
 											{ duration: 5000, image: base_url+ 'assets/img/errorGif.gif' });
 										})
 								} else {
-									swal("Error", "El código de barras ingresado ya existe.", "error");
+									showAppAlert('error',"- El código de barras ingresado ya existe.", {
+                                    	duration: 5000,
+                                    	image: base_url+ 'assets/img/errorGif.gif'
+                                	});
 								}
 							})
 						}
 					})
 					.fail(function() {
-						swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+						showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador.", {
+                          	duration: 5000,
+                          	image: base_url+ 'assets/img/errorGif.gif'
+						});
 					});
 				// $('#modalInsumo').modal('hide');
 				// tableInsumos.ajax.reload();

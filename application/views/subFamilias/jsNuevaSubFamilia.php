@@ -62,10 +62,16 @@
 
     function GrabarNuevaSubFamilia() {
         if ($('#nombreSubFamilia').val() == 0) {
-            swal("ERROR!", "No Ingreso El Nombre De La Sub Familia!", "error");
+            showAppAlert('error',"- No Ingreso El Nombre De La Sub Familia!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         }
         else if ($('#cboIdFamilia').val() == null) {
-            swal("ERROR!", "No Selecciono La Familia!", "error");
+            showAppAlert('error',"- No Selecciono La Familia!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             //grabar datos
             IdSubFamilia = $('#idSubFamilia').val();
@@ -80,12 +86,18 @@
             $.post(base_url + "index.php/SubFamilias/grabarNuevaSubFamilia", {
                     'prod': miJson
                 }).done(function() {
-                    swal("Listo", "Se registro Exitosamente La Nueva Sub Familia", "success");
+                    showAppAlert('success', "Se registro Exitosamente La Nueva Sub Familia!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
                     $('#ModalNuevaSubFamilia').modal('hide');
                     tablaSubFamilia.ajax.reload();
                 })
                 .fail(function() {
-                    swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+                    showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+                    });
                 })
                 .always(function() {});
         }

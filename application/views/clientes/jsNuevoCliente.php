@@ -170,8 +170,10 @@
 
 	$('#RutCliente').on('focusout', function() {
 		if ($("#RutCliente").val().length < 8) {
-			swal("Error", "Ingrese un rut váildo", "error");
-			// ("#RutCliente").val("");
+			showAppAlert('error',"- Ingrese un rut váildo", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else {
 			if ($('#idCliente').val().length == 0) { //verificar si el rut existe
 				rutCliente = $('#RutCliente').val();
@@ -182,7 +184,10 @@
 					var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
 					if (obj.length > 0) {
 						$.each(obj, function(index, v) { // recorro el array
-							swal("Error", "El Rut Ingresado : " + rutCliente + "-" + v.dv + ",\n Ya Esta Registrado. Si desea modificarlo, seleccione al Cliente", "error");
+							showAppAlert('error',"- El Rut Ingresado : " + rutCliente + "-" + v.dv + ",\n Ya Esta Registrado. Si desea modificarlo, seleccione al Cliente", {
+                                duration: 5000,
+                                image: base_url+ 'assets/img/errorGif.gif'
+                            });
 							$("#RutCliente").val("");
 							$("#DvRutCliente").val("");
 						});
@@ -204,19 +209,40 @@
 
 	function grabarNuevoCliente() {
 		if ($('#RutCliente').val() == 0) {
-			swal("ERROR!", "No Ingreso El Rut Del Cliente!", "error");
+	        showAppAlert('error',"- No Ingreso El Rut Del Cliente!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($('#DireccionCliente').val() == 0) {
-			swal("ERROR!", "No Ingreso La Direccion Del Cliente!", "error");
+			showAppAlert('error',"- No Ingreso La Direccion Del Cliente!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($('#cboIdComuna').val() == 0) {
-			swal("ERROR!", "No Selecciono La Comuna Del Cliente!", "error");
+			showAppAlert('error',"- No Selecciono La Comuna Del Cliente!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($('#GiroCliente').val() == 0) {
-			swal("ERROR!", "No Ingreso El Giro Del Cliente!", "error");
+			showAppAlert('error',"- No Ingreso El Giro Del Cliente!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($('#cboIdLprecio').val() == 0) {
-			swal("ERROR!", "No Selecciono La Lista De Precios Del Cliente!", "error");
+			showAppAlert('error',"- No Selecciono La Lista De Precios Del Cliente!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($('#nombreCliente').val() == 0) {
-			swal("ERROR!", "No Ingreso El Nombre Del Cliente!", "error");
+			showAppAlert('error',"- No Ingreso El Nombre Del Cliente!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($("#CorreoCliente").val() != '' && !validateEmail($("#CorreoCliente").val())) {
-			swal("ERROR!", "Correo Invalido", "error");
+			showAppAlert('error',"- Correo Invalido", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else {
 			idCliente = $('#idCliente').val();
 			NombreCliente = $('#nombreCliente').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -249,12 +275,18 @@
 			$.post(base_url + "index.php/Cliente/grabarNuevoCliente", {
 					'prod': miJson
 				}).done(function() {
-					swal("Listo", "Se registro Exitosamente El Nuevo Cliente", "success");
+					showAppAlert('success', "Se registro Exitosamente El Nuevo Cliente!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
 					$('#ModalNuevoCliente').modal('hide');
 					tablaClientes.ajax.reload();
 				})
 				.fail(function() {
-					swal("Se produjo un error al realizar el proceso, favor contacte a su administrador", "error");
+					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                		duration: 5000,
+                		image: base_url+ 'assets/img/errorGif.gif'
+            		});
 				})
 				.always(function() {});
 		}

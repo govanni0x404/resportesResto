@@ -57,7 +57,10 @@
 
     function grabarNuevaProvincia() {
         if ($('#nombreProvincia').val() == 0) {
-            swal("ERROR!", "No Ingreso El Nombre De La Provincia!", "error");
+            showAppAlert('error',"- No Ingreso El Nombre De La Provincia!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             idProvincia = $('#idProvincia').val();
             NombreProvincia = $('#nombreProvincia').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -69,12 +72,18 @@
             $.post(base_url + "index.php/Provincias/grabarNuevaProvincia", {
                     'prod': miJson
                 }).done(function() {
-                    swal("Listo", "Se registro Exitosamente La Nueva Provincia", "success");
+                    showAppAlert('success', "Se registro Exitosamente La Nueva Provincia!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
                     $('#ModalNuevaProvincia').modal('hide');
                     tablaProvincias.ajax.reload();
                 })
                 .fail(function() {
-                    swal("Se produjo un error al realizar el proceso, favor contacte a su administrador", "error");
+                    showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+                    });
                 })
                 .always(function() {});
         }

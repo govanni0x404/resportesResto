@@ -78,9 +78,15 @@
 
 	function grabarMsgProductos() {
 		if ($('#cboProducto').val() == null) {
-			swal("ERROR!", "No Selecciono el Producto!", "error");
+			showAppAlert('error',"- No Selecciono el Producto!", {
+            	duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($('#txtMsgProducto').val() == 0) {
-			swal("ERROR!", "No Ingreso El Mensaje Del Producto!", "error");
+			showAppAlert('error',"- No Ingreso El Mensaje Del Producto!", {
+            	duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else {
 			//grabar datos
 			idMsg = $('#idMsg').val();
@@ -100,12 +106,18 @@
 			$.post(base_url + "index.php/MensajesPorProductos/grabarMsgProductos", {
 					'prod': miJson
 				}).done(function() {
-					swal("Listo", "Se registro Exitosamente El Nuevo Mensaje", "success");
+					showAppAlert('success', "Se registro Exitosamente El Nuevo Mensaje!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
 					$('#ModalMensajesDelProducto').modal('hide');
 					tablaMsgProducto.ajax.reload();
 				})
 				.fail(function() {
-					swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+                    });
 				})
 				.always(function() {});
 		}

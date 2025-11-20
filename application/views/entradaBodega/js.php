@@ -44,11 +44,17 @@ function agregarProductoALaGrilla() {
     var umedidaIngreso = parseFloat($('#UmedidaInsumo').val());
     ProductoComprado = $("#cboInsumo").val();
     if (ProductoComprado == null) {
-        swal("Error!", "Debe Seleccionar El Insumo!", "error");
+        showAppAlert('error',"- Debe Seleccionar El Insumo!", {
+            duration: 5000,
+            image: base_url+ 'assets/img/errorGif.gif'
+        });
         return;
     }
     if (Cantidad_a_Ingresar == null || Cantidad_a_Ingresar <= 0 || isNaN(Cantidad_a_Ingresar)) {
-        swal("Error!", "Debe Indicar La Cantidad De Ingreso!", "error");
+        showAppAlert('error',"- Debe Indicar La Cantidad De Ingreso!", {
+            duration: 5000,
+            image: base_url+ 'assets/img/errorGif.gif'
+        });
         return;
     }
     $.post(base_url + "index.php/Insumos/ObtenerDatosInsumos", {
@@ -74,7 +80,10 @@ function agregarProductoALaGrilla() {
             //sumarTotalesTabla();
         })
         .fail(function() {
-            swal("Se produjo un error al realizar la consulta");
+            showAppAlert('error',"- Se produjo un error al realizar la consulta!" ,{
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         })
         .always(function() {
             //alert( "finished" );
@@ -109,7 +118,10 @@ function grabarEntradaBodega() {
     var FechaIngreso = $('#Fecha').data('daterangepicker').endDate.format('YYYY-MM-DD');
 
     if (IdBodega == null || IdBodega == 0) {
-        swal("Error!", "Debe Seleccionar La Bodega!", "error");
+        showAppAlert('error',"- Debe Seleccionar La Bodega!" ,{
+            duration: 5000,
+            image: base_url+ 'assets/img/errorGif.gif'
+        });
         return;
     }
 
@@ -154,22 +166,37 @@ function grabarEntradaBodega() {
                     },
                     dataType: "json",
                     success: function (resp) {
-                        swal("Listo!", "La entrada se almacenó con éxito!", "success");
+                        showAppAlert('success', "La entrada a Bodega se almacenó con éxito!", {
+                            duration: 4000,
+                            image: base_url + 'assets/img/success.gif'
+                        });
                         $("#detalleEntradaBodega").empty();
                     },
                     error: function (xhr, status, error) {
-                        swal("Error!", "No se pudo grabar el detalle: " + error, "error");
+                        showAppAlert('error',"- No se pudo grabar el detalle: " + error, {
+                            duration: 5000,
+                            image: base_url+ 'assets/img/errorGif.gif'
+                        });
                     }
                 });
             } else {
-                swal("Error!", "No se recibió ID de entrada.", "error");
+                showAppAlert('error',"- No se recibió ID de entrada.", {
+                    duration: 5000,
+                    image: base_url+ 'assets/img/errorGif.gif'
+                });
             }
         } catch (e) {
             console.error(e, datos);
-            swal("Error!", "No se pudo procesar la respuesta del servidor.", "error");
+            showAppAlert('error',"- No se pudo procesar la respuesta del servidor", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         }
     }).fail(function () {
-        swal("Error!", "Fallo la conexión con el servidor.", "error");
+        showAppAlert('error',"- Fallo la conexión con el servidor.", {
+            duration: 5000,
+            image: base_url+ 'assets/img/errorGif.gif'
+        });
     });
 }
 

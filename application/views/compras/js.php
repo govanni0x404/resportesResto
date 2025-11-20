@@ -534,7 +534,7 @@ function GrabarIngresoDeCompra() {
                                 });
                              }
                         } catch (e) {
-                             showAppAlert('success', "El ingreso de la compra se ingresó con éxito!", {
+                            showAppAlert('success', "El ingreso de la compra se ingresó con éxito!", {
                                 duration: 4000,
                                 image: base_url + 'assets/img/success.gif'
                             });
@@ -553,7 +553,7 @@ function GrabarIngresoDeCompra() {
             } catch (e) {
                 let positionError = datos.search("ERROR:");
                 let errorMessage = datos.substr(positionError, 150);
-                showAppAlert('error',"- SSe produjo un error al procesar la respuesta de la cabecera, favor reintente \n(" + e + ")\n" + errorMessage, {
+                showAppAlert('error',"- Se produjo un error al procesar la respuesta de la cabecera, favor reintente \n(" + e + ")\n" + errorMessage, {
                     duration: 5000,
                     image: base_url+ 'assets/img/errorGif.gif'
                 });

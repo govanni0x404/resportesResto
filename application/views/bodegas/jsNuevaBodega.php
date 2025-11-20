@@ -57,7 +57,10 @@
 
 	function GrabarNuevaBodega() {
 		if ($('#nombreBodega').val() == 0) {
-			swal("ERROR!", "No Ingreso El Nombre De La Bodega!", "error");
+			showAppAlert('error',"- No Ingreso El Nombre De La Bodega!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else {
 			idBodega = $('#idBodega').val();
 			NombreBodega = $('#nombreBodega').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -69,12 +72,18 @@
 			$.post(base_url + "index.php/Bodegas/grabarNuevaBodega", {
 					'prod': miJson
 				}).done(function() {
-					swal("Listo", "Se registro Exitosamente La Nueva Bodega", "success");
+					showAppAlert('success', "Se registro Exitosamente La Nueva Bodega!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
 					$('#ModalNuevaBodega').modal('hide');
 					tablaBodegas.ajax.reload();
 				})
 				.fail(function() {
-					swal("Se produjo un error al realizar el proceso, favor contacte a su administrador", "error");
+					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador.", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+                    });
 				})
 				.always(function() {});
 		}

@@ -142,69 +142,115 @@ class Productos extends CI_Controller
 		echo json_encode($this->Mproductos->ListadoDeMenu());
 	}
 
-	public function grabarNuevoProducto()
-	{
+	public function grabarProductoConPrecios()	{
+		
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-			redirect(base_url()); //redireccionar al login
+			echo json_encode(['error' => 'Sesión expirada']);
+			return;
 		}
-		$d = $this->input->post('prod');
-		$id = intval($d['id_producto']);
-
-			foreach ($d as $key => $value) {
-		if ($value === "" || $value === null) {
-			// Si el campo se espera que sea numérico, lo dejamos en 0
-			if (strpos($key, 'id_') === 0 || in_array($key, [
-				'precio_bruto', 'precio_ucompra', 'valor1', 'valor2',
-				'stock_minimo', 'pponderado', 'valor_ila', 'orden'
-			])) {
-				$d[$key] = 0;
+		
+		$producto = $this->input->post('producto');
+		$precios = $this->input->post('precios');
+		
+		log_message('debug', 'Producto recibido: ' . print_r($producto, true));
+		log_message('debug', 'Precios recibidos: ' . print_r($precios, true));
+		
+		if (empty($producto)) {
+			echo json_encode(['error' => 'No se recibieron datos del producto']);
+			return;
+		}
+		
+		// Validar campos del producto
+		foreach ($producto as $key => $value) {
+			if ($value === "" || $value === null) {
+				if (strpos($key, 'id_') === 0 || in_array($key, [
+					'precio_bruto', 'precio_ucompra', 'valor1', 'valor2',
+					'stock_minimo', 'pponderado', 'valor_ila', 'orden'
+				])) {
+					$producto[$key] = 0;
+				}
 			}
 		}
-		}
-		//$cb = intval($d['cbarra']);
+		
+		$id = intval($producto['id_producto']);
+		
 		$miData = array(
-			'nombre_producto' => $d['nombre_producto'],
-			'cbarra' => $d['cbarra'],
-			'impto_iva' => $d['impto_iva'],
-			'impto_ila' => $d['impto_ila'],
-			'id_familia' => $d['id_familia'],
-			'id_umedida' => $d['id_umedida'],
-			'precio_bruto' => $d['precio_bruto'],
-			'espack' => $d['espack'],
-			'vigente' => $d['vigente'],
-			'inventariable' => $d['inventariable'],
-			'valor_ila' => $d['valor_ila'],
-			'precio_ucompra' => $d['precio_ucompra'],
-			'pponderado' => $d['pponderado'],
-			'stock_minimo' => $d['stock_minimo'],
-			'cbarra_balanza' => $d['cbarra_balanza'],
-			'con_agregado' => $d['con_agregado'],
-			'venta_publico' => $d['venta_publico'],
-			'descripcion_corta' => $d['descripcion_corta'],
-			'permite_porcion' => $d['permite_porcion'],
-			'id_subfamilia' => $d['id_subfamilia'],
-			'id_dimpresion' => $d['id_dimpresion'],
-			'id_receta' => $d['id_receta'],
-			'orden' => $d['orden'],
-			'permite_cambio' => $d['permite_cambio'],
-			'valor1' => $d['valor1'],
-			'valor2' => $d['valor2'],
-			'id_bodega' => $d['id_bodega'],
-			'es_menu' => $d['es_menu'],
-			'id_menu' => $d['id_menu'],
-			'venta_segun_stock' => $d['venta_segun_stock'],
-			'elaboracion_propia' => $d['elaboracion_propia'],
-			'permitir_venta_sin_precio' => $d['permitir_venta_sin_precio'],
-			'venta_uno_a_uno' => $d['venta_uno_a_uno'],
-			'pedir_cantidad_en_venta' => $d['pedir_cantidad_en_venta'],
-			'detalle_preparacion' => $d['detalle_preparacion'],
-			'tiempo_preparacion' => $d['tiempo_preparacion'],
-			'mostrar_detalle_insumos_receta' => $d['mostrar_detalle_insumos_receta'],
-			'ver_en_dispositivos_moviles' => $d['ver_en_dispositivos_moviles'],
-			'permite_cortesia' => $d['permite_cortesia']
+			'nombre_producto' => $producto['nombre_producto'],
+			'cbarra' => $producto['cbarra'],
+			'impto_iva' => $producto['impto_iva'],
+			'impto_ila' => $producto['impto_ila'],
+			'id_familia' => $producto['id_familia'],
+			'id_umedida' => $producto['id_umedida'],
+			'precio_bruto' => $producto['precio_bruto'],
+			'espack' => $producto['espack'],
+			'vigente' => $producto['vigente'],
+			'inventariable' => $producto['inventariable'],
+			'valor_ila' => $producto['valor_ila'],
+			'precio_ucompra' => $producto['precio_ucompra'],
+			'pponderado' => $producto['pponderado'],
+			'stock_minimo' => $producto['stock_minimo'],
+			'cbarra_balanza' => $producto['cbarra_balanza'],
+			'con_agregado' => $producto['con_agregado'],
+			'venta_publico' => $producto['venta_publico'],
+			'descripcion_corta' => $producto['descripcion_corta'],
+			'permite_porcion' => $producto['permite_porcion'],
+			'id_subfamilia' => $producto['id_subfamilia'],
+			'id_dimpresion' => $producto['id_dimpresion'],
+			'id_receta' => $producto['id_receta'],
+			'orden' => $producto['orden'],
+			'permite_cambio' => $producto['permite_cambio'],
+			'valor1' => $producto['valor1'],
+			'valor2' => $producto['valor2'],
+			'id_bodega' => $producto['id_bodega'],
+			'es_menu' => $producto['es_menu'],
+			'id_menu' => $producto['id_menu'],
+			'venta_segun_stock' => $producto['venta_segun_stock'],
+			'elaboracion_propia' => $producto['elaboracion_propia'],
+			'permitir_venta_sin_precio' => $producto['permitir_venta_sin_precio'],
+			'venta_uno_a_uno' => $producto['venta_uno_a_uno'],
+			'pedir_cantidad_en_venta' => $producto['pedir_cantidad_en_venta'],
+			'detalle_preparacion' => $producto['detalle_preparacion'],
+			'tiempo_preparacion' => $producto['tiempo_preparacion'],
+			'mostrar_detalle_insumos_receta' => $producto['mostrar_detalle_insumos_receta'],
+			'ver_en_dispositivos_moviles' => $producto['ver_en_dispositivos_moviles'],
+			'permite_cortesia' => $producto['permite_cortesia']
 		);
-		$r = $this->Mproductos->grabarNuevoProducto($id, $miData);
-		echo json_encode($r);
+		
+		// Grabar producto
+		$resultadoProducto = $this->Mproductos->grabarNuevoProducto($id, $miData);
+		
+		if (empty($resultadoProducto)) {
+			echo json_encode(['error' => 'Error al grabar producto']);
+			return;
+		}
+		
+		$idProducto = $resultadoProducto[0]->id_producto;
+		log_message('debug', 'Producto grabado con ID: ' . $idProducto);
+		
+		// Grabar precios si existen
+		$preciosGrabados = array();
+		if (!empty($precios) && is_array($precios)) {
+			foreach ($precios as $precio) {
+				if ($precio['total'] > 0) {
+					$dataPrecio = array(
+						'id_producto' => $idProducto,
+						'id_lprecio' => (int)$precio['id_lprecio'],
+						'total' => (int)$precio['total']
+					);
+					
+					$resultadoPrecio = $this->Mproductos->grabarPrecioProducto($dataPrecio);
+					$preciosGrabados[] = $resultadoPrecio;
+				}
+			}
+		}
+		
+		log_message('debug', 'Precios grabados: ' . count($preciosGrabados));
+		
+		echo json_encode([
+			'success' => true,
+			'id_producto' => $idProducto,
+			'precios_grabados' => count($preciosGrabados)
+		]);
 	}
 
 	public function obtenerEAN13()

@@ -641,4 +641,38 @@ class Mproductos extends CI_Model
         $query = $this->db->query("SELECT last_value+1 as new_id from producto_id_producto_seq");
         return $query->result();
     }
+
+	public function grabarPrecioProducto($data)
+	{
+		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+			redirect(base_url());
+		}
+		
+		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		
+		// Verificar si ya existe el precio para este producto y lista
+		$this->db->where('id_producto', $data['id_producto']);
+		$this->db->where('id_lprecio', $data['id_lprecio']);
+		$existe = $this->db->get('detalle_lprecio');
+		
+		if ($existe->num_rows() > 0) {
+			// Actualizar
+			$this->db->where('id_producto', $data['id_producto']);
+			$this->db->where('id_lprecio', $data['id_lprecio']);
+			$this->db->update('detalle_lprecio', $data);
+			
+			return ['updated' => true, 'id_producto' => $data['id_producto'], 'id_lprecio' => $data['id_lprecio']];
+		} else {
+			// Insertar
+			$this->db->insert('detalle_lprecio', $data);
+			
+			$consulta = $this->db->query("SELECT CURRVAL('detalle_lprecio_id_detalle_lprecio_seq'::regclass) as id_detalle_lprecio");
+			
+			if ($consulta->num_rows() > 0) {
+				return ['inserted' => true, 'id_detalle_lprecio' => $consulta->row()->id_detalle_lprecio];
+			}
+		}
+		
+		return ['error' => 'No se pudo grabar el precio'];
+	}
 }

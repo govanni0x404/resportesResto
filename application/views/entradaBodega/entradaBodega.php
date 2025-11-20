@@ -132,7 +132,7 @@ $fechaActual = date('Y-m-d');
                                                         </div>
                                                         <div class="col-md-2">
                                                             <button onclick="grabarEntradaBodega()" type="button"
-                                                                class="btn btn-success"></i>INGRESAR
+                                                                class="btn btn-primary"></i>INGRESAR
                                                                 A BODEGA</button>
                                                         </div>
                                                         <div class="panel lobidisable">

@@ -67,7 +67,7 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarNuevoCanalDeVenta()" type="button" class="btn btn-success"><i class="fa fa-check-square-o"></i>GRABAR</button>
+				<button onclick="grabarNuevoCanalDeVenta()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
 				<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
@@ -91,9 +91,15 @@
 
 	function grabarNuevoCanalDeVenta() {
 		if ($('#nombreCanalDeVenta').val() == 0) {
-			swal("ERROR!", "No Ingreso El Nombre Del Canal De Venta!", "error");
+	        showAppAlert('error',"- No Ingreso El Nombre Del Canal De Venta!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($('#cboIdLprecio').val() == 0) {
-			swal("ERROR!", "Seleccione La Lista De Precios!", "error");
+			showAppAlert('error',"- Seleccione La Lista De Precios!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else {
 			idCanalDeVenta = $('#idCanalDeVenta').val();
 			NombreCanalDeVenta = $('#nombreCanalDeVenta').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -119,12 +125,18 @@
 			$.post(base_url + "index.php/CanalDeVenta/grabarNuevoCanalDeVenta", {
 					'prod': miJson
 				}).done(function() {
-					swal("Listo", "Se registro Exitosamente El Nuevo Canal De Venta", "success");
+				    showAppAlert('success', "Se registro Exitosamente El Nuevo Canal De Venta!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
 					$('#ModalNuevoCanalDeVenta').modal('hide');
 					tablaCanalVenta.ajax.reload();
 				})
 				.fail(function() {
-					swal("Se produjo un error al realizar el proceso, favor contacte a su administrador", "error");
+			        showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador.", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+                    });
 				})
 				.always(function() {});
 		}

@@ -61,9 +61,15 @@
 
     function grabarNuevaComuna() {
         if ($('#nombreComuna').val() === '') {
-            swal("ERROR!", "No Ingreso El Nombre De La Comuna!", "error");
+            showAppAlert('error',"- No Ingreso El Nombre De La Comuna!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         }else if ($('#cboIdProvincia').val() == 0) {
-            swal("ERROR!", "No Selecciono La Provincia!", "error");
+            showAppAlert('error',"- No Selecciono La Provincia!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             IdComuna = $('#idComuna').val();
             NombreComuna = $('#nombreComuna').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -76,12 +82,18 @@
             $.post(base_url + "index.php/Comuna/grabarNuevaComuna", {
                     'prod': miJson
                 }).done(function() {
-                    swal("Listo", "Se registro Exitosamente La Nueva Comuna", "success");
+                    showAppAlert('success', "Se registro Exitosamente La Nueva Comuna!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
                     $('#ModalNuevaComuna').modal('hide');
                     tablaComuna.ajax.reload();
                 })
                 .fail(function() {
-                    swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+                    showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+                    });
                 })
                 .always(function() {});
         }

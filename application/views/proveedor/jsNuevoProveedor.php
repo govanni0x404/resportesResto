@@ -155,7 +155,10 @@
 
 	$('#RutProveedor').on('focusout', function() {
 		if ($("#RutProveedor").val().length < 8) {
-			swal("Error", "Ingrese un rut váildo", "error");
+			showAppAlert('error',"- Ingrese un rut váildo!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 			// ("#RutProveedor").val("");
 		} else {
 			if ($('#idProveedor').val().length == 0) { //verificar si el rut existe
@@ -167,7 +170,10 @@
 					var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
 					if (obj.length > 0) {
 						$.each(obj, function(index, v) { // recorro el array
-							swal("Error", "El Rut Ingresado : " + rutProveedor + "-" + v.dv + ",\n Ya Esta Registrado. Si desea modificarlo, seleccione al Proveedor", "error");
+							showAppAlert('error',"- El Rut Ingresado : " + rutProveedor + "-" + v.dv + ",\n Ya Esta Registrado. Si desea modificarlo, seleccione al Proveedor", {
+                				duration: 5000,
+                				image: base_url+ 'assets/img/errorGif.gif'
+            				});
 							$("#RutProveedor").val("");
 							$("#DvRutProveedor").val("");
 						});
@@ -189,15 +195,30 @@
 
 	function grabarNuevoProveedor() {
 		if ($('#RutProveedor').val() == 0) {
-			swal("ERROR!", "No Ingreso El Rut Del Cliente!", "error");
+			showAppAlert('error',"- No Ingreso El Rut Del Proveedor!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($('#nombreProveedor').val() == 0) {
-			swal("ERROR!", "No Ingreso El Nombre Del Proveedor!", "error");
+			showAppAlert('error',"- No Ingreso El Nombre Del Proveedor!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($('#DireccionProveedor').val() == 0) {
-			swal("ERROR!", "No Ingreso La Direccion Del Proveedor!", "error");
+			showAppAlert('error',"- No Ingreso La Direccion Del Proveedor!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($('#GiroProveedor').val() == 0) {
-			swal("ERROR!", "No Ingreso El Giro Del Proveedor!", "error");
+			showAppAlert('error',"- No Ingreso El Giro Del Proveedor!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($("#CorreoProveedor").val() != '' && !validateEmail($("#CorreoProveedor").val())) {
-			swal("ERROR!", "Correo Invalido", "error");
+			showAppAlert('error',"- Correo Invalido!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else {
 			idProveedor = $('#idProveedor').val();
 			NombreProveedor = $('#nombreProveedor').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -228,12 +249,18 @@
 			$.post(base_url + "index.php/Proveedor/grabarNuevoProveedor", {
 					'prod': miJson
 				}).done(function() {
-					swal("Listo", "Se registro Exitosamente El Nuevo Proveedor", "success");
+					showAppAlert('success', "Se registro Exitosamente El Nuevo Proveedor!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
 					$('#ModalNuevoProveedor').modal('hide');
 					tablaProveedor.ajax.reload();
 				})
 				.fail(function() {
-					swal("Se produjo un error al realizar el proceso, favor contacte a su administrador", "error");
+					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador!", {
+                		duration: 5000,
+                		image: base_url+ 'assets/img/errorGif.gif'
+            		});
 				})
 				.always(function() {});
 		}

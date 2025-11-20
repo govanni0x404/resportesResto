@@ -188,7 +188,10 @@
             msg = "-> Nombre Lista Precios\n";
         }
         if (msg.length) {
-            swal("Falta Ingresar Los Siguiente(s) dato(s):\n" + msg);
+            showAppAlert('error',"- Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             //grabar datos
             IdListaPrecios = $('#idlPrecio').val();
@@ -202,10 +205,16 @@
                 }).done(function() {
                     $('#ModalNuevaLprecios').modal('hide');
                     tableResumenListaPrecios.ajax.reload();
-                    swal("Listo", "Se registro Exitosamente La Nueva Lista De Precios", "success");
+                    showAppAlert('success', "Se registro Exitosamente La Nueva Lista De Precios!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
                 })
                 .fail(function() {
-                    swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+                    showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+                    });
                 })
                 .always(function() {});
         }
@@ -262,7 +271,10 @@
                 detalle: detallePrecios
             }, function() {}).done(function(datos) {
                 console.log(datos);
-                swal("Listo", "Se registro Exitosamente El Cambio De Precio", "success");
+                showAppAlert('success', "Se registro Exitosamente El Cambio De Precio!", {
+                    duration: 4000,
+                    image: base_url + 'assets/img/success.gif'
+                });
                 $('#modalCambioPrecio').modal('hide');
                 tableResumenListaPrecios.ajax.reload();
             })

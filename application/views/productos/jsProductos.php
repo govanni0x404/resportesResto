@@ -212,14 +212,15 @@ function CargarListasDePreciosVacias() {
         $.each(obj, function(index, v) {
             tbl += "<tr>";
             tbl += "<td style='display:none'>" + v.id_detalle_lprecio + "</td>";
-            tbl += "<td style='width:30%'>" + v.nombre_lprecio + "</td>";
-            tbl += '<td style="width:30%" class="text-right">';
+            tbl += "<td style='width:40%'>" + v.nombre_lprecio + "</td>";
+            tbl += '<td style="width:40%" class="text-right">';
             tbl += '<input class="text-right form-control precio-input" type="number" min="0" max="1000000" value="0">';
             tbl += '</td>';
             tbl += "</tr>";
         });
         
         $("#detallePrecioVenta").html(tbl);
+        maxPrecioVenta();
     });
 }
 
@@ -303,81 +304,77 @@ function GrabarProducto() {
 }
 
 function grabarPreciosYProducto() {
+    console.log("=== INICIANDO GRABACIÓN ===");
+    
+    if (!datosProductoPendiente) {
+        swal("Error", "No hay datos del producto", "error");
+        return;
+    }
+    
+    // Recolectar precios de la tabla
+    var precios = [];
     var tienePrecio = false;
-    var detallePrecios = [];
     
     $("#detallePrecioVenta tr").each(function() {
-    var id = $(this).find(".id_lista").val();
-    var precio = parseInt($(this).find(".precio-input").val()) || 0;
-
-    detallePrecios.push({
-        id_detalle_lprecio: id,
-        total: precio
+        var idLista = $(this).find("td").eq(0).text().trim();
+        var precio = parseInt($(this).find(".precio-input").val()) || 0;
+        
+        if (precio > 0) {
+            tienePrecio = true;
+            precios.push({
+                id_lprecio: idLista,
+                total: precio
+            });
+        }
     });
-});
-
+    
+    console.log("Precios recolectados:", precios);
     
     if (!tienePrecio) {
         swal("Error", "Debe ingresar al menos un precio mayor a cero", "error");
         return;
     }
     
-    console.log("=== DATOS A ENVIAR ===");
-    console.log("Producto:", datosProductoPendiente);
-    console.log("Precios:", detallePrecios);
-    
-    // Cerrar modal de precios
-    $('#modalPrecioVentaProducto').modal('hide');
-    
-    // Guardar producto
+    // Enviar todo junto
     $.ajax({
-        url: base_url + "index.php/Productos/grabarNuevoProducto",
+        url: base_url + "index.php/Productos/grabarProductoConPrecios",
         type: "POST",
-        data: { prod: datosProductoPendiente },
-        dataType: "json",
-        success: function(resultado) {
-            console.log("Producto guardado:", resultado);
-            
-            var idProducto = resultado[0].id_producto;
-            
-            // Agregar id_producto a los precios
-            var preciosFinales = detallePrecios.map(function(p) {
-                return {
-                    id_detalle_lprecio: p.id_detalle_lprecio,
-                    total: p.total,
-                    id_producto: idProducto
-                };
-            });
-            
-            console.log("Guardando precios:", preciosFinales);
-            
-            // Guardar precios
-            $.ajax({
-                url: base_url + "index.php/ListaDePrecios/grabarPrecios",
-                type: "POST",
-                data: { detalle: preciosFinales },
-                success: function(resp) {
-                    console.log("Precios guardados:", resp);
-                    
-                    if (datosProductoPendiente.venta_uno_a_uno == 1) {
-                        GrabarNuevoInsumo();
-                    }
-                    
-                    $('#modalNuevoProducto').modal('hide');
-                    datosProductoPendiente = null;
-                    
-                    swal("¡Listo!", "Producto y precios guardados", "success");
-                    tablaCartaProductos.ajax.reload();
-                },
-                error: function(xhr) {
-                    console.error("Error precios:", xhr.responseText);
-                    swal("Error", "Producto guardado pero falló al guardar precios", "warning");
-                }
-            });
+        data: { 
+            producto: datosProductoPendiente,
+            precios: precios
         },
-        error: function(xhr) {
-            console.error("Error producto:", xhr.responseText);
-            swal("Error", "No se pudo guardar el producto", "error");
+        dataType: "json",
+        success: function(response) {
+            console.log("✓ Respuesta:", response);
+            
+            if (response.error) {
+                swal("Error", response.error, "error");
+                return;
+            }
+            
+            // Si es venta directa, crear insumo
+            if (datosProductoPendiente.venta_uno_a_uno == 1) {
+                GrabarNuevoInsumo();
+            }
+            
+            // Cerrar modales
+            $('#modalPrecioVentaProducto').modal('hide');
+            $('#modalNuevoProducto').modal('hide');
+            
+            // Limpiar
+            datosProductoPendiente = null;
+            
+            // Mostrar éxito
+            swal("¡Éxito!", "Producto guardado con " + response.precios_grabados + " precio(s)", "success");
+            
+            // Recargar tabla
+            if (typeof tablaCartaProductos !== 'undefined') {
+                tablaCartaProductos.ajax.reload();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("✗ Error:", xhr.responseText);
+            swal("Error", "No se pudo guardar: " + error, "error");
         }
     });
 }
@@ -443,19 +440,13 @@ function sololetrasyNumeros(e, espace) {
 
 function maxPrecioVenta() {
     $(document).off('input', '.precio-input').on('input', '.precio-input', function() {
-
         var value = $(this).val();
-
-        // Limitar largo
         if (value.length > 7) {
             value = value.slice(0, 7);
         }
-
-        // Limitar valores
         var n = parseInt(value) || 0;
         if (n > 1000000) n = 1000000;
         if (n < 0) n = 0;
-
         $(this).val(n);
     });
 }

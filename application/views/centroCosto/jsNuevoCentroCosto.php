@@ -71,7 +71,10 @@
 
   function grabarNuevoCentroCosto() {
     if ($('#nombreCentroCosto').val() == 0) {
-      swal("ERROR!", "No Ingreso El Nombre Del Centro De Costo!", "error");
+      showAppAlert('error',"- No Ingreso El Nombre Del Centro De Costo.", {
+        duration: 5000,
+        image: base_url+ 'assets/img/errorGif.gif'
+      });
     } else {
       idCentroCosto = $('#idCentroCosto').val();
       NombreCentroCosto = $('#nombreCentroCosto').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -89,12 +92,18 @@
       $.post(base_url + "index.php/CentroCosto/grabarNuevoCentroCosto", {
           'prod': miJson
         }).done(function() {
-          swal("Listo", "Se registro Exitosamente El Nuevo Centro De Costo", "success");
+          showAppAlert('success', "Se registro Exitosamente El Nuevo Centro De Costo!", {
+            duration: 4000,
+            image: base_url + 'assets/img/success.gif'
+          });
           $('#ModalNuevoCentroCosto').modal('hide');
           tablaCentroCosto.ajax.reload();
         })
         .fail(function() {
-          swal("Se produjo un error al realizar el proceso, favor contacte a su administrador", "error");
+          showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador.", {
+            duration: 5000,
+            image: base_url+ 'assets/img/errorGif.gif'
+          });
         })
         .always(function() {});
     }

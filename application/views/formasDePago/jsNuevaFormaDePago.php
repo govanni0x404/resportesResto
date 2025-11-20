@@ -103,7 +103,10 @@
 
     function GrabarNuevaFormaDePago() {
         if ($('#nombreFormaDePago').val() == 0) {
-            swal("ERROR!", "No Ingreso El Nombre De La Forma De Pago!", "error");
+            showAppAlert('error',"- No Ingreso El Nombre De La Forma De Pago!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             IdFormaDePago = $('#idFormaDePago').val();
             NombreFormaDePago = $('#nombreFormaDePago').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -138,12 +141,18 @@
             $.post(base_url + "index.php/FormasDePago/grabarNuevaFormaDePago", {
                     'prod': miJson
                 }).done(function() {
-                    swal("Listo", "Se registro Exitosamente La Nueva Forma De Pago", "success");
+                    showAppAlert('success', "Se registro Exitosamente La Nueva Forma De Pago!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
                     $('#ModalNuevaFormaDePago').modal('hide');
                     tablaFormasDePago.ajax.reload();
                 })
                 .fail(function() {
-                    swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+                    showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+                    });
                 })
                 .always(function() {});
         }
