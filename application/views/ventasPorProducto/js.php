@@ -1,0 +1,312 @@
+<script>
+    var base_url = "<?php echo base_url(); ?>";
+    tablaVentasPorProducto = $('#tableVentasPorProducto').DataTable();
+
+  /*  $(document).ready(function () {
+        $('#date-range-picker').daterangepicker({
+            singleDatePicker: false,
+            format: 'DD/MM/YYYY',
+            "locale": {
+                "format": "DD/MM/YYYY",
+                "separator": " - ",
+                "applyLabel": "Elegir",
+                "cancelLabel": "Cancelar",
+                "fromLabel": "Desde",
+                "toLabel": "Hasta",
+                "customRangeLabel": "Custom",
+                "daysOfWeek": [
+                    "Dom",
+                    "Lun",
+                    "Mar",
+                    "Mie",
+                    "Jue",
+                    "Vie",
+                    "Sab"
+                ],
+                "monthNames": [
+                    "Enero",
+                    "Febrero",
+                    "Marzo",
+                    "Abril",
+                    "Mayo",
+                    "Junio",
+                    "Julio",
+                    "Agosto",
+                    "Septiembre",
+                    "Octubre",
+                    "Noviembre",
+                    "Diciembre"
+                ],
+                "firstDay": 1
+            }
+        });
+    });
+    */
+
+    $('#date-range-picker').daterangepicker({
+            ranges: dateRange,
+            format: 'DD-MM-YYYY',
+            locale: {
+                format: 'DD-MM-YYYY', // Formato de fecha
+                separator: ' - ',
+                applyLabel: 'Aplicar',
+                cancelLabel: 'Cancelar',
+                fromLabel: 'Desde',
+                toLabel: 'Hasta',
+                customRangeLabel: 'Rango personalizado',
+                weekLabel: 'S',
+                daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'],
+                monthNames: [
+                    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                ],
+                firstDay: 1 // Comienza el lunes
+        }
+    });
+
+    function updateInput(start, end) {
+        $('#date-range-picker').val(start.format('DD/MM/YYYY') + ' - ' + end.format('DD/MM/YYYY'));
+    }
+
+    $('#date-range-picker').on('apply.daterangepicker', function (ev, picker) {
+        updateInput(picker.startDate, picker.endDate);
+    });
+
+    $(document).on('click', function (event) {
+        if (!$(event.target).closest('.daterangepicker').length && !$(event.target).is('#date-range-picker')) {
+            var picker = $('#date-range-picker').data('daterangepicker');
+            if (picker) {
+                updateInput(picker.startDate, picker.endDate);
+            }
+        }
+    });
+
+
+    function consultarRListadoVentasPorProducto() {
+        var desde = $('#date-range-picker').data('daterangepicker').startDate.format('DD-MM-YYYY');
+        var hasta = $('#date-range-picker').data('daterangepicker').endDate.format('DD-MM-YYYY');
+        ListadoVentasPorProducto(desde, hasta);
+        piechartProductos(desde, hasta);
+    }
+
+    function ListadoVentasPorProducto(desde, hasta) {
+        let tituloExport = "Ventas Por Producto";
+        if ($.fn.dataTable.isDataTable('#tableVentasPorProducto')) {
+            tablaVentasPorProducto = $('#tableVentasPorProducto').DataTable();
+            tablaVentasPorProducto.destroy();
+        }
+        tablaVentasPorProducto = $("#tableVentasPorProducto").DataTable({
+            "ajax": {
+                "url": base_url + "index.php/VentasPorProducto/ListadoVentasPorProducto",
+                "type": "POST",
+                "data": {
+                    'desde': desde,
+                    'hasta': hasta,
+                }
+            },
+            "bPaginate": true,
+            "bProcessing": true,
+            "pageLength": 20,
+            "select": true,
+            "dom": "Bfrtip",
+            "ordering": true,
+            "filter": true,
+            "info": false,
+            "footer": false,
+            "order": [[1, 'desc']],
+            "responsive": {
+                details: {
+                    type: 'column',
+                    target: -1
+                }
+            },
+            "columns": [
+                {
+                    mData: "nombre_producto",
+                    className: "text-left"
+                },
+                {
+                    mData: "cantidad_vendida",
+                    className: "text-center"
+                },
+                /*{
+                    mData: "total_neto",
+                    className: "text-right",
+                    render: $.fn.dataTable.render.number(',', '.', 0, '$')
+                },
+                {
+                    mData: "total_iva",
+                    className: "text-right",
+                    render: $.fn.dataTable.render.number(',', '.', 0, '$')
+                },*/
+                {
+                    mData: "total_vendido",
+                    className: "text-center",
+                    render: $.fn.dataTable.render.number(',', '.', 0, '$')
+                },
+
+            ],
+            "drawCallback": function () {
+                CantidadVendido = this.api();
+                $(CantidadVendido.column(1).footer()).html(
+                    ' ' + CantidadVendido.column(1, {
+                        page: 'current'
+                    }).data().sum()
+                )
+                /*
+                                var totalNeto = this.api();
+                                var totalN = totalNeto.column(2, { page: 'current' }).data().sum();
+                                function formatNumber(num) {
+                                    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                                }
+                                var totalFormatted = formatNumber(totalN.toFixed(0));
+                                $(totalNeto.column(2).footer()).html(
+                                    '$' + totalFormatted
+                                );
+                
+                                var totalIva = this.api();
+                                var totalI = totalIva.column(3, { page: 'current' }).data().sum();
+                                function formatNumber(num) {
+                                    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                                }
+                                var totalFormatted = formatNumber(totalI.toFixed(0));
+                                $(totalIva.column(3).footer()).html(
+                                    '$' + totalFormatted
+                                );
+                */
+                var totalVendido = this.api();
+                var totalV = totalVendido.column(2, { page: 'current' }).data().sum();
+                function formatNumber(num) {
+                    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                }
+                var totalFormatted = formatNumber(totalV.toFixed(0));
+                $(totalVendido.column(2).footer()).html(
+                    '$' + totalFormatted
+                );
+            },
+            'language': {
+                url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
+                // traduce la linea de abajo que quedaba en ingles
+                select: {
+                    rows: {
+                        _: " (Seleccionadas %d filas)",
+                        0: " (Presione una linea a seleccionar)",
+                        1: " (1 Fila seleccionada)"
+                    }
+                }
+            },
+            "buttons": [{
+                text: "PDF",
+                extend: 'pdf',
+                exportOptions: {
+                    modifier: {
+                        selected: null
+                    },
+                    //columns: [0, 1, 2, 3, 4]
+                    columns: [0, 1, 2]
+                },
+                extend: 'pdfHtml5',
+                orientation: 'landscape',
+                pageSize: 'LEGAL',
+                title: tituloExport,
+                className: "btn btn-danger"
+            }]
+        });
+
+    }
+
+    var totalesProductos = [];
+    var Productos = [];
+    dataProductos = {
+        labels: Productos,
+        datasets: [{
+            data: totalesProductos,
+            backgroundColor: [
+                "rgb(54, 162, 235)",
+                "rgb(255, 99, 132)",
+                "rgb(255, 159, 64)",
+                "rgb(255, 205, 86)",
+                "rgb(75, 192, 192)",
+                "rgb(153, 102, 255)",
+                "rgb(201, 203, 207)",
+                "rgb(255, 0, 0)",
+            ],
+        }]
+    },
+
+        configProductos = {
+            type: 'pie',
+            data: dataProductos,
+            options: {
+                responsive: true,
+                // maintainAspectRatio: true,
+                // padding: 1000,
+                hoverOffset: 0,
+                hoverBorderColor: '#000',
+                plugins: {
+                    legend: {
+                        display: false,
+                        position: 'bottom'
+                    }
+                }
+            }
+        };
+
+    const chartProductos = new Chart(
+        document.getElementById('chartProductos'),
+        configProductos,
+    );
+
+    function piechartProductos(desde, hasta) {
+        //pie chart
+        $.post(base_url + "index.php/VentasPorProducto/pieVentasPorProducto", {
+            'desde': desde,
+            'hasta': hasta
+        }, function (datos) {
+            try {
+                var obj = $.parseJSON(datos);
+                var sum = 0;
+                $.each(obj, function (index, v) {
+                    Productos[index] = v.nombre_producto + ' / ' + v.porcentaje + '%';
+                    totalesProductos[index] = v.monto_total;
+                    sum += parseInt(v.monto_total);
+                });
+                if (obj.length <= 0 || sum <= 0) {
+                    $('#grafico').hide();
+                } else {
+                    $('#grafico').show();
+                }
+                chartProductos.update();
+            } catch (e) {
+                console.log(e);
+            }
+        })
+    }
+
+    function cargarValidacionReportes() {
+        $.post(base_url + "index.php/Configuraciones/obtenerConfiguracionesRestoWeb", {
+        }, function (datos) {
+            var obj = $.parseJSON(datos);
+            $.each(obj, function (index, v) {
+                if (v.desglozar_monto_neto_iva_total_en_reportes == 't') {
+                    tablaVentasPorProducto.column(2).visible(true);
+                    tablaVentasPorProducto.column(3).visible(true);
+                } else {
+                    tablaVentasPorProducto.column(2).visible(false);
+                    tablaVentasPorProducto.column(3).visible(false);
+
+                }
+            });
+        }).done(function () {
+        })
+            .fail(function () {
+                alert("Se produjo un error al realizar la consulta");
+            })
+            .always(function () {
+            });
+    }
+
+    $('#btnConsultar').click(function () {
+        cargarValidacionReportes();
+    })
+</script>

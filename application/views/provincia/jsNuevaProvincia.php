@@ -1,0 +1,82 @@
+<!--  MODAL NUEVO REGISTRO  -->
+<div id="ModalNuevaProvincia" class="modal fade" role="dialog" style="overflow-y: scroll;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- TITULO  MODAL  -->
+            <div id="tituloModalUsuario" class="modal-header btn-success">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title text text-center">REGISTRO PROVINCIAS
+                </h4>
+            </div>
+            <!-- FIN TITULO  MODAL  -->
+
+            <!-- CONTENIDO  MODAL  -->
+            <div class="modal-body">
+                <div class="h-panel">
+                    <ul id="myTab" class="nav nav-with title font">
+                        <li class="active"><a href="#tabBodegas" data-toggle="tab" id="tab1" class="text color1"></a></li>
+                    </ul>
+                    <div class="tab-pane fade active in" id="tabBodegas">
+                        <!-- CAMPOS DE REGISTRO  -->
+                        <fieldset>
+                            <div class="col-md-6 ">
+                                <label for="idProvincia">ID</label>
+                                <input type="number" disabled class="form-control input-sm input-sm" name="idProvincia" id="idProvincia" requerido="no" value="" />
+                            </div>
+                            <div class="col-md-6 ">
+                                <label for="nombreProvincia">NOMBRE PROVINCIA *</label>
+                                <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreProvincia" id="nombreProvincia" requerido="si" value="" placeholder="Nombre Provincia" />
+                            </div>
+                        </fieldset>
+                        <!-- FIN CAMPOS DE REGISTRO  -->
+                    </div>
+                </div>
+            </div>
+            <!-- CONTENIDO  MODAL  -->
+
+            <!-- BOTONES  -->
+            <div class="modal-footer">
+                <button onclick="grabarNuevaProvincia()" type="button" class="btn btn-success"><i class="fa fa-check-square-o"></i>GRABAR</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+            </div>
+            <!-- FIN BOTONES  -->
+        </div>
+    </div>
+</div>
+<!-- FIN  MODAL NUEVO REGISTRO  -->
+
+<script>
+    function AbrirModalNuevaProvincia() {
+        $('#idProvincia').val("");
+        $('#nombreProvincia').val("");
+        $('#ModalNuevaProvincia').modal({
+            backdrop: 'static',
+            keyboard: false
+        });
+    }
+
+    function grabarNuevaProvincia() {
+        if ($('#nombreProvincia').val() == 0) {
+            swal("ERROR!", "No Ingreso El Nombre De La Provincia!", "error");
+        } else {
+            idProvincia = $('#idProvincia').val();
+            NombreProvincia = $('#nombreProvincia').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
+            var miJson = {
+                'id_provincia': idProvincia,
+                'nombre_provincia': NombreProvincia,
+            };
+            console.log(miJson);
+            $.post(base_url + "index.php/Provincias/grabarNuevaProvincia", {
+                    'prod': miJson
+                }).done(function() {
+                    swal("Listo", "Se registro Exitosamente La Nueva Provincia", "success");
+                    $('#ModalNuevaProvincia').modal('hide');
+                    tablaProvincias.ajax.reload();
+                })
+                .fail(function() {
+                    swal("Se produjo un error al realizar el proceso, favor contacte a su administrador", "error");
+                })
+                .always(function() {});
+        }
+    }
+</script>

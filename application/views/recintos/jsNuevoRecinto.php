@@ -1,0 +1,127 @@
+<div id="ModalNuevoRecinto" class="modal fade" role="dialog" style="overflow-y: scroll;">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<!-- TITULO  MODAL  -->
+			<div id="tituloModal" class="modal-header btn-success">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title text text-center">REGISTRO RECINTO
+				</h4>
+			</div>
+			<!-- FIN TITULO  MODAL  -->
+
+			<!-- CONTENIDO  MODAL  -->
+			<div class="modal-body">
+				<div class="h-panel">
+					<ul id="myTab" class="nav nav-with title font">
+						<li class="active"><a href="#tabDatosUsuarios" data-toggle="tab" id="tab1" class="text color1"></a></li>
+					</ul>
+					<div class="tab-pane fade active in" id="tabDatosUsuarios">
+						<!-- CAMPOS DE REGISTRO  -->
+						<fieldset>
+							<div class="col-md-6 ">
+								<label for="idRecinto">ID</label>
+								<input type="number" disabled class="form-control input-sm input-sm" name="idRecinto" id="idRecinto" requerido="no" value="">
+							</div>
+						</fieldset>
+						<fieldset>
+							<div class="col-md-6 ">
+								<label for="nombreRecinto">RECINTO *</label>
+								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreRecinto" id="nombreRecinto" requerido="si" value="" placeholder="Nombre Recinto" />
+							</div>
+							<div class="col-md-6">
+								<label for="cboIdDestinoDeImpresion">DESTINO DE IMPRESION *</label>
+								<select id="cboIdDestinoDeImpresion" nombre="cboIdDestinoDeImpresion" class="form-control input-sm" style="width:100%" requerido="si"></select>
+							</div>
+						</fieldset>
+						<fieldset>
+							<div class="col-md-2">
+								<div class="btn-group" role="group" aria-label="...">
+									<div class="checkbox checkbox-success">
+										<br>
+										<input id="ckVigente" type="checkbox">
+										<label for="ckVigente">
+											Vigente
+										</label>
+									</div>
+								</div>
+							</div>
+						</fieldset>
+						<!-- FIN CAMPOS DE REGISTRO  -->
+					</div>
+				</div>
+			</div>
+			<!-- CONTENIDO  MODAL  -->
+
+			<!-- BOTONES  -->
+			<div class="modal-footer">
+				<button onclick="grabarNuevoRecinto()" type="button" class="btn btn-success"><i class="fa fa-check-square-o"></i>GRABAR</button>
+				<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+			</div>
+			<!-- FIN BOTONES  -->
+		</div>
+	</div>
+</div>
+<script>
+	function AbrirModalNuevoRecinto() {
+		$('#idRecinto').val("");
+		$('#nombreRecinto').val("");
+		$('#ckVigente').prop('checked', true);
+		ListadoDestinoDeImpresion("");
+		$('#ModalNuevoRecinto').modal({
+			backdrop: 'static',
+			keyboard: false
+		});
+	}
+
+	function grabarNuevoRecinto() {
+		if ($('#nombreRecinto').val() == 0) {
+			swal("ERROR!", "No Ingreso El Nombre Del Recinto!", "error");
+		} else if ($('#cboIdDestinoDeImpresion').val() == null) {
+			swal("ERROR!", "No Selecciono El Destino De Impresion!", "error");
+		} else {
+			IdRecinto = $('#idRecinto').val();
+			NombreRecinto = $('#nombreRecinto').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
+			IdDestinoDeImpresion = $('#cboIdDestinoDeImpresion').val();
+			if ($('#ckVigente').is(":checked")) {
+				var Vigente = 1
+			} else {
+				var Vigente = 0
+			}
+			var miJson = {
+				'id_recinto': IdRecinto,
+				'nombre_recinto': NombreRecinto,
+				'id_dimpresion': IdDestinoDeImpresion,
+				'vigente': Vigente
+			};
+			$.post(base_url + "index.php/Recintos/grabarNuevoRecinto", {
+					'prod': miJson
+				}).done(function() {
+					swal("Listo", "Se registro Exitosamente El Nuevo Recinto", "success");
+					$('#ModalNuevoRecinto').modal('hide');
+					tablaRecinto.ajax.reload();
+				})
+				.fail(function() {
+					swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+				})
+				.always(function() {});
+		}
+	}
+
+	function ListadoDestinoDeImpresion(objSelected) {
+		$.post(base_url + "index.php/Productos/ListadoDestinoDeImpresion", {
+			id: ""
+		}, function(datos) {
+			var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
+			tbl = '<option selected disabled value="0">Seleccione El Destino De Impresion</option>';
+			$.each(obj, function(index, v) { // recorro el array
+				if (v.nombre_dimpresion == objSelected) {
+					tbl = tbl + '<option selected value="' + v.id_dimpresion + '">' + v.nombre_dimpresion + '</option>';
+				} else {
+					tbl = tbl + '<option value="' + v.id_dimpresion + '">' + v.nombre_dimpresion + '</option>';
+				}
+			}); //fin each
+			$("#cboIdDestinoDeImpresion").html(tbl);
+			$("#cboIdDestinoDeImpresion").select2();
+		});
+	}
+</script>

@@ -1,0 +1,276 @@
+<script>
+    var base_url = "<?php echo base_url(); ?>";
+    tableResumenListaPrecios = $('#tableResumenListaPrecios').DataTable();
+    $(document).ready(function() {
+        ListadoListasDePrecios();
+        ListadoDeFamilias();
+        $('#ckTodasLasFamilias').prop('checked', true);
+        $("#cboFamilias").attr("disabled", true);
+    });
+
+    $('#btnFiltrar').on('click', function() {
+        var id_lprecio = $("#cboListaDePrecios").val();
+        console.log(id_lprecio);
+        if ($('#ckTodasLasListasDePrecios').prop('checked') == false) {
+            if (id_lprecio == null || id_lprecio == 0) {
+                alert("Debe seleccionar la lista de precios");
+                return;
+            }
+        } else {
+            id_lprecio = 0;
+        }
+        var id_familia = $("#cboFamilias").val();
+        console.log(id_familia);
+        if ($('#ckTodasLasFamilias').prop('checked') == false) {
+            if (id_familia == null || id_familia == 0) {
+                alert("Debe seleccionar la familia");
+                return;
+            }
+        } else {
+            id_familia = 0;
+        }
+        InformeListaDePrecios(id_lprecio, id_familia);
+
+    });
+
+    $('#ckTodasLasListasDePrecios').click(function() {
+        if ($('#ckTodasLasListasDePrecios').prop('checked') == false) {
+            $("#cboListaDePrecios").attr("disabled", false);
+        } else {
+            $("#cboListaDePrecios").attr("disabled", true);
+        }
+    });
+
+    $('#ckTodasLasFamilias').click(function() {
+        if ($('#ckTodasLasFamilias').prop('checked') == false) {
+            $("#cboFamilias").attr("disabled", false);
+        } else {
+            $("#cboFamilias").attr("disabled", true);
+        }
+    });
+
+    function InformeListaDePrecios(id_lprecio, id_familia) {
+        let tituloExport = "Lista De Precios";
+        if ($.fn.dataTable.isDataTable('#tableResumenListaPrecios')) {
+            tableResumenListaPrecios = $('#tableResumenListaPrecios').DataTable();
+            tableResumenListaPrecios.destroy();
+        }
+        tableResumenListaPrecios = $("#tableResumenListaPrecios").DataTable({
+            "ajax": {
+                "url": base_url + "index.php/ListaDePrecios/InformeListaDePrecios",
+                "type": "POST",
+                "data": {
+                    'id_lprecio': id_lprecio,
+                    'id_familia': id_familia,
+                }
+            },
+            "bPaginate": true,
+            "bProcessing": true,
+            "pageLength": 10,
+            "select": true,
+            "dom": "Bfrtip",
+            "ordering": true,
+            "filter": true,
+            "info": false,
+            "footer": false,
+            "responsive": {
+                details: {
+                    type: 'column',
+                    target: -1
+                }
+            },
+            "columns": [{
+                    mData: "id_producto",
+                    className: "text-center",
+                    visible: false
+                },
+                {
+                    mData: "cbarra",
+                    className: "text-center"
+                },
+                {
+                    mData: "nombre_producto",
+                    className: "text-center"
+                },
+                {
+                    mData: "nombre_familia",
+                    className: "text-center"
+                },
+                {
+                    mData: "nombre_umedida",
+                    className: "text-center"
+                },
+                {
+                    mData: "total",
+                    className: "text-center",
+                    render: $.fn.dataTable.render.number(',', '.', 0, '$')
+                },
+                {
+                    mData: "precio_ucompra",
+                    className: "text-center",
+                    render: $.fn.dataTable.render.number(',', '.', 0, '$')
+                },
+            ],
+            'language': {
+                url: "//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
+                // traduce la linea de abajo que quedaba en ingles
+                select: {
+                    rows: {
+                        _: " (Seleccionadas %d filas)",
+                        0: " (Presione una linea a seleccionar)",
+                        1: " (1 Fila seleccionada)"
+                    }
+                }
+            },
+            'buttons': []
+        });
+        tableResumenListaPrecios
+            .on('select', function(e, dt, type, indexes) {
+                var rowData = tableResumenListaPrecios.rows(indexes).data().toArray();
+
+                /*$("#txtPonderado").val(rowData[0].pponderado);
+                 $("#txtMargenEsperadoPonderado").val(rowData[0].por_ganancia_producto);
+
+                $("#txtPrecioUCompra").val(rowData[0].precio_ucompra);
+                $("#txtMargenEsperado").val(rowData[0].por_ganancia_producto);*/
+
+                $("#idProducto").val(rowData[0].id_producto);
+                llenarPrecios(rowData[0].id_producto);
+                //calcularMargen();
+                $('#modalCambioPrecio').modal('show');
+
+
+
+            })
+    }
+
+
+    function ListadoListasDePrecios() {
+        $.post(base_url + "index.php/ListaDePrecios/ListadoListasDePrecios", {
+            id: ""
+        }, function(datos) {
+            var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
+            tbl = "<option value='0' disabled>Seleccione La Lista De Precios</option>";
+            $.each(obj, function(index, v) { // recorro el array
+                tbl += '<option selected value="' + v.id_lprecio + '">' + v.nombre_lprecio + '</option>';
+            }); //fin each
+            $("#cboListaDePrecios").html(tbl);
+            $("#cboListaDePrecios").select2();
+        });
+    }
+
+    function ListadoDeFamilias() {
+        $.post(base_url + "index.php/ListaDePrecios/ListadoDeFamilias", {
+            id: ""
+        }, function(datos) {
+            var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
+            tbl = "<option value='0' disabled>Seleccione La Familia</option>";
+            $.each(obj, function(index, v) { // recorro el array
+                tbl += '<option selected value="' + v.id_familia + '">' + v.nombre_familia + '</option>';
+            }); //fin each
+            $("#cboFamilias").html(tbl);
+            $("#cboFamilias").select2();
+        });
+    }
+
+    function crearNuevaLprecio() {
+        $('#idlPrecio').val("");
+        $('#nombreLprecio').val("");
+        $('#ModalNuevaLprecios').modal({
+            backdrop: 'static',
+            keyboard: false
+        });
+    }
+
+    function GrabarNuevaLprecio() {
+        var msg = "";
+        if ($('#nombreLprecio').val() == 0) {
+            msg = "-> Nombre Lista Precios\n";
+        }
+        if (msg.length) {
+            swal("Falta Ingresar Los Siguiente(s) dato(s):\n" + msg);
+        } else {
+            //grabar datos
+            IdListaPrecios = $('#idlPrecio').val();
+            NombreListaPrecios = $('#nombreLprecio').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
+            var miJson = {
+                'id_lprecio': IdListaPrecios,
+                'nombre_lprecio': NombreListaPrecios
+            };
+            $.post(base_url + "index.php/ListaDePrecios/grabarNuevaListaDePrecios", {
+                    'prod': miJson
+                }).done(function() {
+                    $('#ModalNuevaLprecios').modal('hide');
+                    tableResumenListaPrecios.ajax.reload();
+                    swal("Listo", "Se registro Exitosamente La Nueva Lista De Precios", "success");
+                })
+                .fail(function() {
+                    swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+                })
+                .always(function() {});
+        }
+    }
+
+    function llenarPrecios(idProducto) {
+        $.post(base_url + "index.php/ListaDePrecios/obtenerListayPreciosDeVenta", {
+            id_producto: idProducto
+        }, function(datos) {
+            var obj = $.parseJSON(datos); // lo convierto a un objeto a json
+            tbl = '';
+            $.each(obj, function(index, v) { // recorro el array
+                tbl = tbl + "<tr id='" + v.id_detalle_lprecio + "'>";
+                tbl = tbl + "<td  style= 'display:none' >" + v.id_detalle_lprecio + "</td>";
+                tbl = tbl + "<td  style='width:30%'' >" + v.nombre_lprecio + "</td>";
+                tbl = tbl + '<td style="width:30%" class="text-right" ><input class="text-right form-control form-control-line" type="number" min="0" name="" value="' + v.total + '"></td>';
+                tbl = tbl + "</tr>";
+
+
+            }); //fin each
+            $("#detallePrecioVenta").html(tbl);
+
+        });
+    }
+
+    function grabarPrecios() {
+        var idProducto = $("#idProducto").val();
+        var detallePrecios = [];
+        $("#tablePrecios tbody tr").each(function(index) {
+            $(this).children("td").each(function(index2) {
+                valorLista = 0;
+                switch (index2) {
+                    case 0: //id producto
+                        idDetalleLprecio = $(this).html();
+                        break;
+                    case 2: // precio
+                        var row = $(this);
+                        if (row.find('input[type="number"]').val()) {
+                            valorLista = row.find('input[type="number"]').val();
+                        }
+
+                        detallePrecios.push({
+                            'id_producto': idProducto,
+                            'id_detalle_lprecio': idDetalleLprecio,
+                            'total': valorLista
+                        });
+                        break;
+                }
+            });
+        }); //fin recorrer tabla
+
+        console.log(detallePrecios);
+        $.post(base_url + "index.php/ListaDePrecios/grabarPrecios", {
+                detalle: detallePrecios
+            }, function() {}).done(function(datos) {
+                console.log(datos);
+                swal("Listo", "Se registro Exitosamente El Cambio De Precio", "success");
+                $('#modalCambioPrecio').modal('hide');
+                tableResumenListaPrecios.ajax.reload();
+            })
+            .fail(function() {
+                alert("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+            })
+            .always(function() {});
+
+
+    } // fin grabar precios
+</script>
