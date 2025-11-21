@@ -64,7 +64,10 @@ function GrabarNuevoAgregados() {
         msg = "Cantidad De Agregado\n";
     }
     if (msg.length) {
-        swal("Falta Ingresar Los Siguiente(s) dato(s):\n" + msg);
+        showAppAlert('error',"- Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+            duration: 5000,
+            image: base_url+ 'assets/img/errorGif.gif'
+        });
     } else {
         //grabar datos
         productoMaestro = $('#txtID').val();
@@ -102,7 +105,10 @@ function GrabarNuevoAgregados() {
         }
 
         if (errorexiste == 1) {
-            swal("Error", "El producto ya se encuentra en la lista", "error");
+            showAppAlert('error',"- El producto ya se encuentra en la lista", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             var miJson = {
                 'id_producto': productoAgregado,
@@ -117,10 +123,16 @@ function GrabarNuevoAgregados() {
                 }).done(function() {
                     idProducto = $('#id_producto').val();
                     AbrirModalAgregadosDelProducto(idProducto);
-                    swal("Listo", "Se registro Exitosamente El Nuevo Agregado", "success");
+                    showAppAlert('success', "Se registro Exitosamente El Nuevo Agregado!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
                 })
                 .fail(function() {
-                    swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+                    showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+                    });
                 })
                 .always(function() {});
         }
@@ -158,7 +170,10 @@ function actualizarCantidadProductoAgregado() {
             detalle: detalleAgregados
         }, function() {}).done(function(datos) {
             console.log(datos);
-            swal("Listo", "Se Actualizo Exitosamente El Agregado", "success");
+            showAppAlert('success', "Se Actualizo Exitosamente El Agregado!", {
+                duration: 4000,
+                image: base_url + 'assets/img/success.gif'
+            });
             //$('#modalCambioPrecio').modal('hide');
             //tableResumenListaPrecios.ajax.reload();
         })
@@ -202,7 +217,10 @@ function actualizarValorAdicionalProductoAgregado() {
             detalle: detalleAgregados
         }, function() {}).done(function(datos) {
             console.log(datos);
-            swal("Listo", "Se Actualizo Exitosamente El Agregado", "success");
+            showAppAlert('success', "Se Actualizo Exitosamente El Agregado!", {
+                duration: 4000,
+                image: base_url + 'assets/img/success.gif'
+            });
         })
         .fail(function() {
             alert("Se produjo un error al realizar el proceso, favor contacte a su administrador");
@@ -238,18 +256,23 @@ function HabilitarAgregado(id) {
 
                     let positionError = datos.search("ERROR:");
                     if (parseFloat(positionError) > 0) {
-                        swal("Error", "Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(
-                            positionError, 150), "error");
+                        showAppAlert('error',"- Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(positionError, 150), {
+                            duration: 5000,
+                            image: base_url+ 'assets/img/errorGif.gif'
+                        });
                     } else {
-                        swal("Agregado Habilitado!", "Se Habilito El Agregado con éxito!", "success");
+                        showAppAlert('success', "Se Habilito El Agregado con éxito!", {
+                            duration: 4000,
+                            image: base_url + 'assets/img/success.gif'
+                        });
                         AbrirModalAgregadosDelProducto(idProducto);
                     }
                 }).fail(function() {
-                    swal("Se produjo un error al realizar La Habilitacion, favor vuelva a intentarlo");
+                    showAppAlert('error',"- Se produjo un error al realizar La Habilitacion, favor vuelva a intentarlo", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+                    });
                 });
-                swal.close();
-            } else {
-                swal.close();
             }
         });
 }
@@ -275,18 +298,23 @@ function DeshabilitarAgregado(id) {
 
                     let positionError = datos.search("ERROR:");
                     if (parseFloat(positionError) > 0) {
-                        swal("Error", "Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(
-                            positionError, 150), "error");
+                        showAppAlert('error',"- Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(positionError, 150), {
+                            duration: 5000,
+                            image: base_url+ 'assets/img/errorGif.gif'
+                        });
                     } else {
-                        swal("Agregado Deshabilitado!", "Se Deshabilito El Agregado con éxito!", "success");
+                        showAppAlert('Agregado Deshabilitado', "Se Deshabilito El Agregado con éxito!", {
+                            duration: 4000,
+                            image: base_url + 'assets/img/success.gif'
+                        });
                         AbrirModalAgregadosDelProducto(idProducto);
                     }
                 }).fail(function() {
-                    swal("Se produjo un error al realizar La Habilitacion, favor vuelva a intentarlo");
+                    showAppAlert('error',"- Se produjo un error al realizar La Habilitacion, favor vuelva a intentarlo.", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+                    });
                 });
-                swal.close();
-            } else {
-                swal.close();
             }
         });
 }

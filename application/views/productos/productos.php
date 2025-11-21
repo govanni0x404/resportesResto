@@ -51,7 +51,7 @@ $fechaActual = date('Y-m-d');
                 </div>
                 <br>-->
 				<div class="col-md-4">
-					<button onclick="crearNuevoProducto()" type="button" class="btn btn-success"></i>Nuevo Producto</button>
+					<button onclick="crearNuevoProducto()" type="button" class="btn btn-primary"></i>Nuevo Producto</button>
 				</div>
 				<div class="panel lobidisable">
 					<div class="panel-heading">

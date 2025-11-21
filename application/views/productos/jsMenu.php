@@ -103,7 +103,10 @@
             msg = "Nombre Menu\n";
         }
         if (msg.length) {
-            swal("Falta Ingresar Los Siguiente(s) dato(s):\n" + msg);
+            showAppAlert('error',"- Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             //grabar datos
             IdMenu = $('#txtIdMenu').val();
@@ -124,10 +127,16 @@
             }).done(function() {
                 $('#ModalNuevoMenu').modal('hide');
                 tableListadoMenu.ajax.reload();
-                swal("Listo", "Se registro Exitosamente El Nuevo Menu", "success");
+                showAppAlert('success', "Se registro Exitosamente El Nuevo Menu!", {
+                    duration: 4000,
+                    image: base_url + 'assets/img/success.gif'
+                });
             })
             .fail(function() {
-                swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+                showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                    duration: 5000,
+                    image: base_url+ 'assets/img/errorGif.gif'
+                });
             })
             .always(function() {});
     }
@@ -269,7 +278,10 @@
             msg = "Nombre Categoria\n";
         }
         if (msg.length) {
-            swal("Debe Ingresar Los Siguiente(s) dato(s):\n" + msg);
+            showAppAlert('error',"- Debe Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             //grabar datos
             IdCategoria = $('#IdCategoria').val();
@@ -292,10 +304,16 @@
             }).done(function() {
                 $('#ModalNuevaCategoria').modal('hide');
                 tableCategoriasMenu.ajax.reload();
-                swal("Listo", "Se registro Exitosamente La Nueva Categoria", "success");
+                showAppAlert('success', "Se registro Exitosamente La Nueva Categoria!", {
+                    duration: 4000,
+                    image: base_url + 'assets/img/success.gif'
+                });
             })
             .fail(function() {
-                swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+                showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                    duration: 5000,
+                    image: base_url+ 'assets/img/errorGif.gif'
+                });
             })
             .always(function() {});
     }
@@ -404,7 +422,10 @@
                 detalle: detalleComposicionMenu
             }, function() {}).done(function(datos) {
                 console.log(datos);
-                swal("Listo", "Se Actualizo Exitosamente", "success");
+                showAppAlert('success', "Se Actualizo Exitosamente!", {
+                    duration: 4000,
+                    image: base_url + 'assets/img/success.gif'
+                });
             })
             .fail(function() {
                 alert("Se produjo un error al realizar el proceso, favor contacte a su administrador");
@@ -441,7 +462,10 @@
                 detalle: detalleComposicionMenu
             }, function() {}).done(function(datos) {
                 console.log(datos);
-                swal("Listo", "Se Actualizo Exitosamente", "success");
+                showAppAlert('success', "Se Actualizo Exitosamente!", {
+                    duration: 4000,
+                    image: base_url + 'assets/img/success.gif'
+                });
             })
             .fail(function() {
                 alert("Se produjo un error al realizar el proceso, favor contacte a su administrador");
@@ -464,7 +488,10 @@
             msg = "Productos A Agregar\n";
         }
         if (msg.length) {
-            swal("Debe Ingresar Los Siguiente(s) dato(s):\n" + msg);
+            showAppAlert('error',"- Debe Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             //grabar datos
             IdDetalleCategoriaMenu = $('#IdDetalleCategoria').val();
@@ -500,10 +527,16 @@
             }).done(function() {
                 id_categoria_menu = $('#id_categoria_menu').val();
                 obtenerProductosQueConformanElMenu(id_categoria_menu);
-                swal("Listo", "Se registro Exitosamente", "success");
+                showAppAlert('success', "Se registro Exitosamente!", {
+                    duration: 4000,
+                    image: base_url + 'assets/img/success.gif'
+                });
             })
             .fail(function() {
-                swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+                showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                    duration: 5000,
+                    image: base_url+ 'assets/img/errorGif.gif'
+                });
             })
             .always(function() {});
     }
@@ -566,7 +599,10 @@
                 detalle: detalleConfiguracionMenu
             }, function() {}).done(function(datos) {
                 console.log(datos);
-                swal("Listo", "Se Actualizo Exitosamente", "success");
+                showAppAlert('success', "Se Actualizo Exitosamente!", {
+                    duration: 4000,
+                    image: base_url + 'assets/img/success.gif'
+                });
             })
             .fail(function() {
                 alert("Se produjo un error al realizar el proceso, favor contacte a su administrador");

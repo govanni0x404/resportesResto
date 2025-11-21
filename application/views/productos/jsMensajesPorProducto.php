@@ -47,7 +47,10 @@
             msg = "Mensaje Del Producto\n";
         }
         if (msg.length) {
-            swal("Falta Ingresar Los Siguiente(s) dato(s):\n" + msg);
+            showAppAlert('error',"- Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             //grabar datos
             productoConMsg = $('#txtID').val();
@@ -67,10 +70,16 @@
                 }).done(function() {
                     idProducto = $('#id_producto').val();
                     AbrirModalMensajesDelProducto(idProducto)
-                    swal("Listo", "Se registro Exitosamente El Nuevo Mensaje", "success");
+                    showAppAlert('success', "Se registro Exitosamente El Nuevo Mensaje!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
                 })
                 .fail(function() {
-                    swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+                    showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+                    });
                 })
                 .always(function() {});
         }
@@ -97,17 +106,23 @@
 
                         let positionError = datos.search("ERROR:");
                         if (parseFloat(positionError) > 0) {
-                            swal("Error", "Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(positionError, 150), "error");
+                            showAppAlert('error',"- Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(positionError, 150), {
+                                duration: 5000,
+                                image: base_url+ 'assets/img/errorGif.gif'
+                            });
                         } else {
-                            swal("Mensaje Habilitado!", "Se Habilito El Mensaje con éxito!", "success");
+                            showAppAlert('Mensaje Habilitado', "Se Habilito El Mensaje con éxito!", {
+                                duration: 4000,
+                                image: base_url + 'assets/img/success.gif'
+                            });
                             AbrirModalMensajesDelProducto(idProducto);
                         }
                     }).fail(function() {
-                        swal("Se produjo un error al realizar La Habilitacion, favor vuelva a intentarlo");
+                        showAppAlert('error',"- Se produjo un error al realizar La Habilitacion, favor vuelva a intentarlo", {
+                            duration: 5000,
+                            image: base_url+ 'assets/img/errorGif.gif'
+                        });
                     });
-                    swal.close();
-                } else {
-                    swal.close();
                 }
             });
     }
@@ -133,17 +148,23 @@
 
                         let positionError = datos.search("ERROR:");
                         if (parseFloat(positionError) > 0) {
-                            swal("Error", "Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(positionError, 150), "error");
+                            showAppAlert('error',"- Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(positionError, 150), {
+                                duration: 5000,
+                                image: base_url+ 'assets/img/errorGif.gif'
+                            });
                         } else {
-                            swal("Mensaje Deshabilitado!", "Se Deshabilito El Mensaje con éxito!", "success");
+                            showAppAlert('Mensaje Deshabilitado', "Se Deshabilito El Mensaje con éxito!", {
+                                duration: 4000,
+                                image: base_url + 'assets/img/success.gif'
+                            });
                             AbrirModalMensajesDelProducto(idProducto);
                         }
                     }).fail(function() {
-                        swal("Se produjo un error al realizar La Habilitacion, favor vuelva a intentarlo");
+                        showAppAlert('error',"- Se produjo un error al realizar La Habilitacion, favor vuelva a intentarlo", {
+                            duration: 5000,
+                            image: base_url+ 'assets/img/errorGif.gif'
+                        });
                     });
-                    swal.close();
-                } else {
-                    swal.close();
                 }
             });
     }

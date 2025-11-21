@@ -212,15 +212,24 @@ function CargarListasDePreciosVacias() {
         $.each(obj, function(index, v) {
             tbl += "<tr>";
             tbl += "<td style='display:none'>" + v.id_detalle_lprecio + "</td>";
-            tbl += "<td style='width:40%'>" + v.nombre_lprecio + "</td>";
-            tbl += '<td style="width:40%" class="text-right">';
+            tbl += "<td style='width:30%'>" + v.nombre_lprecio + "</td>";
+            
+            // Input de precio
+            tbl += '<td style="width:30%" class="text-right">';
             tbl += '<input class="text-right form-control precio-input" type="number" min="0" max="1000000" value="0">';
             tbl += '</td>';
+            
+            // Input de comisión
+            tbl += '<td style="width:30%" class="text-right">';
+            tbl += '<input class="text-right form-control comision-input" type="number" min="0" max="100" step="0.01" value="0" placeholder="0.00">';
+            tbl += '</td>';
+            
             tbl += "</tr>";
         });
         
         $("#detallePrecioVenta").html(tbl);
         maxPrecioVenta();
+        maxComision();
     });
 }
 
@@ -307,31 +316,39 @@ function grabarPreciosYProducto() {
     console.log("=== INICIANDO GRABACIÓN ===");
     
     if (!datosProductoPendiente) {
-        swal("Error", "No hay datos del producto", "error");
+        showAppAlert('Error', - "No hay datos del producto", {
+            duration: 5000,
+            image: base_url+ 'assets/img/errorGif.gif'
+        });
         return;
     }
     
-    // Recolectar precios de la tabla
+    // Recolectar precios y comisiones de la tabla
     var precios = [];
     var tienePrecio = false;
     
     $("#detallePrecioVenta tr").each(function() {
         var idLista = $(this).find("td").eq(0).text().trim();
         var precio = parseInt($(this).find(".precio-input").val()) || 0;
+        var comision = parseFloat($(this).find(".comision-input").val()) || 0;
         
         if (precio > 0) {
             tienePrecio = true;
             precios.push({
                 id_lprecio: idLista,
-                total: precio
+                total: precio,
+                monto_comision: comision
             });
         }
     });
     
-    console.log("Precios recolectados:", precios);
+    console.log("Precios y comisiones recolectados:", precios);
     
     if (!tienePrecio) {
-        swal("Error", "Debe ingresar al menos un precio mayor a cero", "error");
+        showAppAlert('error',"- Debe ingresar al menos un precio mayor a cero", {
+            duration: 5000,
+            image: base_url+ 'assets/img/errorGif.gif'
+        }); 
         return;
     }
     
@@ -348,7 +365,10 @@ function grabarPreciosYProducto() {
             console.log("✓ Respuesta:", response);
             
             if (response.error) {
-                swal("Error", response.error, "error");
+                showAppAlert('Error', - response.error, {
+                    duration: 5000,
+                    image: base_url+ 'assets/img/errorGif.gif'
+                }); 
                 return;
             }
             
@@ -365,7 +385,10 @@ function grabarPreciosYProducto() {
             datosProductoPendiente = null;
             
             // Mostrar éxito
-            swal("¡Éxito!", "Producto guardado con " + response.precios_grabados + " precio(s)", "success");
+            showAppAlert('success', "Producto guardado con " + response.precios_grabados + " precio(s) y comisiones!", {
+                duration: 4000,
+                image: base_url + 'assets/img/success.gif'
+            });
             
             // Recargar tabla
             if (typeof tablaCartaProductos !== 'undefined') {
@@ -374,12 +397,29 @@ function grabarPreciosYProducto() {
         },
         error: function(xhr, status, error) {
             console.error("✗ Error:", xhr.responseText);
-            swal("Error", "No se pudo guardar: " + error, "error");
+            showAppAlert('Error', - "No se pudo guardar: " + error, {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            }); 
         }
     });
 }
 
-// 4. Inicializar
+function maxComision() {
+    $(document).off('input', '.comision-input').on('input', '.comision-input', function() {
+        var value = $(this).val();
+        var n = parseFloat(value) || 0;
+        
+        // Limitar a 2 decimales
+        n = Math.round(n * 100) / 100;
+        
+        if (n > 100) n = 100;
+        if (n < 0) n = 0;
+        
+        $(this).val(n);
+    });
+}
+
 $(document).ready(function() {
     maxPrecioVenta();
     console.log("✓ Sistema de precios inicializado");
@@ -452,39 +492,38 @@ function maxPrecioVenta() {
 }
 
 function cancelarCreacionProducto() {
+
     swal({
         title: "¿Está seguro?",
         text: "Si cancela, perderá toda la información ingresada del producto",
-        icon: "warning",
-        buttons: {
-            cancel: {
-                text: "No, continuar editando",
-                value: false,
-                visible: true,
-                className: "btn-secondary",
-                closeModal: true,
-            },
-            confirm: {
-                text: "Sí, cancelar",
-                value: true,
-                visible: true,
-                className: "btn-danger",
-                closeModal: true
-            }
-        }
-    }).then((willCancel) => {
-        if (willCancel) {
-            // Limpiar datos pendientes
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, cancelar",
+        cancelButtonText: "No, continuar editando",
+        closeOnConfirm: true,
+        closeOnCancel: true
+    }, function(isConfirm) {
+
+        if (isConfirm) {
+
             datosProductoPendiente = null;
-            
-            // Cerrar ambos modales
+
             $('#modalPrecioVentaProducto').modal('hide');
             $('#modalNuevoProducto').modal('hide');
-            
-            swal("Cancelado", "No se creó el producto", "info");
+
+            setTimeout(() => {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+            }, 150);
+
+            showAppAlert('Cancelado', - "No se creó el producto", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         }
     });
 }
+
 
 // Ejecutar cuando se carga el documento
 $(document).ready(function() {

@@ -127,7 +127,10 @@
 			msg = "-> Seccion Receta\n";
 		}
 		if (msg.length) {
-			swal("Error", "Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, "error");
+			showAppAlert('error',"- Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else {
 			//grabar datos
 
@@ -218,23 +221,38 @@
 										}, function() {}).done(function(datos) {
 											$('#modalReceta').modal('hide');
 											tableRecetas.ajax.reload();
-											swal("Listo", "Se registro Exitosamente La Receta", "success");
+											showAppAlert('success', "Se registro Exitosamente La Receta!", {
+                                    			duration: 4000,
+                                    			image: base_url + 'assets/img/success.gif'
+                                			});
 										})
 										.fail(function() {
-											swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+											showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                                    			duration: 5000,
+                                    			image: base_url+ 'assets/img/errorGif.gif'
+                                			});
 										})
 								})
 								.fail(function() {
-									swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+									showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                                    	duration: 5000,
+                                    	image: base_url+ 'assets/img/errorGif.gif'
+                                	});
 								})
 						} catch (e) {
 							let positionError = datos.search("ERROR:");
-							swal("Error", "Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(positionError, 150), "error");
+							showAppAlert('error',"- Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(positionError, 150), {
+                                	duration: 5000,
+                                    image: base_url+ 'assets/img/errorGif.gif'
+                                });
 						} finally {}
 					}
 				})
 				.fail(function() {
-					swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                        duration: 5000,
+                        image: base_url+ 'assets/img/errorGif.gif'
+                    });
 				})
 		}
 	});
@@ -265,11 +283,20 @@
 		});
 		//COMPROBACIONES
 		if (id_insumo == 0) {
-			swal("Error", "Elija un insumo por favor", "error");
+			showAppAlert('error',"- Elija un insumo por favor", {
+            	duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if (cantidad_insumo == '') {
-			swal("Error", "Ingrese una cantidad", "error");
+			showAppAlert('error',"- Ingrese una cantidad", {
+            	duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if (errorexiste == 1) {
-			swal("Error", "El producto ya se encuentra en la lista", "error");
+			showAppAlert('error',"- El producto ya se encuentra en la lista", {
+            	duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else {
 			rnd = $("#contador").val();
 			$('#cboCodBarraInsumoReceta').val(0).trigger('change');

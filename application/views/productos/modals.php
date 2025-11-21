@@ -297,14 +297,14 @@
 </div>
 
 <div id="modalPrecioVentaProducto" class="modal fade" role="dialog" style="overflow-y: scroll;">
-    <!--<div class="modal-dialog modal-lg">-->
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg"> <!-- Cambiado a modal-lg para más espacio -->
         <div class="modal-content">
             <div class="modal-header btn-success">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                        aria-hidden="true">&times;</span></button>
+                <button type="button" class="close" onclick="cancelarCreacionProducto()" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
                 <h4 class="modal-title color4 f-bold">
-                    PRECIO DE VENTA
+                    PRECIO DE VENTA Y COMISIÓN
                 </h4>
             </div>
             <div class="modal-body">
@@ -317,8 +317,9 @@
                                     <thead>
                                         <tr>
                                             <th style='display:none'>ID</th>
-                                            <th>LISTA DE PRECIOS</th>
-                                            <th class="text-right">PRECIO BRUTO UN</th>
+                                            <th style="width:30%">LISTA DE PRECIOS</th>
+                                            <th class="text-right" style="width:30%">PRECIO BRUTO</th>
+                                            <th class="text-right" style="width:30%">COMISIÓN (%)</th>
                                         </tr>
                                     </thead>
                                     <tbody id="detallePrecioVenta">
@@ -328,15 +329,18 @@
                         </div>
                     </div>
                 </fieldset>
-            </div><!-- end body modal--->
+            </div>
             <div class="modal-footer">
-                <button onclick="grabarPreciosYProducto()" type="button" class="btn btn-danger">Grabar Precios</button>
-                <button type="button" class="btn btn-white" data-dismiss="modal">Cancelar</button>
+                <button onclick="grabarPreciosYProducto()" type="button" class="btn btn-danger">
+                    <i class="fa fa-save"></i> Grabar Precios y Comisiones
+                </button>
+                <button onclick="cancelarCreacionProducto()" type="button" class="btn btn-white">
+                    <i class="fa fa-times"></i> Cancelar
+                </button>
             </div>
         </div>
     </div>
-</div> <!-- End Moda Code -->
-
+</div>
 <div id="ModalNuevaFamilia" class="modal fade" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">

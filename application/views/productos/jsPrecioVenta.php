@@ -56,7 +56,10 @@
 			}
 		).done(function(){
 			$('#modalPrecioVentaProducto').modal('hide');
-			swal("Listo", "Precio guardado correctamente", "success");
+			showAppAlert('success', "Precio guardado correctamente!", {
+        		duration: 4000,
+                image: base_url + 'assets/img/success.gif'
+            });
 		});
 	}
 

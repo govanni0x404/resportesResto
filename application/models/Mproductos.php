@@ -642,7 +642,7 @@ class Mproductos extends CI_Model
         return $query->result();
     }
 
-	public function grabarPrecioProducto($data)
+	public function grabarPrecioProducto($data, $idDetalle = null)
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
@@ -655,16 +655,29 @@ class Mproductos extends CI_Model
 		$this->db->where('id_lprecio', $data['id_lprecio']);
 		$existe = $this->db->get('detalle_lprecio');
 		
+		// Preparar datos incluyendo comisión
+		$dataToSave = array(
+			'id_producto' => $data['id_producto'],
+			'id_lprecio' => $data['id_lprecio'],
+			'total' => $data['total'],
+			'monto_comision' => isset($data['monto_comision']) ? $data['monto_comision'] : 0
+		);
+		
+		// Agregar comisión si existe en el array
+		if (isset($data['monto_comision'])) {
+			$dataToSave['monto_comision'] = $data['monto_comision'];
+		}
+		
 		if ($existe->num_rows() > 0) {
 			// Actualizar
 			$this->db->where('id_producto', $data['id_producto']);
 			$this->db->where('id_lprecio', $data['id_lprecio']);
-			$this->db->update('detalle_lprecio', $data);
+			$this->db->update('detalle_lprecio', $dataToSave);
 			
 			return ['updated' => true, 'id_producto' => $data['id_producto'], 'id_lprecio' => $data['id_lprecio']];
 		} else {
 			// Insertar
-			$this->db->insert('detalle_lprecio', $data);
+			$this->db->insert('detalle_lprecio', $dataToSave);
 			
 			$consulta = $this->db->query("SELECT CURRVAL('detalle_lprecio_id_detalle_lprecio_seq'::regclass) as id_detalle_lprecio");
 			

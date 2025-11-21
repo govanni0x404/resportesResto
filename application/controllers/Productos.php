@@ -227,30 +227,33 @@ class Productos extends CI_Controller
 		$idProducto = $resultadoProducto[0]->id_producto;
 		log_message('debug', 'Producto grabado con ID: ' . $idProducto);
 		
-		// Grabar precios si existen
 		$preciosGrabados = array();
-		if (!empty($precios) && is_array($precios)) {
-			foreach ($precios as $precio) {
-				if ($precio['total'] > 0) {
-					$dataPrecio = array(
-						'id_producto' => $idProducto,
-						'id_lprecio' => (int)$precio['id_lprecio'],
-						'total' => (int)$precio['total']
-					);
-					
-					$resultadoPrecio = $this->Mproductos->grabarPrecioProducto($dataPrecio);
-					$preciosGrabados[] = $resultadoPrecio;
-				}
-			}
-		}
-		
-		log_message('debug', 'Precios grabados: ' . count($preciosGrabados));
-		
-		echo json_encode([
-			'success' => true,
-			'id_producto' => $idProducto,
-			'precios_grabados' => count($preciosGrabados)
-		]);
+    	if (!empty($precios) && is_array($precios)) {
+        	foreach ($precios as $precio) {
+            	if ($precio['total'] > 0) {
+                	$dataPrecio = array(
+                    	'id_producto' => $idProducto,
+                    	'id_lprecio' => (int)$precio['id_lprecio'],
+                    	'total' => (int)$precio['total']
+                	);
+                
+                	if (isset($precio['monto_comision']) && $precio['monto_comision'] >= 0) {
+                    	$dataPrecio['monto_comision'] = (float)$precio['monto_comision'];
+                	}
+                
+                	$resultadoPrecio = $this->Mproductos->grabarPrecioProducto($dataPrecio);
+                	$preciosGrabados[] = $resultadoPrecio;
+            	}
+        	}
+    	}
+    
+    	log_message('debug', 'Precios y comisiones grabados: ' . count($preciosGrabados));
+    
+    	echo json_encode([
+        	'success' => true,
+        	'id_producto' => $idProducto,
+        	'precios_grabados' => count($preciosGrabados)
+    	]);
 	}
 
 	public function obtenerEAN13()
