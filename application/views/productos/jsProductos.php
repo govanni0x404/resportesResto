@@ -342,17 +342,16 @@ function grabarPreciosYProducto() {
         }
     });
     
-    console.log("Precios y comisiones recolectados:", precios);
-    
-    if (!tienePrecio) {
-        showAppAlert('error',"- Debe ingresar al menos un precio mayor a cero", {
+    if (!$('#ckPermitirVentaSiempre').is(':checked')){
+        if (!tienePrecio) {
+        showAppAlert('error',"- Debe ingresar un precio mayor a cero", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         }); 
         return;
+        }
     }
-    
-    // Enviar todo junto
+        
     $.ajax({
         url: base_url + "index.php/Productos/grabarProductoConPrecios",
         type: "POST",
@@ -385,7 +384,7 @@ function grabarPreciosYProducto() {
             datosProductoPendiente = null;
             
             // Mostrar éxito
-            showAppAlert('success', "Producto guardado con " + response.precios_grabados + " precio(s) y comisiones!", {
+            showAppAlert('success', "Producto Creado y Guardado Correctamente!", {
                 duration: 4000,
                 image: base_url + 'assets/img/success.gif'
             });
@@ -505,21 +504,8 @@ function cancelarCreacionProducto() {
     }, function(isConfirm) {
 
         if (isConfirm) {
-
             datosProductoPendiente = null;
-
             $('#modalPrecioVentaProducto').modal('hide');
-            $('#modalNuevoProducto').modal('hide');
-
-            setTimeout(() => {
-                $('.modal-backdrop').remove();
-                $('body').removeClass('modal-open');
-            }, 150);
-
-            showAppAlert('Cancelado', - "No se creó el producto", {
-                duration: 5000,
-                image: base_url+ 'assets/img/errorGif.gif'
-            });
         }
     });
 }

@@ -7,7 +7,6 @@ $(document).ready(function() {
     });
     ListadoBodegas("");
     ListadoInsumos("");
-
 });
 
 $('#btnValidarIngreso').on('click', function() {
