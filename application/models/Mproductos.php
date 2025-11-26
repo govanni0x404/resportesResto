@@ -77,15 +77,18 @@ class Mproductos extends CI_Model
 		return $results;
 	}
 
-	public function obtenerPreciosDeVenta($idProducto)
-	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-			redirect(base_url()); //redireccionar al login
-		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-		$query = $this->db->query('SELECT * from detalle_lprecio  d join lprecio l on d.id_lprecio=l.id_lprecio
-                                  where d.id_producto=' . $idProducto . ' order by l.nombre_lprecio');
-		return $query->result();
+	public function obtenerPreciosDeVenta($idProducto){
+    	if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+	        redirect(base_url());
+    	}
+    	$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    	$query = $this->db->query('SELECT d.id_detalle_lprecio, d.id_lprecio, l.nombre_lprecio, d.total, 
+        	                      COALESCE(d.monto_comision, 0) as monto_comision 
+            	                  FROM detalle_lprecio d 
+                	              JOIN lprecio l ON d.id_lprecio=l.id_lprecio
+                    	          WHERE d.id_producto=' . $idProducto . ' 
+                        	      ORDER BY l.nombre_lprecio');
+    	return $query->result();
 	}
 
 	public function ListadoDeSubFamilias()

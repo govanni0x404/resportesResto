@@ -74,6 +74,15 @@ class Productos extends CI_Controller
 		echo json_encode($this->Mproductos->obtenerPreciosDeVenta($idProducto));
 	}
 
+	public function obtenerPreciosYComisiones()
+	{
+    	if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        	redirect(base_url());
+    	}
+    	$idProducto = $this->input->post('id_producto');
+    	echo json_encode($this->Mproductos->obtenerPreciosDeVenta($idProducto));
+	}
+
 	public function ListadoDeSubFamilias()
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {

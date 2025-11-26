@@ -1,7 +1,8 @@
 <script>
 var base_url = "<?php echo base_url(); ?>";
 tablaCartaProductos = $('#tableCartaProductos').DataTable();
-var datosProductoPendiente = null; // Variable global para almacenar temporalmente los datos del producto
+var datosProductoPendiente = null; 
+var preciosExistentes = []; 
 
 $(document).ready(function() {
     ListadoCartaDeProductos();
@@ -28,6 +29,16 @@ $('#ckTodasLasFamilias').click(function() {
         $("#cboFamilias").attr("disabled", true);
     }
 });
+
+function ObtenerPreciosDeVenta(idProducto) {
+    $.post(base_url + "index.php/Productos/obtenerPreciosYComisiones", {
+        id_producto: idProducto
+    }, function(datos) {
+        var obj = $.parseJSON(datos);
+        preciosExistentes = obj; // Guardar precios existentes
+        console.log("Precios cargados:", preciosExistentes);
+    });
+}
 
 function ListadoCartaDeProductos() {
     let tituloExport = "CARTA DE PRODUCTOS";
@@ -142,6 +153,9 @@ function crearNuevoProducto() {
     $('#txtCbarra').val("");
     $('#txtNombre').val("");
     
+    // Limpiar precios existentes
+    preciosExistentes = [];
+    
     ObtenerUltimoIdProducto("");
     ListadoDeFamiliasMantenedor("GENERAL");
     ListadoDeSubFamilias("");
@@ -169,9 +183,6 @@ function crearNuevoProducto() {
     
     // Limpiar tabla de precios
     $("#detallePrecioVenta").html('');
-    
-    // Cargar listas de precios vacías para nuevo producto
-    CargarListasDePreciosVacias();
     
     $('#modalNuevoProducto').modal({
         backdrop: 'static',
@@ -210,18 +221,28 @@ function CargarListasDePreciosVacias() {
         var tbl = '';
         
         $.each(obj, function(index, v) {
+            var precioExistente = null;
+            if (preciosExistentes && preciosExistentes.length > 0) {
+                precioExistente = preciosExistentes.find(function(p) {
+                    return p.id_lprecio == v.id_detalle_lprecio;
+                });
+            }
+            
+            var precio = precioExistente ? precioExistente.total : 0;
+            var comision = precioExistente ? precioExistente.monto_comision : 0;
+            
             tbl += "<tr>";
             tbl += "<td style='display:none'>" + v.id_detalle_lprecio + "</td>";
             tbl += "<td style='width:30%'>" + v.nombre_lprecio + "</td>";
             
-            // Input de precio
+            // Input de precio con valor existente
             tbl += '<td style="width:30%" class="text-right">';
-            tbl += '<input class="text-right form-control precio-input" type="number" min="0" max="1000000" value="0">';
+            tbl += '<input class="text-right form-control precio-input" type="number" min="0" max="1000000" value="' + precio + '">';
             tbl += '</td>';
             
-            // Input de comisión
+            // Input de comisión con valor existente
             tbl += '<td style="width:30%" class="text-right">';
-            tbl += '<input class="text-right form-control comision-input" type="number" min="0" max="100" step="0.01" value="0" placeholder="0.00">';
+            tbl += '<input class="text-right form-control comision-input" type="number" min="0" max="100" step="0.01" value="' + comision + '" placeholder="0.00">';
             tbl += '</td>';
             
             tbl += "</tr>";
@@ -233,7 +254,6 @@ function CargarListasDePreciosVacias() {
     });
 }
 
-// FUNCIÓN MODIFICADA: Ahora valida y abre modal de precios
 function GrabarProducto() {
     var msg = "";
     
@@ -258,8 +278,8 @@ function GrabarProducto() {
         return;
     }
     
-    // Preparar datos del producto y guardarlos temporalmente
-    datosProductoPendiente = {
+    // Preparar datos del producto
+    var datosProducto = {
         'id_producto': $('#txtID').val(),
         'nombre_producto': $('#txtNombre').val().toUpperCase().replace(/[,.'"$#%&]+/g, ''),
         'cbarra': $('#txtCbarra').val(),
@@ -302,13 +322,85 @@ function GrabarProducto() {
         'permite_cortesia': $('#ckPermiteCortesia').is(":checked") ? 1 : 0,
     };
     
-    // Siempre cargar listas de precios al abrir el modal
-    CargarListasDePreciosVacias();
+    var idProducto = $('#txtID').val();
+    
+    if (idProducto && idProducto != "" && idProducto != "0") {
+        // ES EDICIÓN - Grabar directamente SIN abrir modal
+        grabarProductoExistente(datosProducto);
+    } else {
+        // ES CREACIÓN - Abrir modal de precios
+        datosProductoPendiente = datosProducto;
+        preciosExistentes = []; // Limpiar precios existentes
+        CargarListasDePreciosVacias();
+        $('#modalPrecioVentaProducto').modal({
+            backdrop: 'static',
+            keyboard: false
+        });
+    }
+}
 
-    // Abrir modal de precios
-    $('#modalPrecioVentaProducto').modal({
-        backdrop: 'static',
-        keyboard: false
+function grabarProductoExistente(datosProducto) {
+    // Recolectar precios actuales (si existen en el array preciosExistentes)
+    var precios = [];
+    
+    if (preciosExistentes && preciosExistentes.length > 0) {
+        preciosExistentes.forEach(function(precio) {
+            precios.push({
+                id_lprecio: precio.id_lprecio,
+                total: precio.total,
+                monto_comision: precio.monto_comision
+            });
+        });
+    }
+    
+    $.ajax({
+        url: base_url + "index.php/Productos/grabarProductoConPrecios",
+        type: "POST",
+        data: { 
+            producto: datosProducto,
+            precios: precios // Enviar precios existentes para mantenerlos
+        },
+        dataType: "json",
+        success: function(response) {
+            console.log("✓ Producto actualizado:", response);
+            
+            if (response.error) {
+                showAppAlert('error', response.error, {
+                    duration: 5000,
+                    image: base_url+ 'assets/img/errorGif.gif'
+                });
+                return;
+            }
+            
+            // Si es venta directa, crear/actualizar insumo
+            if (datosProducto.venta_uno_a_uno == 1) {
+                GrabarNuevoInsumo();
+            }
+            
+            // Cerrar modal
+            $('#modalNuevoProducto').modal('hide');
+            
+            // Limpiar
+            preciosExistentes = [];
+            
+            // Mostrar éxito
+            showAppAlert('success', "Producto actualizado correctamente!", {
+                duration: 4000,
+                image: base_url + 'assets/img/success.gif'
+            });
+            
+            // Recargar tabla
+            if (typeof tablaCartaProductos !== 'undefined') {
+                tablaCartaProductos.ajax.reload();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("✗ Error:", xhr.responseText);
+            showAppAlert('error', "No se pudo actualizar: " + error, {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+        }
     });
 }
 
@@ -316,7 +408,7 @@ function grabarPreciosYProducto() {
     console.log("=== INICIANDO GRABACIÓN ===");
     
     if (!datosProductoPendiente) {
-        showAppAlert('Error', - "No hay datos del producto", {
+        showAppAlert('error', "No hay datos del producto", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
@@ -342,16 +434,20 @@ function grabarPreciosYProducto() {
         }
     });
     
-    if (!$('#ckPermitirVentaSiempre').is(':checked')){
+    console.log("Precios recolectados:", precios);
+    
+    // Solo validar precio si no permite venta sin precio
+    if (!$('#ckPermitirVentaSiempre').is(':checked')) {
         if (!tienePrecio) {
-        showAppAlert('error',"- Debe ingresar un precio mayor a cero", {
-            duration: 5000,
-            image: base_url+ 'assets/img/errorGif.gif'
-        }); 
-        return;
+            showAppAlert('error', "Debe ingresar al menos un precio mayor a cero", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            }); 
+            return;
         }
     }
-        
+    
+    // Enviar todo junto
     $.ajax({
         url: base_url + "index.php/Productos/grabarProductoConPrecios",
         type: "POST",
@@ -364,7 +460,7 @@ function grabarPreciosYProducto() {
             console.log("✓ Respuesta:", response);
             
             if (response.error) {
-                showAppAlert('Error', - response.error, {
+                showAppAlert('error', response.error, {
                     duration: 5000,
                     image: base_url+ 'assets/img/errorGif.gif'
                 }); 
@@ -382,9 +478,10 @@ function grabarPreciosYProducto() {
             
             // Limpiar
             datosProductoPendiente = null;
+            preciosExistentes = [];
             
             // Mostrar éxito
-            showAppAlert('success', "Producto Creado y Guardado Correctamente!", {
+            showAppAlert('success', "Producto creado y guardado correctamente!", {
                 duration: 4000,
                 image: base_url + 'assets/img/success.gif'
             });
@@ -396,7 +493,7 @@ function grabarPreciosYProducto() {
         },
         error: function(xhr, status, error) {
             console.error("✗ Error:", xhr.responseText);
-            showAppAlert('Error', - "No se pudo guardar: " + error, {
+            showAppAlert('error', "No se pudo guardar: " + error, {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             }); 
@@ -491,7 +588,6 @@ function maxPrecioVenta() {
 }
 
 function cancelarCreacionProducto() {
-
     swal({
         title: "¿Está seguro?",
         text: "Si cancela, perderá toda la información ingresada del producto",
