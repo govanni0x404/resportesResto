@@ -36,19 +36,6 @@
 	}
 
 	function cancelarEdicionPrecios() {
-		swal({
-			title: "¿Está seguro?",
-			text: "Si cancela, se perderán los cambios realizados",
-			type: "warning",
-			showCancelButton: true,
-			confirmButtonText: "Sí, cancelar",
-			cancelButtonText: "No, seguir editando",
-			closeOnConfirm: true,
-			closeOnCancel: true
-		}, function(isConfirm) {
-			if (isConfirm) {
-				$('#modalPrecioVentaProducto').modal('hide');
-			}
-		});
+		$('#modalPrecioVentaProducto').modal('hide');
 	}
 </script>
