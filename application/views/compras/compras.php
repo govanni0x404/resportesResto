@@ -104,7 +104,7 @@ $fechaActual = date('Y-m-d');
                         <div class="col-md-2">
                             <label style="visibility: hidden;">Acción</label>
                             <button id="btnAgregarALista" type="button"
-                                class="btn btn-success btn-block"><i class="fa fa-plus"></i> Agregar</button>
+                                class="btn btn-primary btn-block"><i class="fa fa-plus"></i> Agregar</button>
                         </div>
                     </fieldset>
                 </div>

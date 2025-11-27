@@ -67,7 +67,7 @@ $fechaActual = date('Y-m-d');
                 </div>
                 <br>
                 <div class="col-md-4">
-                    <button onclick="crearNuevaLprecio()" type="button" class="btn btn-success"></i>Nueva Lista De Precios</button>
+                    <button onclick="crearNuevaLprecio()" type="button" class="btn btn-primary"></i>Nueva Lista De Precios</button>
                 </div>
                 <div class="panel lobidisable">
                     <div class="panel-heading">
