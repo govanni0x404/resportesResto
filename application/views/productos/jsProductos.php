@@ -260,6 +260,11 @@ function GrabarProducto() {
     if ($('#txtNombre').val() == "" || $('#txtNombre').val() == 0) {
         msg += "- Nombre Del Producto\n";
     }
+
+    if ($('#txtCbarra').val().trim() === "") {
+    msg += "- Código de barras no puede estar en blanco\n";
+    }
+
     if ($('#cboFamilia').val() == null || $('#cboFamilia').val() == 0) {
         msg += "- Familia Del Producto\n";
     }

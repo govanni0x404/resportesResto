@@ -39,7 +39,7 @@ $fechaActual = date('Y-m-d');
                     </div>
                     <br>
                     <div class="col-md-2">
-                        <button id="btnValidarIngreso" type="button" class="btn btn-success"></i>Validar Stock</button>
+                        <button id="btnValidarIngreso" type="button" class="btn btn-primary"></i>Validar Stock</button>
                     </div>
                 </fieldset>
             </div>
@@ -86,7 +86,7 @@ $fechaActual = date('Y-m-d');
                                 <br>
                                 <div class="col-md-2">
                                     <button onclick="agregarProductoALaGrilla()" id="btnAgregarALista" type="button"
-                                        class="btn btn-success"></i>Agregar</button>
+                                        class="btn btn-primary"></i>Agregar</button>
                                 </div>
                             </fieldset>
                         </div>

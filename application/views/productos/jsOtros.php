@@ -23,10 +23,6 @@
         if ($('#AliasFamilia').val().trim() === '') {
             $('#AliasFamilia').val($('#nombreFamilia').val().trim());
         }
-        var destinoImpresion = $('#cboDestinoDeImpresionFamilia').val();
-        if (!destinoImpresion || destinoImpresion == '' || destinoImpresion == '0' || destinoImpresion == 0) {
-            msg += "Destino De Impresion De Familia\n";
-        }
         if (msg.length) {
             showAppAlert('error',"- Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
                 duration: 5000,
@@ -37,7 +33,9 @@
             IdFamilia = $('#idFamilia').val();
             NombreFamilia = $('#nombreFamilia').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
             AliasFamilia = $('#AliasFamilia').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
-            IdDimpresion = $('#cboDestinoDeImpresionFamilia').val();
+            let IdDimpresion = $('#cboDestinoDeImpresionFamilia').val();
+            IdDimpresion = (IdDimpresion === "" || IdDimpresion === null) ? null : IdDimpresion;
+
             if ($('#ckVentaDirectaFamilia').is(":checked")) {
                 var VentaDirectaFamilia = 1
             } else {

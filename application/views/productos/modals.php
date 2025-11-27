@@ -287,8 +287,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarProducto()" type="button" class="btn btn-success"></i>Grabar Producto</button>
-                <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times-circle"></i>
+                <button onclick="GrabarProducto()" type="button" class="btn btn-primary"></i>Grabar Producto</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>
                     SALIR</button>
             </div>
             <!-- FIN BOTONES  -->

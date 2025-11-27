@@ -317,7 +317,7 @@ class Productos extends CI_Controller
 		$miData = array(
 			'nombre_familia' => $d['nombre_familia'],
 			'venta_directa' => $d['venta_directa'],
-			'id_dimpresion' => $d['id_dimpresion'],
+			'id_dimpresion' => empty($d['id_dimpresion']) ? null : $d['id_dimpresion'],
 			'orden_familia' => $d['orden_familia'],
 			'imprimir_en_detalle_pedido' => $d['imprimir_en_detalle_pedido'],
 			'alias' => $d['alias'],
