@@ -94,7 +94,7 @@ function ListadoCartaDeProductos() {
             {mData: "permite_cortesia", className: "text-center", visible: false}
         ],
         'language': {
-            url: "//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
+            url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
             select: {
                 rows: {
                     _: " (Seleccionadas %d filas)",

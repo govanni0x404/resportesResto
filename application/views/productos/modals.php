@@ -331,7 +331,7 @@
                 </fieldset>
             </div>
             <div class="modal-footer">
-                <button onclick="grabarPreciosYComisiones()" type="button" class="btn btn-danger">
+                <button onclick="grabarPreciosYProducto()" type="button" class="btn btn-danger">
                     <i class="fa fa-save"></i> Grabar Precios y Comisiones
                 </button>
                 <button onclick="cancelarEdicionPrecios()" type="button" class="btn btn-white">
