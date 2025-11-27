@@ -45,6 +45,14 @@
 		var detallePrecios = [];
 		var tienePrecio = false;
 
+		if (!idProducto || idProducto === '0') {
+        	showAppAlert('error', "Error: El ID del producto no está disponible. Por favor, seleccione un producto válido.", {
+            	duration: 5000,
+            	image: base_url + 'assets/img/errorGif.gif'
+        	}); 
+        	return; // Detener la ejecución si no hay ID
+    	}
+
 		$("#detallePrecioVenta tr").each(function() {
 			var id_lprecio = $(this).find("td").eq(0).text().trim();
 			var precio = parseInt($(this).find(".precio-input").val()) || 0;
