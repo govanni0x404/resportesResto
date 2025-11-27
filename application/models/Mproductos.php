@@ -269,11 +269,11 @@ class Mproductos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-		$q = 'SELECT a.id_agregado, round(a.cantidad) as cantidad, a.valor, a.vigente, p.nombre_producto, pm.nombre_producto as producto_maestro 
+		$q = 'SELECT a.id_agregado, a.id_producto, round(a.cantidad) as cantidad, a.valor, a.vigente, p.nombre_producto, pm.nombre_producto as producto_maestro 
         from agregados a
         join producto p on p.id_producto=a.id_producto
         join producto pm on pm.id_producto=a.id_producto_maestro
-       where a.id_producto_maestro=' . $idProducto . ' order by p.nombre_producto';
+      	where a.id_producto_maestro=' . $idProducto . ' and a.eliminado = false order by p.nombre_producto';
 		$query = $this->db->query($q)->result();
 		return $query;
 	}

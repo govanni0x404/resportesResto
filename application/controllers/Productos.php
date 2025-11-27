@@ -413,6 +413,46 @@ class Productos extends CI_Controller
 		echo json_encode($respueta);
 	}
 
+	public function actualizarPreciosYComisiones()
+	{
+		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+			echo json_encode(['error' => 'Sesión expirada']);
+			return;
+		}
+		
+		$idProducto = $this->input->post('id_producto');
+		$precios = $this->input->post('precios');
+		
+		log_message('debug', 'Actualizando precios de producto: ' . $idProducto);
+		log_message('debug', 'Precios recibidos: ' . print_r($precios, true));
+		
+		if (empty($precios)) {
+			echo json_encode(['error' => 'No se recibieron precios']);
+			return;
+		}
+		
+		$preciosGrabados = array();
+		
+		foreach ($precios as $precio) {
+			$dataPrecio = array(
+				'id_producto' => $idProducto,
+				'id_lprecio' => (int)$precio['id_lprecio'],
+				'total' => (int)$precio['total'],
+				'monto_comision' => (float)$precio['monto_comision']
+			);
+			
+			$resultadoPrecio = $this->Mproductos->grabarPrecioProducto($dataPrecio);
+			$preciosGrabados[] = $resultadoPrecio;
+		}
+		
+		log_message('debug', 'Precios actualizados: ' . count($preciosGrabados));
+		
+		echo json_encode([
+			'success' => true,
+			'precios_actualizados' => count($preciosGrabados)
+		]);
+	}
+
 	public function actualizarValorAdicionalProductoAgregado()
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {

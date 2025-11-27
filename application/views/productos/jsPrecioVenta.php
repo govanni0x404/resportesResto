@@ -1,81 +1,131 @@
 <script>
-	//Precio Venta Producto///////////////////////
 	function AbrirModalPrecioVenta(idProducto) {
-		IdProducto = $('#txtID').val();
-		// ObtenerPreciosDeventa(idProducto)
+		var IdProducto = $('#txtID').val();
+		
+		// Cargar precios Y COMISIONES existentes del producto
+		cargarPreciosYComisionesParaEdicion(IdProducto);
+		
 		$('#modalPrecioVentaProducto').modal({
 			backdrop: 'static',
 			keyboard: false
 		});
 	}
 
-	// function ObtenerPreciosDeventa(idProducto) {
-	// 	$.post(base_url + "index.php/ListaDePrecios/obtenerListayPreciosDeVenta", {
-	// 		id_producto: idProducto
-	// 	}, function(datos) {
-	// 		var obj = $.parseJSON(datos); // lo convierto a un objeto a json
-	// 		tbl = '';
-	// 		$.each(obj, function(index, v) { // recorro el array
-	// 			tbl = tbl + "<tr id='" + v.id_detalle_lprecio + "'>";
-	// 			tbl = tbl + "<td  style= 'display:none' >" + v.id_detalle_lprecio + "</td>";
-	// 			tbl = tbl + "<td  style='width:30%'' >" + v.nombre_lprecio + "</td>";
-	// 			tbl = tbl + '<td style="width:30%" class="text-right" ><input class="text-right form-control form-control-line" type="text" min="0" name="" value="' + v.total + '"></td>';
-	// 			tbl = tbl + "</tr>";
+	function cargarPreciosYComisionesParaEdicion(idProducto) {
+		$.post(base_url + "index.php/Productos/obtenerPreciosYComisiones", {
+			id_producto: idProducto
+		}, function(datos) {
+			var obj = $.parseJSON(datos);
+			var tbl = '';
+			
+			$.each(obj, function(index, v) {
+				tbl += "<tr>";
+				tbl += "<td style='display:none'>" + v.id_lprecio + "</td>";
+				tbl += "<td style='width:30%'>" + v.nombre_lprecio + "</td>";
+				
+				// Precio
+				tbl += '<td style="width:30%" class="text-right">';
+				tbl += '<input class="text-right form-control precio-input" type="number" min="0" max="1000000" value="' + (v.total || 0) + '">';
+				tbl += '</td>';
+				
+				// Comisión
+				tbl += '<td style="width:30%" class="text-right">';
+				tbl += '<input class="text-right form-control comision-input" type="number" min="0" max="100" step="0.01" value="' + (v.monto_comision || 0) + '" placeholder="0.00">';
+				tbl += '</td>';
+				
+				tbl += "</tr>";
+			});
+			
+			$("#detallePrecioVenta").html(tbl);
+		});
+	}
 
-
-	// 		}); //fin each
-	// 		$("#detallePrecioVenta").html(tbl);
-
-	// 	});
-	// }
-
-	function grabarPrecios() {
-
+	function grabarPreciosYComisiones() {
 		var idProducto = $("#txtID").val();
 		var detallePrecios = [];
+		var tienePrecio = false;
 
-		$("#tablePrecios tbody tr").each(function() {
+		$("#detallePrecioVenta tr").each(function() {
+			var id_lprecio = $(this).find("td").eq(0).text().trim();
+			var precio = parseInt($(this).find(".precio-input").val()) || 0;
+			var comision = parseFloat($(this).find(".comision-input").val()) || 0;
 
-			var id_lprecio = $(this).find("td").eq(1).attr("data-id-lprecio"); 
-			var precio = $(this).find("input").val();
+			if (precio > 0) {
+				tienePrecio = true;
+				detallePrecios.push({
+					id_lprecio: id_lprecio,
+					total: precio,
+					monto_comision: comision
+				});
+			}
+		});
 
-			detallePrecios.push({
+		if (!$('#ckPermitirVentaSiempre').is(':checked')) {
+        	if (!tienePrecio) {
+            	showAppAlert('error', "Debe ingresar al menos un precio mayor a cero", {
+	                duration: 5000,
+    	            image: base_url+ 'assets/img/errorGif.gif'
+        	    }); 
+            	return;
+        	}
+    	}
+
+		console.log("Actualizando precios y comisiones:", detallePrecios);
+
+		$.ajax({
+			url: base_url + "index.php/Productos/actualizarPreciosYComisiones",
+			type: "POST",
+			data: { 
 				id_producto: idProducto,
-				id_lprecio: id_lprecio,
-				precio_venta: precio
-			});
-
-		});
-
-		console.log(detallePrecios);
-
-		$.post(base_url + "index.php/ListaDePrecios/grabarPrecios", 
-			{ detalle: detallePrecios },
-			function(resp){
-				console.log(resp);
-			}
-		).done(function(){
-			$('#modalPrecioVentaProducto').modal('hide');
-			showAppAlert('success', "Precio guardado correctamente!", {
-        		duration: 4000,
-                image: base_url + 'assets/img/success.gif'
-            });
-		});
-	}
-
-	function maxPrecioVenta() {
-		var numberInput = document.getElementById('montoPrecioVenta');
-		numberInput.addEventListener('input', function() {
-			var value = parseInt(numberInput.value);
-			if (numberInput.value.length > 7) {
-				numberInput.value = numberInput.value.slice(0, 7);
-			}
-			if (value > 1000000) {
-				numberInput.value = 1000000;
-			} else if (value < 0) {
-				numberInput.value = 0;
+				precios: detallePrecios 
+			},
+			dataType: "json",
+			success: function(response) {
+				console.log("✓ Respuesta:", response);
+				
+				if (response.error) {
+					showAppAlert('error', response.error, {
+						duration: 5000,
+						image: base_url + 'assets/img/errorGif.gif'
+					});
+					return;
+				}
+				
+				$('#modalPrecioVentaProducto').modal('hide');
+				
+				showAppAlert('success', "Precios y comisiones actualizados correctamente!", {
+					duration: 4000,
+					image: base_url + 'assets/img/success.gif'
+				});
+				
+				if (typeof tablaCartaProductos !== 'undefined') {
+					tablaCartaProductos.ajax.reload();
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error("✗ Error:", xhr.responseText);
+				showAppAlert('error', "Error al actualizar: " + error, {
+					duration: 5000,
+					image: base_url + 'assets/img/errorGif.gif'
+				});
 			}
 		});
 	}
-	
+
+	function cancelarEdicionPrecios() {
+		swal({
+			title: "¿Está seguro?",
+			text: "Si cancela, se perderán los cambios realizados",
+			type: "warning",
+			showCancelButton: true,
+			confirmButtonText: "Sí, cancelar",
+			cancelButtonText: "No, seguir editando",
+			closeOnConfirm: true,
+			closeOnCancel: true
+		}, function(isConfirm) {
+			if (isConfirm) {
+				$('#modalPrecioVentaProducto').modal('hide');
+			}
+		});
+	}
 </script>

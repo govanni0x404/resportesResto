@@ -502,6 +502,7 @@ function grabarPreciosYProducto() {
 }
 
 function maxComision() {
+    // Usar delegación de eventos en el contenedor padre que siempre existe
     $(document).off('input', '.comision-input').on('input', '.comision-input', function() {
         var value = $(this).val();
         var n = parseFloat(value) || 0;
@@ -518,6 +519,7 @@ function maxComision() {
 
 $(document).ready(function() {
     maxPrecioVenta();
+    maxComision();
     console.log("✓ Sistema de precios inicializado");
 });
 
@@ -575,6 +577,7 @@ function sololetrasyNumeros(e, espace) {
 }
 
 function maxPrecioVenta() {
+    // Usar delegación de eventos en el contenedor padre que siempre existe
     $(document).off('input', '.precio-input').on('input', '.precio-input', function() {
         var value = $(this).val();
         if (value.length > 7) {
@@ -605,10 +608,4 @@ function cancelarCreacionProducto() {
         }
     });
 }
-
-
-// Ejecutar cuando se carga el documento
-$(document).ready(function() {
-    maxPrecioVenta();
-});
 </script>

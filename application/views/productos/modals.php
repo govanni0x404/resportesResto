@@ -300,7 +300,7 @@
     <div class="modal-dialog modal-lg"> <!-- Cambiado a modal-lg para más espacio -->
         <div class="modal-content">
             <div class="modal-header btn-success">
-                <button type="button" class="close" onclick="cancelarCreacionProducto()" aria-label="Close">
+                <button type="button" class="close" onclick="cancelarEdicionPrecios()" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
                 <h4 class="modal-title color4 f-bold">
@@ -331,10 +331,10 @@
                 </fieldset>
             </div>
             <div class="modal-footer">
-                <button onclick="grabarPreciosYProducto()" type="button" class="btn btn-danger">
+                <button onclick="grabarPreciosYComisiones()" type="button" class="btn btn-danger">
                     <i class="fa fa-save"></i> Grabar Precios y Comisiones
                 </button>
-                <button onclick="cancelarCreacionProducto()" type="button" class="btn btn-white">
+                <button onclick="cancelarEdicionPrecios()" type="button" class="btn btn-white">
                     <i class="fa fa-times"></i> Cancelar
                 </button>
             </div>
@@ -589,7 +589,7 @@
                         <fieldset>
                             <div class="col-md-6 ">
                                 <label for="cantidadAgregado">CANTIDAD</label>
-                                <input type="number" min="0" max="50000" onkeypress="return maxNumber()"
+                                <input type="number" min="0" max="50000"
                                     class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return soloNumeros(event)" onpaste="return false;"
                                     ondrop="return false;" autocomplete="off" name="cantidadAgregado"
@@ -597,7 +597,7 @@
                             </div>
                             <div class="col-md-6 ">
                                 <label for="valorAdicionalAgregado">VALOR ADICIONAL</label>
-                                <input type="number" min="0" max="50000" onkeypress="return maxNumber()"
+                                <input type="number" min="0" max="50000"
                                     class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return soloNumeros(event)" onpaste="return false;"
                                     ondrop="return false;" autocomplete="off" name="valorAdicionalAgregado"
