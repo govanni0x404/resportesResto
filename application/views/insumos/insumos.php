@@ -24,7 +24,7 @@
 					</div>
 				</div>
 				<br>
-				<button style="margin-left:10px;" id="btnNuevoInsumo" type="button" class="btn btn-success"></i>Crear Insumo</button>
+				<button style="margin-left:10px;" id="btnNuevoInsumo" type="button" class="btn btn-primary"></i>Crear Insumo</button>
 
 				<div class="table-responsive" style="margin-top:10px; padding:5px;">
 					<table id="tableInsumos" class="display responsive" style="width: 100%">

@@ -75,8 +75,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-success"><i class="fa fa-check-square-o"></i> GRABAR AGREGADO</button>
-				<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
+				<button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i> GRABAR AGREGADO</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>

@@ -56,8 +56,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarMsgProductos()" type="button" class="btn btn-success"><i class="fa fa-check-square-o"></i>GRABAR MENSAJE</button>
-				<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+				<button onclick="grabarMsgProductos()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR MENSAJE</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>

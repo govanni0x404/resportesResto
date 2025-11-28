@@ -24,7 +24,7 @@
 					</div>
 				</div>
 				<br>
-				<button style="margin-left:10px;" id="btnNuevaReceta" type="button" class="btn btn-success"></i>Crear Receta</button>
+				<button style="margin-left:10px;" id="btnNuevaReceta" type="button" class="btn btn-primary"></i>Crear Receta</button>
 
 				<div class="table-responsive" style="margin-top:10px; padding:5px;">
 					<table id="tableRecetas" class="display responsive" style="width: 100%">
