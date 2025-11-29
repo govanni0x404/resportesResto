@@ -536,7 +536,7 @@
                                         <ul class="dropdown-menu">
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/Recintos"><i class="ti-money"></i>Recintos</a></li>
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/Mesas"><i class="ti-money"></i>Mesas</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/MesasRecinto"><i class="ti-money"></i>Mesas Por Recinto</a></li>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/MesasPorRecinto"><i class="ti-money"></i>Mesas Por Recinto</a></li>
                                         </ul>
                                     </li>
 
