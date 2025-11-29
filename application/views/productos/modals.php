@@ -432,9 +432,9 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarNuevaFamilia()" type="button" class="btn btn-success"><i
+                <button onclick="GrabarNuevaFamilia()" type="button" class="btn btn-primary"><i
                         class="fa fa-check-square-o"></i>GRABAR</button>
-                <button type="button" class="btn btn-danger" data-dismiss="modal"><i
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i
                         class="fa fa-times-circle"></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
@@ -485,9 +485,9 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarNuevaBodega()" type="button" class="btn btn-success"><i
+                <button onclick="GrabarNuevaBodega()" type="button" class="btn btn-primary"><i
                         class="fa fa-check-square-o"></i>GRABAR</button>
-                <button type="button" class="btn btn-danger" data-dismiss="modal"><i
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i
                         class="fa fa-times-circle"></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
@@ -546,9 +546,9 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarNuevaSubFamilia()" type="button" class="btn btn-success"><i
+                <button onclick="GrabarNuevaSubFamilia()" type="button" class="btn btn-primary"><i
                         class="fa fa-check-square-o"></i>GRABAR</button>
-                <button type="button" class="btn btn-danger" data-dismiss="modal"><i
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i
                         class="fa fa-times-circle"></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
@@ -825,7 +825,7 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger" data-dismiss="modal"><i
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i
                         class="fa fa-times-circle"></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
@@ -883,7 +883,7 @@
                         <br>
                         <fieldset>
                             <div class="col-md-4">
-                                <button onclick="GrabarNuevoMenu()" type="button" class="btn btn-success"><i
+                                <button onclick="GrabarNuevoMenu()" type="button" class="btn btn-primary"><i
                                         class="fa fa-check-square-o"></i>GRABAR MENU</button>
                             </div>
                         </fieldset>
@@ -895,7 +895,7 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger" data-dismiss="modal"><i
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i
                         class="fa fa-times-circle"></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
@@ -1432,9 +1432,9 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-success" id="btnGrabarInsumo"><i class="fa fa-check-square-o"></i>
+                <button type="button" class="btn btn-primary" id="btnGrabarInsumo"><i class="fa fa-check-square-o"></i>
                     GRABAR</button>
-                <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times-circle"></i>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>
                     SALIR</button>
             </div>
             <!-- FIN BOTONES  -->

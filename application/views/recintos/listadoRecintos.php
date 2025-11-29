@@ -60,7 +60,7 @@ function ListadoDeRecinto() {
                 }
             }
         },
-        "buttons": [{
+        "buttons": [/*{
                 text: 'PDF',
                 extend: 'pdf',
                 exportOptions: {
@@ -86,7 +86,7 @@ function ListadoDeRecinto() {
                 },
                 title: 'Listado De Recintos',
                 className: "btn btn-success"
-            }
+            }*/
         ]
     });
     tablaRecinto

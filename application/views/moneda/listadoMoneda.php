@@ -50,33 +50,7 @@ function ListadoDeMoneda() {
                 }
             }
         },
-        "buttons": [{
-                text: 'PDF',
-                extend: 'pdf',
-                exportOptions: {
-                    modifier: {
-                        selected: null
-                    },
-                    columns: [0, 1, 2, 3, 4]
-                },
-                extend: 'pdfHtml5',
-                orientation: 'landscape',
-                pageSize: 'LEGAL',
-                title: 'Listado De Moneda',
-                className: "btn btn-danger"
-            },
-            {
-                text: 'EXCEL',
-                extend: 'excel',
-                exportOptions: {
-                    modifier: {
-                        selected: null
-                    },
-                    columns: [0, 1, 2, 3, 4]
-                },
-                title: 'Listado De Moneda',
-                className: "btn btn-success"
-            }
+        "buttons": [
         ]
     });
     tablaMoneda

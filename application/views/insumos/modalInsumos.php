@@ -12,10 +12,10 @@
 
 			<!-- CONTENIDO  MODAL  -->
 
-			<div class="col-md-12">
 				<div class="modal-body">
 					<div class="h-panel">
-						<div class="col-md-5">
+						<div class="row">
+							<div class="col-md-5">
 							<br>
 							<ul id="myTab" class="nav nav-tabs title font">
 								<li class="active">
@@ -68,9 +68,9 @@
 								</fieldset>
 								<!-- FIN CAMPOS DE REGISTRO  -->
 							</div>
-						</div>
-						<div><br></div>
-						<div class="col-md-7">
+							</div>
+							<div><br></div>
+							<div class="col-md-7">
 							<ul id="myTab2" class="nav nav-tabs title font">
 								<li id="tabUmedida" class="active">
 									<a href="#tabUnidadMedidaInsumo" data-toggle="tab" id="tab2" class="text color1">U/MEDIDA</a>
@@ -282,10 +282,10 @@
 									</div>
 								</fieldset>
 							</div>
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
 			<!-- CONTENIDO  MODAL  -->
 
 			<!-- BOTONES  -->

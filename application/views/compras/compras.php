@@ -122,10 +122,10 @@ $fechaActual = date('Y-m-d');
                             <thead class="btn-success">
                                 <tr>
                                     <th style='display:none;' scope="col">id producto</th>
-                                    <th style="width:40%" scope="col">Producto</th>
-                                    <th style="width:15%" scope="col">Cantidad</th>
-                                    <th style="width:15%" scope="col">Bruto/Un</th>
-                                    <th style="width:15%" scope="col">Total Bruto</th>
+                                    <th style="width:40%" class="text-center" scope="col">Producto</th>
+                                    <th style="width:15%" class="text-center" scope="col">Cantidad</th>
+                                    <th style="width:15%" class="text-center" scope="col">Bruto/Un</th>
+                                    <th style="width:15%" class="text-center" scope="col">Total Bruto</th>
                                     <th style="width:10%" scope="col" class="text-center">Quitar</th>
                                 </tr>
                             </thead>
@@ -135,12 +135,12 @@ $fechaActual = date('Y-m-d');
                     </div>
 
                     <div class="row" style="margin-top: 20px;">
-                        <div class="col-md-8">
+                        <div class="col-md-7">
                         </div>
                         <div class="col-md-2">
                             <label class="control-label">Total Compra:</label>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="input-group">
                                 <span class="input-group-addon">$</span>
                                 <input type="number" disabled

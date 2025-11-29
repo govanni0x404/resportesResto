@@ -277,11 +277,11 @@ function agregarProductoALaGrilla() {
             $.each(obj, function(index, v) {
                 tbl = "<tr id='" + v.rnd + "'>";
                 tbl = tbl + "<td style='display:none;'>" + v.id_insumo + "</td>";
-                tbl = tbl + "<td>" + v.nombre_insumo + "</td>";
-                tbl = tbl + "<td class='text-right'>" + commaSeparateNumber($('#CantidadComprada').val()) + " " + (v.unidad_medida ? v.unidad_medida : "") + "</td>";
-                tbl = tbl + "<td class='text-right'>" + commaSeparateNumber($('#BrutoUnitario').val()) + "</td>";
-                tbl = tbl + "<td class='text-right TotalBRUTO'>" + commaSeparateNumber($('#TotalBruto').val()) + "</td>";
-                tbl = tbl + "<td><a onclick='removeRow(" + v.rnd + ")' href='#' class='btn btn-danger btn-icon'><i class='fa fa-trash-o'></i></a></td>";
+                tbl = tbl + "<td class='text-center'>" + v.nombre_insumo + "</td>";
+                tbl = tbl + "<td class='text-center'>" + commaSeparateNumber($('#CantidadComprada').val()) + " " + (v.unidad_medida ? v.unidad_medida : "") + "</td>";
+                tbl = tbl + "<td class='text-center'>" + commaSeparateNumber($('#BrutoUnitario').val()) + "</td>";
+                tbl = tbl + "<td class='text-center TotalBRUTO'>" + commaSeparateNumber($('#TotalBruto').val()) + "</td>";
+                tbl = tbl + "<td class='text-center'><a onclick='removeRow(" + v.rnd + ")' href='#' class='btn btn-danger btn-icon'><i class='fa fa-trash-o'></i></a></td>";
                 tbl = tbl + "</tr>";
                 $('#detalleCompra').append(tbl);
                 nuevoProducto();

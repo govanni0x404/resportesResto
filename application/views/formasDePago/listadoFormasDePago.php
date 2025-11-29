@@ -67,33 +67,7 @@ function ListadoDeFormasDePago() {
                 }
             }
         },
-        "buttons": [{
-                text: 'PDF',
-                extend: 'pdf',
-                exportOptions: {
-                    modifier: {
-                        selected: null
-                    },
-                    columns: [0, 1, 2, 3, 4, 5]
-                },
-                extend: 'pdfHtml5',
-                orientation: 'landscape',
-                pageSize: 'LEGAL',
-                title: 'Listado De Formas De Pago',
-                className: "btn btn-danger"
-            },
-            {
-                text: 'EXCEL',
-                extend: 'excel',
-                exportOptions: {
-                    modifier: {
-                        selected: null
-                    },
-                    columns: [0, 1, 2, 3, 4, 5]
-                },
-                title: 'Listado De Formas De Pago',
-                className: "btn btn-success"
-            }
+        "buttons": [
         ]
     });
     tablaFormasDePago

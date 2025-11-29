@@ -68,33 +68,7 @@
           }
         }
       },
-      "buttons": [{
-        text: 'PDF',
-        extend: 'pdf',
-        exportOptions: {
-          modifier: {
-            selected: null
-          },
-          columns: [0, 1, 2]
-        },
-        extend: 'pdfHtml5',
-        orientation: 'landscape',
-        pageSize: 'LEGAL',
-        title: 'Listado De Canal De Venta',
-        className: "btn btn-danger"
-      },
-      {
-        text: 'EXCEL',
-        extend: 'excel',
-        exportOptions: {
-          modifier: {
-            selected: null
-          },
-          columns: [0, 1, 2]
-        },
-        title: 'Listado De Canal De Venta',
-        className: "btn btn-success"
-      }
+      "buttons": [
       ]
     });
     tablaCanalVenta

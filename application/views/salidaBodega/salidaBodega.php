@@ -104,10 +104,10 @@ $fechaActual = date('Y-m-d');
                                                 <thead class="btn-success">
                                                     <tr>
                                                         <th style='display:none;' scope="col">id Insumo</th>
-                                                        <th style="width:35%" scope="col">Insumo</th>
+                                                        <th style="width:35%" class="text-center" scope="col">Insumo</th>
                                                         <th style='display:none;' scope="col">Stock Anterior</th>
-                                                        <th style="width:15%" scope="col">Cantidad</th>
-                                                        <th style="width:15%" scope="col">Quitar</th>
+                                                        <th style="width:15%" class="text-center" scope="col">Cantidad</th>
+                                                        <th style="width:15%" class="text-center" scope="col">Quitar</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="detalleSalidaBodega">

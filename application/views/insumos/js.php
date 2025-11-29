@@ -277,17 +277,17 @@ function listarStockInsumo(id_insumo) {
             },
             {
                 mData: "nombre_bodega",
-                className: "text-left",
+                className: "text-center",
                 width: "50%",
             },
             {
                 mData: "saldo",
-                className: "text-right",
+                className: "text-center",
                 width: "10%",
             },
             {
                 mData: "nombre_umedida",
-                className: "text-left",
+                className: "text-center",
                 width: "40%",
             },
             {
@@ -345,17 +345,17 @@ function listarInsumosReceta(id_insumo) {
         },
         "columns": [{
                 mData: "nombre_insumo",
-                className: "text-left",
+                className: "text-center",
                 width: "50%",
             },
             {
                 mData: "cantidad",
-                className: "text-right",
+                className: "text-center",
                 width: "50%",
             },
             {
                 mData: "nombre_umedida",
-                className: "text-left",
+                className: "text-center",
                 width: "5%",
             },
             {
@@ -413,22 +413,22 @@ function listarInsumosProduccion(id_insumo) {
         },
         "columns": [{
                 mData: "cantidad",
-                className: "text-right",
+                className: "text-center",
                 width: "1%",
             },
             {
                 mData: "nombre_umedida",
-                className: "text-left",
+                className: "text-center",
                 width: "30%",
             },
             {
                 mData: "costo_unitario",
-                className: "text-right",
+                className: "text-center",
                 width: "15%",
             },
             {
                 mData: "costo_total",
-                className: "text-right",
+                className: "text-center",
                 width: "15%",
             },
             {

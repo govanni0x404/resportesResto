@@ -63,33 +63,7 @@ function ListadoDeTurnos() {
                 }
             }
         },
-        "buttons": [{
-                text: 'PDF',
-                extend: 'pdf',
-                exportOptions: {
-                    modifier: {
-                        selected: null
-                    },
-                    columns: [0, 1, 2, 3, 4]
-                },
-                extend: 'pdfHtml5',
-                orientation: 'landscape',
-                pageSize: 'LEGAL',
-                title: 'Listado De Turnos',
-                className: "btn btn-danger"
-            },
-            {
-                text: 'EXCEL',
-                extend: 'excel',
-                exportOptions: {
-                    modifier: {
-                        selected: null
-                    },
-                    columns: [0, 1, 2, 3, 4]
-                },
-                title: 'Listado De Turnos',
-                className: "btn btn-success"
-            }
+        "buttons": [
         ]
     });
     tablaTurnos

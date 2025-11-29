@@ -59,33 +59,7 @@ function ListadoDeMensajesPorProductos() {
                 }
             }
         },
-        "buttons": [{
-                text: 'PDF',
-                extend: 'pdf',
-                exportOptions: {
-                    modifier: {
-                        selected: null
-                    },
-                    columns: [0, 1, 2, 3]
-                },
-                extend: 'pdfHtml5',
-                orientation: 'landscape',
-                pageSize: 'LEGAL',
-                title: 'Listado De Mensajes Por Productos',
-                className: "btn btn-danger"
-            },
-            {
-                text: 'EXCEL',
-                extend: 'excel',
-                exportOptions: {
-                    modifier: {
-                        selected: null
-                    },
-                    columns: [0, 1, 2, 3]
-                },
-                title: 'Listado De Mensajes Por Productos',
-                className: "btn btn-success"
-            }
+        "buttons": [
         ]
     });
     tablaMsgProducto

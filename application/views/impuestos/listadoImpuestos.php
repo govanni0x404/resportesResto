@@ -63,33 +63,7 @@ function ListadoDeImpuestos() {
                 }
             }
         },
-        "buttons": [{
-                text: 'PDF',
-                extend: 'pdf',
-                exportOptions: {
-                    modifier: {
-                        selected: null
-                    },
-                    columns: [0, 1, 2, 3, 4]
-                },
-                extend: 'pdfHtml5',
-                orientation: 'landscape',
-                pageSize: 'LEGAL',
-                title: 'Listado De Impuestos',
-                className: "btn btn-danger"
-            },
-            {
-                text: 'EXCEL',
-                extend: 'excel',
-                exportOptions: {
-                    modifier: {
-                        selected: null
-                    },
-                    columns: [0, 1, 2, 3, 4]
-                },
-                title: 'Listado De Impuestos',
-                className: "btn btn-success"
-            }
+        "buttons": [
         ]
     });
     tablaImpuestos

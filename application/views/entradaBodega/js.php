@@ -64,10 +64,10 @@ function agregarProductoALaGrilla() {
 
                 tbl = "<tr id='" + v.rnd + "'>";
                 tbl = tbl + "<td style='display:none;'>" + v.id_insumo + "</td>";
-                tbl = tbl + "<td>" + v.nombre_insumo + "</td>";
-                tbl = tbl + "<td style='display:none;' class='text-right'>" + commaSeparateNumber($('#txtStockActual').val()) + "</td>";
-                tbl = tbl + "<td class='text-right'>" + commaSeparateNumber($('#CantidadNew').val()) + "</td>";
-                tbl = tbl + "<td><a  onclick='removeRow(" + v.rnd +
+                tbl = tbl + "<td class='text-center'>" + v.nombre_insumo + "</td>";
+                tbl = tbl + "<td style='display:none;' class='text-center'>" + commaSeparateNumber($('#txtStockActual').val()) + "</td>";
+                tbl = tbl + "<td class='text-center'>" + commaSeparateNumber($('#CantidadNew').val()) + "</td>";
+                tbl = tbl + "<td class='text-center' ><a  onclick='removeRow(" + v.rnd +
                     ")' href='#' class='btn btn-danger btn-icon'><i class='fa fa-trash-o'></i></a></td>";
                 tbl = tbl + "</tr>";
                 $('#detalleEntradaBodega').append(tbl);

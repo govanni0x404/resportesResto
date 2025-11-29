@@ -164,8 +164,8 @@ $fechaActual = date('Y-m-d');
 
                                     <!-- BOTONES  -->
                                     <div class="modal-footer">
-                                        <button onclick="GrabarNuevaLprecio()" type="button" class="btn btn-success" id="btnGrabarRol"><i class="fa fa-check-square-o"></i>GRABAR</button>
-                                        <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+                                        <button onclick="GrabarNuevaLprecio()" type="button" class="btn btn-primary" id="btnGrabarRol"><i class="fa fa-check-square-o"></i>GRABAR</button>
+                                        <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
                                     </div>
                                     <!-- FIN BOTONES  -->
                                 </div>
@@ -209,8 +209,8 @@ $fechaActual = date('Y-m-d');
 
                                     </div><!-- end body modal--->
                                     <div class="modal-footer">
-                                        <button onclick="grabarPrecios()" type="button" class="btn btn-danger">Grabar Precios</button>
-                                        <button type="button" class="btn btn-white" data-dismiss="modal">Cancelar</button>
+                                        <button onclick="grabarPrecios()" type="button" class="btn btn-primary">Grabar Precios</button>
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
                                     </div>
                                 </div>
                             </div>
