@@ -54,14 +54,15 @@ class Usuario extends CI_Controller
         
         $d = $this->input->post('prod');
         $id = intval($d['id_usuario']);
+        $vigente_bool = ($d['vigente'] === 'true');
         
         $miData = array(
             'nombre_usuario' => $d['nombre_usuario'],
             'clave' => $d['clave_usuario'],
             'esadmin' => false,
             'esgarzon' => false,
-            'id_rol' => 4, // Rol por defecto
-            'vigente' => true
+            'id_rol' => 4,
+            'vigente' => $vigente_bool
         );
         
         $r = $this->Musuarios->grabarNuevoUsuario($id, $miData);

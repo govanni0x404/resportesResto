@@ -28,7 +28,7 @@
                                 <label for="claveUsuario">CLAVE USUARIO *</label>
                                 <input type="password" class="form-control input-sm" maxlength='200' autocomplete="off" name="claveUsuario" id="claveUsuario" requerido="si" value="" placeholder="Clave Usuario" />
                             </div>
-                            <div class="col-md-12" id="divVigente" style="display:none;">
+                            <div class="col-md-12" id="divVigente">
                                 <label for="vigente">VIGENTE *</label>
                                 <select class="form-control input-sm" name="vigente" id="vigente" requerido="si">
                                     <option value="true">SI</option>
@@ -67,7 +67,7 @@
         $('#divNombreUsuario').show();
         $('#divClaveUsuario').show();
         $('#divIdUsuario').show();
-        $('#divVigente').hide();
+        $('#divVigente').show();
         
         $('#tituloModalUsuario h4').text('REGISTRO DE USUARIOS');
         
@@ -152,11 +152,13 @@
 
             var nombreUsuario = $('#nombreUsuario').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
             var claveUsuario = $('#claveUsuario').val();
+			var vigenteUsuario = $('#vigente').val(); // "true" o "false"
 
             var miJson = {
                 'id_usuario': 0,
                 'nombre_usuario': nombreUsuario,
-                'clave_usuario': claveUsuario
+                'clave_usuario': claveUsuario,
+				'vigente': vigenteUsuario
             };
 
             console.log('Datos a enviar:', miJson);

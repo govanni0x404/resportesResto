@@ -71,7 +71,6 @@ class Musuarios extends CI_Model
           $data['esadmin'] = false;
           $data['esgarzon'] = false;
           $data['id_rol']   = 1;
-          $data['vigente']  = true;
 
           if ($id && $id > 0) {
 

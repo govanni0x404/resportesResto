@@ -55,7 +55,12 @@ function ListadoDeUsuarios() {
                 mData: "vigente",
                 className: "text-center",
                 render: function(data) {
-                    return data ? '<span class="label label-success">ACTIVO</span>' : '<span class="label label-danger">INACTIVO</span>';
+                    var vigente = (data === true || data === "true" || data === "t" || data === 1);
+                    if (vigente) {
+                        return '<span class="label label-success">ACTIVO</span>';
+                    } else {
+                        return '<span class="label label-danger">INACTIVO</span>';
+                    }
                 }
             }
         ],
