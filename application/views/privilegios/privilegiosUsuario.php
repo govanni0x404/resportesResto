@@ -51,7 +51,7 @@
                                 
                                 <div class="table-responsive" style="max-height:600px; overflow:auto;">
                                     <table id="tablePrivilegios" class="table table-hover table-bordered">
-                                        <thead style="background-color: #5bc0de; color: white;">
+                                        <thead style="background-color: #568c30;">
                                             <tr>
                                                 <th class='text-center' style='display:none'>ID PUSUARIO</th>
                                                 <th class='text-center' style='display:none'>ID PSISTEMA</th>
