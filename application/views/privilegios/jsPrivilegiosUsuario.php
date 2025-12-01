@@ -62,8 +62,8 @@ function mostrarPrivilegiosPorRol(id_rol) {
             tbl += "<tr style='background-color:" + bgColor + ";'>";
             tbl += "<td class='text-center' style='display:none'>" + id_pusuario + "</td>";
             tbl += "<td class='text-center' style='display:none'>" + v.id_psistema + "</td>";
+            tbl += "<td class='text-center' style='padding: 10px; font-weight: bold;'>" + id_pusuario + "</td>";
             tbl += "<td class='text-left' style='padding: 10px;'>" + v.nombre_psistema + "</td>";
-            tbl += "<td class='text-left' style='padding: 10px;'>" + v.nombre_vb + "</td>";
             tbl += "<td class='text-center'><input type='checkbox' class='privilegio-check' data-id-pusuario='" + id_pusuario + "' data-id-psistema='" + v.id_psistema + "' data-id-rol='" + id_rol + "' " + checked + " style='width: 20px; height: 20px; cursor: pointer;'></td>";
             tbl += "</tr>";
         });
@@ -98,10 +98,11 @@ function mostrarPrivilegiosPorRol(id_rol) {
 function crearPrivilegio(id_rol, id_psistema, autoriza) {
     var miJson = {
         'id_rol': id_rol,
-        'id_psistema': id_psistema
+        'id_psistema': id_psistema,
+        'autoriza': autoriza
     };
     
-    $.post(base_url + "index.php/PrivilegiosUsuario/actualizarPrivilegio", {
+    $.post(base_url + "index.php/PrivilegiosUsuario/crearPrivilegio", {
         'prod': miJson
     }).done(function(response) {
         console.log('Privilegio creado:', response);

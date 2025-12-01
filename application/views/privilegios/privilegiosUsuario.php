@@ -38,7 +38,7 @@
                     
                     <div id="divPrivilegios" style="display: none; padding: 15px;">
                         <div class="panel panel-success">
-                            <div class="panel-heading panel-success" >
+                            <div class="panel-heading panel-success">
                                 <h4 class="panel-title">
                                     <i class="fa fa-list"></i> Módulos del Sistema
                                 </h4>
@@ -51,13 +51,13 @@
                                 
                                 <div class="table-responsive" style="max-height:600px; overflow:auto;">
                                     <table id="tablePrivilegios" class="table table-hover table-bordered">
-                                        <thead style="background-color: #568c30;">
+                                        <thead style="background-color: #5cb85c;">
                                             <tr>
-                                                <th class='text-center' style='display:none'>ID PUSUARIO</th>
-                                                <th class='text-center' style='display:none'>ID PSISTEMA</th>
-                                                <th class='text-center' style="padding: 12px; width: 25%;">SISTEMA</th>
-                                                <th class='text-center' style="padding: 12px; width: 60%;">MÓDULO</th>
-                                                <th class='text-center' style="width: 15%;">ACCESO</th>
+                                                <th class='text-center' style='display:none;'>ID PUSUARIO</th>
+                                                <th class='text-center' style='display:none;'>ID PSISTEMA</th>
+                                                <th class='text-center' style="padding: 12px; width: 15%; color:white;">CÓDIGO</th>
+                                                <th class='text-center' style="padding: 12px; width: 70%; color:white;">AUTORIZADO</th>
+                                                <th class='text-center' style="width: 15%; color:white;"></th>
                                             </tr>
                                         </thead>
                                         <tbody id="detallePrivilegios">

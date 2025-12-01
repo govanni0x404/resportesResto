@@ -106,8 +106,21 @@ class MprivilegiosUsuario extends CI_Model
     $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
     
     try {
-      $q = "UPDATE pusuario SET autoriza = true WHERE id_rol = " . $id_rol;
-      $this->db->query($q);
+      // Primero crear los registros que no existen
+      $q_insert = "INSERT INTO pusuario (id_rol, id_psistema, autoriza)
+                   SELECT " . $id_rol . ", ps.id_psistema, true
+                   FROM psistema ps
+                   WHERE ps.vigente = true
+                   AND NOT EXISTS (
+                       SELECT 1 FROM pusuario pu 
+                       WHERE pu.id_rol = " . $id_rol . " 
+                       AND pu.id_psistema = ps.id_psistema
+                   )";
+      $this->db->query($q_insert);
+      
+      // Luego actualizar todos a true
+      $q_update = "UPDATE pusuario SET autoriza = true WHERE id_rol = " . $id_rol;
+      $this->db->query($q_update);
       
       error_log('Todos los privilegios habilitados para rol: ' . $id_rol);
       return array('success' => true, 'message' => 'Todos los privilegios habilitados');
