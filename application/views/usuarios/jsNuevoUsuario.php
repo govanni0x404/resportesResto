@@ -79,8 +79,9 @@
 
     function grabarNuevoUsuario() {
         if (modoEdicion) {
-            // Modo edición - solo actualizar vigente
             var vigenteSeleccionado = $('#vigente').val();
+			let nombre = $.trim($('#nombreUsuario').val());
+    		let clave = $.trim($('#claveUsuario').val());
             
             if (vigenteSeleccionado == "" || vigenteSeleccionado == null) {
                 showAppAlert('error', "- Debe seleccionar el estado de vigencia!", {
@@ -99,10 +100,21 @@
     			'vigente': vigenteSeleccionado
 			};
 
-            console.log('Datos a enviar:', miJson);
+            if(nombre === ""){
+				showAppAlert('error', "- El nombre de Usuario no puede quedar vacio.", {
+                    duration: 5000,
+                    image: base_url + 'assets/img/errorGif.gif'
+                });
+			}else if(clave === ""){
+				showAppAlert('error', "- La clave de Usuario no puede quedar vacia", {
+                    duration: 5000,
+                    image: base_url + 'assets/img/errorGif.gif'
+                });
+			}else{
+				console.log('Datos a enviar:', miJson);
             
-            $.post(base_url + "index.php/Usuario/editarUsuario", {
-                    'prod': miJson
+            	$.post(base_url + "index.php/Usuario/editarUsuario", {
+                	'prod': miJson
                 }).done(function(response) {
                     console.log('Respuesta del servidor:', response);
                     showAppAlert('success', "Se actualizó exitosamente el usuario!", {
@@ -119,7 +131,7 @@
                         image: base_url + 'assets/img/errorGif.gif'
                     });
                 });
-
+			}
         } else {
             // Modo creación
             if ($('#nombreUsuario').val() == "" || $('#nombreUsuario').val() == null) {
