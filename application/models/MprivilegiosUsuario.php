@@ -8,84 +8,46 @@ class MprivilegiosUsuario extends CI_Model
     parent::__construct();
   }
 
-  public function ListadoDeUsuarios()
+  public function ListadoDeRoles()
   {
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
     
-    $q = "SELECT u.id_usuario, u.nombre_usuario, u.id_rol, r.nombre_rol, u.vigente
-          FROM usuario u
-          LEFT JOIN rol r ON u.id_rol = r.id_rol
-          WHERE u.vigente = true
-          ORDER BY u.nombre_usuario ASC";
+    $q = "SELECT r.id_rol, r.nombre_rol 
+          FROM rol r 
+          ORDER BY r.nombre_rol ASC";
 
     try {
       $consulta = $this->db->query($q);
-      $sampleData = $consulta->result();
-      $data = array();
-
-      foreach ($sampleData as $key) {
-        array_push($data, array(
-          "id_usuario" => $key->id_usuario,
-          "nombre_usuario" => $key->nombre_usuario,
-          "id_rol" => $key->id_rol,
-          "nombre_rol" => $key->nombre_rol ? $key->nombre_rol : 'Sin Rol',
-          "vigente" => $key->vigente,
-        ));
-      }
-      
-      $results = array(
-        "sEcho" => 1,
-        "iTotalRecords" => count($data),
-        "iTotalDisplayRecords" => count($data),
-        "aaData" => $data
-      );
-
-      return $results;
+      return $consulta->result();
     } catch (Exception $e) {
-      error_log('Error en ListadoDeUsuarios: ' . $e->getMessage());
-      return array(
-        "sEcho" => 1,
-        "iTotalRecords" => 0,
-        "iTotalDisplayRecords" => 0,
-        "aaData" => array()
-      );
+      error_log('Error en ListadoDeRoles: ' . $e->getMessage());
+      return array();
     }
   }
 
-  public function ListarPrivilegiosDeUsuario($id_usuario)
+  public function ListarPrivilegiosPorRol($id_rol)
   {
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
     
-    // Obtener el rol del usuario
-    $q_usuario = "SELECT id_rol FROM usuario WHERE id_usuario = " . $id_usuario;
-    $consulta_usuario = $this->db->query($q_usuario);
-    $usuario = $consulta_usuario->row();
-    
-    if (!$usuario) {
-      return array();
-    }
-    
-    $id_rol = $usuario->id_rol;
-    
-    // Obtener privilegios del usuario
-    $q = "SELECT pu.id_pusuario, pu.id_rol, pu.id_psistema, ps.nombre_psistema, 
-                 ps.nombre_vb, pu.autoriza
-          FROM pusuario pu
-          JOIN psistema ps ON pu.id_psistema = ps.id_psistema
-          WHERE pu.id_rol = " . $id_rol . " AND ps.vigente = true
+    // Obtener todos los módulos del sistema y verificar si el rol tiene acceso
+    $q = "SELECT ps.id_psistema, ps.nombre_psistema, ps.nombre_vb,
+                 pu.id_pusuario, pu.autoriza, pu.id_rol
+          FROM psistema ps
+          LEFT JOIN pusuario pu ON ps.id_psistema = pu.id_psistema AND pu.id_rol = " . $id_rol . "
+          WHERE ps.vigente = true
           ORDER BY ps.nombre_vb ASC";
     
     try {
       $consulta = $this->db->query($q);
       return $consulta->result();
     } catch (Exception $e) {
-      error_log('Error en ListarPrivilegiosDeUsuario: ' . $e->getMessage());
+      error_log('Error en ListarPrivilegiosPorRol: ' . $e->getMessage());
       return array();
     }
   }
@@ -106,6 +68,32 @@ class MprivilegiosUsuario extends CI_Model
       return array('success' => true, 'message' => 'Privilegio actualizado correctamente');
     } catch (Exception $e) {
       error_log('Error en actualizarPrivilegio: ' . $e->getMessage());
+      return array('success' => false, 'message' => $e->getMessage());
+    }
+  }
+
+  public function crearPrivilegio($id_rol, $id_psistema)
+  {
+    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+      redirect(base_url());
+    }
+    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    
+    try {
+      $data = array(
+        'id_rol' => $id_rol,
+        'id_psistema' => $id_psistema,
+        'autoriza' => true
+      );
+      $this->db->insert('pusuario', $data);
+      
+      $consulta = $this->db->query("SELECT CURRVAL('pusuario_id_pusuario_seq'::regclass) as id_pusuario");
+      $resultado = $consulta->result();
+      
+      error_log('Privilegio creado. Rol: ' . $id_rol . ', PSistema: ' . $id_psistema);
+      return array('success' => true, 'id_pusuario' => $resultado[0]->id_pusuario);
+    } catch (Exception $e) {
+      error_log('Error en crearPrivilegio: ' . $e->getMessage());
       return array('success' => false, 'message' => $e->getMessage());
     }
   }
