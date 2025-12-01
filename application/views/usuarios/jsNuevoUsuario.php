@@ -1,3 +1,33 @@
+<script>
+function cargarRoles() {
+    $.get(base_url + "index.php/Usuario/ListadoRoles", function(response) {
+
+        // Conversión segura a JSON
+        if (typeof response === "string") {
+            try {
+                response = JSON.parse(response);
+            } catch(e) {
+                console.error("ERROR: la respuesta NO es JSON");
+                return;
+            }
+        }
+
+        console.log("Roles cargados:", response);
+
+        // Limpiar select
+        $("#rolUsuario").empty();
+        $("#rolUsuario").append('<option value="">Seleccione...</option>');
+
+        // Cargar opciones
+        response.forEach(function(r) {
+            $("#rolUsuario").append(
+                '<option value="' + r.id_rol + '">' + r.nombre_rol + '</option>'
+            );
+        });
+    });
+}
+</script>
+
 <!--  MODAL NUEVO REGISTRO  -->
 <div id="ModalNuevoUsuario" class="modal fade" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
@@ -35,6 +65,12 @@
                                     <option value="false">NO</option>
                                 </select>
                             </div>
+							<div class="col-md-12" id="divRolUsuario">
+							    <label for="rolUsuario">ROL *</label>
+    							<select class="form-control input-sm" name="rolUsuario" id="rolUsuario" requerido="si">
+        							<option value="">Seleccione...</option>
+    							</select>
+							</div>
                         </fieldset>
                         <!-- FIN CAMPOS DE REGISTRO  -->
                     </div>
@@ -62,6 +98,9 @@
         $('#nombreUsuario').val("");
         $('#claveUsuario').val("");
         $('#vigente').val("true");
+		
+		cargarRoles();
+    	$("#rolUsuario").val("");
         
         // Mostrar campos de creación
         $('#divNombreUsuario').show();
@@ -82,6 +121,7 @@
             var vigenteSeleccionado = $('#vigente').val();
 			let nombre = $.trim($('#nombreUsuario').val());
     		let clave = $.trim($('#claveUsuario').val());
+			var idRol = $("#rolUsuario").val();
             
             if (vigenteSeleccionado == "" || vigenteSeleccionado == null) {
                 showAppAlert('error', "- Debe seleccionar el estado de vigencia!", {
@@ -97,7 +137,8 @@
     			'id_usuario': idUsuario,
     			'nombre_usuario': $('#nombreUsuario').val(),
     			'clave_usuario': $('#claveUsuario').val(),
-    			'vigente': vigenteSeleccionado
+    			'vigente': vigenteSeleccionado,
+				'id_rol': idRol
 			};
 
             if(nombre === ""){
@@ -150,15 +191,25 @@
                 return;
             }
 
+			if ($("#rolUsuario").val() == "" || $("#rolUsuario").val() == null) {
+			    showAppAlert('error', "- Debe seleccionar un rol!", {
+        			duration: 5000,
+        			image: base_url + 'assets/img/errorGif.gif'
+    			});
+    		return;
+			}
+
             var nombreUsuario = $('#nombreUsuario').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
             var claveUsuario = $('#claveUsuario').val();
 			var vigenteUsuario = $('#vigente').val(); // "true" o "false"
+			var idRol = $("#rolUsuario").val();
 
             var miJson = {
                 'id_usuario': 0,
                 'nombre_usuario': nombreUsuario,
                 'clave_usuario': claveUsuario,
-				'vigente': vigenteUsuario
+				'vigente': vigenteUsuario,
+				'id_rol': idRol
             };
 
             console.log('Datos a enviar:', miJson);

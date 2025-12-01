@@ -87,6 +87,11 @@ function ListadoDeUsuarios() {
         $("#nombreUsuario").val(rowData[0].nombre_usuario);
         $("#ClaveUsuario").val(rowData[0].clave_usuario);
         
+        cargarRoles();
+        setTimeout(function() {
+            $("#rolUsuario").val(rowData[0].id_rol);
+        }, 200);
+
         // Convertir el valor booleano a string para el select
         var vigenteValue = rowData[0].vigente === true || rowData[0].vigente === 't' || rowData[0].vigente === 'true' ? 'true' : 'false';
         $("#vigente").val(vigenteValue);

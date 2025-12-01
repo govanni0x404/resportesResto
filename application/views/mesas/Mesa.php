@@ -27,9 +27,7 @@
                         </div>
                     </div>
                     <br>
-                    <div style="display: flex; justify-content: flex-end; width: 100%;">
-                        <button onclick="AbrirModalNuevaMesa()" Style="margin-right: 35px;" type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Habilitar Nueva Mesa</button>
-                    </div>
+                    <button onclick="AbrirModalNuevaMesa()" Style="margin-left: 35px;" type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Habilitar Nueva Mesa</button>
                     <div class="table-responsive" style="margin-top:10px; padding:5px;">
                         <table id="tablaMesas" class="display responsive" style="width: 100%">
                             <thead>

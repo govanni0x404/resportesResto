@@ -70,7 +70,6 @@ class Musuarios extends CI_Model
           // Valores por defecto obligatorios
           $data['esadmin'] = false;
           $data['esgarzon'] = false;
-          $data['id_rol']   = 1;
 
           if ($id && $id > 0) {
 

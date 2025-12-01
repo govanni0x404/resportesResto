@@ -61,7 +61,7 @@ class Usuario extends CI_Controller
             'clave' => $d['clave_usuario'],
             'esadmin' => false,
             'esgarzon' => false,
-            'id_rol' => 4,
+            'id_rol' => intval($d['id_rol']),
             'vigente' => $vigente_bool
         );
         
@@ -86,10 +86,20 @@ class Usuario extends CI_Controller
         $miData = array(
             'nombre_usuario' => $d['nombre_usuario'],
             'clave'          => $d['clave_usuario'],
-            'vigente'        => $vigente_bool
+            'vigente'        => $vigente_bool,
+            'id_rol'         => intval($d['id_rol'])
         );
 
         $r = $this->Musuarios->editarUsuario($id, $miData);
         echo json_encode($r);
+    }
+
+    public function ListadoRoles()
+    {
+        $db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+
+        $query = $db->query("SELECT id_rol, nombre_rol FROM rol ORDER BY nombre_rol ASC");
+
+        echo json_encode($query->result());
     }
 }
