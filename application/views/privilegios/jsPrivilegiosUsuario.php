@@ -55,7 +55,7 @@ function mostrarPrivilegiosPorRol(id_rol) {
         var tbl = "";
         $.each(obj, function(index, v) {
             var autoriza = v.autoriza == 't' || v.autoriza == true;
-            var bgColor = autoriza ? '#d4edda' : '#f8d7da';
+            var bgColor = autoriza ? '#' : '#';
             var checked = autoriza ? 'checked' : '';
             var id_pusuario = v.id_pusuario ? v.id_pusuario : 0;
             
