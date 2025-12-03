@@ -181,7 +181,7 @@ $('#btnBloquearTodos').on('click', function() {
     
     swal({
         title: "¿Está seguro?",
-        text: "Se bloquearán todos los privilegios para este rol",
+        text: "Se Deshabilitaran todos los privilegios para este rol",
         type: "warning",
         showCancelButton: true,
         confirmButtonColor: "#d9534f",
@@ -193,10 +193,10 @@ $('#btnBloquearTodos').on('click', function() {
             $.post(base_url + "index.php/PrivilegiosUsuario/BloquearTodosLosPrivilegios", {
                 'id_rol': id_rol
             }).done(function() {
-                swal("¡Bloqueado!", "Todos los privilegios han sido bloqueados", "success");
+                swal("¡Bloqueado!", "Todos los privilegios han sido Deshabilitados", "success");
                 mostrarPrivilegiosPorRol(id_rol);
             }).fail(function() {
-                swal("Error", "No se pudieron bloquear los privilegios", "error");
+                swal("Error", "No se pudieron Deshabilitar los privilegios", "error");
             });
         }
     });
