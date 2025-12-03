@@ -5,7 +5,11 @@
 
 <footer class="main-footer">
 	<div class="container">
-		<div class="pull-right hidden-xs"> <b>Version</b> 1.0</div>
+		<div class="pull-right hidden-xs"> <b>Version</b>
+    <?php
+    echo get_git_version();
+    ?>
+  </div>
 		<strong>Copyright &copy; <a href="https://datamaule.cl/">DAT@MAULE</a>.</strong> All rights reserved. <i class="fa fa-heart color-green"></i>
 	</div>
 </footer> <!-- /. footer -->
