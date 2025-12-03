@@ -29,8 +29,8 @@ $fechaActual = date('Y-m-d');
 						<h4>LISTADO DE PRODUCTOS</h4>
 					</div>
 				</div>
-				<div class="row" style="margin-bottom: 5px; margin-top: 20px; margin-left: 20px;">
-				<div class="col-md-4">
+				<div class="row " style="margin-bottom: 5px; margin-top: 20px; margin-right: 50px;">
+				<div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
 					<button onclick="crearNuevoProducto()" type="button" class="btn btn-primary">
 						<i class="fa fa-plus"></i> Nuevo Producto
 					</button>
@@ -43,13 +43,13 @@ $fechaActual = date('Y-m-d');
 								<tr>
 									<th class="text text-center">N° PRODUCTO</th>
 									<th class="text text-center">CODIGO DE BARRAS</th>
-									<th class="text text-center">PRODUCTO</th>
-									<th class="text text-center">FAMILIA</th>
-									<th class="text text-center">U. MEDIDA</th>
+									<th class="text text-left">PRODUCTO</th>
+									<th class="text text-left">FAMILIA</th>
+									<th class="text text-left">U. MEDIDA</th>
 									<th class="text text-center">IMPTO. VENTA</th>
 									<th class="text text-center">IMPTO. ADICIONAL</th>
 									<th class="text text-center">DESTINO DE IMPRESION</th>
-									<th class="text text-center">BODEGA</th>
+									<th class="text text-left">BODEGA</th>
 									<th class="text text-center">PONDERADO</th>
 									<th class="text text-center">MENU</th>
 									<th class="text text-center">SUB FAMILIA</th>

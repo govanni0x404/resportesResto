@@ -67,7 +67,7 @@ function showTableLoader(message) {
 }
 
 function hideTableLoader() {
-    $('#dynamic-table-loader').fadeOut(200, function() {
+    $('#dynamic-table-loader').fadeOut(500, function() {
         $(this).remove();
     });
 }
@@ -114,12 +114,12 @@ function ListadoCartaDeProductos() {
             {mData: "id_producto", className: "text-center", visible: false},
             {mData: "cbarra", className: "text-center"},
             {mData: "nombre_producto", className: "text-left"},
-            {mData: "nombre_familia", className: "text-center"},
-            {mData: "nombre_umedida", className: "text-center"},
+            {mData: "nombre_familia", className: "text-left"},
+            {mData: "nombre_umedida", className: "text-left"},
             {mData: "iva", className: "text-center", render: $.fn.dataTable.render.number(',', '.', 0, '$'), visible: false},
             {mData: "impto_adicional", className: "text-center", visible: false},
             {mData: "nombre_dimpresion", className: "text-center", visible: false},
-            {mData: "nombre_bodega", className: "text-center"},
+            {mData: "nombre_bodega", className: "text-left"},
             {mData: "pponderado", className: "text-center", visible: false, render: $.fn.dataTable.render.number(',', '.', 0, '$')},
             {mData: "menu", className: "text-center", visible: false},
             {mData: "subfamilia", className: "text-center", visible: false},

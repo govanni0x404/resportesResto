@@ -28,7 +28,9 @@
                         </div>
                     </div>
                     <br>
-                    <button onclick="AbrirModalNuevoTipoEvento()" type="button" class="btn btn-primary"></i>Habilitar Nuevo Tipo De Eventos</button>
+                    <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+                    <button onclick="AbrirModalNuevoTipoEvento()" type="button" class="btn btn-primary" style="margin-right: 20px; margin-bottom:20px;"></i>Habilitar Nuevo Tipo De Eventos</button>
+                    </div>
                     <div class="table-responsive" style="margin-top:10px; padding:5px;">
                         <table id="tablaTipoEvento" class="display responsive" style="width: 100%">
                             <thead>

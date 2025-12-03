@@ -28,15 +28,17 @@
                         </div>
                     </div>
                     <br>
-                    <button onclick="AbrirModalMensajesDelProducto()" type="button" class="btn btn-primary"></i>Habilitar Nuevo Mensaje Por Productos</button>
+                    <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+                    <button onclick="AbrirModalMensajesDelProducto()" type="button" class="btn btn-primary" style="margin-right: 20px; margin-bottom:20px;"></i>Habilitar Nuevo Mensaje Por Productos</button>
+                    </div>
                     <div class="table-responsive" style="margin-top:10px; padding:5px;">
                         <table id="tablaMsgProducto" class="display responsive" style="width: 100%">
                             <thead>
                                 <tr>
                                     <th class="text text-center" style='width:10px'>ID</th>
-                                    <th class="text text-center" style='width:45px'>PRODUCTO</th>
-                                    <th class="text text-center" style='width:45px'>MENSAJE</th>
-                                    <th class="text text-center" style='width:45px'>VIGENTE</th>
+                                    <th class="text text-left" style='width:45px'>PRODUCTO</th>
+                                    <th class="text text-left" style='width:45px'>MENSAJE</th>
+                                    <th class="text text-left" style='width:45px'>VIGENTE</th>
                                 </tr>
                             </thead>
                         </table>

@@ -28,14 +28,16 @@
             </div>
           </div>
           <br>
-          <button onclick="AbrirModalNuevaComuna()" type="button" class="btn btn-primary"></i>Habilitar Nueva Comuna</button>
+          <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+          <button onclick="AbrirModalNuevaComuna()" type="button" class="btn btn-primary" style="margin-right: 20px; margin-bottom:20px;"></i>Habilitar Nueva Comuna</button>
+          </div>
           <div class="table-responsive" style="margin-top:10px; padding:5px;">
             <table id="tablaComuna" class="display responsive" style="width: 100%">
               <thead>
                 <tr>
                   <th class="text text-center" style='height:10px'>N° COMUNA</th>
-                  <th class="text text-center" style='height:45px'>COMUNA</th>
-                  <th class="text text-center" style='height:10px'>PROVINCIA</th>
+                  <th class="text text-left" style='height:45px'>COMUNA</th>
+                  <th class="text text-left" style='height:10px'>PROVINCIA</th>
                 </tr>
               </thead>
             </table>

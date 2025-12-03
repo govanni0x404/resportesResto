@@ -28,20 +28,22 @@
             </div>
           </div>
           <br>
-          <button onclick="AbrirModalNuevoProveedor()" type="button" style="margin-left:15px;" class="btn btn-primary"></i>Habilitar Nuevo Proveedor</button>
+          <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+            <button onclick="AbrirModalNuevoProveedor()" type="button" style="margin-right: 20px; margin-bottom:20px;" class="btn btn-primary"></i>Habilitar Nuevo Proveedor</button>
+          </div>
           <div class="table-responsive" style="margin-top:10px; padding:5px;">
             <table id="tablaProveedor" class="display responsive" style="width: 100%">
               <thead>
                 <tr>
                   <th class="text text-center" style='height:10px'>N° PROVEEDOR</th>
-                  <th class="text text-center" style='height:45px'>PROVEEDOR</th>
-                  <th class="text text-center" style='height:10px'>RUT</th>
+                  <th class="text text-left" style='height:45px'>PROVEEDOR</th>
+                  <th class="text text-left" style='height:10px'>RUT</th>
                   <th class="text text-center" style='height:10px'>DV</th>
-                  <th class="text text-center" style='height:10px'>RUT</th>
+                  <th class="text text-left" style='height:10px'>RUT</th>
                   <th class="text text-center" style='height:10px'>DIRECCION</th>
                   <th class="text text-center" style='height:10px'>TELEFONO</th>
                   <th class="text text-center" style='height:10px'>MAIL</th>
-                  <th class="text text-center" style='height:10px'>GIRO</th>
+                  <th class="text text-left" style='height:10px'>GIRO</th>
                 </tr>
               </thead>
             </table>

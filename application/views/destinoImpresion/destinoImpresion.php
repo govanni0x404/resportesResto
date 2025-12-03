@@ -28,13 +28,15 @@
             </div>
           </div>
           <br>
-          <button onclick="AbrirModalNuevoDestinoDeImpresion()" type="button" class="btn btn-primary"></i>Habilitar Nuevo Destino De Impresion</button>
+          <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+          <button onclick="AbrirModalNuevoDestinoDeImpresion()" type="button" class="btn btn-primary" style="margin-right: 20px; margin-bottom:20px;"></i>Habilitar Nuevo Destino De Impresion</button>
+          </div>
           <div class="table-responsive" style="margin-top:10px; padding:5px;">
             <table id="tablaDestinoImpresion" class="display responsive" style="width: 100%">
               <thead>
                 <tr>
                 <th class="text text-center" style='height:10px'>N° DESTINO DE IMPRESION</th>
-                <th class="text text-center">DESTINO DE IMPRESION</th>
+                <th class="text text-left">DESTINO DE IMPRESION</th>
                 <th  style= 'display:none' class="text text-center">IP</th>
                 <th  style= 'display:none' class="text text-center">PUERTO</th>
                 <th  style= 'display:none' class="text text-center">RUTA WINDOWS</th>

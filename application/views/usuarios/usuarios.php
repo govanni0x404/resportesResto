@@ -25,14 +25,16 @@
                         </div>
                     </div>
                     <br>
-                    <button onclick="AbrirModalNuevoUsuario()" type="button" style="margin-left:15px;" class="btn btn-primary"><i class="fa fa-plus"></i> Habilitar Nuevo Usuario</button>
+                    <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+                    <button onclick="AbrirModalNuevoUsuario()" type="button" style="margin-right: 20px; margin-bottom:20px;" class="btn btn-primary"><i class="fa fa-plus"></i> Habilitar Nuevo Usuario</button>
+                    </div>
                     <div class="table-responsive" style="margin-top:10px; padding:5px;">
                         <table id="tablaUsuarios" class="display responsive" style="width: 100%">
                             <thead>
                                 <tr>
                                     <th class="text text-center">ID</th>
-                                    <th class="text text-center">NOMBRE USUARIO</th>
-                                    <th class="text text-center">ROL</th>
+                                    <th class="text text-left">NOMBRE USUARIO</th>
+                                    <th class="text text-left">ROL</th>
                                     <th class="text text-center">VIGENTE</th>
                                 </tr>
                             </thead>

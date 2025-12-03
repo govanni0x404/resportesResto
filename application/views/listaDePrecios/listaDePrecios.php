@@ -101,9 +101,9 @@ $fechaActual = date('Y-m-d');
                                             <tr>
                                                 <th class="text text-center" style='height:10px'>N° PRODUCTO</th>
                                                 <th class="text text-center" style='height:45px'>CODIGO DE BARRAS</th>
-                                                <th class="text text-center" style='height:45px'>PRODUCTO</th>
-                                                <th class="text text-center" style='height:45px'>FAMILIA</th>
-                                                <th class="text text-center" style='height:45px'>UNIDAD DE MEDIDA</th>
+                                                <th class="text text-left" style='height:45px'>PRODUCTO</th>
+                                                <th class="text text-left" style='height:45px'>FAMILIA</th>
+                                                <th class="text text-left" style='height:45px'>UNIDAD DE MEDIDA</th>
                                                 <th class="text text-center" style='height:45px'>PRECIO DE VENTA</th>
                                                 <th class="text text-center" style='height:45px'>PRECIO DE COMPRA</th>
 

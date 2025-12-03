@@ -28,14 +28,16 @@
                         </div>
                     </div>
                     <br>
-                    <button onclick="AbrirModalNuevoImpuesto()" type="button" class="btn btn-primary"></i>Habilitar Nuevo Impuesto</button>
+                    <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+                    <button onclick="AbrirModalNuevoImpuesto()" type="button" class="btn btn-primary" style= "margin-right: 20px; margin-bottom:20px;"></i>Habilitar Nuevo Impuesto</button>
+                    </div>
                     <div class="table-responsive" style="margin-top:10px; padding:5px;">
                         <table id="tablaImpuestos" class="display responsive" style="width: 100%">
                             <thead>
                                 <tr>
                                     <th class="text text-center" style='height:10px'>ID</th>
-                                    <th class="text text-center" style='height:45px'>IMPUESTO</th>
-                                    <th class="text text-center">OBSERVACION</th>
+                                    <th class="text text-left" style='height:45px'>IMPUESTO</th>
+                                    <th class="text text-left">OBSERVACION</th>
                                     <th class="text text-center">TASA (%)</th>
                                     <th class="text text-center">CODIGO SII</th>
                                 </tr>
