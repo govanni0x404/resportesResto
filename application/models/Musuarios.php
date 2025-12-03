@@ -100,11 +100,28 @@ class Musuarios extends CI_Model
 
   public function editarUsuario($id, $data)
   {
+      if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+          redirect(base_url());
+      }
+      
       $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
 
-      $this->db->where('id_usuario', $id);
-      $this->db->update('usuario', $data);
+      try {
+          $data['esadmin'] = false;
+          $data['esgarzon'] = false;
 
-      return [['id_usuario' => $id]];
+          $this->db->where('id_usuario', $id);
+          $this->db->update('usuario', $data);
+
+          if ($this->db->error()['code'] != 0) {
+              throw new Exception($this->db->error()['message']);
+          }
+
+          return [['id_usuario' => $id, 'success' => true]];
+          
+      } catch (Exception $e) {
+          error_log('Error en editarUsuario: ' . $e->getMessage());
+          return ['error' => $e->getMessage()];
+      }
   }
 }

@@ -1,16 +1,40 @@
 <script>
 var base_url = "<?php echo base_url(); ?>";
-var tablaUsuarios = $('#tablaUsuarios').DataTable();
+var tablaUsuarios;
+var rolesMap = {};
 
 $(document).ready(function() {
-    ListadoDeUsuarios();
+    cargarRolesParaTabla(function() {
+        ListadoDeUsuarios();
+    });
 });
 
-    function showTableLoader(message) {
-    if ($('#dynamic-table-loader').length) {
-        $('#dynamic-table-loader').show();
-        return;
-    }
+function cargarRolesParaTabla(callback) {
+    $.get(base_url + "index.php/Usuario/ListadoRoles", function(response) {
+        if (typeof response === "string") {
+            try {
+                response = JSON.parse(response);
+            } catch(e) {
+                console.error("ERROR al cargar roles");
+                return;
+            }
+        }
+        
+        // Crear mapa de roles: {id: nombre}
+        response.forEach(function(r) {
+            rolesMap[r.id_rol] = r.nombre_rol;
+        });
+        
+        console.log("Mapa de roles cargado:", rolesMap);
+        
+        if (callback && typeof callback === 'function') {
+            callback();
+        }
+    });
+}
+
+function showTableLoader(message) {
+    $('#dynamic-table-loader').remove();
     
     var loaderHtml = 
         '<div id="dynamic-table-loader" style="' +
@@ -30,37 +54,43 @@ $(document).ready(function() {
     
     $wrapper.css('position', 'relative');
     $wrapper.append(loaderHtml);
-    }   
+}   
 
-    function hideTableLoader() {
-        $('#dynamic-table-loader').fadeOut(500, function() {
-            $(this).remove();
-        });
-    }
+function hideTableLoader() {
+    $('#dynamic-table-loader').fadeOut(200, function() {
+        $(this).remove();
+    });
+}
 
 function ListadoDeUsuarios() {
-    if ($.fn.dataTable.isDataTable('#tablaUsuarios')) {
-        tablaUsuarios = $('#tablaUsuarios').DataTable();
-        tablaUsuarios.destroy();
+    if (tablaUsuarios && $.fn.dataTable.isDataTable('#tablaUsuarios')) {
+        try {
+            tablaUsuarios.destroy();
+        } catch(e) {
+            console.warn("Error al destruir tabla:", e);
+        }
     }
+    
     tablaUsuarios = $("#tablaUsuarios").DataTable({
         "ajax": {
             "url": base_url + "index.php/Usuario/ListadoDeUsuarios",
-            "data": {
-            },
+            "type": "POST", // ✅ Agregar tipo
+            "data": {},
             beforeSend: function () {
                 showTableLoader("Cargando Usuarios...");
             },
             complete: function () {
                 hideTableLoader();
             },
-            error: function () {
+            error: function (xhr, error, thrown) {
+                console.error("Error en AJAX:", error, thrown);
                 hideTableLoader();
             }
         },
         "bPaginate": true,
         "bProcessing": false,
         "pageLength": 10,
+        "lengthChange": false,
         "select": true,
         "dom": "Bfrtip",
         "ordering": true,
@@ -73,7 +103,8 @@ function ListadoDeUsuarios() {
                 target: -1
             }
         },
-        "columns": [{
+        "columns": [
+            {
                 mData: "id_usuario",
                 className: "text-center"
             },
@@ -85,13 +116,7 @@ function ListadoDeUsuarios() {
                 mData: "id_rol",
                 className: "text-left",
                 render: function(data) {
-                    var roles = {
-                        1: 'ADMINISTRADOR',
-                        2: 'SUPERVISOR',
-                        3: 'CAJERO',
-                        4: 'GARZON'
-                    };
-                    return roles[data] || 'ROL ' + data;
+                    return rolesMap[String(data)] || rolesMap[parseInt(data)] || 'ROL ' + data;
                 }
             },
             {
@@ -128,7 +153,7 @@ function ListadoDeUsuarios() {
         
         $("#idUsuario").val(rowData[0].id_usuario);
         $("#nombreUsuario").val(rowData[0].nombre_usuario);
-        $("#ClaveUsuario").val(rowData[0].clave_usuario);
+        $("#claveUsuario").val(rowData[0].clave_usuario);
         
         cargarRoles();
         setTimeout(function() {
@@ -139,7 +164,7 @@ function ListadoDeUsuarios() {
         var vigenteValue = rowData[0].vigente === true || rowData[0].vigente === 't' || rowData[0].vigente === 'true' ? 'true' : 'false';
         $("#vigente").val(vigenteValue);
         
-        // Mostrar campos de edición y ocultar creación
+        // Mostrar campos de edición
         $('#divNombreUsuario').show();
         $('#divClaveUsuario').show();
         $('#divIdUsuario').show();
