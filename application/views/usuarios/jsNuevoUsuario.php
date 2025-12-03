@@ -1,8 +1,6 @@
 <script>
-function cargarRoles() {
+function cargarRoles(callback) {
     $.get(base_url + "index.php/Usuario/ListadoRoles", function(response) {
-
-        // Conversión segura a JSON
         if (typeof response === "string") {
             try {
                 response = JSON.parse(response);
@@ -12,7 +10,7 @@ function cargarRoles() {
             }
         }
 
-        console.log("Roles cargados:", response);
+        console.log("Roles cargados en modal:", response);
 
         // Limpiar select
         $("#rolUsuario").empty();
@@ -24,6 +22,10 @@ function cargarRoles() {
                 '<option value="' + r.id_rol + '">' + r.nombre_rol + '</option>'
             );
         });
+        
+        if (callback && typeof callback === 'function') {
+            callback();
+        }
     });
 }
 </script>
@@ -110,9 +112,14 @@ function cargarRoles() {
         
         $('#tituloModalUsuario h4').text('REGISTRO DE USUARIOS');
         
-        $('#ModalNuevoUsuario').modal({
-            backdrop: 'static',
-            keyboard: false
+        cargarRoles(function() {
+
+            $("#rolUsuario").val("");
+
+            $('#ModalNuevoUsuario').modal({
+                backdrop: 'static',
+                keyboard: false
+            });
         });
     }
 
