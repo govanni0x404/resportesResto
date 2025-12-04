@@ -106,7 +106,6 @@
             return;
         }
         else {
-            //grabar datos
             IdMenu = $('#txtIdMenu').val();
             NombreMenu = $('#txtNombreMenu').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
             if ($('#ckVigenciaMenu').is(":checked")) {
@@ -120,11 +119,16 @@
                 'vigente': vigenciaMenu
             };
         };
+        
         $.post(base_url + "index.php/Productos/grabarNuevoMenu", {
                 'prod': miJson
-            }).done(function() {
+            }).done(function(response) {
                 $('#ModalNuevoMenu').modal('hide');
                 tableListadoMenu.ajax.reload();
+                
+                // AGREGAR ESTO: Recargar el select de menús
+                ListadoDeMenu(NombreMenu); // Pasar el nombre del menú recién creado para seleccionarlo
+                
                 showAppAlert('success', "Se registro Exitosamente El Nuevo Menu!", {
                     duration: 4000,
                     image: base_url + 'assets/img/success.gif'
@@ -135,10 +139,8 @@
                     duration: 5000,
                     image: base_url+ 'assets/img/errorGif.gif'
                 });
-            })
-            .always(function() {});
+            });
     }
-
 
     //CATEGORIA MENU 
 
@@ -163,6 +165,10 @@
 
     function ListadoCategoriaMenu(id_menu) {
         let tituloExport = "CATEGORIAS";
+        
+        // Guardar el id_menu en un input hidden o variable global
+        $('#current_id_menu').val(id_menu); // Agregar un input hidden en tu modal
+        
         if ($.fn.dataTable.isDataTable('#tableCategoriasMenu')) {
             tableCategoriasMenu = $('#tableCategoriasMenu').DataTable();
             tableCategoriasMenu.destroy();
@@ -172,7 +178,7 @@
                 "url": base_url + "index.php/Productos/obtenerCategoriaMenu",
                 "type": "POST",
                 "data": {
-                    'id_menu': id_menu,
+                    'id_menu': id_menu, 
                 }
             },
             "bPaginate": false,
@@ -190,33 +196,15 @@
                     target: -1
                 }
             },
-            "columns": [{
-                    mData: "id_categoria_menu",
-                    className: "text-left",
-                    visible: false
-                },
-                {
-                    mData: "id_menu",
-                    className: "text-left",
-                    visible: false
-                },
-                {
-                    mData: "nombre_categoria_menu",
-                    className: "text-center"
-                },
-                {
-                    mData: "vigente",
-                    className: "text-center"
-                },
-                {
-                    mData: "btnAgregarProductosCategoria",
-                    className: "text-center"
-                },
-
+            "columns": [
+                {mData: "id_categoria_menu", className: "text-left", visible: false},
+                {mData: "id_menu", className: "text-left", visible: false},
+                {mData: "nombre_categoria_menu", className: "text-center"},
+                {mData: "vigente", className: "text-center"},
+                {mData: "btnAgregarProductosCategoria", className: "text-center"},
             ],
             'language': {
                 url: "//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
-                // traduce la linea de abajo que quedaba en ingles
                 select: {
                     rows: {
                         _: " (Seleccionadas %d filas)",
@@ -230,20 +218,20 @@
     }
 
     function GrabarCategoriaMenu() {
-        var msg = "";
-        if ($('#cboMenus').val() == 0) {
-            msg = "Menu Al Cual Asignara La Categoria\n";
-        }
-        if ($('#txtNombreCategoria').val() == 0) {
-            msg = "Nombre Categoria\n";
-        }
-        if (msg.length) {
-            showAppAlert('error',"- Debe Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+        if (!$('#cboMenus').val() || $('#cboMenus').val() === "0") {
+            showAppAlert('error',"- Debe Seleccionar un Menu", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
+            return;
+        }
+        if ($('#txtNombreCategoria').val() === "") {
+            showAppAlert('error',"- Falta Ingresar el Nombre de la Categoria", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+            return;
         } else {
-            //grabar datos
             IdCategoria = $('#IdCategoria').val();
             IdMenu = $('#cboMenus').val();
             NombreCategoria = $('#txtNombreCategoria').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');

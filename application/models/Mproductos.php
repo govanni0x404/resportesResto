@@ -466,43 +466,23 @@ class Mproductos extends CI_Model
 		return $consulta->result();
 	}
 
-	/*public function habilitarVigenciaMenu($id_menu, $data)
-	   { //
-		   if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-			   redirect(base_url()); //redireccionar al login
-		   }
-		   //$this->db=$this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-		   $this->db->where('id_menu', $id_menu);
-		   $r = $this->db->update('menu', $data);
-		   return $r;
-	   }
-
-		public function DeshabilitarVigenciaMenu($id, $data)
-	   { //
-		   if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-			   redirect(base_url()); //redireccionar al login
-		   }
-		   //$this->db=$this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-		   $this->db->where('id_menu', $id);
-		   $r = $this->db->update('menu', $data);
-		   return $r;
-	   }*/
-
 	public function obtenerCategoriaMenu($id_menu)
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-			redirect(base_url()); //redireccionar al login
+			redirect(base_url());
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		
 		$q = "SELECT cm.id_categoria_menu, cm.id_menu, m.nombre_menu, cm.nombre_categoria_menu, cm.vigente
-        from categoria_menu cm
-        join menu m on cm.id_menu=m.id_menu";
+			from categoria_menu cm
+			join menu m on cm.id_menu=m.id_menu";
+		
+		// MODIFICAR AQUÍ: Solo filtrar si id_menu > 0
 		if ($id_menu > 0) {
-			$q = $q . " and cm.id_menu=$id_menu
-				order by cm.nombre_categoria_menu desc";
-		} else {
-			$q = $q . " order by cm.nombre_categoria_menu desc";
+			$q = $q . " WHERE cm.id_menu=$id_menu";
 		}
+		
+		$q = $q . " ORDER BY m.nombre_menu, cm.nombre_categoria_menu";  // Ordenar por menú y categoría
 
 		$consulta = $this->db->query($q);
 		$sampleData = $consulta->result();
@@ -512,13 +492,13 @@ class Mproductos extends CI_Model
 			array_push($data, array(
 				"id_categoria_menu" => $key->id_categoria_menu,
 				"id_menu" => $key->id_menu,
+				"nombre_menu" => $key->nombre_menu,  // Agregar nombre del menú
 				"nombre_categoria_menu" => $key->nombre_categoria_menu,
 				'vigente' => ($key->vigente == 't' ? 'SI' : 'NO'),
-				'btnAgregarProductosCategoria' => ("<button onclick='AbrirModalProductosAgregadosACategoria(" . $key->id_categoria_menu . ")' type='button' class='btn-block btn-warning text-center'>AGREGAR PRODUCTOS A LA CATEGORIAS</button>"),
-
-			)
-			);
+				'btnAgregarProductosCategoria' => ("<button onclick='AbrirModalProductosAgregadosACategoria(" . $key->id_categoria_menu . ")' type='button' class='btn-block btn-warning text-center'>AGREGAR PRODUCTOS</button>"),
+			));
 		}
+		
 		$results = array(
 			"sEcho" => 1,
 			"iTotalRecords" => count($data),

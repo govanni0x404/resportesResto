@@ -792,7 +792,7 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <fieldset>
                             <div class="col-md-4">
-                                <button onclick="AbrirModalNuevoMenu()" type="button" class="btn btn-success"><i
+                                <button onclick="AbrirModalNuevoMenu()" type="button" class="btn btn-primary"><i
                                         class="fa fa-plus"></i>NUEVO MENU</button>
                             </div>
                         </fieldset>
@@ -919,7 +919,7 @@
                         <fieldset>
                             <div class="col-md-4">
                                 <button onclick="AbrirModalNuevaCategoriasMenu()" type="button"
-                                    class="btn btn-success"><i class="fa fa-plus"></i> NUEVA CATEGORIA</button>
+                                    class="btn btn-primary"><i class="fa fa-plus"></i> NUEVA CATEGORIA</button>
                             </div>
                         </fieldset>
                         <br>
@@ -951,7 +951,7 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger" data-dismiss="modal"><i
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i
                         class="fa fa-times-circle"></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
@@ -987,12 +987,12 @@
                             </div>
                         </fieldset>
                         <fieldset>
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label for="cboMenus">MENU</label>
                                 <select id="cboMenus" nombre="cboMenus" class="form-control input-sm" style="width:100%"
                                     requerido="si"></select>
                             </div>
-                            <div class="col-md-6 ">
+                            <div class="col-md-12">
                                 <label for="txtNombreCategoria">CATEGORIA</label>
                                 <input placeholder="Nombre Categoria" type="text" class="form-control input-sm input-sm"
                                     maxlength='28' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -1011,14 +1011,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                        </fieldset>
-                        <br>
-                        <fieldset>
-                            <div class="col-md-4">
-                                <button onclick="GrabarCategoriaMenu()" type="button" class="btn btn-success"><i
-                                        class="fa fa-check-square-o"></i>GRABAR CATEGORIA</button>
-                            </div>
                         </fieldset>
                         <!-- FIN CAMPOS DE REGISTRO  -->
                     </div>
@@ -1028,8 +1020,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger" data-dismiss="modal"><i
-                        class="fa fa-times-circle"></i>SALIR</button>
+                <button onclick="GrabarCategoriaMenu()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR CATEGORIA</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -1057,12 +1049,12 @@
                     </ul>
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <fieldset>
-                            <div class="col-md-2 ">
+                            <div class="col-md-4 ">
                                 <label for="IdDetalleCategoria">ID</label>
                                 <input type="text" disabled class="form-control input-sm input-sm"
                                     name="IdDetalleCategoria" id="IdDetalleCategoria" requerido="no" value="">
                             </div>
-                            <div class="col-md-10">
+                            <div class="col-md-12">
                                 <label for="cboMenuCategoria">MENU/CATEGORIA</label>
                                 <select id="cboMenuCategoria" nombre="cboMenuCategoria" class="form-control input-sm"
                                     style="width:100%" requerido="si"></select>
@@ -1116,7 +1108,7 @@
                         <br>
                         <fieldset>
                             <div class="col-md-4">
-                                <button onclick="GrabarDetalleCategoriaMenu()" type="button" class="btn btn-success"><i
+                                <button onclick="GrabarDetalleCategoriaMenu()" type="button" class="btn btn-primary"><i
                                         class="fa fa-check-square-o"></i>AGREGAR A CATEGORIA</button>
                             </div>
                         </fieldset>
@@ -1156,14 +1148,14 @@
                         </fieldset>
                         <br>
                         <fieldset>
-                            <div class="col-md-4 ">
+                            <div class="col-md-6 ">
                                 <label for="CantMinima">MINIMA</label>
                                 <input min="0" type="number" class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
                                     ondrop="return false;" autocomplete="off" name="CantMinima" id="CantMinima"
                                     requerido="si" value="" />
                             </div>
-                            <div class="col-md-4 ">
+                            <div class="col-md-6 ">
                                 <label for="CantMaxima">MAXIMA</label>
                                 <input min="0" type="number" class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -1171,7 +1163,7 @@
                                     requerido="si" value="" />
                             </div>
                             <br>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="btn-group" role="group" aria-label="...">
                                     <div class="checkbox checkbox-success checkbox-circle">
                                         <input id="ckEstricto" type="checkbox">
@@ -1183,7 +1175,7 @@
                             </div>
                         </fieldset>
                         <fieldset>
-                            <div class="col-md-4 ">
+                            <div class="col-md-6">
                                 <label for="CostoPromedio">COSTO PROMEDIO</label>
                                 <input min="0" type="number" class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -1199,9 +1191,9 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button id="BtnActualizarDetalleMenu" type="button" class="btn btn-success"><i
+                <button id="BtnActualizarDetalleMenu" type="button" class="btn btn-primary"><i
                         class="fa fa-check-square-o"></i>ACTUALIZAR</button>
-                <button type="button" class="btn btn-danger" data-dismiss="modal"><i
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i
                         class="fa fa-times-circle"></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->

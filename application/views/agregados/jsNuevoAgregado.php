@@ -102,6 +102,7 @@
 		ProductoMaestro = $('#cboProductoDeVentaConAgregado').val();
 		ProductoAgregado = $('#cboProductoAgregado').val();
 		CantidadAgregado = $('#cantidadAgregado').val();
+		ValorAdicionalAgregado = $('#valorAdicionalAgregado').val();
 
 		if (ProductoMaestro == null) {
 			showAppAlert('error',"- No Selecciono El Producto De Venta Con Agregado!", {
@@ -118,6 +119,11 @@
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
 			});
+		}else if (ValorAdicionalAgregado == 0){
+			showAppAlert('error',"- No Ingreso El valor Adicional Del Agregado!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+			});		
 		} else {
 			//grabar datos
 			IdAgregado = $('#idAgregado').val();
