@@ -243,6 +243,11 @@
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
+		} else if ($("#CreditoMaximoCliente").val() != '' && isNaN($("#CreditoMaximoCliente").val())) {
+			showAppAlert('error',"- Crédito máximo debe ser un número válido!", {
+       	 		duration: 5000,
+        		image: base_url+ 'assets/img/errorGif.gif'
+    		});
 		} else {
 			idCliente = $('#idCliente').val();
 			NombreCliente = $('#nombreCliente').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -255,7 +260,7 @@
 			CorreoCliente = $('#CorreoCliente').val().toUpperCase().replace(/[,'"$#%&]+/g, '');
 			GiroCliente = $('#GiroCliente').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
 			IdListaDePrecios = $('#cboIdLprecio').val();
-			MontoCredito = $('#CreditoMaximoCliente').val();
+			MontoCredito = $('#CreditoMaximoCliente').val() === '' ? 0 : parseFloat($('#CreditoMaximoCliente').val());
 
 			var miJson = {
 				'id_cliente': idCliente,

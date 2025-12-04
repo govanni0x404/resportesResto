@@ -18,17 +18,17 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-6 ">
+                            <div class="col-md-4 ">
                                 <label for="idSubFamilia">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idSubFamilia" id="idSubFamilia" requerido="no" value="">
                             </div>
                         </fieldset>
                         <fieldset>
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label for="cboIdFamilia">FAMILIA *</label>
                                 <select id="cboIdFamilia" nombre="cboIdFamilia" class="form-control input-sm" style="width:100%" requerido="si"></select>
                             </div>
-                            <div class="col-md-6 ">
+                            <div class="col-md-12">
                                 <label for="nombreSubFamilia">SUB FAMILIA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreSubFamilia" id="nombreSubFamilia" requerido="si" value="" placeholder="Nombre SubFamilia" />
                             </div>

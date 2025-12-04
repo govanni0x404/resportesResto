@@ -95,7 +95,7 @@
                 confirmButtonText: "Aceptar!",
                 cancelButtonText: "Cancelar!",
                 closeOnConfirm: true,
-                closeOnCancel: false
+                closeOnCancel: true
             },
             function(isConfirm) {
                 if (isConfirm) {
@@ -137,7 +137,7 @@
                 confirmButtonText: "Aceptar!",
                 cancelButtonText: "Cancelar!",
                 closeOnConfirm: true,
-                closeOnCancel: false
+                closeOnCancel: true
             },
             function(isConfirm) {
                 if (isConfirm) {
@@ -165,6 +165,8 @@
                             image: base_url+ 'assets/img/errorGif.gif'
                         });
                     });
+                }else{
+
                 }
             });
     }

@@ -98,16 +98,14 @@
     }
 
     function GrabarNuevoMenu() {
-        var msg = "";
-        if ($('#txtNombreMenu').val() == 0) {
-            msg = "Nombre Menu\n";
-        }
-        if (msg.length) {
-            showAppAlert('error',"- Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+        if ($('#txtNombreMenu').val() === '') {
+            showAppAlert('error',"- El Nombre del menu, no puede quedar en Blanco", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-        } else {
+            return;
+        }
+        else {
             //grabar datos
             IdMenu = $('#txtIdMenu').val();
             NombreMenu = $('#txtNombreMenu').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -140,44 +138,6 @@
             })
             .always(function() {});
     }
-
-
-    /*
-            function habilitarVigenciaMenu(id_menu) {
-            swal({
-                    title: "Esta seguro/a?",
-                    text: "De Habilitar El Menu?",
-                    type: "warning",
-                    showCancelButton: true,
-                    confirmButtonColor: "#EB360F",
-                    confirmButtonText: "Aceptar!",
-                    cancelButtonText: "Cancelar!",
-                    closeOnConfirm: true,
-                    closeOnCancel: false
-                },
-                function(isConfirm) {
-                    if (isConfirm) {
-                         id_menu = $('v.id_menu').val();
-                        $.post(base_url + "index.php/Productos/habilitarVigenciaMenu", {
-                            id_menu: id_menu
-                        }, function() {}).done(function(datos) {
-
-                            let positionError = datos.search("ERROR:");
-                            if (parseFloat(positionError) > 0) {
-                                swal("Error", "Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(positionError, 150), "error");
-                            } else {
-                                swal("Menu Habilitado!", "Se Habilito El Menu con éxito!", "success");
-                                ListadoMenu(id_menu);
-                            }
-                        }).fail(function() {
-                            swal("Se produjo un error al realizar La Habilitacion, favor vuelva a intentarlo");
-                        });
-                        swal.close();
-                    } else {
-                        swal.close();
-                    }
-                });
-        }*/
 
 
     //CATEGORIA MENU 

@@ -19,11 +19,11 @@
                     <div class="tab-pane fade active in" id="tabBodegas">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-6 ">
+                            <div class="col-md-4 ">
                                 <label for="idUmedida">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idUmedida" id="idUmedida" requerido="no" value="" />
                             </div>
-                            <div class="col-md-6 ">
+                            <div class="col-md-12 ">
                                 <label for="nombreUmedida">UNIDAD DE MEDIDA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreUmedida" id="nombreUmedida" requerido="si" value="" placeholder="Nombre Unidad De Medida" />
                             </div>

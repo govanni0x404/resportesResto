@@ -26,11 +26,11 @@
 								<br>
 								<!-- CAMPOS DE REGISTRO  -->
 								<fieldset>
-									<div class="col-md-2">
+									<div class="col-md-4">
 										<label for="idInsumo">ID</label>
 										<input type="number" disabled class="form-control input-sm input-sm" name="idInsumo" id="idInsumo" requerido="no" value="">
 									</div>
-									<div class="col-md-6">
+									<div class="col-md-8">
 										<label for="codBarra">CODIGO INTERNO</label>
 										<input type="text" class="form-control input-sm input-sm" name="codBarra" id="codBarra" maxlength='50' onkeypress="return sololetrasyNumeros(event)" requerido="no" value="">
 									</div>
@@ -164,15 +164,15 @@
 									</div>
 								</fieldset>
 								<fieldset>
-									<div class="col-md-5">
+									<div class="col-md-10">
 										<label for="costoReceta">C. NETO + I. ADIC (C. RECETA)</label>
 										<input type="number" class="form-control input-sm input-sm" name="costoReceta" onkeypress="return soloNumeros(event)" id="costoReceta" requerido="no" value="">
 									</div>
-									<div class="col-md-4">
+									<div class="col-md-10">
 										<label for="costoBruto">COSTO BRUTO PP (INFORM)</label>
 										<input type="number" class="form-control input-sm input-sm" name="costoBruto" onkeypress="return soloNumeros(event)" id="costoBruto" requerido="no" value="">
 									</div>
-									<div class="col-md-3">
+									<div class="col-md-10">
 										<label for="costoUltCompra">C. ULT. COMPRA</label>
 										<input type="number" class="form-control input-sm input-sm" name="costoUltCompra" onkeypress="return soloNumeros(event)" id="costoUltCompra" requerido="no" value="">
 									</div>

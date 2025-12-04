@@ -87,11 +87,11 @@
       },
       {
         mData: "cantidad",
-        className: "text-center"
+        className: "text-right"
       },
       {
         mData: "valor",
-        className: "text-center",
+        className: "text-right",
         render: $.fn.dataTable.render.number(',', '.', 0, '$')
       },
       {

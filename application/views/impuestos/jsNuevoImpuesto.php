@@ -18,11 +18,11 @@
 					<div class="tab-pane fade active in" id="tabDatosUsuarios">
 						<!-- CAMPOS DE REGISTRO  -->
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-4 ">
 								<label for="idImpuesto">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idImpuesto" id="idImpuesto" requerido="no" value="">
 							</div>
-							<div class="col-md-6 ">
+							<div class="col-md-12 ">
 								<label for="nombreImpuesto">NOMBRE IMPUESTO *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreImpuesto" id="nombreImpuesto" requerido="si" value="" placeholder="Nombre Impuesto" />
 							</div>

@@ -38,8 +38,8 @@
                   <th class="text text-center" style='height:10px'>N° AGREGADO</th>
                   <th class="text text-left" style='height:45px'>PRODUCTO DE VENTA C/AGREGADO</th>
                   <th class="text text-left" style='height:10px'>AGREGADO</th>
-                  <th class="text text-center" style='height:10px'>CANTIDAD</th>
-                  <th class="text text-center" style='height:10px'>VALOR</th>
+                  <th class="text text-right" style='height:10px'>CANTIDAD</th>
+                  <th class="text text-right" style='height:10px'>VALOR</th>
                   <th class="text text-center" style='height:10px'>ACTIVO</th>
                   <th class="text text-center" style='height:10px'>USAR DESTINO DE IMPRESION</th>
                 </tr>

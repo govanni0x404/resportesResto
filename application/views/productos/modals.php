@@ -369,7 +369,7 @@
                             </div>
                         </fieldset>
                         <fieldset>
-                            <div class="col-md-6 ">
+                            <div class="col-md-11 ">
                                 <label for="nombreFamilia">FAMILIA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -377,7 +377,7 @@
                                     requerido="si" value="" placeholder="Nombre Familia" />
                             </div>
 
-                            <div class="col-md-6 ">
+                            <div class="col-md-11 ">
                                 <label for="AliasFamilia">ALIAS FAMILIA</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -386,13 +386,13 @@
                             </div>
                         </fieldset>
                         <fieldset>
-                            <div class="col-md-6">
+                            <div class="col-md-7">
                                 <label for="cboDestinoDeImpresionFamilia">DESTINO DE IMPRESION</label>
                                 <select id="cboDestinoDeImpresionFamilia" nombre="cboDestinoDeImpresionFamilia"
                                     class="form-control input-sm" style="width:100%" requerido="si"></select>
                             </div>
                             <br>
-                            <div class="col-md-6">
+                            <div class="col-md-5">
                                 <div class="btn-group" role="group" aria-label="...">
                                     <div class="checkbox checkbox-success checkbox-circle">
                                         <input id="ckVentaDirectaFamilia" type="checkbox">
@@ -404,7 +404,7 @@
                             </div>
                         </fieldset>
                         <fieldset>
-                            <div class="col-md-4 ">
+                            <div class="col-md-5 ">
                                 <label for="ordenFamilia">ORDEN FAMILIA</label>
                                 <input type="number" class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -412,7 +412,7 @@
                                     requerido="si" value="" placeholder="Orden Familia" />
                             </div>
                             <br>
-                            <div class="col-md-8">
+                            <div class="col-md-7">
                                 <div class=" btn-group" role="group" aria-label="...">
                                     <div class="checkbox checkbox-success checkbox-circle">
                                         <input id="ckImprimirEnDetallePedido" type="checkbox">
@@ -464,12 +464,12 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-6 ">
+                            <div class="col-md-4 ">
                                 <label for="idBodega">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idBodega"
                                     id="idBodega" requerido="no" value="">
                             </div>
-                            <div class="col-md-6 ">
+                            <div class="col-md-10 ">
                                 <label for="nombreBodega">BODEGA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -518,19 +518,19 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-6 ">
+                            <div class="col-md-4 ">
                                 <label for="idSubFamilia">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idSubFamilia"
                                     id="idSubFamilia" requerido="no" value="">
                             </div>
                         </fieldset>
                         <fieldset>
-                            <div class="col-md-6">
+                            <div class="col-md-10">
                                 <label for="cboFamiliaMsubFamilia">FAMILIA</label>
                                 <select id="cboFamiliaMsubFamilia" nombre="cboFamiliaMsubFamilia"
                                     class="form-control input-sm" style="width:100%" requerido="si"></select>
                             </div>
-                            <div class="col-md-6 ">
+                            <div class="col-md-10 ">
                                 <label for="nombreSubFamilia">SUB FAMILIA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -854,12 +854,12 @@
                     </ul>
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <fieldset>
-                            <div class="col-md-6 ">
+                            <div class="col-md-4 ">
                                 <label for="txtIdMenu">ID</label>
                                 <input type="text" disabled class="form-control input-sm input-sm" name="txtIdMenu"
                                     id="txtIdMenu" requerido="no" value="">
                             </div>
-                            <div class="col-md-6 ">
+                            <div class="col-md-9 ">
                                 <label for="txtNombreMenu">MENU</label>
                                 <input placeholder="Nombre Menu" type="text" class="form-control input-sm input-sm"
                                     maxlength='28' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -880,13 +880,6 @@
                             </div>
 
                         </fieldset>
-                        <br>
-                        <fieldset>
-                            <div class="col-md-4">
-                                <button onclick="GrabarNuevoMenu()" type="button" class="btn btn-primary"><i
-                                        class="fa fa-check-square-o"></i>GRABAR MENU</button>
-                            </div>
-                        </fieldset>
                         <!-- FIN CAMPOS DE REGISTRO  -->
                     </div>
                 </div>
@@ -895,8 +888,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class="fa fa-times-circle"></i>SALIR</button>
+                <button onclick="GrabarNuevoMenu()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR MENU</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>

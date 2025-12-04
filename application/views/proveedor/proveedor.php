@@ -36,10 +36,10 @@
               <thead>
                 <tr>
                   <th class="text text-center" style='height:10px'>N° PROVEEDOR</th>
-                  <th class="text text-left" style='height:45px'>PROVEEDOR</th>
                   <th class="text text-left" style='height:10px'>RUT</th>
                   <th class="text text-center" style='height:10px'>DV</th>
                   <th class="text text-left" style='height:10px'>RUT</th>
+                  <th class="text text-left" style='height:45px'>PROVEEDOR</th>
                   <th class="text text-center" style='height:10px'>DIRECCION</th>
                   <th class="text text-center" style='height:10px'>TELEFONO</th>
                   <th class="text text-center" style='height:10px'>MAIL</th>

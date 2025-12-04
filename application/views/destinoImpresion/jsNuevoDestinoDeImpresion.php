@@ -18,18 +18,18 @@
 					<div class="tab-pane fade active in" id="tabDatosUsuarios">
 						<!-- CAMPOS DE REGISTRO  -->
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-4 ">
 								<label for="idDestinoDeImpresion">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idDestinoDeImpresion" id="idDestinoDeImpresion" requerido="no" value="">
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-10 ">
 								<label for="nombreDestinoDeImpresion">NOMBRE DESTINO IMPRESION *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreDestinoDeImpresion" id="nombreDestinoDeImpresion" requerido="si" value="" placeholder="Nombre Destino De Impresion" />
 							</div>
 
-							<div class="col-md-6 ">
+							<div class="col-md-10 ">
 								<label for="rutaImpresora">RUTA DE LA IMPRESORA/IP *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return rutas(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="rutaImpresora" id="rutaImpresora" requerido="si" value="" placeholder="Ruta Destino De Impresion" />
 							</div>

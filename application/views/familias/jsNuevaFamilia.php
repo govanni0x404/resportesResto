@@ -24,18 +24,18 @@
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-12 ">
 								<label for="nombreFamilia">FAMILIA *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreFamilia" id="nombreFamilia" requerido="si" value="" placeholder="Nombre Familia" />
 							</div>
 
-							<div class="col-md-6 ">
+							<div class="col-md-12 ">
 								<label for="AliasFamilia">ALIAS FAMILIA *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="AliasFamilia" id="AliasFamilia" requerido="si" value="" placeholder="Alias Familia" />
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-4">
+							<div class="col-md-8">
 								<label for="ordenFamilia">ORDEN FAMILIA</label>
 								<input min="0" type="text" class="form-control input-sm input-sm" maxlength='4' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="ordenFamilia" id="ordenFamilia" requerido="si" value="" placeholder="Orden Familia" />
 							</div>

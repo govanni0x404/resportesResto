@@ -84,10 +84,6 @@
                 className: "text-center"
             },
             {
-                mData: "nombre_proveedor",
-                className: "text-left"
-            },
-            {
                 mData: "rut",
                 className: "text-left",
                 visible: false
@@ -99,6 +95,10 @@
             },
             {
                 mData: "rut_completo",
+                className: "text-left"
+            },
+            {
+                mData: "nombre_proveedor",
                 className: "text-left"
             },
             {

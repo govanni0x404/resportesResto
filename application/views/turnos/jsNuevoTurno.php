@@ -19,11 +19,11 @@
           <div class="tab-pane fade active in" id="tabBodegas">
             <!-- CAMPOS DE REGISTRO  -->
             <fieldset>
-              <div class="col-md-6 ">
+              <div class="col-md-4 ">
                 <label for="idTurnos">ID</label>
                 <input type="number" disabled class="form-control input-sm input-sm" name="idTurnos" id="idTurnos" requerido="no" value="" />
               </div>
-              <div class="col-md-6 ">
+              <div class="col-md-12 ">
                 <label for="nombreTurno">NOMBRE TURNO *</label>
                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreTurno" id="nombreTurno" requerido="si" value="" placeholder="Nombre Turno" />
               </div>

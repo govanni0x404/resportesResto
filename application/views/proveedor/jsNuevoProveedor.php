@@ -19,7 +19,7 @@
 					<div class="tab-pane fade active in" id="tabBodegas">
 						<!-- CAMPOS DE REGISTRO  -->
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-4 ">
 								<label for="idProveedor">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idProveedor" id="idProveedor" requerido="no" value="" />
 							</div>
@@ -58,13 +58,11 @@
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-12 ">
+							<div class="col-md-8">
 								<label for="GiroProveedor">GIRO *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="GiroProveedor" id="GiroProveedor" requerido="si" value="" placeholder="Giro Proveedor" />
 							</div>
-						</fieldset>
-						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-4">
 								<label for="CreditoProveedor">CREDITO</label>
 								<input min="0" type="text" class="form-control input-sm input-sm" maxlength='8' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="CreditoProveedor" id="CreditoProveedor" requerido="si" value="" placeholder="Credito Maximo Proveedor" />
 							</div>
@@ -199,7 +197,7 @@
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#nombreProveedor').val() == 0) {
+		} else if ($('#nombreProveedor').val() === '') {
 			showAppAlert('error',"- No Ingreso El Nombre Del Proveedor!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
@@ -219,6 +217,11 @@
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
+		}else if ($("#CreditoProveedor").val() != '' && isNaN($("#CreditoProveedor").val())) {
+			showAppAlert('error',"- Crédito debe ser un número válido!", {
+       	 		duration: 5000,
+        		image: base_url+ 'assets/img/errorGif.gif'
+    		});
 		} else {
 			idProveedor = $('#idProveedor').val();
 			NombreProveedor = $('#nombreProveedor').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -228,11 +231,7 @@
 			TelefonoProveedor = $('#TelefonoProveedor').val();
 			CorreoProveedor = $('#CorreoProveedor').val().toUpperCase().replace(/[,'"$#%&]+/g, '');
 			GiroProveedor = $('#GiroProveedor').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
-			MontoCredito = $('#CreditoProveedor').val();
-
-			if (MontoCredito === '') {
- 			   MontoCredito = '0';
-			}
+			MontoCredito = $('#CreditoProveedor').val() === '' ? 0 : parseFloat($('#CreditoProveedor').val());
 
 			var miJson = {
 				'id_proveedor': idProveedor,

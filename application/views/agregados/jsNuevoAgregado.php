@@ -30,16 +30,16 @@
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-6">
+							<div class="col-md-12">
 								<label for="cboProductoAgregado">PRODUCTO DE AGREGADO</label>
 								<select id="cboProductoAgregado" nombre="cboProductoAgregado" class="form-control input-sm" style="width:100%" requerido="si"></select>
 							</div>
 
-							<div class="col-md-3 ">
+							<div class="col-md-6 ">
 								<label for="cantidadAgregado">CANTIDAD</label>
 								<input min="0" type="number" class="form-control input-sm input-sm" maxlength='28' onpaste="return false;" ondrop="return false;" autocomplete="off" name="cantidadAgregado" id="cantidadAgregado" requerido="si" value="" />
 							</div>
-							<div class="col-md-3 ">
+							<div class="col-md-6 ">
 								<label for="valorAdicionalAgregado">C. ADICIONAL</label>
 								<input type="number" class="form-control input-sm input-sm" maxlength='28' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="valorAdicionalAgregado" id="valorAdicionalAgregado" requerido="si" value="" />
 							</div>

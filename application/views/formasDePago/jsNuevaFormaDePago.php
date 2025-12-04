@@ -18,11 +18,11 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-6 ">
+                            <div class="col-md-4 ">
                                 <label for="idFormaDePago">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idFormaDePago" id="idFormaDePago" requerido="no" value="">
                             </div>
-                            <div class="col-md-6 ">
+                            <div class="col-md-10 ">
                                 <label for="nombreFormaDePago">FORMA DE PAGO *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreFormaDePago" id="nombreFormaDePago" requerido="si" value="" placeholder="Nombre Forma De Pago" />
                             </div>
