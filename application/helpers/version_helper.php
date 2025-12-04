@@ -127,15 +127,3 @@ if (!function_exists('app_version_json')) {
         return json_encode($version, JSON_PRETTY_PRINT);
     }
 }
-```
-
----
-
-## **PASO 3: Autocargar el Helper**
-
-### 3.1 Ubicación del archivo:
-```
-tu-proyecto/
-└── application/
-    └── config/
-        └── autoload.php  ← EDITAR ESTE
