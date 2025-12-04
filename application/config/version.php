@@ -3,16 +3,14 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
  * Archivo generado automáticamente por Git Hook
- * No editar manualmente - se sobrescribe en cada commit
- * 
- * Generado: <?php echo date('Y-m-d H:i:s'); ?>
+ * Versión auto-incrementada en cada commit
  */
 
 $config['version'] = [
-    'number' => 'v1.0.2',
-    'commit' => '602f02c',
+    'number' => '1.0.2',
+    'commit' => '2d2bc5b',
     'branch' => 'prueba-local',
-    'date' => '2025-12-04 09:54:38',
-    'build' => 31,
-    'full' => 'v1.0.2+602f02c'
+    'date' => '2025-12-04 09:59:43',
+    'build' => 32,
+    'full' => '1.0.2+2d2bc5b'
 ];

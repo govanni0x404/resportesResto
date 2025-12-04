@@ -6,7 +6,7 @@
 <footer class="main-footer">
 	<div class="container">
 		<div class="pull-right hidden-xs"> <b>Version</b>
-        <p><?php ?>Versión <?php echo app_version(); ?></p>
+        <p><?php ?><?php echo app_version(); ?></p>
   </div>
 		<strong>Copyright &copy; <a href="https://datamaule.cl/">DAT@MAULE</a>.</strong> All rights reserved. <i class="fa fa-heart color-green"></i>
 	</div>
