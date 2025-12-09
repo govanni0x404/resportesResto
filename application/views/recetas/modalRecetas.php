@@ -312,7 +312,10 @@
 		}
 
 		if (msg.length) {
-			swal("Error", "Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, "error");
+			showAppAlert('error', "Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
 			return;
 		}
 
@@ -400,14 +403,23 @@
 					tableRecetas.ajax.reload(null, false);
 					
 					// Mostrar mensaje de éxito
-					swal("Listo", response.message, "success");
+					showAppAlert('success', response.message, {
+                    	duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
 				} else {
-					swal("Error", response.message || "Error al guardar la receta", "error");
+					showAppAlert('error', response.message || "Error al guardar la receta", {
+                        duration: 6000,
+                        image: base_url + 'assets/img/errorGif.gif'
+                    });
 				}
 			},
 			error: function(xhr, status, error) {
 				console.error('Error AJAX:', {xhr: xhr, status: status, error: error});
-				swal("Error", "Se produjo un error al realizar el proceso. Detalle: " + error, "error");
+				showAppAlert('error', "Se produjo un error al realizar el proceso. Detalle: " + error, {
+                    duration: 6000,
+                    image: base_url + 'assets/img/errorGif.gif'
+                });
 			}
 		});
 	});
@@ -438,11 +450,20 @@
 		});
 		//COMPROBACIONES
 		if (id_insumo == 0) {
-			swal("Error", "Elija un insumo por favor", "error");
+			showAppAlert('error', "Elija un insumo por favor", {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
 		} else if (cantidad_insumo == '') {
-			swal("Error", "Ingrese una cantidad", "error");
+			showAppAlert('error', "Ingrese una cantidad", {
+            	duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
 		} else if (errorexiste == 1) {
-			swal("Error", "El producto ya se encuentra en la lista", "error");
+			showAppAlert('error', "El producto ya se encuentra en la lista", {
+            	duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
 		} else {
 			rnd = $("#contador").val();
 			$('#cboCodBarraInsumoReceta').val(0).trigger('change');
@@ -682,7 +703,10 @@
 				var cant_lineas = $('#cant_lineas').val();
 				$('#' + rnd).remove();
 				$('#cant_lineas').val(parseInt(cant_lineas) - 1);
-				swal("Eliminado!", "", "success");
+				showAppAlert('success', "", {
+                	duration: 4000,
+                    image: base_url + 'assets/img/success.gif'
+                });
 			});
 	}
 

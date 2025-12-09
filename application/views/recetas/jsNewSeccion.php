@@ -59,7 +59,10 @@
         }
         
         if (msg.length) {
-            swal("Error", "Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, "error");
+            showAppAlert('error', "SFalta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
             return;
         }
 
@@ -83,14 +86,23 @@
                     // Recargar el combo de secciones
                     llenarSeccionReceta(response.data[0].id_seccion);
                     
-                    swal("Listo", "Se registró exitosamente la nueva sección", "success");
+                    showAppAlert('success', "Se registró exitosamente la nueva sección!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
                 } else {
-                    swal("Error", response.message || "Error al guardar", "error");
+                    showAppAlert('error', response.message || "Error al guardar", {
+                        duration: 6000,
+                        image: base_url + 'assets/img/errorGif.gif'
+                    });
                 }
             },
             error: function(xhr, status, error) {
                 console.error('Error:', error);
-                swal("Error", "Se produjo un error al realizar el proceso", "error");
+                showAppAlert('error', "Se produjo un error al realizar el proceso", {
+                    duration: 6000,
+                    image: base_url + 'assets/img/errorGif.gif'
+                });
             }
         });
     }

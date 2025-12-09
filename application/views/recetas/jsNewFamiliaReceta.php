@@ -60,7 +60,10 @@
         }
         
         if (msg.length) {
-            swal("Error", "Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, "error");
+            showAppAlert('error', "Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
             return;
         }
 
@@ -85,14 +88,23 @@
                     var id_familia_actual = $('#cboGrupoReceta').val();
                     llenarFamiliaReceta(response.data[0].id_familia_receta);
                     
-                    swal("Listo", "Se registró exitosamente la nueva familia", "success");
+                    showAppAlert('success', "Se registró exitosamente la nueva familia!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
                 } else {
-                    swal("Error", response.message || "Error al guardar", "error");
+                    showAppAlert('error', response.message || "Error al guardar", {
+                        duration: 6000,
+                        image: base_url + 'assets/img/errorGif.gif'
+                    });
                 }
             },
             error: function(xhr, status, error) {
                 console.error('Error:', error);
-                swal("Error", "Se produjo un error al realizar el proceso", "error");
+                showAppAlert('error', "Se produjo un error al realizar el proceso", {
+                    duration: 6000,
+                    image: base_url + 'assets/img/errorGif.gif'
+                });
             }
         });
     }

@@ -204,7 +204,9 @@
                     $('#CkPermitirImpresionPrecuenta').prop('checked', false);
                 }
 
-                $("#cboZiseFont").val(rowData[0].size_font).trigger('change');
+                sizeDimpresion(rowData[0].size_font);
+                $("#ckImpresionGraficaWindows").trigger("change");
+
                 $('#ModalNuevoDestinoDeImpresion').modal('show');
             })
     }

@@ -117,7 +117,7 @@
 						</fieldset>
 						<fieldset>
 							<div class="col-md-6 ">
-								<label for="ZiseFont">TAMAÑO FUENTE</label>
+								<label for="size_font">TAMAÑO FUENTE</label>
 								<select id="cboZiseFont" nombre="cboZiseFont" class="form-control input-sm" style="width:100%" requerido="si">
 
 								</select>
@@ -152,9 +152,9 @@
 		$('#ckNoImprimirComprobantes').prop('checked', false);
 		$('#CkReemplazarPorDestinoRecinto').prop('checked', false);
 		$('#CkPermitirImpresionPrecuenta').prop('checked', false);
-		$('#cboZiseFont').val("");
-		sizeDimpresion();
-		$("#cboZiseFont").prop('disabled', true);
+		sizeDimpresion(8);  
+		$('#ckImpresionGraficaWindows').prop('checked', false);
+		$("#ckImpresionGraficaWindows").trigger("change");
 		$('#ModalNuevoDestinoDeImpresion').modal({
 			backdrop: 'static',
 			keyboard: false
@@ -180,7 +180,7 @@
 			rutaImpresora = $('#rutaImpresora').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
 			RutaWindowsImpresora = $('#RutaWindowsImpresora').val();
 			PuertoImpresora = $('#PuertoImpresora').val();
-			ZiseFont = $('#cboZiseFont').val();
+			size_font = $('#cboZiseFont').val();
 			if ($('#ckImpresionGraficaWindows').is(":checked")) {
 				var impresionGraficaWindows = 1
 			} else {
@@ -224,7 +224,7 @@
 				'sin_impresion': noImprimirComprobantes,
 				'usar_dimpresion_recinto': reemplazarPorDestinoRecinto,
 				'usar_dimpresion_precuenta_android': permitirImpresionPrecuenta,
-				'size_font': ZiseFont,
+				'size_font': size_font,
 			};
 			$.post(base_url + "index.php/DestinoDeImpresion/grabarNuevoDestinoDeImpresion", {
 					'prod': miJson
@@ -274,16 +274,18 @@
         }
     });
 
-	function sizeDimpresion(objSelected) {
+	function sizeDimpresion(selected = null) {
 		var tbl = '';
-		tbl = tbl + '<option value="0">0</option>';
-		tbl = tbl + '<option selected value="8">8</option>';
-		tbl = tbl + '<option value="9">9</option>';
-		tbl = tbl + '<option value="10">10</option>';
-		tbl = tbl + '<option value="11">11</option>';
-		tbl = tbl + '<option value="12">12</option>';
-		tbl = tbl + '<option value="13">13</option>';
-		tbl = tbl + '<option value="14">14</option>';
+		var valores = [0, 8, 9, 10, 11, 12, 13, 14];
+
+		valores.forEach(function(v) {
+			if (selected == v) {
+				tbl += '<option selected value="' + v + '">' + v + '</option>';
+			} else {
+				tbl += '<option value="' + v + '">' + v + '</option>';
+			}
+		});
+
 		$("#cboZiseFont").html(tbl);
 		$("#cboZiseFont").select2();
 	}
