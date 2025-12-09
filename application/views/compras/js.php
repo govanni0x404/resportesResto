@@ -225,6 +225,43 @@ $('#CantidadComprada, #BrutoUnitario').on('input', function() {
 });
 
 function agregarProductoALaGrilla() {
+
+    var idProveedor = $('#cboProveedorCompra').val();
+    if (!idProveedor || idProveedor == 0) {
+        showAppAlert('error', "- Debe seleccionar el proveedor!", {
+            duration: 5000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+
+    var idDocumento = $('#cboDocumentoCompra').val();
+    if (!idDocumento || idDocumento == 0) {
+        showAppAlert('error', "- Debe seleccionar el documento de compra!", {
+            duration: 5000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+
+    var folio = $('#FolioDocumento').val();
+    if (!folio || folio.length == 0 || folio == "0") {
+        showAppAlert('error', "- Debe ingresar el folio del documento!", {
+            duration: 5000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+
+    var ProductoComprado = $("#cboProductosCompra").val();
+    if (!ProductoComprado || ProductoComprado == 0) {
+        showAppAlert('error', "- Debe seleccionar el producto comprado!", {
+            duration: 5000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+
     if (!compraValidada) {
         showAppAlert('error',"- Debe seleccionar un producto para validar la compra primero", {
             duration: 5000,
