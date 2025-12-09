@@ -57,7 +57,10 @@
 
     function grabarNuevoTipoEvento() {
         if ($('#nombreTipoEvento').val() == 0) {
-            swal("ERROR!", "No Ingreso El Nombre Del Tipo De Evento!", "error");
+            showAppAlert('error',"- No Ingreso El nombre del Tipo de Evento!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             idTipoEvento = $('#idTipoEvento').val();
             NombreTipoEvento = $('#nombreTipoEvento').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -69,7 +72,10 @@
             $.post(base_url + "index.php/TipoEvento/grabarNuevoTipoEvento", {
                     'prod': miJson
                 }).done(function() {
-                    swal("Listo", "Se registro Exitosamente El Tipo De Evento", "success");
+                    showAppAlert('success', "Se registro Exitosamente El Nuevo Tipo de Evento!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
                     $('#ModalNuevoTipoEvento').modal('hide');
                     tablaTipoEvento.ajax.reload();
                 })

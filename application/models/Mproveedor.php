@@ -14,7 +14,7 @@ class Mproveedor extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-		$q = "SELECT p.id_proveedor, p.nombre_proveedor, p.rut, p.dv, p.direccion, p.telefono, p.mail, p.giro from proveedor p 
+		$q = "SELECT p.id_proveedor, p.nombre_proveedor, p.rut, p.dv, p.direccion, p.telefono, p.mail, p.giro, p.creditomaximo from proveedor p 
 			order by p.id_proveedor asc";
 
 		$consulta = $this->db->query($q);
@@ -32,6 +32,7 @@ class Mproveedor extends CI_Model
 				"telefono" => $key->telefono,
 				"mail" => $key->mail,
 				"giro" => $key->giro,
+				"creditomaximo" => $key->creditomaximo,
 
 			));
 		}

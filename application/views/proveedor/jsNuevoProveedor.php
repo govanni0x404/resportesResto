@@ -95,6 +95,7 @@
 		$('#CorreoProveedor').val("");
 		$('#GiroProveedor').val("");
 		$('#CreditoProveedor').val("0");
+					
 		$('#ModalNuevoProveedor').modal({
 			backdrop: 'static',
 			keyboard: false
@@ -197,31 +198,37 @@
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#nombreProveedor').val() === '') {
+			return;
+		} if ($('#nombreProveedor').val() === '') {
 			showAppAlert('error',"- No Ingreso El Nombre Del Proveedor!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#DireccionProveedor').val() == 0) {
+			return;
+		} if ($('#DireccionProveedor').val() == 0) {
 			showAppAlert('error',"- No Ingreso La Direccion Del Proveedor!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#GiroProveedor').val() == 0) {
+			return;
+		} if ($('#GiroProveedor').val() == 0) {
 			showAppAlert('error',"- No Ingreso El Giro Del Proveedor!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($("#CorreoProveedor").val() != '' && !validateEmail($("#CorreoProveedor").val())) {
+			return;
+		} if ($("#CorreoProveedor").val() != '' && !validateEmail($("#CorreoProveedor").val())) {
 			showAppAlert('error',"- Correo Invalido!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		}else if ($("#CreditoProveedor").val() != '' && isNaN($("#CreditoProveedor").val())) {
+			return;
+		} if ($("#CreditoProveedor").val() != '' && isNaN($("#CreditoProveedor").val())) {
 			showAppAlert('error',"- Crédito debe ser un número válido!", {
        	 		duration: 5000,
         		image: base_url+ 'assets/img/errorGif.gif'
     		});
+			return
 		} else {
 			idProveedor = $('#idProveedor').val();
 			NombreProveedor = $('#nombreProveedor').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');

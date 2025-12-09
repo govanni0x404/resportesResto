@@ -153,7 +153,7 @@ $fechaActual = date('Y-m-d');
                                                     </div>
                                                     <div class="col-md-11 ">
                                                         <label for="nombreLprecio">LISTA DE PRECIOS *</label>
-                                                        <input type="text" class="form-control input-sm input-sm" maxlength='28' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreLprecio" id="nombreLprecio" requerido="si" value="" placeholder="Nombre Lista Precios" />
+                                                        <input type="text" class="form-control input-sm input-sm" maxlength='28' onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreLprecio" id="nombreLprecio" requerido="si" value="" placeholder="Nombre Lista Precios" />
                                                     </div>
                                                 </fieldset>
                                                 <!-- FIN CAMPOS DE REGISTRO  -->

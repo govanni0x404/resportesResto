@@ -57,7 +57,10 @@
 
     function grabarNuevoGastoEvento() {
         if ($('#nombreGastoEvento').val() == 0) {
-            swal("ERROR!", "No Ingreso El Nombre Del Gasto Evento!", "error");
+            showAppAlert('error',"- No Ingreso El nombre del Gasto en Evento!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             idGastoEvento = $('#idGastoEvento').val();
             NombreGastoEvento = $('#nombreGastoEvento').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -69,7 +72,10 @@
             $.post(base_url + "index.php/GastoEventos/grabarNuevoGastoEvento", {
                     'prod': miJson
                 }).done(function() {
-                    swal("Listo", "Se registro Exitosamente El Gasto Evento", "success");
+                    showAppAlert('success', "Se registro Exitosamente El Nuevo Gasto en Evento!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
                     $('#ModalNuevoGastoEvento').modal('hide');
                     tablaGastoEvento.ajax.reload();
                 })

@@ -245,7 +245,16 @@
                     'prod': miJson
                 }).done(function() {
                     $('#ModalNuevaLprecios').modal('hide');
-                    tableResumenListaPrecios.ajax.reload();
+                    
+                    // CAMBIO AQUÍ: Verificar si la tabla está inicializada antes de recargar
+                    if ($.fn.DataTable.isDataTable('#tableResumenListaPrecios') && 
+                        tableResumenListaPrecios.ajax.url()) {
+                        tableResumenListaPrecios.ajax.reload();
+                    } else {
+                        // Si no está inicializada, actualizar solo el combo
+                        ListadoListasDePrecios();
+                    }
+                    
                     showAppAlert('success', "Se registro Exitosamente La Nueva Lista De Precios!", {
                         duration: 4000,
                         image: base_url + 'assets/img/success.gif'

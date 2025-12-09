@@ -92,7 +92,10 @@
 
 	function GrabarNuevaFamilia() {
 		if ($('#nombreFamilia').val() == 0) {
-			swal("ERROR!", "No Ingreso El Nombre De La Familia!", "error");
+			showAppAlert('error',"- No Ingreso El nombre de la Familia!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($('#AliasFamilia').val().trim() === '') {
             $('#AliasFamilia').val($('#nombreFamilia').val().trim());
 		}else {
@@ -122,12 +125,18 @@
 			$.post(base_url + "index.php/Familias/grabarNuevaFamilia", {
 					'prod': miJson
 				}).done(function() {
-					swal("Listo", "Se registro Exitosamente La Nueva Familia", "success");
+					showAppAlert('success', "Se registro Exitosamente La Nueva Familia!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
 					$('#ModalNuevaFamilia').modal('hide');
 					tablaFamilias.ajax.reload();
 				})
 				.fail(function() {
-					swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador!", {
+                		duration: 5000,
+               	 		image: base_url+ 'assets/img/errorGif.gif'
+            		});
 				})
 				.always(function() {});
 		}

@@ -208,46 +208,54 @@
 	}
 
 	function grabarNuevoCliente() {
-		if ($('#RutCliente').val() == 0) {
+		if (!$('#RutCliente').val() || $('#RutCliente').val().trim() === '') {
 	        showAppAlert('error',"- No Ingreso El Rut Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#DireccionCliente').val() == 0) {
-			showAppAlert('error',"- No Ingreso La Direccion Del Cliente!", {
-                duration: 5000,
-                image: base_url+ 'assets/img/errorGif.gif'
-            });
-		} else if ($('#cboIdComuna').val() == 0) {
-			showAppAlert('error',"- No Selecciono La Comuna Del Cliente!", {
-                duration: 5000,
-                image: base_url+ 'assets/img/errorGif.gif'
-            });
-		} else if ($('#GiroCliente').val() == 0) {
-			showAppAlert('error',"- No Ingreso El Giro Del Cliente!", {
-                duration: 5000,
-                image: base_url+ 'assets/img/errorGif.gif'
-            });
-		} else if ($('#cboIdLprecio').val() == 0) {
-			showAppAlert('error',"- No Selecciono La Lista De Precios Del Cliente!", {
-                duration: 5000,
-                image: base_url+ 'assets/img/errorGif.gif'
-            });
-		} else if ($('#nombreCliente').val() == 0) {
+			return;
+		} if (!$('#nombreCliente').val() || $('#nombreCliente').val().trim() === '') {
 			showAppAlert('error',"- No Ingreso El Nombre Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($("#CorreoCliente").val() != '' && !validateEmail($("#CorreoCliente").val())) {
+			return;
+		} if (!$('#DireccionCliente').val() || $('#DireccionCliente').val().trim() === ''){
+			showAppAlert('error',"- No Ingreso La Direccion Del Cliente!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+			return;
+		} if (!$('#DireccionCliente').val() || $('#DireccionCliente').val() === '' || $('#DireccionCliente').val() === '0') {
+			showAppAlert('error',"- No escribio la direccion Del Cliente!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+			return;
+		} if (!$('#cboIdComuna').val() || $('#cboIdComuna').val() === '' || $('#cboIdComuna').val() === '0' || $('#cboIdComuna').val() === 0) {
+        	showAppAlert('error',"- No Selecciono La Comuna Del Cliente!", {
+            	duration: 5000,
+            	image: base_url+ 'assets/img/errorGif.gif'
+        	});
+        return;
+    	} if (!$('#GiroCliente').val() || $('#GiroCliente').val().trim() === '') {
+			showAppAlert('error',"- No Ingreso El Giro Del Cliente!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+			return;
+		} if (!$('#cboIdLprecio').val() || $('#cboIdLprecio').val() === '' || $('#cboIdLprecio').val() === '0') {
+			showAppAlert('error',"- No Selecciono La Lista De Precios Del Cliente!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+			return;
+		} if ($("#CreditoMaximoCliente").val() != '' && isNaN($("#CreditoMaximoCliente").val())) {
 			showAppAlert('error',"- Correo Invalido", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($("#CreditoMaximoCliente").val() != '' && isNaN($("#CreditoMaximoCliente").val())) {
-			showAppAlert('error',"- Crédito máximo debe ser un número válido!", {
-       	 		duration: 5000,
-        		image: base_url+ 'assets/img/errorGif.gif'
-    		});
+			return;
 		} else {
 			idCliente = $('#idCliente').val();
 			NombreCliente = $('#nombreCliente').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');

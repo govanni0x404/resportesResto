@@ -56,7 +56,10 @@
 
     function grabarNuevoIngresoEvento() {
         if ($('#nombreIngresoEvento').val() == 0) {
-            swal("ERROR!", "No Ingreso El Nombre Del Ingreso De Evento!", "error");
+            showAppAlert('error',"- No Ingreso El nombre del Evento!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             idIngresoEvento = $('#idIngresoEvento').val();
             NombreIngresoEvento = $('#nombreIngresoEvento').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -68,7 +71,10 @@
             $.post(base_url + "index.php/IngresoEventos/grabarNuevoIngresoEvento", {
                     'prod': miJson
                 }).done(function() {
-                    swal("Listo", "Se registro Exitosamente El Ingreso De Evento", "success");
+                    showAppAlert('success', "Se registro Exitosamente El Nuevo Evento!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
                     $('#ModalNuevoIngresoEvento').modal('hide');
                     tablaIngresosEvento.ajax.reload();
                 })

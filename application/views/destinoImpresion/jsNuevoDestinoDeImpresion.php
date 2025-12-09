@@ -152,7 +152,7 @@
 		$('#ckNoImprimirComprobantes').prop('checked', false);
 		$('#CkReemplazarPorDestinoRecinto').prop('checked', false);
 		$('#CkPermitirImpresionPrecuenta').prop('checked', false);
-		$('#ZiseFont').val("");
+		$('#cboZiseFont').val("");
 		sizeDimpresion();
 		$("#cboZiseFont").prop('disabled', true);
 		$('#ModalNuevoDestinoDeImpresion').modal({
@@ -167,18 +167,20 @@
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		}else if ($('#RutaWindowsImpresora').val() == 0) {
+			return;
+		} if ($('#RutaWindowsImpresora').val() === '') {
 			showAppAlert('error',"- No Ingreso La Ruta De Impresion!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
+			return;
 		} else {
 			IdDestinoDeImpresion = $('#idDestinoDeImpresion').val();
 			NombreDestinoDeImpresion = $('#nombreDestinoDeImpresion').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
 			rutaImpresora = $('#rutaImpresora').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
 			RutaWindowsImpresora = $('#RutaWindowsImpresora').val();
 			PuertoImpresora = $('#PuertoImpresora').val();
-			ZiseFont = $('#ZiseFont').val();
+			ZiseFont = $('#cboZiseFont').val();
 			if ($('#ckImpresionGraficaWindows').is(":checked")) {
 				var impresionGraficaWindows = 1
 			} else {
