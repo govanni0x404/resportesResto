@@ -39,10 +39,10 @@ $fechaActual = date('d-m-Y');
                                 <th class="text text-center">RUT</th>
                                 <th class="text text-center">DV</th>
                                 <th class="text text-center">RUT</th>
-                                <th class="text text-center">NOMBRE</th>
-                                <th class="text text-center">GIRO</th>
-                                <th class="text text-center">DIRECCION</th>
-                                <th class="text text-center">COMUNA</th>
+                                <th class="text text-left">NOMBRE</th>
+                                <th class="text text-left">GIRO</th>
+                                <th class="text text-left">DIRECCION</th>
+                                <th class="text text-left">COMUNA</th>
                                 <th class="text text-center">TELEFONO</th>
                             </tr>
                         </thead>
