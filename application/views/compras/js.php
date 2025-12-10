@@ -161,7 +161,7 @@ function ValidarCompra(callback) {
             });
 
             if (idCompra > 0) {
-                showAppAlert('COMPRA DUPLICADA',"- La compra ya se encuentra registrada. Fue ingresada el día: " + fecha, {
+                showAppAlert('COMPRA DUPLICADA',"- El documento indicado ya se encuentra registrado en otra compra del proveedor. Fue ingresada el día: " + fecha, {
                     duration: 5000,
                     image: base_url+ 'assets/img/errorGif.gif'
                 }); 

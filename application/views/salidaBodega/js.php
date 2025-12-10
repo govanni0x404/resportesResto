@@ -47,6 +47,14 @@ function agregarProductoALaGrilla() {
         });
         return;
     }
+
+    if ($('#cboInsumo').val() === '' || $('#cboInsumo').val() === null || $('#cboInsumo').val() == 0) {
+        showAppAlert('error', "- Debe seleccionar el insumo antes de agregar productos!", {
+            duration: 5000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
     
     var Cantidad_a_Ingresar = parseFloat($('#CantidadNew').val());
     var umedidaSalida = parseFloat($('#UmedidaInsumo').val());

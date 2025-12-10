@@ -224,12 +224,8 @@
     }
 
     function GrabarNuevaLprecio() {
-        var msg = "";
         if ($('#nombreLprecio').val() == 0) {
-            msg = "-> Nombre Lista Precios\n";
-        }
-        if (msg.length) {
-            showAppAlert('error',"- Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+            showAppAlert('error',"- El campo Nombre Lista de Precios no puede quedar vacio.", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
