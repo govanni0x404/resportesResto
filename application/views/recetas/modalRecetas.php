@@ -697,13 +697,13 @@
 				confirmButtonColor: "#DD6B55",
 				cancelButtonText: "Cancelar",
 				confirmButtonText: "Eliminar",
-				closeOnConfirm: false
+				closeOnConfirm: true
 			},
 			function() {
 				var cant_lineas = $('#cant_lineas').val();
 				$('#' + rnd).remove();
 				$('#cant_lineas').val(parseInt(cant_lineas) - 1);
-				showAppAlert('success', "", {
+				showAppAlert('success', "Insumo Eliminado Correctamente", {
                 	duration: 4000,
                     image: base_url + 'assets/img/success.gif'
                 });

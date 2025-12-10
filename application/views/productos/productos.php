@@ -32,7 +32,7 @@ $fechaActual = date('Y-m-d');
 				<div class="row " style="margin-bottom: 5px; margin-top: 20px; margin-right: 50px;">
 				<div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
 					<button onclick="crearNuevoProducto()" type="button" class="btn btn-primary">
-						<i class="fa fa-plus"></i> Nuevo Producto
+						<i class=""></i> Crear Nuevo Producto
 					</button>
 				</div>
 				</div>

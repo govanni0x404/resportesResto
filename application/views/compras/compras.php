@@ -134,13 +134,13 @@ $fechaActual = date('Y-m-d');
                         </table>
                     </div>
 
-                    <div class="row" style="margin-top: 20px;">
-                        <div class="col-md-7">
+                    <div class="" style="margin-top: 20px;">
+                        <div class="col-md-10">
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-1">
                             <label class="control-label">Total Compra:</label>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-0" style="margin-bottom: 30px;">
                             <div class="input-group">
                                 <span class="input-group-addon">$</span>
                                 <input type="number" disabled
@@ -156,7 +156,7 @@ $fechaActual = date('Y-m-d');
                             <button id="GrabaIngresoDeCompra"
                                 type="button"
                                 class="btn btn-primary btn-lg" 
-                                style="padding: 15px 40px; font-size: 16px;">
+                                style="padding: 10px 20px; font-size: 16px;">
                                 <i class="fa fa-save"></i> INGRESAR COMPRA
                             </button>
                         </div>

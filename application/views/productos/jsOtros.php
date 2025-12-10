@@ -65,8 +65,11 @@
                     'prod': miJson
                 }).done(function() {
                     $('#ModalNuevaFamilia').modal('hide');
-                    //tableResumenListaPrecios.ajax.reload();
-                    ListadoDeFamiliasMantenedor("GENERAL");
+                    ListadoDeFamiliasMantenedor(NombreFamilia);
+
+                    if (typeof ListadoDeFamilias === 'function') {
+                        ListadoDeFamilias(NombreFamilia);
+                    }
                     showAppAlert('success', "Se registro Exitosamente La Nueva Familia", {
                         duration: 4000,
                         image: base_url + 'assets/img/success.gif'
@@ -124,7 +127,11 @@
                 }).done(function() {
                     $('#ModalNuevaSubFamilia').modal('hide');
                     //tableResumenListaPrecios.ajax.reload();
-                    ListadoDeSubFamilias("");
+                    ListadoDeSubFamilias(NombreSubFamilia);
+
+                    if (typeof ListadoDeSubFamilias === 'function') {
+                        ListadoDeSubFamilias(NombreSubFamilia);
+                    }
                     showAppAlert('success', "Se registro Exitosamente La Nueva Sub Familia", {
                         duration: 4000,
                         image: base_url + 'assets/img/success.gif'
@@ -173,7 +180,11 @@
                 }).done(function() {
                     $('#ModalNuevaBodega').modal('hide');
                     //tableResumenListaPrecios.ajax.reload();
-                    ListadoDeBodega("BODEGA PRINCIPAL");
+                    ListadoDeBodega(NombreBodega);
+
+                    if (typeof ListadoDeBodega === 'function') {
+                        ListadoDeBodega(NombreBodega);
+                    }
                     showAppAlert('success', "Se registro Exitosamente La Nueva Bodega", {
                         duration: 4000,
                         image: base_url + 'assets/img/success.gif'

@@ -26,7 +26,7 @@
                     </div>
                     <br>
                     <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
-                    <button onclick="AbrirModalNuevoUsuario()" type="button" style="margin-right: 20px; margin-bottom:20px;" class="btn btn-primary"><i class="fa fa-plus"></i> Habilitar Nuevo Usuario</button>
+                    <button onclick="AbrirModalNuevoUsuario()" type="button" style="margin-right: 20px; margin-bottom:20px;" class="btn btn-primary"><i class=""></i> Crear Nuevo Usuario</button>
                     </div>
                     <div class="table-responsive" style="margin-top:10px; padding:5px;">
                         <table id="tablaUsuarios" class="display responsive" style="width: 100%">

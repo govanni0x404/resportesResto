@@ -67,7 +67,7 @@ $fechaActual = date('Y-m-d');
                 </div>
                 <br>
                 <div class="col-md-4">
-                    <button onclick="crearNuevaLprecio()" type="button" class="btn btn-primary"></i>Nueva Lista De Precios</button>
+                    <button onclick="crearNuevaLprecio()" type="button" class="btn btn-primary"></i>Crear Nueva Lista De Precios</button>
                 </div>
                 <div class="panel lobidisable">
                     <div class="panel-heading">
@@ -133,7 +133,7 @@ $fechaActual = date('Y-m-d');
                                     <!-- TITULO  MODAL  -->
                                     <div id="tituloModal" class="modal-header btn-success">
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                        <h4 class="modal-title text text-center">NUEVA LISTA DE PRECIOS
+                                        <h4 class="modal-title text text-center">CREAR NUEVA LISTA DE PRECIOS
                                         </h4>
                                     </div>
                                     <!-- FIN TITULO  MODAL  -->

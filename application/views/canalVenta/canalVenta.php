@@ -29,7 +29,7 @@
                     </div>
                     <br>
                     <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
-                    <button onclick="AbrirModalNuevoCentroCosto()" type="button" class="btn btn-primary" style="margin-right: 20px; margin-bottom:20px;"></i>Habilitar Nuevo Canal De Venta</button>
+                    <button onclick="AbrirModalNuevoCentroCosto()" type="button" class="btn btn-primary" style="margin-right: 20px; margin-bottom:20px;"></i>Crear Nuevo Canal De Venta</button>
                     </div>
                     <div class="table-responsive" style="margin-top:10px; padding:5px;">
                         <table id="tablaCanalVenta" class="display responsive" style="width: 100%">

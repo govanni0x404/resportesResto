@@ -15,7 +15,7 @@ class Agregados extends CI_Controller
       redirect(base_url()); //redireccionar al login
     }
     $data = array(
-      'nombreUsuario' => $this->session->userdata('nombre_usuario'),¿
+      'nombreUsuario' => $this->session->userdata('nombre_usuario'),
     );
     $this->load->view('menuTop.php', $data);
     $this->load->view('agregados/agregados.php');

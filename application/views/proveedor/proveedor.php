@@ -29,7 +29,7 @@
           </div>
           <br>
           <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
-            <button onclick="AbrirModalNuevoProveedor()" type="button" style="margin-right: 20px; margin-bottom:20px;" class="btn btn-primary"></i>Habilitar Nuevo Proveedor</button>
+            <button onclick="AbrirModalNuevoProveedor()" type="button" style="margin-right: 20px; margin-bottom:20px;" class="btn btn-primary"></i>Crear Nuevo Proveedor</button>
           </div>
           <div class="table-responsive" style="margin-top:10px; padding:5px;">
             <table id="tablaProveedor" class="display responsive" style="width: 100%">

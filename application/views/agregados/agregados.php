@@ -29,7 +29,7 @@
           </div>
           <br>
           <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
-          <button onclick="AbrirModalNuevoAgregados()" type="button" class="btn btn-primary gap-2" style="margin-right: 20px; margin-bottom:20px;"></i>Habilitar Nuevo Agregado</button>
+          <button onclick="AbrirModalNuevoAgregados()" type="button" class="btn btn-primary gap-2" style="margin-right: 20px; margin-bottom:20px;"></i>Crear Nuevo Agregado</button>
         </div>
           <div class="table-responsive" style="margin-top:10px; padding:5px;">
             <table id="tablaAgregados" class="display responsive" style="width: 100%">

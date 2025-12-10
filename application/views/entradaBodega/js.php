@@ -39,9 +39,19 @@ $('#cboInsumo').on('change', function() {
 
 
 function agregarProductoALaGrilla() {
+
+    if ($('#cboBodega').val() === '' || $('#cboBodega').val() === null || $('#cboBodega').val() == 0) {
+        showAppAlert('error', "- Debe seleccionar la Bodega antes de agregar productos!", {
+            duration: 5000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+
     var Cantidad_a_Ingresar = parseFloat($('#CantidadNew').val());
     var umedidaIngreso = parseFloat($('#UmedidaInsumo').val());
     ProductoComprado = $("#cboInsumo").val();
+
     if (ProductoComprado == null) {
         showAppAlert('error',"- Debe Seleccionar El Insumo!", {
             duration: 5000,

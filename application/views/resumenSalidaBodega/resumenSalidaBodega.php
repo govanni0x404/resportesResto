@@ -163,7 +163,7 @@ $fechaActual = date('d-m-Y');
 
                             <!-- BOTONES -->
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-danger" data-dismiss="modal"><i
+                                <button type="button" class="btn btn-default" data-dismiss="modal"><i
                                         class="fa fa-times-circle-o"></i> SALIR</button>
                             </div>
                             <!-- FIN BOTONES -->
