@@ -318,7 +318,7 @@
                                             <th style='display:none'>ID</th>
                                             <th style="width:30%">LISTA DE PRECIOS</th>
                                             <th class="text-right" style="width:30%">PRECIO BRUTO</th>
-                                            <th class="text-right" style="width:30%">COMISIÓN (%)</th>
+                                            <th class="text-right" style="width:30%">COMISIÓN</th>
                                         </tr>
                                     </thead>
                                     <tbody id="detallePrecioVenta">
@@ -330,7 +330,7 @@
                 </fieldset>
             </div>
             <div class="modal-footer">
-                <button onclick="grabarPreciosYProducto()" type="button" class="btn btn-danger">
+                <button onclick="grabarPreciosYProducto()" type="button" class="btn btn-primary">
                     <i class="fa fa-save"></i> Grabar Precios y Comisiones
                 </button>
                 <button onclick="cancelarEdicionPrecios()" type="button" class="btn btn-white">
@@ -669,9 +669,9 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button id="btnActualizarAgregado" type="button" class="btn btn-success"><i
+                <button id="btnActualizarAgregado" type="button" class="btn btn-primary"><i
                         class="fa fa-check-square-o"></i>ACTUALIZAR AGREGADO</button>
-                <button type="button" class="btn btn-danger" data-dismiss="modal"><i
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i
                         class="fa fa-times-circle"></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
@@ -722,7 +722,7 @@
                         </fieldset>
                         <fieldset>
                             <div class="col-md-4">
-                                <button onclick="grabarMsgProductos()" type="button" class="btn btn-success"><i
+                                <button onclick="grabarMsgProductos()" type="button" class="btn btn-primary"><i
                                         class="fa fa-check-square-o"></i>GRABAR MENSAJE</button>
                             </div>
                             <!--<div class="col-md-4">
@@ -761,7 +761,7 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger" data-dismiss="modal"><i
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i
                         class="fa fa-times-circle"></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
