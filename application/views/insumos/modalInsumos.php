@@ -146,9 +146,9 @@
 											<thead>
 												<tr>
 													<th class="text text-center">INSUMO</th>
-													<th class="text text-center">BODEGA</th>
+													<th class="text text-left">BODEGA</th>
 													<th class="text text-center">STOCK</th>
-													<th class="text text-center">U/MED. INV.</th>
+													<th class="text text-left">U/MED. INV.</th>
 													<th class="text text-center"></th>
 												</tr>
 											</thead>
@@ -259,9 +259,9 @@
 										<table id="tableRecetasInsumo" class="display responsive" style="width: 100%">
 											<thead>
 												<tr>
-													<th class="text text-center">RECETA</th>
+													<th class="text text-left">RECETA</th>
 													<th class="text text-center">CANTIDAD</th>
-													<th class="text text-center">U/MEDIDA</th>
+													<th class="text text-left">U/MEDIDA</th>
 													<th class="text text-center"></th>
 												</tr>
 											</thead>
@@ -322,10 +322,10 @@
 							<thead>
 								<tr>
 									<th class="text text-center">FECHA COMPRA</th>
-									<th class="text text-center">NOMBRE PROVEEDOR</th>
+									<th class="text text-left">NOMBRE PROVEEDOR</th>
 									<th class="text text-center">CANTIDAD</th>
 									<th class="text text-center">BRUTO UN.</th>
-									<th class="text text-center">TIPO DOCUMENTO</th>
+									<th class="text text-left">TIPO DOCUMENTO</th>
 									<th class="text text-center">FOLIO DOC.</th>
 									<th class="text text-center"></th>
 									<th class="text text-center"></th>
@@ -339,7 +339,7 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -489,36 +489,62 @@
 		var msg = "";
 
 		console.log(inv_cierre);
-		if ($('#nombreInsumo').val() == 0) {
-			msg = "-> Nombre Insumo\n";
-		}
-		if ($('#cboGrupoInsumo').val() == 0) {
-			msg = "-> Grupo del Insumo\n";
-		}
-		if ($('#cboIva').val() == 0) {
-			msg = "-> Iva Insumo\n";
-		}
-		if ($('#cboImptoAdicional').val() == 0) {
-			msg = "-> Impuesto Adicional Insumo\n";
-		}
-		if ($('#medInventario').val() == 0) {
-			msg = "-> Unidad Medida Inventario\n";
-		}
-		if ($('#cboUnMedInventario').val() == 0) {
-			msg = "-> Tipo Unidad Medida Inventario\n";
-		}
-		if ($('#medReceta').val() == 0) {
-			msg = "-> Unidad Medida Receta\n";
-		}
-		if ($('#cboUnMedReceta').val() == 0) {
-			msg = "-> Tipo Unidad Medida Receta\n";
-		}
-		if (msg.length) {
-		    showAppAlert('error',"- Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, "error", {
+		if ($('#nombreInsumo').val() === '') {
+			showAppAlert('error',"- Falta Ingresar el nombre del Insumo", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else {
+			return;
+		}
+		if ($('#cboGrupoInsumo').val() == 0) {
+			showAppAlert('error',"- Falta Seleccionar la Familia/Grupo del Insumo", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#cboIva').val() == 0) {
+			showAppAlert('error',"- Falta Seleccionar el iva del Insumo", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#cboImptoAdicional').val() == 0) {
+			showAppAlert('error',"- Falta Seleccionar el Impuesto Adicional del Insumo", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#medInventario').val() == 0) {
+			showAppAlert('error',"- Falta Ingresar la medida de Inventario del Insumo", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#cboUnMedInventario').val() == 0) {
+			showAppAlert('error',"- Falta Seleccionar la Unidad de Medida el nombre del Insumo", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#medReceta').val() == 0) {
+			showAppAlert('error',"- Falta Ingresar la medida de Receta del Insumo", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#cboUnMedReceta').val() == 0) {
+			showAppAlert('error',"- Falta Seleccionar la unidad de medida de Receta del Insumo", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+			return;
+		}else {
 			//grabar datos
 
 			$.post(base_url + "index.php/Insumos/getSiguienteInsumo", {}).done(function(datos) {
@@ -669,12 +695,12 @@
 				},
 				{
 					mData: "cantidad",
-					className: "text-right",
+					className: "text-center",
 					width: "5%",
 				},
 				{
 					mData: "bruto_unitario",
-					className: "text-right",
+					className: "text-center",
 					width: "40%",
 				},
 				{
@@ -684,7 +710,7 @@
 				},
 				{
 					mData: "numero_documento",
-					className: "text-right",
+					className: "text-center",
 					width: "40%",
 				},
 				{
@@ -742,17 +768,17 @@
 			},
 			"columns": [{
 					mData: "nombre_receta",
-					className: "text-center",
-					width: "50%",
-				},
-				{
-					mData: "rendimiento",
 					className: "text-left",
 					width: "50%",
 				},
 				{
+					mData: "rendimiento",
+					className: "text-center",
+					width: "50%",
+				},
+				{
 					mData: "nombre_umedida",
-					className: "text-right",
+					className: "text-left",
 					width: "5%",
 				},
 				{

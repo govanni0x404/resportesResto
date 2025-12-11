@@ -293,32 +293,47 @@
 
 		// Validaciones
 		if ($('#nombreReceta').val() == 0) {
-			msg += "-> Nombre Receta\n";
-		}
-		if ($('#rendimientoReceta').val() == 0) {
-			msg += "-> Rendimiento Receta\n";
-		}
-		if ($('#brutoSugerido').val() == 0) {
-			msg += "-> Precio Venta Sugerido\n";
-		}
-		if ($('#cboUnMedida').val() == 0) {
-			msg += "-> Unidad de Medida\n";
-		}
-		if ($('#cboGrupoReceta').val() == 0) {
-			msg += "-> Grupo Receta\n";
-		}
-		if ($('#cboSeccionReceta').val() == 0) {
-			msg += "-> Seccion Receta\n";
-		}
-
-		if (msg.length) {
-			showAppAlert('error', "Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+			showAppAlert('error', "Falta Ingresar el Nombre de la Receta", {
                 duration: 6000,
                 image: base_url + 'assets/img/errorGif.gif'
             });
 			return;
 		}
-
+		if ($('#rendimientoReceta').val() == 0) {
+			showAppAlert('error', "Falta Ingresar el Rendimiento de la Receta", {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#brutoSugerido').val() == 0) {
+			showAppAlert('error', "Falta Ingresar el Precio Bruto de la Receta", {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#cboUnMedida').val() == 0) {
+			showAppAlert('error', "Falta Ingresar la Unidad de Medida de la Receta", {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#cboGrupoReceta').val() == 0) {
+			showAppAlert('error', "Falta Seleccionar el Grupo/Familia de la Receta", {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#cboSeccionReceta').val() == 0) {
+			showAppAlert('error', "Falta Seleccionar la Seccion de la Receta", {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
+			return;
+		}
 		// Preparar JSON de la receta
 		var miJson = {
 			'id_receta': id_receta,
