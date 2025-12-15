@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DATAMAULE - Login</title>
+    <title>DATARESTO</title>
 
     <link rel="shortcut icon" href="<?php echo base_url() ?>assets/dist/img/ico/datamaule36x36.png" type="image/x-icon">
     
@@ -294,7 +294,7 @@
         <div class="login-card">
             <div class="login-header">
                 <div class="login-icon">
-                    <img src="<?php echo base_url() ?>assets/dist/img/logoDatamaule.jpg" alt="Logo Datamaule">
+                    <img src="<?php echo base_url() ?>assets/dist/img/logoDatamaule2.jpg" alt="Logo Datamaule">
                 </div>
                 <h1 class="login-title">dat@Resto</h1>
                 <p class="login-subtitle">Bienvenido de nuevo</p>
