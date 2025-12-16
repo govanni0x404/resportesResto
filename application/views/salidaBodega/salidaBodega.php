@@ -35,7 +35,7 @@ $fechaActual = date('Y-m-d');
                     <div class="col-md-2">
                         <label for="Fecha">Fecha</label>
                         <input type="text" id="Fecha" class="form-control input-sm"
-                            value="<?php echo $fechaActual; ?>" />
+                            value="<?php echo date('d-m-Y'); ?>" />
                     </div>
                     <br>
                     <!--

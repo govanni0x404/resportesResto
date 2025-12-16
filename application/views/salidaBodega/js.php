@@ -3,7 +3,24 @@ var base_url = "<?php echo base_url(); ?>";
 $(document).ready(function() {
     $('#Fecha').daterangepicker({
         "singleDatePicker": true,
-        "format": 'DD-MM-YYYY',
+        "autoApply": true,
+        "format": "DD-MM-YYYY",
+        "locale": {
+            "format": "DD-MM-YYYY",
+            "separator": " - ",
+            "applyLabel": "Aplicar",
+            "cancelLabel": "Cancelar",
+            "fromLabel": "Desde",
+            "toLabel": "Hasta",
+            "customRangeLabel": "Rango personalizado",
+            "weekLabel": "S",
+            "daysOfWeek": ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
+            "monthNames": [
+                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+            ],
+            "firstDay": 1
+        }
     });
     ListadoBodegas("");
     ListadoInsumos("");
