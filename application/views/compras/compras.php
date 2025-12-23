@@ -35,8 +35,18 @@ $fechaActual = date('Y-m-d');
                     <fieldset>
                         <div class="col-md-3">
                             <label for="cboProveedorCompra">Proveedor</label>
-                            <select id="cboProveedorCompra" nombre="cboProveedorCompra" class="form-control input-sm"
-                                style="width:100%" requerido="si"></select>
+                                <div class="input-group">
+                                    <select id="cboProveedorCompra" nombre="cboProveedorCompra" class="form-control input-sm"
+                                        style="width:100%" requerido="si"></select>
+                                    
+                                        <span class="input-group-btn">
+                                            <button class="btn btn-success btn-sm" type="button" id="btnNuevoProveedorCompra" 
+                                                style="height: 30px;" title="Agregar nuevo proveedor"
+                                                onclick="AbrirModalNuevoProveedor()">
+                                                <i class="fa fa-plus"></i>
+                                            </button>
+                                        </span>
+                                </div>
                         </div>
 
                         <div class="col-md-3">
@@ -166,3 +176,4 @@ $fechaActual = date('Y-m-d');
         </div>
     </div>
 </div>
+ <?php $this->load->view('proveedor/jsNuevoProveedor.php'); ?>

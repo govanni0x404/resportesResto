@@ -260,7 +260,24 @@
                         image: base_url + 'assets/img/success.gif'
                     });
 					$('#ModalNuevoProveedor').modal('hide');
-					tablaProveedor.ajax.reload();
+					 if (typeof ListarProveedores === 'function') {
+						ListarProveedores("");
+						
+						try {
+							var nuevoProveedor = JSON.parse(response);
+							if (nuevoProveedor.id_proveedor) {
+								setTimeout(function() {
+									$('#cboProveedorCompra').val(nuevoProveedor.id_proveedor).trigger('change');
+								}, 500);
+							}
+						} catch(e) {
+							console.log("No se pudo seleccionar automáticamente el nuevo proveedor");
+						}
+					}
+					
+					if (typeof tablaProveedor !== 'undefined') {
+						tablaProveedor.ajax.reload();
+					}
 				})
 				.fail(function() {
 					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador!", {

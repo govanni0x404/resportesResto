@@ -60,7 +60,15 @@ class Proveedor extends CI_Controller
       'creditomaximo' => $creditomaximo,
     );
     $r = $this->Mproveedor->grabarNuevoProveedor($id, $miData);
-    echo json_encode($r);
+    if ($r && isset($r['id_proveedor'])) {
+        echo json_encode(array(
+            'success' => true,
+            'id_proveedor' => $r['id_proveedor'],
+            'message' => 'Proveedor grabado exitosamente'
+        ));
+    } else {
+        echo json_encode($r);
+    }
   }
 
   public function busquedaProveedorPorRut()
