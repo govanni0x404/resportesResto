@@ -75,8 +75,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i> GRABAR AGREGADO</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
+				<button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-primary"><i class=""></i> GRABAR AGREGADO</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i> SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -105,22 +105,22 @@
 		ValorAdicionalAgregado = $('#valorAdicionalAgregado').val();
 
 		if (ProductoMaestro == null) {
-			showAppAlert('error',"- No Selecciono El Producto De Venta Con Agregado!", {
+			showAppAlert('error',"No Selecciono El Producto De Venta Con Agregado!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
 			});
 		} else if (ProductoAgregado == null) {
-			showAppAlert('error',"- No Selecciono El Agregado!", {
+			showAppAlert('error',"No Selecciono El Agregado!", {
             	duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
 			});
 		} else if (CantidadAgregado == 0) {
-			showAppAlert('error',"- No Ingreso La Cantidad Del Agregado!", {
+			showAppAlert('error',"No Ingreso La Cantidad Del Agregado!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
 			});
 		}else if (ValorAdicionalAgregado == 0){
-			showAppAlert('error',"- No Ingreso El valor Adicional Del Agregado!", {
+			showAppAlert('error',"No Ingreso El valor Adicional Del Agregado!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
 			});		
@@ -159,7 +159,7 @@
 					tablaAgregados.ajax.reload();
 				})
 				.fail(function() {
-					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador.", {
+					showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador.", {
                         duration: 5000,
                         image: base_url+ 'assets/img/errorGif.gif'
 					});

@@ -80,8 +80,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarNuevaFormaDePago()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+                <button onclick="GrabarNuevaFormaDePago()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -103,7 +103,7 @@
 
     function GrabarNuevaFormaDePago() {
         if ($('#nombreFormaDePago').val() == 0) {
-            showAppAlert('error',"- No Ingreso El Nombre De La Forma De Pago!", {
+            showAppAlert('error',"No Ingreso El Nombre De La Forma De Pago!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
@@ -149,7 +149,7 @@
                     tablaFormasDePago.ajax.reload();
                 })
                 .fail(function() {
-                    showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                    showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {
                         duration: 5000,
                         image: base_url+ 'assets/img/errorGif.gif'
                     });

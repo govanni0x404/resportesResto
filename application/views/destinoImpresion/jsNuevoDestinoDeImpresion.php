@@ -132,8 +132,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarNuevoDestinoDeImpresion()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+				<button onclick="grabarNuevoDestinoDeImpresion()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -163,13 +163,13 @@
 
 	function grabarNuevoDestinoDeImpresion() {
 		if ($('#nombreDestinoDeImpresion').val() == 0) {
-			showAppAlert('error',"- No Ingreso El Nombre Del Destino De Impresion!", {
+			showAppAlert('error',"No Ingreso El Nombre Del Destino De Impresion!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		} if ($('#RutaWindowsImpresora').val() === '') {
-			showAppAlert('error',"- No Ingreso La Ruta De Impresion!", {
+			showAppAlert('error',"No Ingreso La Ruta De Impresion!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
@@ -237,7 +237,7 @@
 					tablaDestinoImpresion.ajax.reload();
 				})
 				.fail(function() {
-					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+					showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {
                 		duration: 5000,
                 		image: base_url+ 'assets/img/errorGif.gif'
             		});

@@ -36,8 +36,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="grabarNuevoGastoEvento()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+                <button onclick="grabarNuevoGastoEvento()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -57,7 +57,7 @@
 
     function grabarNuevoGastoEvento() {
         if ($('#nombreGastoEvento').val() == 0) {
-            showAppAlert('error',"- No Ingreso El nombre del Gasto en Evento!", {
+            showAppAlert('error',"No Ingreso El nombre del Gasto en Evento!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });

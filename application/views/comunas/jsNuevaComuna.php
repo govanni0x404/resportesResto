@@ -41,8 +41,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="grabarNuevaComuna()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+                <button onclick="grabarNuevaComuna()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -61,12 +61,12 @@
 
     function grabarNuevaComuna() {
         if ($('#nombreComuna').val() === '') {
-            showAppAlert('error',"- No Ingreso El Nombre De La Comuna!", {
+            showAppAlert('error',"No Ingreso El Nombre De La Comuna!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
         }else if ($('#cboIdProvincia').val() == 0) {
-            showAppAlert('error',"- No Selecciono La Provincia!", {
+            showAppAlert('error',"No Selecciono La Provincia!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
@@ -90,7 +90,7 @@
                     tablaComuna.ajax.reload();
                 })
                 .fail(function() {
-                    showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                    showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {
                         duration: 5000,
                         image: base_url+ 'assets/img/errorGif.gif'
                     });

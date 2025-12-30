@@ -177,8 +177,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button type="button" class="btn btn-primary" id="btnGrabarInsumo"><i class="fa fa-check-square-o"></i> GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
+				<button type="button" class="btn btn-primary" id="btnGrabarInsumo"><i class=""></i> GRABAR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i> SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -316,15 +316,15 @@
             });
 			return;
 		}
-		if ($('#brutoSugerido').val() == 0) {
-			showAppAlert('error', "Falta Ingresar el Precio Bruto de la Receta", {
+		if ($('#cboUnMedida').val() == 0) {
+			showAppAlert('error', "Falta Ingresar la Unidad de Medida de la Receta", {
                 duration: 6000,
                 image: base_url + 'assets/img/errorGif.gif'
             });
 			return;
 		}
-		if ($('#cboUnMedida').val() == 0) {
-			showAppAlert('error', "Falta Ingresar la Unidad de Medida de la Receta", {
+		if ($('#brutoSugerido').val() == 0) {
+			showAppAlert('error', "Falta Ingresar el Precio Bruto de la Receta", {
                 duration: 6000,
                 image: base_url + 'assets/img/errorGif.gif'
             });

@@ -41,8 +41,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarNuevaSubFamilia()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+                <button onclick="GrabarNuevaSubFamilia()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -62,13 +62,13 @@
 
     function GrabarNuevaSubFamilia() {
         if ($('#nombreSubFamilia').val() == 0) {
-            showAppAlert('error',"- No Ingreso El Nombre De La Sub Familia!", {
+            showAppAlert('error',"No Ingreso El Nombre De La Sub Familia!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
         }
         else if ($('#cboIdFamilia').val() == null) {
-            showAppAlert('error',"- No Selecciono La Familia!", {
+            showAppAlert('error',"No Selecciono La Familia!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
@@ -94,7 +94,7 @@
                     tablaSubFamilia.ajax.reload();
                 })
                 .fail(function() {
-                    showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                    showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {
                         duration: 5000,
                         image: base_url+ 'assets/img/errorGif.gif'
                     });

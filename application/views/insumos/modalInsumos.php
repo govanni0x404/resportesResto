@@ -164,15 +164,15 @@
 									</div>
 								</fieldset>
 								<fieldset>
-									<div class="col-md-10">
+									<div class="col-md-6">
 										<label for="costoReceta">C. NETO + I. ADIC (C. RECETA)</label>
 										<input type="number" class="form-control input-sm input-sm" name="costoReceta" onkeypress="return soloNumeros(event)" id="costoReceta" requerido="no" value="">
 									</div>
-									<div class="col-md-10">
+									<div class="col-md-6">
 										<label for="costoBruto">COSTO BRUTO PP (INFORM)</label>
 										<input type="number" class="form-control input-sm input-sm" name="costoBruto" onkeypress="return soloNumeros(event)" id="costoBruto" requerido="no" value="">
 									</div>
-									<div class="col-md-10">
+									<div class="col-md-6">
 										<label for="costoUltCompra">C. ULT. COMPRA</label>
 										<input type="number" class="form-control input-sm input-sm" name="costoUltCompra" onkeypress="return soloNumeros(event)" id="costoUltCompra" requerido="no" value="">
 									</div>
@@ -181,7 +181,7 @@
 								<fieldset>
 									<div class="col-md-8"></div>
 									<div class="col-md-4">
-										<button type="button" class="btn btn-success" id="btnHistoricoCompras">HISTORICO DE COMPRAS</button>
+										<button type="button" class="btn btn-primary" id="btnHistoricoCompras">HISTORICO DE COMPRAS</button>
 									</div>
 								</fieldset>
 							</div>
@@ -290,8 +290,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button type="button" class="btn btn-primary" id="btnGrabarInsumo"><i class="fa fa-check-square-o"></i> GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
+				<button type="button" class="btn btn-primary" id="btnGrabarInsumo"><i class=""></i> GRABAR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i> SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -321,7 +321,7 @@
 						<table id="tableHistoricoCompras" class="display responsive" style="width: 100%">
 							<thead>
 								<tr>
-									<th class="text text-center">FECHA COMPRA</th>
+									<th class="text text-left">FECHA COMPRA</th>
 									<th class="text text-left">NOMBRE PROVEEDOR</th>
 									<th class="text text-center">CANTIDAD</th>
 									<th class="text text-center">BRUTO UN.</th>
@@ -490,56 +490,56 @@
 
 		console.log(inv_cierre);
 		if ($('#nombreInsumo').val() === '') {
-			showAppAlert('error',"- Falta Ingresar el nombre del Insumo", {
+			showAppAlert('error',"Falta Ingresar el nombre del Insumo", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		}
 		if ($('#cboGrupoInsumo').val() == 0) {
-			showAppAlert('error',"- Falta Seleccionar la Familia/Grupo del Insumo", {
+			showAppAlert('error',"Falta Seleccionar la Familia/Grupo del Insumo", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		}
 		if ($('#cboIva').val() == 0) {
-			showAppAlert('error',"- Falta Seleccionar el iva del Insumo", {
+			showAppAlert('error',"Falta Seleccionar el iva del Insumo", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		}
 		if ($('#cboImptoAdicional').val() == 0) {
-			showAppAlert('error',"- Falta Seleccionar el Impuesto Adicional del Insumo", {
+			showAppAlert('error',"Falta Seleccionar el Impuesto Adicional del Insumo", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		}
 		if ($('#medInventario').val() == 0) {
-			showAppAlert('error',"- Falta Ingresar la medida de Inventario del Insumo", {
+			showAppAlert('error',"Falta Ingresar la medida de Inventario del Insumo", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		}
 		if ($('#cboUnMedInventario').val() == 0) {
-			showAppAlert('error',"- Falta Seleccionar la Unidad de Medida el nombre del Insumo", {
+			showAppAlert('error',"Falta Seleccionar la Unidad de Medida el nombre del Insumo", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		}
 		if ($('#medReceta').val() == 0) {
-			showAppAlert('error',"- Falta Ingresar la medida de Receta del Insumo", {
+			showAppAlert('error',"Falta Ingresar la medida de Receta del Insumo", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		}
 		if ($('#cboUnMedReceta').val() == 0) {
-			showAppAlert('error',"- Falta Seleccionar la unidad de medida de Receta del Insumo", {
+			showAppAlert('error',"Falta Seleccionar la unidad de medida de Receta del Insumo", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
@@ -607,7 +607,7 @@
                                 	});
 								})
 								.fail(function() {
-									showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+									showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {
                                     	duration: 5000,
                                     	image: base_url+ 'assets/img/errorGif.gif'
                                 	});
@@ -627,11 +627,11 @@
         									});
 										})
 										.fail(function() {
-											showAppAlert('error', "- Se produjo un error al realizar el proceso, favor contacte a su administrador", 
+											showAppAlert('error', "Se produjo un error al realizar el proceso, favor contacte a su administrador", 
 											{ duration: 5000, image: base_url+ 'assets/img/errorGif.gif' });
 										})
 								} else {
-									showAppAlert('error',"- El código de barras ingresado ya existe.", {
+									showAppAlert('error',"El código de barras ingresado ya existe.", {
                                     	duration: 5000,
                                     	image: base_url+ 'assets/img/errorGif.gif'
                                 	});
@@ -640,7 +640,7 @@
 						}
 					})
 					.fail(function() {
-						showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador.", {
+						showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador.", {
                           	duration: 5000,
                           	image: base_url+ 'assets/img/errorGif.gif'
 						});

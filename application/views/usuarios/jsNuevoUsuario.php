@@ -82,8 +82,8 @@ function cargarRoles(callback) {
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="grabarNuevoUsuario()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i> GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
+                <button onclick="grabarNuevoUsuario()" type="button" class="btn btn-primary"><i class=""></i> GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -131,7 +131,7 @@ function cargarRoles(callback) {
 			var idRol = $("#rolUsuario").val();
             
             if (vigenteSeleccionado == "" || vigenteSeleccionado == null) {
-                showAppAlert('error', "- Debe seleccionar el estado de vigencia!", {
+                showAppAlert('error', "Debe seleccionar el estado de vigencia!", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });
@@ -149,12 +149,12 @@ function cargarRoles(callback) {
 			};
 
             if(nombre === ""){
-				showAppAlert('error', "- El nombre de Usuario no puede quedar vacio.", {
+				showAppAlert('error', "El nombre de Usuario no puede quedar vacio.", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });
 			}else if(clave === ""){
-				showAppAlert('error', "- La clave de Usuario no puede quedar vacia", {
+				showAppAlert('error', "La clave de Usuario no puede quedar vacia", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });
@@ -174,7 +174,7 @@ function cargarRoles(callback) {
                 })
                 .fail(function(jqXHR, textStatus, errorThrown) {
                     console.error('Error:', textStatus, errorThrown);
-                    showAppAlert('error', "- Se produjo un error al realizar el proceso", {
+                    showAppAlert('error', "Se produjo un error al realizar el proceso", {
                         duration: 5000,
                         image: base_url + 'assets/img/errorGif.gif'
                     });
@@ -183,7 +183,7 @@ function cargarRoles(callback) {
         } else {
             // Modo creación
             if ($('#nombreUsuario').val() == "" || $('#nombreUsuario').val() == null) {
-                showAppAlert('error', "- Debe ingresar el nombre de usuario!", {
+                showAppAlert('error', "Debe ingresar el nombre de usuario!", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });
@@ -191,7 +191,7 @@ function cargarRoles(callback) {
             }
             
             if ($('#claveUsuario').val() == "" || $('#claveUsuario').val() == null) {
-                showAppAlert('error', "- Debe ingresar la clave de usuario!", {
+                showAppAlert('error', "Debe ingresar la clave de usuario!", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });
@@ -199,7 +199,7 @@ function cargarRoles(callback) {
             }
 
 			if ($("#rolUsuario").val() == "" || $("#rolUsuario").val() == null) {
-			    showAppAlert('error', "- Debe seleccionar un rol!", {
+			    showAppAlert('error', "Debe seleccionar un rol!", {
         			duration: 5000,
         			image: base_url + 'assets/img/errorGif.gif'
     			});
@@ -234,7 +234,7 @@ function cargarRoles(callback) {
                 })
                 .fail(function(jqXHR, textStatus, errorThrown) {
                     console.error('Error:', textStatus, errorThrown);
-                    showAppAlert('error', "- Se produjo un error al realizar el proceso", {
+                    showAppAlert('error', "Se produjo un error al realizar el proceso", {
                         duration: 5000,
                         image: base_url + 'assets/img/errorGif.gif'
                     });

@@ -54,8 +54,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarNuevoImpuesto()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+				<button onclick="grabarNuevoImpuesto()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -76,12 +76,12 @@
 
 	function grabarNuevoImpuesto() {
 		if ($('#nombreImpuesto').val() == 0) {
-			showAppAlert('error',"- No Ingreso El Nombre Del Impuesto!", {
+			showAppAlert('error',"No Ingreso El Nombre Del Impuesto!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 		} else if ($('#TasaImpuesto').val() == 0) {
-			showAppAlert('error',"- No Ingreso La Tasa Del Impuesto!", {
+			showAppAlert('error',"No Ingreso La Tasa Del Impuesto!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             })
@@ -109,7 +109,7 @@
 					tablaImpuestos.ajax.reload();
 				})
 				.fail(function() {
-					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+					showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {
                 		duration: 5000,
                 		image: base_url+ 'assets/img/errorGif.gif'
             		})

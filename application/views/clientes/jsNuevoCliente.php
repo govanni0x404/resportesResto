@@ -91,8 +91,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarNuevoCliente()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+				<button onclick="grabarNuevoCliente()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -209,49 +209,49 @@
 
 	function grabarNuevoCliente() {
 		if (!$('#RutCliente').val() || $('#RutCliente').val().trim() === '') {
-	        showAppAlert('error',"- No Ingreso El Rut Del Cliente!", {
+	        showAppAlert('error',"No Ingreso El Rut Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		} if (!$('#nombreCliente').val() || $('#nombreCliente').val().trim() === '') {
-			showAppAlert('error',"- No Ingreso El Nombre Del Cliente!", {
+			showAppAlert('error',"No Ingreso El Nombre Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		} if (!$('#DireccionCliente').val() || $('#DireccionCliente').val().trim() === ''){
-			showAppAlert('error',"- No Ingreso La Direccion Del Cliente!", {
+			showAppAlert('error',"No Ingreso La Direccion Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		} if (!$('#DireccionCliente').val() || $('#DireccionCliente').val() === '' || $('#DireccionCliente').val() === '0') {
-			showAppAlert('error',"- No escribio la direccion Del Cliente!", {
+			showAppAlert('error',"No escribio la direccion Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		} if (!$('#cboIdComuna').val() || $('#cboIdComuna').val() === '' || $('#cboIdComuna').val() === '0' || $('#cboIdComuna').val() === 0) {
-        	showAppAlert('error',"- No Selecciono La Comuna Del Cliente!", {
+        	showAppAlert('error',"No Selecciono La Comuna Del Cliente!", {
             	duration: 5000,
             	image: base_url+ 'assets/img/errorGif.gif'
         	});
         return;
     	} if (!$('#GiroCliente').val() || $('#GiroCliente').val().trim() === '') {
-			showAppAlert('error',"- No Ingreso El Giro Del Cliente!", {
+			showAppAlert('error',"No Ingreso El Giro Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		} if (!$('#cboIdLprecio').val() || $('#cboIdLprecio').val() === '' || $('#cboIdLprecio').val() === '0') {
-			showAppAlert('error',"- No Selecciono La Lista De Precios Del Cliente!", {
+			showAppAlert('error',"No Selecciono La Lista De Precios Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 			return;
 		} if ($("#CreditoMaximoCliente").val() != '' && isNaN($("#CreditoMaximoCliente").val())) {
-			showAppAlert('error',"- Correo Invalido", {
+			showAppAlert('error',"El Correo ingresado es invalido", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
