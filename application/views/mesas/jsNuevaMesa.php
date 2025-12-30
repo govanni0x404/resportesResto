@@ -121,7 +121,7 @@
             var cantidad = parseInt($('#cantidadMesas').val());
             
             if (isNaN(cantidad) || cantidad < 1) {
-                showAppAlert('error', "- Debe ingresar una cantidad válida de mesas (mínimo 1)!", {
+                showAppAlert('error', "Debe ingresar una cantidad válida de mesas (mínimo 1)!", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });

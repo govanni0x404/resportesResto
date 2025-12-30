@@ -68,7 +68,7 @@ $('#cboProductosCompra').on('change', function() {
     var fechaSeleccionada = $('#FechaCompra').val();
     
     if (!idProveedor || idProveedor == 0) {
-        showAppAlert('error',"- Debe seleccionar el proveedor primero", {
+        showAppAlert('error',"Debe seleccionar primero al proveedor", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
@@ -165,7 +165,7 @@ function ValidarCompra(callback) {
             });
 
             if (idCompra > 0) {
-                showAppAlert('COMPRA DUPLICADA',"- El documento indicado ya se encuentra registrado en otra compra del proveedor. Fue ingresada el día: " + fecha, {
+                showAppAlert('COMPRA DUPLICADA',"El folio/numero del documento indicado ya se encuentra registrado en otra compra del mismo proveedor. Esta fue ingresada el día: " + fecha, {
                     duration: 5000,
                     image: base_url+ 'assets/img/errorGif.gif'
                 }); 
@@ -231,7 +231,7 @@ $('#CantidadComprada, #BrutoUnitario').on('input', function() {
 function agregarProductoALaGrilla() {
     var idProveedor = $('#cboProveedorCompra').val();
     if (!idProveedor || idProveedor == 0) {
-        showAppAlert('error', "- Debe seleccionar el proveedor!", {
+        showAppAlert('error', "Debe seleccionar primero al proveedor!", {
             duration: 5000,
             image: base_url + 'assets/img/errorGif.gif'
         });
@@ -240,7 +240,7 @@ function agregarProductoALaGrilla() {
 
     var idDocumento = $('#cboDocumentoCompra').val();
     if (!idDocumento || idDocumento == 0) {
-        showAppAlert('error', "- Debe seleccionar el documento de compra!", {
+        showAppAlert('error', "Debe seleccionar el documento de compra!", {
             duration: 5000,
             image: base_url + 'assets/img/errorGif.gif'
         });
@@ -249,7 +249,7 @@ function agregarProductoALaGrilla() {
 
     var folio = $('#FolioDocumento').val();
     if (!folio || folio.length == 0 || folio == "0") {
-        showAppAlert('error', "- Debe ingresar el folio del documento!", {
+        showAppAlert('error', "Debe ingresar el folio/numero del documento!", {
             duration: 5000,
             image: base_url + 'assets/img/errorGif.gif'
         });
@@ -258,7 +258,7 @@ function agregarProductoALaGrilla() {
 
     var ProductoComprado = $("#cboProductosCompra").val();
     if (!ProductoComprado || ProductoComprado == 0) {
-        showAppAlert('error', "- Debe seleccionar el producto comprado!", {
+        showAppAlert('error', "Debe seleccionar el producto a ingresar!", {
             duration: 5000,
             image: base_url + 'assets/img/errorGif.gif'
         });
@@ -290,14 +290,14 @@ function continuarAgregandoProducto() {
     var ProductoComprado = $("#cboProductosCompra").val();
     
     if (ProductoComprado == null || ProductoComprado == 0) {
-        showAppAlert('error',"- Debe seleccionar el producto comprado!", {
+        showAppAlert('error',"Debe seleccionar el producto a ingresar!", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
         return;
     }
     if (CantidadCompra == null || CantidadCompra <= 0 || isNaN(CantidadCompra)) {
-        showAppAlert('error',"- Debe indicar la cantidad comprada!", {
+        showAppAlert('error',"Debe indicar la cantidad del producto!", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
@@ -305,7 +305,7 @@ function continuarAgregandoProducto() {
     }
 
     if (BrutoUn == null || BrutoUn <= 0 || isNaN(BrutoUn)) {
-        showAppAlert('error',"- Debe indicar el precio bruto de la compra!", {
+        showAppAlert('error',"Debe indicar el precio bruto del producto!", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
@@ -313,7 +313,7 @@ function continuarAgregandoProducto() {
     }
 
     if (BrutoTotal == null || BrutoTotal <= 0 || isNaN(BrutoTotal)) {
-        showAppAlert('error',"- Debe indicar el precio total de la compra!", {
+        showAppAlert('error',"Debe indicar el precio total del producto!", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
@@ -340,7 +340,7 @@ function continuarAgregandoProducto() {
             sumarTotalesTabla();
         })
         .fail(function() {
-            showAppAlert('error',"- Se produjo un error al obtener los datos del producto", {
+            showAppAlert('error',"Se produjo un error al obtener los datos del producto", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
@@ -389,7 +389,7 @@ function GrabarIngresoDeCompra() {
     
     if (!compraValidada) {
         console.log("ERROR: compraValidada =", compraValidada);
-        showAppAlert('error',"- Debe agregar al menos un producto antes de grabar!", {
+        showAppAlert('error',"Debe agregar al menos un producto antes de grabar una compra!", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
@@ -397,21 +397,21 @@ function GrabarIngresoDeCompra() {
     }
     
     if ($('#cboProveedorCompra').val() == 0) {
-        showAppAlert('error',"- No seleccionó el proveedor!", {
+        showAppAlert('error',"Debe seleccionar primero al proveedor!", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
         return;
     }
     if ($('#cboDocumentoCompra').val() == 0) {
-        showAppAlert('error',"- No seleccionó el documento de compra!", {
+        showAppAlert('error',"Debe seleccionar el documento de compra!", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
         return;
     }
     if ($('#FolioDocumento').val() == 0) {
-        showAppAlert('error',"- No ingreso el folio del documento!", {
+        showAppAlert('error',"Debe ingresar el folio/numero del documento!", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
@@ -456,7 +456,7 @@ function GrabarIngresoDeCompra() {
 
     // Validar que hay productos en el detalle
     if (detalleCompra.length === 0) {
-        showAppAlert('error',"- Debe agregar al menos un producto a la compra!", {
+        showAppAlert('error',"Debe agregar al menos un producto a la compra!", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
@@ -554,7 +554,7 @@ function GrabarIngresoDeCompra() {
                 console.log("ID Compra obtenido:", idCompra);
 
                 if (idCompra == 0) {
-                    showAppAlert('error',"- No se pudo obtener el ID de la compra. La cabecera NO se grabó", {
+                    showAppAlert('error',"No se pudo obtener el ID de la compra. La cabecera NO se grabó", {
                         duration: 5000,
                         image: base_url+ 'assets/img/errorGif.gif'
                     });

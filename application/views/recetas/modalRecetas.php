@@ -36,18 +36,28 @@
 											<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="rendimientoReceta" id="rendimientoReceta" requerido="si" value="" />
 										</div>
 										<div class="col-md-3">
-											<label for="brutoSugerido">PRECIO BRUTO SUG/VEN</label>
-											<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="brutoSugerido" id="brutoSugerido" requerido="si" value="" />
-										</div>
-									</fieldset>
-									<br>
-									<fieldset>
-										<div class="col-md-3">
 											<label for="cboUnMedida">UNIDAD MEDIDA</label>
 											<select style="width:100%;" id="cboUnMedida" nombre="cboUnMedida" class="form-control input-sm" requerido="si">
 												<option value="">--Seleccione--</option>
 											</select>
 										</div>
+										<!-- <div class="col-md-3">
+											<label for="brutoSugerido">PRECIO BRUTO SUG/VEN</label>
+											<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="brutoSugerido" id="brutoSugerido" requerido="si" value="" />
+										</div> -->
+									</fieldset>
+									<br>
+									<fieldset>
+										<div class="col-md-3">
+											<label for="brutoSugerido">PRECIO BRUTO SUG/VEN</label>
+											<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="brutoSugerido" id="brutoSugerido" requerido="si" value="" />
+										</div>
+										<!-- <div class="col-md-3">
+											<label for="cboUnMedida">UNIDAD MEDIDA</label>
+											<select style="width:100%;" id="cboUnMedida" nombre="cboUnMedida" class="form-control input-sm" requerido="si">
+												<option value="">--Seleccione--</option>
+											</select>
+										</div> -->
 										<div class="col-md-6">
 											<label for="cboGrupoReceta">GRUPO/FAMILIA
 												  <sup><a onclick="crearNuevaFamiliaReceta()">Nuevo</a></sup>
@@ -92,14 +102,14 @@
 												<input type="hidden" disabled class="form-control input-sm input-sm" name="cBarraI" id="cBarraI" requerido="si" value="">
 
 											</div>
-											<div class="col-md-7">
+											<div class="col-md-9">
 												<label for="nombreInsumoReceta">NOMBRE INSUMO</label>
 												<input type="text" disabled class="form-control input-sm input-sm" name="nombreInsumoReceta" id="nombreInsumoReceta" requerido="si" value="">
 											</div>
-											<div class="col-md-2">
+											<!-- <div class="col-md-2">
 												<label for="esSubreceta">SUBRECETA</label>
 												<input type="text" disabled class="form-control input-sm input-sm" name="esSubreceta" id="esSubreceta" requerido="si" value="">
-											</div>
+											</div> -->
 										</fieldset>
 										<br>
 										<fieldset>

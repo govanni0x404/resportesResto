@@ -147,7 +147,7 @@
 												<tr>
 													<th class="text text-center">INSUMO</th>
 													<th class="text text-left">BODEGA</th>
-													<th class="text text-center">STOCK</th>
+													<th class="text text-right">STOCK</th>
 													<th class="text text-left">U/MED. INV.</th>
 													<th class="text text-center"></th>
 												</tr>
@@ -260,7 +260,7 @@
 											<thead>
 												<tr>
 													<th class="text text-left">RECETA</th>
-													<th class="text text-center">CANTIDAD</th>
+													<th class="text text-right">CANTIDAD</th>
 													<th class="text text-left">U/MEDIDA</th>
 													<th class="text text-center"></th>
 												</tr>

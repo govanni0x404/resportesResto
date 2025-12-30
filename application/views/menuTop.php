@@ -526,7 +526,7 @@
                                                 </ul>
                                             </li>
                                             <li class="dropdown">
-                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Familias</a>
+                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Grupos/Familias</a>
                                                 <ul class="dropdown-menu">
                                                     <li class="active"><a href="<?php echo base_url() ?>index.php/Familias"><i class="ti-money"></i>Familias Productos Carta</a></li>
                                                     <li class="active"><a href="<?php echo base_url() ?>index.php/FamiliasInsumos"><i class="ti-money"></i>Familias Insumos</a></li>
@@ -556,7 +556,6 @@
                                         <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Recintos</a>
                                         <ul class="dropdown-menu">
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/Recintos"><i class="ti-money"></i>Recintos</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Mesas"><i class="ti-money"></i>Mesas</a></li>
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/MesasPorRecinto"><i class="ti-money"></i>Mesas Por Recinto</a></li>
                                         </ul>
                                     </li>
@@ -690,6 +689,7 @@
                                     Herramientas</a>
                                 <ul class="dropdown-menu">
                                     <li class="active"><a href="<?php echo base_url() ?>index.php/PrivilegiosUsuario"><i class="ti-money"></i>Privilegios</a></li>
+                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Mesas"><i class="ti-money"></i>Mesas</a></li>
                                 </ul>
                             </li>
 

@@ -143,12 +143,12 @@
                 },
                 {
                     mData: "total",
-                    className: "text-center",
+                    className: "text-right",
                     render: $.fn.dataTable.render.number(',', '.', 0, '$')
                 },
                 {
                     mData: "precio_ucompra",
-                    className: "text-center",
+                    className: "text-right",
                     render: $.fn.dataTable.render.number(',', '.', 0, '$')
                 },
             ],
@@ -225,7 +225,7 @@
 
     function GrabarNuevaLprecio() {
         if ($('#nombreLprecio').val() == 0) {
-            showAppAlert('error',"- El campo Nombre Lista de Precios no puede quedar vacio.", {
+            showAppAlert('error',"Debe ingresar el Nombre de la nueva Lista de Precios.", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
