@@ -793,7 +793,7 @@
                         <fieldset>
                             <div class="col-md-4">
                                 <button onclick="AbrirModalNuevoMenu()" type="button" class="btn btn-primary"><i
-                                        class="fa fa-plus"></i>NUEVO MENU</button>
+                                        class=""></i>NUEVO MENU</button>
                             </div>
                         </fieldset>
                         <br>
@@ -859,16 +859,16 @@
                                 <input type="text" disabled class="form-control input-sm input-sm" name="txtIdMenu"
                                     id="txtIdMenu" requerido="no" value="">
                             </div>
-                            <div class="col-md-9 ">
-                                <label for="txtNombreMenu">MENU</label>
+                        </fieldset>
+                        <fieldset>
+                            <div class="col-md-8 ">
+                                <label for="txtNombreMenu">NOMBRE MENU</label>
                                 <input placeholder="Nombre Menu" type="text" class="form-control input-sm input-sm"
                                     maxlength='28' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
                                     ondrop="return false;" autocomplete="off" name="txtNombreMenu" id="txtNombreMenu"
                                     requerido="si" value="" />
                             </div>
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="btn-group" role="group" aria-label="...">
                                     <div class="checkbox checkbox-success checkbox-circle">
                                         <input id="ckVigenciaMenu" type="checkbox">
@@ -878,7 +878,6 @@
                                     </div>
                                 </div>
                             </div>
-
                         </fieldset>
                         <!-- FIN CAMPOS DE REGISTRO  -->
                     </div>

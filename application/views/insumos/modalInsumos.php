@@ -164,15 +164,15 @@
 									</div>
 								</fieldset>
 								<fieldset>
-									<div class="col-md-6">
+									<div class="col-md-4">
 										<label for="costoReceta">C. NETO + I. ADIC (C. RECETA)</label>
 										<input type="number" class="form-control input-sm input-sm" name="costoReceta" onkeypress="return soloNumeros(event)" id="costoReceta" requerido="no" value="">
 									</div>
-									<div class="col-md-6">
+									<div class="col-md-4">
 										<label for="costoBruto">COSTO BRUTO PP (INFORM)</label>
 										<input type="number" class="form-control input-sm input-sm" name="costoBruto" onkeypress="return soloNumeros(event)" id="costoBruto" requerido="no" value="">
 									</div>
-									<div class="col-md-6">
+									<div class="col-md-4">
 										<label for="costoUltCompra">C. ULT. COMPRA</label>
 										<input type="number" class="form-control input-sm input-sm" name="costoUltCompra" onkeypress="return soloNumeros(event)" id="costoUltCompra" requerido="no" value="">
 									</div>
@@ -192,8 +192,9 @@
 										<label>Receta de producción</label>
 										<button type="button" class="btn btn-sm" 
 												id="btnCrearRecetaProduccion" 
-												title="Crear nueva receta de producción">
-											<i class=""></i> Crear
+												title="Crear nueva receta de producción" style="color: #568c30; text-decoration: underline;
+												background: none; border: none; background-color: transparent;">
+											<i class=""></i> Nueva
 										</button>
 									</div>
 								</fieldset>
@@ -344,7 +345,7 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i> SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -434,13 +435,13 @@
                     <br>
                     
                     <!-- BOTON VER/AGREGAR INSUMOS -->
-                    <div class="row">
+                    <!-- <div class="row">
                         <div class="col-md-12 text-center">
                             <button type="button" class="btn btn-info" id="btnVerAgregarInsumos">
                                 <i class="fa fa-list"></i> Ver/Agregar Insumos
                             </button>
                         </div>
-                    </div>
+                    </div> -->
                     
                     <br>
                     

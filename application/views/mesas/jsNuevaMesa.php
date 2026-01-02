@@ -43,8 +43,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="grabarNuevaMesa()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i> GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
+                <button onclick="grabarNuevaMesa()" type="button" class="btn btn-primary"><i class=""></i> GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>

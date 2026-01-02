@@ -152,7 +152,7 @@ $fechaActual = date('Y-m-d');
                                                         <input type="number" disabled class="form-control input-sm input-sm" name="idlPrecio" id="idlPrecio" requerido="no" value="">
                                                     </div>
                                                     <div class="col-md-11 ">
-                                                        <label for="nombreLprecio">LISTA DE PRECIOS *</label>
+                                                        <label for="nombreLprecio">NOMBRE LISTA DE PRECIOS *</label>
                                                         <input type="text" class="form-control input-sm input-sm" maxlength='28' onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreLprecio" id="nombreLprecio" requerido="si" value="" placeholder="Nombre Lista Precios" />
                                                     </div>
                                                 </fieldset>
@@ -164,8 +164,8 @@ $fechaActual = date('Y-m-d');
 
                                     <!-- BOTONES  -->
                                     <div class="modal-footer">
-                                        <button onclick="GrabarNuevaLprecio()" type="button" class="btn btn-primary" id="btnGrabarRol"><i class="fa fa-check-square-o"></i>GRABAR</button>
-                                        <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+                                        <button onclick="GrabarNuevaLprecio()" type="button" class="btn btn-primary" id="btnGrabarRol"><i class=""></i>GRABAR</button>
+                                        <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
                                     </div>
                                     <!-- FIN BOTONES  -->
                                 </div>
