@@ -287,7 +287,7 @@
             <!-- BOTONES  -->
             <div class="modal-footer">
                 <button onclick="GrabarProducto()" type="button" class="btn btn-primary"></i>Grabar Producto</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>
                     SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
@@ -331,10 +331,10 @@
             </div>
             <div class="modal-footer">
                 <button onclick="grabarPreciosYProducto()" type="button" class="btn btn-primary">
-                    <i class="fa fa-save"></i> Grabar Precios y Comisiones
+                    <i class=""></i> Grabar Precios y Comisiones
                 </button>
-                <button onclick="cancelarEdicionPrecios()" type="button" class="btn btn-white">
-                    <i class="fa fa-times"></i> Cancelar
+                <button onclick="cancelarEdicionPrecios()" type="button" class="btn btn-default">
+                    <i class=""></i> Cancelar
                 </button>
             </div>
         </div>
@@ -433,9 +433,9 @@
             <!-- BOTONES  -->
             <div class="modal-footer">
                 <button onclick="GrabarNuevaFamilia()" type="button" class="btn btn-primary"><i
-                        class="fa fa-check-square-o"></i>GRABAR</button>
+                        class=""></i>GRABAR</button>
                 <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class="fa fa-times-circle"></i>SALIR</button>
+                        class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -486,9 +486,9 @@
             <!-- BOTONES  -->
             <div class="modal-footer">
                 <button onclick="GrabarNuevaBodega()" type="button" class="btn btn-primary"><i
-                        class="fa fa-check-square-o"></i>GRABAR</button>
+                        class=""></i>GRABAR</button>
                 <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class="fa fa-times-circle"></i>SALIR</button>
+                        class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -547,9 +547,9 @@
             <!-- BOTONES  -->
             <div class="modal-footer">
                 <button onclick="GrabarNuevaSubFamilia()" type="button" class="btn btn-primary"><i
-                        class="fa fa-check-square-o"></i>GRABAR</button>
+                        class=""></i>GRABAR</button>
                 <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class="fa fa-times-circle"></i>SALIR</button>
+                        class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -630,7 +630,7 @@
                         <fieldset>
                             <div class="col-md-4">
                                 <button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-success"><i
-                                        class="fa fa-check-square-o"></i>GRABAR AGREGADO</button>
+                                        class=""></i>GRABAR AGREGADO</button>
                             </div>
                             <!--<div class="col-md-4">
                                 <button type="button" class="btn btn-warning"><i class="fa fa-plus"></i>NUEVO AGREGADO</button>
@@ -723,7 +723,7 @@
                         <fieldset>
                             <div class="col-md-4">
                                 <button onclick="grabarMsgProductos()" type="button" class="btn btn-primary"><i
-                                        class="fa fa-check-square-o"></i>GRABAR MENSAJE</button>
+                                        class=""></i>GRABAR MENSAJE</button>
                             </div>
                             <!--<div class="col-md-4">
                                 <button type="button" class="btn btn-warning"><i class="fa fa-plus"></i>NUEVO AGREGADO</button>
@@ -762,7 +762,7 @@
             <!-- BOTONES  -->
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class="fa fa-times-circle"></i>SALIR</button>
+                        class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -826,7 +826,7 @@
             <!-- BOTONES  -->
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class="fa fa-times-circle"></i>SALIR</button>
+                        class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -888,8 +888,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarNuevoMenu()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR MENU</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+                <button onclick="GrabarNuevoMenu()" type="button" class="btn btn-primary"><i class=""></i>GRABAR MENU</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -952,7 +952,7 @@
             <!-- BOTONES  -->
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class="fa fa-times-circle"></i>SALIR</button>
+                        class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -1020,8 +1020,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarCategoriaMenu()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR CATEGORIA</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+                <button onclick="GrabarCategoriaMenu()" type="button" class="btn btn-primary"><i class=""></i>GRABAR CATEGORIA</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -1417,9 +1417,9 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" id="btnGrabarInsumo"><i class="fa fa-check-square-o"></i>
+                <button type="button" class="btn btn-primary" id="btnGrabarInsumo"><i class=""></i>
                     GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>
                     SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
