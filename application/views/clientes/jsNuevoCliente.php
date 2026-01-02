@@ -49,7 +49,18 @@
 						<fieldset>
 							<div class="col-md-6">
 								<label for="cboIdComuna">COMUNA *</label>
-								<select id="cboIdComuna" nombre="cboIdComuna" class="form-control input-sm" style="width:100%" requerido="si"></select>
+								<div class="input-group">
+                                    <select id="cboIdComuna" nombre="cboIdComuna" class="form-control input-sm"
+                                        style="width:100%" requerido="si"></select>
+                                    
+                                        <span class="input-group-btn">
+                                            <button class="btn btn-success btn-sm" type="button" id="btnNuevoComunaCliente" 
+                                                style="height: 30px;" title="Agregar nueva comuna"
+                                                onclick="AbrirModalNuevaComuna()">
+                                                <i class="fa fa-plus"></i>
+                                            </button>
+                                        </span>
+                                </div>
 							</div>
 							<div class="col-md-6 ">
 								<label for="ReferenciaDireccionCliente">REFERENIA DIRECCION</label>
@@ -294,6 +305,7 @@
                     });
 					$('#ModalNuevoCliente').modal('hide');
 					tablaClientes.ajax.reload();
+					
 				})
 				.fail(function() {
 					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
@@ -397,3 +409,4 @@
 		);
 	};
 </script>
+ <?php $this->load->view('comunas/jsNuevaComuna.php'); ?>

@@ -155,7 +155,7 @@
     </style>
     <style>
 
-    /spiner/
+    /* /spiner/ */
     /* Fondo oscuro de pantalla completa */
     .loader-backdrop {
       position: fixed; inset: 0; z-index: 9999;

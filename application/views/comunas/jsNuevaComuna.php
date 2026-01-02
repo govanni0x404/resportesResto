@@ -87,7 +87,23 @@
                         image: base_url + 'assets/img/success.gif'
                     });
                     $('#ModalNuevaComuna').modal('hide');
-                    tablaComuna.ajax.reload();
+                    if (typeof ListarComunas === 'function') {
+						ListarComunas("");
+						
+						try {
+							var nuevaComuna = JSON.parse(response);
+							if (nuevaComuna.id_comuna) {
+								setTimeout(function() {
+									$('#cboIdComuna').val(nuevaComuna.id_comuna).trigger('change');
+								}, 500);
+							}
+						} catch(e) {
+							console.log("No se pudo seleccionar automáticamente la nueva comuna");
+						}
+					}
+                    if (typeof tablaComuna !== 'undefined') {
+						tablaComuna.ajax.reload();
+					}
                 })
                 .fail(function() {
                     showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {

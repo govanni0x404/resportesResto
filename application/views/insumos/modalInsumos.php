@@ -188,7 +188,7 @@
 							<div class="tab-pane fade" id="tabProduccion">
 								<br>
 								<fieldset>
-									<div class="col-md-12">
+									<div class="col-md-9">
 										<label>Receta de producción</label>
 										<button type="button" class="btn btn-sm" 
 												id="btnCrearRecetaProduccion" 
@@ -204,10 +204,11 @@
 											<option value="">--Seleccione--</option>
 										</select>
 									</div>
-									<!-- <div class="col-md-6">
-										<button type="button" class="btn btn-danger" id="btnRealizarProduccion">REALIZAR PRODUCCION</button>
-										<button type="button" class="btn btn-success" id="btnVerStock">VER STOCK</button>
-									</div> -->
+									<div class="col-md-6">
+										<button type="button" class="btn btn-danger btn-sm" id="btnRealizarProduccion">
+											<i class="fa fa-cogs"></i> REALIZAR PRODUCCION
+										</button>
+									</div>
 								</fieldset>
 								<br>
 								<fieldset>
@@ -1429,6 +1430,11 @@ function grabarNuevaRecetaProduccion() {
         });
     });
 }
+
+// Botón para realizar producción
+$("#btnRealizarProduccion").on("click", function() {
+    AbrirModalProduccion();
+});
 </script>
 <!-- esto va en menu top para quitar las flechas en input type number 
 <style>
