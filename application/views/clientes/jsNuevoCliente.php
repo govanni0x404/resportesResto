@@ -49,7 +49,8 @@
 						<fieldset>
 							<div class="col-md-6">
 								<label for="cboIdComuna">COMUNA *</label>
-								<div class="input-group">
+								<select id="cboIdComuna" nombre="cboIdComuna" class="form-control input-sm" style="width:100%" requerido="si"></select>
+								<!-- <div class="input-group">
                                     <select id="cboIdComuna" nombre="cboIdComuna" class="form-control input-sm"
                                         style="width:100%" requerido="si"></select>
                                     
@@ -60,7 +61,7 @@
                                                 <i class="fa fa-plus"></i>
                                             </button>
                                         </span>
-                                </div>
+                                </div> -->
 							</div>
 							<div class="col-md-6 ">
 								<label for="ReferenciaDireccionCliente">REFERENIA DIRECCION</label>

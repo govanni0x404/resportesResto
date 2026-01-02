@@ -47,16 +47,16 @@
                                             <label for="cboInsumoProduccion">INSUMO *</label>
                                             <div class="input-group">
                                                 <select id="cboInsumoProduccion" name="cboInsumoProduccion" 
-                                                        class="form-control input-sm" style="width:100%">
+                                                        class="form-control input-sm">
                                                     <option value="0">-- Seleccione --</option>
                                                 </select>
-                                                <span class="input-group-btn">
+                                                <!-- <span class="input-group-btn">
                                                     <button class="btn btn-success btn-sm" type="button" 
                                                             style="height: 30px;" title="Buscar Receta"
                                                             id="btnBuscarRecetaProduccion">
                                                         <i class="fa fa-search"></i>
                                                     </button>
-                                                </span>
+                                                </span> -->
                                             </div>
                                         </div>
                                         <div class="col-md-3">
@@ -109,7 +109,7 @@
                                 </div>
                             </div>
 
-                            <div class="row">
+                            <!-- <div class="row">
                                 <div class="col-md-12">
                                     <fieldset>
                                         <div class="col-md-3">
@@ -121,12 +121,12 @@
                                         </div>
                                     </fieldset>
                                 </div>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
 
                     <!-- TABLA DE PRODUCCIONES -->
-                    <div class="row">
+                    <!-- <div class="row">
                         <div class="col-md-12">
                             <div class="panel panel-default">
                                 <div class="panel-heading">
@@ -151,33 +151,18 @@
                                                 </tr>
                                             </thead>
                                             <tbody id="detalleProduccion">
-                                                <!-- Se llenará dinámicamente -->
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- SECCION OBSERVACIONES -->
-                    <div class="row">
-                        <div class="col-md-12">
-                            <fieldset>
-                                <div class="col-md-12">
-                                    <label>OBSERVACIONES</label>
-                                    <textarea class="form-control" rows="3" 
-                                              id="observacionesProduccion" name="observacionesProduccion"
-                                              maxlength="300"></textarea>
-                                </div>
-                            </fieldset>
-                        </div>
-                    </div>
+                    </div> -->
 
                     <!-- INSUMO ELABORADO -->
                     <div class="row" style="margin-top: 20px;">
                         <div class="col-md-12">
-                            <div class="panel panel-info">
+                            <div class="panel panel-success">
                                 <div class="panel-heading">
                                     <h5><strong>INSUMO ELABORADO</strong></h5>
                                 </div>
@@ -214,6 +199,20 @@
                         </div>
                     </div>
 
+                    <!-- SECCION OBSERVACIONES -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <fieldset>
+                                <div class="col-md-12">
+                                    <label>OBSERVACIONES</label>
+                                    <textarea class="form-control" rows="3" 
+                                              id="observacionesProduccion" name="observacionesProduccion"
+                                              maxlength="300"></textarea>
+                                </div>
+                            </fieldset>
+                        </div>
+                    </div>
+
                     <!-- COSTO TOTAL -->
                     <div class="row">
                         <div class="col-md-12 text-right">
@@ -228,14 +227,14 @@
 
             <!-- BOTONES -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger" id="btnGrabarProduccion">
-                    <i class="fa fa-save"></i> GRABAR DATOS
+                <button type="button" class="btn btn-primary" id="btnGrabarProduccion">
+                    <i class=""></i> GRABAR DATOS
                 </button>
-                <button type="button" class="btn btn-info" id="btnLimpiarProduccion">
+                <!-- <button type="button" class="btn btn-info" id="btnLimpiarProduccion">
                     <i class="fa fa-eraser"></i> LIMPIAR
-                </button>
+                </button> -->
                 <button type="button" class="btn btn-default" data-dismiss="modal">
-                    <i class="fa fa-times"></i> SALIR
+                    <i class=""></i> SALIR
                 </button>
             </div>
             <!-- FIN BOTONES -->
