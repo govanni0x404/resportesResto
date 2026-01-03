@@ -205,8 +205,8 @@
 										</select>
 									</div>
 									<div class="col-md-6">
-										<button type="button" class="btn btn-danger btn-sm" id="btnRealizarProduccion">
-											<i class="fa fa-cogs"></i> REALIZAR PRODUCCION
+										<button type="button" class="btn btn-primary btn-sm" id="btnRealizarProduccion">
+											<i class=""></i> REALIZAR PRODUCCION
 										</button>
 									</div>
 								</fieldset>
@@ -1431,9 +1431,21 @@ function grabarNuevaRecetaProduccion() {
     });
 }
 
-// Botón para realizar producción
+// Botón para realizar producción - CON DATOS DEL INSUMO
 $("#btnRealizarProduccion").on("click", function() {
-    AbrirModalProduccion();
+    var idInsumo = $("#idInsumo").val();
+    var nombreInsumo = $("#nombreInsumo").val();
+    
+    if (!idInsumo || idInsumo == 0) {
+        showAppAlert('error', "Debe seleccionar un insumo primero", {
+            duration: 5000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+    
+    // Abrir modal y cargar datos del insumo
+    AbrirModalProduccion(idInsumo, nombreInsumo);
 });
 </script>
 <!-- esto va en menu top para quitar las flechas en input type number 

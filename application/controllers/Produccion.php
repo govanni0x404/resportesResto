@@ -87,4 +87,31 @@ class Produccion extends CI_Controller
         
         echo json_encode(array('stock_actual' => $stock));
     }
+
+    public function obtenerCostoPPP()
+    {
+        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+            redirect(base_url());
+        }
+        
+        $id_insumo = $this->input->post('id_insumo');
+        $id_bodega = $this->input->post('id_bodega');
+        
+        $costo = $this->Mproduccion->obtenerCostoPPP($id_insumo, $id_bodega);
+        
+        echo json_encode(array('costo_ppp' => $costo));
+    }
+
+    public function obtenerDatosInsumoCompleto()
+    {
+        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+            redirect(base_url());
+        }
+        
+        $id_insumo = $this->input->post('id_insumo');
+        
+        $datos = $this->Mproduccion->obtenerDatosInsumoCompleto($id_insumo);
+        
+        echo json_encode($datos);
+    }
 }

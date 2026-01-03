@@ -86,4 +86,53 @@ class Mproduccion extends CI_Model
         
         return $this->db->affected_rows() > 0;
     }
+    
+    public function obtenerCostoPPP($id_insumo, $id_bodega)
+    {
+        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+            redirect(base_url());
+        }
+        
+        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        
+        $q = "SELECT precio_promedio_ponderado as costo_ppp 
+            FROM stock_insumo 
+            WHERE id_insumo = " . intval($id_insumo) . " 
+            AND id_bodega = " . intval($id_bodega);
+        
+        $consulta = $this->db->query($q);
+        
+        if ($consulta->num_rows() > 0) {
+            return $consulta->row()->costo_ppp;
+        }
+        
+        return 0;
+    }
+
+    public function obtenerDatosInsumoCompleto($id_insumo)
+    {
+        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+            redirect(base_url());
+        }
+        
+        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        
+        $q = "SELECT 
+                i.id_insumo,
+                i.nombre_insumo,
+                i.id_unidad_medida,
+                um.nombre_unidad_medida,
+                um.abreviatura
+            FROM insumo i
+            LEFT JOIN unidad_medida um ON i.id_unidad_medida = um.id_unidad_medida
+            WHERE i.id_insumo = " . intval($id_insumo);
+        
+        $consulta = $this->db->query($q);
+        
+        if ($consulta->num_rows() > 0) {
+            return $consulta->row();
+        }
+        
+        return null;
+    }
 }
