@@ -276,28 +276,37 @@
 <script>
 var base_url = "<?php echo base_url(); ?>";
 
+// Variable global para almacenar insumos de la receta
+var insumosReceta = [];
+var contadorInsumos = 0;
+
+// Variable para almacenar el ID del insumo elaborado
+var idInsumoElaborado = 0;
+
 // Abrir modal de producción CON DATOS DEL INSUMO
 function AbrirModalProduccion(idInsumo, nombreInsumo) {
     console.log("=== ABRIENDO MODAL DE PRODUCCIÓN ===");
     console.log("ID Insumo:", idInsumo);
     console.log("Nombre Insumo:", nombreInsumo);
     
-    // Limpiar campos
-    $('#idProduccion').val("");
-    $('#cantidadRecetaProduccion').val("");
-    $('#costoTotalProduccion').val("0");
-    $('#observacionesProduccion').val("");
-    $('#detalleInsumosRecetaProduccion').html("<tr><td colspan='10' class='text-center'>Seleccione un insumo y bodega</td></tr>");
-    $('#costoTotalFinal').text("0");
+    // Guardar el ID del insumo elaborado
+    idInsumoElaborado = idInsumo;
     
-    // Cargar combos
-    cargarInsumosParaProduccion(idInsumo);
+    // Limpiar campos y resetear
+    limpiarModalProduccion();
+    
+    // Cargar combos primero
     cargarBodegasParaProduccion();
     
-    // Cargar datos del insumo seleccionado
-    if (idInsumo && idInsumo > 0) {
-        cargarDatosInsumoProduccion(idInsumo);
-    }
+    // Cargar insumos y luego cargar datos del insumo elaborado
+    cargarInsumosParaProduccion(function() {
+        // Una vez cargados los insumos, cargar datos del insumo elaborado
+        if (idInsumo && idInsumo > 0) {
+            cargarDatosInsumoElaborado(idInsumo);
+            // Preseleccionar el insumo en el combo
+            $('#cboInsumoProduccion').val(idInsumo).trigger('change');
+        }
+    });
     
     // Configurar datepicker
     $('#fechaProduccion').daterangepicker({
@@ -313,9 +322,7 @@ function AbrirModalProduccion(idInsumo, nombreInsumo) {
             ],
             firstDay: 1
         }
-    })
-    .on('apply.daterangepicker', function (ev, picker) {
-        // 🔥 FORZAR formato correcto
+    }).on('apply.daterangepicker', function (ev, picker) {
         $(this).val(picker.startDate.format('DD-MM-YYYY'));
     });
     
@@ -326,133 +333,400 @@ function AbrirModalProduccion(idInsumo, nombreInsumo) {
     });
 }
 
-// Cargar datos del insumo
-function cargarDatosInsumoProduccion(idInsumo) {
-    $.post(base_url + "index.php/Insumos/ObtenerDatosInsumos", {
+// Limpiar modal
+function limpiarModalProduccion() {
+    $('#idProduccion').val("");
+    $('#cantidadRecetaProduccion').val("");
+    $('#stockBodegaProduccion').val("0");
+    $('#umedidaInvProduccion').val("");
+    $('#umedidaRecetaProduccion').val("");
+    $('#costoNetoProduccion').val("0");
+    $('#costoTotalProduccion').val("0");
+    $('#observacionesProduccion').val("");
+    $('#nombreInsumoElaborado').val("");
+    $('#rendimientoReal').val("1");
+    $('#umedidaInventarioElaborado').val("");
+    $('#costoUnitarioElaborado').val("0.00");
+    
+    // Limpiar tabla y array
+    insumosReceta = [];
+    contadorInsumos = 0;
+    actualizarTablaInsumos();
+    actualizarCostoTotal();
+}
+
+// Cargar datos del insumo ELABORADO (producto final)
+function cargarDatosInsumoElaborado(idInsumo) {
+    $.post(base_url + "index.php/Produccion/obtenerDatosInsumoCompleto", {
         id_insumo: idInsumo
     }, function(datos) {
-        var obj = jQuery.parseJSON(datos);
-        if (obj && obj.length > 0) {
-            var insumo = obj[0];
-            
-            // Llenar datos del insumo elaborado
-            $('#nombreInsumoElaborado').val(insumo.nombre_insumo);
-            
-            // Obtener unidad de medida
-            $.post(base_url + "index.php/Insumos/ObtenerUnidadMedida", {
-                id_insumo: idInsumo
-            }, function(datos2) {
-                var objUm = $.parseJSON(datos2);
-                if (objUm && objUm.unidad_medida) {
-                    $('#umedidaInventarioElaborado').val(objUm.unidad_medida);
-                    $('#umedidaInvProduccion').val(objUm.unidad_medida);
-                }
-            });
+        var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
+        
+        if (obj) {
+            $('#nombreInsumoElaborado').val(obj.nombre_insumo);
+            $('#umedidaInventarioElaborado').val(obj.abreviatura || obj.nombre_unidad_medida);
         }
     });
 }
 
 // Cargar insumos
-function cargarInsumosParaProduccion(idInsumoSeleccionado) {
+function cargarInsumosParaProduccion(callback) {
     $.post(base_url + "index.php/Insumos/ListarInsumos", {}, function(datos) {
         var obj = jQuery.parseJSON(datos);
         var tbl = '<option value="0">-- Seleccione --</option>';
         
         $.each(obj, function(index, v) {
-            var selected = (v.id_insumo == idInsumoSeleccionado) ? 'selected' : '';
-            tbl += '<option value="' + v.id_insumo + '" ' + selected + '>' + v.nombre_insumo + '</option>';
+            tbl += '<option value="' + v.id_insumo + '">' + v.nombre_insumo + '</option>';
         });
         
-        $("#cboInsumoProduccion").html(tbl);
-        $("#cboInsumoProduccion").select2();
+        $("#cboInsumoProduccion").html(tbl).select2();
         
-        // Si hay un insumo seleccionado, disparar el evento change
-        if (idInsumoSeleccionado) {
-            $('#cboInsumoProduccion').trigger('change');
+        // Ejecutar callback si existe
+        if (typeof callback === 'function') {
+            callback();
         }
     });
 }
 
 // Cargar bodegas
 function cargarBodegasParaProduccion() {
-    $.post(
-        base_url + "index.php/Bodegas/ListadoDeBodegas",
-        {},
-        function (obj) {
+    $.post(base_url + "index.php/Bodegas/ListadoDeBodegas", {}, function (obj) {
+        var tbl = '<option value="0">-- Seleccione --</option>';
+        
+        $.each(obj.aaData, function (index, v) {
+            tbl += `<option value="${v.id_bodega}">${v.nombre_bodega}</option>`;
+        });
+        
+        $("#cboBodegaOrigenProduccion").html(tbl).select2();
+        $("#bodegaDestinoElaborado").html(tbl).select2();
+    }, 'json');
+}
 
-            console.log(obj); // ahora ya sabes qué llega
+// Cuando cambia el insumo
+$('#cboInsumoProduccion').on('change', function() {
+    var idInsumo = $(this).val();
+    
+    console.log("Cambió insumo a:", idInsumo);
+    
+    if (idInsumo > 0) {
+        // Obtener datos del insumo seleccionado
+        $.post(base_url + "index.php/Produccion/obtenerDatosInsumoCompleto", {
+            id_insumo: idInsumo
+        }, function(datos) {
+            console.log("Datos del insumo recibidos:", datos);
+            
+            var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
+            
+            if (obj) {
+                // Llenar unidades de medida
+                var unidadMedida = obj.abreviatura || obj.nombre_unidad_medida || '';
+                console.log("Unidad de medida:", unidadMedida);
+                
+                $('#umedidaInvProduccion').val(unidadMedida);
+                $('#umedidaRecetaProduccion').val(unidadMedida);
+            }
+            
+            // Si hay bodega seleccionada, obtener stock y costo
+            var idBodega = $('#cboBodegaOrigenProduccion').val();
+            console.log("Bodega actual:", idBodega);
+            
+            if (idBodega > 0) {
+                cargarStockYCosto(idInsumo, idBodega);
+            }
+        }).fail(function(xhr, status, error) {
+            console.error("Error al obtener datos del insumo:", error);
+        });
+    } else {
+        $('#umedidaInvProduccion').val("");
+        $('#umedidaRecetaProduccion').val("");
+        $('#stockBodegaProduccion').val("0");
+        $('#costoNetoProduccion').val("0");
+        $('#costoTotalProduccion').val("0");
+    }
+});
 
-            var tbl = '<option value="0">-- Seleccione --</option>';
+// Cuando cambia la bodega
+$('#cboBodegaOrigenProduccion').on('change', function() {
+    var idBodega = $(this).val();
+    var idInsumo = $('#cboInsumoProduccion').val();
+    
+    console.log("Cambió bodega a:", idBodega);
+    console.log("Insumo actual:", idInsumo);
+    
+    if (idInsumo > 0 && idBodega > 0) {
+        cargarStockYCosto(idInsumo, idBodega);
+    } else {
+        $('#stockBodegaProduccion').val("0");
+        $('#costoNetoProduccion').val("0");
+        $('#costoTotalProduccion').val("0");
+    }
+});
 
-            $.each(obj.aaData, function (index, v) {
-                tbl += `<option value="${v.id_bodega}">${v.nombre_bodega}</option>`;
-            });
-
-            $("#cboBodegaOrigenProduccion").html(tbl).select2();
-            $("#cboBodegaDestinoProduccion").html(tbl).select2();
-            $("#bodegaDestinoElaborado").html(tbl).select2();
-
-        },
-        'json'
-    ).fail(function () {
-        console.log("Error al cargar bodegas");
+// Cargar stock y costo PPP
+function cargarStockYCosto(idInsumo, idBodega) {
+    console.log("=== Cargando stock y costo ===");
+    console.log("ID Insumo:", idInsumo);
+    console.log("ID Bodega:", idBodega);
+    
+    // Obtener stock
+    $.post(base_url + "index.php/Produccion/obtenerStockActual", {
+        id_insumo: idInsumo,
+        id_bodega: idBodega
+    }, function(datos) {
+        console.log("Stock recibido:", datos);
+        var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
+        var stock = parseFloat(obj.stock_actual || 0);
+        $('#stockBodegaProduccion').val(stock.toFixed(2));
+        console.log("Stock establecido:", stock);
+    }).fail(function(xhr, status, error) {
+        console.error("Error al obtener stock:", error);
+    });
+    
+    // Obtener costo PPP
+    $.post(base_url + "index.php/Produccion/obtenerCostoPPP", {
+        id_insumo: idInsumo,
+        id_bodega: idBodega
+    }, function(datos) {
+        console.log("Costo PPP recibido:", datos);
+        var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
+        var costo = parseFloat(obj.costo_ppp || 0);
+        $('#costoNetoProduccion').val(costo.toFixed(2));
+        console.log("Costo PPP establecido:", costo);
+        
+        // Recalcular costo total si hay cantidad
+        calcularCostoTotal();
+    }).fail(function(xhr, status, error) {
+        console.error("Error al obtener costo PPP:", error);
     });
 }
 
-
-// Cuando cambia el insumo o la bodega
-$('#cboInsumoProduccion, #cboBodegaOrigenProduccion').on('change', function() {
-    var idInsumo = $('#cboInsumoProduccion').val();
-    var idBodega = $('#cboBodegaOrigenProduccion').val();
-    
-    console.log("Cambió insumo o bodega:", idInsumo, idBodega);
-    
-    if (idInsumo > 0 && idBodega > 0) {
-        // Obtener stock
-        $.post(base_url + "index.php/Produccion/obtenerStockActual", {
-            id_insumo: idInsumo,
-            id_bodega: idBodega
-        }, function(datos) {
-            var obj = jQuery.parseJSON(datos);
-            $('#stockBodegaProduccion').val(obj.stock_actual || 0);
-        });
-        
-        // Cargar datos del insumo
-        cargarDatosInsumoProduccion(idInsumo);
-    }
+// Calcular costo total cuando cambia la cantidad
+$('#cantidadRecetaProduccion').on('input', function() {
+    console.log("Cambió cantidad a:", $(this).val());
+    calcularCostoTotal();
 });
 
-// Calcular costo total
-$('#cantidadRecetaProduccion').on('input', function() {
-    var cantidad = parseFloat($(this).val()) || 0;
+function calcularCostoTotal() {
+    var cantidad = parseFloat($('#cantidadRecetaProduccion').val()) || 0;
     var costoNeto = parseFloat($('#costoNetoProduccion').val()) || 0;
     var costoTotal = cantidad * costoNeto;
     
+    console.log("=== Calculando costo total ===");
+    console.log("Cantidad:", cantidad);
+    console.log("Costo Neto:", costoNeto);
+    console.log("Costo Total:", costoTotal);
+    
     $('#costoTotalProduccion').val(costoTotal.toFixed(2));
-    $('#costoTotalFinal').text(costoTotal.toFixed(2));
-    $('#costoUnitarioElaborado').val(costoTotal.toFixed(2));
+}
+
+// BOTÓN AGREGAR - Agregar insumo a la tabla
+$('.btn-success:contains("Agregar")').on('click', function(e) {
+    e.preventDefault();
+    
+    console.log("=== BOTÓN AGREGAR CLICKEADO ===");
+    
+    var idInsumo = $('#cboInsumoProduccion').val();
+    var nombreInsumo = $('#cboInsumoProduccion option:selected').text();
+    var idBodega = $('#cboBodegaOrigenProduccion').val();
+    var nombreBodega = $('#cboBodegaOrigenProduccion option:selected').text();
+    var cantidad = parseFloat($('#cantidadRecetaProduccion').val()) || 0;
+    var umedidaReceta = $('#umedidaRecetaProduccion').val();
+    var umedidaInv = $('#umedidaInvProduccion').val();
+    var costoNeto = parseFloat($('#costoNetoProduccion').val()) || 0;
+    var costoTotal = parseFloat($('#costoTotalProduccion').val()) || 0;
+    var stock = parseFloat($('#stockBodegaProduccion').val()) || 0;
+    
+    console.log("Datos a agregar:");
+    console.log("- ID Insumo:", idInsumo);
+    console.log("- Nombre Insumo:", nombreInsumo);
+    console.log("- ID Bodega:", idBodega);
+    console.log("- Nombre Bodega:", nombreBodega);
+    console.log("- Cantidad:", cantidad);
+    console.log("- U/M Receta:", umedidaReceta);
+    console.log("- U/M Inv:", umedidaInv);
+    console.log("- Costo Neto:", costoNeto);
+    console.log("- Costo Total:", costoTotal);
+    console.log("- Stock:", stock);
+    
+    // Validaciones
+    if (idInsumo == 0) {
+        showAppAlert('error', "Seleccione un insumo", {
+            duration: 3000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+    
+    if (idBodega == 0) {
+        showAppAlert('error', "Seleccione una bodega de origen", {
+            duration: 3000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+    
+    if (cantidad <= 0) {
+        showAppAlert('error', "Ingrese una cantidad válida", {
+            duration: 3000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+    
+    if (cantidad > stock) {
+        showAppAlert('error', "La cantidad supera el stock disponible (" + stock + ")", {
+            duration: 3000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+    
+    // Agregar al array
+    contadorInsumos++;
+    var insumo = {
+        id: contadorInsumos,
+        id_insumo: idInsumo,
+        nombre_insumo: nombreInsumo,
+        id_bodega: idBodega,
+        nombre_bodega: nombreBodega,
+        cantidad: cantidad,
+        umedida_receta: umedidaReceta,
+        umedida_inv: umedidaInv,
+        conversion: 1, // Puedes calcular esto según tu lógica
+        costo_neto: costoNeto,
+        costo_total: costoTotal,
+        stock: stock
+    };
+    
+    console.log("Insumo agregado al array:", insumo);
+    insumosReceta.push(insumo);
+    console.log("Total insumos en array:", insumosReceta.length);
+    
+    // Actualizar tabla y totales
+    actualizarTablaInsumos();
+    actualizarCostoTotal();
+    
+    // Limpiar campos de entrada
+    limpiarCamposInsumo();
+    
+    showAppAlert('success', "Insumo agregado correctamente", {
+        duration: 2000,
+        image: base_url + 'assets/img/success.gif'
+    });
 });
+
+// BOTÓN NUEVO - Limpiar campos de insumo
+$('.btn-default:contains("Nuevo")').on('click', function(e) {
+    e.preventDefault();
+    limpiarCamposInsumo();
+});
+
+// BOTÓN QUITAR - Eliminar insumo seleccionado
+$('.btn-danger:contains("Quitar")').on('click', function(e) {
+    e.preventDefault();
+    
+    // Obtener fila seleccionada
+    var filaSeleccionada = $('#tableInsumosRecetaProduccion tbody tr.selected');
+    
+    if (filaSeleccionada.length === 0) {
+        showAppAlert('error', "Seleccione un insumo de la tabla para eliminar", {
+            duration: 3000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+    
+    var idFila = filaSeleccionada.data('id');
+    
+    // Eliminar del array
+    insumosReceta = insumosReceta.filter(function(item) {
+        return item.id !== idFila;
+    });
+    
+    // Actualizar tabla y totales
+    actualizarTablaInsumos();
+    actualizarCostoTotal();
+    
+    showAppAlert('success', "Insumo eliminado correctamente", {
+        duration: 2000,
+        image: base_url + 'assets/img/success.gif'
+    });
+});
+
+// Seleccionar fila de la tabla al hacer click
+$(document).on('click', '#tableInsumosRecetaProduccion tbody tr', function() {
+    if ($(this).find('td').length === 1) return; // No seleccionar fila vacía
+    
+    $('#tableInsumosRecetaProduccion tbody tr').removeClass('selected');
+    $(this).addClass('selected');
+});
+
+// Limpiar campos de entrada de insumo
+function limpiarCamposInsumo() {
+    $('#cboInsumoProduccion').val(0).trigger('change');
+    $('#cboBodegaOrigenProduccion').val(0).trigger('change');
+    $('#cantidadRecetaProduccion').val("");
+    $('#stockBodegaProduccion').val("0");
+    $('#umedidaInvProduccion').val("");
+    $('#umedidaRecetaProduccion').val("");
+    $('#costoNetoProduccion').val("0");
+    $('#costoTotalProduccion').val("0");
+}
+
+// Actualizar tabla de insumos
+function actualizarTablaInsumos() {
+    var html = '';
+    
+    if (insumosReceta.length === 0) {
+        html = '<tr><td colspan="10" class="text-center">Seleccione un insumo y bodega</td></tr>';
+    } else {
+        $.each(insumosReceta, function(index, item) {
+            html += '<tr data-id="' + item.id + '" style="cursor: pointer;">';
+            html += '<td class="text-center">' + (index + 1) + '</td>';
+            html += '<td class="text-left">' + item.nombre_insumo + '</td>';
+            html += '<td class="text-center">' + parseFloat(item.cantidad).toFixed(2) + '</td>';
+            html += '<td class="text-center">' + (item.umedida_receta || '') + '</td>';
+            html += '<td class="text-center">' + item.conversion + '</td>';
+            html += '<td class="text-center">' + (item.umedida_inv || '') + '</td>';
+            html += '<td class="text-right">' + parseFloat(item.costo_neto).toFixed(2) + '</td>';
+            html += '<td class="text-right">' + parseFloat(item.costo_total).toFixed(2) + '</td>';
+            html += '<td class="text-center">' + item.nombre_bodega + '</td>';
+            html += '<td class="text-center">' + parseFloat(item.stock).toFixed(2) + '</td>';
+            html += '</tr>';
+        });
+    }
+    
+    $('#detalleInsumosRecetaProduccion').html(html);
+    
+    console.log("=== Tabla actualizada ===");
+    console.log("Total de insumos:", insumosReceta.length);
+}
+
+// Actualizar costo total
+function actualizarCostoTotal() {
+    var total = 0;
+    
+    $.each(insumosReceta, function(index, item) {
+        total += parseFloat(item.costo_total);
+    });
+    
+    $('#costoTotalFinal').text(total.toFixed(2));
+    $('#costoUnitarioElaborado').val(total.toFixed(2));
+}
 
 // Grabar producción
 $('#btnGrabarProduccion').on('click', function() {
-    if ($('#cboInsumoProduccion').val() == 0) {
-        showAppAlert('error', "Seleccione un insumo", {
+    // Validaciones
+    if (insumosReceta.length === 0) {
+        showAppAlert('error', "Debe agregar al menos un insumo a la receta", {
             duration: 5000,
             image: base_url + 'assets/img/errorGif.gif'
         });
         return;
     }
     
-    if ($('#cboBodegaOrigenProduccion').val() == 0) {
-        showAppAlert('error', "Seleccione una bodega de origen", {
-            duration: 5000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-        return;
-    }
-    
-    if (!$('#cantidadRecetaProduccion').val() || $('#cantidadRecetaProduccion').val() == 0) {
-        showAppAlert('error', "Ingrese la cantidad a producir", {
+    if ($('#bodegaDestinoElaborado').val() == 0) {
+        showAppAlert('error', "Seleccione una bodega de destino para el producto elaborado", {
             duration: 5000,
             image: base_url + 'assets/img/errorGif.gif'
         });
@@ -465,19 +739,19 @@ $('#btnGrabarProduccion').on('click', function() {
     
     var miJson = {
         'fecha': fechaProduccion,
-        'id_insumo': $('#cboInsumoProduccion').val(),
-        'id_bodega': $('#cboBodegaOrigenProduccion').val(),
-        'cantidad': $('#cantidadRecetaProduccion').val(),
-        'costo_unitario': $('#costoNetoProduccion').val(),
-        'costo_total': $('#costoTotalProduccion').val(),
-        'observaciones': $('#observacionesProduccion').val()
+        'insumos': insumosReceta,
+        'cantidad_producida': parseFloat($('#rendimientoReal').val()) || 1,
+        'id_bodega_destino': $('#bodegaDestinoElaborado').val(),
+        'costo_total': parseFloat($('#costoTotalFinal').text()) || 0,
+        'observaciones': $('#observacionesProduccion').val(),
+        'nombre_insumo_elaborado': $('#nombreInsumoElaborado').val()
     };
     
     console.log("=== DATOS DE PRODUCCIÓN ===");
     console.log(miJson);
     
     $.post(base_url + "index.php/Produccion/grabarProduccion", {
-        'produccion': miJson
+        'produccion': JSON.stringify(miJson)
     })
     .done(function(response) {
         console.log("Respuesta:", response);
@@ -490,10 +764,13 @@ $('#btnGrabarProduccion').on('click', function() {
                 image: base_url + 'assets/img/success.gif'
             });
             
-            $('#cantidadRecetaProduccion').val("");
-            $('#costoTotalProduccion').val("0");
-            $('#costoTotalFinal').text("0");
-            $('#observacionesProduccion').val("");
+            // Limpiar todo
+            limpiarModalProduccion();
+            
+            // Cerrar modal después de 2 segundos
+            setTimeout(function() {
+                $('#ModalRealizarProduccion').modal('hide');
+            }, 2000);
         } else {
             showAppAlert('error', respuesta.message || "Error al registrar producción", {
                 duration: 5000,
@@ -510,15 +787,7 @@ $('#btnGrabarProduccion').on('click', function() {
     });
 });
 
-// Limpiar
-$('#btnLimpiarProduccion').on('click', function() {
-    $('#cantidadRecetaProduccion').val("");
-    $('#costoTotalProduccion').val("0");
-    $('#costoTotalFinal').text("0");
-    $('#observacionesProduccion').val("");
-});
-
-// Funciones auxiliares si no existen
+// Funciones auxiliares
 if (typeof soloNumerosDecimales !== 'function') {
     function soloNumerosDecimales(e) {
         var key = e.keyCode || e.which;
@@ -533,4 +802,10 @@ if (typeof soloNumerosDecimales !== 'function') {
         return letras.indexOf(teclado) !== -1;
     }
 }
+
+// Agregar estilos para fila seleccionada
+$('<style>')
+    .prop('type', 'text/css')
+    .html('#tableInsumosRecetaProduccion tbody tr.selected { background-color: #d9edf7 !important; }')
+    .appendTo('head');
 </script>
