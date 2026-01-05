@@ -106,14 +106,18 @@
                                             <input type="number" disabled class="form-control input-sm" 
                                                    name="costoTotalProduccion" id="costoTotalProduccion" value="0" />
                                         </div>
-                                        <div class="col-md-2">
-                                            <button class="btn btn-success">Agregar</button>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <button class="btn btn-default">Nuevo</button>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <button class="btn btn-danger">Quitar</button>
+                                        <div class="col-md-6 text-right botones-produccion">
+                                            <div class="btn-group">
+                                                <button class="btn btn-success btn-sm">
+                                                    <i class=""></i> Agregar
+                                                </button>
+                                                <button class="btn btn-default btn-sm">
+                                                    <i class=""></i> Nuevo
+                                                </button>
+                                                <button class="btn btn-danger btn-sm">
+                                                    <i class=""></i> Quitar
+                                                </button>
+                                            </div>
                                         </div>
                                     </fieldset>
                                 </div>
@@ -142,15 +146,15 @@
                                 <div class="panel-body" style="padding: 5px;">
                                     <div class="table-responsive">
                                         <table id="tableInsumosRecetaProduccion" class="table table-bordered table-hover table-sm" style="font-size: 12px;">
-                                            <thead style="background-color: #5cb85c; color: white;">
+                                            <thead style="background-color: #568c30; color: white;">
                                                 <tr>
                                                     <th class="text-center" style="width: 5%;">N</th>
-                                                    <th class="text-left" style="width: 20%;">Insumo</th>
-                                                    <th class="text-center" style="width: 10%;">Cant/Receta</th>
-                                                    <th class="text-center" style="width: 10%;">U/M Receta</th>
-                                                    <th class="text-center" style="width: 10%;">Conversión</th>
-                                                    <th class="text-center" style="width: 10%;">U/M Inv.</th>
-                                                    <th class="text-right" style="width: 10%;">Costo Neto Un(PPP)</th>
+                                                    <th class="text-left" style="width: 15%;">Insumo</th>
+                                                    <th class="text-center" style="width: 7%;">Cant/Receta</th>
+                                                    <th class="text-center" style="width: 7%;">U/M Receta</th>
+                                                    <th class="text-center" style="width: 5%;">Conversión</th>
+                                                    <th class="text-center" style="width: 8%;">U/M Inv.</th>
+                                                    <th class="text-right" style="width: 7%;">Costo Neto Un(PPP)</th>
                                                     <th class="text-right" style="width: 10%;">Costo Total</th>
                                                     <th class="text-center" style="width: 10%;">Bodega Origen</th>
                                                     <th class="text-center" style="width: 5%;">Stock</th>
@@ -271,42 +275,37 @@
         </div>
     </div>
 </div>
+<style>
+    .botones-produccion {
+    margin-top: 24px;   /* baja los botones */
+}
+
+.botones-produccion .btn {
+    min-width: 90px;
+}
+</style>
 <!-- FIN MODAL REALIZAR PRODUCCION -->
 
 <script>
 var base_url = "<?php echo base_url(); ?>";
 
-// Variable global para almacenar insumos de la receta
+// Variables globales
 var insumosReceta = [];
 var contadorInsumos = 0;
-
-// Variable para almacenar el ID del insumo elaborado
 var idInsumoElaborado = 0;
 
-// Abrir modal de producción CON DATOS DEL INSUMO
+// Abrir modal de producción
 function AbrirModalProduccion(idInsumo, nombreInsumo) {
     console.log("=== ABRIENDO MODAL DE PRODUCCIÓN ===");
     console.log("ID Insumo:", idInsumo);
     console.log("Nombre Insumo:", nombreInsumo);
     
-    // Guardar el ID del insumo elaborado
     idInsumoElaborado = idInsumo;
-    
-    // Limpiar campos y resetear
     limpiarModalProduccion();
     
-    // Cargar combos primero
+    // Cargar combos
     cargarBodegasParaProduccion();
-    
-    // Cargar insumos y luego cargar datos del insumo elaborado
-    cargarInsumosParaProduccion(function() {
-        // Una vez cargados los insumos, cargar datos del insumo elaborado
-        if (idInsumo && idInsumo > 0) {
-            cargarDatosInsumoElaborado(idInsumo);
-            // Preseleccionar el insumo en el combo
-            $('#cboInsumoProduccion').val(idInsumo).trigger('change');
-        }
-    });
+    cargarInsumosParaProduccion(idInsumo);
     
     // Configurar datepicker
     $('#fechaProduccion').daterangepicker({
@@ -316,17 +315,14 @@ function AbrirModalProduccion(idInsumo, nombreInsumo) {
         locale: {
             format: 'DD-MM-YYYY',
             daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
-            monthNames: [
-                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-            ],
+            monthNames: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
             firstDay: 1
         }
     }).on('apply.daterangepicker', function (ev, picker) {
         $(this).val(picker.startDate.format('DD-MM-YYYY'));
     });
     
-    // Abrir modal
     $('#ModalRealizarProduccion').modal({
         backdrop: 'static',
         keyboard: false
@@ -347,43 +343,40 @@ function limpiarModalProduccion() {
     $('#rendimientoReal').val("1");
     $('#umedidaInventarioElaborado').val("");
     $('#costoUnitarioElaborado').val("0.00");
+    $('#cboBodegaOrigenProduccion').val(0);
+    $('#bodegaDestinoElaborado').val(0);
     
-    // Limpiar tabla y array
     insumosReceta = [];
     contadorInsumos = 0;
     actualizarTablaInsumos();
     actualizarCostoTotal();
 }
 
-// Cargar datos del insumo ELABORADO (producto final)
-function cargarDatosInsumoElaborado(idInsumo) {
-    $.post(base_url + "index.php/Produccion/obtenerDatosInsumoCompleto", {
-        id_insumo: idInsumo
-    }, function(datos) {
-        var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
-        
-        if (obj) {
-            $('#nombreInsumoElaborado').val(obj.nombre_insumo);
-            $('#umedidaInventarioElaborado').val(obj.abreviatura || obj.nombre_unidad_medida);
-        }
-    });
-}
-
 // Cargar insumos
-function cargarInsumosParaProduccion(callback) {
+function cargarInsumosParaProduccion(idInsumoSeleccionado) {
     $.post(base_url + "index.php/Insumos/ListarInsumos", {}, function(datos) {
         var obj = jQuery.parseJSON(datos);
         var tbl = '<option value="0">-- Seleccione --</option>';
         
         $.each(obj, function(index, v) {
-            tbl += '<option value="' + v.id_insumo + '">' + v.nombre_insumo + '</option>';
+            var selected = (v.id_insumo == idInsumoSeleccionado) ? 'selected' : '';
+            tbl += '<option value="' + v.id_insumo + '" ' + selected + '>' + v.nombre_insumo + '</option>';
         });
         
-        $("#cboInsumoProduccion").html(tbl).select2();
+        $("#cboInsumoProduccion").html(tbl);
         
-        // Ejecutar callback si existe
-        if (typeof callback === 'function') {
-            callback();
+        // Destruir select2 si existe y reinicializar
+        if ($("#cboInsumoProduccion").data('select2')) {
+            $("#cboInsumoProduccion").select2('destroy');
+        }
+        $("#cboInsumoProduccion").select2();
+        
+        // Si hay insumo seleccionado, cargar sus datos
+        if (idInsumoSeleccionado && idInsumoSeleccionado > 0) {
+            setTimeout(function() {
+                $('#cboInsumoProduccion').val(idInsumoSeleccionado).trigger('change');
+                cargarDatosInsumoElaborado(idInsumoSeleccionado);
+            }, 100);
         }
     });
 }
@@ -394,22 +387,58 @@ function cargarBodegasParaProduccion() {
         var tbl = '<option value="0">-- Seleccione --</option>';
         
         $.each(obj.aaData, function (index, v) {
-            tbl += `<option value="${v.id_bodega}">${v.nombre_bodega}</option>`;
+            tbl += '<option value="' + v.id_bodega + '">' + v.nombre_bodega + '</option>';
         });
         
-        $("#cboBodegaOrigenProduccion").html(tbl).select2();
-        $("#bodegaDestinoElaborado").html(tbl).select2();
+        $("#cboBodegaOrigenProduccion").html(tbl);
+        $("#bodegaDestinoElaborado").html(tbl);
+        
+        // Reinicializar select2
+        if ($("#cboBodegaOrigenProduccion").data('select2')) {
+            $("#cboBodegaOrigenProduccion").select2('destroy');
+        }
+        $("#cboBodegaOrigenProduccion").select2();
+        
+        if ($("#bodegaDestinoElaborado").data('select2')) {
+            $("#bodegaDestinoElaborado").select2('destroy');
+        }
+        $("#bodegaDestinoElaborado").select2();
     }, 'json');
 }
 
-// Cuando cambia el insumo
+// Cargar datos del insumo elaborado (producto final)
+function cargarDatosInsumoElaborado(idInsumo) {
+    console.log("=== Cargando datos insumo elaborado ===");
+    console.log("ID Insumo:", idInsumo);
+    
+    $.post(base_url + "index.php/Produccion/obtenerDatosInsumoCompleto", {
+        id_insumo: idInsumo
+    }, function(datos) {
+        console.log("Datos insumo elaborado recibidos:", datos);
+        
+        var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
+        
+        if (obj) {
+            var unidadMedida = obj.abreviatura || obj.nombre_unidad_medida || '';
+            console.log("Nombre insumo elaborado:", obj.nombre_insumo);
+            console.log("Unidad medida elaborado:", unidadMedida);
+            
+            $('#nombreInsumoElaborado').val(obj.nombre_insumo);
+            $('#umedidaInventarioElaborado').val(unidadMedida);
+        }
+    }).fail(function(xhr, status, error) {
+        console.error("Error al cargar datos del insumo elaborado:", error);
+    });
+}
+
+// Cuando cambia el insumo en el combo
 $('#cboInsumoProduccion').on('change', function() {
     var idInsumo = $(this).val();
     
-    console.log("Cambió insumo a:", idInsumo);
+    console.log("=== Cambió insumo ===");
+    console.log("ID Insumo:", idInsumo);
     
     if (idInsumo > 0) {
-        // Obtener datos del insumo seleccionado
         $.post(base_url + "index.php/Produccion/obtenerDatosInsumoCompleto", {
             id_insumo: idInsumo
         }, function(datos) {
@@ -418,7 +447,6 @@ $('#cboInsumoProduccion').on('change', function() {
             var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
             
             if (obj) {
-                // Llenar unidades de medida
                 var unidadMedida = obj.abreviatura || obj.nombre_unidad_medida || '';
                 console.log("Unidad de medida:", unidadMedida);
                 
@@ -426,15 +454,14 @@ $('#cboInsumoProduccion').on('change', function() {
                 $('#umedidaRecetaProduccion').val(unidadMedida);
             }
             
-            // Si hay bodega seleccionada, obtener stock y costo
+            // Si hay bodega seleccionada, cargar stock y costo
             var idBodega = $('#cboBodegaOrigenProduccion').val();
-            console.log("Bodega actual:", idBodega);
-            
             if (idBodega > 0) {
                 cargarStockYCosto(idInsumo, idBodega);
             }
         }).fail(function(xhr, status, error) {
             console.error("Error al obtener datos del insumo:", error);
+            console.error("XHR:", xhr.responseText);
         });
     } else {
         $('#umedidaInvProduccion').val("");
@@ -450,8 +477,9 @@ $('#cboBodegaOrigenProduccion').on('change', function() {
     var idBodega = $(this).val();
     var idInsumo = $('#cboInsumoProduccion').val();
     
-    console.log("Cambió bodega a:", idBodega);
-    console.log("Insumo actual:", idInsumo);
+    console.log("=== Cambió bodega ===");
+    console.log("ID Bodega:", idBodega);
+    console.log("ID Insumo:", idInsumo);
     
     if (idInsumo > 0 && idBodega > 0) {
         cargarStockYCosto(idInsumo, idBodega);
@@ -519,7 +547,7 @@ function calcularCostoTotal() {
     $('#costoTotalProduccion').val(costoTotal.toFixed(2));
 }
 
-// BOTÓN AGREGAR - Agregar insumo a la tabla
+// BOTÓN AGREGAR
 $('.btn-success:contains("Agregar")').on('click', function(e) {
     e.preventDefault();
     
@@ -538,9 +566,9 @@ $('.btn-success:contains("Agregar")').on('click', function(e) {
     
     console.log("Datos a agregar:");
     console.log("- ID Insumo:", idInsumo);
-    console.log("- Nombre Insumo:", nombreInsumo);
+    console.log("- Nombre:", nombreInsumo);
     console.log("- ID Bodega:", idBodega);
-    console.log("- Nombre Bodega:", nombreBodega);
+    console.log("- Bodega:", nombreBodega);
     console.log("- Cantidad:", cantidad);
     console.log("- U/M Receta:", umedidaReceta);
     console.log("- U/M Inv:", umedidaInv);
@@ -592,21 +620,21 @@ $('.btn-success:contains("Agregar")').on('click', function(e) {
         cantidad: cantidad,
         umedida_receta: umedidaReceta,
         umedida_inv: umedidaInv,
-        conversion: 1, // Puedes calcular esto según tu lógica
+        conversion: 1,
         costo_neto: costoNeto,
         costo_total: costoTotal,
         stock: stock
     };
     
-    console.log("Insumo agregado al array:", insumo);
+    console.log("Insumo agregado:", insumo);
     insumosReceta.push(insumo);
-    console.log("Total insumos en array:", insumosReceta.length);
+    console.log("Total insumos:", insumosReceta.length);
     
     // Actualizar tabla y totales
     actualizarTablaInsumos();
     actualizarCostoTotal();
     
-    // Limpiar campos de entrada
+    // Limpiar campos
     limpiarCamposInsumo();
     
     showAppAlert('success', "Insumo agregado correctamente", {
@@ -615,17 +643,16 @@ $('.btn-success:contains("Agregar")').on('click', function(e) {
     });
 });
 
-// BOTÓN NUEVO - Limpiar campos de insumo
+// BOTÓN NUEVO
 $('.btn-default:contains("Nuevo")').on('click', function(e) {
     e.preventDefault();
     limpiarCamposInsumo();
 });
 
-// BOTÓN QUITAR - Eliminar insumo seleccionado
+// BOTÓN QUITAR
 $('.btn-danger:contains("Quitar")').on('click', function(e) {
     e.preventDefault();
     
-    // Obtener fila seleccionada
     var filaSeleccionada = $('#tableInsumosRecetaProduccion tbody tr.selected');
     
     if (filaSeleccionada.length === 0) {
@@ -638,12 +665,10 @@ $('.btn-danger:contains("Quitar")').on('click', function(e) {
     
     var idFila = filaSeleccionada.data('id');
     
-    // Eliminar del array
     insumosReceta = insumosReceta.filter(function(item) {
         return item.id !== idFila;
     });
     
-    // Actualizar tabla y totales
     actualizarTablaInsumos();
     actualizarCostoTotal();
     
@@ -653,15 +678,15 @@ $('.btn-danger:contains("Quitar")').on('click', function(e) {
     });
 });
 
-// Seleccionar fila de la tabla al hacer click
+// Seleccionar fila
 $(document).on('click', '#tableInsumosRecetaProduccion tbody tr', function() {
-    if ($(this).find('td').length === 1) return; // No seleccionar fila vacía
+    if ($(this).find('td').length === 1) return;
     
     $('#tableInsumosRecetaProduccion tbody tr').removeClass('selected');
     $(this).addClass('selected');
 });
 
-// Limpiar campos de entrada de insumo
+// Limpiar campos de insumo
 function limpiarCamposInsumo() {
     $('#cboInsumoProduccion').val(0).trigger('change');
     $('#cboBodegaOrigenProduccion').val(0).trigger('change');
@@ -673,7 +698,7 @@ function limpiarCamposInsumo() {
     $('#costoTotalProduccion').val("0");
 }
 
-// Actualizar tabla de insumos
+// Actualizar tabla
 function actualizarTablaInsumos() {
     var html = '';
     
@@ -697,9 +722,7 @@ function actualizarTablaInsumos() {
     }
     
     $('#detalleInsumosRecetaProduccion').html(html);
-    
-    console.log("=== Tabla actualizada ===");
-    console.log("Total de insumos:", insumosReceta.length);
+    console.log("Tabla actualizada. Total insumos:", insumosReceta.length);
 }
 
 // Actualizar costo total
@@ -712,11 +735,14 @@ function actualizarCostoTotal() {
     
     $('#costoTotalFinal').text(total.toFixed(2));
     $('#costoUnitarioElaborado').val(total.toFixed(2));
+    
+    console.log("Costo total actualizado:", total.toFixed(2));
 }
 
-// Grabar producción
+// GRABAR PRODUCCIÓN
 $('#btnGrabarProduccion').on('click', function() {
-    // Validaciones
+    console.log("=== GRABAR PRODUCCIÓN ===");
+    
     if (insumosReceta.length === 0) {
         showAppAlert('error', "Debe agregar al menos un insumo a la receta", {
             duration: 5000,
@@ -739,6 +765,7 @@ $('#btnGrabarProduccion').on('click', function() {
     
     var miJson = {
         'fecha': fechaProduccion,
+        'id_insumo_elaborado': idInsumoElaborado,
         'insumos': insumosReceta,
         'cantidad_producida': parseFloat($('#rendimientoReal').val()) || 1,
         'id_bodega_destino': $('#bodegaDestinoElaborado').val(),
@@ -747,8 +774,7 @@ $('#btnGrabarProduccion').on('click', function() {
         'nombre_insumo_elaborado': $('#nombreInsumoElaborado').val()
     };
     
-    console.log("=== DATOS DE PRODUCCIÓN ===");
-    console.log(miJson);
+    console.log("Datos a enviar:", miJson);
     
     $.post(base_url + "index.php/Produccion/grabarProduccion", {
         'produccion': JSON.stringify(miJson)
@@ -764,10 +790,8 @@ $('#btnGrabarProduccion').on('click', function() {
                 image: base_url + 'assets/img/success.gif'
             });
             
-            // Limpiar todo
             limpiarModalProduccion();
             
-            // Cerrar modal después de 2 segundos
             setTimeout(function() {
                 $('#ModalRealizarProduccion').modal('hide');
             }, 2000);
@@ -780,6 +804,7 @@ $('#btnGrabarProduccion').on('click', function() {
     })
     .fail(function(xhr, status, error) {
         console.error("Error:", error);
+        console.error("Response:", xhr.responseText);
         showAppAlert('error', "Error al registrar producción", {
             duration: 5000,
             image: base_url + 'assets/img/errorGif.gif'
@@ -803,7 +828,7 @@ if (typeof soloNumerosDecimales !== 'function') {
     }
 }
 
-// Agregar estilos para fila seleccionada
+// Estilos
 $('<style>')
     .prop('type', 'text/css')
     .html('#tableInsumosRecetaProduccion tbody tr.selected { background-color: #d9edf7 !important; }')

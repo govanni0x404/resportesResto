@@ -120,11 +120,9 @@ class Mproduccion extends CI_Model
         $q = "SELECT 
                 i.id_insumo,
                 i.nombre_insumo,
-                i.id_unidad_medida,
-                um.nombre_unidad_medida,
-                um.abreviatura
+                ui.nombre_umedida AS nombre_unidad_medida
             FROM insumo i
-            LEFT JOIN unidad_medida um ON i.id_unidad_medida = um.id_unidad_medida
+            LEFT JOIN umedida ui ON i.id_umedida_inventario = ui.id_umedida
             WHERE i.id_insumo = " . intval($id_insumo);
         
         $consulta = $this->db->query($q);
