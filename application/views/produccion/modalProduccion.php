@@ -424,7 +424,7 @@ function cargarDatosInsumoElaborado(idInsumo) {
             console.log("Unidad medida elaborado:", unidadMedida);
             
             $('#nombreInsumoElaborado').val(obj.nombre_insumo);
-            $('#umedidaInventarioElaborado').val(unidadMedida);
+            $('#umedidaInventarioElaborado').val(obj.umedida_inventario || '');
         }
     }).fail(function(xhr, status, error) {
         console.error("Error al cargar datos del insumo elaborado:", error);
@@ -447,11 +447,8 @@ $('#cboInsumoProduccion').on('change', function() {
             var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
             
             if (obj) {
-                var unidadMedida = obj.abreviatura || obj.nombre_unidad_medida || '';
-                console.log("Unidad de medida:", unidadMedida);
-                
-                $('#umedidaInvProduccion').val(unidadMedida);
-                $('#umedidaRecetaProduccion').val(unidadMedida);
+                $('#umedidaInvProduccion').val(obj.umedida_inventario || '');
+                $('#umedidaRecetaProduccion').val(obj.umedida_receta || '');
             }
             
             // Si hay bodega seleccionada, cargar stock y costo
@@ -512,13 +509,19 @@ function cargarStockYCosto(idInsumo, idBodega) {
     
     // Obtener costo PPP
     $.post(base_url + "index.php/Produccion/obtenerCostoPPP", {
-        id_insumo: idInsumo,
-        id_bodega: idBodega
+        id_insumo: idInsumo
     }, function(datos) {
         console.log("Costo PPP recibido:", datos);
         var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
-        var costo = parseFloat(obj.costo_ppp || 0);
+        var costo = 0;
+
+        if (obj && obj.costo_ppp !== null && obj.costo_ppp !== undefined) {
+            costo = parseFloat(obj.costo_ppp);
+        }
+
         $('#costoNetoProduccion').val(costo.toFixed(2));
+        calcularCostoTotal();
+
         console.log("Costo PPP establecido:", costo);
         
         // Recalcular costo total si hay cantidad

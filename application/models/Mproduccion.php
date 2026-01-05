@@ -87,50 +87,54 @@ class Mproduccion extends CI_Model
         return $this->db->affected_rows() > 0;
     }
     
-    public function obtenerCostoPPP($id_insumo, $id_bodega)
+    public function obtenerCostoPPP($id_insumo)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-            redirect(base_url());
-        }
-        
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-        
-        $q = "SELECT precio_promedio_ponderado as costo_ppp 
-            FROM stock_insumo 
-            WHERE id_insumo = " . intval($id_insumo) . " 
-            AND id_bodega = " . intval($id_bodega);
-        
+        $this->db = $this->load->database(
+            $this->session->userdata('nombre_conexion'), TRUE
+        );
+
+        $q = "SELECT costo_neto_ppp
+            FROM insumo
+            WHERE id_insumo = " . intval($id_insumo);
+
         $consulta = $this->db->query($q);
-        
+
         if ($consulta->num_rows() > 0) {
-            return $consulta->row()->costo_ppp;
+            return floatval($consulta->row()->costo_neto_ppp);
         }
-        
+
         return 0;
     }
 
     public function obtenerDatosInsumoCompleto($id_insumo)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-            redirect(base_url());
-        }
-        
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-        
+        $this->db = $this->load->database(
+            $this->session->userdata('nombre_conexion'), TRUE
+        );
+
         $q = "SELECT 
                 i.id_insumo,
                 i.nombre_insumo,
-                ui.nombre_umedida AS nombre_unidad_medida
+
+                -- Unidad receta
+                ur.id_umedida AS id_umedida_receta,
+                ur.nombre_umedida AS umedida_receta,
+
+                -- Unidad inventario
+                ui.id_umedida AS id_umedida_inventario,
+                ui.nombre_umedida AS umedida_inventario
+
             FROM insumo i
+            LEFT JOIN umedida ur ON i.id_umedida_receta = ur.id_umedida
             LEFT JOIN umedida ui ON i.id_umedida_inventario = ui.id_umedida
             WHERE i.id_insumo = " . intval($id_insumo);
-        
+
         $consulta = $this->db->query($q);
-        
+
         if ($consulta->num_rows() > 0) {
             return $consulta->row();
         }
-        
+
         return null;
     }
 }
