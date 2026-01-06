@@ -166,4 +166,54 @@ class MrecetaProduccion extends CI_Model
         $this->db->where('id_detalle_receta_produccion', $id_detalle);
         return $this->db->delete('detalle_receta_produccion');
     }
+
+    public function verificarRecetaExiste($id_insumo)
+    {
+        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+            return false;
+        }
+
+        $this->db = $this->load->database(
+            $this->session->userdata('nombre_conexion'),
+            TRUE
+        );
+
+        // AJUSTA EL NOMBRE DE LA TABLA SI ES DISTINTO
+        $q = "SELECT 1
+            FROM receta_produccion
+            WHERE id_insumo = ?
+            LIMIT 1";
+
+        $query = $this->db->query($q, [$id_insumo]);
+
+        return ($query->num_rows() > 0);
+    }
+
+    public function obtenerRecetasDelInsumo($id_insumo)
+    {
+        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+            return [];
+        }
+
+        $this->db = $this->load->database(
+            $this->session->userdata('nombre_conexion'),
+            TRUE
+        );
+
+        $q = "SELECT
+                rp.id_receta_produccion,
+                rp.nombre_receta_produccion,
+                rp.cantidad,
+                rp.id_umedida,
+                um.nombre_umedida
+            FROM receta_produccion rp
+            LEFT JOIN umedida um ON rp.id_umedida = um.id_umedida
+            WHERE rp.id_insumo = ?
+            AND rp.vigente = true
+            ORDER BY rp.nombre_receta_produccion ASC";
+
+        $consulta = $this->db->query($q, array($id_insumo));
+        
+        return $consulta->result();
+    }
 }
