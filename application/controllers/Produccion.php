@@ -6,10 +6,6 @@ class Produccion extends CI_Controller
     function __construct()
     {
         parent::__construct();
-        $this->db = $this->load->database(
-            $this->session->userdata('nombre_conexion'),
-            TRUE
-        );
         $this->load->model(array('Mproduccion', 'Minsumos', 'MrecetaProduccion'));
     }
 
@@ -94,6 +90,50 @@ class Produccion extends CI_Controller
                 
                 $costoTotalProduccion += floatval($insumo['costo_total']);
             }
+            
+            // TODO: Agregar entrada del producto elaborado a la bodega destino
+            // Esto dependerá de tu estructura de base de datos y lógica de negocio
+            // Ejemplo:
+            /*
+            $stock_destino_actual = $this->Mproduccion->obtenerStockActual(
+                $id_insumo_elaborado, 
+                $d['id_bodega_destino']
+            );
+            
+            $nuevo_stock_destino = $stock_destino_actual + $d['cantidad_producida'];
+            $costo_unitario_elaborado = $costoTotalProduccion / $d['cantidad_producida'];
+            
+            $miDataEntrada = array(
+                'fecha' => $d['fecha'],
+                'id_insumo' => $id_insumo_elaborado,
+                'id_bodega' => $d['id_bodega_destino'],
+                'cantidad' => $d['cantidad_producida'],
+                'stock_actual' => $stock_destino_actual,
+                'nuevo_stock' => $nuevo_stock_destino,
+                'costo_total' => $costoTotalProduccion,
+                'costo_unitario' => $costo_unitario_elaborado,
+                'id_usuario' => $this->session->userdata('id_usuario'),
+                'fecha_transaccion' => date('Y-m-d H:i:s'),
+                'observaciones' => 'Producción de ' . $d['nombre_insumo_elaborado'] . ' - ' . $d['observaciones']
+            );
+            
+            $id_produccion_entrada = $this->Mproduccion->grabarProduccion($miDataEntrada);
+            
+            // Actualizar stock destino
+            $this->Mproduccion->actualizarStock(
+                $id_insumo_elaborado, 
+                $d['id_bodega_destino'], 
+                $nuevo_stock_destino
+            );
+            
+            // Actualizar precio promedio ponderado del producto elaborado
+            $this->Mproduccion->actualizarPPP(
+                $id_insumo_elaborado,
+                $d['id_bodega_destino'],
+                $costo_unitario_elaborado,
+                $nuevo_stock_destino
+            );
+            */
             
             // Finalizar transacción
             $this->db->trans_complete();
@@ -192,17 +232,12 @@ class Produccion extends CI_Controller
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
-
+        
         $id_insumo = $this->input->post('id_insumo');
-
-        if (!$id_insumo) {
-            echo json_encode(['existe' => false]);
-            return;
-        }
-
+        
         $existe = $this->MrecetaProduccion->verificarRecetaExiste($id_insumo);
-
-        echo json_encode(['existe' => $existe ? true : false]);
+        
+        echo json_encode(array('existe' => $existe));
     }
 
     public function obtenerRecetasInsumo()
@@ -225,10 +260,7 @@ class Produccion extends CI_Controller
         }
         
         $id_receta = $this->input->post('id_receta');
-        $cantidad_producir = $this->input->post('cantidad_producir');
-        if (!$cantidad_producir) {
-            $cantidad_producir = 1;
-        }
+        $cantidad_producir = $this->input->post('cantidad_producir', 1);
         
         $detalle = $this->MrecetaProduccion->obtenerDetalleReceta($id_receta);
         

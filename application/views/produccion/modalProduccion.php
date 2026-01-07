@@ -275,6 +275,7 @@
         </div>
     </div>
 </div>
+<?php $this->load->view('produccion/modalCantidadProduccion.php'); ?>
 <style>
     .botones-produccion {
     margin-top: 24px;   /* baja los botones */
@@ -360,10 +361,14 @@ function mostrarModalCantidad(idInsumo, nombreInsumo) {
         $('#cantidadAProducir').val('1');
         
         // Abrir modal
-        $('#ModalCantidadProduccion').modal({
-            backdrop: 'static',
-            keyboard: false
-        });
+        $('.modal').modal('hide');
+
+        setTimeout(function () {
+            $('#ModalCantidadProduccion').modal({
+                backdrop: 'static',
+                keyboard: false
+            });
+        }, 300);
         
     }).fail(function(xhr, status, error) {
         console.error("Error al cargar recetas:", error);
