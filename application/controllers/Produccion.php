@@ -182,9 +182,8 @@ class Produccion extends CI_Controller
         }
         
         $id_insumo = $this->input->post('id_insumo');
-        $id_bodega = $this->input->post('id_bodega');
-        
-        $costo = $this->Mproduccion->obtenerCostoPPP($id_insumo, $id_bodega);
+
+        $costo = $this->Mproduccion->obtenerCostoPPP($id_insumo);
         
         echo json_encode(array('costo_ppp' => $costo));
     }
@@ -195,81 +194,10 @@ class Produccion extends CI_Controller
             redirect(base_url());
         }
         
-        try {
-            $id_insumo = $this->input->post('id_insumo');
-            
-            if (!$id_insumo) {
-                echo json_encode(array(
-                    'error' => true,
-                    'message' => 'ID de insumo no proporcionado'
-                ));
-                return;
-            }
-            
-            $datos = $this->Mproduccion->obtenerDatosInsumoCompleto($id_insumo);
-            
-            if (!$datos) {
-                echo json_encode(array(
-                    'error' => true,
-                    'message' => 'No se encontraron datos para el insumo'
-                ));
-                return;
-            }
-            
-            echo json_encode($datos);
-            
-        } catch (Exception $e) {
-            log_message('error', 'Error en obtenerDatosInsumoCompleto: ' . $e->getMessage());
-            echo json_encode(array(
-                'error' => true,
-                'message' => $e->getMessage()
-            ));
-        }
-    }
-
-    public function verificarReceta()
-    {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-            redirect(base_url());
-        }
-        
         $id_insumo = $this->input->post('id_insumo');
         
-        $existe = $this->MrecetaProduccion->verificarRecetaExiste($id_insumo);
+        $datos = $this->Mproduccion->obtenerDatosInsumoCompleto($id_insumo);
         
-        echo json_encode(array('existe' => $existe));
-    }
-
-    public function obtenerRecetasInsumo()
-    {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-            redirect(base_url());
-        }
-        
-        $id_insumo = $this->input->post('id_insumo');
-        
-        $recetas = $this->MrecetaProduccion->obtenerRecetasDelInsumo($id_insumo);
-        
-        echo json_encode($recetas);
-    }
-
-    public function obtenerDetalleReceta()
-    {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-            redirect(base_url());
-        }
-        
-        $id_receta = $this->input->post('id_receta');
-        $cantidad_producir = $this->input->post('cantidad_producir', 1);
-        
-        $detalle = $this->MrecetaProduccion->obtenerDetalleReceta($id_receta);
-        
-        // Ajustar cantidades según la cantidad a producir
-        foreach ($detalle as $item) {
-            $item->cantidad_ajustada = $item->cantidad_insumo * floatval($cantidad_producir);
-            $item->costo_total = $item->cantidad_ajustada * floatval($item->costo_neto_ppp);
-        }
-        
-        echo json_encode($detalle);
+        echo json_encode($datos);
     }
 }

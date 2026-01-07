@@ -107,27 +107,42 @@ class MrecetaProduccion extends CI_Model
         
         $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
         
-        // Consulta actualizada para obtener el detalle con el costo PPP
         $q = "SELECT 
                 drp.id_detalle_receta_produccion,
                 drp.id_receta_produccion,
-                drp.id_insumo as id_insumo_receta,
+                drp.id_insumo,
                 i.nombre_insumo,
-                drp.cantidad as cantidad_insumo,
-                drp.id_umedida as id_umedida_receta,
-                um.nombre_umedida as umedida_receta,
-                i.id_umedida_inventario,
-                umi.nombre_umedida as umedida_inventario,
-                i.costo_neto_ppp,
-                1 as conversion
+                drp.cantidad,
+                drp.id_umedida,
+                um.nombre_umedida
             FROM detalle_receta_produccion drp
             JOIN insumo i ON drp.id_insumo = i.id_insumo
-            LEFT JOIN umedida um ON drp.id_umedida = um.id_umedida
-            LEFT JOIN umedida umi ON i.id_umedida_inventario = umi.id_umedida
+            JOIN umedida um ON drp.id_umedida = um.id_umedida
             WHERE drp.id_receta_produccion = " . intval($id_receta_produccion);
 
         $consulta = $this->db->query($q);
-        return $consulta->result();
+        $sampleData = $consulta->result();
+        $data = array();
+
+        foreach ($sampleData as $key) {
+            array_push($data, array(
+                "id_detalle_receta_produccion" => $key->id_detalle_receta_produccion,
+                "id_insumo" => $key->id_insumo,
+                "nombre_insumo" => $key->nombre_insumo,
+                "cantidad" => $key->cantidad,
+                "nombre_umedida" => $key->nombre_umedida,
+                "responsive" => ""
+            ));
+        }
+
+        $results = array(
+            "sEcho" => 1,
+            "iTotalRecords" => count($data),
+            "iTotalDisplayRecords" => count($data),
+            "aaData" => $data
+        );
+
+        return $results;
     }
 
     public function grabarDetalleReceta($data)
@@ -150,58 +165,5 @@ class MrecetaProduccion extends CI_Model
         $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
         $this->db->where('id_detalle_receta_produccion', $id_detalle);
         return $this->db->delete('detalle_receta_produccion');
-    }
-
-    public function verificarRecetaExiste($id_insumo)
-    {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-            return false;
-        }
-
-        $this->db = $this->load->database(
-            $this->session->userdata('nombre_conexion'),
-            TRUE
-        );
-
-        $q = "SELECT COUNT(*) as total
-            FROM receta_produccion
-            WHERE id_insumo = ?
-            AND vigente = true";
-
-        $query = $this->db->query($q, array($id_insumo));
-        
-        if ($query && $query->num_rows() > 0) {
-            return $query->row()->total > 0;
-        }
-
-        return false;
-    }
-
-    public function obtenerRecetasDelInsumo($id_insumo)
-    {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-            return array();
-        }
-
-        $this->db = $this->load->database(
-            $this->session->userdata('nombre_conexion'),
-            TRUE
-        );
-
-        $q = "SELECT
-                rp.id_receta_produccion as id_receta,
-                rp.nombre_receta_produccion as nombre_receta,
-                rp.cantidad as cantidad_receta,
-                rp.id_umedida,
-                um.nombre_umedida
-            FROM receta_produccion rp
-            LEFT JOIN umedida um ON rp.id_umedida = um.id_umedida
-            WHERE rp.id_insumo = ?
-            AND rp.vigente = true
-            ORDER BY rp.nombre_receta_produccion ASC";
-
-        $consulta = $this->db->query($q, array($id_insumo));
-        
-        return $consulta->result();
     }
 }
