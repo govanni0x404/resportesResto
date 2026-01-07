@@ -35,18 +35,9 @@ $fechaActual = date('Y-m-d');
                     <fieldset>
                         <div class="col-md-3">
                             <label for="cboProveedorCompra">Proveedor</label>
-                                <div class="input-group">
-                                    <select id="cboProveedorCompra" nombre="cboProveedorCompra" class="form-control input-sm"
-                                        style="width:100%" requerido="si"></select>
-                                    
-                                        <span class="input-group-btn">
-                                            <button class="btn btn-success btn-sm" type="button" id="btnNuevoProveedorCompra" 
-                                                style="height: 30px;" title="Agregar nuevo proveedor"
-                                                onclick="AbrirModalNuevoProveedor()">
-                                                <i class="fa fa-plus"></i>
-                                            </button>
-                                        </span>
-                                </div>
+                            <sup><a onclick="AbrirModalNuevoProveedor()">Nuevo</a></sup>
+                            <select id="cboProveedorCompra" nombre="cboProveedorCompra" class="form-control input-sm"
+                            style="width:100%" requerido="si"></select>
                         </div>
 
                         <div class="col-md-3">
@@ -114,7 +105,7 @@ $fechaActual = date('Y-m-d');
                         <div class="col-md-2">
                             <label style="visibility: hidden;">Acción</label>
                             <button id="btnAgregarALista" type="button"
-                                class="btn btn-primary btn-block"><i class="fa fa-plus"></i> Agregar</button>
+                                class="btn btn-primary btn-block"><i class=""></i> Agregar</button>
                         </div>
                     </fieldset>
                 </div>
@@ -167,7 +158,7 @@ $fechaActual = date('Y-m-d');
                                 type="button"
                                 class="btn btn-primary btn-lg" 
                                 style="padding: 10px 20px; font-size: 16px;">
-                                <i class="fa fa-save"></i> INGRESAR COMPRA
+                                <i class=""></i> INGRESAR COMPRA
                             </button>
                         </div>
                     </div>

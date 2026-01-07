@@ -37,6 +37,7 @@
 										</div>
 										<div class="col-md-3">
 											<label for="cboUnMedida">UNIDAD MEDIDA</label>
+											<sup><a onclick="AbrirModalNuevaUmedida()">Nuevo</a></sup>
 											<select style="width:100%;" id="cboUnMedida" nombre="cboUnMedida" class="form-control input-sm" requerido="si">
 												<option value="">--Seleccione--</option>
 											</select>
@@ -185,9 +186,7 @@
 	</div>
 </div>
 <!-- FIN  MODAL NUEVO REGISTRO  -->
-
-
-
+ <?php $this->load->view('umedida/jsNuevaUmedida.php'); ?>
 
 <script>
 	var tableInsumoReceta = $("#tableInsumoReceta").on("draw.dt", function() {

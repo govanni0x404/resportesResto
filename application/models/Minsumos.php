@@ -79,6 +79,12 @@ class Minsumos extends CI_Model
 
 		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
 		$q = "SELECT * from impuesto order by nombre_impuesto asc";
+		// $q = "SELECT * FROM impuesto WHERE UPPER(nombre_impuesto) IN ('IVA 19%', 'EXENTO')
+		// 	ORDER BY CASE 
+    	// 		WHEN UPPER(nombre_impuesto) LIKE 'IVA%' THEN 1
+    	// 		WHEN UPPER(nombre_impuesto) = 'EXENTO' THEN 2
+  		// 		END
+		// 	";
 		$query = $this->db->query($q)->result();
 		return $query;
 	}

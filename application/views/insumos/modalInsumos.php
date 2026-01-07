@@ -46,6 +46,7 @@
 								<fieldset>
 									<div class="col-md-12">
 										<label for="cboGrupoInsumo">FAMILIA/GRUPO INSUMO *</label>
+										<sup style="color:#568c30;" ><a onclick="AbrirModalNuevaFamiliaInsumo()">Nuevo</a></sup>
 										<select style="width:100%;" id="cboGrupoInsumo" nombre="cboGrupoInsumo" class="form-control input-sm" requerido="si">
 											<option value="">--Seleccione--</option>
 										</select>
@@ -533,6 +534,7 @@
     </div>
 </div>
 <!-- FIN MODAL NUEVA RECETA DE PRODUCCION -->
+ <?php $this->load->view('familiasInsumo/jsNuevaFamilia.php'); ?>
 
 <script>
 	$("#btnNuevoInsumo").on("click", function() {

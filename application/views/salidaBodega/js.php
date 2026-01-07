@@ -111,6 +111,7 @@ function agregarProductoALaGrilla() {
 
         }).done(function() {
             //sumarTotalesTabla();
+            $("#txtObservaciones").val("");
         })
         .fail(function() {
             showAppAlert('error',"Se produjo un error al realizar la consulta", {
@@ -173,10 +174,17 @@ function grabarSalidaBodega() {
     });
 
     // --- datos de cabecera ---
+    // var miJson = {
+    //     'fecha': FechaSalida,
+    //     'id_bodega': IdBodega,
+    //     'observaciones': 'Salida manual'
+    // };
+
+    var Observaciones = $('#txtObservaciones').val().trim();
     var miJson = {
         'fecha': FechaSalida,
         'id_bodega': IdBodega,
-        'observaciones': 'Salida manual'
+        'observaciones': Observaciones
     };
 
     // --- grabar cabecera ---
@@ -204,6 +212,7 @@ function grabarSalidaBodega() {
                             image: base_url + 'assets/img/success.gif'
                         });
                         $("#detalleSalidaBodega").empty();
+                        $("#txtObservaciones").val("");
                     },
                     error: function (xhr, status, error) {
                         showAppAlert('error',"No se pudo grabar el detalle: " + error, "error", {

@@ -46,6 +46,14 @@ class Umedida extends CI_Controller
       'nombre_umedida' => $d['nombre_umedida'],
     );
     $r = $this->MuMedida->grabarNuevaUmedida($id, $miData);
-    echo json_encode($r);
+        if ($r && isset($r['id_proveedor'])) {
+        echo json_encode(array(
+            'success' => true,
+            'id_umedida' => $r['id_umedida'],
+            'message' => 'Unidad de Medida grabada exitosamente'
+        ));
+    } else {
+        echo json_encode($r);
+    }
   }
 }

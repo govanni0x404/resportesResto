@@ -15,7 +15,7 @@ class Mrecintos extends CI_Model
     }
     $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
     $q = "SELECT r.id_recinto, r.nombre_recinto, r.vigente, d.nombre_dimpresion from recinto r 
-    join dimpresion d on r.id_dimpresion=d.id_dimpresion
+    left join dimpresion d on r.id_dimpresion=d.id_dimpresion
     order by r.id_recinto asc";
 
     $consulta = $this->db->query($q);
@@ -55,5 +55,18 @@ class Mrecintos extends CI_Model
       $consulta = $this->db->query("SELECT CURRVAL('recinto_id_recinto_seq'::regclass) as id_recinto");
     }
     return $consulta->result();
+  }
+
+  public function obtenerUltimoDestinoImpresion()
+  {
+      $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+
+      return $this->db
+          ->select('id_dimpresion')
+          ->from('dimpresion') // 👈 TABLA CORRECTA
+          ->order_by('id_dimpresion', 'DESC')
+          ->limit(1)
+          ->get()
+          ->row();
   }
 }

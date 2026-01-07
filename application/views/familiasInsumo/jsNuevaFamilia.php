@@ -77,7 +77,24 @@
             image: base_url + 'assets/img/success.gif'
           });
           $('#ModalNuevaFamiliaInsumo').modal('hide');
-          tablaFamiliasInsumo.ajax.reload();
+          if (typeof ListarFamiliasInsumo === 'function') {
+					  ListarFamiliasInsumo("");
+						
+					  try {
+						  var nuevaFamiliaInsumo = JSON.parse(response);
+						  if (nuevaFamiliaInsumo.id_grupo_insumo) {
+							  setTimeout(function() {
+								  $('#cboGrupoInsumo').val(nuevaFamiliaInsumo.id_grupo_insumo).trigger('change');
+							  }, 500);
+						  }
+					  } catch(e) {
+						  console.log("No se pudo seleccionar automáticamente la nueva familia de insumos");
+					  }
+				  }
+
+          if (typeof tablaFamiliasInsumo !== 'undefined') {
+            tablaFamiliasInsumo.ajax.reload();
+          }
         })
         .fail(function() {
           showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador!", {
