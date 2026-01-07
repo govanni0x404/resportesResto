@@ -35,12 +35,14 @@ $fechaActual = date('Y-m-d');
                     <div class="col-md-2">
                         <label for="Fecha">Fecha</label>
                         <input type="text" id="Fecha" class="form-control input-sm"
-                            value="<?php echo $fechaActual; ?>" />
+                            value="<?php echo date('d-m-Y'); ?>" />
                     </div>
                     <br>
+                    <!--
                     <div class="col-md-2">
                         <button id="btnValidarIngreso" type="button" class="btn btn-primary"></i>Validar Stock</button>
                     </div>
+                    -->
                 </fieldset>
             </div>
 
@@ -113,35 +115,35 @@ $fechaActual = date('Y-m-d');
                                                 <tbody id="detalleEntradaBodega">
                                                 </tbody>
                                             </table>
+                                            <div class="container-padding">
+                                                <input type="number" class="form-control" style="display: none;" name="id_rol"
+                                                    id="id_rol" value="0" min="0" oninput="validity.valid||(value='');">
 
-                                        </fieldset>
-                                    </div>
-
-
-                                    <div class="container-padding">
-                                        <input type="number" class="form-control" style="display: none;" name="id_rol"
-                                            id="id_rol" value="0" min="0" oninput="validity.valid||(value='');">
-
-                                        <div class="row">
-                                            <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
-                                                <div class="panel-body">
-                                                    <fieldset>
-                                                        <div class="col-md-5">
-                                                        </div>
-                                                        <div class="col-md-5">
-                                                        </div>
-                                                        <div class="col-md-2">
-                                                            <button onclick="grabarEntradaBodega()" type="button"
-                                                                class="btn btn-primary"></i>INGRESAR
-                                                                A BODEGA</button>
-                                                        </div>
-                                                        <div class="panel lobidisable">
-                                                            <div class="panel-heading">
-                                                                <div class="panel-title">
-
-                                                                </div>
+                                            <div class="row">
+                                                <div class=" ">
+                                                    <div class="panel-body">
+                                                        <fieldset>
+                                                            <div class="col-md-5">
                                                             </div>
-                                                            <br>
+                                                            <div class="col-md-5">
+                                                            </div>
+                                                            <div class="col-md-2">
+                                                                <button onclick="grabarEntradaBodega()" type="button"
+                                                                    class="btn btn-primary"></i>INGRESAR
+                                                                A BODEGA</button>
+                                                            </div>
+                                                            <div class="panel lobidisable">
+                                                                <div class="panel-heading">
+                                                                    <div class="panel-title">
 
-                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <br>
+
+                                                            </div>
+                                                            </div>
+                                                        </fieldset>
                                                 </div>
+
+
+                                    

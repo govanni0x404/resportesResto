@@ -1,23 +1,96 @@
 <script>
 var base_url = "<?php echo base_url(); ?>";
-var tablaUsuarios = $('#tablaUsuarios').DataTable();
+var tablaUsuarios;
+var rolesMap = {};
 
 $(document).ready(function() {
-    ListadoDeUsuarios();
+    cargarRolesParaTabla(function() {
+        ListadoDeUsuarios();
+    });
 });
 
-function ListadoDeUsuarios() {
-    if ($.fn.dataTable.isDataTable('#tablaUsuarios')) {
-        tablaUsuarios = $('#tablaUsuarios').DataTable();
-        tablaUsuarios.destroy();
+function cargarRolesParaTabla(callback) {
+    $.get(base_url + "index.php/Usuario/ListadoRoles", function(response) {
+        if (typeof response === "string") {
+            try {
+                response = JSON.parse(response);
+            } catch(e) {
+                console.error("ERROR al cargar roles");
+                return;
+            }
+        }
+        
+        // Crear mapa de roles: {id: nombre}
+        response.forEach(function(r) {
+            rolesMap[r.id_rol] = r.nombre_rol;
+        });
+        
+        console.log("Mapa de roles cargado:", rolesMap);
+        
+        if (callback && typeof callback === 'function') {
+            callback();
+        }
+    });
+}
+
+function showTableLoader(message) {
+    $('#dynamic-table-loader').remove();
+    
+    var loaderHtml = 
+        '<div id="dynamic-table-loader" style="' +
+        'position: absolute; top: 0; left: 0; right: 0; bottom: 0; ' +
+        'background: rgba(255, 255, 255, 0.95); ' +
+        'display: flex; flex-direction: column; align-items: center; justify-content: center; ' +
+        'z-index: 100; gap: 12px;">' +
+        '<div style="width: 40px; height: 40px; border: 4px solid rgba(0,123,255,0.2); ' +
+        'border-top-color: #007bff; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>' +
+        '<div style="color: #333; font-size: 14px;">' + (message || 'Cargando...') + '</div>' +
+        '</div>';
+    
+    var $wrapper = $('#tablaUsuarios').closest('.dataTables_wrapper');
+    if ($wrapper.length === 0) {
+        $wrapper = $('#tablaUsuarios').parent();
     }
+    
+    $wrapper.css('position', 'relative');
+    $wrapper.append(loaderHtml);
+}   
+
+function hideTableLoader() {
+    $('#dynamic-table-loader').fadeOut(200, function() {
+        $(this).remove();
+    });
+}
+
+function ListadoDeUsuarios() {
+    if (tablaUsuarios && $.fn.dataTable.isDataTable('#tablaUsuarios')) {
+        try {
+            tablaUsuarios.destroy();
+        } catch(e) {
+            console.warn("Error al destruir tabla:", e);
+        }
+    }
+    
     tablaUsuarios = $("#tablaUsuarios").DataTable({
         "ajax": {
-            "url": base_url + "index.php/Usuario/ListadoDeUsuarios"
+            "url": base_url + "index.php/Usuario/ListadoDeUsuarios",
+            "type": "POST", // ✅ Agregar tipo
+            "data": {},
+            beforeSend: function () {
+                showTableLoader("Cargando Usuarios...");
+            },
+            complete: function () {
+                hideTableLoader();
+            },
+            error: function (xhr, error, thrown) {
+                console.error("Error en AJAX:", error, thrown);
+                hideTableLoader();
+            }
         },
         "bPaginate": true,
-        "bProcessing": true,
+        "bProcessing": false,
         "pageLength": 10,
+        "lengthChange": false,
         "select": true,
         "dom": "Bfrtip",
         "ordering": true,
@@ -30,25 +103,20 @@ function ListadoDeUsuarios() {
                 target: -1
             }
         },
-        "columns": [{
+        "columns": [
+            {
                 mData: "id_usuario",
                 className: "text-center"
             },
             {
                 mData: "nombre_usuario",
-                className: "text-center"
+                className: "text-left"
             },
             {
                 mData: "id_rol",
-                className: "text-center",
+                className: "text-left",
                 render: function(data) {
-                    var roles = {
-                        1: 'ADMINISTRADOR',
-                        2: 'SUPERVISOR',
-                        3: 'CAJERO',
-                        4: 'GARZON'
-                    };
-                    return roles[data] || 'ROL ' + data;
+                    return rolesMap[String(data)] || rolesMap[parseInt(data)] || 'ROL ' + data;
                 }
             },
             {
@@ -85,7 +153,7 @@ function ListadoDeUsuarios() {
         
         $("#idUsuario").val(rowData[0].id_usuario);
         $("#nombreUsuario").val(rowData[0].nombre_usuario);
-        $("#ClaveUsuario").val(rowData[0].clave_usuario);
+        $("#claveUsuario").val(rowData[0].clave_usuario);
         
         cargarRoles();
         setTimeout(function() {
@@ -96,7 +164,7 @@ function ListadoDeUsuarios() {
         var vigenteValue = rowData[0].vigente === true || rowData[0].vigente === 't' || rowData[0].vigente === 'true' ? 'true' : 'false';
         $("#vigente").val(vigenteValue);
         
-        // Mostrar campos de edición y ocultar creación
+        // Mostrar campos de edición
         $('#divNombreUsuario').show();
         $('#divClaveUsuario').show();
         $('#divIdUsuario').show();

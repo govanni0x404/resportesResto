@@ -18,11 +18,11 @@
                     <div class="tab-pane fade active in" id="tabBodegas">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-6 ">
+                            <div class="col-md-4 ">
                                 <label for="idIngresoEvento">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idIngresoEvento" id="idIngresoEvento" requerido="no" value="" />
                             </div>
-                            <div class="col-md-6 ">
+                            <div class="col-md-10 ">
                                 <label for="nombreIngresoEvento">NOMBRE INGRESO EVENTO *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreIngresoEvento" id="nombreIngresoEvento" requerido="si" value="" placeholder="Nombre Ingreso De Evento" />
                             </div>
@@ -35,8 +35,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="grabarNuevoIngresoEvento()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+                <button onclick="grabarNuevoIngresoEvento()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -56,7 +56,10 @@
 
     function grabarNuevoIngresoEvento() {
         if ($('#nombreIngresoEvento').val() == 0) {
-            swal("ERROR!", "No Ingreso El Nombre Del Ingreso De Evento!", "error");
+            showAppAlert('error',"No Ingreso El nombre del Evento!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
         } else {
             idIngresoEvento = $('#idIngresoEvento').val();
             NombreIngresoEvento = $('#nombreIngresoEvento').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -68,7 +71,10 @@
             $.post(base_url + "index.php/IngresoEventos/grabarNuevoIngresoEvento", {
                     'prod': miJson
                 }).done(function() {
-                    swal("Listo", "Se registro Exitosamente El Ingreso De Evento", "success");
+                    showAppAlert('success', "Se registro Exitosamente El Nuevo Evento!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
                     $('#ModalNuevoIngresoEvento').modal('hide');
                     tablaIngresosEvento.ajax.reload();
                 })

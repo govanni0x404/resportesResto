@@ -19,7 +19,7 @@
 					<div class="tab-pane fade active in" id="tabBodegas">
 						<!-- CAMPOS DE REGISTRO  -->
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-4 ">
 								<label for="idProveedor">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idProveedor" id="idProveedor" requerido="no" value="" />
 							</div>
@@ -58,13 +58,11 @@
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-12 ">
+							<div class="col-md-8">
 								<label for="GiroProveedor">GIRO *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="GiroProveedor" id="GiroProveedor" requerido="si" value="" placeholder="Giro Proveedor" />
 							</div>
-						</fieldset>
-						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-4">
 								<label for="CreditoProveedor">CREDITO</label>
 								<input min="0" type="text" class="form-control input-sm input-sm" maxlength='8' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="CreditoProveedor" id="CreditoProveedor" requerido="si" value="" placeholder="Credito Maximo Proveedor" />
 							</div>
@@ -77,8 +75,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarNuevoProveedor()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+				<button onclick="grabarNuevoProveedor()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -97,6 +95,7 @@
 		$('#CorreoProveedor').val("");
 		$('#GiroProveedor').val("");
 		$('#CreditoProveedor').val("0");
+					
 		$('#ModalNuevoProveedor').modal({
 			backdrop: 'static',
 			keyboard: false
@@ -155,7 +154,7 @@
 
 	$('#RutProveedor').on('focusout', function() {
 		if ($("#RutProveedor").val().length < 8) {
-			showAppAlert('error',"- Ingrese un rut váildo!", {
+			showAppAlert('error',"Ingrese un rut váildo!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
@@ -195,30 +194,41 @@
 
 	function grabarNuevoProveedor() {
 		if ($('#RutProveedor').val() == 0) {
-			showAppAlert('error',"- No Ingreso El Rut Del Proveedor!", {
+			showAppAlert('error',"No Ingreso El Rut Del Proveedor!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#nombreProveedor').val() == 0) {
-			showAppAlert('error',"- No Ingreso El Nombre Del Proveedor!", {
+			return;
+		} if ($('#nombreProveedor').val() === '') {
+			showAppAlert('error',"No Ingreso El Nombre Del Proveedor!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#DireccionProveedor').val() == 0) {
-			showAppAlert('error',"- No Ingreso La Direccion Del Proveedor!", {
+			return;
+		} if ($('#DireccionProveedor').val() == 0) {
+			showAppAlert('error',"No Ingreso La Direccion Del Proveedor!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#GiroProveedor').val() == 0) {
-			showAppAlert('error',"- No Ingreso El Giro Del Proveedor!", {
+			return;
+		} if ($('#GiroProveedor').val() == 0) {
+			showAppAlert('error',"No Ingreso El Giro Del Proveedor!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($("#CorreoProveedor").val() != '' && !validateEmail($("#CorreoProveedor").val())) {
-			showAppAlert('error',"- Correo Invalido!", {
+			return;
+		} if ($("#CorreoProveedor").val() != '' && !validateEmail($("#CorreoProveedor").val())) {
+			showAppAlert('error',"El Correo ingresado es invalido!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
+			return;
+		} if ($("#CreditoProveedor").val() != '' && isNaN($("#CreditoProveedor").val())) {
+			showAppAlert('error',"El Crédito ingresado debe ser un número válido!", {
+       	 		duration: 5000,
+        		image: base_url+ 'assets/img/errorGif.gif'
+    		});
+			return
 		} else {
 			idProveedor = $('#idProveedor').val();
 			NombreProveedor = $('#nombreProveedor').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -228,11 +238,7 @@
 			TelefonoProveedor = $('#TelefonoProveedor').val();
 			CorreoProveedor = $('#CorreoProveedor').val().toUpperCase().replace(/[,'"$#%&]+/g, '');
 			GiroProveedor = $('#GiroProveedor').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
-			MontoCredito = $('#CreditoProveedor').val();
-
-			if (MontoCredito === '') {
- 			   MontoCredito = '0';
-			}
+			MontoCredito = $('#CreditoProveedor').val() === '' ? 0 : parseFloat($('#CreditoProveedor').val());
 
 			var miJson = {
 				'id_proveedor': idProveedor,
@@ -254,7 +260,24 @@
                         image: base_url + 'assets/img/success.gif'
                     });
 					$('#ModalNuevoProveedor').modal('hide');
-					tablaProveedor.ajax.reload();
+					 if (typeof ListarProveedores === 'function') {
+						ListarProveedores("");
+						
+						try {
+							var nuevoProveedor = JSON.parse(response);
+							if (nuevoProveedor.id_proveedor) {
+								setTimeout(function() {
+									$('#cboProveedorCompra').val(nuevoProveedor.id_proveedor).trigger('change');
+								}, 500);
+							}
+						} catch(e) {
+							console.log("No se pudo seleccionar automáticamente el nuevo proveedor");
+						}
+					}
+					
+					if (typeof tablaProveedor !== 'undefined') {
+						tablaProveedor.ajax.reload();
+					}
 				})
 				.fail(function() {
 					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador!", {

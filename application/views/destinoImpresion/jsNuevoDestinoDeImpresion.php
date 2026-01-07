@@ -18,18 +18,18 @@
 					<div class="tab-pane fade active in" id="tabDatosUsuarios">
 						<!-- CAMPOS DE REGISTRO  -->
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-4 ">
 								<label for="idDestinoDeImpresion">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idDestinoDeImpresion" id="idDestinoDeImpresion" requerido="no" value="">
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-10 ">
 								<label for="nombreDestinoDeImpresion">NOMBRE DESTINO IMPRESION *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreDestinoDeImpresion" id="nombreDestinoDeImpresion" requerido="si" value="" placeholder="Nombre Destino De Impresion" />
 							</div>
 
-							<div class="col-md-6 ">
+							<div class="col-md-10 ">
 								<label for="rutaImpresora">RUTA DE LA IMPRESORA/IP *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return rutas(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="rutaImpresora" id="rutaImpresora" requerido="si" value="" placeholder="Ruta Destino De Impresion" />
 							</div>
@@ -117,7 +117,7 @@
 						</fieldset>
 						<fieldset>
 							<div class="col-md-6 ">
-								<label for="ZiseFont">TAMAÑO FUENTE</label>
+								<label for="size_font">TAMAÑO FUENTE</label>
 								<select id="cboZiseFont" nombre="cboZiseFont" class="form-control input-sm" style="width:100%" requerido="si">
 
 								</select>
@@ -132,8 +132,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarNuevoDestinoDeImpresion()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+				<button onclick="grabarNuevoDestinoDeImpresion()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -152,9 +152,9 @@
 		$('#ckNoImprimirComprobantes').prop('checked', false);
 		$('#CkReemplazarPorDestinoRecinto').prop('checked', false);
 		$('#CkPermitirImpresionPrecuenta').prop('checked', false);
-		$('#ZiseFont').val("");
-		sizeDimpresion();
-		$("#cboZiseFont").prop('disabled', true);
+		sizeDimpresion(8);  
+		$('#ckImpresionGraficaWindows').prop('checked', false);
+		$("#ckImpresionGraficaWindows").trigger("change");
 		$('#ModalNuevoDestinoDeImpresion').modal({
 			backdrop: 'static',
 			keyboard: false
@@ -163,22 +163,24 @@
 
 	function grabarNuevoDestinoDeImpresion() {
 		if ($('#nombreDestinoDeImpresion').val() == 0) {
-			showAppAlert('error',"- No Ingreso El Nombre Del Destino De Impresion!", {
+			showAppAlert('error',"No Ingreso El Nombre Del Destino De Impresion!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		}else if ($('#RutaWindowsImpresora').val() == 0) {
-			showAppAlert('error',"- No Ingreso La Ruta De Impresion!", {
+			return;
+		} if ($('#RutaWindowsImpresora').val() === '') {
+			showAppAlert('error',"No Ingreso La Ruta De Impresion!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
+			return;
 		} else {
 			IdDestinoDeImpresion = $('#idDestinoDeImpresion').val();
 			NombreDestinoDeImpresion = $('#nombreDestinoDeImpresion').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
 			rutaImpresora = $('#rutaImpresora').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
 			RutaWindowsImpresora = $('#RutaWindowsImpresora').val();
 			PuertoImpresora = $('#PuertoImpresora').val();
-			ZiseFont = $('#ZiseFont').val();
+			size_font = $('#cboZiseFont').val();
 			if ($('#ckImpresionGraficaWindows').is(":checked")) {
 				var impresionGraficaWindows = 1
 			} else {
@@ -222,7 +224,7 @@
 				'sin_impresion': noImprimirComprobantes,
 				'usar_dimpresion_recinto': reemplazarPorDestinoRecinto,
 				'usar_dimpresion_precuenta_android': permitirImpresionPrecuenta,
-				'size_font': ZiseFont,
+				'size_font': size_font,
 			};
 			$.post(base_url + "index.php/DestinoDeImpresion/grabarNuevoDestinoDeImpresion", {
 					'prod': miJson
@@ -235,7 +237,7 @@
 					tablaDestinoImpresion.ajax.reload();
 				})
 				.fail(function() {
-					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+					showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {
                 		duration: 5000,
                 		image: base_url+ 'assets/img/errorGif.gif'
             		});
@@ -272,16 +274,18 @@
         }
     });
 
-	function sizeDimpresion(objSelected) {
+	function sizeDimpresion(selected = null) {
 		var tbl = '';
-		tbl = tbl + '<option value="0">0</option>';
-		tbl = tbl + '<option selected value="8">8</option>';
-		tbl = tbl + '<option value="9">9</option>';
-		tbl = tbl + '<option value="10">10</option>';
-		tbl = tbl + '<option value="11">11</option>';
-		tbl = tbl + '<option value="12">12</option>';
-		tbl = tbl + '<option value="13">13</option>';
-		tbl = tbl + '<option value="14">14</option>';
+		var valores = [0, 8, 9, 10, 11, 12, 13, 14];
+
+		valores.forEach(function(v) {
+			if (selected == v) {
+				tbl += '<option selected value="' + v + '">' + v + '</option>';
+			} else {
+				tbl += '<option value="' + v + '">' + v + '</option>';
+			}
+		});
+
 		$("#cboZiseFont").html(tbl);
 		$("#cboZiseFont").select2();
 	}

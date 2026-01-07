@@ -28,16 +28,18 @@
             </div>
           </div>
           <br>
-          <button onclick="AbrirModalNuevoAgregados()" type="button" class="btn btn-primary gap-2" style="margin-left:15px;"></i>Habilitar Nuevo Agregado</button>
+          <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+          <button onclick="AbrirModalNuevoAgregados()" type="button" class="btn btn-primary gap-2" style="margin-right: 20px; margin-bottom:20px;"></i>Crear Nuevo Agregado</button>
+        </div>
           <div class="table-responsive" style="margin-top:10px; padding:5px;">
             <table id="tablaAgregados" class="display responsive" style="width: 100%">
               <thead>
                 <tr>
                   <th class="text text-center" style='height:10px'>N° AGREGADO</th>
-                  <th class="text text-center" style='height:45px'>PRODUCTO DE VENTA C/AGREGADO</th>
-                  <th class="text text-center" style='height:10px'>AGREGADO</th>
-                  <th class="text text-center" style='height:10px'>CANTIDAD</th>
-                  <th class="text text-center" style='height:10px'>VALOR</th>
+                  <th class="text text-left" style='height:45px'>PRODUCTO DE VENTA C/AGREGADO</th>
+                  <th class="text text-left" style='height:10px'>AGREGADO</th>
+                  <th class="text text-right" style='height:10px'>CANTIDAD</th>
+                  <th class="text text-right" style='height:10px'>VALOR</th>
                   <th class="text text-center" style='height:10px'>ACTIVO</th>
                   <th class="text text-center" style='height:10px'>USAR DESTINO DE IMPRESION</th>
                 </tr>

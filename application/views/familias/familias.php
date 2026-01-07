@@ -28,14 +28,16 @@
             </div>
           </div>
           <br>
-          <button onclick="AbrirModalNuevaFamilia()" type="button" class="btn btn-primary"></i>Habilitar Nueva Familia</button>
+          <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+          <button onclick="AbrirModalNuevaFamilia()" type="button" class="btn btn-primary" style="margin-right: 20px; margin-bottom:20px;"></i>Crear Nueva Familia</button>
+          </div>
           <div class="table-responsive" style="margin-top:10px; padding:5px;">
             <table id="tablaFamilias" class="display responsive" style="width: 100%">
               <thead>
                 <tr>
                   <th class="text text-center" style='height:10px'>ID</th>
-                  <th class="text text-center" style='height:45px'>FAMILIA</th>
-                  <th class="text text-center">ALIAS</th>
+                  <th class="text text-left" style='height:45px'>FAMILIA</th>
+                  <th class="text text-left">ALIAS</th>
                   <th class="text text-center">VENTA DIRECTA</th>
                   <th class="text text-center">ORDEN</th>
                   <th class="text text-center">IMPRIMIR DETALLE</th>

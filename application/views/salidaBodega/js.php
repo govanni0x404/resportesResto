@@ -3,7 +3,24 @@ var base_url = "<?php echo base_url(); ?>";
 $(document).ready(function() {
     $('#Fecha').daterangepicker({
         "singleDatePicker": true,
-        "format": 'DD-MM-YYYY',
+        "autoApply": true,
+        "format": "DD-MM-YYYY",
+        "locale": {
+            "format": "DD-MM-YYYY",
+            "separator": " - ",
+            "applyLabel": "Aplicar",
+            "cancelLabel": "Cancelar",
+            "fromLabel": "Desde",
+            "toLabel": "Hasta",
+            "customRangeLabel": "Rango personalizado",
+            "weekLabel": "S",
+            "daysOfWeek": ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
+            "monthNames": [
+                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+            ],
+            "firstDay": 1
+        }
     });
     ListadoBodegas("");
     ListadoInsumos("");
@@ -40,18 +57,34 @@ $('#cboInsumo').on('change', function() {
 
 
 function agregarProductoALaGrilla() {
+    if ($('#cboBodega').val() === '' || $('#cboBodega').val() === null || $('#cboBodega').val() == 0) {
+        showAppAlert('error', "Debe seleccionar la Bodega antes de agregar productos!", {
+            duration: 5000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+
+    if ($('#cboInsumo').val() === '' || $('#cboInsumo').val() === null || $('#cboInsumo').val() == 0) {
+        showAppAlert('error', "Debe seleccionar el insumo antes de agregar productos!", {
+            duration: 5000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+    
     var Cantidad_a_Ingresar = parseFloat($('#CantidadNew').val());
     var umedidaSalida = parseFloat($('#UmedidaInsumo').val());
     ProductoComprado = $("#cboInsumo").val();
     if (ProductoComprado == null) {
-        showAppAlert('error',"- Debe Seleccionar El Insumo!", {
+        showAppAlert('error',"Debe Seleccionar El Insumo!", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
         return;
     }
     if (Cantidad_a_Ingresar == null || Cantidad_a_Ingresar <= 0 || isNaN(Cantidad_a_Ingresar)) {
-        showAppAlert('error',"- Debe Indicar La Cantidad De Salida!", {
+        showAppAlert('error',"Debe Indicar La Cantidad De Salida!", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
@@ -80,7 +113,7 @@ function agregarProductoALaGrilla() {
             //sumarTotalesTabla();
         })
         .fail(function() {
-            showAppAlert('error',"- Se produjo un error al realizar la consulta", {
+            showAppAlert('error',"Se produjo un error al realizar la consulta", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
@@ -118,7 +151,7 @@ function grabarSalidaBodega() {
     var FechaSalida = $('#Fecha').data('daterangepicker').endDate.format('YYYY-MM-DD');
 
     if (IdBodega == null || IdBodega == 0) {
-        showAppAlert('error',"- Debe Seleccionar La Bodega!", {
+        showAppAlert('error',"Debe Seleccionar La Bodega!", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });
@@ -173,27 +206,27 @@ function grabarSalidaBodega() {
                         $("#detalleSalidaBodega").empty();
                     },
                     error: function (xhr, status, error) {
-                        showAppAlert('error',"- No se pudo grabar el detalle: " + error, "error", {
+                        showAppAlert('error',"No se pudo grabar el detalle: " + error, "error", {
                             duration: 5000,
                             image: base_url+ 'assets/img/errorGif.gif'
                         });
                     }
                 });
             } else {
-                showAppAlert('error',"- No se recibió ID de salida.", {
+                showAppAlert('error',"No se recibió ID de salida.", {
                     duration: 5000,
                     image: base_url+ 'assets/img/errorGif.gif'
                 });
             }
         } catch (e) {
             console.error(e, datos);
-            showAppAlert('error',"- No se pudo procesar la respuesta del servidor.", {
+            showAppAlert('error',"No se pudo procesar la respuesta del servidor.", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
         }
     }).fail(function () {
-        showAppAlert('error',"- Fallo la conexión con el servidor.", {
+        showAppAlert('error',"Fallo la conexión con el servidor.", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
         });

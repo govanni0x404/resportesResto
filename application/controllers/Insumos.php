@@ -24,6 +24,7 @@ class Insumos extends CI_Controller
 				$this->load->view('menuFooter.php');
 				$this->load->view('insumos/modalInsumos.php');
 				$this->load->view('insumos/js.php');
+				$this->load->view('produccion/modalProduccion.php');
 /*
 		if ($this->session->userdata('nombre_usuario')) {
 			if ($this->session->userdata('id_rol') == 1) {

@@ -35,8 +35,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="asignarMesa()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i> ASIGNAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
+                <button onclick="asignarMesa()" type="button" class="btn btn-primary"><i class=""></i> ASIGNAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -58,7 +58,7 @@
                 });
             })
             .fail(function() {
-                showAppAlert('error', "- Error al cargar los recintos", {
+                showAppAlert('error', "Error al cargar los recintos", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });
@@ -70,7 +70,7 @@
         var idRecinto = $('#recintoSelect').val();
         
         if (idRecinto == "0" || idRecinto == "" || idRecinto == null) {
-            showAppAlert('error', "- Debe seleccionar un recinto!", {
+            showAppAlert('error', "Debe seleccionar un recinto!", {
                 duration: 5000,
                 image: base_url + 'assets/img/errorGif.gif'
             });
@@ -97,7 +97,7 @@
             })
             .fail(function(jqXHR, textStatus, errorThrown) {
                 console.error('Error:', textStatus, errorThrown);
-                showAppAlert('error', "- Se produjo un error al realizar el proceso", {
+                showAppAlert('error', "Se produjo un error al realizar el proceso", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });

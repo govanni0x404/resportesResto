@@ -28,13 +28,15 @@
             </div>
           </div>
           <br>
-          <button onclick="AbrirModalNuevoTurno()" type="button" class="btn btn-primary"></i>Habilitar Nuevo Turno</button>
+          <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+          <button onclick="AbrirModalNuevoTurno()" type="button" class="btn btn-primary" style="margin-right: 20px; margin-bottom:20px;"></i>Crear Nuevo Turno</button>
+          </div>
           <div class="table-responsive" style="margin-top:10px; padding:5px;">
             <table id="tablaTurnos" class="display responsive" style="width: 100%">
               <thead>
                 <tr>
                   <th class="text text-center" style='height:10px'>ID</th>
-                  <th class="text text-center" style='height:45px'>TURNO</th>
+                  <th class="text text-left" style='height:45px'>TURNO</th>
                   <th class="text text-center">CIERRE TURNO</th>
                   <th class="text text-center">INFORME Z</th>
                   <th class="text text-center">IMPRIMIR CIERRE CON MESAS ABIERTAS</th>

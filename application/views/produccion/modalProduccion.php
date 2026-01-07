@@ -275,7 +275,6 @@
         </div>
     </div>
 </div>
-<?php $this->load->view('produccion/modalCantidadProduccion.php'); ?>
 <style>
     .botones-produccion {
     margin-top: 24px;   /* baja los botones */
@@ -294,226 +293,40 @@ var base_url = "<?php echo base_url(); ?>";
 var insumosReceta = [];
 var contadorInsumos = 0;
 var idInsumoElaborado = 0;
-var cantidadAProducirGlobal = 1;
 
-// Abrir modal de producción CON VALIDACIÓN DE RECETA
+// Abrir modal de producción
 function AbrirModalProduccion(idInsumo, nombreInsumo) {
-    console.log("=== INTENTANDO ABRIR MODAL DE PRODUCCIÓN ===");
+    console.log("=== ABRIENDO MODAL DE PRODUCCIÓN ===");
     console.log("ID Insumo:", idInsumo);
     console.log("Nombre Insumo:", nombreInsumo);
     
     idInsumoElaborado = idInsumo;
+    limpiarModalProduccion();
     
-    // Primero verificar si existe receta
-    $.post(base_url + "index.php/Produccion/verificarReceta", {
-        id_insumo: idInsumo
-    }, function(datos) {
-        var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
-        
-        console.log("¿Existe receta?:", obj.existe);
-        
-        if (!obj.existe) {
-            // NO TIENE RECETA - Mostrar mensaje de error
-            showAppAlert('error', "Debe seleccionar la receta a producir", {
-                duration: 5000,
-                image: base_url + 'assets/img/errorGif.gif'
-            });
-            return;
+    // Cargar combos
+    cargarBodegasParaProduccion();
+    cargarInsumosParaProduccion(idInsumo);
+    
+    // Configurar datepicker
+    $('#fechaProduccion').daterangepicker({
+        singleDatePicker: true,
+        autoApply: true,
+        startDate: moment($('#fechaProduccion').val(), 'DD-MM-YYYY'),
+        locale: {
+            format: 'DD-MM-YYYY',
+            daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
+            monthNames: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+            firstDay: 1
         }
-        
-        // SÍ TIENE RECETA - Mostrar modal de cantidad
-        mostrarModalCantidad(idInsumo, nombreInsumo);
-        
-    }).fail(function(xhr, status, error) {
-        console.error("Error al verificar receta:", error);
-        showAppAlert('error', "Error al verificar la receta", {
-            duration: 5000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-    });
-}
-
-// Mostrar modal para seleccionar receta y cantidad
-function mostrarModalCantidad(idInsumo, nombreInsumo) {
-    console.log("=== MOSTRANDO MODAL DE CANTIDAD ===");
-    
-    // Cargar recetas del insumo
-    $.post(base_url + "index.php/Produccion/obtenerRecetasInsumo", {
-        id_insumo: idInsumo
-    }, function(datos) {
-        var recetas = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
-        
-        console.log("Recetas encontradas:", recetas);
-        
-        var tbl = '<option value="0">-- Seleccione --</option>';
-        $.each(recetas, function(index, v) {
-            tbl += '<option value="' + v.id_receta + '">' + v.nombre_receta + '</option>';
-        });
-        
-        $("#recetaSeleccionada").html(tbl);
-        
-        if ($("#recetaSeleccionada").data('select2')) {
-            $("#recetaSeleccionada").select2('destroy');
-        }
-        $("#recetaSeleccionada").select2();
-        
-        // Resetear cantidad
-        $('#cantidadAProducir').val('1');
-        
-        // Abrir modal
-        $('.modal').modal('hide');
-
-        setTimeout(function () {
-            $('#ModalCantidadProduccion').modal({
-                backdrop: 'static',
-                keyboard: false
-            });
-        }, 300);
-        
-    }).fail(function(xhr, status, error) {
-        console.error("Error al cargar recetas:", error);
-        showAppAlert('error', "Error al cargar las recetas", {
-            duration: 5000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-    });
-}
-
-// Botón ACEPTAR en modal de cantidad
-$('#btnAceptarCantidad').on('click', function() {
-    var idReceta = $('#recetaSeleccionada').val();
-    var cantidad = parseFloat($('#cantidadAProducir').val()) || 1;
-    
-    console.log("=== ACEPTAR CANTIDAD ===");
-    console.log("ID Receta:", idReceta);
-    console.log("Cantidad:", cantidad);
-    
-    if (idReceta == 0) {
-        showAppAlert('error', "Seleccione una receta", {
-            duration: 3000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-        return;
-    }
-    
-    if (cantidad <= 0) {
-        showAppAlert('error', "La cantidad debe ser mayor a 0", {
-            duration: 3000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-        return;
-    }
-    
-    // Guardar cantidad global
-    cantidadAProducirGlobal = cantidad;
-    
-    // Cerrar modal de cantidad
-    $('#ModalCantidadProduccion').modal('hide');
-    
-    // Cargar detalle de la receta y abrir modal principal
-    cargarRecetaYAbrirModal(idReceta, cantidad);
-});
-
-// Cargar receta y abrir modal principal de producción
-function cargarRecetaYAbrirModal(idReceta, cantidad) {
-    console.log("=== CARGANDO RECETA ===");
-    console.log("ID Receta:", idReceta);
-    console.log("Cantidad:", cantidad);
-    
-    $.post(base_url + "index.php/Produccion/obtenerDetalleReceta", {
-        id_receta: idReceta,
-        cantidad_producir: cantidad
-    }, function(datos) {
-        var detalle = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
-        
-        console.log("Detalle de receta:", detalle);
-        
-        // Limpiar modal
-        limpiarModalProduccion();
-        
-        // Cargar datos del insumo elaborado
-        cargarDatosInsumoElaborado(idInsumoElaborado);
-        
-        // Cargar combos
-        cargarBodegasParaProduccion();
-        cargarInsumosParaProduccion(null);
-        
-        // Configurar datepicker
-        $('#fechaProduccion').daterangepicker({
-            singleDatePicker: true,
-            autoApply: true,
-            startDate: moment($('#fechaProduccion').val(), 'DD-MM-YYYY'),
-            locale: {
-                format: 'DD-MM-YYYY',
-                daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
-                monthNames: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
-                firstDay: 1
-            }
-        }).on('apply.daterangepicker', function (ev, picker) {
-            $(this).val(picker.startDate.format('DD-MM-YYYY'));
-        });
-        
-        // Cargar insumos de la receta en la tabla
-        setTimeout(function() {
-            cargarInsumosDeReceta(detalle, cantidad);
-        }, 500);
-        
-        // Abrir modal principal
-        $('#ModalRealizarProduccion').modal({
-            backdrop: 'static',
-            keyboard: false
-        });
-        
-    }).fail(function(xhr, status, error) {
-        console.error("Error al cargar detalle de receta:", error);
-        showAppAlert('error', "Error al cargar los detalles de la receta", {
-            duration: 5000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-    });
-}
-
-// Cargar insumos de la receta en la tabla automáticamente
-function cargarInsumosDeReceta(detalle, cantidadProducir) {
-    console.log("=== CARGANDO INSUMOS DE RECETA EN TABLA ===");
-    
-    // Limpiar array de insumos
-    insumosReceta = [];
-    contadorInsumos = 0;
-    
-    // Procesar cada insumo de la receta
-    $.each(detalle, function(index, item) {
-        contadorInsumos++;
-        
-        var insumo = {
-            id: contadorInsumos,
-            id_insumo: item.id_insumo_receta,
-            nombre_insumo: item.nombre_insumo,
-            id_bodega: 0, // Se debe seleccionar
-            nombre_bodega: '-- Pendiente --',
-            cantidad: parseFloat(item.cantidad_ajustada || item.cantidad_insumo),
-            umedida_receta: item.umedida_receta || '',
-            umedida_inv: item.umedida_inventario || '',
-            conversion: parseFloat(item.conversion || 1),
-            costo_neto: parseFloat(item.costo_neto_ppp || 0),
-            costo_total: parseFloat(item.costo_total || 0),
-            stock: 0 // Se actualizará cuando se seleccione bodega
-        };
-        
-        insumosReceta.push(insumo);
-        
-        console.log("Insumo de receta agregado:", insumo);
+    }).on('apply.daterangepicker', function (ev, picker) {
+        $(this).val(picker.startDate.format('DD-MM-YYYY'));
     });
     
-    console.log("Total insumos cargados:", insumosReceta.length);
-    
-    // Actualizar tabla y totales
-    actualizarTablaInsumos();
-    actualizarCostoTotal();
-    
-    // Establecer la cantidad a producir
-    $('#rendimientoReal').val(cantidadProducir);
+    $('#ModalRealizarProduccion').modal({
+        backdrop: 'static',
+        keyboard: false
+    });
 }
 
 // Limpiar modal
@@ -611,7 +424,7 @@ function cargarDatosInsumoElaborado(idInsumo) {
             console.log("Unidad medida elaborado:", unidadMedida);
             
             $('#nombreInsumoElaborado').val(obj.nombre_insumo);
-            $('#umedidaInventarioElaborado').val(unidadMedida);
+            $('#umedidaInventarioElaborado').val(obj.umedida_inventario || '');
         }
     }).fail(function(xhr, status, error) {
         console.error("Error al cargar datos del insumo elaborado:", error);
@@ -634,11 +447,8 @@ $('#cboInsumoProduccion').on('change', function() {
             var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
             
             if (obj) {
-                var unidadMedida = obj.abreviatura || obj.nombre_unidad_medida || '';
-                console.log("Unidad de medida:", unidadMedida);
-                
-                $('#umedidaInvProduccion').val(unidadMedida);
-                $('#umedidaRecetaProduccion').val(unidadMedida);
+                $('#umedidaInvProduccion').val(obj.umedida_inventario || '');
+                $('#umedidaRecetaProduccion').val(obj.umedida_receta || '');
             }
             
             // Si hay bodega seleccionada, cargar stock y costo
@@ -699,13 +509,19 @@ function cargarStockYCosto(idInsumo, idBodega) {
     
     // Obtener costo PPP
     $.post(base_url + "index.php/Produccion/obtenerCostoPPP", {
-        id_insumo: idInsumo,
-        id_bodega: idBodega
+        id_insumo: idInsumo
     }, function(datos) {
         console.log("Costo PPP recibido:", datos);
         var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
-        var costo = parseFloat(obj.costo_ppp || 0);
+        var costo = 0;
+
+        if (obj && obj.costo_ppp !== null && obj.costo_ppp !== undefined) {
+            costo = parseFloat(obj.costo_ppp);
+        }
+
         $('#costoNetoProduccion').val(costo.toFixed(2));
+        calcularCostoTotal();
+
         console.log("Costo PPP establecido:", costo);
         
         // Recalcular costo total si hay cantidad

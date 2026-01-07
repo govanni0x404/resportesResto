@@ -6,6 +6,38 @@
         ListadoDeProveedores();
     });
 
+    function showTableLoader(message) {
+    if ($('#dynamic-table-loader').length) {
+        $('#dynamic-table-loader').show();
+        return;
+    }
+    
+    var loaderHtml = 
+        '<div id="dynamic-table-loader" style="' +
+        'position: absolute; top: 0; left: 0; right: 0; bottom: 0; ' +
+        'background: rgba(255, 255, 255, 0.95); ' +
+        'display: flex; flex-direction: column; align-items: center; justify-content: center; ' +
+        'z-index: 100; gap: 12px;">' +
+        '<div style="width: 40px; height: 40px; border: 4px solid rgba(0,123,255,0.2); ' +
+        'border-top-color: #007bff; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>' +
+        '<div style="color: #333; font-size: 14px;">' + (message || 'Cargando...') + '</div>' +
+        '</div>';
+    
+    var $wrapper = $('#tablaProveedor').closest('.dataTables_wrapper');
+    if ($wrapper.length === 0) {
+        $wrapper = $('#tablaProveedor').parent();
+    }
+    
+    $wrapper.css('position', 'relative');
+    $wrapper.append(loaderHtml);
+    }   
+
+    function hideTableLoader() {
+        $('#dynamic-table-loader').fadeOut(500, function() {
+            $(this).remove();
+        });
+    }
+
     function ListadoDeProveedores() {
         if ($.fn.dataTable.isDataTable('#tablaProveedor')) {
             tablaProveedor = $('#tablaProveedor').DataTable();
@@ -19,10 +51,21 @@
                 { width: "200px", targets: 8 },  // Giro
             ],
             "ajax": {
-                "url": base_url + "index.php/Proveedor/ListadoDeProveedores"
+                "url": base_url + "index.php/Proveedor/ListadoDeProveedores",
+                "data": {
+            },
+            beforeSend: function () {
+                showTableLoader("Cargando Proveedores...");
+            },
+            complete: function () {
+                hideTableLoader();
+            },
+            error: function () {
+                hideTableLoader();
+            }
             },
             "bPaginate": true,
-            "bProcessing": true,
+            "bProcessing": false,
             "pageLength": 10,
             "select": true,
             "dom": "Bfrtip",
@@ -41,12 +84,8 @@
                 className: "text-center"
             },
             {
-                mData: "nombre_proveedor",
-                className: "text-center"
-            },
-            {
                 mData: "rut",
-                className: "text-center",
+                className: "text-left",
                 visible: false
             },
             {
@@ -56,7 +95,11 @@
             },
             {
                 mData: "rut_completo",
-                className: "text-center"
+                className: "text-left"
+            },
+            {
+                mData: "nombre_proveedor",
+                className: "text-left"
             },
             {
                 mData: "direccion",
@@ -75,7 +118,12 @@
             },
             {
                 mData: "giro",
-                className: "text-center"
+                className: "text-left"
+            },
+            {
+                mData: "creditomaximo",
+                className: "text-left",
+                visible: false
             },
             ],
             'language': {
@@ -104,6 +152,7 @@
                 $("#TelefonoProveedor").val(rowData[0].telefono);
                 $("#CorreoProveedor").val(rowData[0].mail);
                 $("#GiroProveedor").val(rowData[0].giro);
+                $("#CreditoProveedor").val(rowData[0].creditomaximo);
 
                 $('#ModalNuevoProveedor').modal('show');
             })

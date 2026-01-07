@@ -50,6 +50,18 @@
 							<div class="col-md-6">
 								<label for="cboIdComuna">COMUNA *</label>
 								<select id="cboIdComuna" nombre="cboIdComuna" class="form-control input-sm" style="width:100%" requerido="si"></select>
+								<!-- <div class="input-group">
+                                    <select id="cboIdComuna" nombre="cboIdComuna" class="form-control input-sm"
+                                        style="width:100%" requerido="si"></select>
+                                    
+                                        <span class="input-group-btn">
+                                            <button class="btn btn-success btn-sm" type="button" id="btnNuevoComunaCliente" 
+                                                style="height: 30px;" title="Agregar nueva comuna"
+                                                onclick="AbrirModalNuevaComuna()">
+                                                <i class="fa fa-plus"></i>
+                                            </button>
+                                        </span>
+                                </div> -->
 							</div>
 							<div class="col-md-6 ">
 								<label for="ReferenciaDireccionCliente">REFERENIA DIRECCION</label>
@@ -91,8 +103,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarNuevoCliente()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+				<button onclick="grabarNuevoCliente()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -208,41 +220,54 @@
 	}
 
 	function grabarNuevoCliente() {
-		if ($('#RutCliente').val() == 0) {
-	        showAppAlert('error',"- No Ingreso El Rut Del Cliente!", {
+		if (!$('#RutCliente').val() || $('#RutCliente').val().trim() === '') {
+	        showAppAlert('error',"No Ingreso El Rut Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#DireccionCliente').val() == 0) {
-			showAppAlert('error',"- No Ingreso La Direccion Del Cliente!", {
+			return;
+		} if (!$('#nombreCliente').val() || $('#nombreCliente').val().trim() === '') {
+			showAppAlert('error',"No Ingreso El Nombre Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#cboIdComuna').val() == 0) {
-			showAppAlert('error',"- No Selecciono La Comuna Del Cliente!", {
+			return;
+		} if (!$('#DireccionCliente').val() || $('#DireccionCliente').val().trim() === ''){
+			showAppAlert('error',"No Ingreso La Direccion Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#GiroCliente').val() == 0) {
-			showAppAlert('error',"- No Ingreso El Giro Del Cliente!", {
+			return;
+		} if (!$('#DireccionCliente').val() || $('#DireccionCliente').val() === '' || $('#DireccionCliente').val() === '0') {
+			showAppAlert('error',"No escribio la direccion Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#cboIdLprecio').val() == 0) {
-			showAppAlert('error',"- No Selecciono La Lista De Precios Del Cliente!", {
+			return;
+		} if (!$('#cboIdComuna').val() || $('#cboIdComuna').val() === '' || $('#cboIdComuna').val() === '0' || $('#cboIdComuna').val() === 0) {
+        	showAppAlert('error',"No Selecciono La Comuna Del Cliente!", {
+            	duration: 5000,
+            	image: base_url+ 'assets/img/errorGif.gif'
+        	});
+        return;
+    	} if (!$('#GiroCliente').val() || $('#GiroCliente').val().trim() === '') {
+			showAppAlert('error',"No Ingreso El Giro Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#nombreCliente').val() == 0) {
-			showAppAlert('error',"- No Ingreso El Nombre Del Cliente!", {
+			return;
+		} if (!$('#cboIdLprecio').val() || $('#cboIdLprecio').val() === '' || $('#cboIdLprecio').val() === '0') {
+			showAppAlert('error',"No Selecciono La Lista De Precios Del Cliente!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($("#CorreoCliente").val() != '' && !validateEmail($("#CorreoCliente").val())) {
-			showAppAlert('error',"- Correo Invalido", {
+			return;
+		} if ($("#CreditoMaximoCliente").val() != '' && isNaN($("#CreditoMaximoCliente").val())) {
+			showAppAlert('error',"El Correo ingresado es invalido", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
+			return;
 		} else {
 			idCliente = $('#idCliente').val();
 			NombreCliente = $('#nombreCliente').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -255,7 +280,7 @@
 			CorreoCliente = $('#CorreoCliente').val().toUpperCase().replace(/[,'"$#%&]+/g, '');
 			GiroCliente = $('#GiroCliente').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
 			IdListaDePrecios = $('#cboIdLprecio').val();
-			MontoCredito = $('#CreditoMaximoCliente').val();
+			MontoCredito = $('#CreditoMaximoCliente').val() === '' ? 0 : parseFloat($('#CreditoMaximoCliente').val());
 
 			var miJson = {
 				'id_cliente': idCliente,
@@ -281,6 +306,7 @@
                     });
 					$('#ModalNuevoCliente').modal('hide');
 					tablaClientes.ajax.reload();
+					
 				})
 				.fail(function() {
 					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
@@ -384,3 +410,4 @@
 		);
 	};
 </script>
+ <?php $this->load->view('comunas/jsNuevaComuna.php'); ?>

@@ -19,17 +19,17 @@
 					<div class="tab-pane fade active in" id="tabBodegas">
 						<!-- CAMPOS DE REGISTRO  -->
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-4 ">
 								<label for="idCanalDeVenta">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idCanalDeVenta" id="idCanalDeVenta" requerido="no" value="" />
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-10 ">
 								<label for="nombreCanalDeVenta">NOMBRE CANAL DE VENTA *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreCanalDeVenta" id="nombreCanalDeVenta" requerido="si" value="" placeholder="Nombre Canal De Venta" />
 							</div>
-							<div class="col-md-6">
+							<div class="col-md-10">
 								<label for="cboIdLprecio">LISTA DE PRECIOS *</label>
 								<select id="cboIdLprecio" nombre="cboIdLprecio" class="form-control input-sm" style="width:100%" requerido="si"></select>
 							</div>
@@ -67,8 +67,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarNuevoCanalDeVenta()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+				<button onclick="grabarNuevoCanalDeVenta()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -91,12 +91,12 @@
 
 	function grabarNuevoCanalDeVenta() {
 		if ($('#nombreCanalDeVenta').val() == 0) {
-	        showAppAlert('error',"- No Ingreso El Nombre Del Canal De Venta!", {
+	        showAppAlert('error',"No Ingreso El Nombre Del Canal De Venta!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 		} else if ($('#cboIdLprecio').val() == 0) {
-			showAppAlert('error',"- Seleccione La Lista De Precios!", {
+			showAppAlert('error',"No ha seleccionado ninguna lista de precios!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
@@ -133,7 +133,7 @@
 					tablaCanalVenta.ajax.reload();
 				})
 				.fail(function() {
-			        showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador.", {
+			        showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador.", {
                         duration: 5000,
                         image: base_url+ 'assets/img/errorGif.gif'
                     });

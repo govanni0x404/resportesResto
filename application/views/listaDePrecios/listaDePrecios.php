@@ -67,7 +67,7 @@ $fechaActual = date('Y-m-d');
                 </div>
                 <br>
                 <div class="col-md-4">
-                    <button onclick="crearNuevaLprecio()" type="button" class="btn btn-primary"></i>Nueva Lista De Precios</button>
+                    <button onclick="crearNuevaLprecio()" type="button" class="btn btn-primary"></i>Crear Nueva Lista De Precios</button>
                 </div>
                 <div class="panel lobidisable">
                     <div class="panel-heading">
@@ -101,11 +101,11 @@ $fechaActual = date('Y-m-d');
                                             <tr>
                                                 <th class="text text-center" style='height:10px'>N° PRODUCTO</th>
                                                 <th class="text text-center" style='height:45px'>CODIGO DE BARRAS</th>
-                                                <th class="text text-center" style='height:45px'>PRODUCTO</th>
-                                                <th class="text text-center" style='height:45px'>FAMILIA</th>
-                                                <th class="text text-center" style='height:45px'>UNIDAD DE MEDIDA</th>
-                                                <th class="text text-center" style='height:45px'>PRECIO DE VENTA</th>
-                                                <th class="text text-center" style='height:45px'>PRECIO DE COMPRA</th>
+                                                <th class="text text-left" style='height:45px'>PRODUCTO</th>
+                                                <th class="text text-left" style='height:45px'>FAMILIA</th>
+                                                <th class="text text-left" style='height:45px'>UNIDAD DE MEDIDA</th>
+                                                <th class="text text-right" style='height:45px'>PRECIO DE VENTA</th>
+                                                <th class="text text-right" style='height:45px'>PRECIO DE COMPRA</th>
 
                                             </tr>
                                         </thead>
@@ -133,7 +133,7 @@ $fechaActual = date('Y-m-d');
                                     <!-- TITULO  MODAL  -->
                                     <div id="tituloModal" class="modal-header btn-success">
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                        <h4 class="modal-title text text-center">NUEVA LISTA DE PRECIOS
+                                        <h4 class="modal-title text text-center">CREAR NUEVA LISTA DE PRECIOS
                                         </h4>
                                     </div>
                                     <!-- FIN TITULO  MODAL  -->
@@ -147,13 +147,13 @@ $fechaActual = date('Y-m-d');
                                             <div class="tab-pane fade active in" id="tabDatosUsuarios">
                                                 <!-- CAMPOS DE REGISTRO  -->
                                                 <fieldset>
-                                                    <div class="col-md-6 ">
+                                                    <div class="col-md-4 ">
                                                         <label for="idlPrecio">ID</label>
                                                         <input type="number" disabled class="form-control input-sm input-sm" name="idlPrecio" id="idlPrecio" requerido="no" value="">
                                                     </div>
-                                                    <div class="col-md-6 ">
-                                                        <label for="nombreLprecio">LISTA DE PRECIOS *</label>
-                                                        <input type="text" class="form-control input-sm input-sm" maxlength='28' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreLprecio" id="nombreLprecio" requerido="si" value="" placeholder="Nombre Lista Precios" />
+                                                    <div class="col-md-11 ">
+                                                        <label for="nombreLprecio">NOMBRE LISTA DE PRECIOS *</label>
+                                                        <input type="text" class="form-control input-sm input-sm" maxlength='28' onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreLprecio" id="nombreLprecio" requerido="si" value="" placeholder="Nombre Lista Precios" />
                                                     </div>
                                                 </fieldset>
                                                 <!-- FIN CAMPOS DE REGISTRO  -->
@@ -164,8 +164,8 @@ $fechaActual = date('Y-m-d');
 
                                     <!-- BOTONES  -->
                                     <div class="modal-footer">
-                                        <button onclick="GrabarNuevaLprecio()" type="button" class="btn btn-primary" id="btnGrabarRol"><i class="fa fa-check-square-o"></i>GRABAR</button>
-                                        <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+                                        <button onclick="GrabarNuevaLprecio()" type="button" class="btn btn-primary" id="btnGrabarRol"><i class=""></i>GRABAR</button>
+                                        <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
                                     </div>
                                     <!-- FIN BOTONES  -->
                                 </div>

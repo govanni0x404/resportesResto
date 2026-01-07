@@ -18,23 +18,23 @@
 					<div class="tab-pane fade active in" id="tabDatosUsuarios">
 						<!-- CAMPOS DE REGISTRO  -->
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-4 ">
 								<label for="idRecinto">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idRecinto" id="idRecinto" requerido="no" value="">
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-12 ">
 								<label for="nombreRecinto">RECINTO *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreRecinto" id="nombreRecinto" requerido="si" value="" placeholder="Nombre Recinto" />
 							</div>
-							<div class="col-md-6">
+							<div class="col-md-12">
 								<label for="cboIdDestinoDeImpresion">DESTINO DE IMPRESION *</label>
 								<select id="cboIdDestinoDeImpresion" nombre="cboIdDestinoDeImpresion" class="form-control input-sm" style="width:100%" requerido="si"></select>
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-2">
+							<div class="col-md-6">
 								<div class="btn-group" role="group" aria-label="...">
 									<div class="checkbox checkbox-success">
 										<br>
@@ -54,8 +54,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarNuevoRecinto()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+				<button onclick="grabarNuevoRecinto()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -75,12 +75,12 @@
 
 	function grabarNuevoRecinto() {
 		if ($('#nombreRecinto').val() == 0) {
-			showAppAlert('error',"- No Ingreso El Nombre Del Recinto!", {
+			showAppAlert('error',"No Ingreso El Nombre Del Recinto!", {
             	duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
 		} else if ($('#cboIdDestinoDeImpresion').val() == null) {
-			showAppAlert('error',"- No Selecciono El Destino De Impresion!", {
+			showAppAlert('error',"No Selecciono El Destino De Impresion!", {
             	duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
@@ -110,7 +110,7 @@
 					tablaRecinto.ajax.reload();
 				})
 				.fail(function() {
-					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+					showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {
             			duration: 5000,
                 		image: base_url+ 'assets/img/errorGif.gif'
             		});

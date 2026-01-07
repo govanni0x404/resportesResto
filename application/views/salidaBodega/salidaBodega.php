@@ -35,12 +35,14 @@ $fechaActual = date('Y-m-d');
                     <div class="col-md-2">
                         <label for="Fecha">Fecha</label>
                         <input type="text" id="Fecha" class="form-control input-sm"
-                            value="<?php echo $fechaActual; ?>" />
+                            value="<?php echo date('d-m-Y'); ?>" />
                     </div>
                     <br>
+                    <!--
                     <div class="col-md-2">
                         <button id="btnValidarSalida" type="button" class="btn btn-primary"></i>Validar Stock</button>
                     </div>
+                    -->
                 </fieldset>
             </div>
 
@@ -113,17 +115,12 @@ $fechaActual = date('Y-m-d');
                                                 <tbody id="detalleSalidaBodega">
                                                 </tbody>
                                             </table>
-
-                                        </fieldset>
-                                    </div>
-
-
-                                    <div class="container-padding">
+                                            <div class="container-padding">
                                         <input type="number" class="form-control" style="display: none;" name="id_rol"
                                             id="id_rol" value="0" min="0" oninput="validity.valid||(value='');">
 
                                         <div class="row">
-                                            <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
+                                            <div class="">
                                                 <div class="panel-body">
                                                     <fieldset>
                                                         <div class="col-md-5">
@@ -145,3 +142,9 @@ $fechaActual = date('Y-m-d');
 
                                                         </div>
                                                 </div>
+
+                                        </fieldset>
+                                    </div>
+
+
+                                    

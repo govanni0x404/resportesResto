@@ -45,8 +45,7 @@ class MresumenDeCompras extends CI_Model
 				'numero_documento' => $key->numero_documento,
 				'fecha' => $key->fecha,
 				'total' => $key->total,
-				"btnVerDetalleCompras" => '<button type="button" onclick="detalleFacturas(' . $key->id_compra . ')" class="btn btn-labeled btn-success m-b-5" data-toggle="modal" data-target="#modalDetalleFacturas"><span class="btn-label"><i class="glyphicon glyphicon-ok"></i></span>Ver Detalle</button>',
-				"test" => "",
+				"btnVerDetalleCompras" => '<button type="button" onclick="detalleFacturas(' . $key->id_compra . ')" class="btn btn-labeled btn-success m-b-5"><span class="btn-label"><i class="glyphicon glyphicon-ok"></i></span>Ver Detalle</button>',				"test" => "",
 
 			));
 		}
@@ -96,18 +95,18 @@ class MresumenDeCompras extends CI_Model
 		return $results;
 	}
 
-	public function resumenDeComprasPDF()
+	public function resumenDeComprasPDF($idCompra, $listadoCompras)
 	{
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-            redirect(base_url()); //redireccionar al login
-        }
-        
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+			redirect(base_url());
+		}
+		
+		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
 		$q = "SELECT c.id_compra, p.nombre_proveedor, td.nombre_tdocumento, c.numero_documento, to_char(c.fecha, 'DD-MM-YYYY') as fecha, c.total
 			from compra c 
 			join proveedor p on c.id_proveedor = p.id_proveedor
 			join tdocumento td on c.id_tdocumento = td.id_tdocumento
-			
+			where c.id_compra = $idCompra
 			order by c.id_compra desc";
 
 		$consulta = $this->db->query($q);

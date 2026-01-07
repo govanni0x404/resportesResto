@@ -200,8 +200,8 @@ $fechaActual = date('d-m-Y');
 
                 <!-- BOTONES -->
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-dismiss="modal"><i
-                            class="fa fa-times-circle-o"></i> SALIR</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal"><i
+                            class=""></i> SALIR</button>
                 </div>
                 <!-- FIN BOTONES -->
             </div>
@@ -229,12 +229,12 @@ $fechaActual = date('d-m-Y');
                         </ul>
                         <div class="tab-pane fade active in" id="tabDatosUsuarios">
                             <fieldset>
-                                <div class="col-md-6 ">
+                                <div class="col-md-8 ">
                                     <label for="Nventa">N° VENTA</label>
                                     <input type="text" disabled class="form-control input-sm input-sm" name="Nventa"
                                         id="Nventa" requerido="no" value="">
                                 </div>
-                                <div class="col-md-6 ">
+                                <div class="col-md-12 ">
                                     <label for="FormaDePagoActual">FORMA DE PAGO ACTUAL</label>
                                     <input disabled type="text" class="form-control input-sm input-sm" maxlength='28'
                                         onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -243,18 +243,10 @@ $fechaActual = date('d-m-Y');
                                 </div>
                             </fieldset>
                             <fieldset>
-                                <div class="col-md-6">
+                                <div class="col-md-12">
                                     <label for="cboNuevaFormaDePago">NUEVA FORMA DE PAGO</label>
                                     <select id="cboNuevaFormaDePago" nombre="cboNuevaFormaDePago"
                                         class="form-control input-sm" style="width:100%" requerido="si"></select>
-                                </div>
-                            </fieldset>
-                            <br>
-                            <fieldset>
-                                <div class="col-md-4">
-                                    <button onclick="actualizarFormaDePagoVenta()" type="button"
-                                        class="btn btn-success"><i class="fa fa-check-square-o"></i>ACTUALIZAR FORMA DE
-                                        PAGO</button>
                                 </div>
                             </fieldset>
                             <!-- FIN CAMPOS DE REGISTRO  -->
@@ -265,8 +257,11 @@ $fechaActual = date('d-m-Y');
 
                 <!-- BOTONES  -->
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-dismiss="modal"><i
-                            class="fa fa-times-circle"></i>SALIR</button>
+                    <button onclick="actualizarFormaDePagoVenta()" type="button"
+                                        class="btn btn-primary"><i class=""></i>ACTUALIZAR FORMA DE
+                                        PAGO</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal"><i
+                            class=""></i>SALIR</button>
                 </div>
                 <!-- FIN BOTONES  -->
             </div>

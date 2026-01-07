@@ -40,6 +40,38 @@ function ObtenerPreciosDeVenta(idProducto) {
     });
 }
 
+function showTableLoader(message) {
+    if ($('#dynamic-table-loader').length) {
+        $('#dynamic-table-loader').show();
+        return;
+    }
+    
+    var loaderHtml = 
+        '<div id="dynamic-table-loader" style="' +
+        'position: absolute; top: 0; left: 0; right: 0; bottom: 0; ' +
+        'background: rgba(255, 255, 255, 0.95); ' +
+        'display: flex; flex-direction: column; align-items: center; justify-content: center; ' +
+        'z-index: 100; gap: 12px;">' +
+        '<div style="width: 40px; height: 40px; border: 4px solid rgba(0,123,255,0.2); ' +
+        'border-top-color: #007bff; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>' +
+        '<div style="color: #333; font-size: 14px;">' + (message || 'Cargando...') + '</div>' +
+        '</div>';
+    
+    var $wrapper = $('#tableCartaProductos').closest('.dataTables_wrapper');
+    if ($wrapper.length === 0) {
+        $wrapper = $('#tableCartaProductos').parent();
+    }
+    
+    $wrapper.css('position', 'relative');
+    $wrapper.append(loaderHtml);
+}
+
+function hideTableLoader() {
+    $('#dynamic-table-loader').fadeOut(500, function() {
+        $(this).remove();
+    });
+}
+
 function ListadoCartaDeProductos() {
     let tituloExport = "CARTA DE PRODUCTOS";
     if ($.fn.dataTable.isDataTable('#tableCartaProductos')) {
@@ -50,17 +82,28 @@ function ListadoCartaDeProductos() {
         "ajax": {
             "url": base_url + "index.php/Productos/ListadoCartaDeProductos",
             "type": "POST",
-            "data": {}
+            "data": {
+            },
+            beforeSend: function () {
+                showTableLoader("Cargando productos…");
+            },
+            complete: function () {
+                hideTableLoader();
+            },
+            error: function () {
+                hideTableLoader();
+            }
         },
         "bPaginate": true,
-        "bProcessing": true,
+        "bProcessing": false,
         "pageLength": 15,
         "select": true,
-        "dom": "Bfrtip",
+        //"dom": "Bfrtip",
         "ordering": true,
         "filter": true,
         "info": false,
         "footer": false,
+        "lengthChange": false,
         "responsive": {
             details: {
                 type: 'column',
@@ -71,12 +114,12 @@ function ListadoCartaDeProductos() {
             {mData: "id_producto", className: "text-center", visible: false},
             {mData: "cbarra", className: "text-center"},
             {mData: "nombre_producto", className: "text-left"},
-            {mData: "nombre_familia", className: "text-center"},
-            {mData: "nombre_umedida", className: "text-center"},
+            {mData: "nombre_familia", className: "text-left"},
+            {mData: "nombre_umedida", className: "text-left"},
             {mData: "iva", className: "text-center", render: $.fn.dataTable.render.number(',', '.', 0, '$'), visible: false},
             {mData: "impto_adicional", className: "text-center", visible: false},
             {mData: "nombre_dimpresion", className: "text-center", visible: false},
-            {mData: "nombre_bodega", className: "text-center"},
+            {mData: "nombre_bodega", className: "text-left"},
             {mData: "pponderado", className: "text-center", visible: false, render: $.fn.dataTable.render.number(',', '.', 0, '$')},
             {mData: "menu", className: "text-center", visible: false},
             {mData: "subfamilia", className: "text-center", visible: false},

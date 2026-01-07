@@ -24,16 +24,17 @@
 					</div>
 				</div>
 				<br>
-				<button style="margin-left:10px;" id="btnNuevoInsumo" type="button" class="btn btn-primary"></i>Crear Insumo</button>
-
+ 				<div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+					<button style="margin-left:10px; margin-right: 30px; margin-bottom: 20px;" id="btnNuevoInsumo" type="button" class="btn btn-primary"></i>Crear Insumo</button>
+				</div>
 				<div class="table-responsive" style="margin-top:10px; padding:5px;">
 					<table id="tableInsumos" class="display responsive" style="width: 100%">
 						<thead>
 							<tr>
 								<th class="text text-center">ID INSUMO</th>
 								<th class="text text-center" style="width:1px">CODIGO DE BARRA</th>
-								<th class="text text-center" style="width:100%">NOMBRE INSUMO</th>
-								<th class="text text-center" style="width:100%">GRUPO INSUMO</th>
+								<th class="text text-left" style="width:100%">NOMBRE INSUMO</th>
+								<th class="text text-left" style="width:100%">GRUPO INSUMO</th>
 								<th class="text text-center">COSTO NETO PP</th>
 								<th class="text text-center">COSTO BRUTO PP</th>
 								<th class="text text-center">MED. INV</th>
@@ -41,7 +42,7 @@
 								<th class="text text-center">MED. RECET</th>
 								<th class="text text-center">UN. MED. RECETA</th>
 								<th class="text text-center">IVA</th>
-								<th class="text text-center">IMPTO. ADICIONAL</th>
+								<th class="text text-left">IMPTO. ADICIONAL</th>
 								<th class="text text-center">% MERMA</th>
 								<th class="text text-center">ES RECETA</th>
 								<th class="text text-center">INVENTARIO CIERRE</th>

@@ -28,13 +28,15 @@
             </div>
           </div>
           <br>
-          <button onclick="AbrirModalNuevaBodega()" type="button" class="btn btn-primary"></i>Habilitar Nueva Bodega</button>
+          <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+          <button onclick="AbrirModalNuevaBodega()" type="button" class="btn btn-primary" style="margin-right: 20px; margin-bottom:20px;"></i>Crear Nueva Bodega</button>
+          </div>
           <div class="table-responsive" style="margin-top:10px; padding:5px;">
             <table id="tablaBodegas" class="display responsive" style="width: 100%">
               <thead>
                 <tr>
                   <th class="text text-center" style='height:10px'>N° BODEGA</th>
-                  <th class="text text-center" style='height:45px'>BODEGA</th>
+                  <th class="text text-left" style='height:45px'>BODEGA</th>
 
                 </tr>
               </thead>

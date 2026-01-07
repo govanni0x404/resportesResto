@@ -18,17 +18,17 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-6 ">
+                            <div class="col-md-4 ">
                                 <label for="idSubFamilia">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idSubFamilia" id="idSubFamilia" requerido="no" value="">
                             </div>
                         </fieldset>
                         <fieldset>
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label for="cboIdFamilia">FAMILIA *</label>
                                 <select id="cboIdFamilia" nombre="cboIdFamilia" class="form-control input-sm" style="width:100%" requerido="si"></select>
                             </div>
-                            <div class="col-md-6 ">
+                            <div class="col-md-12">
                                 <label for="nombreSubFamilia">SUB FAMILIA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreSubFamilia" id="nombreSubFamilia" requerido="si" value="" placeholder="Nombre SubFamilia" />
                             </div>
@@ -41,8 +41,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarNuevaSubFamilia()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+                <button onclick="GrabarNuevaSubFamilia()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -62,13 +62,13 @@
 
     function GrabarNuevaSubFamilia() {
         if ($('#nombreSubFamilia').val() == 0) {
-            showAppAlert('error',"- No Ingreso El Nombre De La Sub Familia!", {
+            showAppAlert('error',"No Ingreso El Nombre De La Sub Familia!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
         }
         else if ($('#cboIdFamilia').val() == null) {
-            showAppAlert('error',"- No Selecciono La Familia!", {
+            showAppAlert('error',"No Selecciono La Familia!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
@@ -94,7 +94,7 @@
                     tablaSubFamilia.ajax.reload();
                 })
                 .fail(function() {
-                    showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                    showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {
                         duration: 5000,
                         image: base_url+ 'assets/img/errorGif.gif'
                     });

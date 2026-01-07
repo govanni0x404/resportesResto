@@ -19,11 +19,11 @@
                     <div class="tab-pane fade active in" id="tabBodegas">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-6 ">
+                            <div class="col-md-4 ">
                                 <label for="idMoneda">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idMoneda" id="idMoneda" requerido="no" value="" />
                             </div>
-                            <div class="col-md-6 ">
+                            <div class="col-md-12 ">
                                 <label for="nombreMoneda">NOMBRE MONEDA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreMoneda" id="nombreMoneda" requerido="si" value="" placeholder="Nombre Moneda" />
                             </div>
@@ -36,8 +36,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="grabarNuevaMoneda()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+                <button onclick="grabarNuevaMoneda()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -57,7 +57,7 @@
 
     function grabarNuevaMoneda() {
         if ($('#nombreMoneda').val() == 0) {
-            showAppAlert('error',"- No Ingreso El Nombre De La Moneda!", {
+            showAppAlert('error',"No Ingreso El Nombre De La Moneda!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
@@ -80,7 +80,7 @@
                     tablaMoneda.ajax.reload();
                 })
                 .fail(function() {
-                    showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+                    showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {
                         duration: 5000,
                         image: base_url+ 'assets/img/errorGif.gif'
                     });

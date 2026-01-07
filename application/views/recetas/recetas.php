@@ -24,15 +24,16 @@
 					</div>
 				</div>
 				<br>
-				<button style="margin-left:10px;" id="btnNuevaReceta" type="button" class="btn btn-primary"></i>Crear Receta</button>
-
+				<div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+				<button style="margin-right:30px; margin-bottom: 20px;" id="btnNuevaReceta" type="button" class="btn btn-primary"></i>Crear Receta</button>
+				</div>
 				<div class="table-responsive" style="margin-top:10px; padding:5px;">
 					<table id="tableRecetas" class="display responsive" style="width: 100%">
 						<thead>
 							<tr>
 								<th class="text text-center">ID RECETA</th>
 								<th class="text text-center" style="width:1px">NOMBRE DE LA RECETA</th>
-								<th class="text text-center">GRUPO/FAMILIA</th>
+								<th class="text text-left">GRUPO/FAMILIA</th>
 								<th class="text text-center">COSTO INSUMOS</th>
 								<th class="text text-center">MARGEN GANANCIA</th>
 								<th class="text text-center">% COSTO</th>

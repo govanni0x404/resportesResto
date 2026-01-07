@@ -155,7 +155,7 @@
     </style>
     <style>
 
-    /spiner/
+    /* /spiner/ */
     /* Fondo oscuro de pantalla completa */
     .loader-backdrop {
       position: fixed; inset: 0; z-index: 9999;
@@ -455,43 +455,38 @@
                     <div class="collapse navbar-collapse" id="navbar-menu">
                         <ul class="nav navbar-nav navbar-left" data-in="" data-out="">
                             <li class="active"><a href="<?php echo base_url() ?>index.php/Dashboard"><i class="ti-home"></i> Mis Ventas</a></li>
-                            <li class="dropdown">
 
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Reportes</a>
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i>
+                                    Procesos</a>
                                 <ul class="dropdown-menu">
-                                    <li><a href="<?php echo base_url() ?>index.php/CierresDeCaja"><i class="ti-clipboard"></i>Cierres de Caja</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/InsumosPorBodega"><i class="ti-alert"></i>Stock Por Bodega</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/ResumenDeCompras"><i class="fa fa-crop"></i>Resumen De Compras</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/ConsolidadoVentas"><i class="fa fa-crop"></i>Consolidado De Ventas</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/DetalleOperaciones"><i class="pe-7s-cash"></i>Detalle De Operaciones</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/VentasPorProducto"><i class="pe-7s-cash"></i>Ventas Por Producto</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/PropinasPorGarzon"><i class="pe-7s-cash"></i>Propinas Por Garzon</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/ResumenAnulaciones"><i class="pe-7s-cash"></i>Resumen De Anulaciones/Eliminaciones</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/ListadoDeClientes"><i class="pe-7s-cash"></i>Listado De Clientes</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/VentasMensualesTotalizadas"><i class="pe-7s-cash"></i>Resumen Ventas Mensuales</a></li>
                                     <li class="dropdown">
-                                        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Movimientos De Bodega</a>
+                                        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Compras e Inventario</a>
                                         <ul class="dropdown-menu">
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/ResumenEntradaBodega"><i class="ti-money"></i>Entrada De Stock</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/ResumenSalidaBodega"><i class="ti-money"></i>Salida De Stock</a></li>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/EntradaBodega"><i class="ti-money"></i>Entrada a Bodega</a></li>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/SalidaBodega"><i class="ti-money"></i>Salida a Bodega</a></li>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Compras"><i class="ti-money"></i>Compras</a></li>
                                         </ul>
-                                    </li>
+                                    </li>                                
                                 </ul>
+                            </li>
 
                             <li class="dropdown">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Mantenedores</a>
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Mantencion</a>
                                 <ul class="dropdown-menu">
 
-                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Cliente"><i class="ti-money"></i>Clientes</a></li>
-                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Proveedor"><i class="ti-money"></i>Proveedor</a></li>
+                                    <!-- <li class="active"><a href="<?php echo base_url() ?>index.php/Cliente"><i class="ti-money"></i>Clientes</a></li>
+                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Proveedor"><i class="ti-money"></i>Proveedor</a></li> -->
                                     
-                                    <li class="dropdown">
+                                    <!-- <li class="dropdown">
                                         <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Usuarios</a>
                                         <ul class="dropdown-menu">
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Usuario"><i class="ti-money"></i>Usuarios</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/PrivilegiosUsuario"><i class="ti-money"></i>Privilegios Usuarios</a></li>
                                         </ul>
-                                    </li>
+                                    </li> -->
+                                    <li class="active"><a href="<?php echo base_url() ?>index.php/ListaDePrecios"><i class="ti-money"></i>Lista de Precios</a></li>
+                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Cliente"><i class="ti-money"></i>Clientes</a></li>
+                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Proveedor"><i class="ti-money"></i>Proveedor</a></li>
+
                                     <li class="dropdown">
                                         <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Tablas</a>
                                         <ul class="dropdown-menu">
@@ -516,7 +511,7 @@
                                                 </ul>
                                             </li>
                                             <li class="dropdown">
-                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Familias</a>
+                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Grupos/Familias</a>
                                                 <ul class="dropdown-menu">
                                                     <li class="active"><a href="<?php echo base_url() ?>index.php/Familias"><i class="ti-money"></i>Familias Productos Carta</a></li>
                                                     <li class="active"><a href="<?php echo base_url() ?>index.php/FamiliasInsumos"><i class="ti-money"></i>Familias Insumos</a></li>
@@ -533,20 +528,24 @@
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/Turnos"><i class="ti-money"></i>Turnos</a></li>
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/Umedida"><i class="ti-money"></i>Unidad De Medida</a></li>
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/ItemGastosMensuales"><i class="ti-money"></i>Item Gastos Mensuales</a></li>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Usuario"><i class="ti-money"></i>Usuario</a></li>
                                         </ul>
                                     </li>
 
 
+                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Insumos"><i class="ti-money"></i>Insumos</a></li>
+                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Recetas"><i class="ti-money"></i>Recetas</a></li>
 
 
                                     <li class="dropdown">
                                         <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Recintos</a>
                                         <ul class="dropdown-menu">
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/Recintos"><i class="ti-money"></i>Recintos</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Mesas"><i class="ti-money"></i>Mesas</a></li>
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/MesasPorRecinto"><i class="ti-money"></i>Mesas Por Recinto</a></li>
                                         </ul>
                                     </li>
+
+                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Productos"><i class="ti-money"></i>Productos de la Carta</a></li>
 
 
 
@@ -663,15 +662,51 @@
                                 </ul>
                             </li>
 
+                            <li class="dropdown">
+
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Consultas</a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="<?php echo base_url() ?>index.php/CierresDeCaja"><i class="ti-clipboard"></i>Cierres de Caja</a></li>
+                                    <li><a href="<?php echo base_url() ?>index.php/InsumosPorBodega"><i class="ti-alert"></i>Stock Por Bodega</a></li>
+                                    <li><a href="<?php echo base_url() ?>index.php/ResumenDeCompras"><i class="fa fa-crop"></i>Resumen De Compras</a></li>
+                                    <li><a href="<?php echo base_url() ?>index.php/ConsolidadoVentas"><i class="fa fa-crop"></i>Consolidado De Ventas</a></li>
+                                    <li><a href="<?php echo base_url() ?>index.php/DetalleOperaciones"><i class="pe-7s-cash"></i>Detalle De Operaciones</a></li>
+                                    <li><a href="<?php echo base_url() ?>index.php/VentasPorProducto"><i class="pe-7s-cash"></i>Ventas Por Producto</a></li>
+                                    <li><a href="<?php echo base_url() ?>index.php/PropinasPorGarzon"><i class="pe-7s-cash"></i>Propinas Por Garzon</a></li>
+                                    <li><a href="<?php echo base_url() ?>index.php/ResumenAnulaciones"><i class="pe-7s-cash"></i>Resumen De Anulaciones/Eliminaciones</a></li>
+                                    <li><a href="<?php echo base_url() ?>index.php/ListadoDeClientes"><i class="pe-7s-cash"></i>Listado De Clientes</a></li>
+                                    <li><a href="<?php echo base_url() ?>index.php/VentasMensualesTotalizadas"><i class="pe-7s-cash"></i>Resumen Ventas Mensuales</a></li>
+                                    <li class="dropdown">
+                                        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Movimientos De Bodega</a>
+                                        <ul class="dropdown-menu">
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/ResumenEntradaBodega"><i class="ti-money"></i>Entrada De Stock</a></li>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/ResumenSalidaBodega"><i class="ti-money"></i>Salida De Stock</a></li>
+                                        </ul>
+                                    </li>
+                                </ul>
+
+                            
+                            
                             <li class="active"><a href="<?php echo base_url() ?>index.php/Productos"><i class="ti-money"></i>Carta</a></li>
-                            <li class="active"><a href="<?php echo base_url() ?>index.php/Insumos"><i class="ti-money"></i>Insumos</a></li>
-                            <li class="active"><a href="<?php echo base_url() ?>index.php/Recetas"><i class="ti-money"></i>Recetas</a></li>
-                            <li class="active"><a href="<?php echo base_url() ?>index.php/ListaDePrecios"><i class="ti-money"></i>Lista De Precios</a></li>
+                            <li class="active"><a href="<?php echo base_url() ?>index.php/Cliente"><i class="ti-money"></i>Clientes</a></li>
+                            <li class="active"><a href="<?php echo base_url() ?>index.php/Proveedor"><i class="ti-money"></i>Proveedor</a></li>
+                            <!-- <li class="active"><a href="<?php echo base_url() ?>index.php/Insumos"><i class="ti-money"></i>Insumos</a></li>
+                            <li class="active"><a href="<?php echo base_url() ?>index.php/Recetas"><i class="ti-money"></i>Recetas</a></li> -->
                             <li class="active"><a href="<?php echo base_url() ?>index.php/Compras"><i class="ti-money"></i>Compras</a></li>
+                            <li class="active"><a href="<?php echo base_url() ?>index.php/ListaDePrecios"><i class="ti-money"></i>Precios</a></li>
                             <!--<li class="active"><a href="<?php echo base_url() ?>index.php/Usuarios"><i class="ti-user"></i>Usuarios</a></li>-->
 
-
                             <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i>
+                                    Herramientas</a>
+                                <ul class="dropdown-menu">
+                                    <li class="active"><a href="<?php echo base_url() ?>index.php/PrivilegiosUsuario"><i class="ti-money"></i>Privilegios</a></li>
+                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Mesas"><i class="ti-money"></i>Mesas</a></li>
+                                </ul>
+                            </li>
+
+
+                            <!-- <li class="dropdown">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i>
                                     Stock</a>
                                 <ul class="dropdown-menu">
@@ -680,7 +715,7 @@
 
 
                                 </ul>
-                            </li>
+                            </li> -->
 
 
 

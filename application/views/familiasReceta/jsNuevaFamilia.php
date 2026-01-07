@@ -19,11 +19,11 @@
           <div class="tab-pane fade active in" id="tabBodegas">
             <!-- CAMPOS DE REGISTRO  -->
             <fieldset>
-              <div class="col-md-6 ">
+              <div class="col-md-4 ">
                 <label for="idFamiliaReceta">ID</label>
                 <input type="number" disabled class="form-control input-sm input-sm" name="idFamiliaReceta" id="idFamiliaReceta" requerido="no" value="" />
               </div>
-              <div class="col-md-6 ">
+              <div class="col-md-10 ">
                 <label for="nombreFamiliaReceta">NOMBRE FAMILIA RECETA *</label>
                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreFamiliaReceta" id="nombreFamiliaReceta" requerido="si" value="" placeholder="Nombre Familia Receta" />
               </div>
@@ -36,8 +36,8 @@
 
       <!-- BOTONES  -->
       <div class="modal-footer">
-        <button onclick="GrabarNuevaFamiliaReceta()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-        <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+        <button onclick="GrabarNuevaFamiliaReceta()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
       </div>
       <!-- FIN BOTONES  -->
     </div>
@@ -57,7 +57,10 @@
 
   function GrabarNuevaFamiliaReceta() {
     if ($('#nombreFamiliaReceta').val() == 0) {
-      swal("ERROR!", "No Ingreso El Nombre De La Familia Receta!", "error");
+      showAppAlert('error',"No Ingreso El Nombre De La Familia Receta!", {
+        duration: 5000,
+        image: base_url+ 'assets/img/errorGif.gif'
+      });
     } else {
       idFamiliaReceta = $('#idFamiliaReceta').val();
       NombreFamiliaReceta = $('#nombreFamiliaReceta').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
@@ -69,12 +72,18 @@
       $.post(base_url + "index.php/FamiliasReceta/grabarNuevaFamiliaReceta", {
           'prod': miJson
         }).done(function() {
-          swal("Listo", "Se registro Exitosamente La Nueva Familia Receta", "success");
+          showAppAlert('success', "Se registro Exitosamente La Nueva Familia Receta!", {
+            duration: 4000,
+            image: base_url + 'assets/img/success.gif'
+          });
           $('#ModalNuevaFamiliaReceta').modal('hide');
           tablaFamiliasReceta.ajax.reload();
         })
         .fail(function() {
-          swal("Se produjo un error al realizar el proceso, favor contacte a su administrador", "error");
+          showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador!", {
+            duration: 5000,
+            image: base_url+ 'assets/img/errorGif.gif'
+          });
         })
         .always(function() {});
     }

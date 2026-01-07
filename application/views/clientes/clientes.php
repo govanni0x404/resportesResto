@@ -28,7 +28,9 @@
                         </div>
                     </div>
                     <br>
-                    <button onclick="AbrirModalNuevoCliente()" type="button" style="margin-left:15px;" class="btn btn-primary"></i>Habilitar Nuevo Cliente</button>
+                    <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+                    <button onclick="AbrirModalNuevoCliente()" type="button" style="margin-right: 20px; margin-bottom:20px;" class="btn btn-primary"></i>Crear Nuevo Cliente</button>
+                    </div>
                     <div class="table-responsive" style="margin-top:10px; padding:5px;">
                         <table id="tablaClientes" class="display responsive" style="width: 100%">
                             <thead>
@@ -37,10 +39,10 @@
                                     <th class="text text-center">RUT</th>
                                     <th class="text text-center">DV</th>
                                     <th class="text text-center">RUT</th>
-                                    <th class="text text-center">NOMBRE</th>
-                                    <th class="text text-center">GIRO</th>
-                                    <th class="text text-center">DIRECCION</th>
-                                    <th class="text text-center">COMUNA</th>
+                                    <th class="text text-left">NOMBRE</th>
+                                    <th class="text text-left">GIRO</th>
+                                    <th class="text text-left">DIRECCION</th>
+                                    <th class="text text-left">COMUNA</th>
                                     <th class="text text-center">TELEFONO</th>
                                     <th class="text text-center">LISTA DE PRECIOS</th>
                                     <th class="text text-center">MAIL</th>

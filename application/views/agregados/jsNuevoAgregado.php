@@ -30,16 +30,16 @@
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-6">
+							<div class="col-md-12">
 								<label for="cboProductoAgregado">PRODUCTO DE AGREGADO</label>
 								<select id="cboProductoAgregado" nombre="cboProductoAgregado" class="form-control input-sm" style="width:100%" requerido="si"></select>
 							</div>
 
-							<div class="col-md-3 ">
+							<div class="col-md-6 ">
 								<label for="cantidadAgregado">CANTIDAD</label>
 								<input min="0" type="number" class="form-control input-sm input-sm" maxlength='28' onpaste="return false;" ondrop="return false;" autocomplete="off" name="cantidadAgregado" id="cantidadAgregado" requerido="si" value="" />
 							</div>
-							<div class="col-md-3 ">
+							<div class="col-md-6 ">
 								<label for="valorAdicionalAgregado">C. ADICIONAL</label>
 								<input type="number" class="form-control input-sm input-sm" maxlength='28' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="valorAdicionalAgregado" id="valorAdicionalAgregado" requerido="si" value="" />
 							</div>
@@ -75,8 +75,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i> GRABAR AGREGADO</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
+				<button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-primary"><i class=""></i> GRABAR AGREGADO</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i> SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -102,22 +102,28 @@
 		ProductoMaestro = $('#cboProductoDeVentaConAgregado').val();
 		ProductoAgregado = $('#cboProductoAgregado').val();
 		CantidadAgregado = $('#cantidadAgregado').val();
+		ValorAdicionalAgregado = $('#valorAdicionalAgregado').val();
 
 		if (ProductoMaestro == null) {
-			showAppAlert('error',"- No Selecciono El Producto De Venta Con Agregado!", {
+			showAppAlert('error',"No Selecciono El Producto De Venta Con Agregado!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
 			});
 		} else if (ProductoAgregado == null) {
-			showAppAlert('error',"- No Selecciono El Agregado!", {
+			showAppAlert('error',"No Selecciono El Agregado!", {
             	duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
 			});
 		} else if (CantidadAgregado == 0) {
-			showAppAlert('error',"- No Ingreso La Cantidad Del Agregado!", {
+			showAppAlert('error',"No Ingreso La Cantidad Del Agregado!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
 			});
+		}else if (ValorAdicionalAgregado == 0){
+			showAppAlert('error',"No Ingreso El valor Adicional Del Agregado!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+			});		
 		} else {
 			//grabar datos
 			IdAgregado = $('#idAgregado').val();
@@ -153,7 +159,7 @@
 					tablaAgregados.ajax.reload();
 				})
 				.fail(function() {
-					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador.", {
+					showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador.", {
                         duration: 5000,
                         image: base_url+ 'assets/img/errorGif.gif'
 					});

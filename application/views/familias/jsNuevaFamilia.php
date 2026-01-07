@@ -24,18 +24,18 @@
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-md-12 ">
 								<label for="nombreFamilia">FAMILIA *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreFamilia" id="nombreFamilia" requerido="si" value="" placeholder="Nombre Familia" />
 							</div>
 
-							<div class="col-md-6 ">
+							<div class="col-md-12 ">
 								<label for="AliasFamilia">ALIAS FAMILIA *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="AliasFamilia" id="AliasFamilia" requerido="si" value="" placeholder="Alias Familia" />
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-4">
+							<div class="col-md-8">
 								<label for="ordenFamilia">ORDEN FAMILIA</label>
 								<input min="0" type="text" class="form-control input-sm input-sm" maxlength='4' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="ordenFamilia" id="ordenFamilia" requerido="si" value="" placeholder="Orden Familia" />
 							</div>
@@ -69,8 +69,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="GrabarNuevaFamilia()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+				<button onclick="GrabarNuevaFamilia()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -92,7 +92,10 @@
 
 	function GrabarNuevaFamilia() {
 		if ($('#nombreFamilia').val() == 0) {
-			swal("ERROR!", "No Ingreso El Nombre De La Familia!", "error");
+			showAppAlert('error',"No Ingreso El nombre de la Familia!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
 		} else if ($('#AliasFamilia').val().trim() === '') {
             $('#AliasFamilia').val($('#nombreFamilia').val().trim());
 		}else {
@@ -122,12 +125,18 @@
 			$.post(base_url + "index.php/Familias/grabarNuevaFamilia", {
 					'prod': miJson
 				}).done(function() {
-					swal("Listo", "Se registro Exitosamente La Nueva Familia", "success");
+					showAppAlert('success', "Se registro Exitosamente La Nueva Familia!", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
 					$('#ModalNuevaFamilia').modal('hide');
 					tablaFamilias.ajax.reload();
 				})
 				.fail(function() {
-					swal("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+					showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador!", {
+                		duration: 5000,
+               	 		image: base_url+ 'assets/img/errorGif.gif'
+            		});
 				})
 				.always(function() {});
 		}

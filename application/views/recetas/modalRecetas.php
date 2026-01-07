@@ -36,18 +36,28 @@
 											<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="rendimientoReceta" id="rendimientoReceta" requerido="si" value="" />
 										</div>
 										<div class="col-md-3">
-											<label for="brutoSugerido">PRECIO BRUTO SUG/VEN</label>
-											<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="brutoSugerido" id="brutoSugerido" requerido="si" value="" />
-										</div>
-									</fieldset>
-									<br>
-									<fieldset>
-										<div class="col-md-3">
 											<label for="cboUnMedida">UNIDAD MEDIDA</label>
 											<select style="width:100%;" id="cboUnMedida" nombre="cboUnMedida" class="form-control input-sm" requerido="si">
 												<option value="">--Seleccione--</option>
 											</select>
 										</div>
+										<!-- <div class="col-md-3">
+											<label for="brutoSugerido">PRECIO BRUTO SUG/VEN</label>
+											<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="brutoSugerido" id="brutoSugerido" requerido="si" value="" />
+										</div> -->
+									</fieldset>
+									<br>
+									<fieldset>
+										<div class="col-md-3">
+											<label for="brutoSugerido">PRECIO BRUTO SUG/VEN</label>
+											<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="brutoSugerido" id="brutoSugerido" requerido="si" value="" />
+										</div>
+										<!-- <div class="col-md-3">
+											<label for="cboUnMedida">UNIDAD MEDIDA</label>
+											<select style="width:100%;" id="cboUnMedida" nombre="cboUnMedida" class="form-control input-sm" requerido="si">
+												<option value="">--Seleccione--</option>
+											</select>
+										</div> -->
 										<div class="col-md-6">
 											<label for="cboGrupoReceta">GRUPO/FAMILIA
 												  <sup><a onclick="crearNuevaFamiliaReceta()">Nuevo</a></sup>
@@ -92,14 +102,14 @@
 												<input type="hidden" disabled class="form-control input-sm input-sm" name="cBarraI" id="cBarraI" requerido="si" value="">
 
 											</div>
-											<div class="col-md-7">
+											<div class="col-md-9">
 												<label for="nombreInsumoReceta">NOMBRE INSUMO</label>
 												<input type="text" disabled class="form-control input-sm input-sm" name="nombreInsumoReceta" id="nombreInsumoReceta" requerido="si" value="">
 											</div>
-											<div class="col-md-2">
+											<!-- <div class="col-md-2">
 												<label for="esSubreceta">SUBRECETA</label>
 												<input type="text" disabled class="form-control input-sm input-sm" name="esSubreceta" id="esSubreceta" requerido="si" value="">
-											</div>
+											</div> -->
 										</fieldset>
 										<br>
 										<fieldset>
@@ -167,8 +177,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button type="button" class="btn btn-primary" id="btnGrabarInsumo"><i class="fa fa-check-square-o"></i> GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
+				<button type="button" class="btn btn-primary" id="btnGrabarInsumo"><i class=""></i> GRABAR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i> SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>
@@ -293,29 +303,47 @@
 
 		// Validaciones
 		if ($('#nombreReceta').val() == 0) {
-			msg += "-> Nombre Receta\n";
-		}
-		if ($('#rendimientoReceta').val() == 0) {
-			msg += "-> Rendimiento Receta\n";
-		}
-		if ($('#brutoSugerido').val() == 0) {
-			msg += "-> Precio Venta Sugerido\n";
-		}
-		if ($('#cboUnMedida').val() == 0) {
-			msg += "-> Unidad de Medida\n";
-		}
-		if ($('#cboGrupoReceta').val() == 0) {
-			msg += "-> Grupo Receta\n";
-		}
-		if ($('#cboSeccionReceta').val() == 0) {
-			msg += "-> Seccion Receta\n";
-		}
-
-		if (msg.length) {
-			swal("Error", "Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, "error");
+			showAppAlert('error', "Falta Ingresar el Nombre de la Receta", {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
 			return;
 		}
-
+		if ($('#rendimientoReceta').val() == 0) {
+			showAppAlert('error', "Falta Ingresar el Rendimiento de la Receta", {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#cboUnMedida').val() == 0) {
+			showAppAlert('error', "Falta Ingresar la Unidad de Medida de la Receta", {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#brutoSugerido').val() == 0) {
+			showAppAlert('error', "Falta Ingresar el Precio Bruto de la Receta", {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#cboGrupoReceta').val() == 0) {
+			showAppAlert('error', "Falta Seleccionar el Grupo/Familia de la Receta", {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
+			return;
+		}
+		if ($('#cboSeccionReceta').val() == 0) {
+			showAppAlert('error', "Falta Seleccionar la Seccion de la Receta", {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
+			return;
+		}
 		// Preparar JSON de la receta
 		var miJson = {
 			'id_receta': id_receta,
@@ -400,14 +428,23 @@
 					tableRecetas.ajax.reload(null, false);
 					
 					// Mostrar mensaje de éxito
-					swal("Listo", response.message, "success");
+					showAppAlert('success', response.message, {
+                    	duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
 				} else {
-					swal("Error", response.message || "Error al guardar la receta", "error");
+					showAppAlert('error', response.message || "Error al guardar la receta", {
+                        duration: 6000,
+                        image: base_url + 'assets/img/errorGif.gif'
+                    });
 				}
 			},
 			error: function(xhr, status, error) {
 				console.error('Error AJAX:', {xhr: xhr, status: status, error: error});
-				swal("Error", "Se produjo un error al realizar el proceso. Detalle: " + error, "error");
+				showAppAlert('error', "Se produjo un error al realizar el proceso. Detalle: " + error, {
+                    duration: 6000,
+                    image: base_url + 'assets/img/errorGif.gif'
+                });
 			}
 		});
 	});
@@ -438,11 +475,20 @@
 		});
 		//COMPROBACIONES
 		if (id_insumo == 0) {
-			swal("Error", "Elija un insumo por favor", "error");
+			showAppAlert('error', "Elija un insumo por favor", {
+                duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
 		} else if (cantidad_insumo == '') {
-			swal("Error", "Ingrese una cantidad", "error");
+			showAppAlert('error', "Ingrese una cantidad", {
+            	duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
 		} else if (errorexiste == 1) {
-			swal("Error", "El producto ya se encuentra en la lista", "error");
+			showAppAlert('error', "El producto ya se encuentra en la lista", {
+            	duration: 6000,
+                image: base_url + 'assets/img/errorGif.gif'
+            });
 		} else {
 			rnd = $("#contador").val();
 			$('#cboCodBarraInsumoReceta').val(0).trigger('change');
@@ -676,13 +722,16 @@
 				confirmButtonColor: "#DD6B55",
 				cancelButtonText: "Cancelar",
 				confirmButtonText: "Eliminar",
-				closeOnConfirm: false
+				closeOnConfirm: true
 			},
 			function() {
 				var cant_lineas = $('#cant_lineas').val();
 				$('#' + rnd).remove();
 				$('#cant_lineas').val(parseInt(cant_lineas) - 1);
-				swal("Eliminado!", "", "success");
+				showAppAlert('success', "Insumo Eliminado Correctamente", {
+                	duration: 4000,
+                    image: base_url + 'assets/img/success.gif'
+                });
 			});
 	}
 

@@ -47,7 +47,15 @@ class Comuna extends CI_Controller
       'id_provincia' => $d['id_provincia'],
     );
     $r = $this->Mcomuna->grabarNuevaComuna($id, $miData);
-    echo json_encode($r);
+    if ($r && isset($r['id_comuna'])) {
+        echo json_encode(array(
+            'success' => true,
+            'id_comuna' => $r['id_comuna'],
+            'message' => 'Comuna grabada exitosamente'
+        ));
+    } else {
+        echo json_encode($r);
+    }
   }
 
   public function ListarComunas()

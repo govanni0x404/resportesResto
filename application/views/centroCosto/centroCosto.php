@@ -28,13 +28,15 @@
             </div>
           </div>
           <br>
-          <button onclick="AbrirModalNuevoCentroCosto()" type="button" class="btn btn-primary"></i>Habilitar Nuevo Centro Costo</button>
+          <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+          <button onclick="AbrirModalNuevoCentroCosto()" type="button" class="btn btn-primary" style="margin-right: 20px; margin-bottom:20px;"></i>Crear Nuevo Centro Costo</button>
+          </div>
           <div class="table-responsive" style="margin-top:10px; padding:5px;">
             <table id="tablaCentroCosto" class="display responsive" style="width: 100%">
               <thead>
                 <tr>
                   <th class="text text-center" style='height:10px'>N° CENTRO COSTO</th>
-                  <th class="text text-center" style='height:45px'>CENTRO COSTO</th>
+                  <th class="text text-left" style='height:45px'>CENTRO COSTO</th>
                   <th class="text text-center" style='height:10px'>INGRESO</th>
                 </tr>
               </thead>

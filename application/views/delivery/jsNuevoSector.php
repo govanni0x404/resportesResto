@@ -19,11 +19,11 @@
           <div class="tab-pane fade active in" id="tabBodegas">
             <!-- CAMPOS DE REGISTRO  -->
             <fieldset>
-              <div class="col-md-6 ">
+              <div class="col-md-4 ">
                 <label for="idSector">ID</label>
                 <input type="number" disabled class="form-control input-sm input-sm" name="idSector" id="idSector" requerido="no" value="" />
               </div>
-              <div class="col-md-6 ">
+              <div class="col-md-10 ">
                 <label for="nombreSector">NOMBRE SECTOR *</label>
                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreSector" id="nombreSector" requerido="si" value="" placeholder="Nombre Sector" />
               </div>
@@ -36,8 +36,8 @@
 
       <!-- BOTONES  -->
       <div class="modal-footer">
-        <button onclick="GrabarNuevoSector()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i>GRABAR</button>
-        <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i>SALIR</button>
+        <button onclick="GrabarNuevoSector()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
       </div>
       <!-- FIN BOTONES  -->
     </div>
@@ -57,7 +57,7 @@
 
   function GrabarNuevoSector() {
     if ($('#nombreSector').val() == 0) {
-      showAppAlert('error',"- No Ingreso El Nombre Del Sector!", {
+      showAppAlert('error',"No Ingreso El Nombre Del Sector!", {
         duration: 5000,
         image: base_url+ 'assets/img/errorGif.gif'
       });
@@ -80,7 +80,7 @@
           tablaSector.ajax.reload();
         })
         .fail(function() {
-          showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+          showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
           });

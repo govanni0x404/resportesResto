@@ -35,8 +35,18 @@ $fechaActual = date('Y-m-d');
                     <fieldset>
                         <div class="col-md-3">
                             <label for="cboProveedorCompra">Proveedor</label>
-                            <select id="cboProveedorCompra" nombre="cboProveedorCompra" class="form-control input-sm"
-                                style="width:100%" requerido="si"></select>
+                                <div class="input-group">
+                                    <select id="cboProveedorCompra" nombre="cboProveedorCompra" class="form-control input-sm"
+                                        style="width:100%" requerido="si"></select>
+                                    
+                                        <span class="input-group-btn">
+                                            <button class="btn btn-success btn-sm" type="button" id="btnNuevoProveedorCompra" 
+                                                style="height: 30px;" title="Agregar nuevo proveedor"
+                                                onclick="AbrirModalNuevoProveedor()">
+                                                <i class="fa fa-plus"></i>
+                                            </button>
+                                        </span>
+                                </div>
                         </div>
 
                         <div class="col-md-3">
@@ -56,7 +66,7 @@ $fechaActual = date('Y-m-d');
                         <div class="col-md-3">
                             <label for="FechaCompra">Fecha Compra</label>
                             <input type="text" id="FechaCompra" class="form-control input-sm"
-                                value="<?php echo $fechaActual; ?>" />
+                                value="<?php echo date('d-m-Y'); ?>" />
                         </div>
                     </fieldset>
                 </div>
@@ -134,13 +144,13 @@ $fechaActual = date('Y-m-d');
                         </table>
                     </div>
 
-                    <div class="row" style="margin-top: 20px;">
-                        <div class="col-md-7">
+                    <div class="" style="margin-top: 20px;">
+                        <div class="col-md-10">
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-1">
                             <label class="control-label">Total Compra:</label>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-0" style="margin-bottom: 30px;">
                             <div class="input-group">
                                 <span class="input-group-addon">$</span>
                                 <input type="number" disabled
@@ -156,7 +166,7 @@ $fechaActual = date('Y-m-d');
                             <button id="GrabaIngresoDeCompra"
                                 type="button"
                                 class="btn btn-primary btn-lg" 
-                                style="padding: 15px 40px; font-size: 16px;">
+                                style="padding: 10px 20px; font-size: 16px;">
                                 <i class="fa fa-save"></i> INGRESAR COMPRA
                             </button>
                         </div>
@@ -166,3 +176,4 @@ $fechaActual = date('Y-m-d');
         </div>
     </div>
 </div>
+ <?php $this->load->view('proveedor/jsNuevoProveedor.php'); ?>

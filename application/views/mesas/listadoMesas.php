@@ -6,6 +6,38 @@ $(document).ready(function() {
     ListadoDeMesas();
 });
 
+function showTableLoader(message) {
+    if ($('#dynamic-table-loader').length) {
+        $('#dynamic-table-loader').show();
+        return;
+    }
+    
+    var loaderHtml = 
+        '<div id="dynamic-table-loader" style="' +
+        'position: absolute; top: 0; left: 0; right: 0; bottom: 0; ' +
+        'background: rgba(255, 255, 255, 0.95); ' +
+        'display: flex; flex-direction: column; align-items: center; justify-content: center; ' +
+        'z-index: 100; gap: 12px;">' +
+        '<div style="width: 40px; height: 40px; border: 4px solid rgba(0,123,255,0.2); ' +
+        'border-top-color: #007bff; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>' +
+        '<div style="color: #333; font-size: 14px;">' + (message || 'Cargando...') + '</div>' +
+        '</div>';
+    
+    var $wrapper = $('#tablaMesas').closest('.dataTables_wrapper');
+    if ($wrapper.length === 0) {
+        $wrapper = $('#tablaMesas').parent();
+    }
+    
+    $wrapper.css('position', 'relative');
+    $wrapper.append(loaderHtml);
+}
+
+function hideTableLoader() {
+    $('#dynamic-table-loader').fadeOut(500, function() {
+        $(this).remove();
+    });
+}
+
 function ListadoDeMesas() {
     if ($.fn.dataTable.isDataTable('#tablaMesas')) {
         tablaMesas = $('#tablaMesas').DataTable();
@@ -13,10 +45,21 @@ function ListadoDeMesas() {
     }
     tablaMesas = $("#tablaMesas").DataTable({
         "ajax": {
-            "url": base_url + "index.php/Mesas/ListadoDeMesas"
+            "url": base_url + "index.php/Mesas/ListadoDeMesas",
+            "data": {
+            },
+            beforeSend: function () {
+                showTableLoader("Cargando Mesas...");
+            },
+            complete: function () {
+                hideTableLoader();
+            },
+            error: function () {
+                hideTableLoader();
+            }
         },
         "bPaginate": true,
-        "bProcessing": true,
+        "bProcessing": false,
         "pageLength": 10,
         "select": true,
         "dom": "Bfrtip",
@@ -45,7 +88,12 @@ function ListadoDeMesas() {
                 mData: "vigente",
                 className: "text-center",
                 render: function(data) {
-                    return data ? '<span class="label label-success">ACTIVO</span>' : '<span class="label label-danger">INACTIVO</span>';
+                    var vigente = (data === true || data === "true" || data === "t" || data === 1);
+                    if (vigente) {
+                        return '<span class="label label-success">ACTIVO</span>';
+                    } else {
+                        return '<span class="label label-danger">INACTIVO</span>';
+                    }
                 }
             }
         ],

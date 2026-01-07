@@ -49,6 +49,38 @@
         }
     });
 
+    function showTableLoader(message) {
+    if ($('#dynamic-table-loader').length) {
+        $('#dynamic-table-loader').show();
+        return;
+    }
+    
+    var loaderHtml = 
+        '<div id="dynamic-table-loader" style="' +
+        'position: absolute; top: 0; left: 0; right: 0; bottom: 0; ' +
+        'background: rgba(255, 255, 255, 0.95); ' +
+        'display: flex; flex-direction: column; align-items: center; justify-content: center; ' +
+        'z-index: 100; gap: 12px;">' +
+        '<div style="width: 40px; height: 40px; border: 4px solid rgba(0,123,255,0.2); ' +
+        'border-top-color: #007bff; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>' +
+        '<div style="color: #333; font-size: 14px;">' + (message || 'Cargando...') + '</div>' +
+        '</div>';
+    
+    var $wrapper = $('#tableResumenListaPrecios').closest('.dataTables_wrapper');
+    if ($wrapper.length === 0) {
+        $wrapper = $('#tableResumenListaPrecios').parent();
+    }
+    
+    $wrapper.css('position', 'relative');
+    $wrapper.append(loaderHtml);
+    }
+
+    function hideTableLoader() {
+        $('#dynamic-table-loader').fadeOut(200, function() {
+            $(this).remove();
+        });
+    }
+
     function InformeListaDePrecios(id_lprecio, id_familia) {
         let tituloExport = "Lista De Precios";
         if ($.fn.dataTable.isDataTable('#tableResumenListaPrecios')) {
@@ -62,10 +94,19 @@
                 "data": {
                     'id_lprecio': id_lprecio,
                     'id_familia': id_familia,
+                },
+                beforeSend: function () {
+                    showTableLoader("Cargando Listas de Precios...");
+                },
+                complete: function () {
+                    hideTableLoader();
+                },
+                error: function () {
+                    hideTableLoader();
                 }
             },
             "bPaginate": true,
-            "bProcessing": true,
+            "bProcessing": false,
             "pageLength": 10,
             "select": true,
             "dom": "Bfrtip",
@@ -90,24 +131,24 @@
                 },
                 {
                     mData: "nombre_producto",
-                    className: "text-center"
+                    className: "text-left"
                 },
                 {
                     mData: "nombre_familia",
-                    className: "text-center"
+                    className: "text-left"
                 },
                 {
                     mData: "nombre_umedida",
-                    className: "text-center"
+                    className: "text-left"
                 },
                 {
                     mData: "total",
-                    className: "text-center",
+                    className: "text-right",
                     render: $.fn.dataTable.render.number(',', '.', 0, '$')
                 },
                 {
                     mData: "precio_ucompra",
-                    className: "text-center",
+                    className: "text-right",
                     render: $.fn.dataTable.render.number(',', '.', 0, '$')
                 },
             ],
@@ -183,12 +224,8 @@
     }
 
     function GrabarNuevaLprecio() {
-        var msg = "";
         if ($('#nombreLprecio').val() == 0) {
-            msg = "-> Nombre Lista Precios\n";
-        }
-        if (msg.length) {
-            showAppAlert('error',"- Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
+            showAppAlert('error',"Debe ingresar el Nombre de la nueva Lista de Precios.", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
@@ -204,7 +241,16 @@
                     'prod': miJson
                 }).done(function() {
                     $('#ModalNuevaLprecios').modal('hide');
-                    tableResumenListaPrecios.ajax.reload();
+                    
+                    // CAMBIO AQUÍ: Verificar si la tabla está inicializada antes de recargar
+                    if ($.fn.DataTable.isDataTable('#tableResumenListaPrecios') && 
+                        tableResumenListaPrecios.ajax.url()) {
+                        tableResumenListaPrecios.ajax.reload();
+                    } else {
+                        // Si no está inicializada, actualizar solo el combo
+                        ListadoListasDePrecios();
+                    }
+                    
                     showAppAlert('success', "Se registro Exitosamente La Nueva Lista De Precios!", {
                         duration: 4000,
                         image: base_url + 'assets/img/success.gif'

@@ -1,8 +1,6 @@
 <script>
-function cargarRoles() {
+function cargarRoles(callback) {
     $.get(base_url + "index.php/Usuario/ListadoRoles", function(response) {
-
-        // Conversión segura a JSON
         if (typeof response === "string") {
             try {
                 response = JSON.parse(response);
@@ -12,7 +10,7 @@ function cargarRoles() {
             }
         }
 
-        console.log("Roles cargados:", response);
+        console.log("Roles cargados en modal:", response);
 
         // Limpiar select
         $("#rolUsuario").empty();
@@ -24,6 +22,10 @@ function cargarRoles() {
                 '<option value="' + r.id_rol + '">' + r.nombre_rol + '</option>'
             );
         });
+        
+        if (callback && typeof callback === 'function') {
+            callback();
+        }
     });
 }
 </script>
@@ -80,8 +82,8 @@ function cargarRoles() {
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="grabarNuevoUsuario()" type="button" class="btn btn-primary"><i class="fa fa-check-square-o"></i> GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times-circle"></i> SALIR</button>
+                <button onclick="grabarNuevoUsuario()" type="button" class="btn btn-primary"><i class=""></i> GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -110,9 +112,14 @@ function cargarRoles() {
         
         $('#tituloModalUsuario h4').text('REGISTRO DE USUARIOS');
         
-        $('#ModalNuevoUsuario').modal({
-            backdrop: 'static',
-            keyboard: false
+        cargarRoles(function() {
+
+            $("#rolUsuario").val("");
+
+            $('#ModalNuevoUsuario').modal({
+                backdrop: 'static',
+                keyboard: false
+            });
         });
     }
 
@@ -124,7 +131,7 @@ function cargarRoles() {
 			var idRol = $("#rolUsuario").val();
             
             if (vigenteSeleccionado == "" || vigenteSeleccionado == null) {
-                showAppAlert('error', "- Debe seleccionar el estado de vigencia!", {
+                showAppAlert('error', "Debe seleccionar el estado de vigencia!", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });
@@ -142,12 +149,12 @@ function cargarRoles() {
 			};
 
             if(nombre === ""){
-				showAppAlert('error', "- El nombre de Usuario no puede quedar vacio.", {
+				showAppAlert('error', "El nombre de Usuario no puede quedar vacio.", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });
 			}else if(clave === ""){
-				showAppAlert('error', "- La clave de Usuario no puede quedar vacia", {
+				showAppAlert('error', "La clave de Usuario no puede quedar vacia", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });
@@ -167,7 +174,7 @@ function cargarRoles() {
                 })
                 .fail(function(jqXHR, textStatus, errorThrown) {
                     console.error('Error:', textStatus, errorThrown);
-                    showAppAlert('error', "- Se produjo un error al realizar el proceso", {
+                    showAppAlert('error', "Se produjo un error al realizar el proceso", {
                         duration: 5000,
                         image: base_url + 'assets/img/errorGif.gif'
                     });
@@ -176,7 +183,7 @@ function cargarRoles() {
         } else {
             // Modo creación
             if ($('#nombreUsuario').val() == "" || $('#nombreUsuario').val() == null) {
-                showAppAlert('error', "- Debe ingresar el nombre de usuario!", {
+                showAppAlert('error', "Debe ingresar el nombre de usuario!", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });
@@ -184,7 +191,7 @@ function cargarRoles() {
             }
             
             if ($('#claveUsuario').val() == "" || $('#claveUsuario').val() == null) {
-                showAppAlert('error', "- Debe ingresar la clave de usuario!", {
+                showAppAlert('error', "Debe ingresar la clave de usuario!", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });
@@ -192,7 +199,7 @@ function cargarRoles() {
             }
 
 			if ($("#rolUsuario").val() == "" || $("#rolUsuario").val() == null) {
-			    showAppAlert('error', "- Debe seleccionar un rol!", {
+			    showAppAlert('error', "Debe seleccionar un rol!", {
         			duration: 5000,
         			image: base_url + 'assets/img/errorGif.gif'
     			});
@@ -227,7 +234,7 @@ function cargarRoles() {
                 })
                 .fail(function(jqXHR, textStatus, errorThrown) {
                     console.error('Error:', textStatus, errorThrown);
-                    showAppAlert('error', "- Se produjo un error al realizar el proceso", {
+                    showAppAlert('error', "Se produjo un error al realizar el proceso", {
                         duration: 5000,
                         image: base_url + 'assets/img/errorGif.gif'
                     });

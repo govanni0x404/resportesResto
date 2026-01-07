@@ -17,21 +17,11 @@ class ListaDePrecios extends CI_Controller
         }
         $data = array(
             'nombreUsuario' => $this->session->userdata('nombre_usuario'),
-            //  'modulosDisponibles' => json_decode($this->Mroles->modulosDisponibles($this->session->userdata('id_rol')), true)
         );
         $this->load->view('menuTop.php', $data);
         $this->load->view('listaDePrecios/listaDePrecios.php');
         $this->load->view('menuFooter.php');
         $this->load->view('listaDePrecios/js.php');
-        /*
-        if ($this->session->userdata('id_rol') == 1) {
-        $this->load->view('menuTop.php', $data);
-        $this->load->view('listaDePrecios/listaDePrecios.php');
-        $this->load->view('menuFooter.php');
-        $this->load->view('listaDePrecios/js.php');
-        } else {
-                redirect(base_url());
-            }*/
     }
 
 

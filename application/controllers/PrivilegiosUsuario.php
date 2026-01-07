@@ -22,26 +22,25 @@ class PrivilegiosUsuario extends CI_Controller
         $this->load->view('menuTop.php', $data);
         $this->load->view('privilegios/privilegiosUsuario.php');
         $this->load->view('menuFooter.php');
-        $this->load->view('privilegios/listadoUsuariosPrivilegios.php');
         $this->load->view('privilegios/jsPrivilegiosUsuario.php');
         $this->load->view('funciones.php');
     }
 
-    public function ListadoDeUsuarios()
+    public function ListadoDeRoles()
     {
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
-        echo json_encode($this->MprivilegiosUsuario->ListadoDeUsuarios());
+        echo json_encode($this->MprivilegiosUsuario->ListadoDeRoles());
     }
 
-    public function ListarPrivilegiosDeUsuario()
+    public function ListarPrivilegiosPorRol()
     {
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
-        $id_usuario = $this->input->post('id_usuario');
-        echo json_encode($this->MprivilegiosUsuario->ListarPrivilegiosDeUsuario($id_usuario));
+        $id_rol = $this->input->post('id_rol');
+        echo json_encode($this->MprivilegiosUsuario->ListarPrivilegiosPorRol($id_rol));
     }
 
     public function actualizarPrivilegio()
