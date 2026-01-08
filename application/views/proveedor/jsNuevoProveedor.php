@@ -31,7 +31,7 @@
 							</div>
 							<div class="col-md-4 ">
 								<label for="DvRutProveedor">DV *</label>
-								<input min="0" disabled type="text" class="form-control input-sm input-sm" maxlength='1' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="DvRutProveedor" id="DvRutProveedor" requerido="si" value="" placeholder="Dv Proveedor" />
+								<input min="0" readonly type="text" class="form-control input-sm input-sm" maxlength='1' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="DvRutProveedor" id="DvRutProveedor" requerido="si" value="" placeholder="Dv Proveedor" />
 							</div>
 						</fieldset>
 						<fieldset>
@@ -102,9 +102,13 @@
 		});
 	}
 
-	$('#RutProveedor').on('change', function() {
-		var rut = $('#RutProveedor').val();
-		$('#DvRutProveedor').val(validarDV(rut));
+	$('#RutProveedor').on('input', function () {
+		let rut = $(this).val();
+		if (rut.length >= 7) {
+			$('#DvRutProveedor').val(validarDV(rut));
+		} else {
+			$('#DvRutProveedor').val('');
+		}
 	});
 
 	function obtenerDatosSII(rut, dv) {

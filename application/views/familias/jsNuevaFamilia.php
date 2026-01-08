@@ -91,54 +91,58 @@
 	}
 
 	function GrabarNuevaFamilia() {
-		if ($('#nombreFamilia').val() == 0) {
+		if ($('#nombreFamilia').val().trim() === '') {
 			showAppAlert('error',"No Ingreso El nombre de la Familia!", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#AliasFamilia').val().trim() === '') {
-            $('#AliasFamilia').val($('#nombreFamilia').val().trim());
-		}else {
-			IdFamilia = parseInt($('#idFamilia').val())||0;
-			NombreFamilia = $('#nombreFamilia').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
-			AliasFamilia = $('#AliasFamilia').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
-			if ($('#ckVentaDirectaFamilia').is(":checked")) {
-				var VentaDirectaFamilia = 1
-			} else {
-				var VentaDirectaFamilia = 0
-			}
-			OrdenFamilia = parseInt($('#ordenFamilia').val())||0;
-			if ($('#ckPiePedido').is(":checked")) {
-				var piePedido = 1
-			} else {
-				var piePedido = 0
-			}
-			var miJson = {
-				'id_familia': IdFamilia,
-				'nombre_familia': NombreFamilia,
-				'venta_directa': VentaDirectaFamilia,
-				'orden_familia': OrdenFamilia,
-				'imprimir_en_detalle_pedido': piePedido,
-				'alias': AliasFamilia,
-			};
-			console.log(miJson);
-			$.post(base_url + "index.php/Familias/grabarNuevaFamilia", {
-					'prod': miJson
-				}).done(function() {
-					showAppAlert('success', "Se registro Exitosamente La Nueva Familia!", {
-                        duration: 4000,
-                        image: base_url + 'assets/img/success.gif'
-                    });
-					$('#ModalNuevaFamilia').modal('hide');
-					tablaFamilias.ajax.reload();
-				})
-				.fail(function() {
-					showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador!", {
-                		duration: 5000,
-               	 		image: base_url+ 'assets/img/errorGif.gif'
-            		});
-				})
-				.always(function() {});
+			return;
+		} 
+		
+		if ($('#AliasFamilia').val().trim() === '') {
+        	$('#AliasFamilia').val($('#nombreFamilia').val().trim());
+    	}
+		
+		IdFamilia = parseInt($('#idFamilia').val())||0;
+		NombreFamilia = $('#nombreFamilia').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
+		AliasFamilia = $('#AliasFamilia').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
+		
+		if ($('#ckVentaDirectaFamilia').is(":checked")) {
+			var VentaDirectaFamilia = 1
+		} else {
+			var VentaDirectaFamilia = 0
 		}
+		OrdenFamilia = parseInt($('#ordenFamilia').val())||0;
+		if ($('#ckPiePedido').is(":checked")) {
+			var piePedido = 1
+		} else {
+			var piePedido = 0
+		}
+		var miJson = {
+			'id_familia': IdFamilia,
+			'nombre_familia': NombreFamilia,
+			'venta_directa': VentaDirectaFamilia,
+			'orden_familia': OrdenFamilia,
+			'imprimir_en_detalle_pedido': piePedido,
+			'alias': AliasFamilia,
+		};
+		console.log(miJson);
+		$.post(base_url + "index.php/Familias/grabarNuevaFamilia", {
+				'prod': miJson
+			}).done(function() {
+				showAppAlert('success', "Se registro Exitosamente La Nueva Familia!", {
+                       duration: 4000,
+                       image: base_url + 'assets/img/success.gif'
+                   });
+				$('#ModalNuevaFamilia').modal('hide');
+				tablaFamilias.ajax.reload();
+			})
+			.fail(function() {
+				showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador!", {
+               		duration: 5000,
+           	 		image: base_url+ 'assets/img/errorGif.gif'
+           		});
+			})
+			.always(function() {});
 	}
 </script>
