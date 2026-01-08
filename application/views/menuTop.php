@@ -700,6 +700,7 @@
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i>
                                     Herramientas</a>
                                 <ul class="dropdown-menu">
+                                    <li class="active"><a href="<?php echo base_url() ?>index.php/ConfiguracionesGenerales"><i class="ti-money"></i>Configuraciones</a></li>
                                     <li class="active"><a href="<?php echo base_url() ?>index.php/PrivilegiosUsuario"><i class="ti-money"></i>Privilegios</a></li>
                                     <li class="active"><a href="<?php echo base_url() ?>index.php/Mesas"><i class="ti-money"></i>Mesas</a></li>
                                 </ul>
