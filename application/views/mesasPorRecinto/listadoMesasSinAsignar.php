@@ -1,9 +1,65 @@
 <script>
 var base_url = "<?php echo base_url(); ?>";
-var tablaMesasSinAsignar = $('#tablaMesasSinAsignar').DataTable();
+// var tablaMesasSinAsignar = $('#tablaMesasSinAsignar').DataTable();
+var tablaMesasSinAsignar;
+var recintoSeleccionado = 0;
 
-$(document).ready(function() {
-    ListadoDeMesasSinAsignar();
+// $(document).ready(function() {
+//     ListadoDeMesasSinAsignar();
+// });
+
+$(document).ready(function () {
+    tablaMesasSinAsignar = $("#tablaMesasSinAsignar").DataTable({
+        ajax: {
+            url: base_url + "index.php/MesasPorRecinto/ListadoDeMesas",
+            beforeSend: function () {
+                showTableLoader("Cargando Mesas...");
+            },
+            complete: function () {
+                hideTableLoader();
+            }
+        },
+        pageLength: 10,
+        select: true,
+        ordering: true,
+        columns: [
+            { mData: "id_mesa", className: "text-center" },
+            {
+                mData: "disponible",
+                className: "text-center",
+                render: d =>
+                    d
+                        ? '<span class="label label-success">DISPONIBLE</span>'
+                        : '<span class="label label-danger">OCUPADA</span>'
+            },
+            {
+                mData: "nombre_recinto",
+                className: "text-center",
+                render: function (data, type, row) {
+                    if (!row.id_recinto || row.id_recinto == 0) {
+                        return '<span class="label label-warning">SIN ASIGNAR</span>';
+                    }
+                    return '<span class="label label-info">' + data + '</span>';
+                }
+            }
+        ],
+        language: {
+            url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"
+        }
+    });
+        tablaMesasSinAsignar.on('select', function (e, dt, type, indexes) {
+        if (type !== 'row') return;
+
+        var rowData = tablaMesasSinAsignar.rows(indexes).data()[0];
+
+        $("#idMesaAsignar").val(rowData.id_mesa);
+        //$("#recintoSelect").val(rowData.id_recinto || 0);
+
+        recintoSeleccionado = rowData.id_recinto || 0;
+
+        $('#ModalAsignarMesa').modal('show');
+    });
+
 });
 
 function showTableLoader(message) {
@@ -38,86 +94,97 @@ function hideTableLoader() {
     });
 }
 
-function ListadoDeMesasSinAsignar() {
-    if ($.fn.dataTable.isDataTable('#tablaMesasSinAsignar')) {
-        tablaMesasSinAsignar = $('#tablaMesasSinAsignar').DataTable();
-        tablaMesasSinAsignar.destroy();
-    }
-    tablaMesasSinAsignar = $("#tablaMesasSinAsignar").DataTable({
-        "ajax": {
-            "url": base_url + "index.php/MesasPorRecinto/ListadoDeMesasSinAsignar",
-            "data": {
-            },
-            beforeSend: function () {
-                showTableLoader("Cargando Mesas Sin Asignar...");
-            },
-            complete: function () {
-                hideTableLoader();
-            },
-            error: function () {
-                hideTableLoader();
-            }
-        },
-        "bPaginate": true,
-        "bProcessing": false,
-        "pageLength": 10,
-        "select": true,
-        "dom": "Bfrtip",
-        "ordering": true,
-        "filter": true,
-        "info": false,
-        "footer": false,
-        "responsive": {
-            details: {
-                type: 'column',
-                target: -1
-            }
-        },
-        "columns": [{
-                mData: "id_mesa",
-                className: "text-center"
-            },
-            {
-                mData: "disponible",
-                className: "text-center",
-                render: function(data) {
-                    return data ? '<span class="label label-success">DISPONIBLE</span>' : '<span class="label label-danger">OCUPADA</span>';
-                }
-            },
-            {
-                mData: "id_recinto",
-                className: "text-center",
-                render: function(data) {
-                    return data == 0 ? '<span class="label label-warning">SIN ASIGNAR</span>' : '<span class="label label-info">RECINTO ' + data + '</span>';
-                }
-            }
-        ],
-        'language': {
-            url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
-            select: {
-                rows: {
-                    _: " (Seleccionadas %d filas)",
-                    0: " (Presione una línea a seleccionar)",
-                    1: " (1 Fila seleccionada)"
-                }
-            }
-        },
-        "buttons": []
-    });
+// function ListadoDeMesasSinAsignar() {
+//     // if ($.fn.dataTable.isDataTable('#tablaMesasSinAsignar')) {
+//     //     tablaMesasSinAsignar = $('#tablaMesasSinAsignar').DataTable();
+//     //     tablaMesasSinAsignar.destroy();
+//     // }
+//     tablaMesasSinAsignar = $("#tablaMesasSinAsignar").DataTable({
+//         "ajax": {
+//             //"url": base_url + "index.php/MesasPorRecinto/ListadoDeMesasSinAsignar",
+//             "url": base_url + "index.php/MesasPorRecinto/ListadoDeMesas",
+//             "data": {
+//             },
+//             beforeSend: function () {
+//                 showTableLoader("Cargando Mesas Sin Asignar...");
+//             },
+//             complete: function () {
+//                 hideTableLoader();
+//             },
+//             error: function () {
+//                 hideTableLoader();
+//             }
+//         },
+//         "bPaginate": true,
+//         "bProcessing": false,
+//         "pageLength": 10,
+//         "select": true,
+//         "dom": "Bfrtip",
+//         "ordering": true,
+//         "filter": true,
+//         "info": false,
+//         "footer": false,
+//         "responsive": {
+//             details: {
+//                 type: 'column',
+//                 target: -1
+//             }
+//         },
+//         "columns": [{
+//                 mData: "id_mesa",
+//                 className: "text-center"
+//             },
+//             {
+//                 mData: "disponible",
+//                 className: "text-center",
+//                 render: function(data) {
+//                     return data ? '<span class="label label-success">DISPONIBLE</span>' : '<span class="label label-danger">OCUPADA</span>';
+//                 }
+//             },
+//             // {
+//             //     mData: "id_recinto",
+//             //     className: "text-center",
+//             //     render: function(data) {
+//             //         return data == 0 ? '<span class="label label-warning">SIN ASIGNAR</span>' : '<span class="label label-info">RECINTO ' + data + '</span>';
+//             //     }
+//             // }
+//             {
+//                 mData: "nombre_recinto",
+//                 className: "text-center",
+//                 render: function(data, type, row) {
+//                     if (!row.id_recinto || row.id_recinto == 0) {
+//                         return '<span class="label label-warning">SIN ASIGNAR</span>';
+//                     }
+//                     return '<span class="label label-info">' + data + '</span>';
+//                 }
+//             }
+//         ],
+//         'language': {
+//             url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
+//             select: {
+//                 rows: {
+//                     _: " (Seleccionadas %d filas)",
+//                     0: " (Presione una línea a seleccionar)",
+//                     1: " (1 Fila seleccionada)"
+//                 }
+//             }
+//         },
+//         "buttons": []
+//     });
     
-    tablaMesasSinAsignar.on('select', function(e, dt, type, indexes) {
-        var rowData = tablaMesasSinAsignar.rows(indexes).data().toArray();
+//     tablaMesasSinAsignar.on('select', function(e, dt, type, indexes) {
+//         var rowData = tablaMesasSinAsignar.rows(indexes).data().toArray();
         
-        var idMesa = rowData[0].id_mesa;
-        var posCalculado = idMesa - 1;
+//         var idMesa = rowData[0].id_mesa;
+//         var posCalculado = idMesa - 1;
         
-        $("#idMesaAsignar").val(idMesa);
-        $("#posCalculado").val(posCalculado);
-        $("#recintoSelect").val("0");
+//         $("#idMesaAsignar").val(idMesa);
+//         $("#posCalculado").val(posCalculado);
+//         $("#recintoSelect").val("0");
         
-        console.log('Mesa seleccionada:', idMesa, 'Pos calculado:', posCalculado);
+//         console.log('Mesa seleccionada:', idMesa, 'Pos calculado:', posCalculado);
         
-        $('#ModalAsignarMesa').modal('show');
-    });
-}
+//         $('#ModalAsignarMesa').modal('show');
+//     });
+// }
 </script>
