@@ -146,8 +146,32 @@
                     className: "text-right",
                     render: $.fn.dataTable.render.number(',', '.', 0, '$')
                 },
+                // {
+                //     mData: "precio_ucompra",
+                //     className: "text-right",
+                //     render: $.fn.dataTable.render.number(',', '.', 0, '$')
+                // },
                 {
-                    mData: "precio_ucompra",
+                    mData: "por_ganancia",
+                    className: "text-right",
+                    render: function (data) {
+                        return data + ' %';
+                    }
+                },
+                {
+                    mData: "costo",
+                    className: "text-right",
+                    render: $.fn.dataTable.render.number(',', '.', 0, '$')
+                },
+                {
+                    mData: "por_costo",
+                    className: "text-right",
+                    render: function (data) {
+                        return data + ' %';
+                    }
+                },
+                {
+                    mData: "monto_comision",
                     className: "text-right",
                     render: $.fn.dataTable.render.number(',', '.', 0, '$')
                 },

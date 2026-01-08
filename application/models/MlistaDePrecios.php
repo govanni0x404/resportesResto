@@ -36,11 +36,20 @@ class MlistaDePrecios extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
         $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-        $q = "SELECT p.id_producto, p.cbarra, p.nombre_producto, p.id_familia, f.nombre_familia, u.nombre_umedida, dl.total, p.precio_ucompra, dl.id_lprecio from Producto p
-        join familia f on f.id_familia=p.id_familia
-        join umedida u on p.id_umedida=u.id_umedida
-        join detalle_lprecio dl on dl.id_producto=p.id_producto
-        where p.vigente=true and p.venta_publico=true";
+        // $q = "SELECT p.id_producto, p.cbarra, p.nombre_producto, p.id_familia, f.nombre_familia, u.nombre_umedida, dl.total, p.precio_ucompra, dl.id_lprecio from Producto p
+        // join familia f on f.id_familia=p.id_familia
+        // join umedida u on p.id_umedida=u.id_umedida
+        // join detalle_lprecio dl on dl.id_producto=p.id_producto
+        // where p.vigente=true and p.venta_publico=true";
+        $q = "SELECT p.id_producto, p.cbarra, p.nombre_producto, p.id_familia, f.nombre_familia, u.nombre_umedida, dl.total, dl.por_ganancia, dl.costo, dl.por_costo, dl.monto_comision,
+        p.precio_ucompra, dl.id_lprecio
+        FROM Producto p
+        JOIN familia f ON f.id_familia = p.id_familia
+        JOIN umedida u ON p.id_umedida = u.id_umedida
+        JOIN detalle_lprecio dl ON dl.id_producto = p.id_producto
+        WHERE p.vigente = true 
+        AND p.venta_publico = true";
+
         if ($id_familia > 0) {
             $q = $q . " and f.id_familia=$id_familia";
         }
@@ -61,7 +70,11 @@ class MlistaDePrecios extends CI_Model
                 "nombre_familia" => $key->nombre_familia,
                 "nombre_umedida" => $key->nombre_umedida,
                 "total" => $key->total,
-                "precio_ucompra" => $key->precio_ucompra
+                "precio_ucompra" => $key->precio_ucompra,
+                "por_ganancia"    => $key->por_ganancia,
+                "costo"           => $key->costo,
+                "por_costo"       => $key->por_costo,
+                "monto_comision"  => $key->monto_comision
             ));
         }
         $results = array(
