@@ -199,7 +199,7 @@ function crearNuevoProducto() {
     // Limpiar precios existentes
     preciosExistentes = [];
     
-    ObtenerUltimoIdProducto("");
+    //ObtenerUltimoIdProducto("");
     ListadoDeFamiliasMantenedor("GENERAL");
     ListadoDeSubFamilias("");
     ListadoDeUmedida("UNIDAD");
