@@ -201,7 +201,7 @@ $fechaActual = date('Y-m-d');
                                                                     <th style= 'display:none'>ID</th>
                                                                     <th>LISTA DE PRECIOS</th>
                                                                     <th class="text-right">PRECIO BRUTO UN</th>
-                                                                    <!-- <th class="text-right">MONTO COMISIÓN</th> -->
+                                                                    <th class="text-right">MONTO COMISIÓN</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody id="detallePrecioVenta">

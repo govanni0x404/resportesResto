@@ -290,69 +290,142 @@
         }
     }
 
+    // function llenarPrecios(idProducto) {
+    //     $.post(base_url + "index.php/ListaDePrecios/obtenerListayPreciosDeVenta", {
+    //         id_producto: idProducto
+    //     }, function(datos) {
+    //         var obj = $.parseJSON(datos); // lo convierto a un objeto a json
+    //         tbl = '';
+    //         $.each(obj, function(index, v) { // recorro el array
+    //             tbl = tbl + "<tr id='" + v.id_detalle_lprecio + "'>";
+    //             tbl = tbl + "<td  style= 'display:none' >" + v.id_detalle_lprecio + "</td>";
+    //             tbl = tbl + "<td  style='width:30%'' >" + v.nombre_lprecio + "</td>";
+    //             tbl = tbl + '<td style="width:30%" class="text-right" ><input class="text-right form-control form-control-line" type="number" min="0" name="" value="' + v.total + '"></td>';
+    //             tbl = tbl + "</tr>";
+
+
+    //         }); //fin each
+    //         $("#detallePrecioVenta").html(tbl);
+
+    //     });
+    // }
+
     function llenarPrecios(idProducto) {
-        $.post(base_url + "index.php/ListaDePrecios/obtenerListayPreciosDeVenta", {
-            id_producto: idProducto
-        }, function(datos) {
-            var obj = $.parseJSON(datos); // lo convierto a un objeto a json
-            tbl = '';
-            $.each(obj, function(index, v) { // recorro el array
-                tbl = tbl + "<tr id='" + v.id_detalle_lprecio + "'>";
-                tbl = tbl + "<td  style= 'display:none' >" + v.id_detalle_lprecio + "</td>";
-                tbl = tbl + "<td  style='width:30%'' >" + v.nombre_lprecio + "</td>";
-                tbl = tbl + '<td style="width:30%" class="text-right" ><input class="text-right form-control form-control-line" type="number" min="0" name="" value="' + v.total + '"></td>';
-                tbl = tbl + "</tr>";
+    $.post(base_url + "index.php/ListaDePrecios/obtenerListayPreciosDeVenta", {
+        id_producto: idProducto
+    }, function(datos) {
 
+        var obj = $.parseJSON(datos);
+        var tbl = '';
 
-            }); //fin each
-            $("#detallePrecioVenta").html(tbl);
+        $.each(obj, function(index, v) {
 
+            tbl += "<tr>";
+            tbl += "<td style='display:none'>" + v.id_detalle_lprecio + "</td>";
+            tbl += "<td>" + v.nombre_lprecio + "</td>";
+
+            // PRECIO
+            tbl += `
+                <td class="text-right">
+                    <input type="number" class="form-control text-right precio"
+                        value="${v.total}" min="0">
+                </td>
+            `;
+
+            // COMISIÓN
+            tbl += `
+                <td class="text-right">
+                    <input type="number" class="form-control text-right comision"
+                        value="${v.monto_comision || 0}" min="0">
+                </td>
+            `;
+
+            tbl += "</tr>";
         });
-    }
+
+        $("#detallePrecioVenta").html(tbl);
+    });
+}
+
+    // function grabarPrecios() {
+    //     var idProducto = $("#idProducto").val();
+    //     var detallePrecios = [];
+    //     $("#tablePrecios tbody tr").each(function(index) {
+    //         $(this).children("td").each(function(index2) {
+    //             valorLista = 0;
+    //             switch (index2) {
+    //                 case 0: //id producto
+    //                     idDetalleLprecio = $(this).html();
+    //                     break;
+    //                 case 2: // precio
+    //                     var row = $(this);
+    //                     if (row.find('input[type="number"]').val()) {
+    //                         valorLista = row.find('input[type="number"]').val();
+    //                     }
+
+    //                     detallePrecios.push({
+    //                         'id_producto': idProducto,
+    //                         'id_detalle_lprecio': idDetalleLprecio,
+    //                         'total': valorLista
+    //                     });
+    //                     break;
+    //             }
+    //         });
+    //     }); //fin recorrer tabla
+
+    //     console.log(detallePrecios);
+    //     $.post(base_url + "index.php/ListaDePrecios/grabarPrecios", {
+    //             detalle: detallePrecios
+    //         }, function() {}).done(function(datos) {
+    //             console.log(datos);
+    //             showAppAlert('success', "Se registro Exitosamente El Cambio De Precio!", {
+    //                 duration: 4000,
+    //                 image: base_url + 'assets/img/success.gif'
+    //             });
+    //             $('#modalCambioPrecio').modal('hide');
+    //             tableResumenListaPrecios.ajax.reload();
+    //         })
+    //         .fail(function() {
+    //             alert("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+    //         })
+    //         .always(function() {});
+
+
+    // } // fin grabar precios
 
     function grabarPrecios() {
-        var idProducto = $("#idProducto").val();
-        var detallePrecios = [];
-        $("#tablePrecios tbody tr").each(function(index) {
-            $(this).children("td").each(function(index2) {
-                valorLista = 0;
-                switch (index2) {
-                    case 0: //id producto
-                        idDetalleLprecio = $(this).html();
-                        break;
-                    case 2: // precio
-                        var row = $(this);
-                        if (row.find('input[type="number"]').val()) {
-                            valorLista = row.find('input[type="number"]').val();
-                        }
 
-                        detallePrecios.push({
-                            'id_producto': idProducto,
-                            'id_detalle_lprecio': idDetalleLprecio,
-                            'total': valorLista
-                        });
-                        break;
-                }
-            });
-        }); //fin recorrer tabla
+    var idProducto = $("#idProducto").val();
+    var detallePrecios = [];
 
-        console.log(detallePrecios);
-        $.post(base_url + "index.php/ListaDePrecios/grabarPrecios", {
-                detalle: detallePrecios
-            }, function() {}).done(function(datos) {
-                console.log(datos);
-                showAppAlert('success', "Se registro Exitosamente El Cambio De Precio!", {
-                    duration: 4000,
-                    image: base_url + 'assets/img/success.gif'
-                });
-                $('#modalCambioPrecio').modal('hide');
-                tableResumenListaPrecios.ajax.reload();
-            })
-            .fail(function() {
-                alert("Se produjo un error al realizar el proceso, favor contacte a su administrador");
-            })
-            .always(function() {});
+    $("#tablePrecios tbody tr").each(function () {
 
+        var idDetalleLprecio = $(this).find("td:eq(0)").text();
+        var precio = $(this).find("input.precio").val() || 0;
+        var comision = $(this).find("input.comision").val() || 0;
 
-    } // fin grabar precios
+        detallePrecios.push({
+            id_producto: idProducto,
+            id_detalle_lprecio: idDetalleLprecio,
+            total: precio,
+            monto_comision: comision
+        });
+    });
+
+    $.post(base_url + "index.php/ListaDePrecios/grabarPrecios", {
+        detalle: detallePrecios
+    }).done(function () {
+
+        showAppAlert('success', "Se registraron los cambios correctamente", {
+            duration: 4000,
+            image: base_url + 'assets/img/success.gif'
+        });
+
+        $('#modalCambioPrecio').modal('hide');
+        tableResumenListaPrecios.ajax.reload();
+
+    }).fail(function () {
+        alert("Error al grabar precios");
+    });
+}
 </script>
