@@ -6,23 +6,22 @@ class ConfiguracionesGenerales extends CI_Controller {
 
     public function __construct() {
         parent::__construct();
-        $this->load->model('MconfiguracionesGenerales');
+        $this->load->model('Mconfiguracionesgenerales');
     }
 
     public function index() {
-        $data['config'] = $this->MconfiguracionesGenerales->get_configuracion();
+        $data['config'] = $this->Mconfiguracionesgenerales->get_configuracion();
         $this->load->view('configuracionesgenerales/index', $data);
     }
 
     public function guardar() {
-        $current = $this->MconfiguracionesGenerales->get_configuracion();
+        $current = $this->Mconfiguracionesgenerales->get_configuracion();
         $post_data = $this->input->post();
 
         $update_data = array_merge($current, $post_data);
 
         $boolean_fields = [
-            'ver_delivery_caja', 'ver_barra_caja', 'ver_ingresos_egresos_cierre_caja', 'nombre_cliente', 'nombre_garzon',
-            'usar_correo_electronico', 'informar_anulaciones_mail', 'sin_imagenes_de_recintos', 'cajero_agrega_cualquier_mesa',
+            'ver_delivery_caja', 'ver_barra_caja', 'ver_ingresos_egresos_cierre_caja', 'usar_correo_electronico', 'informar_anulaciones_mail', 'sin_imagenes_de_recintos', 'cajero_agrega_cualquier_mesa',
             'validar_cortesia_venta_producto', 'happy_hour', 'happy_dia_lunes', 'happy_dia_martes', 'happy_dia_miercoles',
             'happy_dia_jueves', 'happy_dia_viernes', 'happy_dia_sabado', 'happy_dia_domingo', 'requiere_cliente_descuento',
             'mostrar', 'admin_anulacion_eliminacion', 'requerir_usuario_admin_cortesia', 'requerir_usuario_admin_credito',
@@ -56,7 +55,6 @@ class ConfiguracionesGenerales extends CI_Controller {
             }
         }
 
-        // Handle numeric fields if needed, e.g., ensure they are integers
         $numeric_fields = ['por_propina', 'detalle_familia_alcierre', 'por_maximodescuento', 'por_iva', 'seg_bloqueo_seleccion_mesa', 'decimales_stock_insumo', 'copias_dte', 'timeout', 'resolucion_sii', 'anio_resolucion_sii', 'avisarcuandoquedenxfolios'];
         foreach ($numeric_fields as $field) {
             if (isset($post_data[$field])) {
@@ -64,7 +62,7 @@ class ConfiguracionesGenerales extends CI_Controller {
             }
         }
 
-        $result = $this->MconfiguracionesGenerales->update_configuracion($update_data);
+        $result = $this->Mconfiguracionesgenerales->update_configuracion($update_data);
         if ($result) {
             echo json_encode(array('status' => 'success'));
         } else {
@@ -72,4 +70,3 @@ class ConfiguracionesGenerales extends CI_Controller {
         }
     }
 }
-?>

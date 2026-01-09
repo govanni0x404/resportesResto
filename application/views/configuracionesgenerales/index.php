@@ -130,100 +130,94 @@
                 <button type="button" onclick="location.reload();" class="btn-green">Cancelar</button>
             </div>
         </div>
-        <div class="tabs">
-            <button class="tablink active" onclick="openTab(event, 'general')">General</button>
-            <button class="tablink" onclick="openTab(event, 'otras')">Otras Configuraciones</button>
-            <button class="tablink" onclick="openTab(event, 'facturacion')">Facturación Electrónica</button>
-            <button class="tablink" onclick="openTab(event, 'empresa')">Datos de la Empresa</button>
-        </div>
 
         <form id="configForm" method="post" action="<?php echo site_url('ConfiguracionesGenerales/guardar'); ?>">
             <!-- Tab General -->
             <div id="general" class="tab active">
                 <div class="panel left-panel">
                     <h3>Ver en Caja</h3>
-                    <label><input type="checkbox" name="ver_delivery_caja" value="1" <?php echo ($config['ver_delivery_caja'] ?? true) ? 'checked' : ''; ?>> DELIVERY</label>
-                    <label><input type="checkbox" name="ver_barra_caja" value="1" <?php echo ($config['ver_barra_caja'] ?? true) ? 'checked' : ''; ?>> Venta Directa Caja</label>
-                    <label><input type="checkbox" name="ver_barra_caja" value="1" <?php echo ($config['ver_barra_caja'] ?? true) ? 'checked' : ''; ?>> Numero Pedido</label>
-                    <label><input type="checkbox" name="ver_barra_caja" value="1" <?php echo ($config['ver_barra_caja'] ?? true) ? 'checked' : ''; ?>> Nombre Cliente</label>
-                    <label><input type="checkbox" name="ver_barra_caja" value="1" <?php echo ($config['ver_barra_caja'] ?? true) ? 'checked' : ''; ?>> Garzon</label>
+                    <label><input type="checkbox" name="delivery" value="1" <?php echo ($config['ver_delivery_caja'] ?? true) ? 'checked' : ''; ?>> DELIVERY</label>
+                    <label><input type="checkbox" name="ventaDirecta" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Venta Directa Caja</label>
+                    <label><input type="checkbox" name="numPedido" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Numero Pedido</label>
+                    <label><input type="checkbox" name="nombreCliente" value="1" <?php echo ($config['mostrar_nombre_cliente_venta'] ?? true) ? 'checked' : ''; ?>> Nombre Cliente</label>
+                    <label><input type="checkbox" name="nombreGarzon" value="1" <?php echo ($config['mostrar_nombre_garzon_venta'] ?? true) ? 'checked' : ''; ?>> Garzon</label>
                     <h3>Configuraciones Caja</h3>
-                    <label><input type="text" name="garzon_emite_precuenta" value="1" <?php echo ($config['garzon_emite_precuenta'] ?? true) ? 'checked' : ''; ?>> Impresion grafica y precuentas</label>
-                    <input type="text" name="num_pedido" value="<?php echo $config['num_pedido'] ?? ''; ?>">
-                    <label><input type="text" name="garzon_emite_precuenta" value="1" <?php echo ($config['garzon_emite_precuenta'] ?? true) ? 'checked' : ''; ?>> Impresora Local</label>
-                    <input type="text" name="num_pedido" value="<?php echo $config['num_pedido'] ?? ''; ?>">
-                    <label><input type="checkbox" name="ver_barra_caja" value="1" <?php echo ($config['ver_barra_caja'] ?? true) ? 'checked' : ''; ?>> Imprimir comprobante de venta</label>
+                    <label><input type="text" name="impresionGrafica" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Impresion grafica y precuentas</label>
+                    <input type="text" name="txtimpresionGrafica" value="<?php echo $config[''] ?? ''; ?>">
+                    <label><input type="text" name="impresionLocal" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Impresora Local</label>
+                    <input type="text" name="txtimpresionLocal" value="<?php echo $config[''] ?? ''; ?>">
+                    <label><input type="checkbox" name="comprobanteVenta" value="1" <?php echo ($config['imprimir_comprobante_anulacion '] ?? true) ? 'checked' : ''; ?>> Imprimir comprobante de venta</label>
                     <h3>Precuentas</h3>
-                    <label><input type="checkbox" name="omitir_productos_sin_precio_precuenta" value="1" <?php echo ($config['omitir_productos_sin_precio_precuenta'] ?? false) ? 'checked' : ''; ?>> Garzon Puede emitir Precuenta</label>
-                    <label><input type="checkbox" name="mostrar_valor_propina_precuenta" value="1" <?php echo ($config['mostrar_valor_propina_precuenta'] ?? false) ? 'checked' : ''; ?>> Usar Impresora equipo local</label>
-                    <label><input type="checkbox" name="preguntar_por_calculo_propina_en_pago" value="1" <?php echo ($config['preguntar_por_calculo_propina_en_pago'] ?? true) ? 'checked' : ''; ?>> Ocultar monto de venta a garzon</label>
-                    <label><input type="checkbox" name="mostrar_boton_propina_garzon" value="1" <?php echo ($config['mostrar_boton_propina_garzon'] ?? false) ? 'checked' : ''; ?>> No imprimir productos sin valor</label>
+                    <label><input type="checkbox" name="precuentaGarzon" value="1" <?php echo ($config['garzon_emite_precuenta '] ?? false) ? 'checked' : ''; ?>> Garzon Puede emitir Precuenta</label>
+                    <label><input type="checkbox" name="impresoraLocal" value="1" <?php echo ($config[''] ?? false) ? 'checked' : ''; ?>> Usar Impresora equipo local</label>
+                    <label><input type="checkbox" name="montoGarzon" value="1" <?php echo ($config['ocultar_cuenta_garzon '] ?? true) ? 'checked' : ''; ?>> Ocultar monto de venta a garzon</label>
+                    <label><input type="checkbox" name="montoSinValor" value="1" <?php echo ($config[''] ?? false) ? 'checked' : ''; ?>> No imprimir productos sin valor</label>
                     <h3>Propinas</h3>
-                    <label><input type="checkbox" name="omitir_productos_sin_precio_precuenta" value="1" <?php echo ($config['omitir_productos_sin_precio_precuenta'] ?? false) ? 'checked' : ''; ?>> Mostar valor de propína en precuenta</label>
-                    <label><input type="checkbox" name="mostrar_valor_propina_precuenta" value="1" <?php echo ($config['mostrar_valor_propina_precuenta'] ?? false) ? 'checked' : ''; ?>> Preguntar por calculo de propina en pago</label>
-                    <label><input type="checkbox" name="preguntar_por_calculo_propina_en_pago" value="1" <?php echo ($config['preguntar_por_calculo_propina_en_pago'] ?? true) ? 'checked' : ''; ?>> Mostrar boton ver propina</label>
-                    <label><input type="checkbox" name="mostrar_boton_propina_garzon" value="1" <?php echo ($config['mostrar_boton_propina_garzon'] ?? false) ? 'checked' : ''; ?>> Calcular propina para delivery</label>
-                    <label><input type="checkbox" name="mostrar_boton_propina_garzon" value="1" <?php echo ($config['mostrar_boton_propina_garzon'] ?? false) ? 'checked' : ''; ?>> Propina en venta directa</label>
+                    <label><input type="checkbox" name="propinaPrecuenta" value="1" <?php echo ($config[''] ?? false) ? 'checked' : ''; ?>> Mostar valor de propína en precuenta</label>
+                    <label><input type="checkbox" name="calculoPropina" value="1" <?php echo ($config['calcular_valor_propina '] ?? false) ? 'checked' : ''; ?>> Preguntar por calculo de propina en pago</label>
+                    <label><input type="checkbox" name="botonPropina" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Mostrar boton ver propina</label>
+                    <label><input type="checkbox" name="calculoPropinaDelivery" value="1" <?php echo ($config['propina_en_delivery'] ?? false) ? 'checked' : ''; ?>> Calcular propina para delivery</label>
+                    <label><input type="checkbox" name="propinaEnVentaDirecta" value="1" <?php echo ($config['propina_en_venta_directa '] ?? false) ? 'checked' : ''; ?>> Propina en venta directa</label>
                     <h3>Otros restorant</h3>
-                    <label><input type="checkbox" name="abrir_gaveta_solo_por_pago_efectivo" value="1" <?php echo ($config['abrir_gaveta_solo_por_pago_efectivo'] ?? true) ? 'checked' : ''; ?>> Permitir el cambio del costo de insumo</label>
-                    <label><input type="checkbox" name="omitir_mensaje_comprobante_no_valido_como_boleta" value="1" <?php echo ($config['omitir_mensaje_comprobante_no_valido_como_boleta'] ?? false) ? 'checked' : ''; ?>> Ordenar Carta</label>
-                    <label><input type="text" name="garzon_emite_precuenta" value="1" <?php echo ($config['garzon_emite_precuenta'] ?? true) ? 'checked' : ''; ?>> Mesa para venta directa</label>
-                    <input type="text" name="num_pedido" value="<?php echo $config['num_pedido'] ?? ''; ?>">
-                    <label><input type="text" name="garzon_emite_precuenta" value="1" <?php echo ($config['garzon_emite_precuenta'] ?? true) ? 'checked' : ''; ?>> Impresora para cierre de caja</label>
-                    <input type="text" name="num_pedido" value="<?php echo $config['num_pedido'] ?? ''; ?>">
-                    <label><input type="checkbox" name="omitir_mensaje_comprobante_no_valido_como_boleta" value="1" <?php echo ($config['omitir_mensaje_comprobante_no_valido_como_boleta'] ?? false) ? 'checked' : ''; ?>> Imprimir comprobantes de anulacion</label>
-                    <label><input type="checkbox" name="omitir_mensaje_comprobante_no_valido_como_boleta" value="1" <?php echo ($config['omitir_mensaje_comprobante_no_valido_como_boleta'] ?? false) ? 'checked' : ''; ?>> Imprimir Valor productos en destino de impresion</label>
+                    <label><input type="checkbox" name="cambioCostoInsumo" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Permitir el cambio del costo de insumo</label>
+                    <label><input type="checkbox" name="ordenarCarta" value="1" <?php echo ($config['ordenar_carta '] ?? false) ? 'checked' : ''; ?>> Ordenar Carta</label>
+                    <label><input type="text" name="mesaDirecta" value="1" <?php echo ($config['id_mesa_venta_directa'] ?? true) ? 'checked' : ''; ?>> Mesa para venta directa</label>
+                    <input type="text" name="txtmesaDirecta" value="<?php echo $config['id_mesa_venta_directa'] ?? ''; ?>">
+                    <label><input type="text" name="impresoraCierreCaja" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Impresora para cierre de caja</label>
+                    <input type="text" name="txtimpresoraCierreCaja" value="<?php echo $config[''] ?? ''; ?>">
+                    <label><input type="checkbox" name="comprobanteAnulacion" value="1" <?php echo ($config['imprimir_comprobante_anulacion'] ?? false) ? 'checked' : ''; ?>> Imprimir comprobantes de anulacion</label>
+                    <label><input type="checkbox" name="valorProductos" value="1" <?php echo ($config['imprimir_valor_producto_cocina'] ?? false) ? 'checked' : ''; ?>> Imprimir Valor productos en destino de impresion</label>
                 </div>
                 <div class="panel middle-panel-top">
                     <h3>Informes por Correo Electrónico</h3>
-                    <label><input type="checkbox" name="usar_correo_electronico" value="1" <?php echo ($config['usar_correo_electronico'] ?? false) ? 'checked' : ''; ?>> Enviar Cierre de caja por correo electrónico</label>
-                    <input type="email" name="correo_electronico" placeholder="yeldmartin@gmail.com" value="<?php echo $config['correo_electronico'] ?? ''; ?>">
-                    <label><input type="checkbox" name="informar_anulaciones_mail" value="1" <?php echo ($config['informar_anulaciones_mail'] ?? false) ? 'checked' : ''; ?>> Informar anulaciones y comisiones de precio</label>
+                    <label><input type="checkbox" name="cierreCajaCorreo" value="1" <?php echo ($config[''] ?? false) ? 'checked' : ''; ?>> Enviar Cierre de caja por correo electrónico</label>
+                    <input type="email" name="txtcierreCajaCorreo" placeholder="yeldmartin@gmail.com" value="<?php echo $config['correo_electronico'] ?? ''; ?>">
+                    <label><input type="checkbox" name="anulacionesCorreo" value="1" <?php echo ($config['informar_anulaciones_mail'] ?? false) ? 'checked' : ''; ?>> Informar anulaciones y comisiones de precio</label>
                     <button type="button" class="btn-orange">Probar envío</button>
                     <p class="p">Separar los correos por coma y luego presionar enter</p>
                 </div>
                 <div class="panel middle-panel-bottom">
                     <h3>Imprimir cierre de caja</h3>
-                    <label><input type="checkbox" name="ver_creditos_a_clientes_cierre_caja" value="1" <?php echo ($config['ver_creditos_a_clientes_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Ingresos y Egresos</label>
-                    <label><input type="checkbox" name="ver_creditos_a_clientes_cierre_caja" value="1" <?php echo ($config['ver_creditos_a_clientes_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Creditos a clientes</label>
-                    <label><input type="checkbox" name="ver_cortesias_cierre_caja" value="1" <?php echo ($config['ver_cortesias_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Cortesías</label>
-                    <label><input type="checkbox" name="ver_anulaciones_eliminaciones_cierre_caja" value="1" <?php echo ($config['ver_anulaciones_eliminaciones_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Anulaciones y eliminaciones</label>
-                    <label><input type="checkbox" name="ver_detalle_atencion_cierre_caja" value="1" <?php echo ($config['ver_detalle_atencion_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Detalle de atención</label>
+                    <label><input type="checkbox" name="ingresosYEgresos" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Ingresos y Egresos</label>
+                    <label><input type="checkbox" name="creditosClientes" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Creditos a clientes</label>
+                    <label><input type="checkbox" name="cortesiasClientes" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Cortesías</label>
+                    <label><input type="checkbox" name="anulacionesYEliminaciones" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Anulaciones y eliminaciones</label>
+                    <label><input type="checkbox" name="detallesDeAtencion" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Detalle de atención</label>
                 </div>
                 <div class="panel middle-panel-bottom">
-                    <label><input type="checkbox" name="ver_creditos_a_clientes_cierre_caja" value="1" <?php echo ($config['ver_creditos_a_clientes_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Llenar forma de pago que no sea efectivo en cierre manual</label>
-                    <label><input type="checkbox" name="ver_creditos_a_clientes_cierre_caja" value="1" <?php echo ($config['ver_creditos_a_clientes_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Cierre de caja indicando cada forma de pago</label>
-                    <label><input type="checkbox" name="ver_cortesias_cierre_caja" value="1" <?php echo ($config['ver_cortesias_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Imprimir cierre de caja</label>
+                    <label><input type="checkbox" name="formasDePagoCierre" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Llenar forma de pago que no sea efectivo en cierre manual</label>
+                    <label><input type="checkbox" name="cierreDeCajaFormaDePago" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Cierre de caja indicando cada forma de pago</label>
+                    <label><input type="checkbox" name="imprimirCierreDeCaja" value="1" <?php echo ($config['imprimir_cierre_caja_impresora_termica'] ?? true) ? 'checked' : ''; ?>> Imprimir cierre de caja</label>
                 </div>
                 <div class="panel right-panel-top">
-                    <label><input type="text" name="sin_imagenes_de_recintos" value="1" <?php echo ($config['sin_imagenes_de_recintos'] ?? false) ? 'checked' : ''; ?>> Bloquear la selecicon de las mesas luego de</label>
-                    <input type="number" name="seg_bloqueo_seleccion_mesa" value="<?php echo $config['seg_bloqueo_seleccion_mesa'] ?? 1000; ?>" class="input-small"> Seg.
-                    <label><input type="text" name="sin_imagenes_de_recintos" value="1" <?php echo ($config['sin_imagenes_de_recintos'] ?? false) ? 'checked' : ''; ?>> Enviar pedido luego de</label>
-                    <input type="number" name="sin_imagenes_de_recintos" value="<?php echo $config['sin_imagenes_de_recintos'] ?? 1000; ?>" class="input-small"> Seg.
-                    <label><input type="checkbox" name="cajero_agrega_cualquier_mesa" value="1" <?php echo ($config['cajero_agrega_cualquier_mesa'] ?? false) ? 'checked' : ''; ?>> Sin imagenes de recintos</label>
-                    <label><input type="checkbox" name="cajero_agrega_cualquier_mesa" value="1" <?php echo ($config['cajero_agrega_cualquier_mesa'] ?? false) ? 'checked' : ''; ?>> Cajero puede agregar a cualquier mesa</label>
-                    <label><input type="checkbox" name="validar_cortesia_venta_producto" value="1" <?php echo ($config['validar_cortesia_venta_producto'] ?? false) ? 'checked' : ''; ?>> Validar Cortesía venta Producto</label>
-                    <label><input type="text" name="sin_imagenes_de_recintos" value="1" <?php echo ($config['sin_imagenes_de_recintos'] ?? false) ? 'checked' : ''; ?>> Familia de favoritos </label>
-                    <input type="number" name="seg_bloqueo_seleccion_mesa" value="<?php echo $config['seg_bloqueo_seleccion_mesa'] ?? 1000; ?>" class="input-small"> Seg.
+                    <label><input type="text" name="bloqueoMesas" value="1" <?php echo ($config[''] ?? false) ? 'checked' : ''; ?>> Bloquear la selecicon de las mesas luego de</label>
+                    <input type="number" name="txtbloqueoMesas" value="<?php echo $config['seg_bloqueo_seleccion_mesa'] ?? 1000; ?>" class="input-small"> Seg.
+                    <label><input type="text" name="envioPedidoMesas" value="1" <?php echo ($config[''] ?? false) ? 'checked' : ''; ?>> Enviar pedido luego de</label>
+                    <input type="number" name="txtenvioPedidoMesas" value="<?php echo $config[''] ?? 1000; ?>" class="input-small"> Seg.
+                    <label><input type="checkbox" name="imgRecinto" value="1" <?php echo ($config[''] ?? false) ? 'checked' : ''; ?>> Sin imagenes de recintos</label>
+                    <label><input type="checkbox" name="cajaroMesaAgregar" value="1" <?php echo ($config[''] ?? false) ? 'checked' : ''; ?>> Cajero puede agregar a cualquier mesa</label>
+                    <label><input type="checkbox" name="validarCortesiaProductos" value="1" <?php echo ($config['validar_productos_cortesia'] ?? false) ? 'checked' : ''; ?>> Validar Cortesía venta Producto</label>
+                    <label><input type="text" name="familiaFavoritos" value="1" <?php echo ($config[''] ?? false) ? 'checked' : ''; ?>> Familia de favoritos </label>
+                    <input type="number" name="txtfamiliaFavoritos" value="<?php echo $config[''] ?? 1000; ?>" class="input-small"> Seg.
                 </div>
                 <div class="panel right-panel-middle">
                     <h3>Descuentos</h3>
-                    <label><input type="text" name="happy_hour" value="1" <?php echo ($config['happy_hour'] ?? false) ? 'checked' : ''; ?>> Máximo Permitido</label>
-                    <input type="time" name="inicio_happy_hour" value="<?php echo $config['inicio_happy_hour'] ?? ''; ?>">
-                    <label><input type="checkbox" name="validar_cortesia_venta_producto" value="1" <?php echo ($config['validar_cortesia_venta_producto'] ?? false) ? 'checked' : ''; ?>> Requerir Cliente</label>
+                    <label><input type="text" name="maximoDescuento" value="1" <?php echo ($config['por_maximodescuento'] ?? false) ? 'checked' : ''; ?>> Máximo Permitido</label>
+                    <input type="time" name="txtmaximoDescuento" value="<?php echo $config['por_maximodescuento'] ?? ''; ?>">
+                    <label><input type="checkbox" name="requerirClienteDescuento" value="1" <?php echo ($config['requiere_cliente_descuento '] ?? false) ? 'checked' : ''; ?>> Requerir Cliente</label>
                 </div>
                 <div class="panel right-panel-middle">
-                    <label><input type="text" name="happy_hour" value="1" <?php echo ($config['happy_hour'] ?? false) ? 'checked' : ''; ?>> Clave de administrador</label>
-                    <input type="time" name="inicio_happy_hour" value="<?php echo $config['inicio_happy_hour'] ?? ''; ?>">
-                    <label><input type="checkbox" name="validar_cortesia_venta_producto" value="1" <?php echo ($config['validar_cortesia_venta_producto'] ?? false) ? 'checked' : ''; ?>> Mostrar clave</label>
-                    <label><input type="checkbox" name="validar_cortesia_venta_producto" value="1" <?php echo ($config['validar_cortesia_venta_producto'] ?? false) ? 'checked' : ''; ?>> Requerir clave admin para anulacion</label>
+                    <label><input type="text" name="claveAdmin" value="1" <?php echo ($config['pass_admin'] ?? false) ? 'checked' : ''; ?>> Clave de administrador</label>
+                    <input type="time" name="txtclaveAdmin" value="<?php echo $config['pass_admin'] ?? ''; ?>">
+                    <label><input type="checkbox" name="mostrarClaveAdmin" value="1" <?php echo ($config[''] ?? false) ? 'checked' : ''; ?>> Mostrar clave</label>
+                    <label><input type="checkbox" name="claveAdminAnulacion" value="1" <?php echo ($config['admin_anulacion_eliminacion'] ?? false) ? 'checked' : ''; ?>> Requerir clave admin para anulacion</label>
                 </div>
                 <div class="panel right-panel-middle">
                     <h3>REQUIERE USUARIO ADMINISTRADOR PARA:</h3>
-                    <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> Ventas a credito</label>
-                    <label><input type="checkbox" name="requerir_usuario_admin_credito" value="1" <?php echo ($config['requerir_usuario_admin_credito'] ?? false) ? 'checked' : ''; ?>> cortesias</label>
-                    <label><input type="checkbox" name="requerir_usuario_admin_descuento" value="1" <?php echo ($config['requerir_usuario_admin_descuento'] ?? false) ? 'checked' : ''; ?>> Descuentos en caja</label>
-                    <label><input type="checkbox" name="boton_apertura_caja_solo_admin" value="1" <?php echo ($config['boton_apertura_caja_solo_admin'] ?? false) ? 'checked' : ''; ?>> Apertura de gaveta en caja</label>
+                    <label><input type="checkbox" name="claveAdminVentaCredito" value="1" <?php echo ($config['requerir_usuario_admin_credito'] ?? false) ? 'checked' : ''; ?>> Ventas a credito</label>
+                    <label><input type="checkbox" name="claveAdminVentaCortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> cortesias</label>
+                    <label><input type="checkbox" name="claveAdminDescuentoCaja" value="1" <?php echo ($config['requerir_usuario_admin_descuento'] ?? false) ? 'checked' : ''; ?>> Descuentos en caja</label>
+                    <label><input type="checkbox" name="claveAdminDescuentoAbrirGaveta" value="1" <?php echo ($config[''] ?? false) ? 'checked' : ''; ?>> Apertura de gaveta en caja</label>
                 </div>
 
 
@@ -316,22 +310,22 @@
                         <option value="0">DOCUMENTO PAGO CORTESIA</option>
                         <option value="1">COMPROBANTE INTERNO</option>
                     </select>
-                    <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> Permitir retiro fondo fijo</label>
+                    <label><input type="checkbox" name="fondoFijo" value="1" <?php echo ($config['permitir_retiro_fondo_fijo'] ?? false) ? 'checked' : ''; ?>> Permitir retiro fondo fijo</label>
                     <label>Documento Comprobante interno</label>
                     <select name="id_tdocumento_comprobante_interno">
                         <option value="0">DOCUMENTO PAGO CORTESIA</option>
                         <option value="1">COMPROBANTE INTERNO</option>
                     </select>
-                    <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> Listar precios por sector</label>
-                    <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> Agregar comision a venta</label>
-                    <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> Pedir anfitriona</label>
+                    <label><input type="checkbox" name="preciosPorSector" value="1" <?php echo ($config['lprecio_x_sector'] ?? false) ? 'checked' : ''; ?>> Listar precios por sector</label>
+                    <label><input type="checkbox" name="comisionVenta" value="1" <?php echo ($config['agregar_comision_a_venta'] ?? false) ? 'checked' : ''; ?>> Agregar comision a venta</label>
+                    <label><input type="checkbox" name="pedirAnfitriona" value="1" <?php echo ($config['pedir_anfitriona'] ?? false) ? 'checked' : ''; ?>> Pedir anfitriona</label>
 
                 </div>
                 <div class="panel middle-panel-bottom">
-                    <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> Inventario insumos cierre de caja</label>
-                    <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> Permitir repetir el producto en el menu</label>
-                    <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> Pedir comensales en mesa</label>
-                    <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> Imprimir hora en productos del pedido</label>
+                    <label><input type="checkbox" name="insumosCierreDeCaja" value="1" <?php echo ($config['inventario_cierre_caja'] ?? false) ? 'checked' : ''; ?>> Inventario insumos cierre de caja</label>
+                    <label><input type="checkbox" name="repetirProductoMenu" value="1" <?php echo ($config['permitir_repetir_producto_menu'] ?? false) ? 'checked' : ''; ?>> Permitir repetir el producto en el menu</label>
+                    <label><input type="checkbox" name="comensalesMesa" value="1" <?php echo ($config['pedir_comensales_en_mesa'] ?? false) ? 'checked' : ''; ?>> Pedir comensales en mesa</label>
+                    <label><input type="checkbox" name="horaPedido" value="1" <?php echo ($config['imprimir_hora_detalle_productos_pedido'] ?? false) ? 'checked' : ''; ?>> Imprimir hora en productos del pedido</label>
                 </div>
             </div>
 
@@ -341,7 +335,7 @@
             <div id="facturacion" class="tab">
                 <div class="panel full-width">
                     <h3>Facturacion electronica</h3>
-                    <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> Habilitar factura electronica</label>
+                    <label><input type="checkbox" name="habilitarFactura" value="1" <?php echo ($config['habilitar_facturacion_electronica'] ?? false) ? 'checked' : ''; ?>> Habilitar factura electronica</label>
                     <label>EMPRESA PROVEEDORA DTE</label>
                     <div class="radio-group">
                         <label><input type="radio" name="acepta" value="1" <?php echo ($config['acepta'] ?? false) ? 'checked' : ''; ?>> ACEPTA</label>
@@ -371,7 +365,7 @@
                         <option value="0">BOLETA ELECTRONICA</option>
                     </select>
                     <label>Imrpesora</label>
-                    <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> Imprimir pdf</label>
+                    <label><input type="checkbox" name="imprimirPdfDte" value="1" <?php echo ($config['imprimir_pdf_dte'] ?? false) ? 'checked' : ''; ?>> Imprimir pdf</label>
                     <input type="text" name="ruta_dte_pdf" value="<?php echo $config['ruta_dte_pdf'] ?? '/17.0.1/caja'; ?>">
                     <label>Formato pdf</label>
                     <input type="text" name="ruta_dte_pdf" value="<?php echo $config['ruta_dte_pdf'] ?? '/17.0.1/caja'; ?>">
@@ -379,8 +373,8 @@
                     <input type="text" name="ruta_dte_pdf" value="<?php echo $config['ruta_dte_pdf'] ?? '/17.0.1/caja'; ?>">
                     <label>Copias dte</label>
                     <input type="text" name="ruta_dte_pdf" value="<?php echo $config['ruta_dte_pdf'] ?? '/17.0.1/caja'; ?>">
-                    <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> Imprimir copia cedible</label>
-                    <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> enviar dte al sii</label>
+                    <label><input type="checkbox" name="imprimirCopiaCedible" value="1" <?php echo ($config['imprimir_copia_cedible'] ?? false) ? 'checked' : ''; ?>> Imprimir copia cedible</label>
+                    <label><input type="checkbox" name="enviarDteSii" value="1" <?php echo ($config['enviar_dte_sii'] ?? false) ? 'checked' : ''; ?>> enviar dte al sii</label>
                     <label>Timeout</label>
                     <input type="text" name="ruta_dte_pdf" value="<?php echo $config['ruta_dte_pdf'] ?? '/17.0.1/caja'; ?>">
 

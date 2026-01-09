@@ -1,5 +1,4 @@
 <?php
-// application/models/Configuracionesgenerales_model.php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class MconfiguracionesGenerales extends CI_Model {
