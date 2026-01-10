@@ -466,6 +466,7 @@
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/EntradaBodega"><i class="ti-money"></i>Entrada a Bodega</a></li>
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/SalidaBodega"><i class="ti-money"></i>Salida a Bodega</a></li>
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/Compras"><i class="ti-money"></i>Compras</a></li>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Inventario"><i class="ti-money"></i>Inventario</a></li>
                                         </ul>
                                     </li>                                
                                 </ul>
