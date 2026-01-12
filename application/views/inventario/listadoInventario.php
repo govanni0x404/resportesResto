@@ -61,7 +61,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tbodyInventarios">
-                                <?php if(isset($inventarios) && count($inventarios) > 0): ?>
+                                <!-- <?php if(isset($inventarios) && count($inventarios) > 0): ?>
                                     <?php foreach ($inventarios as $inv): ?>
                                     <tr class="inventario-row" 
                                         data-id="<?= $inv->id_inventario ?>"
@@ -77,7 +77,12 @@
                                             <em>No hay inventarios registrados</em>
                                         </td>
                                     </tr>
-                                <?php endif; ?>
+                                <?php endif; ?> -->
+                                <tr>
+                                    <td colspan="3" class="text-center">
+                                        <em>Cargando Inventarios</em>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>

@@ -677,6 +677,7 @@
                                     <li><a href="<?php echo base_url() ?>index.php/ResumenAnulaciones"><i class="pe-7s-cash"></i>Resumen De Anulaciones/Eliminaciones</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/ListadoDeClientes"><i class="pe-7s-cash"></i>Listado De Clientes</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/VentasMensualesTotalizadas"><i class="pe-7s-cash"></i>Resumen Ventas Mensuales</a></li>
+                                    <li><a href="<?php echo base_url() ?>index.php/ResumenVentasProductosMes"><i class="pe-7s-cash"></i>Resumen De Venta de Productos Mensuales</a></li>
                                     <li class="dropdown">
                                         <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Movimientos De Bodega</a>
                                         <ul class="dropdown-menu">

@@ -19,7 +19,7 @@ class Inventario extends CI_Controller {
         $id_bodega_default = !empty($bodegas) ? $bodegas[0]->id_bodega : null;
         
         $data['bodegas'] = $bodegas;
-        $data['inventarios'] = $this->Minventario->get_inventarios($id_bodega_default);
+        // $data['inventarios'] = $this->Minventario->get_inventarios($id_bodega_default);
         
         $this->load->view('menuTop.php', $data);
         $this->load->view('menuFooter.php');
