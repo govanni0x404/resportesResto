@@ -72,7 +72,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 (ENVIRONMENT !== 'production')
 */
-$active_group = 'default';
+$active_group = '76193938-6';
 $query_builder = TRUE;
 
 
@@ -104,7 +104,7 @@ $db['76193938-6'] = array(
 	'hostname' => 'localhost',
 	'username' => 'postgres',
 	'password' => '123datamaule2019.,#-',
-	'database' => 'laToscana',
+	'database' => 'acacios2',
 	'dbdriver' => 'postgre',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
