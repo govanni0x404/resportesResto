@@ -7,16 +7,10 @@ $(document).ready(function(){
     let inventarioActual = null;
     let detalleCompleto = [];
 
-    // ============================================
-    // CARGAR PRIMERA BODEGA AL INICIAR
-    // ============================================
     if ($('#selectBodega option').length > 0) {
         $('#selectBodega').val($('#selectBodega option:first').val());
     }
 
-    // ============================================
-    // CAMBIAR BODEGA
-    // ============================================
     $('#selectBodega').change(function(){
         let idBodega = $(this).val();
         cargarInventariosPorBodega(idBodega);
@@ -57,20 +51,29 @@ $(document).ready(function(){
         });
     }
 
-    // ============================================
-    // CLICK EN FILA DE INVENTARIO
-    // ============================================
-    $(document).on('click', '.inventario-row', function(){
+    $(document).on('click', '.inventario-row', function () {
+
         $('.inventario-row').removeClass('selected');
         $(this).addClass('selected');
 
         inventarioActual = $(this).data('id');
+
+        detalleCompleto = [];
+        $('#chkSoloDiferencias').prop('checked', false);
+        $('#txtBuscarInsumo').val('');
+        $('#totalDifCosto').text('0.00');
+
+        $('#tablaDetalle tbody').html(`
+            <tr>
+                <td colspan="6" class="text-center">
+                    <em class="text-muted">Cargando detalle...</em>
+                </td>
+            </tr>
+        `);
+
         cargarDetalle(inventarioActual);
     });
 
-    // ============================================
-    // CARGAR DETALLE DEL INVENTARIO
-    // ============================================
     function cargarDetalle(idInventario) {
         $.ajax({
             url: BASE_URL + "index.php/inventario/detalle",
@@ -84,61 +87,50 @@ $(document).ready(function(){
         });
     }
 
-    // ============================================
-    // RENDERIZAR TABLA DE DETALLE
-    // ============================================
     function renderizarDetalle(data) {
         let html = '';
         let totalDifCosto = 0;
 
-        if (data.length === 0) {
-            html = `
+        if (!data || data.length === 0) {
+            $('#tablaDetalle tbody').html(`
                 <tr>
                     <td colspan="6" class="text-center">
                         <em class="text-muted">Sin detalle para este inventario</em>
                     </td>
                 </tr>
-            `;
-        } else {
-            data.forEach(d => {
-                let actual = parseFloat(d.actual || 0);
-                let nuevo = parseFloat(d.nuevo || 0);
-                let diferencia = parseFloat(d.diferencia || 0);
-                let costoUn = parseFloat(d.costo_un || 0);
-                let difCosto = parseFloat(d.valor_diferencia_costo || 0);
-                
-                totalDifCosto += difCosto;
+            `);
 
-                // Determinar clase según diferencia
-                let rowClass = '';
-                if (diferencia > 0) {
-                    rowClass = 'diferencia-positiva';
-                } else if (diferencia < 0) {
-                    rowClass = 'diferencia-negativa';
-                } else {
-                    rowClass = 'sin-diferencia';
-                }
-
-                html += `
-                    <tr class="${rowClass}">
-                        <td>${d.nombre_insumo || ''}</td>
-                        <td class="text-right">${formatNumber(actual)}</td>
-                        <td class="text-right">${formatNumber(nuevo)}</td>
-                        <td class="text-right">${formatNumber(diferencia)}</td>
-                        <td class="text-right">${formatNumber(costoUn)}</td>
-                        <td class="text-right">${formatNumber(difCosto)}</td>
-                    </tr>
-                `;
-            });
+            $('#totalDifCosto').text('0.00');
+            return;
         }
+
+        data.forEach(d => {
+            let diferencia = parseFloat(d.diferencia || 0);
+            let difCosto = parseFloat(d.valor_diferencia_costo || 0);
+
+            totalDifCosto += difCosto;
+
+            let rowClass =
+                diferencia > 0 ? 'diferencia-positiva' :
+                diferencia < 0 ? 'diferencia-negativa' :
+                'sin-diferencia';
+
+            html += `
+                <tr class="${rowClass}">
+                    <td>${d.nombre_insumo}</td>
+                    <td class="text-right">${formatNumber(d.actual)}</td>
+                    <td class="text-right">${formatNumber(d.nuevo)}</td>
+                    <td class="text-right">${formatNumber(d.diferencia)}</td>
+                    <td class="text-right">${formatNumber(d.costo_un)}</td>
+                    <td class="text-right">${formatNumber(difCosto)}</td>
+                </tr>
+            `;
+        });
 
         $('#tablaDetalle tbody').html(html);
         $('#totalDifCosto').text(formatNumber(totalDifCosto));
     }
 
-    // ============================================
-    // FILTRO: SOLO DIFERENCIAS
-    // ============================================
     $('#chkSoloDiferencias').change(function(){
         if ($(this).is(':checked')) {
             let filtrado = detalleCompleto.filter(d => parseFloat(d.diferencia || 0) !== 0);
@@ -148,9 +140,6 @@ $(document).ready(function(){
         }
     });
 
-    // ============================================
-    // BÚSQUEDA POR NOMBRE
-    // ============================================
     $('#txtBuscarInsumo').on('keyup', function(){
         let valor = $(this).val().toLowerCase();
         
@@ -164,16 +153,10 @@ $(document).ready(function(){
         }
     });
 
-    // ============================================
-    // SELECT ALL CHECKBOX
-    // ============================================
     $('#chkSelectAll').change(function(){
         $('.chk-detalle').prop('checked', $(this).is(':checked'));
     });
 
-    // ============================================
-    // FORMATEAR NÚMEROS
-    // ============================================
     function formatNumber(num) {
         if (!num) return '0.00';
         return parseFloat(num).toLocaleString('es-CL', {
@@ -194,9 +177,6 @@ $(document).ready(function(){
         return `${dia}/${mes}/${año} ${hora}:${min}:${seg}`;
     }
 
-    // ============================================
-    // BOTÓN SALIR
-    // ============================================
     $('#btnSalir').click(function(){
         window.location.href = '<?= base_url("dashboard") ?>';
     });
@@ -207,16 +187,10 @@ $(document).ready(function(){
         }
     });
 
-    // ============================================
-    // NUEVO INVENTARIO
-    // ============================================
     $('#btnNuevoInventario').click(function(){
         window.location.href = '<?= base_url("inventario/nuevo") ?>';
     });
 
-    // ============================================
-    // ELIMINAR
-    // ============================================
     $('#btnEliminar').click(function(){
         let seleccionados = $('.chk-detalle:checked');
         
@@ -250,7 +224,6 @@ $(document).ready(function(){
         });
     });
 
-    // Cargar inventarios de la bodega inicial al cargar la página
     $('#selectBodega').trigger('change');
 });
 </script>

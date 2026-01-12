@@ -144,13 +144,13 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-md-1">
+                            <!-- <div class="col-md-1">
                                 <label style="margin-bottom: 5px; font-size: 11px;">&nbsp;</label>
                                 <button class="btn btn-sm btn-danger btn-block" id="btnEliminar">
                                     <i class=""></i> Eliminar
                                 </button>
-                            </div>
-                            <!-- <div class="col-md-4 text-right">
+                            </div> -->
+                            <div class="col-md-4 text-right">
                                 <label style="margin-bottom: 5px; font-size: 11px;">Total Dif. Costo</label>
                                 <div>
                                     <span class="badge badge-danger" id="totalDifCosto" 
@@ -158,7 +158,7 @@
                                         0
                                     </span>
                                 </div>
-                            </div> -->
+                            </div>
                         </div>
                     </div>
                 </div>

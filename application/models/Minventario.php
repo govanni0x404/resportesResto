@@ -30,8 +30,6 @@ class Minventario extends CI_Model {
     {
         $this->db->select('id_bodega, nombre_bodega');
         $this->db->from('bodega');
-        // Si tienes columna 'activo', descomenta la siguiente línea:
-        // $this->db->where('activo', 1);
         $this->db->order_by('nombre_bodega', 'ASC');
         
         return $this->db->get()->result();

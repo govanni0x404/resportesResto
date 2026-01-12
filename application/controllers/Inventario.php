@@ -72,12 +72,4 @@ class Inventario extends CI_Controller {
             'message' => $resultado ? 'Items eliminados' : 'Error al eliminar'
         ]);
     }
-
-    // // Ir a crear nuevo inventario
-    // public function nuevo()
-    // {
-    //     $this->load->view('menuTop.php');
-    //     $this->load->view('inventario/nuevo');
-    //     $this->load->view('menuFooter.php');
-    // }
 }
