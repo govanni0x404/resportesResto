@@ -18,10 +18,10 @@ class Compras extends CI_Controller
       'nombreUsuario' => $this->session->userdata('nombre_usuario'),
     );
     $this->load->view('menuTop.php', $data);
-    $this->load->view('compras/compras.php');
-    $this->load->view('compras/funciones.php');
     $this->load->view('menuFooter.php');
-    $this->load->view('compras/js.php');
+    $this->load->view('compras/funciones.php');
+    $this->load->view('compras/js.php');    
+    $this->load->view('compras/compras.php');
   }
 
   public function grabarCompra()

@@ -330,7 +330,8 @@
                 </fieldset>
             </div>
             <div class="modal-footer">
-                <button onclick="grabarPreciosYProducto()" type="button" class="btn btn-primary">
+                <!-- onclick="grabarPreciosYProducto()" -->
+                <button  id="btnGrabarPrecios" type="button" class="btn btn-primary">
                     <i class=""></i> Grabar Precios y Comisiones
                 </button>
                 <button onclick="cancelarEdicionPrecios()" type="button" class="btn btn-default">
@@ -670,9 +671,9 @@
             <!-- BOTONES  -->
             <div class="modal-footer">
                 <button id="btnActualizarAgregado" type="button" class="btn btn-primary"><i
-                        class="fa fa-check-square-o"></i>ACTUALIZAR AGREGADO</button>
+                        class=""></i>ACTUALIZAR AGREGADO</button>
                 <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class="fa fa-times-circle"></i>SALIR</button>
+                        class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -1425,3 +1426,19 @@
         </div>
     </div>
 </div>
+<script>
+// Manejar el clic del botón según el contexto
+$(document).ready(function() {
+    $('#btnGrabarPrecios').off('click').on('click', function() {
+        var idProducto = $("#txtID").val();
+        
+        if (idProducto && idProducto !== "0" && idProducto !== "") {
+            // Es edición de producto existente
+            grabarSoloPreciosDeProducto();
+        } else {
+            // Es creación de nuevo producto
+            grabarPreciosYProducto();
+        }
+    });
+});
+</script>

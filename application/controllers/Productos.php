@@ -180,6 +180,15 @@ class Productos extends CI_Controller
 				}
 			}
 		}
+
+		// VALIDAR CODIGO DE BARRAS DUPLICADO
+		if ($this->Mproductos->existeCodigoBarra($producto['cbarra'])) {
+			echo json_encode([
+				'success' => false,
+				'error' => 'El código de barras ya existe'
+			]);
+			return;
+		}
 		
 		$id = intval($producto['id_producto']);
 		
@@ -281,6 +290,13 @@ class Productos extends CI_Controller
 		// Usabilidade: Ao Chamar a função com os 12 algarismos retorna já com o dígito.
 		echo $this->digitoEAN13($ean13);
 	}
+
+	public function obtenerSiguienteCodigoBarra()
+	{
+		$codigo = $this->Mproductos->obtenerSiguienteCodigoBarra();
+		echo json_encode(['codigo' => $codigo]);
+	}
+
 	function digitoEAN13($cod)
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
@@ -437,9 +453,13 @@ class Productos extends CI_Controller
 			$dataPrecio = array(
 				'id_producto' => $idProducto,
 				'id_lprecio' => (int)$precio['id_lprecio'],
-				'total' => (int)$precio['total'],
-				'monto_comision' => (float)$precio['monto_comision']
+				'total' => (int)$precio['total']
 			);
+			
+			// Solo agregar comisión si viene en el array
+			if (isset($precio['monto_comision'])) {
+				$dataPrecio['monto_comision'] = (float)$precio['monto_comision'];
+			}
 			
 			$resultadoPrecio = $this->Mproductos->grabarPrecioProducto($dataPrecio);
 			$preciosGrabados[] = $resultadoPrecio;
@@ -748,5 +768,20 @@ class Productos extends CI_Controller
 		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
 		$query = $this->db->query('SELECT id_lprecio as id_detalle_lprecio, nombre_lprecio FROM lprecio ORDER BY nombre_lprecio');
 		echo json_encode($query->result());
+	}
+
+	public function verificarColumnaComision()
+	{
+		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+			redirect(base_url());
+		}
+		
+		$existe = $this->Mproductos->verificarColumnaExiste('detalle_lprecio', 'monto_comision');
+		
+		echo json_encode([
+			'existe' => $existe,
+			'tabla' => 'detalle_lprecio',
+			'columna' => 'monto_comision'
+		]);
 	}
 }

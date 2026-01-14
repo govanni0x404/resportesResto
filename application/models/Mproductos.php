@@ -8,6 +8,27 @@ class Mproductos extends CI_Model
 		parent::__construct();
 	}
 
+	public function verificarColumnaExiste($tabla, $columna)
+	{
+		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+			redirect(base_url());
+		}
+		
+		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		
+		$query = $this->db->query("
+			SELECT EXISTS (
+				SELECT 1 
+				FROM information_schema.columns 
+				WHERE table_name = '$tabla' 
+				AND column_name = '$columna'
+			) as existe
+		");
+		
+		$result = $query->row();
+		return $result->existe === 't' || $result->existe === true;
+	}
+
 	public function ListadoCartaDeProductos(/*$id_familia*/)
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
@@ -78,17 +99,31 @@ class Mproductos extends CI_Model
 	}
 
 	public function obtenerPreciosDeVenta($idProducto){
-    	if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-	        redirect(base_url());
-    	}
-    	$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-    	$query = $this->db->query('SELECT d.id_detalle_lprecio, d.id_lprecio, l.nombre_lprecio, d.total, 
-        	                      COALESCE(d.monto_comision, 0) as monto_comision 
-            	                  FROM detalle_lprecio d 
-                	              JOIN lprecio l ON d.id_lprecio=l.id_lprecio
-                    	          WHERE d.id_producto=' . $idProducto . ' 
-                        	      ORDER BY l.nombre_lprecio');
-    	return $query->result();
+		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+			redirect(base_url());
+		}
+		
+		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		
+		// Verificar si existe la columna
+		$tieneComision = $this->verificarColumnaExiste('detalle_lprecio', 'monto_comision');
+		
+		// Construir query dinámicamente
+		if ($tieneComision) {
+			$select = 'd.id_detalle_lprecio, d.id_lprecio, l.nombre_lprecio, d.total, COALESCE(d.monto_comision, 0) as monto_comision';
+		} else {
+			$select = 'd.id_detalle_lprecio, d.id_lprecio, l.nombre_lprecio, d.total, 0 as monto_comision';
+		}
+		
+		$query = $this->db->query("
+			SELECT $select 
+			FROM detalle_lprecio d 
+			JOIN lprecio l ON d.id_lprecio=l.id_lprecio
+			WHERE d.id_producto = $idProducto
+			ORDER BY l.nombre_lprecio
+		");
+		
+		return $query->result();
 	}
 
 	public function ListadoDeSubFamilias()
@@ -185,7 +220,7 @@ class Mproductos extends CI_Model
 	public function grabarNuevoProducto($id, $data)
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-			redirect(base_url()); //redireccionar al login
+			redirect(base_url());
 		}
 		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
 		if ($id) {
@@ -217,6 +252,25 @@ class Mproductos extends CI_Model
 		return $consulta->result();
 	}
 
+	public function existeCodigoBarra($cbarra)
+	{
+		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->db->where('cbarra', $cbarra);
+		return $this->db->count_all_results('producto') > 0;
+	}
+
+	public function obtenerSiguienteCodigoBarra()
+	{
+	    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+
+		$this->db->select_max('cbarra');
+		$query = $this->db->get('producto');
+
+		$row = $query->row();
+		$ultimo = $row && $row->cbarra ? (int)$row->cbarra : 0;
+
+		return $ultimo + 1;
+	}
 
 	public function grabarNuevaSubFamilia($id, $data)
 	{
@@ -394,29 +448,6 @@ class Mproductos extends CI_Model
 		return $r;
 	}
 
-	/*public function verificarSiExisteProductoPorNombre($nombreProducto){
-	   if (strlen($this->session->userdata('nombre_usuario'))==0) {
-		 redirect(base_url());//redireccionar al login
-	   }
-	   //$this->db=$this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-	   $q="SELECT p.id_producto, p.cbarra, p.nombre_producto, f.nombre_familia, u.nombre_umedida, i.nombre_impuesto as iva, ii.nombre_impuesto as impto_adicional,
-		   d.nombre_dimpresion, b.nombre_bodega, p.pponderado,
-		   (select nombre_menu from menu m where m.id_menu=p.id_menu) as menu,
-		   (select nombre_subfamilia from subfamilia sf where sf.id_subfamilia=p.id_subfamilia) as subfamilia,
-		   (select nombre_receta from receta r where r.id_receta=p.id_receta) as receta, 
-		   p.vigente, p.con_agregado, p.venta_publico, p.permite_porcion, p.venta_segun_stock, p.elaboracion_propia, p.permitir_venta_sin_precio, p.venta_uno_a_uno, p.pedir_cantidad_en_venta,
-		   p.ver_en_dispositivos_moviles,p.permite_cortesia
-		   from producto p
-		   join familia f on p.id_familia=f.id_familia
-		   join umedida u on p.id_umedida=u.id_umedida
-		   join impuesto i on p.impto_iva=i.id_impuesto
-		   join impuesto ii on p.impto_ila=ii.id_impuesto
-		   join dimpresion d on p.id_dimpresion=d.id_dimpresion
-		   join bodega b on p.id_bodega=b.id_bodega
-		   where p.nombre_producto='$nombreProducto'";
-		   $query = $this->db->query($q)->result();
-		   return $query;
-	  }*/
 	public function obtenerListadoMenu()
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
@@ -633,22 +664,29 @@ class Mproductos extends CI_Model
 		
 		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
 		
+		// VERIFICAR si existe la columna monto_comision
+		$tieneComision = $this->verificarColumnaExiste('detalle_lprecio', 'monto_comision');
+		
+		log_message('debug', '¿Tabla tiene columna monto_comision? ' . ($tieneComision ? 'SÍ' : 'NO'));
+		
 		// Verificar si ya existe el precio para este producto y lista
 		$this->db->where('id_producto', $data['id_producto']);
 		$this->db->where('id_lprecio', $data['id_lprecio']);
 		$existe = $this->db->get('detalle_lprecio');
 		
-		// Preparar datos incluyendo comisión
+		// Preparar datos base (siempre presentes)
 		$dataToSave = array(
 			'id_producto' => $data['id_producto'],
 			'id_lprecio' => $data['id_lprecio'],
-			'total' => $data['total'],
-			'monto_comision' => isset($data['monto_comision']) ? $data['monto_comision'] : 0
+			'total' => $data['total']
 		);
 		
-		// Agregar comisión si existe en el array
-		if (isset($data['monto_comision'])) {
+		// SOLO agregar comisión si la columna existe
+		if ($tieneComision && isset($data['monto_comision'])) {
 			$dataToSave['monto_comision'] = $data['monto_comision'];
+			log_message('debug', 'Agregando comisión: ' . $data['monto_comision']);
+		} else if (!$tieneComision && isset($data['monto_comision'])) {
+			log_message('warning', 'Columna monto_comision no existe - omitiendo valor');
 		}
 		
 		if ($existe->num_rows() > 0) {
@@ -657,7 +695,12 @@ class Mproductos extends CI_Model
 			$this->db->where('id_lprecio', $data['id_lprecio']);
 			$this->db->update('detalle_lprecio', $dataToSave);
 			
-			return ['updated' => true, 'id_producto' => $data['id_producto'], 'id_lprecio' => $data['id_lprecio']];
+			return [
+				'updated' => true, 
+				'id_producto' => $data['id_producto'], 
+				'id_lprecio' => $data['id_lprecio'],
+				'tiene_comision' => $tieneComision
+			];
 		} else {
 			// Insertar
 			$this->db->insert('detalle_lprecio', $dataToSave);
@@ -665,7 +708,11 @@ class Mproductos extends CI_Model
 			$consulta = $this->db->query("SELECT CURRVAL('detalle_lprecio_id_detalle_lprecio_seq'::regclass) as id_detalle_lprecio");
 			
 			if ($consulta->num_rows() > 0) {
-				return ['inserted' => true, 'id_detalle_lprecio' => $consulta->row()->id_detalle_lprecio];
+				return [
+					'inserted' => true, 
+					'id_detalle_lprecio' => $consulta->row()->id_detalle_lprecio,
+					'tiene_comision' => $tieneComision
+				];
 			}
 		}
 		

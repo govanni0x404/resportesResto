@@ -4,7 +4,8 @@ $date = new DateTime('now');
 $date->modify('last day of this month');
 $fechaActual = date('Y-m-d');
 ?>
-<div class="content-header">
+<div class="container">
+    <div class="content-header">
     <div class="header-icon">
         <i class="pe-7s-home"></i>
     </div>
@@ -73,6 +74,7 @@ $fechaActual = date('Y-m-d');
                     <fieldset>
                         <div class="col-md-4">
                             <label for="cboProductosCompra">Producto</label>
+                            <!-- <sup><a onclick="AbrirModalNuevoInsumo()">Nuevo</a></sup> -->
                             <select id="cboProductosCompra" nombre="cboProductosCompra"
                                 class="form-control input-sm" style="width:100%" requerido="si"></select>
                         </div>
@@ -167,4 +169,7 @@ $fechaActual = date('Y-m-d');
         </div>
     </div>
 </div>
- <?php $this->load->view('proveedor/jsNuevoProveedor.php'); ?>
+</div>
+<?php $this->load->view('proveedor/jsNuevoProveedor.php'); ?>
+<?php $this->load->view('insumos/js.php'); ?>
+<?php $this->load->view('insumos/modalInsumos.php'); ?>

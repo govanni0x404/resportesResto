@@ -25,7 +25,7 @@
 				</div>
 				<br>
  				<div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
-					<button style="margin-left:10px; margin-right: 30px; margin-bottom: 20px;" id="btnNuevoInsumo" type="button" class="btn btn-primary"></i>Crear Insumo</button>
+					<button style="margin-left:10px; margin-right: 30px; margin-bottom: 20px;" onclick="AbrirModalNuevoInsumo()" id="btnNuevoInsumo" type="button" class="btn btn-primary"></i>Crear Insumo</button>
 				</div>
 				<div class="table-responsive" style="margin-top:10px; padding:5px;">
 					<table id="tableInsumos" class="display responsive" style="width: 100%">

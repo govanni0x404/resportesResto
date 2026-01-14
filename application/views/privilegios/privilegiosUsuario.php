@@ -45,8 +45,8 @@
                             </div>
                             <div class="panel-body">
                                 <div style="margin-bottom: 15px;">
-                                    <button type='button' class='btn btn-primary' id='btnHabilitarTodos'><i class='fa fa-check-circle'></i> HABILITAR TODOS LOS PRIVILEGIOS</button>
-                                    <button type='button' class='btn btn-default' id='btnBloquearTodos'><i class='fa fa-times-circle'></i> QUITAR TODOS LOS PRIVILEGIOS</button>
+                                    <button type='button' class='btn btn-primary' id='btnHabilitarTodos'><i class=''></i> HABILITAR TODOS LOS PRIVILEGIOS</button>
+                                    <button type='button' class='btn btn-default' id='btnBloquearTodos'><i class=''></i> QUITAR TODOS LOS PRIVILEGIOS</button>
                                 </div>
                                 
                                 <div class="table-responsive" style="max-height:600px; overflow:auto;">

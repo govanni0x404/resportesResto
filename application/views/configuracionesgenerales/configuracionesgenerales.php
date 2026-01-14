@@ -52,7 +52,7 @@
                                                 <label><input type="checkbox" name="mostrar_nombre_garzon_venta" value="1" <?php echo ($config['mostrar_nombre_garzon_venta'] ?? true) ? 'checked' : ''; ?>> Garzon</label>
                                             </div>
                                         </div>
-                                        <div class="panel panel-default">
+                                        <!-- <div class="panel panel-default">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Configuraciones Caja</h3>
                                             </div>
@@ -63,7 +63,7 @@
                                                 <input type="text" class="form-control" name="impresora_local_precuenta" value="<?php echo $config['impresora_local_precuenta'] ?? ''; ?>">
                                                 <label><input type="checkbox" name="imprimir_comprobante_venta" value="1" <?php echo ($config['imprimir_comprobante_venta'] ?? true) ? 'checked' : ''; ?>> Imprimir comprobante de venta</label>
                                             </div>
-                                        </div>
+                                        </div> -->
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Precuentas</h3>
@@ -142,7 +142,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <!-- <div class="col-md-4">
                                         <div class="panel panel-default">
                                             <div class="panel-body">
                                                 <div class="form-group">
@@ -161,7 +161,7 @@
                                                     <input type="number" class="form-control input-small" name="id_familia_favoritos" value="<?php echo $config['id_familia_favoritos'] ?? ''; ?>"> Seg.
                                                 </div>
                                             </div>
-                                        </div>
+                                        </div> -->
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Descuentos</h3>
@@ -628,38 +628,3 @@
     .radio-group { display: flex; }
     .radio-group label { margin-right: 20px; }
 </style>
-
-<script>
-    function openTab(evt, tabName) {
-        var i, tabcontent, tablinks;
-        tabcontent = document.getElementsByClassName("tab");
-        for (i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].className = tabcontent[i].className.replace(" active", "");
-        }
-        tablinks = document.getElementsByClassName("tablink");
-        for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
-        }
-        document.getElementById(tabName).className += " active";
-        evt.currentTarget.className += " active";
-    }
-
-    $('#configForm').submit(function(e) {
-        e.preventDefault();
-        $.ajax({
-            type: 'POST',
-            url: $(this).attr('action'),
-            data: $(this).serialize(),
-            dataType: 'json',
-            success: function(response) {
-                alert(response.status === 'success' ? 'Guardado exitosamente' : 'Error al guardar');
-                if (response.status === 'success') {
-                    location.reload();
-                }
-            },
-            error: function() {
-                alert('Error en la solicitud');
-            }
-        });
-    });
-</script>

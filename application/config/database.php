@@ -104,7 +104,7 @@ $db['76193938-6'] = array(
 	'hostname' => 'localhost',
 	'username' => 'postgres',
 	'password' => '123datamaule2019.,#-',
-	'database' => 'acacios2',
+	'database' => 'baseVaciaResto',
 	'dbdriver' => 'postgre',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
@@ -122,12 +122,12 @@ $db['76193938-6'] = array(
 	'schema'=>'public'
 );
 
-$db['77115675-4'] = array(
+$db['9209734-K'] = array(
 	'dsn' => '',
 	'hostname' => 'datamaule.cl',
 	'username' => 'ccerda',
 	'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
-	'database' => 'ccerda_pruebas_resto2',
+	'database' => 'ccerda_escuela_artilleria',
 	'dbdriver' => 'postgre',
 	'dbprefix' => '',
 	'pconnect' => FALSE,

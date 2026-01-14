@@ -12,8 +12,9 @@ class ConfiguracionesGenerales extends CI_Controller {
     public function index() {
         $data['config'] = $this->Mconfiguracionesgenerales->get_configuracion();
         $this->load->view('menuTop.php', $data);
-        $this->load->view('configuracionesgenerales/index', $data);
+        $this->load->view('configuracionesgenerales/configuracionesgenerales', $data);
         $this->load->view('menuFooter.php');
+        $this->load->view('configuracionesgenerales/js', $data);
     }
 
     public function guardar() {
