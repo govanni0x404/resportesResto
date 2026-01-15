@@ -350,7 +350,7 @@ function GrabarProducto() {
     }
 
     if ($('#txtCbarra').val().trim() === "") {
-    msg += "- Código de barras no puede estar en blanco\n";
+        msg += "- Código de barras no puede estar en blanco\n";
     }
 
     if ($('#cboFamilia').val() == null || $('#cboFamilia').val() == 0) {
@@ -381,7 +381,7 @@ function GrabarProducto() {
 
     // Preparar datos del producto
     var datosProducto = {
-        'id_producto': $('#txtID').val(),
+        'id_producto': $('#txtID').val() || 0, // Asegurar que sea 0 si está vacío
         'nombre_producto': $('#txtNombre').val().toUpperCase().replace(/[,.'"$#%&]+/g, ''),
         'cbarra': $('#txtCbarra').val(),
         'impto_iva': $('#cboImpuestoIva').val(),

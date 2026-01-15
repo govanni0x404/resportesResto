@@ -40,7 +40,7 @@
                                 <fieldset>
                                     <div class="col-md-12">
                                         <label for="txtNombre">Nombre Producto</label>
-                                        <input type="text" autocomplete="off" maxlength="50"
+                                        <input type="text" autocomplete="off" maxlength="100"
                                             class="form-control input-sm input-sm" name="txtNombre" id="txtNombre"
                                             requerido="si" value="">
                                     </div>

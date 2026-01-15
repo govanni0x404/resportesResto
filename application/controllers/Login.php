@@ -20,18 +20,11 @@ class Login extends CI_Controller
 
 	public function index()
 	{
-
-	 
 		if ($this->session->userdata('nombre_usuario')) {
 			redirect(base_url() . 'index.php/Dashboard');
 		} else {
 			$this->load->view('login/login.php');
 		}
-	 
-
-			 
-
-
 	}
 
 
@@ -39,7 +32,6 @@ class Login extends CI_Controller
 	public function new_user(){
 		$username = $this->input->post('username');
 		$password = $this->input->post('password');
-
 		 
 		$idSoftware=5;
  		$check_user = $this->Mlogin->login_user($username, $password , $idSoftware);
@@ -71,11 +63,6 @@ class Login extends CI_Controller
 				$rolUsuario=0;
 				$rolUsuario= $datosUsuario->id_rol;
 
-
-
-
-
-
 				$params = "user=cAR105_2019.,&pass=123TitinaCaturra2019.,&id=" .$rutCliente."&ns=".$check_user->abreviatura."&isis=&id_sucursal=".$obtenerSucursal->id_sucursal;
 
 				$ch = curl_init();
@@ -85,8 +72,6 @@ class Login extends CI_Controller
 				$server_output = curl_exec($ch);
 				$resultado = json_decode($server_output,true);
 				curl_close($ch);
-
-
 
 				$idCliente= $resultado[0]['id'];
 				if ($check_user->autoriza_cambio_conexion=='t') {
@@ -101,7 +86,7 @@ class Login extends CI_Controller
 			$data = array(
 				'is_logued_in'        => TRUE,
 				'id_usuario'          => $check_user->id_usuario_cliente,
-			  'rut_cliente'         => $check_user->rut . "-" . $check_user->dv,
+			  	'rut_cliente'         => $check_user->rut . "-" . $check_user->dv,
 				'nombre_usuario'      => $check_user->nombre_usuario,
 				'nombre_conexion'     => $check_user->nombre_conexion,
 				'nombre_cliente'			=> $check_user->nombre_cliente,

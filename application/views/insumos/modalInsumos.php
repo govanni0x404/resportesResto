@@ -566,20 +566,21 @@
 		llenarUnMedida();
 	};
 
-	function llenarGrupoInsumos(objSelected, id_grupo_insumo) {
+	function llenarGrupoInsumos(objSelected, id_grupo_insumo_seleccionar) {
 		$.post(base_url + "index.php/Insumos/llenarCboGrupoInsumo", {
-			id_grupo_insumo: id_grupo_insumo
+			id_grupo_insumo: id_grupo_insumo_seleccionar
 		}, function(datos) {
-			var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
+			var obj = jQuery.parseJSON(datos);
 			tbl = "";
-			tbl = '<option selected value="0">--SELECCIONE--</option>';
-			$.each(obj, function(index, v) { // recorro el array
-				if (v.nombre_grupo_insumo == objSelected) {
+			tbl = '<option value="0">--SELECCIONE--</option>';
+			$.each(obj, function(index, v) {
+				// Verificar si debe estar seleccionado por nombre O por ID
+				if (v.nombre_grupo_insumo == objSelected || v.id_grupo_insumo == id_grupo_insumo_seleccionar) {
 					tbl = tbl + '<option selected value="' + v.id_grupo_insumo + '">' + v.nombre_grupo_insumo + '</option>';
 				} else {
 					tbl = tbl + '<option value="' + v.id_grupo_insumo + '">' + v.nombre_grupo_insumo + '</option>';
 				}
-			}); //fin each
+			});
 			$("#cboGrupoInsumo").html(tbl);
 			$("#cboGrupoInsumo").select2();
 		});

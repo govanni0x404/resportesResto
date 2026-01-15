@@ -252,24 +252,33 @@ class Mproductos extends CI_Model
 		return $consulta->result();
 	}
 
-	public function existeCodigoBarra($cbarra)
+	public function existeCodigoBarra($cbarra, $id_producto = null)
 	{
 		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		
 		$this->db->where('cbarra', $cbarra);
+		
+		// Si es una edición, excluir el producto actual
+		if ($id_producto !== null && $id_producto > 0) {
+			$this->db->where('id_producto !=', $id_producto);
+		}
+		
 		return $this->db->count_all_results('producto') > 0;
 	}
 
 	public function obtenerSiguienteCodigoBarra()
 	{
-	    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
 
-		$this->db->select_max('cbarra');
-		$query = $this->db->get('producto');
+		// Obtener el último código de barras como número
+		$query = $this->db->query("
+			SELECT COALESCE(MAX(CAST(cbarra AS INTEGER)), 0) + 1 as siguiente_codigo
+			FROM producto
+			WHERE cbarra ~ '^[0-9]+$'
+		");
 
 		$row = $query->row();
-		$ultimo = $row && $row->cbarra ? (int)$row->cbarra : 0;
-
-		return $ultimo + 1;
+		return $row ? $row->siguiente_codigo : 1;
 	}
 
 	public function grabarNuevaSubFamilia($id, $data)
