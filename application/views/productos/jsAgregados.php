@@ -417,8 +417,50 @@ function ListadoDeAgregadosParaElProducto(objSelected) {
     });
 }
 
-// Inicializar validaciones al cargar
+// Detectar cierre del modal de agregados
 $(document).ready(function() {
-    initValidacionesAgregados();
+    $('#ModalAgregadosDelProducto').on('hidden.bs.modal', function() {
+        // Solo ejecutar si venimos del flujo de creación
+        if (typeof debeAbrirAgregados !== 'undefined' && debeAbrirAgregados && datosProductoPendiente !== null) {
+            finalizarCreacionProductoConAgregados();
+        }
+    });
+    
+    // Mostrar/ocultar botón de finalizar según contexto
+    $('#ModalAgregadosDelProducto').on('shown.bs.modal', function() {
+        if (typeof debeAbrirAgregados !== 'undefined' && debeAbrirAgregados) {
+            $('#btnFinalizarCreacion').show();
+            $('#ModalAgregadosDelProducto .modal-footer button[data-dismiss="modal"]').text('CANCELAR');
+        } else {
+            $('#btnFinalizarCreacion').hide();
+            $('#ModalAgregadosDelProducto .modal-footer button[data-dismiss="modal"]').text('SALIR');
+        }
+    });
 });
+
+// Nueva función para finalizar con validación
+function finalizarYCerrarAgregados() {
+    var cantidadAgregados = $('#tableAgregados tbody tr').length;
+    
+    // Verificar si hay algún tr con mensaje de "No hay agregados"
+    var sinAgregados = $('#tableAgregados tbody tr td[colspan="7"]').length > 0;
+    
+    if (cantidadAgregados === 0 || sinAgregados) {
+        swal({
+            title: "Sin agregados",
+            text: "¿Desea continuar sin agregar productos? El producto quedará marcado como 'Con Agregado' pero sin productos asociados.",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, continuar",
+            cancelButtonText: "No, agregar productos",
+            closeOnConfirm: true
+        }, function(isConfirm) {
+            if (isConfirm) {
+                $('#ModalAgregadosDelProducto').modal('hide');
+            }
+        });
+    } else {
+        $('#ModalAgregadosDelProducto').modal('hide');
+    }
+}
 </script>

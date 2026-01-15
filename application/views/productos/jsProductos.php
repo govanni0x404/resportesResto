@@ -3,6 +3,7 @@ var base_url = "<?php echo base_url(); ?>";
 tablaCartaProductos = $('#tableCartaProductos').DataTable();
 var datosProductoPendiente = null; 
 var preciosExistentes = []; 
+var debeAbrirAgregados = false;
 
 $(document).ready(function() {
     ListadoCartaDeProductos();
@@ -379,6 +380,9 @@ function GrabarProducto() {
         return;
     }
 
+    debeAbrirAgregados = $('#ckConAgregado').is(":checked");
+    console.log("¿Debe abrir agregados?:", debeAbrirAgregados);
+
     // Preparar datos del producto
     var datosProducto = {
         'id_producto': $('#txtID').val() || 0, // Asegurar que sea 0 si está vacío
@@ -523,7 +527,6 @@ function grabarPreciosYProducto() {
         var idLista = $(this).find("td").eq(0).text().trim();
         var precio = parseInt($(this).find(".precio-input").val()) || 0;
         
-        // Verificar si existe el input de comisión antes de leerlo
         var $comisionInput = $(this).find(".comision-input");
         var comision = 0;
         
@@ -538,7 +541,6 @@ function grabarPreciosYProducto() {
                 total: precio
             };
             
-            // Solo incluir comisión si el input existe
             if ($comisionInput.length > 0) {
                 precioData.monto_comision = comision;
             }
@@ -549,7 +551,6 @@ function grabarPreciosYProducto() {
     
     console.log("Precios recolectados:", precios);
     
-    // Resto del código igual...
     if (!$('#ckPermitirVentaSiempre').is(':checked')) {
         if (!tienePrecio) {
             showAppAlert('error', "Debe ingresar al menos un precio mayor a cero", {
@@ -579,23 +580,39 @@ function grabarPreciosYProducto() {
                 return;
             }
             
+            // Crear insumo si es venta directa
             if (datosProductoPendiente.venta_uno_a_uno == 1) {
                 GrabarNuevoInsumo();
             }
             
             $('#modalPrecioVentaProducto').modal('hide');
-            $('#modalNuevoProducto').modal('hide');
             
-            datosProductoPendiente = null;
-            preciosExistentes = [];
-            
-            showAppAlert('success', "Producto creado y guardado correctamente!", {
-                duration: 4000,
-                image: base_url + 'assets/img/success.gif'
-            });
-            
-            if (typeof tablaCartaProductos !== 'undefined') {
-                tablaCartaProductos.ajax.reload();
+            if (debeAbrirAgregados && response.id_producto) {
+                console.log("✓ Abriendo modal de agregados para producto:", response.id_producto);
+                
+                // Establecer el ID del producto recién creado
+                $('#txtID').val(response.id_producto);
+                
+                // Pequeño delay para que se cierre bien el modal anterior
+                setTimeout(function() {
+                    AbrirModalAgregadosDelProducto();
+                }, 500);
+                
+            } else {
+                // Si NO tiene agregados, cerrar todo y limpiar
+                $('#modalNuevoProducto').modal('hide');
+                datosProductoPendiente = null;
+                preciosExistentes = [];
+                debeAbrirAgregados = false;
+                
+                showAppAlert('success', "Producto creado correctamente!", {
+                    duration: 4000,
+                    image: base_url + 'assets/img/success.gif'
+                });
+                
+                if (typeof tablaCartaProductos !== 'undefined') {
+                    tablaCartaProductos.ajax.reload();
+                }
             }
         },
         error: function(xhr, status, error) {
@@ -714,5 +731,31 @@ function cancelarCreacionProducto() {
             $('#modalPrecioVentaProducto').modal('hide');
         }
     });
+}
+
+function finalizarCreacionProductoConAgregados() {
+    console.log("✓ Finalizando creación de producto con agregados");
+    
+    // Cerrar modal de agregados
+    $('#ModalAgregadosDelProducto').modal('hide');
+    
+    // Cerrar modal principal de producto
+    $('#modalNuevoProducto').modal('hide');
+    
+    // Limpiar variables
+    datosProductoPendiente = null;
+    preciosExistentes = [];
+    debeAbrirAgregados = false;
+    
+    // Mostrar mensaje de éxito
+    showAppAlert('success', "¡Producto creado completamente con agregados!", {
+        duration: 4000,
+        image: base_url + 'assets/img/success.gif'
+    });
+    
+    // Recargar tabla
+    if (typeof tablaCartaProductos !== 'undefined') {
+        tablaCartaProductos.ajax.reload();
+    }
 }
 </script>
