@@ -672,10 +672,10 @@
             <div class="modal-footer">
                 <button id="btnFinalizarCreacion" onclick="finalizarYCerrarAgregados()" 
                         type="button" class="btn btn-success" style="display:none;">
-                    <i class="fa fa-check-circle"></i> FINALIZAR Y GUARDAR PRODUCTO
+                    <i class=""></i> Finalizar y Guardar
                 </button>   
-                <button id="btnActualizarAgregado" type="button" class="btn btn-primary"><i
-                        class=""></i>ACTUALIZAR AGREGADO</button>
+                <!-- <button id="btnActualizarAgregado" type="button" class="btn btn-primary"><i
+                        class=""></i>ACTUALIZAR AGREGADO</button> -->
                 <button type="button" class="btn btn-default" data-dismiss="modal"><i
                         class=""></i>SALIR</button>
             </div>

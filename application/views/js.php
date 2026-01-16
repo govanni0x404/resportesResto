@@ -339,14 +339,116 @@
         $.post(base_url + "index.php/Dashboard/empresa", {}, function () { }).done(function (data) {
             try {
                 var obj = jQuery.parseJSON(data);
-                $('#local').text(obj[0].nombre_fantasia);
-                $('#lblNombreCliente').text(obj[0].razon_social);
+                console.log("Datos empresa:", obj); // Debug
+                
+                // Si no hay datos de empresa o el array está vacío
+                if (!obj || obj.length === 0) {
+                    mostrarAlertaEmpresaVacia();
+                    return;
+                }
+                
+                $('#local').text(obj[0].nombre_fantasia || '');
+                $('#lblNombreCliente').text(obj[0].razon_social || '');
+                
+                // Validar datos importantes de empresa
+                validarDatosEmpresa(obj[0]);
+                
             } catch (e) {
-                console.log(data);
+                console.log("Error parsing empresa:", e, data);
             }
         }).fail(function () {
             swal("Se produjo un error al realizar el proceso, favor vuelva a intentarlo");
         });
+    }
+
+    function mostrarAlertaEmpresaVacia() {
+        var mensaje = 'No hay datos de empresa registrados en el sistema.\n\n';
+        mensaje += 'Por favor ingrese los datos de la empresa en el icono de engranaje -> Configuraciones -> Datos de la Empresa.';
+        
+        if (typeof swal !== 'undefined') {
+            swal({
+                title: "Datos de Empresa Requeridos",
+                text: mensaje,
+                icon: "warning",
+                buttons: {
+                    configurar: {
+                        text: "Ir a Configurar",
+                        value: "configurar",
+                    },
+                    cerrar: {
+                        text: "Cerrar",
+                        value: "cerrar",
+                    }
+                }
+            }).then((value) => {
+                if (value === "configurar") {
+                    window.location.href = base_url + "index.php/ConfiguracionesGenerales";
+                }
+            });
+        } else {
+            alert(mensaje);
+        }
+    }
+
+    function validarDatosEmpresa(empresa) {
+        console.log("Validando empresa:", empresa); // Debug
+        var camposFaltantes = [];
+        
+        // Campos importantes de empresa a validar
+        var rut = empresa.rut_empresa;
+        var dv = empresa.dv_empresa;
+        var razon = empresa.razon_social;
+        var giro = empresa.giro;
+        var direccion = empresa.direccion_empresa;
+        
+        if (!rut || rut == '' || rut == 0 || rut == null) {
+            camposFaltantes.push('RUT Empresa');
+        }
+        if (!dv || dv == '' || dv == null) {
+            camposFaltantes.push('Dígito Verificador');
+        }
+        if (!razon || razon == '' || razon == null) {
+            camposFaltantes.push('Razón Social');
+        }
+        if (!giro || giro == '' || giro == null) {
+            camposFaltantes.push('Giro');
+        }
+        if (!direccion || direccion == '' || direccion == null) {
+            camposFaltantes.push('Dirección');
+        }
+        
+        console.log("Campos faltantes:", camposFaltantes); // Debug
+        
+        if (camposFaltantes.length > 0) {
+            var mensaje = 'ATENCION: Faltan datos importantes de la empresa:\n\n';
+            mensaje += '- ' + camposFaltantes.join('\n- ');
+            mensaje += '\n\nPor favor complete estos datos en Configuraciones Generales -> Datos de la Empresa.';
+            
+            // Usar swal si está disponible, sino usar alert
+            if (typeof swal !== 'undefined') {
+                swal({
+                    title: "Datos de Empresa Incompletos",
+                    text: mensaje,
+                    icon: "warning",
+                    buttons: {
+                        configurar: {
+                            text: "Ir a Configurar",
+                            value: "configurar",
+                        },
+                        cerrar: {
+                            text: "Cerrar",
+                            value: "cerrar",
+                        }
+                    }
+                }).then((value) => {
+                    if (value === "configurar") {
+                        window.location.href = base_url + "index.php/ConfiguracionesGenerales";
+                    }
+                });
+            } else {
+                alert(mensaje);
+            }
+        }
     }
 
     function totalVenta(id_caja, desde, hasta) {

@@ -80,7 +80,7 @@
                                                 <h3 class="panel-title">Propinas</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <label><input type="checkbox" name="mostrar_propina_precuenta" value="1" <?php echo ($config['mostrar_propina_precuenta'] ?? false) ? 'checked' : ''; ?>> Mostar valor de propína en precuenta</label>
+                                                <label><input type="checkbox" name="calcular_valor_propina" value="1" <?php echo ($config['calcular_valor_propina'] ?? false) ? 'checked' : ''; ?>> Mostar valor de propína en precuenta</label>
                                                 <label><input type="checkbox" name="preguntar_calculo_propina_en_pago" value="1" <?php echo ($config['preguntar_calculo_propina_en_pago'] ?? false) ? 'checked' : ''; ?>> Preguntar por calculo de propina en pago</label>
                                                 <label><input type="checkbox" name="mostrar_boton_propina_garzon" value="1" <?php echo ($config['mostrar_boton_propina_garzon'] ?? true) ? 'checked' : ''; ?>> Mostrar boton ver propina</label>
                                                 <label><input type="checkbox" name="propina_en_delivery" value="1" <?php echo ($config['propina_en_delivery'] ?? false) ? 'checked' : ''; ?>> Calcular propina para delivery</label>
@@ -92,7 +92,7 @@
                                                 <h3 class="panel-title">Otros restorant</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <label><input type="checkbox" name="permitir_cambio_costo_insumo" value="1" <?php echo ($config['permitir_cambio_costo_insumo'] ?? true) ? 'checked' : ''; ?>> Permitir el cambio del costo de insumo</label>
+                                                <label><input type="checkbox" name="permitircambiarppp" value="1" <?php echo ($config['permitircambiarppp'] ?? true) ? 'checked' : ''; ?>> Permitir el cambio del costo de insumo</label>
                                                 <label><input type="checkbox" name="ordenar_carta" value="1" <?php echo ($config['ordenar_carta'] ?? false) ? 'checked' : ''; ?>> Ordenar Carta</label>
                                                 <div class="form-group">
                                                     <label>Mesa para venta directa</label>
@@ -128,16 +128,16 @@
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="ver_ingresos_egresos_cierre_caja" value="1" <?php echo ($config['ver_ingresos_egresos_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Ingresos y Egresos</label>
-                                                <label><input type="checkbox" name="ver_creditos_clientes_cierre_caja" value="1" <?php echo ($config['ver_creditos_clientes_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Creditos a clientes</label>
-                                                <label><input type="checkbox" name="ver_cortesias_clientes_cierre_caja" value="1" <?php echo ($config['ver_cortesias_clientes_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Cortesías</label>
+                                                <label><input type="checkbox" name="ver_creditos_a_clientes_cierre_caja" value="1" <?php echo ($config['ver_creditos_a_clientes_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Creditos a clientes</label>
+                                                <label><input type="checkbox" name="ver_cortesias_cierre_caja" value="1" <?php echo ($config['ver_cortesias_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Cortesías</label>
                                                 <label><input type="checkbox" name="ver_anulaciones_eliminaciones_cierre_caja" value="1" <?php echo ($config['ver_anulaciones_eliminaciones_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Anulaciones y eliminaciones</label>
-                                                <label><input type="checkbox" name="ver_detalles_atencion_cierre_caja" value="1" <?php echo ($config['ver_detalles_atencion_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Detalle de atención</label>
+                                                <label><input type="checkbox" name="ver_detalle_atencion_cierre_caja" value="1" <?php echo ($config['ver_detalle_atencion_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Detalle de atención</label>
                                             </div>
                                         </div>
                                         <div class="panel panel-default">
                                             <div class="panel-body">
-                                                <label><input type="checkbox" name="llenar_forma_pago_no_efectivo_cierre" value="1" <?php echo ($config['llenar_forma_pago_no_efectivo_cierre'] ?? true) ? 'checked' : ''; ?>> Llenar forma de pago que no sea efectivo en cierre manual</label>
-                                                <label><input type="checkbox" name="cierre_caja_por_forma_pago" value="1" <?php echo ($config['cierre_caja_por_forma_pago'] ?? true) ? 'checked' : ''; ?>> Cierre de caja indicando cada forma de pago</label>
+                                                <label><input type="checkbox" name="mostrar_recaudacion_cierre_no_efectivo" value="1" <?php echo ($config['mostrar_recaudacion_cierre_no_efectivo'] ?? true) ? 'checked' : ''; ?>> Llenar forma de pago que no sea efectivo en cierre manual</label>
+                                                <label><input type="checkbox" name="cierre_caja_manual" value="1" <?php echo ($config['cierre_caja_manual'] ?? true) ? 'checked' : ''; ?>> Cierre de caja indicando cada forma de pago</label>
                                                 <label><input type="checkbox" name="imprimir_cierre_caja_impresora_termica" value="1" <?php echo ($config['imprimir_cierre_caja_impresora_termica'] ?? true) ? 'checked' : ''; ?>> Imprimir cierre de caja</label>
                                             </div>
                                         </div>
@@ -227,9 +227,11 @@
                                                         </select>
                                                     </div>
                                                     <div class="col-md-4 form-group">
-                                                        <select name="id_tdocumento">
+                                                        <label>Bodega por defecto</label>
+                                                        <select class="form-control" name="id_bodega_compra">
+                                                            <option value="0">SELECCIONE BODEGA</option>
                                                             <?php foreach($bodegas as $b): ?>
-                                                            <option value="<?= $b->id ?>" <?= $config['id_tdocumento']==$b->id?'selected':'' ?>>
+                                                            <option value="<?= $b->id ?>" <?= ($config['id_bodega_compra'] ?? 0)==$b->id?'selected':'' ?>>
                                                                 <?= $b->nombre ?>
                                                             </option>
                                                             <?php endforeach ?>
@@ -401,9 +403,9 @@
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Ind traslado venta factura electronica</label>
-                                                    <select class="form-control" name="id_ind_traslado_venta">
+                                                    <select class="form-control" name="id_indicador_traslado_venta">
                                                         <option value="0">GUIA DE DESPACHO ELECTRONICA</option>
-                                                        <option value="1">OPERACION CONSTITUYE VENTA</option>
+                                                        <option value="1" <?= ($config['id_indicador_traslado_venta'] ?? 0) == 1 ? 'selected' : '' ?>>OPERACION CONSTITUYE VENTA</option>
                                                     </select>
                                                 </div>
                                                 <div class="form-group">
@@ -419,12 +421,9 @@
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Formato pdf</label>
-                                                    <input type="text" class="form-control" name="formato_pdf_dte" value="<?php echo $config['formato_pdf_dte'] ?? '/17.0.1/caja'; ?>">
+                                                    <input type="text" class="form-control" name="formato_dte" value="<?php echo $config['formato_dte'] ?? ''; ?>">
                                                 </div>
-                                                <div class="form-group">
-                                                    <label>Ruta dte</label>
-                                                    <input type="text" class="form-control" name="ruta_dte" value="<?php echo $config['ruta_dte'] ?? '/17.0.1/caja'; ?>">
-                                                </div>
+
                                                 <div class="form-group">
                                                     <label>Copias dte</label>
                                                     <input type="number" class="form-control" name="copias_dte" value="<?php echo $config['copias_dte'] ?? 1; ?>">
@@ -433,7 +432,7 @@
                                                 <label><input type="checkbox" name="enviar_dte_sii" value="1" <?php echo ($config['enviar_dte_sii'] ?? false) ? 'checked' : ''; ?>> enviar dte al sii</label>
                                                 <div class="form-group">
                                                     <label>Timeout</label>
-                                                    <input type="number" class="form-control" name="timeout_dte" value="<?php echo $config['timeout_dte'] ?? 30; ?>">
+                                                    <input type="number" class="form-control" name="timeout" value="<?php echo $config['timeout'] ?? 20; ?>">
                                                 </div>
                                             </div>
                                         </div>
@@ -443,16 +442,16 @@
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
-                                                    <label>ciudad sii</label>
-                                                    <input type="text" class="form-control" name="ciudad_sii" value="<?php echo $config['ciudad_sii'] ?? ''; ?>">
+                                                    <label>Comuna SII</label>
+                                                    <input type="number" class="form-control" name="id_comuna_sii" value="<?php echo $config['id_comuna_sii'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>resolucion</label>
                                                     <input type="text" class="form-control" name="resolucion_sii" value="<?php echo $config['resolucion_sii'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>año resolucion</label>
-                                                    <input type="number" class="form-control" name="anio_resolucion" value="<?php echo $config['anio_resolucion'] ?? ''; ?>">
+                                                    <label>Año resolución</label>
+                                                    <input type="number" class="form-control" name="anio_resolucion_sii" value="<?php echo $config['anio_resolucion_sii'] ?? ''; ?>">
                                                 </div>
                                             </div>
                                         </div>
@@ -463,11 +462,11 @@
                                             <div class="panel-body">
                                                 <div class="form-group">
                                                     <label>Usuario</label>
-                                                    <input type="text" class="form-control" name="usuario_sii" value="<?php echo $config['usuario_sii'] ?? ''; ?>">
+                                                    <input type="text" class="form-control" name="usuario_dte" value="<?php echo $config['usuario_dte'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>contraseña</label>
-                                                    <input type="password" class="form-control" name="password_sii" value="<?php echo $config['password_sii'] ?? ''; ?>">
+                                                    <label>Contraseña</label>
+                                                    <input type="password" class="form-control" name="clave_usuario_dte" value="<?php echo $config['clave_usuario_dte'] ?? ''; ?>">
                                                 </div>
                                             </div>
                                         </div>
@@ -477,20 +476,20 @@
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
-                                                    <label>ruta api dte</label>
-                                                    <input type="text" class="form-control" name="ruta_api_dte" value="<?php echo $config['ruta_api_dte'] ?? ''; ?>">
+                                                    <label>Ruta API Get PDF</label>
+                                                    <input type="text" class="form-control" name="ruta_api_get_pdf" value="<?php echo $config['ruta_api_get_pdf'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>ruta get pdf</label>
-                                                    <input type="text" class="form-control" name="ruta_get_pdf" value="<?php echo $config['ruta_get_pdf'] ?? ''; ?>">
+                                                    <label>Ruta API Get QR</label>
+                                                    <input type="text" class="form-control" name="ruta_api_get_qr" value="<?php echo $config['ruta_api_get_qr'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>ruta dte codigo qr</label>
                                                     <input type="text" class="form-control" name="ruta_dte_qr" value="<?php echo $config['ruta_dte_qr'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>ruta consulta de folios</label>
-                                                    <input type="text" class="form-control" name="ruta_consulta_folios" value="<?php echo $config['ruta_consulta_folios'] ?? ''; ?>">
+                                                    <label>Ruta consulta de folios</label>
+                                                    <input type="text" class="form-control" name="url_consulta_folio_dte" value="<?php echo $config['url_consulta_folio_dte'] ?? ''; ?>">
                                                 </div>
                                             </div>
                                         </div>
@@ -510,46 +509,43 @@
                                                 <div class="row">
                                                     <div class="col-md-6 form-group">
                                                         <label>Rut</label>
-                                                        <input type="text" class="form-control" name="rut_empresa" value="<?php echo $config['rut_empresa'] ?? ''; ?>">
+                                                        <input type="text" class="form-control" name="rut_empresa" value="<?php echo $empresa['rut_empresa'] ?? ''; ?>">
                                                     </div>
                                                     <div class="col-md-6 form-group">
                                                         <label>DV</label>
-                                                        <input type="text" class="form-control" name="dv_empresa" value="<?php echo $config['dv_empresa'] ?? ''; ?>">
+                                                        <input type="text" class="form-control" name="dv_empresa" maxlength="1" value="<?php echo $empresa['dv_empresa'] ?? ''; ?>">
                                                     </div>
                                                     <div class="col-md-12 form-group">
-                                                        <label>razon social</label>
-                                                        <input type="text" class="form-control" name="razon_social" value="<?php echo $config['razon_social'] ?? ''; ?>">
+                                                        <label>Razón Social</label>
+                                                        <input type="text" class="form-control" name="razon_social" value="<?php echo $empresa['razon_social'] ?? ''; ?>">
                                                     </div>
                                                     <div class="col-md-12 form-group">
-                                                        <label>Nombre fantasia</label>
-                                                        <input type="text" class="form-control" name="nombre_fantasia" value="<?php echo $config['nombre_fantasia'] ?? ''; ?>">
+                                                        <label>Nombre Fantasía</label>
+                                                        <input type="text" class="form-control" name="nombre_fantasia" value="<?php echo $empresa['nombre_fantasia'] ?? ''; ?>">
                                                     </div>
                                                     <div class="col-md-6 form-group">
-                                                        <label>cod act. economica</label>
-                                                        <input type="text" class="form-control" name="cod_actividad_economica" value="<?php echo $config['cod_actividad_economica'] ?? ''; ?>">
+                                                        <label>Código Act. Económica</label>
+                                                        <input type="text" class="form-control" name="codigo_actividad_economica" value="<?php echo $empresa['codigo_actividad_economica'] ?? ''; ?>">
                                                     </div>
                                                     <div class="col-md-6 form-group">
                                                         <label>Giro</label>
-                                                        <input type="text" class="form-control" name="giro" value="<?php echo $config['giro'] ?? ''; ?>">
+                                                        <input type="text" class="form-control" name="giro" value="<?php echo $empresa['giro'] ?? ''; ?>">
                                                     </div>
                                                     <div class="col-md-12 form-group">
-                                                        <label>Direccion</label>
-                                                        <input type="text" class="form-control" name="direccion" value="<?php echo $config['direccion'] ?? ''; ?>">
+                                                        <label>Dirección</label>
+                                                        <input type="text" class="form-control" name="direccion_empresa" value="<?php echo $empresa['direccion_empresa'] ?? ''; ?>">
                                                     </div>
                                                     <div class="col-md-6 form-group">
                                                         <label>Comuna</label>
-                                                        <select class="form-control" name="comuna">
-                                                            <option value="0">COMUNA</option>
-                                                            <option value="1">LINARES</option>
-                                                        </select>
+                                                        <input type="number" class="form-control" name="id_comuna" value="<?php echo $empresa['id_comuna'] ?? ''; ?>">
                                                     </div>
                                                     <div class="col-md-6 form-group">
                                                         <label>Correo</label>
-                                                        <input type="email" class="form-control" name="correo_empresa" value="<?php echo $config['correo_empresa'] ?? ''; ?>">
+                                                        <input type="email" class="form-control" name="mail" value="<?php echo $empresa['mail'] ?? ''; ?>">
                                                     </div>
                                                     <div class="col-md-6 form-group">
-                                                        <label>Telefono</label>
-                                                        <input type="text" class="form-control" name="telefono" value="<?php echo $config['telefono'] ?? ''; ?>">
+                                                        <label>Teléfono</label>
+                                                        <input type="text" class="form-control" name="telefono" value="<?php echo $empresa['telefono'] ?? ''; ?>">
                                                     </div>
                                                 </div>
                                             </div>
@@ -561,23 +557,24 @@
                                             <div class="panel-body">
                                                 <div class="row">
                                                     <div class="col-md-6 form-group">
-                                                        <label>Cod sii</label>
-                                                        <input type="text" class="form-control" name="cod_sucursal_sii" value="<?php echo $config['cod_sucursal_sii'] ?? ''; ?>">
+                                                        <label>Código SII Sucursal</label>
+                                                        <input type="number" class="form-control" name="codigo_sii" value="<?php echo $empresa['codigo_sii'] ?? ''; ?>">
                                                     </div>
                                                     <div class="col-md-6 form-group">
-                                                        <label>Nombre sucursal</label>
-                                                        <input type="text" class="form-control" name="nombre_sucursal" value="<?php echo $config['nombre_sucursal'] ?? ''; ?>">
+                                                        <label>Código Sucursal</label>
+                                                        <input type="text" class="form-control" name="codigo_sucursal" value="<?php echo $empresa['codigo_sucursal'] ?? ''; ?>">
+                                                    </div>
+                                                    <div class="col-md-6 form-group">
+                                                        <label>Nombre Sucursal</label>
+                                                        <input type="text" class="form-control" name="nombre_sucursal" value="<?php echo $empresa['nombre_sucursal'] ?? ''; ?>">
                                                     </div>
                                                     <div class="col-md-12 form-group">
-                                                        <label>Direccion sucursal</label>
-                                                        <input type="text" class="form-control" name="direccion_sucursal" value="<?php echo $config['direccion_sucursal'] ?? ''; ?>">
+                                                        <label>Dirección Sucursal</label>
+                                                        <input type="text" class="form-control" name="direccion_sucursal" value="<?php echo $empresa['direccion_sucursal'] ?? ''; ?>">
                                                     </div>
                                                     <div class="col-md-6 form-group">
-                                                        <label>Comuna</label>
-                                                        <select class="form-control" name="comuna_sucursal">
-                                                            <option value="0">COMUNA</option>
-                                                            <option value="1">LINARES</option>
-                                                        </select>
+                                                        <label>Comuna Sucursal</label>
+                                                        <input type="number" class="form-control" name="id_comuna_sucursal" value="<?php echo $empresa['id_comuna_sucursal'] ?? ''; ?>">
                                                     </div>
                                                 </div>
                                             </div>
