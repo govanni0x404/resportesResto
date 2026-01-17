@@ -186,6 +186,60 @@
 
 
     /*fin spiner */
+
+    /* Fix scrolling for dropdown menus - only first level */
+    .navbar-top-links > .dropdown > .dropdown-menu {
+      max-height: 80vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* Enable scrolling for nested dropdowns */
+    .dropdown-menu .dropdown-menu {
+      max-height: 70vh;
+      overflow-y: auto;
+      overflow-x: visible;
+    }
+
+    /* Level 3 dropdowns */
+    .dropdown-menu .dropdown-menu .dropdown-menu {
+      position: absolute !important;
+      left: 100%;
+      top: 0;
+      max-height: 70vh;
+      overflow-y: auto;
+      z-index: 1002;
+    }
+
+    /* Responsive adjustments for tablets */
+    @media (max-width: 768px) {
+      .navbar-top-links > .dropdown > .dropdown-menu {
+        max-height: 60vh;
+      }
+
+      .dropdown-menu .dropdown-menu {
+        max-height: 60vh;
+      }
+
+      .dropdown-menu .dropdown-menu .dropdown-menu {
+        max-height: 60vh;
+      }
+    }
+
+    /* Responsive adjustments for small phones */
+    @media (max-width: 480px) {
+      .navbar-top-links > .dropdown > .dropdown-menu {
+        max-height: 50vh;
+      }
+
+      .dropdown-menu .dropdown-menu {
+        max-height: 50vh;
+      }
+
+      .dropdown-menu .dropdown-menu .dropdown-menu {
+        max-height: 50vh;
+      }
+    }
 </style>
 
 
