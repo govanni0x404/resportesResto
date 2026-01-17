@@ -676,7 +676,7 @@
                 </button>   
                 <!-- <button id="btnActualizarAgregado" type="button" class="btn btn-primary"><i
                         class=""></i>ACTUALIZAR AGREGADO</button> -->
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i
+                <button type="button" class="btn btn-default" onclick="cancelarModalAgregados()" data-dismiss="modal"><i
                         class=""></i>SALIR</button>
             </div>
             <!-- FIN BOTONES  -->

@@ -419,8 +419,16 @@ function ListadoDeAgregadosParaElProducto(objSelected) {
 
 // Detectar cierre del modal de agregados
 $(document).ready(function() {
-    $('#ModalAgregadosDelProducto').on('hidden.bs.modal', function() {
-        // Solo ejecutar si venimos del flujo de creación
+    $('#ModalAgregadosDelProducto').on('hidden.bs.modal', function(e) {
+        // ⭐ VERIFICAR SI FUE CANCELACIÓN MANUAL O CIERRE AUTOMÁTICO
+        if ($(this).data('cancelado') === true) {
+            console.log("✓ Modal de agregados cancelado manualmente");
+            $(this).data('cancelado', false); // Resetear flag
+            // NO ejecutar finalizarCreacionProductoConAgregados
+            return;
+        }
+        
+        // Solo ejecutar si venimos del flujo de creación Y no fue cancelado
         if (typeof debeAbrirAgregados !== 'undefined' && debeAbrirAgregados && datosProductoPendiente !== null) {
             finalizarCreacionProductoConAgregados();
         }
@@ -430,13 +438,60 @@ $(document).ready(function() {
     $('#ModalAgregadosDelProducto').on('shown.bs.modal', function() {
         if (typeof debeAbrirAgregados !== 'undefined' && debeAbrirAgregados) {
             $('#btnFinalizarCreacion').show();
-            $('#ModalAgregadosDelProducto .modal-footer button[data-dismiss="modal"]').text('CANCELAR');
+            $('#btnCancelarAgregados').show().text('CANCELAR');
         } else {
             $('#btnFinalizarCreacion').hide();
-            $('#ModalAgregadosDelProducto .modal-footer button[data-dismiss="modal"]').text('SALIR');
+            $('#btnCancelarAgregados').text('SALIR');
         }
     });
 });
+
+function cancelarModalAgregados() {
+    if (typeof debeAbrirAgregados !== 'undefined' && debeAbrirAgregados) {
+        // Marcar que fue cancelado manualmente
+        $('#ModalAgregadosDelProducto').data('cancelado', true);
+        
+        swal({
+            title: "¿Cancelar agregados?",
+            text: "El producto se guardará sin agregados. ¿Desea continuar?",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, cancelar",
+            cancelButtonText: "No, volver",
+            closeOnConfirm: true
+        }, function(isConfirm) {
+            if (isConfirm) {
+                // Cerrar solo el modal de agregados
+                $('#ModalAgregadosDelProducto').modal('hide');
+                
+                // Resetear variables de flujo
+                debeAbrirAgregados = false;
+                datosProductoPendiente = null;
+                preciosExistentes = [];
+                
+                // Cerrar modal principal
+                $('#modalNuevoProducto').modal('hide');
+                
+                // Mostrar mensaje
+                showAppAlert('success', "Producto guardado sin agregados", {
+                    duration: 4000,
+                    image: base_url + 'assets/img/success.gif'
+                });
+                
+                // Recargar tabla
+                if (typeof tablaCartaProductos !== 'undefined') {
+                    tablaCartaProductos.ajax.reload();
+                }
+            } else {
+                // Si decide no cancelar, resetear el flag
+                $('#ModalAgregadosDelProducto').data('cancelado', false);
+            }
+        });
+    } else {
+        // Modo edición normal - solo cerrar
+        $('#ModalAgregadosDelProducto').modal('hide');
+    }
+}
 
 // Nueva función para finalizar con validación
 function finalizarYCerrarAgregados() {
@@ -456,10 +511,14 @@ function finalizarYCerrarAgregados() {
             closeOnConfirm: true
         }, function(isConfirm) {
             if (isConfirm) {
+                // NO marcar como cancelado - es un cierre válido
+                $('#ModalAgregadosDelProducto').data('cancelado', false);
                 $('#ModalAgregadosDelProducto').modal('hide');
             }
         });
     } else {
+        // Hay agregados - cerrar normalmente
+        $('#ModalAgregadosDelProducto').data('cancelado', false);
         $('#ModalAgregadosDelProducto').modal('hide');
     }
 }
