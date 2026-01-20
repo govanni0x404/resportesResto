@@ -187,28 +187,28 @@
 
     /*fin spiner */
 
-    /* Fix scrolling for dropdown menus - only first level */
+    /* Fix scrolling for dropdown menus */
     .navbar-top-links > .dropdown > .dropdown-menu {
       max-height: 80vh;
       overflow-y: auto;
-      overflow-x: hidden;
+      overflow-x: visible;
+      position: relative;
+      z-index: 1000;
     }
 
-    /* Enable scrolling for nested dropdowns */
+    /* Scrollable nested dropdowns */
     .dropdown-menu .dropdown-menu {
       max-height: 70vh;
-      overflow-y: auto;
+      overflow-y: scroll;
       overflow-x: visible;
+      position: absolute;
+      z-index: 1001;
     }
-
-    /* Level 3 dropdowns */
-    .dropdown-menu .dropdown-menu .dropdown-menu {
-      position: absolute !important;
-      left: 100%;
-      top: 0;
-      max-height: 70vh;
-      overflow-y: auto;
-      z-index: 1002;
+    
+    /* Ensure dropdown items don't clip their children */
+    .dropdown-menu .dropdown {
+      position: relative;
+      overflow: visible;
     }
 
     /* Responsive adjustments for tablets */
@@ -218,10 +218,6 @@
       }
 
       .dropdown-menu .dropdown-menu {
-        max-height: 60vh;
-      }
-
-      .dropdown-menu .dropdown-menu .dropdown-menu {
         max-height: 60vh;
       }
     }
@@ -235,10 +231,40 @@
       .dropdown-menu .dropdown-menu {
         max-height: 50vh;
       }
+    }
 
-      .dropdown-menu .dropdown-menu .dropdown-menu {
-        max-height: 50vh;
-      }
+    /* Estilos para dropdowns anidados */
+    .dropdown-menu .dropdown .dropdown-menu {
+      display: none !important;
+      position: fixed;
+      left: auto;
+      top: auto;
+      margin: 0;
+      min-width: 250px;
+      z-index: 2000;
+      background: white;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+
+    .dropdown-menu .dropdown:hover > .dropdown-menu {
+      display: block !important;
+    }
+
+    .dropdown-menu .dropdown.open > .dropdown-menu {
+      display: block !important;
+    }
+
+    .dropdown-menu .dropdown > a {
+      position: relative;
+      padding-right: 20px;
+    }
+
+    .dropdown-menu .dropdown > a::after {
+      content: '›';
+      position: absolute;
+      right: 5px;
+      font-size: 18px;
     }
 </style>
 
@@ -249,6 +275,63 @@
       <div class="loader-text" data-loader-text>Cargando…</div>
     </div>
   </div>
+  
+  <script>
+    // Manejar dropdowns anidados dentro de menús
+    document.addEventListener('DOMContentLoaded', function() {
+      // Encontrar todos los dropdowns anidados
+      const nestedDropdowns = document.querySelectorAll('.dropdown-menu .dropdown > a.dropdown-toggle');
+      const dropdownItems = document.querySelectorAll('.dropdown-menu .dropdown');
+      
+      nestedDropdowns.forEach(function(toggle) {
+        toggle.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const li = this.closest('.dropdown');
+          const menu = li.querySelector('.dropdown-menu');
+          
+          if (menu) {
+            const isOpen = li.classList.contains('open');
+            // Cerrar otros dropdowns al mismo nivel
+            const siblings = li.parentElement.querySelectorAll('.dropdown.open');
+            siblings.forEach(function(sibling) {
+              sibling.classList.remove('open');
+            });
+            // Toggle del actual
+            if (!isOpen) {
+              li.classList.add('open');
+              posicionarSubmenu(li, menu);
+            } else {
+              li.classList.remove('open');
+            }
+          }
+        });
+        
+        // Cerrar otros cuando se hace hover
+        toggle.closest('.dropdown').addEventListener('mouseenter', function() {
+          const parent = toggle.closest('.dropdown-menu');
+          if (parent) {
+            const siblings = parent.querySelectorAll('.dropdown.open');
+            siblings.forEach(function(sibling) {
+              if (sibling !== this) {
+                sibling.classList.remove('open');
+              }
+            }.bind(this));
+          }
+        });
+      });
+      
+      // Función para posicionar el submenú correctamente
+      function posicionarSubmenu(parentLi, menu) {
+        setTimeout(function() {
+          const rect = parentLi.getBoundingClientRect();
+          menu.style.top = rect.top + 'px';
+          menu.style.left = (rect.right) + 'px';
+        }, 0);
+      }
+    });
+  </script>
 </head>
 
 <body>
