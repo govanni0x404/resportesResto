@@ -188,13 +188,13 @@
     /*fin spiner */
 
     /* Fix scrolling for dropdown menus */
-    .navbar-top-links > .dropdown > .dropdown-menu {
+    /* .navbar-top-links > .dropdown > .dropdown-menu {
       max-height: 80vh;
       overflow-y: auto;
       overflow-x: visible;
       position: relative;
       z-index: 1000;
-    }
+    } */
 
     /* Scrollable nested dropdowns */
     .dropdown-menu .dropdown-menu {
@@ -265,6 +265,20 @@
       position: absolute;
       right: 5px;
       font-size: 18px;
+    }
+
+    .navbar-top-links > .dropdown {
+    position: relative;
+    }
+
+    .navbar-top-links > .dropdown > .dropdown-menu {
+    position: absolute !important;
+    top: 100%;
+    right: 0;
+    left: auto;
+    margin-top: 0;
+    max-height: none !important;
+    overflow: visible !important;
     }
 </style>
 
@@ -805,11 +819,11 @@
 
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Consultas</a>
                                 <ul class="dropdown-menu">
+                                    <li><a href="<?php echo base_url() ?>index.php/InsumosPorBodega"><i class="ti-alert"></i>Stock de Insumos</a></li>
+                                    <li><a href="<?php echo base_url() ?>index.php/DetalleOperaciones"><i class="pe-7s-cash"></i>Detalle De Ventas</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/CierresDeCaja"><i class="ti-clipboard"></i>Cierres de Caja</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/InsumosPorBodega"><i class="ti-alert"></i>Stock Por Bodega</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/ResumenDeCompras"><i class="fa fa-crop"></i>Resumen De Compras</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/ConsolidadoVentas"><i class="fa fa-crop"></i>Consolidado De Ventas</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/DetalleOperaciones"><i class="pe-7s-cash"></i>Detalle De Operaciones</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/VentasPorProducto"><i class="pe-7s-cash"></i>Ventas Por Producto</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/PropinasPorGarzon"><i class="pe-7s-cash"></i>Propinas Por Garzon</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/ResumenAnulaciones"><i class="pe-7s-cash"></i>Resumen De Anulaciones/Eliminaciones</a></li>
