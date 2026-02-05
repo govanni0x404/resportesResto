@@ -1,0 +1,14 @@
+services:
+  web:
+    image: php:7.4-apache
+    container_name: mi_proyecto_web
+    ports:
+      - "8082:80"
+    volumes:
+      - .:/var/www/html
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: >
+      sh -c "apt-get update && apt-get install -y libpq-dev 
+      && docker-php-ext-install pgsql pdo_pgsql
+      && apache2-foreground"

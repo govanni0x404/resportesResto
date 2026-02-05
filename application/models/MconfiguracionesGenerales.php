@@ -38,7 +38,6 @@ class MconfiguracionesGenerales extends CI_Model {
                 'codigo_sii' => 0,
                 'mail' => '',
                 'nombre_fantasia' => '',
-                'telefono' => ''
             ];
             $this->db->insert('empresa', $data);
             

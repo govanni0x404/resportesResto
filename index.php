@@ -54,6 +54,7 @@
  * NOTE: If you change these, also change the error_reporting() code below
  */
 	define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
+	error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
 
 /*
  *---------------------------------------------------------------

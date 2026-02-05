@@ -101,10 +101,10 @@ $db['default'] = array(
 
 $db['76193938-6'] = array(
 	'dsn' => '',
-	'hostname' => 'localhost',
+	'hostname' => 'host.docker.internal', //localhost
 	'username' => 'postgres',
 	'password' => '123datamaule2019.,#-',
-	'database' => 'baseVaciaResto',
+	'database' => 'laToscana',
 	'dbdriver' => 'postgre',
 	'dbprefix' => '',
 	'pconnect' => FALSE,

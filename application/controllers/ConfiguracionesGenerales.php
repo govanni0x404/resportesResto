@@ -6,13 +6,13 @@ class ConfiguracionesGenerales extends CI_Controller {
 
     public function __construct() {
         parent::__construct();
-        $this->load->model('Mconfiguracionesgenerales');
+        $this->load->model('MconfiguracionesGenerales');
     }
 
     public function index() {
-        $data['config'] = $this->Mconfiguracionesgenerales->get_configuracion();
-        $data['empresa'] = $this->Mconfiguracionesgenerales->get_empresa();
-        $data['bodegas'] = $this->Mconfiguracionesgenerales->get_bodegas();
+        $data['config'] = $this->MconfiguracionesGenerales->get_configuracion();
+        $data['empresa'] = $this->MconfiguracionesGenerales->get_empresa();
+        $data['bodegas'] = $this->MconfiguracionesGenerales->get_bodegas();
         $this->load->view('menuTop.php', $data);
         $this->load->view('configuracionesgenerales/configuracionesgenerales', $data);
         $this->load->view('menuFooter.php');
