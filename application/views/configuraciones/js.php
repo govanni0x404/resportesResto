@@ -1,113 +1,44 @@
 <script>
-    var base_url = "<?php echo base_url(); ?>";
+    function openTab(evt, tabName) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tab");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].className = tabcontent[i].className.replace(" active", "");
+        }
+        tablinks = document.getElementsByClassName("tablink");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(tabName).className += " active";
+        evt.currentTarget.className += " active";
+    }
+
     $(document).ready(function() {
-        cargarConfiguracionesRestoWeb();
-        ValidacionCheckedTodosLosMontos();
-        ValidacionCheckedMontoTotal();
-    });
-
-    function GrabarConfiguraciones() {
-        swal({
-                title: "Confirmacion!",
-                text: "Esta segur@ De Guardar Las Configuraciones",
-                type: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#EB360F",
-                confirmButtonText: "Aceptar!",
-                cancelButtonText: "Cancelar!",
-                closeOnConfirm: true,
-                closeOnCancel: false
-            },
-            function(isConfirm) {
-                if (isConfirm) {
-                    if ($('#ckDesglozarTodosLosMontosEnReportes').is(":checked")) {
-                        var desglozarTodosLosMontosEnReportes = 1
+        $('#configForm').submit(function(e) {
+            e.preventDefault();
+            var $submitBtn = $(this).find('button[type="submit"]');
+            $submitBtn.prop('disabled', true).text('Guardando...');
+            
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $(this).serialize(),
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        alert('Configuración guardada exitosamente');
+                        location.reload();
                     } else {
-                        var desglozarTodosLosMontosEnReportes = 0
+                        alert('Error al guardar la configuración');
+                        $submitBtn.prop('disabled', false).text('Grabar');
                     }
-
-                    if ($('#ckDesglozarSoloMontoTotalEnReportes').is(":checked")) {
-                        var desglozarSoloMontoTotalEnReportes = 1
-                    } else {
-                        var desglozarSoloMontoTotalEnReportes = 0
-                    }
-
-                    var miJson = {
-                        'desglozar_monto_neto_iva_total_en_reportes': desglozarTodosLosMontosEnReportes,
-                        'desglozar_solo_monto_total_en_reportes': desglozarSoloMontoTotalEnReportes,
-                    };
-                    $.post(base_url + "index.php/Configuraciones/grabarConfiguraciones", {
-                        'prod': miJson
-                    }, function() {}).done(function(datos) {
-                        let positionError = datos.search("ERROR:");
-                        if (parseFloat(positionError) > 0) {
-                            swal("Error", "Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(positionError, 150), "error");
-                        } else {
-                            swal("Configuraciones Actualizadas!", "Se Actualizaron Las Configuraciones!", "success");
-
-                        }
-                    }).fail(function() {
-                        swal("Se produjo un error al realizar La Actualizacion, favor vuelva a intentarlo");
-                    });
-                    swal.close();
-                } else {
-                    swal.close();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', xhr.responseText);
+                    alert('Error en la solicitud: ' + error);
+                    $submitBtn.prop('disabled', false).text('Grabar');
                 }
             });
-    }
-
-    $('#btnGrabarConfiguraciones').click(function() {
-        GrabarConfiguraciones();
-    })
-
-    function ValidacionCheckedTodosLosMontos() {
-        if ($('#ckDesglozarTodosLosMontosEnReportes').prop('checked') == true) {
-            $('#ckDesglozarSoloMontoTotalEnReportes').prop('disabled', true);
-            $('#ckDesglozarSoloMontoTotalEnReportes').prop('checked', false);
-        } else {
-            $('#ckDesglozarSoloMontoTotalEnReportes').prop('disabled', false);
-            $('#ckDesglozarSoloMontoTotalEnReportes').prop('checked', true);
-        }
-    }
-    $('#ckDesglozarTodosLosMontosEnReportes').click(function() {
-        ValidacionCheckedTodosLosMontos();
-    })
-
-    function ValidacionCheckedMontoTotal() {
-        if ($('#ckDesglozarSoloMontoTotalEnReportes').prop('checked') == true) {
-            $('#ckDesglozarTodosLosMontosEnReportes').prop('disabled', true);
-            $('#ckDesglozarTodosLosMontosEnReportes').prop('checked', false);
-
-        } else {
-            $('#ckDesglozarTodosLosMontosEnReportes').prop('disabled', false);
-            $('#ckDesglozarTodosLosMontosEnReportes').prop('checked', true);
-
-        }
-    }
-    $('#ckDesglozarSoloMontoTotalEnReportes').click(function() {
-        ValidacionCheckedMontoTotal();
-    })
-
-    function cargarConfiguracionesRestoWeb() {
-        $.post(base_url + "index.php/Configuraciones/obtenerConfiguracionesRestoWeb", {}, function(datos) {
-                var obj = $.parseJSON(datos);
-                $.each(obj, function(index, v) {
-                    if (v.desglozar_monto_neto_iva_total_en_reportes == 't') {
-                        $("#ckDesglozarTodosLosMontosEnReportes").prop("checked", true);
-                    } else {
-                        $("#ckDesglozarTodosLosMontosEnReportes").prop("checked", false);
-                    }
-
-                    if (v.desglozar_solo_monto_total_en_reportes == 't') {
-                        $("#ckDesglozarSoloMontoTotalEnReportes").prop("checked", true);
-                    } else {
-                        $("#ckDesglozarSoloMontoTotalEnReportes").prop("checked", false);
-                    }
-                });
-            }).done(function() {})
-            .fail(function() {
-                alert("Se produjo un error al realizar la consulta");
-            })
-            .always(function() {});
-    }
+        });
+    });
 </script>

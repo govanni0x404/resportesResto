@@ -470,12 +470,12 @@
                                 <?php if ($this->session->userdata('id_rol') == 1) : ?>
                                     <!--<li><a href="<?php echo base_url() ?>index.php/Usuarios"><i class="ti-user"></i>&nbsp; Usuarios</a></li> -->
                                     <!--<li><a href="<?php echo base_url() ?>index.php/Roles"><i class="ti-user"></i>&nbsp; Roles De Usuarios</a></li>-->
-                                    <li><a href="<?php echo base_url() ?>index.php/Configuraciones"><i class="ti-gear"></i>&nbsp; Configuraciones</a></li>
+                                    <!--<li><a href="<?php echo base_url() ?>index.php/Configuraciones"><i class="ti-gear"></i>&nbsp; Configuraciones</a></li>-->
                                 <?php endif; ?>
                                 <!-- <li><a href="<?php echo base_url() ?>index.php/PerfilDeUsuario"><i
                                             class="ti-user"></i>&nbsp; Perfil De Usuario</a></li>-->
                                 <li><a href="<?php echo base_url() ?>index.php/Login/logout_ci"><i class=" pe-7s-power"></i>&nbsp; Cerrar Sesion</a></li>
-                                <li class="active"><a href="<?php echo base_url() ?>index.php/ConfiguracionesGenerales"><i class=""></i>Configuraciones</a></li>
+                                <li class="active"><a href="<?php echo base_url() ?>index.php/Configuraciones"><i class=""></i>Configuraciones</a></li>
                             </ul>
                             <div class="modal fade modal-success" id="modalCambioClienteSucursal" tabindex="-1" role="dialog">
                                 <div class="modal-dialog" role="document">
