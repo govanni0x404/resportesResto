@@ -23,7 +23,7 @@ class Provincias extends CI_Controller
     $this->load->view('provincia/provincia.php');
     $this->load->view('menuFooter.php');
     $this->load->view('provincia/listadoProvincia.php');
-    $this->load->view('provincia/jsNuevaprovincia.php');
+    $this->load->view('provincia/jsNuevaProvincia.php');
     $this->load->view('funciones.php');
   }
 
