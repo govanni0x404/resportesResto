@@ -13,8 +13,9 @@ class Mmesas extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-    
+    //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+      
     $q = "SELECT m.id_mesa, m.disponible, m.bloqueo_caja, m.id_cotizacion, 
                  m.bloqueo_pedido, m.id_garzon, m.id_recinto, m.vigente
           FROM mesa m
@@ -52,7 +53,8 @@ class Mmesas extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     
     $resultados = array();
     
@@ -85,7 +87,8 @@ class Mmesas extends CI_Model
       if (strlen($this->session->userdata('nombre_usuario')) == 0) {
           redirect(base_url());
       }
-      $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+      //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+      $this->load->helper('tenant'); $this->db = get_tenant_db($this);
       
       $this->db->where('id_mesa', $id);
       $exists = $this->db->get('mesa');

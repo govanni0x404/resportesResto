@@ -14,7 +14,7 @@ class Mproduccion extends CI_Model
             redirect(base_url());
         }
         
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         
         $q = "SELECT 
                 p.id_produccion,
@@ -45,7 +45,7 @@ class Mproduccion extends CI_Model
             redirect(base_url());
         }
         
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->db->insert('produccion', $data);
         return $this->db->insert_id();
     }
@@ -56,7 +56,7 @@ class Mproduccion extends CI_Model
             redirect(base_url());
         }
         
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         
         $q = "SELECT saldo as stock_actual 
               FROM stock_insumo 
@@ -78,7 +78,7 @@ class Mproduccion extends CI_Model
             redirect(base_url());
         }
         
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         
         $this->db->where('id_insumo', $id_insumo);
         $this->db->where('id_bodega', $id_bodega);

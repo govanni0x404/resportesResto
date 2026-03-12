@@ -13,7 +13,7 @@ class MmensajePorProducto extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT mp.id_mensaje_producto, p.nombre_producto, mp.mensaje, mp.vigente
         from mensaje_producto mp
         join producto p on p.id_producto=mp.id_producto
@@ -46,7 +46,7 @@ class MmensajePorProducto extends CI_Model
 			if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 				redirect(base_url()); //redireccionar al login
 			}
-			$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+			$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         if ($id) {
             $this->db->where('id_mensaje_producto', $id);
             $this->db->update('mensaje_producto', $data);

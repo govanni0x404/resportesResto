@@ -72,7 +72,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 (ENVIRONMENT !== 'production')
 */
-$active_group = '76193938-6';
+$active_group = 'default';
 $query_builder = TRUE;
 
 
@@ -101,10 +101,10 @@ $db['default'] = array(
 
 $db['76193938-6'] = array(
 	'dsn' => '',
-	'hostname' => 'host.docker.internal', //localhost
-	'username' => 'postgres',
-	'password' => '123datamaule2019.,#-',
-	'database' => 'baseVaciaResto',
+	'hostname' => 'datamaule.cl', //localhost
+	'username' => 'ccerda',
+	'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
+	'database' => 'ccerda_pruebasrestoweb',
 	'dbdriver' => 'postgre',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
@@ -128,6 +128,29 @@ $db['9209734-K'] = array(
 	'username' => 'ccerda',
 	'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
 	'database' => 'ccerda_escuela_artilleria',
+	'dbdriver' => 'postgre',
+	'dbprefix' => '',
+	'pconnect' => FALSE,
+	'db_debug' => TRUE,
+	'cache_on' => FALSE,
+	'cachedir' => '',
+	'char_set' => 'utf8',
+	'dbcollat' => 'utf8_general_ci',
+	'swap_pre' => '',
+	'encrypt' => FALSE,
+	'compress' => FALSE,
+	'stricton' => FALSE,
+	'failover' => array(),
+	'save_queries' => TRUE,
+	'schema'=>'public'
+);
+
+$db['77115675-4'] = array(
+	'dsn' => '',
+	'hostname' => 'datamaule.cl',
+	'username' => 'ccerda',
+	'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
+	'database' => 'ccerda_pruebasrestoweb',
 	'dbdriver' => 'postgre',
 	'dbprefix' => '',
 	'pconnect' => FALSE,

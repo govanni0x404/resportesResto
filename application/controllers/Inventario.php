@@ -23,7 +23,7 @@ class Inventario extends CI_Controller {
         
         $this->load->view('menuTop.php', $data);
         $this->load->view('menuFooter.php');
-        $this->load->view('inventario/listadoinventario', $data);
+        $this->load->view('inventario/listadoInventario', $data);
         $this->load->view('inventario/js.php');
     }
 

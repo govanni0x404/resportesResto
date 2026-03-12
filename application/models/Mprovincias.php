@@ -13,7 +13,7 @@ class Mprovincias extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT id_provincia, nombre_provincia from provincia order by nombre_provincia asc";
     $query = $this->db->query($q)->result();
     return $query;
@@ -24,7 +24,7 @@ class Mprovincias extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT p.id_provincia, p.nombre_provincia from provincia p 
     order by p.id_provincia asc";
 
@@ -53,7 +53,7 @@ class Mprovincias extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     if ($id) {
       $this->db->where('id_provincia', $id);
       $this->db->update('provincia', $data);

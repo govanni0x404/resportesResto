@@ -13,7 +13,7 @@ class Mturnos extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT t.id_turno, t.nombre_turno, t.cierre_turno, t.informe_z, t.impedir_cierre_con_mesas_abiertas from turno t 
     order by t.id_turno asc";
 
@@ -45,7 +45,7 @@ class Mturnos extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     if ($id) {
       $this->db->where('id_turno', $id);
       $this->db->update('turno', $data);

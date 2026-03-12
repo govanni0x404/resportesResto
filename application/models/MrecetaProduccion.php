@@ -14,7 +14,7 @@ class MrecetaProduccion extends CI_Model
             redirect(base_url());
         }
         
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         
         $q = "SELECT 
                 rp.id_receta_produccion,
@@ -66,7 +66,7 @@ class MrecetaProduccion extends CI_Model
             redirect(base_url());
         }
         
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         
         if ($id && $id > 0) {
             // Actualizar
@@ -89,7 +89,7 @@ class MrecetaProduccion extends CI_Model
             redirect(base_url());
         }
         
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         
         $q = "SELECT * FROM receta_produccion 
               WHERE UPPER(nombre_receta_produccion) = UPPER('" . $nombre . "')
@@ -105,7 +105,7 @@ class MrecetaProduccion extends CI_Model
             redirect(base_url());
         }
         
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         
         $q = "SELECT 
                 drp.id_detalle_receta_produccion,
@@ -151,7 +151,7 @@ class MrecetaProduccion extends CI_Model
             redirect(base_url());
         }
         
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->db->insert('detalle_receta_produccion', $data);
         return $this->db->insert_id();
     }
@@ -162,7 +162,7 @@ class MrecetaProduccion extends CI_Model
             redirect(base_url());
         }
         
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->db->where('id_detalle_receta_produccion', $id_detalle);
         return $this->db->delete('detalle_receta_produccion');
     }

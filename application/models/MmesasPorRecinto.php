@@ -13,7 +13,7 @@ class MmesasPorRecinto extends CI_Model
   //   if (strlen($this->session->userdata('nombre_usuario')) == 0) {
   //     redirect(base_url());
   //   }
-  //   $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+  //   $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     
   //   // Obtener mesas sin asignar (id_recinto = 0) y vigentes
   //   $q = "SELECT m.id_mesa, m.disponible, m.id_recinto, m.vigente, m.pos, 
@@ -47,7 +47,7 @@ class MmesasPorRecinto extends CI_Model
 
   public function ListadoDeMesas()
   {
-      $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+      $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
       $q = " SELECT 
               m.id_mesa,
@@ -89,7 +89,7 @@ class MmesasPorRecinto extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     
     // Obtener todos los recintos activos
     $q = "SELECT r.id_recinto, r.nombre_recinto
@@ -108,7 +108,7 @@ class MmesasPorRecinto extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     
     $this->db->where('id_mesa', $id_mesa);
     $exists = $this->db->get('mesa');

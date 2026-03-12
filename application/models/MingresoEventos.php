@@ -13,7 +13,7 @@ class MingresoEventos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT i.id_ingreso_evento, i.nombre_ingreso_evento from ingreso_evento i
     order by i.id_ingreso_evento asc";
 
@@ -42,7 +42,7 @@ class MingresoEventos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     if ($id) {
       $this->db->where('id_ingreso_evento', $id);
       $this->db->update('ingreso_evento', $data);

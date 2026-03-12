@@ -13,7 +13,7 @@ class MfamiliasReceta extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT f.id_familia_receta, f.nombre_familia_receta from familia_receta f order by f.id_familia_receta asc";
 
     $consulta = $this->db->query($q);
@@ -41,7 +41,7 @@ class MfamiliasReceta extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     if ($id) {
       $this->db->where('id_familia_receta', $id);
       $this->db->update('familia_receta', $data);

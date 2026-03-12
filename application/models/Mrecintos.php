@@ -13,7 +13,7 @@ class Mrecintos extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT r.id_recinto, r.nombre_recinto, r.vigente, d.nombre_dimpresion from recinto r 
     left join dimpresion d on r.id_dimpresion=d.id_dimpresion
     order by r.id_recinto asc";
@@ -45,7 +45,7 @@ class Mrecintos extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     if ($id) {
       $this->db->where('id_recinto', $id);
       $this->db->update('recinto', $data);
@@ -59,7 +59,7 @@ class Mrecintos extends CI_Model
 
   public function obtenerUltimoDestinoImpresion()
   {
-      $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+      $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
       return $this->db
           ->select('id_dimpresion')

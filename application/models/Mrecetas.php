@@ -14,7 +14,7 @@ class Mrecetas extends CI_Model
 			redirect(base_url());
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT r.*, fr.nombre_familia_receta
         from receta r
         join familia_receta fr on r.id_familia_receta = fr.id_familia_receta";
@@ -56,7 +56,7 @@ class Mrecetas extends CI_Model
 			redirect(base_url());
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT i.*, um.nombre_umedida
 		from insumo i
 		join umedida um on i.id_umedida_receta = um.id_umedida where i.vigente = true";
@@ -70,7 +70,7 @@ class Mrecetas extends CI_Model
 			redirect(base_url());
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT * from umedida";
 		$query = $this->db->query($q)->result();
 		return $query;
@@ -82,7 +82,7 @@ class Mrecetas extends CI_Model
 			redirect(base_url());
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT * from familia_receta";
 		$query = $this->db->query($q)->result();
 		return $query;
@@ -94,7 +94,7 @@ class Mrecetas extends CI_Model
 			redirect(base_url());
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT * from seccion";
 		$query = $this->db->query($q)->result();
 		return $query;
@@ -106,7 +106,7 @@ class Mrecetas extends CI_Model
 			redirect(base_url());
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT dr.*, i.*, um.*, r.preparacion
 		from detalle_receta dr
 		join receta r on dr.id_receta = r.id_receta
@@ -119,7 +119,7 @@ class Mrecetas extends CI_Model
 
 	public function grabarReceta($id, $data)
 	{
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_receta', $id);
 			$this->db->update('receta', $data);
@@ -136,7 +136,7 @@ class Mrecetas extends CI_Model
 			redirect(base_url());
 		}
 		
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		
 		if ($idDetalle > 0) {
 			// Actualizar detalle existente
@@ -156,7 +156,7 @@ class Mrecetas extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$this->db->simple_query("UPDATE detalle_receta SET vigente = false where id_receta = " . $idReceta . " and id_detalle_receta not in (" . $idDetalle . ") and id_insumo not in (" . $idInsumo . ")");
 		return 1;
 	}
@@ -167,7 +167,7 @@ class Mrecetas extends CI_Model
 			redirect(base_url());
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_familia_receta', $id);
 			$this->db->update('familia_receta', $data);
@@ -185,7 +185,7 @@ class Mrecetas extends CI_Model
 			redirect(base_url());
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_seccion', $id);
 			$this->db->update('seccion', $data);

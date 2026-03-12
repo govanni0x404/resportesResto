@@ -13,7 +13,7 @@ class Mdelivery extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT s.id_sector, s.nombre_sector from sector s order by s.id_sector asc";
 
     $consulta = $this->db->query($q);
@@ -41,7 +41,7 @@ class Mdelivery extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     if ($id) {
       $this->db->where('id_sector', $id);
       $this->db->update('sector', $data);

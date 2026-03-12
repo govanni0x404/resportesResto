@@ -12,7 +12,7 @@ class Mlogin extends CI_Model
 
 	public function login_user($username, $password)
 	{
-		$this->db = $this->load->database('default', TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		//$this->db->select('usuario.*','cliente.*');
 		$this->db->select('*');
 		//$this->db->select('usuario.*, rol.nombre_rol');

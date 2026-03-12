@@ -14,7 +14,7 @@ class Minsumos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT i.*, (select im.nombre_impuesto from impuesto im where id_impuesto = i.id_impto_iva) as iva, (select im.nombre_impuesto from impuesto im where id_impuesto = i.id_impto_adicional) as iva_adicional,
 			(select um.nombre_umedida from umedida um where um.id_umedida = i.id_umedida_inventario) as u_medida_inv, (select um.nombre_umedida from umedida um where um.id_umedida = i.id_umedida_receta) as u_medida_receta,
 			gi.nombre_grupo_insumo, COALESCE(dit.cantidad, 0) as inv_c_caja
@@ -65,7 +65,7 @@ class Minsumos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT * from grupo_insumo order by nombre_grupo_insumo asc";
 		$query = $this->db->query($q)->result();
 		return $query;
@@ -77,7 +77,7 @@ class Minsumos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT * from impuesto order by nombre_impuesto asc";
 		// $q = "SELECT * FROM impuesto WHERE UPPER(nombre_impuesto) IN ('IVA 19%', 'EXENTO')
 		// 	ORDER BY CASE 
@@ -95,7 +95,7 @@ class Minsumos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT * from umedida order by nombre_umedida asc";
 		$query = $this->db->query($q)->result();
 		return $query;
@@ -107,7 +107,7 @@ class Minsumos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$consulta = $this->db->query("SELECT last_value + 1 as id_insumo from insumo_id_insumo_seq");
 		return $consulta->result();
 	}
@@ -118,7 +118,7 @@ class Minsumos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT * from receta_produccion where id_insumo =" . $id;
 		$query = $this->db->query($q)->result();
 		return $query;
@@ -130,7 +130,7 @@ class Minsumos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_insumo', $id);
 			$this->db->update('insumo', $data);
@@ -147,7 +147,7 @@ class Minsumos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$consulta = $this->db->query("SELECT * from insumo where cbarra = '" . $cbarra . "'");
 		return $consulta->result();
 	}
@@ -157,7 +157,7 @@ class Minsumos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT si.id_insumo, b.nombre_bodega, si.saldo, um.nombre_umedida
 			from stock_insumo si
 			join bodega b on si.id_bodega = b.id_bodega
@@ -194,7 +194,7 @@ class Minsumos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT i.nombre_insumo, um.nombre_umedida, to_char(fecha, 'DD/MM/YYYY') as fecha_compra, p.nombre_proveedor, dc.cantidad, dc.bruto_unitario, td.nombre_tdocumento, c.numero_documento
 			from compra c
 			join detalle_compra dc on c.id_compra = dc.id_compra
@@ -235,7 +235,7 @@ class Minsumos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT i.id_insumo, i.nombre_insumo, drp.cantidad, um.nombre_umedida
 		from detalle_receta_produccion drp 
 		join receta_produccion rp on drp.id_receta_produccion = rp.id_receta_produccion
@@ -271,7 +271,7 @@ class Minsumos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT p.cantidad, um.nombre_umedida, p.costo_unitario, p.costo_total, to_char(p.fecha, 'DD/MM/YYYY') as fecha_proceso, to_char(p.fecha_transaccion,'DD/MM/YYYY HH24:MM:SS') as fecha_hora
 		from produccion p
 		join insumo i on p.id_insumo = i.id_insumo
@@ -309,7 +309,7 @@ class Minsumos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT r.nombre_receta, r.rendimiento, um.nombre_umedida
 		from receta r 
 		join detalle_receta dr on r.id_receta = dr.id_receta
@@ -345,7 +345,7 @@ class Minsumos extends CI_Model
       redirect(base_url()); //redireccionar al login
     }
 
-     $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = " SELECT i.id_insumo, i.nombre_insumo from insumo i 
     order by i.nombre_insumo asc";
     $query = $this->db->query($q)->result();
@@ -358,7 +358,7 @@ class Minsumos extends CI_Model
       redirect(base_url()); //redireccionar al login
     }
 
-     $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = " SELECT i.id_insumo, i.nombre_insumo from insumo i 
     where i.id_insumo =" . $id;
     $query = $this->db->query($q)->result();
@@ -371,7 +371,7 @@ class Minsumos extends CI_Model
             redirect(base_url()); 
         }
         
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT um.nombre_umedida AS unidad_medida 
               FROM insumo i 
               JOIN umedida um ON i.id_umedida_inventario = um.id_umedida 

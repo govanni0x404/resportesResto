@@ -24,7 +24,7 @@ class MresumenDeCompras extends CI_Model
 			$a = date('Y-m-d', $jsDateTS);
 		}
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT c.id_compra, p.nombre_proveedor, td.nombre_tdocumento, c.numero_documento, to_char(c.fecha, 'DD-MM-YYYY') as fecha, c.total
 			from compra c 
 			join proveedor p on c.id_proveedor = p.id_proveedor
@@ -65,7 +65,7 @@ class MresumenDeCompras extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
         
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT i.nombre_insumo, dc.cantidad, round(dc.bruto_unitario) as bruto_unitario, round(dc.bruto_total) as total
 			from detalle_compra dc 
 			join insumo i on dc.id_insumo = i.id_insumo
@@ -101,7 +101,7 @@ class MresumenDeCompras extends CI_Model
 			redirect(base_url());
 		}
 		
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT c.id_compra, p.nombre_proveedor, td.nombre_tdocumento, c.numero_documento, to_char(c.fecha, 'DD-MM-YYYY') as fecha, c.total
 			from compra c 
 			join proveedor p on c.id_proveedor = p.id_proveedor

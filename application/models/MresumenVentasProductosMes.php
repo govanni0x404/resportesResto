@@ -24,7 +24,7 @@ class MresumenVentasProductosMes extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         
         $q = "SELECT
                 p.id_producto,
@@ -81,7 +81,7 @@ class MresumenVentasProductosMes extends CI_Model
     //         redirect(base_url());
     //     }
         
-    //     $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    //     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         
     //     // Convertir mes a rango de fechas
     //     $q = "SELECT
@@ -140,7 +140,7 @@ class MresumenVentasProductosMes extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         
         $q = "SELECT
                 p.nombre_producto,

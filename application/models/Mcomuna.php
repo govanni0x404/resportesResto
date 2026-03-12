@@ -13,7 +13,7 @@ class Mcomuna extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT c.id_comuna, c.nombre_comuna, p.nombre_provincia from comuna c 
     join provincia p on c.id_provincia=p.id_provincia
     order by c.id_comuna asc";
@@ -44,7 +44,7 @@ class Mcomuna extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     if ($id) {
       $this->db->where('id_comuna', $id);
       $this->db->update('comuna', $data);
@@ -61,7 +61,7 @@ class Mcomuna extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = " SELECT c.id_comuna, c.nombre_comuna from comuna c 
     order by c.nombre_comuna asc";
     $query = $this->db->query($q)->result();

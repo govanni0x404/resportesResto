@@ -13,7 +13,7 @@ class MitemGastosMensuales extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT i.id_item_gastos, i.nombre_item_gastos, i.vigente from item_gastos i
     order by i.id_item_gastos asc";
 
@@ -43,7 +43,7 @@ class MitemGastosMensuales extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     if ($id) {
       $this->db->where('id_item_gastos', $id);
       $this->db->update('item_gastos', $data);

@@ -13,7 +13,7 @@ class MdestinoDeImpresion extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT d.id_dimpresion, d.nombre_dimpresion, d.ip, d.puerto, d.ruta_windows, d.impresion_grafica_windows, d.permite_precuenta, d.impresion_local,
     d.usar_logo_precuenta_pos, d.size_font, d.sin_impresion, d.usar_dimpresion_recinto, d.usar_dimpresion_precuenta_android
     from dimpresion d 
@@ -55,7 +55,7 @@ class MdestinoDeImpresion extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     if ($id) {
       $this->db->where('id_dimpresion', $id);
       $this->db->update('dimpresion', $data);

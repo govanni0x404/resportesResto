@@ -13,7 +13,7 @@ class Mconfiguraciones extends CI_Model
 		if (strlen($this->session->userdata('rut_cliente')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = " SELECT desglozar_monto_neto_iva_total_en_reportes, desglozar_solo_monto_total_en_reportes  from configuracion";
     $query = $this->db->query($q)->result();
     return $query;
@@ -24,7 +24,7 @@ class Mconfiguraciones extends CI_Model
 		if (strlen($this->session->userdata('rut_cliente')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $r = $this->db->update('configuracion', $data);
     return $r;
   }

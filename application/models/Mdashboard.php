@@ -13,7 +13,8 @@ class Mdashboard extends CI_Model
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT * from empresa";
         $query = $this->db->query($q)->result();
         return $query;
@@ -35,7 +36,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT coalesce(sum(v.total), 0) as total
 			from venta v
 			join caja c on v.id_caja = c.id_caja
@@ -65,7 +67,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT coalesce(sum(dc.ingreso),0) as ingresos, coalesce(sum(dc.egreso),0) as egresos,";
         if ($id_caja > 0) {
             $q = $q . "
@@ -104,7 +107,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT td.id_tdocumento, td.nombre_tdocumento, count(v.id_tdocumento) as cantidad, round(sum(v.total)) as total,
         round(sum(v.neto)) as neto, round(sum(v.iva)) as iva
         from venta v
@@ -139,7 +143,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT fp.nombre_fpago, count(fp.id_fpago) as cantidad, round(sum(v.total)) as total, round(sum(pv.propina)) as propina,  round(sum(v.neto)) as neto, round(sum(v.iva)) as iva
             from pago_venta pv
 			join fpago fp on pv.id_fpago = fp.id_fpago
@@ -174,7 +179,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT fp.nombre_fpago, count(fp.id_fpago) as cantidad, round(sum(v.total)) as total, round(sum(pv.propina)) as propina,  round(sum(v.neto)) as neto, round(sum(v.iva)) as iva
             from pago_venta pv
 			join fpago fp on pv.id_fpago = fp.id_fpago
@@ -199,7 +205,8 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT co.id_cotizacion, co.id_mesa, to_char(co.fecha_transaccion, 'DD-MM-YYYY / HH24:MI') as fecha_hora, u.nombre_usuario as garzon, cl.nombre_cliente, co.total as cuenta, co.descuento, (co.total - co.descuento) as total, co.id_divpedido, co.neto, co.iva
 			from cotizacion co
 			join detalle_cotizacion dc on co.id_cotizacion = dc.id_cotizacion
@@ -246,7 +253,8 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT p.nombre_producto, sum(dc.cantidad) as cantidad, dc.bruto_un, round(sum(dc.total_bruto)) as total_bruto, to_char(dc.fecha_movimiento, 'HH24:MI') as hora_pedido, dc.mensaje, round(sum(dc.neto)) as neto, round(sum(dc.iva)) as iva
 			from detalle_cotizacion dc
 			join producto p on dc.id_producto = p.id_producto
@@ -296,7 +304,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT u.nombre_usuario, count(co.id_mesa) as mesas_atendidas, round(sum(co.total - co.monto_descuento)) as ventas,
         round(sum(v.valor_propina)) as propina, co.venta_directa, round(sum(v.neto)) as neto, round(sum(v.iva)) as iva
         from cotizacion co
@@ -354,7 +363,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT f.nombre_familia, sum(dv.total_bruto_con_descuento) as monto_total,
 			round(((sum(dv.cantidad)/
 				(select sum(dve.cantidad)
@@ -395,7 +405,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT f.id_familia, f.nombre_familia, sum(dv.cantidad) as cantidad,
             COALESCE(sum(dv.total_bruto_con_descuento), 0) as monto_total, round(sum(dv.subtotal_neto_con_descuento)) as monto_neto,
             round(sum(dv.monto_iva)) as monto_iva
@@ -456,7 +467,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT p.nombre_producto, cast(sum(dv.cantidad)as INT) as cantidad, round(sum(dv.total_bruto)) as monto_total, round(sum(dv.neto)) as monto_neto, round(sum(dv.iva)) as monto_iva
         from producto p
         join familia f on p.id_familia = f.id_familia
@@ -512,7 +524,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT v.id_mesa, count(v.id_mesa) as cantidad, round(sum(v.neto)) as monto_neto, round(sum(v.iva)) as monto_iva,
             round(sum(v.total)) as monto_total
             from venta v
@@ -569,7 +582,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT c.id_caja, u.nombre_usuario, to_char(c.fecha, 'DD/MM/YYYY') as fecha
 			from caja c
 			join usuario u on u.id_usuario = c.id_usuario
@@ -585,7 +599,8 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT * from empresa";
         $consulta = $this->db->query($q);
         return $consulta->result();
@@ -610,7 +625,8 @@ class Mdashboard extends CI_Model
         from caja c
         where c.fecha between '" . $de . "' and '" . $a . "'";*/
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT coalesce(sum(dc.ingreso),0) as ingresos, coalesce(sum(dc.egreso),0) as egresos,";
         if ($idCaja > 0) {
             $q = $q . "
@@ -647,7 +663,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT td.id_tdocumento, td.nombre_tdocumento as nombre_tdocumento, count(v.id_tdocumento) as cantidad, round(sum(v.subtotal)) as total, 
 			round(sum(v.neto)) as neto, round(sum(v.iva)) as iva
@@ -682,7 +699,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT fp.nombre_fpago as nombre_fpago, count(fp.id_fpago) as cantidad, round(sum(v.subtotal)) as total, round(sum(pv.propina)) as propina,  round(sum(v.neto)) as neto, round(sum(v.iva)) as iva
 			from pago_venta pv
@@ -715,7 +733,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT fp.nombre_fpago, count(fp.id_fpago) as cantidad, round(sum(v.subtotal)) as total, round(sum(pv.propina)) as propina,  round(sum(v.neto)) as neto, round(sum(v.iva)) as iva
 			from pago_venta pv
@@ -747,7 +766,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         //$q = " SELECT sum(v.total) as monto_total_ventas from venta v";
         $q = "SELECT coalesce(round(sum(v.subtotal)), 0) as monto_total_ventas
@@ -779,7 +799,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT c.id_caja,dc.id_detalle_caja as numero_ingreso, dc.ingreso, dc.observacion, dc.descripcion_corta, cc.nombre_ccosto,
         to_char(dc.fecha_movimiento, 'DD/MM/YYYY HH24:MM:SS') AS fecha_hora_ingreso
@@ -808,7 +829,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT c.id_caja,dc.id_detalle_caja as numero_ingreso, dc.egreso, dc.observacion, dc.descripcion_corta, cc.nombre_ccosto,
         to_char(dc.fecha_movimiento, 'DD/MM/YYYY HH24:MM:SS') AS fecha_hora_retiro
@@ -840,7 +862,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT vee.id_venta, round(vee.por_descuento) as por_descuento, vee.monto_descuento, c.nombre_cliente, vee.subtotal, vee.total, vee.folio_cotizacion, vee.id_mesa
         from venta vee 
@@ -871,7 +894,8 @@ class Mdashboard extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT v.id_usuario_garzon, u.nombre_usuario, fp.nombre_fpago, round(sum(v.valor_propina)) as total_propina 
         FROM venta v
         JOIN usuario u ON V.id_usuario_garzon=u.id_usuario

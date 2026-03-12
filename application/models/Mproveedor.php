@@ -13,7 +13,7 @@ class Mproveedor extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT p.id_proveedor, p.nombre_proveedor, p.rut, p.dv, p.direccion, p.telefono, p.mail, p.giro, p.creditomaximo from proveedor p 
 			order by p.id_proveedor asc";
 
@@ -51,7 +51,7 @@ class Mproveedor extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_proveedor', $id);
 			$this->db->update('proveedor', $data);
@@ -68,7 +68,7 @@ class Mproveedor extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT p.id_proveedor, p.nombre_proveedor, p.rut, p.dv, p.direccion, p.telefono, p.mail, p.giro from proveedor p 
 			where p.rut='" . $rut . "' order by p.id_proveedor";
 		$consulta = $this->db->query($q);
@@ -80,7 +80,7 @@ class Mproveedor extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT id_proveedor, nombre_proveedor from proveedor order by nombre_proveedor asc";
 		$query = $this->db->query($q)->result();
 		return $query;

@@ -24,7 +24,7 @@ class MventasPorProducto extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT p.nombre_producto,sum(dv.cantidad) as cantidad_vendida,  round(sum(dv.subtotal_neto_con_descuento)) as total_neto, round(sum(dv.monto_iva)) as total_iva,
         sum(dv.total_bruto_con_descuento) as total_vendido
         from producto p
@@ -74,7 +74,7 @@ class MventasPorProducto extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT p.nombre_producto, sum(dv.total_bruto) as monto_total, 
         round(((sum(dv.cantidad)/

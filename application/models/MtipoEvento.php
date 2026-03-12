@@ -13,7 +13,7 @@ class MtipoEvento extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT t.id_tipo_evento, t.nombre_tipo_evento from tipo_evento t
     order by t.id_tipo_evento asc";
 
@@ -42,7 +42,7 @@ class MtipoEvento extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     if ($id) {
       $this->db->where('id_tipo_evento', $id);
       $this->db->update('tipo_evento', $data);

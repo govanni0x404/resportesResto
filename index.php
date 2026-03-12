@@ -53,8 +53,8 @@
  *
  * NOTE: If you change these, also change the error_reporting() code below
  */
-	define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
-	error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+	define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'production');
+	error_reporting(0);
 
 /*
  *---------------------------------------------------------------
@@ -67,7 +67,7 @@
 switch (ENVIRONMENT)
 {
 	case 'development':
-		error_reporting(-1);
+		error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
 		ini_set('display_errors', 1);
 	break;
 

@@ -13,7 +13,7 @@ class McentroCosto extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT c.id_ccosto, c.nombre_ccosto, c.esingreso from ccosto c order by c.id_ccosto asc";
 
 		$consulta = $this->db->query($q);
@@ -42,7 +42,7 @@ class McentroCosto extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_ccosto', $id);
 			$this->db->update('ccosto', $data);

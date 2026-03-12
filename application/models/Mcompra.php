@@ -11,7 +11,7 @@ class Mcompra extends CI_Model
   public function grabarCompra($data)
   {
       if (strlen($this->session->userdata('nombre_usuario')) > 0) {
-          $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+          $this->load->helper('tenant'); $this->db = get_tenant_db($this);
           
           $insert_result = $this->db->insert('compra', $data);
 
@@ -42,7 +42,7 @@ class Mcompra extends CI_Model
   public function grabarDetalleCompra($data)
   {
       if (strlen($this->session->userdata('nombre_usuario')) > 0) {
-          $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+          $this->load->helper('tenant'); $this->db = get_tenant_db($this);
           
           $insert_ok = $this->db->insert('detalle_compra', $data); 
          
@@ -77,7 +77,7 @@ class Mcompra extends CI_Model
       redirect(base_url());
     }
 
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = " SELECT t.id_tdocumento, t.nombre_tdocumento from tdocumento t where t.para_compra=true
     order by t.nombre_tdocumento asc";
     $query = $this->db->query($q)->result();
@@ -87,7 +87,7 @@ class Mcompra extends CI_Model
   public function verificarSiExisteLaCompra($idProveedor, $idTdocumento, $numero_documento)
   {
     if (strlen($this->session->userdata('nombre_usuario')) > 0) {
-      $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+      $this->load->helper('tenant'); $this->db = get_tenant_db($this);
       
       $q = "SELECT id_compra, to_char(fecha, 'DD/MM/YYYY') AS fecha 
             FROM compra 

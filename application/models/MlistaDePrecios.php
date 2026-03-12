@@ -13,7 +13,7 @@ class MlistaDePrecios extends CI_Model
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT id_lprecio, nombre_lprecio from lprecio order by nombre_lprecio asc";
         $query = $this->db->query($q)->result();
         return $query;
@@ -24,7 +24,7 @@ class MlistaDePrecios extends CI_Model
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT id_familia, nombre_familia from familia order by nombre_familia asc";
         $query = $this->db->query($q)->result();
         return $query;
@@ -35,7 +35,7 @@ class MlistaDePrecios extends CI_Model
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         // $q = "SELECT p.id_producto, p.cbarra, p.nombre_producto, p.id_familia, f.nombre_familia, u.nombre_umedida, dl.total, p.precio_ucompra, dl.id_lprecio from Producto p
         // join familia f on f.id_familia=p.id_familia
         // join umedida u on p.id_umedida=u.id_umedida
@@ -92,7 +92,7 @@ class MlistaDePrecios extends CI_Model
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         if ($id) {
             $this->db->where('id_lprecio', $id);
             $this->db->update('lprecio', $data);
@@ -110,7 +110,7 @@ class MlistaDePrecios extends CI_Model
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $query = $this->db->query('SELECT * from detalle_lprecio  d join lprecio l on d.id_lprecio=l.id_lprecio
                                   where d.id_producto=' . $idProducto . ' order by l.nombre_lprecio');
         return $query->result();
@@ -121,7 +121,7 @@ class MlistaDePrecios extends CI_Model
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->db->where('id_detalle_lprecio', $idDetalleLprecio);
         $this->db->update('detalle_lprecio', $data);
         $consulta = $this->db->query("select $idDetalleLprecio as id_detalle_lprecio from detalle_lprecio where id_detalle_lprecio=$idDetalleLprecio");
