@@ -317,11 +317,9 @@ class Mproductos extends CI_Model
 
 	public function ListadoDeProductos(/*$id_producto*/)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-			redirect(base_url()); //redireccionar al login
-		}
+if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$q = "SELECT id_producto, nombre_producto from producto order by nombre_producto asc";
+		$q = "SELECT id_producto, nombre_producto, pponderado, precio_ucompra from producto order by nombre_producto asc";
 		$query = $this->db->query($q)->result();
 		return $query;
 	}
@@ -513,7 +511,7 @@ class Mproductos extends CI_Model
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		
-		$q = "SELECT cm.id_categoria_menu, cm.id_menu, m.nombre_menu, cm.nombre_categoria_menu, cm.vigente
+		$q = "SELECT cm.id_categoria_menu, cm.id_menu, m.nombre_menu, cm.nombre_categoria_menu, cm.vigente, cm.costo_promedio_receta
 			from categoria_menu cm
 			join menu m on cm.id_menu=m.id_menu";
 		
@@ -534,6 +532,7 @@ class Mproductos extends CI_Model
 				"id_menu" => $key->id_menu,
 				"nombre_menu" => $key->nombre_menu,  // Agregar nombre del menú
 				"nombre_categoria_menu" => $key->nombre_categoria_menu,
+				"costo_promedio_receta" => $key->costo_promedio_receta,
 				'vigente' => ($key->vigente == 't' ? 'SI' : 'NO'),
 				'btnAgregarProductosCategoria' => ("<button onclick='AbrirModalProductosAgregadosACategoria(" . $key->id_categoria_menu . ")' type='button' class='btn-block btn-warning text-center'>AGREGAR PRODUCTOS</button>"),
 			));
@@ -568,14 +567,11 @@ class Mproductos extends CI_Model
 
 	public function obtenerProductosQueConformanElMenu($id_categoria_menu)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-			redirect(base_url()); //redireccionar al login
-		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$q = 'SELECT dcm.id_detalle_categoria_menu, dcm.id_categoria_menu, cm.nombre_categoria_menu, p.nombre_producto, dcm.costo_receta, dcm.costo_adicional_venta, dcm.permite_cambio, dcm.imprimir, dcm.vigente from detalle_categoria_menu dcm
+		$q = "SELECT dcm.id_detalle_categoria_menu, dcm.id_categoria_menu, dcm.id_producto, cm.nombre_categoria_menu, p.nombre_producto, dcm.costo_receta, dcm.costo_adicional_venta, dcm.permite_cambio, dcm.imprimir, dcm.vigente from detalle_categoria_menu dcm
         join categoria_menu cm on dcm.id_categoria_menu=cm.id_categoria_menu
         join producto p on dcm.id_producto=p.id_producto
-        where cm.id_categoria_menu=' . $id_categoria_menu . ' order by p.nombre_producto';
+        where dcm.vigente = 't' and cm.id_categoria_menu=" . $id_categoria_menu . " order by p.nombre_producto";
 		$query = $this->db->query($q)->result();
 		return $query;
 	}
@@ -726,5 +722,17 @@ class Mproductos extends CI_Model
 		}
 		
 		return ['error' => 'No se pudo grabar el precio'];
+	}
+
+	public function DeshabilitarDetalleCategoria($id)
+	{
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+		$this->db->where('id_detalle_categoria_menu', (int)$id);
+		$this->db->update('detalle_categoria_menu', array('vigente' => 'f'));
+		return [
+            'affected' => $this->db->affected_rows(),
+            'query' => $this->db->last_query(),
+            'id' => $id
+        ];
 	}
 }

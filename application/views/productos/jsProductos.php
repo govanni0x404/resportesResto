@@ -523,6 +523,7 @@ function grabarPreciosYProducto() {
     var precios = [];
     var tienePrecio = false;
     
+    // Recolectar precios (se permiten todos los valores, incluyendo 0)
     $("#detallePrecioVenta tr").each(function() {
         var idLista = $(this).find("td").eq(0).text().trim();
         var precio = parseInt($(this).find(".precio-input").val()) || 0;
@@ -534,32 +535,18 @@ function grabarPreciosYProducto() {
             comision = parseFloat($comisionInput.val()) || 0;
         }
         
-        if (precio > 0) {
-            tienePrecio = true;
-            var precioData = {
-                id_lprecio: idLista,
-                total: precio
-            };
-            
-            if ($comisionInput.length > 0) {
-                precioData.monto_comision = comision;
-            }
-            
-            precios.push(precioData);
+        // Incluir todos los precios definidos por el usuario
+        var precioData = {
+            id_lprecio: idLista,
+            total: precio
+        };
+        
+        if ($comisionInput.length > 0) {
+            precioData.monto_comision = comision;
         }
+        
+        precios.push(precioData);
     });
-    
-    console.log("Precios recolectados:", precios);
-    
-    if (!$('#ckPermitirVentaSiempre').is(':checked')) {
-        if (!tienePrecio) {
-            showAppAlert('error', "Debe ingresar al menos un precio mayor a cero", {
-                duration: 5000,
-                image: base_url+ 'assets/img/errorGif.gif'
-            }); 
-            return;
-        }
-    }
     
     $.ajax({
         url: base_url + "index.php/Productos/grabarProductoConPrecios",

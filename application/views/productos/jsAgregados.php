@@ -20,7 +20,7 @@ function AbrirModalAgregadosDelProducto(idProducto) {
     }
     
     // Cargar listado de productos disponibles
-    ListadoDeAgregadosParaElProducto();
+    ListadoDeAgregadosParaElProducto(null, "#cboProductoAgregadoProductos");
     
     // Cargar agregados existentes del producto
     ObtenerAgregadosDelProducto(idProductoActual);
@@ -395,27 +395,6 @@ function DeshabilitarAgregado(id) {
     });
 }
 
-function ListadoDeAgregadosParaElProducto(objSelected) {
-    $.post(base_url + "index.php/Productos/ListadoDeProductos", { id: "" }, function(datos) {
-        var obj = jQuery.parseJSON(datos);
-        var tbl = '<option value="0">SELECCIONE EL AGREGADO</option>';
-        
-        $.each(obj, function(index, v) {
-            if (v.nombre_producto == objSelected) {
-                tbl += '<option selected value="' + v.id_producto + '">' + v.nombre_producto + '</option>';
-            } else {
-                tbl += '<option value="' + v.id_producto + '">' + v.nombre_producto + '</option>';
-            }
-        });
-        
-        $("#cboProductoAgregadoProductos").html(tbl);
-        
-        // Reinicializar select2 si existe
-        if ($.fn.select2) {
-            $("#cboProductoAgregadoProductos").select2();
-        }
-    });
-}
 
 // Detectar cierre del modal de agregados
 $(document).ready(function() {

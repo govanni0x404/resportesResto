@@ -101,10 +101,10 @@ $db['default'] = array(
 
 $db['76193938-6'] = array(
 	'dsn' => '',
-	'hostname' => 'datamaule.cl', //localhost
-	'username' => 'ccerda',
-	'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
-	'database' => 'ccerda_pruebasrestoweb',
+	'hostname' => 'localhost', //localhost
+	'username' => 'postgres',
+	'password' => '123datamaule2019.,#-',
+	'database' => 'laToscana',
 	'dbdriver' => 'postgre',
 	'dbprefix' => '',
 	'pconnect' => FALSE,

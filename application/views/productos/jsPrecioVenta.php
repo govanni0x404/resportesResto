@@ -84,31 +84,21 @@ function grabarSoloPreciosDeProducto() {
             comision = parseFloat($comisionInput.val()) || 0;
         }
         
-        if (precio > 0) {
-            tienePrecio = true;
-            var precioData = {
-                id_lprecio: idLista,
-                total: precio
-            };
-            
-            // Solo incluir comisión si el input existe
-            if ($comisionInput.length > 0) {
-                precioData.monto_comision = comision;
-            }
-            
-            precios.push(precioData);
+        // Incluir todos los precios definidos por el usuario, incluso si son 0
+        var precioData = {
+            id_lprecio: idLista,
+            total: precio
+        };
+        
+        // Solo incluir comisión si el input existe
+        if ($comisionInput.length > 0) {
+            precioData.monto_comision = comision;
         }
+        
+        precios.push(precioData);
     });
     
     console.log("Precios a grabar:", precios);
-    
-    if (!tienePrecio) {
-        showAppAlert('error', "Debe ingresar al menos un precio mayor a cero", {
-            duration: 5000,
-            image: base_url+ 'assets/img/errorGif.gif'
-        });
-        return;
-    }
     
     // Grabar solo los precios
     $.ajax({

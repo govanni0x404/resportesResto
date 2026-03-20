@@ -103,10 +103,11 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label for="cboMenu">Menu
-                                            <sup><a onclick="AbrirModalListadoMenu()">Nuevo</a></sup>
+                                            <sup><a onclick="AbrirModalListadoMenu()" style="color: #4CAF50; cursor: pointer;">Nuevo</a></sup>
+                                            <sup><a onclick="QuitarMenuDeProducto()" style="color: #f44336; cursor: pointer;">Quitar</a></sup>
                                         </label>
                                         <select id="cboMenu" class="form-control input-sm" style="width:100%"
-                                            requerido="si"></select>
+                                            requerido="no"></select>
                                     </div>
                                 </fieldset>
 
@@ -778,62 +779,52 @@
 <div id="ModalListadoMenus" class="modal fade" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
-            <!-- TITULO  MODAL  -->
-            <div id="tituloModal" class="modal-header btn-success">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                        aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title text text-center">LISTADO DE MENU
-                </h4>
+            <!-- TITULO MODAL -->
+            <div class="modal-header btn-success">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title text-center">Listado de Menus</h4>
             </div>
-            <!-- FIN TITULO  MODAL  -->
-
-            <!-- CONTENIDO  MODAL  -->
+            <!-- CONTENIDO MODAL -->
             <div class="modal-body">
-                <div class="h-panel">
-                    <ul id="myTab" class="nav nav-with title font">
-                        <li class="active"><a href="#tabDatosUsuarios" data-toggle="tab" id="tab1"
-                                class="text color1"></a></li>
-                    </ul>
-                    <div class="tab-pane fade active in" id="tabDatosUsuarios">
-                        <fieldset>
-                            <div class="col-md-4">
-                                <button onclick="AbrirModalNuevoMenu()" type="button" class="btn btn-primary"><i
-                                        class=""></i>NUEVO MENU</button>
+                <div class="row">
+                    <div class="col-md-12">
+                        <label>Seleccione el Menú</label>
+                        <div class="pull-right">
+                            <a href="#" onclick="AbrirModalNuevoMenu()">Crear</a>
+                        </div>
+                        <select id="cboMenuModal" class="form-control input" style="width: 100%;"></select>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-md-12 text-right">
+                        <a href="#" onclick="AbrirModalNuevaCategoriasMenu()">Crear categoria</a>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="panel panel-default">
+                            <div class="table-responsive">
+                                <table id="tableCategoriasMenuModal" class="table table-bordered table-condensed">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th style="display:none">MenuID</th>
+                                            <th>Nombre Categoria</th>
+                                            <th>Costo Prom.</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bodyCategoriasMenuModal">
+                                        <!-- Se llena via JS -->
+                                    </tbody>
+                                </table>
                             </div>
-                        </fieldset>
-                        <br>
-                        <fieldset>
-                            <div class="col-md-12">
-                                <div class="panel panel-default">
-                                    <div class="table-responsive" style="margin-top:10px; padding:5px;">
-                                        <table id="tableListadoMenu" class="display responsive" style="width: 100%">
-                                            <thead>
-                                                <tr>
-                                                    <th class="text text-right" style='height:10px'>N°</th>
-                                                    <th class="text text-center">MENU</th>
-                                                    <th class="text text-center">ACTIVO</th>
-                                                    <!-- <th class="text text-center">ACCION</th>-->
-                                                    <th class="text text-center">CATEGORIAS</th>
-                                                </tr>
-                                            </thead>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
-
-                        <!-- FIN CAMPOS DE REGISTRO  -->
+                        </div>
                     </div>
                 </div>
             </div>
-            <!-- CONTENIDO  MODAL  -->
-
-            <!-- BOTONES  -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class=""></i>SALIR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal" style="width: 130px; font-weight: bold;">Salir (Esc)</button>
             </div>
-            <!-- FIN BOTONES  -->
         </div>
     </div>
 </div>
@@ -841,61 +832,60 @@
 <div id="ModalNuevoMenu" class="modal fade" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
-            <!-- TITULO  MODAL  -->
-            <div id="tituloModal" class="modal-header btn-success">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                        aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title text text-center">REGISTRO DE MENU
-                </h4>
+            <!-- TITULO MODAL -->
+            <div class="modal-header btn-success">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title text-center">Menú</h4>
             </div>
-            <!-- FIN TITULO  MODAL  -->
-
-            <!-- CONTENIDO  MODAL  -->
+            <!-- CONTENIDO MODAL -->
             <div class="modal-body">
-                <div class="h-panel">
-                    <ul id="myTab" class="nav nav-with title font">
-                        <li class="active"><a href="#tabDatosUsuarios" data-toggle="tab" id="tab1"
-                                class="text color1"></a></li>
-                    </ul>
-                    <div class="tab-pane fade active in" id="tabDatosUsuarios">
-                        <fieldset>
-                            <div class="col-md-4 ">
-                                <label for="txtIdMenu">ID</label>
-                                <input type="text" disabled class="form-control input-sm input-sm" name="txtIdMenu"
-                                    id="txtIdMenu" requerido="no" value="">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label>ID</label>
+                        <input type="text" disabled class="form-control input-sm" id="txtIdMenu" value="">
+                    </div>
+                    <div class="col-md-9">
+                        <label>Nombre del Menú</label>
+                        <input type="text" class="form-control input-sm" id="txtNombreMenu" placeholder="Nombre Menu">
+                    </div>
+                </div>
+                <br>
+                <br>
+                <div class="row" style="display:none;">
+                    <div class="col-md-4">
+                        <button onclick="GrabarNuevoMenu()" type="button" class="btn btn-primary btn-block">Grabar Datos</button>
+                    </div>
+                    <div class="col-md-4">
+                        <!-- <button onclick="AbrirModalNuevoMenu()" type="button" class="btn btn-default btn-block">Nuevo</button> -->
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-default btn-block" data-dismiss="modal">Salir (Esc)</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="panel panel-default">
+                            <div class="table-responsive">
+                                <table id="tableMenuAbajo" class="table table-bordered table-condensed">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nombre</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bodyMenuAbajo">
+                                        <!-- Se llena via JS -->
+                                    </tbody>
+                                </table>
                             </div>
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-8 ">
-                                <label for="txtNombreMenu">NOMBRE MENU</label>
-                                <input placeholder="Nombre Menu" type="text" class="form-control input-sm input-sm"
-                                    maxlength='28' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
-                                    ondrop="return false;" autocomplete="off" name="txtNombreMenu" id="txtNombreMenu"
-                                    requerido="si" value="" />
-                            </div>
-                            <div class="col-md-4">
-                                <div class="btn-group" role="group" aria-label="...">
-                                    <div class="checkbox checkbox-success checkbox-circle">
-                                        <input id="ckVigenciaMenu" type="checkbox">
-                                        <label for="ckVigenciaMenu">
-                                            ACTIVO/VIGENTE
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
-                        <!-- FIN CAMPOS DE REGISTRO  -->
+                        </div>
                     </div>
                 </div>
             </div>
-            <!-- CONTENIDO  MODAL  -->
-
-            <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarNuevoMenu()" type="button" class="btn btn-primary"><i class=""></i>GRABAR MENU</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Salir (Esc)</button>
+                <button onclick="GrabarNuevoMenu()" type="button" class="btn btn-primary">Grabar Datos</button>
             </div>
-            <!-- FIN BOTONES  -->
         </div>
     </div>
 </div>
@@ -966,241 +956,177 @@
 <div id="ModalNuevaCategoria" class="modal fade" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
-            <!-- TITULO  MODAL  -->
-            <div id="tituloModal" class="modal-header btn-success">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                        aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title text text-center">REGISTRO DE CATEGORIAS
-                </h4>
+            <!-- TITULO MODAL -->
+            <div class="modal-header btn-success">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title text-center">Categorias del menú</h4>
             </div>
-            <!-- FIN TITULO  MODAL  -->
-
-            <!-- CONTENIDO  MODAL  -->
+            <!-- CONTENIDO MODAL -->
             <div class="modal-body">
-                <div class="h-panel">
-                    <ul id="myTab" class="nav nav-with title font">
-                        <li class="active"><a href="#tabDatosUsuarios" data-toggle="tab" id="tab1"
-                                class="text color1"></a></li>
-                    </ul>
-                    <div class="tab-pane fade active in" id="tabDatosUsuarios">
-                        <fieldset>
-                            <div class="col-md-6 ">
-                                <label for="IdCategoria">ID</label>
-                                <input type="text" disabled class="form-control input-sm input-sm" name="IdCategoria"
-                                    id="IdCategoria" requerido="no" value="">
+                <div class="row">
+                    <div class="col-md-12">
+                        <label>Nombre del Menú</label>
+                        <select id="cboMenusModalCategorias" class="form-control input" style="background-color: #fcf8e3; color: black; width: 100%;"></select>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-md-3">
+                        <label>ID</label>
+                        <input type="text" disabled class="form-control input-sm" id="IdCategoria" value="">
+                    </div>
+                    <div class="col-md-6">
+                        <label>Nombre de la Categoria</label>
+                        <input type="text" class="form-control input-sm" id="txtNombreCategoria" placeholder="Nombre Categoria">
+                    </div>
+                    <div class="col-md-3 text-right">
+                        <br>
+                        <div class="checkbox checkbox-success checkbox-circle" style="margin-top: 5px;">
+                            <input id="ckVigenciaCategoria" type="checkbox" checked>
+                            <label for="ckVigenciaCategoria"> Vigente </label>
+                        </div>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="panel panel-default">
+                            <div class="table-responsive">
+                                <table id="tableCategoriasAbajo" class="table table-bordered table-condensed">
+                                    <thead>
+                                        <tr style="background-color: #E8F5E9;">
+                                            <th>Código</th>
+                                            <th>Nombre de la categoría</th>
+                                            <th>Vigente</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bodyCategoriasAbajo">
+                                        <!-- Se llena via JS -->
+                                    </tbody>
+                                </table>
                             </div>
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-12">
-                                <label for="cboMenus">MENU</label>
-                                <select id="cboMenus" nombre="cboMenus" class="form-control input-sm" style="width:100%"
-                                    requerido="si"></select>
-                            </div>
-                            <div class="col-md-12">
-                                <label for="txtNombreCategoria">CATEGORIA</label>
-                                <input placeholder="Nombre Categoria" type="text" class="form-control input-sm input-sm"
-                                    maxlength='28' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
-                                    ondrop="return false;" autocomplete="off" name="txtNombreCategoria"
-                                    id="txtNombreCategoria" requerido="si" value="" />
-                            </div>
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-6">
-                                <div class="btn-group" role="group" aria-label="...">
-                                    <div class="checkbox checkbox-success checkbox-circle">
-                                        <input id="ckVigenciaCategoria" type="checkbox">
-                                        <label for="ckVigenciaCategoria">
-                                            ACTIVO/VIGENTE
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
-                        <!-- FIN CAMPOS DE REGISTRO  -->
+                        </div>
                     </div>
                 </div>
             </div>
-            <!-- CONTENIDO  MODAL  -->
-
-            <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarCategoriaMenu()" type="button" class="btn btn-primary"><i class=""></i>GRABAR CATEGORIA</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Salir (Esc)</button>
+                <button onclick="GrabarCategoriaMenu()" type="button" class="btn btn-primary">Grabar</button>
             </div>
-            <!-- FIN BOTONES  -->
         </div>
     </div>
 </div>
 
 <div id="ModalAgregarProductosAcategorias" class="modal fade" role="dialog" style="overflow-y: scroll;">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg" style="width: 95%;">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
-            <div id="tituloModal" class="modal-header btn-success">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                        aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title text text-center">COMPOSICION DEL MENU
-                </h4>
+            <div class="modal-header btn-success" style="border-bottom: 2px solid #558b2f; padding: 15px; background-color: #558b2f !important; height: 50px;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 1; margin-top: -5px;"><span aria-hidden="true">&times;</span></button>
             </div>
             <!-- FIN TITULO  MODAL  -->
 
             <!-- CONTENIDO  MODAL  -->
-            <div class="modal-body">
-                <div class="h-panel">
-                    <ul id="myTab" class="nav nav-with title font">
-                        <li class="active"><a href="#tabDatosUsuarios" data-toggle="tab" id="tab1"
-                                class="text color1"></a></li>
-                    </ul>
-                    <div class="tab-pane fade active in" id="tabDatosUsuarios">
-                        <fieldset>
-                            <div class="col-md-4 ">
-                                <label for="IdDetalleCategoria">ID</label>
-                                <input type="text" disabled class="form-control input-sm input-sm"
-                                    name="IdDetalleCategoria" id="IdDetalleCategoria" requerido="no" value="">
+            <div class="modal-body" style="padding: 20px; background-color: #fff;">
+                <div class="row">
+                    <div class="col-md-12">
+                         <div id="labelMenuCategoriaDestacado" style="background-color: #558b2f; color: white; padding: 12px 20px; font-weight: bold; font-size: 18px; margin-bottom: 20px; border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);">
+                             <!-- Se llena via JS: MENU -> CATEGORIA -->
+                         </div>
+                    </div>
+                </div>
+
+                <div class="row" style="background-color: #f9fdf9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #d6e9c6;">
+                    <div class="col-md-1">
+                        <label style="color: #558b2f;">ID</label>
+                        <input type="text" disabled class="form-control input-sm" id="IdDetalleCategoria" style="background-color: #f5f5f5; border: 1px solid #ccc; font-weight: bold; text-align: center;">
+                    </div>
+                    <div class="col-md-6">
+                        <label style="color: #558b2f;">Producto <span id="labelRecetaProducto" style="font-weight: bold; color: #5cb85c; margin-left: 15px; background: white; padding: 2px 8px; border-radius: 10px; border: 1px solid #5cb85c; font-size: 10px;">SIN RECETA</span></label>
+                        <select id="cboSelectorProductosFinal" class="form-control input-sm" style="border: 1px solid #5cb85c;"></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label style="color: #558b2f;">Costo</label>
+                        <input type="number" class="form-control input-sm text-right" id="CostoCategoriaMenu" value="0" style="border: 1px solid #5cb85c; font-weight: bold;">
+                    </div>
+                    <div class="col-md-3">
+                        <label style="color: #558b2f;">$ Adicional Vta</label>
+                        <input type="number" class="form-control input-sm text-right" id="AdicionalCategoriaMenu" value="0" style="border: 1px solid #5cb85c; font-weight: bold;">
+                    </div>
+                </div>
+
+                <div class="row">
+                     <div class="col-md-10">
+                         <div class="panel panel-default" style="margin-bottom: 0; border: 1px solid #d6e9c6; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
+                            <div class="table-responsive" style="height: 380px; overflow-y: auto;">
+                                <table id="tableDetalleCategoria" class="table table-bordered table-condensed table-hover" style="margin-bottom: 0;">
+                                    <thead>
+                                        <tr style="background-color: #558b2f; color: white;">
+                                            <th style="width: 50px;">ID</th>
+                                            <th>Nombre del Producto</th>
+                                            <th class="text-right" style="width: 120px;">Costo Receta</th>
+                                            <th class="text-right" style="width: 120px;">Costo A/Venta</th>
+                                            <th class="text-center" style="width: 100px;">Permite Ca</th>
+                                            <th class="text-center" style="width: 80px;">Imp</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="DetalleCategoria">
+                                        <!-- Se llena via JS -->
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="col-md-12">
-                                <label for="cboMenuCategoria">MENU/CATEGORIA</label>
-                                <select id="cboMenuCategoria" nombre="cboMenuCategoria" class="form-control input-sm"
-                                    style="width:100%" requerido="si"></select>
-                            </div>
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-12">
-                                <label for="cboListadoProductosParaCategoria">PRODUCTO</label>
-                                <select id="cboListadoProductosParaCategoria" nombre="cboListadoProductosParaCategoria"
-                                    class="form-control input-sm" style="width:100%" requerido="si"></select>
-                            </div>
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-6 ">
-                                <label for="CostoCategoriaMenu">COSTO</label>
-                                <input min="0" type="number" class="form-control input-sm input-sm" maxlength='28'
-                                    onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
-                                    ondrop="return false;" autocomplete="off" name="CostoCategoriaMenu"
-                                    id="CostoCategoriaMenu" requerido="si" value="" />
-                            </div>
-                            <div class="col-md-6 ">
-                                <label for="AdicionalCategoriaMenu">COSTO</label>
-                                <input min="0" type="number" class="form-control input-sm input-sm" maxlength='28'
-                                    onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
-                                    ondrop="return false;" autocomplete="off" name="AdicionalCategoriaMenu"
-                                    id="AdicionalCategoriaMenu" requerido="si" value="" />
-                            </div>
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-6">
-                                <div class="btn-group" role="group" aria-label="...">
-                                    <div class="checkbox checkbox-success checkbox-circle">
-                                        <input id="ckPermitirCambio" type="checkbox">
-                                        <label for="ckPermitirCambio">
-                                            PERMITIR CAMBIO
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="btn-group" role="group" aria-label="...">
-                                    <div class="checkbox checkbox-success checkbox-circle">
-                                        <input id="ckImprimirProductoCategoria" type="checkbox">
-                                        <label for="ckImprimirProductoCategoria">
-                                            IMPRIMIR
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
-                        <br>
-                        <fieldset>
-                            <div class="col-md-4">
-                                <button onclick="GrabarDetalleCategoriaMenu()" type="button" class="btn btn-primary"><i
-                                        class="fa fa-check-square-o"></i>AGREGAR A CATEGORIA</button>
-                            </div>
-                        </fieldset>
-                        <br>
-                        <fieldset>
-                            <div class="col-md-12">
-                                <div class="panel panel-default">
-                                    <div class="panel-body table-responsive">
-                                        <table id="tableDetalleCategoria" class="table table-hover display"
-                                            style="width:100%">
-                                            <thead>
-                                                <tr>
-                                                    <th style='display:none'>N°</th>
-                                                    <th style='display:none'>ID CATEGORIA</th>
-                                                    <th style='display:none'>CATEGORIA</th>
-                                                    <th>PRODUCTO</th>
-                                                    <th>COSTO RECETA</th>
-                                                    <th>COSTO A/VENTA</th>
-                                                    <th>PERMITE CAMBIO</th>
-                                                    <th>IMPRIMIR</th>
-                                                    <th>VIGENTE</th>
-                                                    <!-- <th></th>
-                                                    <th></th>
-                                                    <th></th>-->
-                                                </tr>
-                                            </thead>
-                                            <tbody id="DetalleCategoria">
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
-                        <br>
-                        <fieldset>
-                            <label>LIMITE DE SELECCION</label>
-                        </fieldset>
-                        <br>
-                        <fieldset>
-                            <div class="col-md-6 ">
-                                <label for="CantMinima">MINIMA</label>
-                                <input min="0" type="number" class="form-control input-sm input-sm" maxlength='28'
-                                    onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
-                                    ondrop="return false;" autocomplete="off" name="CantMinima" id="CantMinima"
-                                    requerido="si" value="" />
-                            </div>
-                            <div class="col-md-6 ">
-                                <label for="CantMaxima">MAXIMA</label>
-                                <input min="0" type="number" class="form-control input-sm input-sm" maxlength='28'
-                                    onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
-                                    ondrop="return false;" autocomplete="off" name="CantMaxima" id="CantMaxima"
-                                    requerido="si" value="" />
-                            </div>
-                            <br>
-                            <div class="col-md-6">
-                                <div class="btn-group" role="group" aria-label="...">
-                                    <div class="checkbox checkbox-success checkbox-circle">
-                                        <input id="ckEstricto" type="checkbox">
-                                        <label for="ckEstricto">
-                                            ESTRICTO
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-6">
-                                <label for="CostoPromedio">COSTO PROMEDIO</label>
-                                <input min="0" type="number" class="form-control input-sm input-sm" maxlength='28'
-                                    onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
-                                    ondrop="return false;" autocomplete="off" name="CostoPromedio" id="CostoPromedio"
-                                    requerido="si" value="" />
-                            </div>
-                        </fieldset>
-                        <!-- FIN CAMPOS DE REGISTRO  -->
+                        </div>
+                        <style>
+                            #tableDetalleCategoria tbody tr.selected {
+                                background-color: #dff0d8 !important;
+                                color: #3c763d !important;
+                                font-weight: bold;
+                            }
+                        </style>
+                     </div>
+                     <div class="col-md-2 text-center">
+                         <div style="background-color: #f8f9fa; padding: 20px 10px; border-radius: 10px; border: 1px solid #dee2e6; height: 380px; display: flex; flex-direction: column; justify-content: center; gap: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                             <button onclick="GrabarDetalleCategoriaMenu()" type="button" class="btn btn-warning btn-block" style="background-color: #f0ad4e; border-color: #eea236; color: white; height: 75px; font-weight: bold; font-size: 15px; line-height: 1.3; box-shadow: 0 4px 8px rgba(240,173,78,0.3); border-radius: 8px;">
+                                 <i class="fa fa-plus-circle" style="font-size: 20px;"></i><br>AÑADIR /<br>ACTUALIZAR
+                             </button>
+                             
+                             <button onclick="NuevoDetalleProducto()" type="button" class="btn btn-default btn-block" style="height: 50px; font-weight: bold; border: 1px solid #ced4da; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-radius: 8px;">
+                                 <i class="fa fa-eraser"></i> Limpiar / Nuevo
+                             </button>
+                             
+                             <button onclick="QuitarProductoDeCategoria()" type="button" class="btn btn-danger btn-block" style="height: 50px; font-weight: bold; box-shadow: 0 4px 8px rgba(217,83,79,0.2); border-radius: 8px;">
+                                 <i class="fa fa-trash"></i> Quitar
+                             </button>
+                         </div>
+                     </div>
+                </div>
+
+                <div class="row" style="margin-top: 20px; background-color: #f9fdf9; padding: 15px; border-radius: 8px; border: 1px solid #d6e9c6;">
+                    <div class="col-md-2" style="font-weight: bold; font-size: 15px; padding-top: 10px; color: #3c763d;">
+                        Ítems: <span id="lblCantProductosCategoria" class="badge" style="background-color: #5cb85c; font-size: 14px;">0</span>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <div style="border: 2px dashed #5cb85c; padding: 8px 15px; display: inline-block; border-radius: 12px; background-color: white;">
+                            <span style="font-weight: bold; color: #3c763d; margin-right: 15px; font-size: 13px;"><i class="fa fa-sliders"></i> LÍMITES DE SELECCIÓN</span>
+                            Mínima <input type="number" id="CantMinima" style="width: 55px; background-color: #5cb85c; color: white; border: none; text-align: center; border-radius: 4px; font-weight: bold; height: 28px; margin: 0 5px;" value="0">
+                            &nbsp;
+                            Máxima <input type="number" id="CantMaxima" style="width: 55px; background-color: #5cb85c; color: white; border: none; text-align: center; border-radius: 4px; font-weight: bold; height: 28px; margin: 0 5px;" value="5">
+                            &nbsp;
+                            <label style="cursor: pointer; margin-left: 10px; color: #3c763d;"><input type="checkbox" id="ckEstricto" style="transform: scale(1.2); vertical-align: middle;"> &nbsp;Estricto</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-right">
+                        <div style="display: inline-block; vertical-align: middle; font-weight: bold; font-size: 15px; color: #3c763d; text-transform: uppercase; letter-spacing: 1px;">Costo Promedio</div>
+                        <div id="lblCostoPromedioCategoria" style="display: inline-block; background-color: #4cae4c; color: white; padding: 10px 25px; font-weight: bold; font-size: 22px; margin-left: 15px; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); min-width: 80px; text-align: center;">0</div>
                     </div>
                 </div>
             </div>
-            <!-- CONTENIDO  MODAL  -->
-
-            <!-- BOTONES  -->
-            <div class="modal-footer">
-                <button id="BtnActualizarDetalleMenu" type="button" class="btn btn-primary"><i
-                        class="fa fa-check-square-o"></i>ACTUALIZAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class="fa fa-times-circle"></i>SALIR</button>
+            <div class="modal-footer" style="background-color: #f9f9f9; border-top: 1px solid #e5e5e5;">
+                <button type="button" class="btn btn-default" data-dismiss="modal" style="font-weight: bold; width: 120px;">Salir (Esc)</button>
+                <button onclick="GrabarConfiguracionCategoriaMenu()" type="button" class="btn btn-primary" style="font-weight: bold; width: 120px;">
+                    <i class="fa fa-save"></i> GRABAR
+                </button>
             </div>
-            <!-- FIN BOTONES  -->
         </div>
     </div>
 </div>

@@ -1,16 +1,137 @@
 <script>
     var base_url = "<?php echo base_url(); ?>";
     tableListadoMenu = $('#tableListadoMenu').DataTable();
-    tableCategoriasMenu = $('#tableCategoriasMenu').DataTable();
+//     tableCategoriasMenuModal = $('#tableCategoriasMenuModal').DataTable();
     $(document).ready(function() {
-
+        ListadoDeMenu(); // Esta llama a la de funciones.php para el SELECT
+        ListadoDeMenuTable(); // Esta llama a la de abajo para la TABLA
+        
+        // Listener para el selector de productos en composición
+        $('#cboSelectorProductosFinal').on('change', function() {
+            let idProd = $(this).val();
+            if(idProd && idProd != "0") {
+                if(typeof productosCarta !== 'undefined' && productosCarta[idProd]) {
+                    let info = productosCarta[idProd];
+                    let costo = info.pponderado || info.precio_ucompra || 0;
+                    $('#CostoCategoriaMenu').val(costo);
+                    $('#AdicionalCategoriaMenu').val(0); // Reset adicional por seguridad
+                    if(costo > 0) {
+                        $('#labelRecetaProducto').text("CON COSTO");
+                    } else {
+                        $('#labelRecetaProducto').text("SIN COSTO");
+                    }
+                }
+            } else {
+                // Limpiar todo si selecciona "Seleccione el producto"
+                $('#CostoCategoriaMenu').val(0);
+                $('#AdicionalCategoriaMenu').val(0);
+                $('#labelRecetaProducto').text("SIN RECETA");
+            }
+        });
     });
 
+    function QuitarMenuDeProducto() {
+        $('#cboMenu').val(0).trigger('change');
+    }
+
     function AbrirModalListadoMenu() {
-        ListadoMenu();
+        let idMenuSeleccionado = $('#cboMenu').val();
+        ListadoDeMenuModal(idMenuSeleccionado);
         $('#ModalListadoMenus').modal({
             backdrop: 'static',
             keyboard: false
+        });
+        
+        if(idMenuSeleccionado && idMenuSeleccionado != "0") {
+            setTimeout(function() {
+                $('#cboMenuModal').val(idMenuSeleccionado).trigger('change');
+            }, 500);
+        }
+    }
+
+    $('#cboMenuModal').on('change', function() {
+        let id_menu = $(this).val();
+        if(id_menu && id_menu != "0") {
+            ListadoCategoriaMenuModal(id_menu);
+            CalcularCostosMenu(id_menu);
+        } else {
+            $('#bodyCategoriasMenuModal').html("");
+            $('#txtCostoTotalMenu').val(0);
+            $('#txtPorcentajeCostoMenu').val(0);
+        }
+    });
+
+    function ListadoDeMenuModal(objSelected) {
+        $.post(base_url + "index.php/Productos/ListadoDeMenu", {
+            id: ""
+        }, function(datos) {
+            var obj = jQuery.parseJSON(datos);
+            var actualModal = $('#cboMenuModal').val();
+            var actualCat = $('#cboMenusModalCategorias').val();
+            
+            var sel = objSelected || actualModal || 0;
+            
+            tbl = '<option disabled value="0">Seleccione El Menu</option>';
+            if (!sel || sel == "0") {
+                tbl = '<option selected disabled value="0">Seleccione El Menu</option>';
+            }
+
+            $.each(obj, function(index, v) {
+                if (v.id_menu == sel) {
+                    tbl += '<option selected value="' + v.id_menu + '">' + v.nombre_menu + '</option>';
+                } else {
+                    tbl += '<option value="' + v.id_menu + '">' + v.nombre_menu + '</option>';
+                }
+            });
+            $("#cboMenuModal").html(tbl);
+            $("#cboMenuModal").select2();
+            
+            // Para el modal de categorías
+            var selCat = objSelected || actualCat || 0;
+            var tblCat = '<option disabled value="0">Seleccione El Menu</option>';
+            if (!selCat || selCat == "0") {
+                tblCat = '<option selected disabled value="0">Seleccione El Menu</option>';
+            }
+            $.each(obj, function(index, v) {
+                if (v.id_menu == selCat) {
+                    tblCat += '<option selected value="' + v.id_menu + '">' + v.nombre_menu + '</option>';
+                } else {
+                    tblCat += '<option value="' + v.id_menu + '">' + v.nombre_menu + '</option>';
+                }
+            });
+            $("#cboMenusModalCategorias").html(tblCat);
+            $("#cboMenusModalCategorias").select2();
+        });
+    }
+
+    function CalcularCostosMenu(id_menu) {
+        // Obtenemos los costos totales y precio de venta para el pie del modal
+        $.post(base_url + "index.php/Productos/obtenerCategoriaMenu", {
+            'id_menu': id_menu, 
+        }, function(datos) {
+            var obj = $.parseJSON(datos);
+            var costoTotal = 0;
+            $.each(obj.aaData, function(index, v) {
+                costoTotal += parseFloat(v.costo_promedio_receta || 0);
+            });
+            $('#txtCostoTotalMenu').val(costoTotal);
+            
+            // Calcular % de costo
+            let precioVenta = 0;
+            $("#detallePrecioVenta input").each(function() {
+                if($(this).val() > 0) {
+                    precioVenta = $(this).val();
+                    return false; // break
+                }
+            });
+            $('#txtPrecioVentaMenu').val(precioVenta);
+            
+            if(precioVenta > 0) {
+                let porcentaje = (costoTotal / precioVenta) * 100;
+                $('#txtPorcentajeCostoMenu').val(porcentaje.toFixed(2) + "%");
+            } else {
+                $('#txtPorcentajeCostoMenu').val("0%");
+            }
         });
     }
 
@@ -18,13 +139,39 @@
         $('#txtIdMenu').val("");
         $('#txtNombreMenu').val("");
         $('#ckVigenciaMenu').prop('checked', true);
+        ListadoMenuAbajo();
         $('#ModalNuevoMenu').modal({
             backdrop: 'static',
             keyboard: false
         });
     }
 
-    function ListadoMenu() {
+    var menusCargados = {};
+    function ListadoMenuAbajo() {
+        $.post(base_url + "index.php/Productos/obtenerListadoMenu", {}, function(datos) {
+            var obj = $.parseJSON(datos);
+            var tbl = '';
+            menusCargados = {};
+            $.each(obj.aaData, function(index, v) {
+                menusCargados[v.id_menu] = v;
+                tbl += "<tr style='cursor:pointer' onclick='CargarMenuParaEditar(" + v.id_menu + ")'>";
+                tbl += "<td>" + v.id_menu + "</td>";
+                tbl += "<td>" + v.nombre_menu + "</td>";
+                tbl += "</tr>";
+            });
+            $("#bodyMenuAbajo").html(tbl);
+        });
+    }
+
+    function CargarMenuParaEditar(id) {
+        let v = menusCargados[id];
+        if(!v) return;
+        $('#txtIdMenu').val(v.id_menu);
+        $('#txtNombreMenu').val(v.nombre_menu);
+        $('#ckVigenciaMenu').prop('checked', v.vigente == 'SI');
+    }
+
+    function ListadoDeMenuTable() {
         let tituloExport = "CARTA DE PRODUCTOS";
         if ($.fn.dataTable.isDataTable('#tableListadoMenu')) {
             tableListadoMenu = $('#tableListadoMenu').DataTable();
@@ -42,9 +189,9 @@
             "bProcessing": false,
             "pageLength": 10,
             "select": false,
-            "dom": "Bfrtip",
+            "dom": "Brtip",
             "ordering": true,
-            "filter": true,
+            "filter": false,
             "info": false,
             "footer": false,
             "responsive": {
@@ -120,16 +267,22 @@
             };
         };
         
-        $.post(base_url + "index.php/Productos/grabarNuevoMenu", {
+            $.post(base_url + "index.php/Productos/grabarNuevoMenu", {
                 'prod': miJson
             }).done(function(response) {
-                $('#ModalNuevoMenu').modal('hide');
-                tableListadoMenu.ajax.reload();
+                var res = JSON.parse(response);
+                var newId = res[0].id_menu;
                 
-                // AGREGAR ESTO: Recargar el select de menús
-                ListadoDeMenu(NombreMenu); // Pasar el nombre del menú recién creado para seleccionarlo
+                ListadoMenuAbajo();
+                if (typeof tableListadoMenu !== 'undefined' && tableListadoMenu.ajax) {
+                    tableListadoMenu.ajax.reload();
+                }
                 
-                showAppAlert('success', "Se registro Exitosamente El Nuevo Menu!", {
+                // Recargar combos y seleccionar el nuevo
+                ListadoDeMenu(newId); 
+                ListadoDeMenuModal(newId);
+                
+                showAppAlert('success', "Se registro Exitosamente El Menu!", {
                     duration: 4000,
                     image: base_url + 'assets/img/success.gif'
                 });
@@ -145,7 +298,7 @@
     //CATEGORIA MENU 
 
     function AbrirModalListadoCategoriasMenu(id_menu) {
-        ListadoCategoriaMenu(id_menu);
+        ListadoCategoriaMenuModal(id_menu);
         $('#ModalListadoCategoriasMenu').modal({
             backdrop: 'static',
             keyboard: false
@@ -156,24 +309,65 @@
         $('#IdCategoria').val("");
         $('#txtNombreCategoria').val("");
         $('#ckVigenciaCategoria').prop('checked', true);
-        ListadoMenuModalCategorias();
+        
+        let idMenuSeleccionado = $('#cboMenuModal').val();
+        ListadoDeMenuModal(idMenuSeleccionado); // Llena cboMenusModalCategorias y mantiene selección
+        
         $('#ModalNuevaCategoria').modal({
             backdrop: 'static',
             keyboard: false
         });
     }
 
-    function ListadoCategoriaMenu(id_menu) {
+    $('#cboMenusModalCategorias').on('change', function() {
+        let id_menu = $(this).val();
+        if(id_menu && id_menu != "0") {
+            ListadoCategoriasAbajo(id_menu);
+        } else {
+            $('#bodyCategoriasAbajo').html("");
+        }
+    });
+
+    var categoriasCargadas = {};
+    function ListadoCategoriasAbajo(id_menu) {
+        $.post(base_url + "index.php/Productos/obtenerCategoriaMenu", {
+            'id_menu': id_menu
+        }, function(datos) {
+            var obj = $.parseJSON(datos);
+            var tbl = '';
+            categoriasCargadas = {};
+            $.each(obj.aaData, function(index, v) {
+                categoriasCargadas[v.id_categoria_menu] = v;
+                tbl += "<tr style='cursor:pointer' onclick='CargarCategoriaParaEditar(" + v.id_categoria_menu + ")'>";
+                tbl += "<td>" + v.id_categoria_menu + "</td>";
+                tbl += "<td>" + v.nombre_categoria_menu + "</td>";
+                tbl += "<td>" + v.vigente + "</td>";
+                tbl += "</tr>";
+            });
+            $("#bodyCategoriasAbajo").html(tbl);
+        });
+    }
+
+    function CargarCategoriaParaEditar(id) {
+        let v = categoriasCargadas[id];
+        if(!v) return;
+        $('#IdCategoria').val(v.id_categoria_menu);
+        $('#txtNombreCategoria').val(v.nombre_categoria_menu);
+        $('#ckVigenciaCategoria').prop('checked', v.vigente == 'SI');
+        $('#cboMenusModalCategorias').val(v.id_menu).trigger('change');
+    }
+
+    function ListadoCategoriaMenuModal(id_menu) {
         let tituloExport = "CATEGORIAS";
         
         // Guardar el id_menu en un input hidden o variable global
         $('#current_id_menu').val(id_menu); // Agregar un input hidden en tu modal
         
-        if ($.fn.dataTable.isDataTable('#tableCategoriasMenu')) {
-            tableCategoriasMenu = $('#tableCategoriasMenu').DataTable();
-            tableCategoriasMenu.destroy();
+        if ($.fn.dataTable.isDataTable('#tableCategoriasMenuModal')) {
+            tableCategoriasMenuModal = $('#tableCategoriasMenuModal').DataTable();
+            tableCategoriasMenuModal.destroy();
         }
-        tableCategoriasMenu = $("#tableCategoriasMenu").DataTable({
+        tableCategoriasMenuModal = $("#tableCategoriasMenuModal").DataTable({
             "ajax": {
                 "url": base_url + "index.php/Productos/obtenerCategoriaMenu",
                 "type": "POST",
@@ -185,9 +379,9 @@
             "bProcessing": false,
             "pageLength": 10,
             "select": false,
-            "dom": "Bfrtip",
+            "dom": "Brtip",
             "ordering": true,
-            "filter": true,
+            "filter": false,
             "info": false,
             "footer": false,
             "responsive": {
@@ -197,10 +391,10 @@
                 }
             },
             "columns": [
-                {mData: "id_categoria_menu", className: "text-left", visible: false},
+                {mData: "id_categoria_menu", className: "text-left"},
                 {mData: "id_menu", className: "text-left", visible: false},
                 {mData: "nombre_categoria_menu", className: "text-center"},
-                {mData: "vigente", className: "text-center"},
+                {mData: "costo_promedio_receta", className: "text-center"},
                 {mData: "btnAgregarProductosCategoria", className: "text-center"},
             ],
             'language': {
@@ -218,7 +412,7 @@
     }
 
     function GrabarCategoriaMenu() {
-        if (!$('#cboMenus').val() || $('#cboMenus').val() === "0") {
+        if (!$('#cboMenusModalCategorias').val() || $('#cboMenusModalCategorias').val() === "0") {
             showAppAlert('error',"- Debe Seleccionar un Menu", {
                 duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
@@ -233,7 +427,7 @@
             return;
         } else {
             IdCategoria = $('#IdCategoria').val();
-            IdMenu = $('#cboMenus').val();
+            IdMenu = $('#cboMenusModalCategorias').val();
             NombreCategoria = $('#txtNombreCategoria').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
             if ($('#ckVigenciaCategoria').is(":checked")) {
                 var vigenciaCategoria = 1
@@ -250,9 +444,13 @@
         $.post(base_url + "index.php/Productos/grabarNuevaCategoria", {
                 'prod': miJson
             }).done(function() {
-                $('#ModalNuevaCategoria').modal('hide');
-                tableCategoriasMenu.ajax.reload();
-                showAppAlert('success', "Se registro Exitosamente La Nueva Categoria!", {
+                ListadoCategoriasAbajo(IdMenu);
+                
+                // Recargar listado en el modal principal y asegurar que el menú siga seleccionado
+                ListadoDeMenuModal(IdMenu);
+                ListadoCategoriaMenuModal(IdMenu);
+                
+                showAppAlert('success', "Se registro Exitosamente La Categoria!", {
                     duration: 4000,
                     image: base_url + 'assets/img/success.gif'
                 });
@@ -268,77 +466,133 @@
 
 
 
+    function AbrirComposicionDesdeListado() {
+        // Encontrar la fila seleccionada en la tabla tableCategoriasMenuModal
+        let selectedRow = $("#tableCategoriasMenuModal tbody tr.selected");
+        if (selectedRow.length == 0) {
+            alert("Por favor, seleccione una categoría de la tabla primero (haga clic en una fila)");
+            return;
+        }
+        
+        // Usar DataTables API para obtener el ID real desde la data de la fila (aunque sea oculta)
+        let table = $('#tableCategoriasMenuModal').DataTable();
+        let data = table.row(selectedRow).data();
+        let id_categoria_menu = data ? data.id_categoria_menu : null;
+        
+        if(!id_categoria_menu) {
+            alert("No se pudo obtener el ID de la categoría seleccionada");
+            return;
+        }
+        
+        AbrirModalProductosAgregadosACategoria(id_categoria_menu);
+    }
+
+    // Listener para seleccionar filas en la tabla de categorías del listado
+    $(document).on('click', '#tableCategoriasMenuModal tbody tr', function() {
+        $("#tableCategoriasMenuModal tbody tr").removeClass('selected').css('background-color', '');
+        $(this).addClass('selected').css('background-color', '#E8F5E9');
+    });
+
     //PRODUCTOS AGREGADOS A LA CATEGORIA
     function AbrirModalProductosAgregadosACategoria(id_categoria_menu) {
-        $('#CostoCategoriaMenu').val("0");
-        $('#AdicionalCategoriaMenu').val("0");
-        $('#ckPermitirCambio').prop('checked', false);
-        $('#ckImprimirProductoCategoria').prop('checked', false);
-        $('#CantMinima').val("");
-        $('#CantMaxima').val("");
-        $('#ckEstricto').prop('checked', false);
-        $('#CostoPromedio').val("");
-        listadoDeCategorias();
-        ListadoDeAgregadosParaElProducto();
+        console.log("Abriendo modal... ID Categoria:", id_categoria_menu);
+        // Encontrar datos de la categoría en el objeto de caché si existe
+        let catData = categoriasCargadas[id_categoria_menu];
+        let menuId = $('#cboMenuModal').val();
+        let menuNombre = $("#cboMenuModal option:selected").text();
+        let catNombre = catData ? catData.nombre_categoria_menu : "Categoría";
+        
+        // Actualizar etiqueta destacada (Número 1 en Imagen 2)
+        $("#labelMenuCategoriaDestacado").text(menuNombre + " -> " + catNombre);
+        $("#labelMenuCategoriaDestacado").attr('data-id-categoria', id_categoria_menu);
+        
+        NuevoDetalleProducto(); // Limpiar campos iniciales
+        
+        console.log("Cargando lista de productos para el combo...");
+        ListadoDeAgregadosParaElProducto(null, "#cboSelectorProductosFinal"); // Esta función llena el combo de productos
+        
         obtenerProductosQueConformanElMenu(id_categoria_menu);
         ObtenerConfiguracionesCategoriaMenu(id_categoria_menu);
+        
         $('#ModalAgregarProductosAcategorias').modal({
             backdrop: 'static',
             keyboard: false
         });
     }
 
+    function NuevoDetalleProducto() {
+        $('#IdDetalleCategoria').val("");
+        $('#cboSelectorProductosFinal').val(0).trigger('change');
+        $('#CostoCategoriaMenu').val("0");
+        $('#AdicionalCategoriaMenu').val("0");
+        $('#labelRecetaProducto').text("SIN RECETA");
+        $("#tableDetalleCategoria tbody tr").removeClass('selected');
+    }
     function obtenerProductosQueConformanElMenu(id_categoria_menu) {
         $.post(base_url + "index.php/Productos/obtenerProductosQueConformanElMenu", {
             id_categoria_menu: id_categoria_menu
         }, function(datos) {
-            var obj = $.parseJSON(datos); // lo convierto a un objeto a json
-            tbl = '';
-            $.each(obj, function(index, v) { // recorro el array
-                tbl = tbl + "<tr>";
-                tbl = tbl + "<td style= 'display:none'>" + v.id_detalle_categoria_menu + "</td>";
-                tbl = tbl + "<td id='id_categoria_menu' style= 'display:none'>" + v.id_categoria_menu + "</td>";
-                tbl = tbl + "<td style= 'display:none'>" + v.nombre_categoria_menu + "</td>";
-                tbl = tbl + "<td>" + v.nombre_producto + "</td>";
-                tbl = tbl + '<td style="width:35%" class="text-right" ><input class="text-right form-control form-control-line" type="number" min="0" name="" value="' + v.costo_receta + '"></td>';
-                tbl = tbl + '<td style="width:35%" class="text-right" ><input class="text-right form-control form-control-line" type="number" min="0" name="" value="' + v.costo_adicional_venta + '"></td>';
-                if (v.permite_cambio == 't') {
-                    tbl = tbl + "<td  style='width:15%'' >" + 'SI' + "</td>";
-                } else {
-                    tbl = tbl + "<td  style='width:15%'' >" + 'NO' + "</td>";
-                }
-                if (v.imprimir == 't') {
-                    tbl = tbl + "<td  style='width:15%'' >" + 'SI' + "</td>";
-                } else {
-                    tbl = tbl + "<td  style='width:15%'' >" + 'NO' + "</td>";
-                }
-                if (v.vigente == 't') {
-                    tbl = tbl + "<td  style='width:15%'' >" + 'SI' + "</td>";
-                } else {
-                    tbl = tbl + "<td  style='width:15%'' >" + 'NO' + "</td>";
-                }
-                /*if (v.permite_cambio == 't') {
-                    tbl += "<td <button type='button' class='btn-block btn-danger text-center'><i class='fa fa-times-circle'></i> Deshabilitar Permitir Cambio</button></td>"
-                } else {
-                    tbl += "<td <button type='button' class='btn-block btn-primary text-center'><i class='fa fa-check-circle'></i> habilitar Permitir Cambio</button></td>"
-                }
-                if (v.imprimir == 't') {
-                    tbl += "<td <button type='button' class='btn-block btn-danger text-center'><i class='fa fa-times-circle'></i> Deshabilitar Impresion</button></td>"
-                } else {
-                    tbl += "<td <button type='button' class='btn-block btn-primary text-center'><i class='fa fa-check-circle'></i> habilitar Impresion</button></td>"
-                }
-                if (v.vigente == 't') {
-                    tbl += "<td <button type='button' class='btn-block btn-danger text-center'><i class='fa fa-times-circle'></i> Deshabilitar Producto</button></td>"
-                } else {
-                    tbl += "<td <button type='button' class='btn-block btn-primary text-center'><i class='fa fa-check-circle'></i> Habilitar Producto</button></td>"
-                }*/
-                tbl = tbl + "</tr>";
-
-
-            }); //fin each
+            var obj = $.parseJSON(datos);
+            var tbl = '';
+            var totalCostoReceta = 0;
+            var cantItems = 0;
+            
+            $.each(obj, function(index, v) {
+                let idDetalle = v.id_detalle_categoria_menu;
+                // Guardar datos en caché para edición fácil
+                detallesCargados[idDetalle] = v;
+                
+                tbl += "<tr onclick='CargarDetalleParaEditar(" + idDetalle + ")' style='cursor:pointer'>";
+                tbl += "<td>" + idDetalle + "</td>";
+                tbl += "<td>" + v.nombre_producto + "</td>";
+                tbl += "<td class='text-right'>" + v.costo_receta + "</td>";
+                tbl += "<td class='text-right'>" + v.costo_adicional_venta + "</td>";
+                tbl += "<td class='text-center'>" + (v.permite_cambio == 't' ? 'SÍ' : 'NO') + "</td>";
+                tbl += "<td class='text-center'>" + (v.imprimir == 't' ? 'SÍ' : 'NO') + "</td>";
+                tbl += "</tr>";
+                
+                totalCostoReceta += parseFloat(v.costo_receta) || 0;
+                cantItems++;
+            });
+            
             $("#DetalleCategoria").html(tbl);
-
+            $("#lblCantProductosCategoria").text(cantItems);
+            
+            // Si hay productos, calcular promedio para mostrar (informativo)
+            if(cantItems > 0) {
+                let promedio = totalCostoReceta / cantItems;
+                // $("#lblCostoPromedioCategoria").text(promedio.toFixed(0)); // Esto lo llena ObtenerConfiguracionesCategoriaMenu
+            }
         });
+    }
+
+    var detallesCargados = {};
+
+    function CargarDetalleParaEditar(idDetalle) {
+        let v = detallesCargados[idDetalle];
+        if(!v) return;
+        
+        // Resaltado visual
+        $("#tableDetalleCategoria tbody tr").removeClass('selected');
+        // Encontrar la fila que corresponde a este idDetalle
+        $("#tableDetalleCategoria tbody tr").each(function() {
+            if($(this).find('td:eq(0)').text() == idDetalle) {
+                $(this).addClass('selected');
+            }
+        });
+
+        // Asegurar que exista la opción antes de hacer set (Select2 workaround)
+        if ($('#cboSelectorProductosFinal').find("option[value='" + v.id_producto + "']").length) {
+            $('#cboSelectorProductosFinal').val(v.id_producto).trigger('change');
+        } else {
+            var newOption = new Option(v.nombre_producto, v.id_producto, true, true);
+            $('#cboSelectorProductosFinal').append(newOption).trigger('change');
+        }
+
+        $('#IdDetalleCategoria').val(v.id_detalle_categoria_menu);
+        $('#CostoCategoriaMenu').val(v.costo_receta);
+        $('#AdicionalCategoriaMenu').val(v.costo_adicional_venta);
+        $('#labelRecetaProducto').text(v.costo_receta > 0 ? "CON RECETA" : "SIN RECETA");
     }
 
     function actualizarCostoRecetaCategoriaMenu() {
@@ -421,140 +675,117 @@
             .always(function() {});
     }
 
-    $('#BtnActualizarDetalleMenu').on('click', function() {
-        actualizarCostoRecetaCategoriaMenu();
-        actualizarCostoAdicionalVentaCategoriaMenu();
-        actualizarConfiguracionCategoriaMenu();
-    });
-
     function GrabarDetalleCategoriaMenu() {
-        var msg = "";
-        if ($('#cboMenuCategoria').val() == 0) {
-            msg = "Categoria A La Cual Aignar Productos\n";
-        }
-        if ($('#cboListadoProductosParaCategoria').val() == 0) {
-            msg = "Productos A Agregar\n";
-        }
-        if (msg.length) {
-            showAppAlert('error',"- Debe Ingresar Los Siguiente(s) dato(s):\n" + msg, {
-                duration: 5000,
-                image: base_url+ 'assets/img/errorGif.gif'
+        let id_categoria_menu = $("#labelMenuCategoriaDestacado").attr('data-id-categoria');
+        let id_producto = $('#cboSelectorProductosFinal').val();
+        let costo_receta = $('#CostoCategoriaMenu').val();
+        let costo_adicional_venta = $('#AdicionalCategoriaMenu').val();
+        let id_detalle = $('#IdDetalleCategoria').val();
+        
+        if(!id_producto || id_producto == "0") {
+             showAppAlert('error', "Debe seleccionar un producto", {
+                duration: 4000,
+                image: base_url + 'assets/img/errorGif.gif'
             });
-        } else {
-            //grabar datos
-            IdDetalleCategoriaMenu = $('#IdDetalleCategoria').val();
-            IdCategoriaMenu = $('#cboMenuCategoria').val();
-            IdProducto = $('#cboListadoProductosParaCategoria').val();
-            CostoCategoria = $('#CostoCategoriaMenu').val();
-            CostoAdicional = $('#AdicionalCategoriaMenu').val();
-            if ($('#ckPermitirCambio').is(":checked")) {
-                var permiteCambio = 1
-            } else {
-                var permiteCambio = 0
-            }
+            return;
+        }
 
-            if ($('#ckImprimirProductoCategoria').is(":checked")) {
-                var imprimirProductosCategoria = 1
-            } else {
-                var imprimirProductosCategoria = 0
-            }
-
-
-            var miJson = {
-                'id_detalle_categoria_menu': IdDetalleCategoriaMenu,
-                'id_categoria_menu': IdCategoriaMenu,
-                'id_producto': IdProducto,
-                'costo_receta': CostoCategoria,
-                'costo_adicional_venta': CostoAdicional,
-                'permite_cambio': permiteCambio,
-                'imprimir': imprimirProductosCategoria,
-            };
+        var miJson = {
+            'id_detalle_categoria_menu': id_detalle || 0,
+            'id_categoria_menu': id_categoria_menu,
+            'id_producto': id_producto,
+            'costo_receta': costo_receta,
+            'costo_adicional_venta': costo_adicional_venta,
+            'permite_cambio': true,
+            'imprimir': true
         };
+
         $.post(base_url + "index.php/Productos/grabarDetalleCategoria", {
-                'prod': miJson
-            }).done(function() {
-                id_categoria_menu = $('#id_categoria_menu').val();
-                obtenerProductosQueConformanElMenu(id_categoria_menu);
-                showAppAlert('success', "Se registro Exitosamente!", {
-                    duration: 4000,
-                    image: base_url + 'assets/img/success.gif'
-                });
-            })
-            .fail(function() {
-                showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
-                    duration: 5000,
-                    image: base_url+ 'assets/img/errorGif.gif'
-                });
-            })
-            .always(function() {});
+            prod: miJson
+        }, function(datos) {
+            showAppAlert('success', "Asociación guardada correctamente", {
+                duration: 4000,
+                image: base_url + 'assets/img/success.gif'
+            });
+            obtenerProductosQueConformanElMenu(id_categoria_menu);
+            NuevoDetalleProducto();
+        });
     }
+
+    function QuitarProductoDeCategoria() {
+        let id_detalle = $('#IdDetalleCategoria').val();
+        let id_categoria_menu = $("#labelMenuCategoriaDestacado").attr('data-id-categoria');
+        
+        console.log("Intentando quitar DetalleID:", id_detalle, "de CategoriaID:", id_categoria_menu);
+
+        if(!id_detalle || id_detalle == "" || id_detalle == "0") {
+            showAppAlert('error', "Por favor, seleccione un producto de la tabla haciendo clic sobre él.", {
+                duration: 4000
+            });
+            return;
+        }
+
+            $.post(base_url + "index.php/Productos/DeshabilitarDetalleCategoria", {
+                id: id_detalle
+            }, function(datos) {
+                console.log("Respuesta del servidor al quitar:", datos);
+                
+                // Alerta para que el usuario vea el diagnóstico sin consola
+                if(typeof datos === 'string') {
+                    try { datos = JSON.parse(datos); } catch(e) {}
+                }
+                
+                if (datos.affected == 0) {
+                   alert("ERROR DE ELIMINACIÓN:\nFilas afectadas: " + datos.affected + "\nSQL: " + datos.query + "\nID enviado: " + datos.id + "\n\nPor favor, envíame una foto de esta alerta.");
+                } else {
+                    showAppAlert('warning', "Producto quitado de la categoría", {
+                        duration: 4000,
+                        image: base_url + 'assets/img/success.gif'
+                    });
+                }
+                
+                if(id_categoria_menu) {
+                    obtenerProductosQueConformanElMenu(id_categoria_menu);
+                } else {
+                    console.error("Error: No se pudo recargar la tabla porque id_categoria_menu es nulo");
+                }
+                NuevoDetalleProducto();
+            });
+        }
 
     function ObtenerConfiguracionesCategoriaMenu(id_categoria_menu) {
         $.post(base_url + "index.php/Productos/ObtenerConfiguracionesCategoriaMenu", {
-                id_categoria_menu: id_categoria_menu
-            }, function(datos) {
-                var obj = $.parseJSON(datos);
-                $.each(obj, function(index, v) {
-                    $('#CantMinima').val(v.cantidad_minima);
-                    $('#CantMaxima').val(v.cantidad_maxima);
-                    if (v.estricto == 't') {
-                        $("#ckEstricto").prop("checked", true);
-                    } else {
-                        $("#ckEstricto").prop("checked", false);
-                    }
-                    $('#CostoPromedio').val(v.costo_promedio_receta);
-
-
-                });
-            }).done(function() {})
-            .fail(function() {
-                alert("Se produjo un error al realizar la consulta");
-            })
-            .always(function() {});
+            id_categoria_menu: id_categoria_menu
+        }, function(datos) {
+            var obj = JSON.parse(datos);
+            if(obj && obj.length > 0) {
+                $('#CantMinima').val(obj[0].cantidad_minima || 0);
+                $('#CantMaxima').val(obj[0].cantidad_maxima || 5);
+                $('#ckEstricto').prop('checked', obj[0].estricto == 't' || obj[0].estricto == true);
+                $('#lblCostoPromedioCategoria').text(obj[0].costo_promedio_receta || 0);
+            }
+        });
     }
 
-    function actualizarConfiguracionCategoriaMenu() {
-        var detalleConfiguracionMenu = [];
-        $("#tableDetalleCategoria tbody tr").each(function(index) {
-            $(this).children("td").each(function(index2) {
-                CantidadMinima = $('#CantMinima').val();
-                CantidadMaxima = $('#CantMaxima').val();
-                CostoPromedio = $('#CostoPromedio').val();
-                if ($('#ckEstricto').is(":checked")) {
-                    var esEstricto = 1
-                } else {
-                    var esEstricto = 0
-                }
-                switch (index2) {
-                    case 1:
-                        idCategoriaMenu = $(this).html();
+    function GrabarConfiguracionCategoriaMenu() {
+        let id_categoria_menu = $("#labelMenuCategoriaDestacado").attr('data-id-categoria');
+        let detalle = [{
+            'id_categoria_menu': id_categoria_menu,
+            'cantidad_minima': $('#CantMinima').val(),
+            'cantidad_maxima': $('#CantMaxima').val(),
+            'estricto': $('#ckEstricto').is(':checked'),
+            'costo_promedio_receta': $('#lblCostoPromedioCategoria').text()
+        }];
 
-
-                        detalleConfiguracionMenu.push({
-                            'id_categoria_menu': idCategoriaMenu,
-                            'cantidad_minima': CantidadMinima,
-                            'cantidad_maxima': CantidadMaxima,
-                            'costo_promedio_receta': CostoPromedio,
-                            'estricto': esEstricto,
-                        });
-                        break;
-                }
-            });
-        });
-
-        console.log(detalleConfiguracionMenu);
         $.post(base_url + "index.php/Productos/actualizarConfiguracionCategoriaMenu", {
-                detalle: detalleConfiguracionMenu
-            }, function() {}).done(function(datos) {
-                console.log(datos);
-                showAppAlert('success', "Se Actualizo Exitosamente!", {
-                    duration: 4000,
-                    image: base_url + 'assets/img/success.gif'
-                });
-            })
-            .fail(function() {
-                alert("Se produjo un error al realizar el proceso, favor contacte a su administrador");
-            })
-            .always(function() {});
+            detalle: detalle
+        }, function(datos) {
+            showAppAlert('success', "Configuración de categoría guardada", {
+                duration: 4000,
+                image: base_url + 'assets/img/success.gif'
+            });
+            // Recargar el total en el modal principal si es necesario
+            ListadoDeMenuModal($('#cboMenuModal').val());
+        });
     }
 </script>
