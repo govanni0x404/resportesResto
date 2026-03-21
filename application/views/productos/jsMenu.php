@@ -101,6 +101,11 @@
             });
             $("#cboMenusModalCategorias").html(tblCat);
             $("#cboMenusModalCategorias").select2();
+            
+            // Si hay un menú seleccionado, cargar sus categorías automáticamente
+            if (selCat && selCat != "0") {
+                ListadoCategoriasAbajo(selCat);
+            }
         });
     }
 
