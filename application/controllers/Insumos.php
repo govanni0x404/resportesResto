@@ -112,7 +112,15 @@ class Insumos extends CI_Controller
 			'inventario_cierre_turno' => $d['inv_cierre']
 		);
 		$r = $this->Minsumos->grabarInsumo($id, $miData);
-		echo json_encode($r);
+		if ($r && isset($r['id_insumo'])) {
+			echo json_encode(array(
+				'success' => true,
+				'id_insumo' => $r['id_insumo'],
+				'message' => 'Insumo grabado exitosamente'
+			));
+		} else {
+			echo json_encode($r);
+		}
 
 		if ($r) {
     		echo json_encode(['status' => 'success', 'msg' => 'Insumo grabado correctamente']);

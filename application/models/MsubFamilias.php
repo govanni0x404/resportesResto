@@ -13,7 +13,7 @@ class MsubFamilias extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 		  redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT s.id_subfamilia, s.nombre_subfamilia, f.nombre_familia from subfamilia s 
 			join familia f on s.id_familia=f.id_familia
 			order by s.id_subfamilia asc";
@@ -44,7 +44,7 @@ class MsubFamilias extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 		  redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         if ($id) {
             $this->db->where('id_subfamilia', $id);
             $this->db->update('subfamilia', $data);
@@ -61,7 +61,7 @@ class MsubFamilias extends CI_Model
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
           }
-          $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+          $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $query = $this->db->query("SELECT id_subfamilia, nombre_subfamilia from subfamilia where id_familia= $id_familia order by id_familia");
         return $query->result();
     }

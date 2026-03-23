@@ -37,19 +37,29 @@ class Recintos extends CI_Controller
 
   public function grabarNuevoRecinto()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-      redirect(base_url()); //redireccionar al login
-    }
-    $d = $this->input->post('prod');
-    $id = intval($d['id_recinto']);
-    $miData = array(
-      'nombre_recinto' => $d['nombre_recinto'],
-      'vigente' => $d['vigente'],
-      'id_dimpresion' => $d['id_dimpresion'],
-      'ruta' => 0,
-      'ultima_pos_mesa' => 0,
-    );
-    $r = $this->Mrecintos->grabarNuevoRecinto($id, $miData);
-    echo json_encode($r);
+      if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+          redirect(base_url());
+      }
+
+      $d = $this->input->post('prod');
+      $id = intval($d['id_recinto']);
+
+      if (empty($d['id_dimpresion']) || intval($d['id_dimpresion']) === 0) {
+        $ultimoDestino = $this->Mrecintos->obtenerUltimoDestinoImpresion();
+        $idDestino = $ultimoDestino->id_dimpresion;
+      } else {
+        $idDestino = intval($d['id_dimpresion']);
+      }
+
+      $miData = array(
+          'nombre_recinto'  => $d['nombre_recinto'],
+          'vigente'         => $d['vigente'],
+          'id_dimpresion'   => $idDestino, 
+          'ruta'            => 0,
+          'ultima_pos_mesa' => 0,
+      );
+
+      $r = $this->Mrecintos->grabarNuevoRecinto($id, $miData);
+      echo json_encode($r);
   }
 }

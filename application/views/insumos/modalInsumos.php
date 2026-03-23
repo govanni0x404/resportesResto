@@ -46,6 +46,7 @@
 								<fieldset>
 									<div class="col-md-12">
 										<label for="cboGrupoInsumo">FAMILIA/GRUPO INSUMO *</label>
+										<sup style="color:#568c30;" ><a onclick="AbrirModalNuevaFamiliaInsumo()">Nuevo</a></sup>
 										<select style="width:100%;" id="cboGrupoInsumo" nombre="cboGrupoInsumo" class="form-control input-sm" requerido="si">
 											<option value="">--Seleccione--</option>
 										</select>
@@ -105,6 +106,7 @@
 									</div>
 									<div class="col-md-6">
 										<label for="cboUnMedInventario">U. MEDIDA INVENTARIO/COMPRA *</label>
+										<sup style="color:#568c30;" ><a onclick="AbrirModalNuevaUmedida()">Nuevo</a></sup>
 										<select style="width:100%;" id="cboUnMedInventario" nombre="cboUnMedInventario" class="form-control input-sm" requerido="si">
 											<option value="">--Seleccione--</option>
 										</select>
@@ -118,6 +120,7 @@
 									</div>
 									<div class="col-md-6">
 										<label for="cboUnMedReceta">U. MEDIDA RECETA *</label>
+										<sup style="color:#568c30;" ><a onclick="AbrirModalNuevaUmedida()">Nuevo</a></sup>
 										<select style="width:100%;" id="cboUnMedReceta" nombre="cboUnMedReceta" class="form-control input-sm" requerido="si">
 											<option value="">--Seleccione--</option>
 										</select>
@@ -533,9 +536,12 @@
     </div>
 </div>
 <!-- FIN MODAL NUEVA RECETA DE PRODUCCION -->
+<?php $this->load->view('familiasInsumo/jsNuevaFamilia.php'); ?>
+<?php $this->load->view('umedida/jsNuevaUmedida.php'); ?>
 
 <script>
-	$("#btnNuevoInsumo").on("click", function() {
+
+	function AbrirModalNuevoInsumo(){
 		tabsInsumos();
 		$("#idInsumo").val("");
 		$("#codBarra").val("");
@@ -558,22 +564,23 @@
 		llenarGrupoInsumos();
 		llenarImpto();
 		llenarUnMedida();
-	});
+	};
 
-	function llenarGrupoInsumos(objSelected, id_grupo_insumo) {
+	function llenarGrupoInsumos(objSelected, id_grupo_insumo_seleccionar) {
 		$.post(base_url + "index.php/Insumos/llenarCboGrupoInsumo", {
-			id_grupo_insumo: id_grupo_insumo
+			id_grupo_insumo: id_grupo_insumo_seleccionar
 		}, function(datos) {
-			var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
+			var obj = jQuery.parseJSON(datos);
 			tbl = "";
-			tbl = '<option selected value="0">--SELECCIONE--</option>';
-			$.each(obj, function(index, v) { // recorro el array
-				if (v.nombre_grupo_insumo == objSelected) {
+			tbl = '<option value="0">--SELECCIONE--</option>';
+			$.each(obj, function(index, v) {
+				// Verificar si debe estar seleccionado por nombre O por ID
+				if (v.nombre_grupo_insumo == objSelected || v.id_grupo_insumo == id_grupo_insumo_seleccionar) {
 					tbl = tbl + '<option selected value="' + v.id_grupo_insumo + '">' + v.nombre_grupo_insumo + '</option>';
 				} else {
 					tbl = tbl + '<option value="' + v.id_grupo_insumo + '">' + v.nombre_grupo_insumo + '</option>';
 				}
-			}); //fin each
+			});
 			$("#cboGrupoInsumo").html(tbl);
 			$("#cboGrupoInsumo").select2();
 		});
@@ -788,11 +795,26 @@
 									$("#idInsumo").val(id_insumo2);
 									$('#modalInsumo').modal('hide');
 									tableInsumos.ajax.reload();
-									showAppAlert('success', "Se registro Exitosamente El Nuevo Insumo!", {
-                                    	duration: 4000,
-                                    	image: base_url + 'assets/img/success.gif'
-                                	});
-								})
+
+									if (typeof ListarInsumos === 'function') {
+										ListarInsumos("");
+								
+										try {
+											var nuevoInsumo = JSON.parse(response);
+											if (nuevoInsumo.id_proveedor) {
+												setTimeout(function() {
+													$('#cboInsumoCompra').val(nuevoInsumo.id_insumo).trigger('change');
+												}, 500);
+											}
+										} catch(e) {
+											console.log("No se pudo seleccionar automáticamente el nuevo Insumo");
+										}
+									}
+								
+									if (typeof tableInsumos !== 'undefined') {
+										tableInsumos.ajax.reload();
+									}
+									})
 								.fail(function() {
 									showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {
                                     	duration: 5000,

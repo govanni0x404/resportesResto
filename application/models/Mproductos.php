@@ -8,12 +8,33 @@ class Mproductos extends CI_Model
 		parent::__construct();
 	}
 
+	public function verificarColumnaExiste($tabla, $columna)
+	{
+		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+			redirect(base_url());
+		}
+		
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+		
+		$query = $this->db->query("
+			SELECT EXISTS (
+				SELECT 1 
+				FROM information_schema.columns 
+				WHERE table_name = '$tabla' 
+				AND column_name = '$columna'
+			) as existe
+		");
+		
+		$result = $query->row();
+		return $result->existe === 't' || $result->existe === true;
+	}
+
 	public function ListadoCartaDeProductos(/*$id_familia*/)
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
 		$q = "SELECT p.id_producto, p.cbarra, p.nombre_producto, f.nombre_familia, u.nombre_umedida, i.nombre_impuesto as iva, ii.nombre_impuesto as impto_adicional,
         d.nombre_dimpresion, b.nombre_bodega, p.pponderado,
@@ -78,17 +99,31 @@ class Mproductos extends CI_Model
 	}
 
 	public function obtenerPreciosDeVenta($idProducto){
-    	if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-	        redirect(base_url());
-    	}
-    	$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-    	$query = $this->db->query('SELECT d.id_detalle_lprecio, d.id_lprecio, l.nombre_lprecio, d.total, 
-        	                      COALESCE(d.monto_comision, 0) as monto_comision 
-            	                  FROM detalle_lprecio d 
-                	              JOIN lprecio l ON d.id_lprecio=l.id_lprecio
-                    	          WHERE d.id_producto=' . $idProducto . ' 
-                        	      ORDER BY l.nombre_lprecio');
-    	return $query->result();
+		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+			redirect(base_url());
+		}
+		
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+		
+		// Verificar si existe la columna
+		$tieneComision = $this->verificarColumnaExiste('detalle_lprecio', 'monto_comision');
+		
+		// Construir query dinámicamente
+		if ($tieneComision) {
+			$select = 'd.id_detalle_lprecio, d.id_lprecio, l.nombre_lprecio, d.total, COALESCE(d.monto_comision, 0) as monto_comision';
+		} else {
+			$select = 'd.id_detalle_lprecio, d.id_lprecio, l.nombre_lprecio, d.total, 0 as monto_comision';
+		}
+		
+		$query = $this->db->query("
+			SELECT $select 
+			FROM detalle_lprecio d 
+			JOIN lprecio l ON d.id_lprecio=l.id_lprecio
+			WHERE d.id_producto = $idProducto
+			ORDER BY l.nombre_lprecio
+		");
+		
+		return $query->result();
 	}
 
 	public function ListadoDeSubFamilias()
@@ -96,7 +131,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT id_subfamilia, nombre_subfamilia from subfamilia order by nombre_subfamilia asc";
 		$query = $this->db->query($q)->result();
 		return $query;
@@ -107,7 +142,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT id_umedida, nombre_umedida from umedida order by nombre_umedida asc";
 		$query = $this->db->query($q)->result();
 		return $query;
@@ -118,7 +153,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT id_dimpresion, nombre_dimpresion from dimpresion order by nombre_dimpresion asc";
 		$query = $this->db->query($q)->result();
 		return $query;
@@ -129,7 +164,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT id_bodega, nombre_bodega from bodega order by nombre_bodega asc";
 		$query = $this->db->query($q)->result();
 		return $query;
@@ -140,7 +175,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT id_impuesto, nombre_impuesto from impuesto 
         where nombre_impuesto ilike '%IVA%' OR nombre_impuesto ilike '%EXENTO%'
         order by nombre_impuesto asc";
@@ -153,7 +188,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT id_impuesto, nombre_impuesto from impuesto
         order by nombre_impuesto asc";
 		$query = $this->db->query($q)->result();
@@ -165,7 +200,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT id_menu, nombre_menu from menu order by nombre_menu asc";
 		$query = $this->db->query($q)->result();
 		return $query;
@@ -176,7 +211,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT id_receta, nombre_receta from receta order by nombre_receta asc";
 		$query = $this->db->query($q)->result();
 		return $query;
@@ -185,9 +220,9 @@ class Mproductos extends CI_Model
 	public function grabarNuevoProducto($id, $data)
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-			redirect(base_url()); //redireccionar al login
+			redirect(base_url());
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_producto', $id);
 			$this->db->update('producto', $data);
@@ -205,7 +240,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_familia', $id);
 			$this->db->update('familia', $data);
@@ -217,13 +252,41 @@ class Mproductos extends CI_Model
 		return $consulta->result();
 	}
 
+	public function existeCodigoBarra($cbarra, $id_producto = null)
+	{
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+		
+		$this->db->where('cbarra', $cbarra);
+		
+		// Si es una edición, excluir el producto actual
+		if ($id_producto !== null && $id_producto > 0) {
+			$this->db->where('id_producto !=', $id_producto);
+		}
+		
+		return $this->db->count_all_results('producto') > 0;
+	}
+
+	public function obtenerSiguienteCodigoBarra()
+	{
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+
+		// Obtener el último código de barras como número
+		$query = $this->db->query("
+			SELECT COALESCE(MAX(CAST(cbarra AS INTEGER)), 0) + 1 as siguiente_codigo
+			FROM producto
+			WHERE cbarra ~ '^[0-9]+$'
+		");
+
+		$row = $query->row();
+		return $row ? $row->siguiente_codigo : 1;
+	}
 
 	public function grabarNuevaSubFamilia($id, $data)
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_subfamilia', $id);
 			$this->db->update('subfamilia', $data);
@@ -240,7 +303,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_bodega', $id);
 			$this->db->update('bodega', $data);
@@ -254,11 +317,9 @@ class Mproductos extends CI_Model
 
 	public function ListadoDeProductos(/*$id_producto*/)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-			redirect(base_url()); //redireccionar al login
-		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-		$q = "SELECT id_producto, nombre_producto from producto order by nombre_producto asc";
+if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+		$q = "SELECT id_producto, nombre_producto, pponderado, precio_ucompra from producto order by nombre_producto asc";
 		$query = $this->db->query($q)->result();
 		return $query;
 	}
@@ -268,7 +329,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = 'SELECT a.id_agregado, a.id_producto, round(a.cantidad) as cantidad, a.valor, a.vigente, p.nombre_producto, pm.nombre_producto as producto_maestro 
         from agregados a
         join producto p on p.id_producto=a.id_producto
@@ -283,7 +344,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_agregado', $id);
 			$this->db->update('agregados', $data);
@@ -300,7 +361,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$this->db->where('id_agregado', $idAgregado);
 		$this->db->update('agregados', $data);
 		$consulta = $this->db->query("SELECT $idAgregado as id_agregado from agregados where id_agregado=$idAgregado");
@@ -312,7 +373,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$this->db->where('id_agregado', $idAgregado);
 		$this->db->update('agregados', $data);
 		$consulta = $this->db->query("SELECT $idAgregado as id_agregado from agregados where id_agregado=$idAgregado");
@@ -324,7 +385,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$this->db->where('id_agregado', $id);
 		$r = $this->db->update('agregados', $data);
 		return $r;
@@ -335,7 +396,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$this->db->where('id_agregado', $id);
 		$r = $this->db->update('agregados', $data);
 		return $r;
@@ -346,7 +407,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = 'SELECT mp.id_mensaje_producto, p.nombre_producto, mp.mensaje, mp.vigente
         from mensaje_producto mp
         join producto p on p.id_producto=mp.id_producto
@@ -360,7 +421,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_mensaje_producto', $id);
 			$this->db->update('mensaje_producto', $data);
@@ -377,7 +438,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$this->db->where('id_mensaje_producto', $id);
 		$r = $this->db->update('mensaje_producto', $data);
 		return $r;
@@ -388,41 +449,18 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$this->db->where('id_mensaje_producto', $id);
 		$r = $this->db->update('mensaje_producto', $data);
 		return $r;
 	}
 
-	/*public function verificarSiExisteProductoPorNombre($nombreProducto){
-	   if (strlen($this->session->userdata('nombre_usuario'))==0) {
-		 redirect(base_url());//redireccionar al login
-	   }
-	   //$this->db=$this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-	   $q="SELECT p.id_producto, p.cbarra, p.nombre_producto, f.nombre_familia, u.nombre_umedida, i.nombre_impuesto as iva, ii.nombre_impuesto as impto_adicional,
-		   d.nombre_dimpresion, b.nombre_bodega, p.pponderado,
-		   (select nombre_menu from menu m where m.id_menu=p.id_menu) as menu,
-		   (select nombre_subfamilia from subfamilia sf where sf.id_subfamilia=p.id_subfamilia) as subfamilia,
-		   (select nombre_receta from receta r where r.id_receta=p.id_receta) as receta, 
-		   p.vigente, p.con_agregado, p.venta_publico, p.permite_porcion, p.venta_segun_stock, p.elaboracion_propia, p.permitir_venta_sin_precio, p.venta_uno_a_uno, p.pedir_cantidad_en_venta,
-		   p.ver_en_dispositivos_moviles,p.permite_cortesia
-		   from producto p
-		   join familia f on p.id_familia=f.id_familia
-		   join umedida u on p.id_umedida=u.id_umedida
-		   join impuesto i on p.impto_iva=i.id_impuesto
-		   join impuesto ii on p.impto_ila=ii.id_impuesto
-		   join dimpresion d on p.id_dimpresion=d.id_dimpresion
-		   join bodega b on p.id_bodega=b.id_bodega
-		   where p.nombre_producto='$nombreProducto'";
-		   $query = $this->db->query($q)->result();
-		   return $query;
-	  }*/
 	public function obtenerListadoMenu()
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT * from menu order by nombre_menu";
 		$consulta = $this->db->query($q);
 		$sampleData = $consulta->result();
@@ -454,7 +492,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_menu', $id);
 			$this->db->update('menu', $data);
@@ -471,9 +509,9 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		
-		$q = "SELECT cm.id_categoria_menu, cm.id_menu, m.nombre_menu, cm.nombre_categoria_menu, cm.vigente
+		$q = "SELECT cm.id_categoria_menu, cm.id_menu, m.nombre_menu, cm.nombre_categoria_menu, cm.vigente, cm.costo_promedio_receta
 			from categoria_menu cm
 			join menu m on cm.id_menu=m.id_menu";
 		
@@ -494,6 +532,7 @@ class Mproductos extends CI_Model
 				"id_menu" => $key->id_menu,
 				"nombre_menu" => $key->nombre_menu,  // Agregar nombre del menú
 				"nombre_categoria_menu" => $key->nombre_categoria_menu,
+				"costo_promedio_receta" => $key->costo_promedio_receta,
 				'vigente' => ($key->vigente == 't' ? 'SI' : 'NO'),
 				'btnAgregarProductosCategoria' => ("<button onclick='AbrirModalProductosAgregadosACategoria(" . $key->id_categoria_menu . ")' type='button' class='btn-block btn-warning text-center'>AGREGAR PRODUCTOS</button>"),
 			));
@@ -514,7 +553,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_categoria_menu', $id);
 			$this->db->update('categoria_menu', $data);
@@ -528,14 +567,11 @@ class Mproductos extends CI_Model
 
 	public function obtenerProductosQueConformanElMenu($id_categoria_menu)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-			redirect(base_url()); //redireccionar al login
-		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-		$q = 'SELECT dcm.id_detalle_categoria_menu, dcm.id_categoria_menu, cm.nombre_categoria_menu, p.nombre_producto, dcm.costo_receta, dcm.costo_adicional_venta, dcm.permite_cambio, dcm.imprimir, dcm.vigente from detalle_categoria_menu dcm
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+		$q = "SELECT dcm.id_detalle_categoria_menu, dcm.id_categoria_menu, dcm.id_producto, cm.nombre_categoria_menu, p.nombre_producto, dcm.costo_receta, dcm.costo_adicional_venta, dcm.permite_cambio, dcm.imprimir, dcm.vigente from detalle_categoria_menu dcm
         join categoria_menu cm on dcm.id_categoria_menu=cm.id_categoria_menu
         join producto p on dcm.id_producto=p.id_producto
-        where cm.id_categoria_menu=' . $id_categoria_menu . ' order by p.nombre_producto';
+        where dcm.vigente = 't' and cm.id_categoria_menu=" . $id_categoria_menu . " order by p.nombre_producto";
 		$query = $this->db->query($q)->result();
 		return $query;
 	}
@@ -545,7 +581,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$this->db->where('id_detalle_categoria_menu', $idDetalleCategoriaMenu);
 		$this->db->update('detalle_categoria_menu', $data);
 		$consulta = $this->db->query("SELECT $idDetalleCategoriaMenu as id_detalle_categoria_menu from detalle_categoria_menu where id_detalle_categoria_menu=$idDetalleCategoriaMenu");
@@ -557,7 +593,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$this->db->where('id_detalle_categoria_menu', $idDetalleCategoriaMenu);
 		$this->db->update('detalle_categoria_menu', $data);
 		$consulta = $this->db->query("SELECT $idDetalleCategoriaMenu as id_detalle_categoria_menu from detalle_categoria_menu where id_detalle_categoria_menu=$idDetalleCategoriaMenu");
@@ -569,7 +605,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_detalle_categoria_menu', $id);
 			$this->db->update('detalle_categoria_menu', $data);
@@ -585,7 +621,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT id_categoria_menu, nombre_categoria_menu from categoria_menu order by nombre_categoria_menu asc";
 		$query = $this->db->query($q)->result();
 		return $query;
@@ -596,7 +632,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = 'SELECT cm.id_categoria_menu, cm.cantidad_minima, cm.cantidad_maxima, cm.costo_promedio_receta, cm.estricto from categoria_menu cm 
         where cm.id_categoria_menu=' . $id_categoria_menu . '';
 		$query = $this->db->query($q)->result();
@@ -608,7 +644,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$this->db->where('id_categoria_menu', $idCategoriaMenu);
 		$this->db->update('categoria_menu', $data);
 		$consulta = $this->db->query("SELECT $idCategoriaMenu as categoria_menu_id_categoria_menu_seq from categoria_menu where id_categoria_menu=$idCategoriaMenu");
@@ -620,7 +656,7 @@ class Mproductos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		 $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $query = $this->db->query("SELECT last_value+1 as new_id from producto_id_producto_seq");
         return $query->result();
     }
@@ -631,24 +667,31 @@ class Mproductos extends CI_Model
 			redirect(base_url());
 		}
 		
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+		
+		// VERIFICAR si existe la columna monto_comision
+		$tieneComision = $this->verificarColumnaExiste('detalle_lprecio', 'monto_comision');
+		
+		log_message('debug', '¿Tabla tiene columna monto_comision? ' . ($tieneComision ? 'SÍ' : 'NO'));
 		
 		// Verificar si ya existe el precio para este producto y lista
 		$this->db->where('id_producto', $data['id_producto']);
 		$this->db->where('id_lprecio', $data['id_lprecio']);
 		$existe = $this->db->get('detalle_lprecio');
 		
-		// Preparar datos incluyendo comisión
+		// Preparar datos base (siempre presentes)
 		$dataToSave = array(
 			'id_producto' => $data['id_producto'],
 			'id_lprecio' => $data['id_lprecio'],
-			'total' => $data['total'],
-			'monto_comision' => isset($data['monto_comision']) ? $data['monto_comision'] : 0
+			'total' => $data['total']
 		);
 		
-		// Agregar comisión si existe en el array
-		if (isset($data['monto_comision'])) {
+		// SOLO agregar comisión si la columna existe
+		if ($tieneComision && isset($data['monto_comision'])) {
 			$dataToSave['monto_comision'] = $data['monto_comision'];
+			log_message('debug', 'Agregando comisión: ' . $data['monto_comision']);
+		} else if (!$tieneComision && isset($data['monto_comision'])) {
+			log_message('warning', 'Columna monto_comision no existe - omitiendo valor');
 		}
 		
 		if ($existe->num_rows() > 0) {
@@ -657,7 +700,12 @@ class Mproductos extends CI_Model
 			$this->db->where('id_lprecio', $data['id_lprecio']);
 			$this->db->update('detalle_lprecio', $dataToSave);
 			
-			return ['updated' => true, 'id_producto' => $data['id_producto'], 'id_lprecio' => $data['id_lprecio']];
+			return [
+				'updated' => true, 
+				'id_producto' => $data['id_producto'], 
+				'id_lprecio' => $data['id_lprecio'],
+				'tiene_comision' => $tieneComision
+			];
 		} else {
 			// Insertar
 			$this->db->insert('detalle_lprecio', $dataToSave);
@@ -665,10 +713,26 @@ class Mproductos extends CI_Model
 			$consulta = $this->db->query("SELECT CURRVAL('detalle_lprecio_id_detalle_lprecio_seq'::regclass) as id_detalle_lprecio");
 			
 			if ($consulta->num_rows() > 0) {
-				return ['inserted' => true, 'id_detalle_lprecio' => $consulta->row()->id_detalle_lprecio];
+				return [
+					'inserted' => true, 
+					'id_detalle_lprecio' => $consulta->row()->id_detalle_lprecio,
+					'tiene_comision' => $tieneComision
+				];
 			}
 		}
 		
 		return ['error' => 'No se pudo grabar el precio'];
+	}
+
+	public function DeshabilitarDetalleCategoria($id)
+	{
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+		$this->db->where('id_detalle_categoria_menu', (int)$id);
+		$this->db->update('detalle_categoria_menu', array('vigente' => 'f'));
+		return [
+            'affected' => $this->db->affected_rows(),
+            'query' => $this->db->last_query(),
+            'id' => $id
+        ];
 	}
 }

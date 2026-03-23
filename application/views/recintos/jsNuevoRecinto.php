@@ -79,12 +79,13 @@
             	duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if ($('#cboIdDestinoDeImpresion').val() == null) {
-			showAppAlert('error',"No Selecciono El Destino De Impresion!", {
-            	duration: 5000,
-                image: base_url+ 'assets/img/errorGif.gif'
-            });
-		} else {
+		} 
+		// else if ($('#cboIdDestinoDeImpresion').val() == null) {
+		// 	showAppAlert('error',"No Selecciono El Destino De Impresion!", {
+        //     	duration: 5000,
+        //         image: base_url+ 'assets/img/errorGif.gif'
+        //     });
+		else {
 			IdRecinto = $('#idRecinto').val();
 			NombreRecinto = $('#nombreRecinto').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
 			IdDestinoDeImpresion = $('#cboIdDestinoDeImpresion').val();
@@ -119,21 +120,25 @@
 		}
 	}
 
-	function ListadoDestinoDeImpresion(objSelected) {
+	function ListadoDestinoDeImpresion() {
 		$.post(base_url + "index.php/Productos/ListadoDestinoDeImpresion", {
 			id: ""
 		}, function(datos) {
-			var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
-			tbl = '<option selected disabled value="0">Seleccione El Destino De Impresion</option>';
-			$.each(obj, function(index, v) { // recorro el array
-				if (v.nombre_dimpresion == objSelected) {
-					tbl = tbl + '<option selected value="' + v.id_dimpresion + '">' + v.nombre_dimpresion + '</option>';
-				} else {
-					tbl = tbl + '<option value="' + v.id_dimpresion + '">' + v.nombre_dimpresion + '</option>';
-				}
-			}); //fin each
-			$("#cboIdDestinoDeImpresion").html(tbl);
-			$("#cboIdDestinoDeImpresion").select2();
-		});
-	}
+
+			var obj = jQuery.parseJSON(datos);
+			var tbl = '';
+			var ultimoId = null;
+
+			$.each(obj, function(index, v) {
+				tbl += '<option value="' + v.id_dimpresion + '">' + v.nombre_dimpresion + '</option>';
+				ultimoId = v.id_dimpresion;
+			});
+
+			$("#cboIdDestinoDeImpresion").html(tbl).select2();
+
+			if (ultimoId !== null) {
+				$("#cboIdDestinoDeImpresion").val(ultimoId).trigger('change');
+			}
+	});
+}
 </script>

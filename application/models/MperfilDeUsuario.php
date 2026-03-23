@@ -13,7 +13,7 @@ class MperfilDeUsuario extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = " SELECT u.nombre_usuario, u.clave, r.nombre_rol, u.esadmin, u.id_usuario
         from usuario u
         join rol r on u.id_rol=r.id_rol
@@ -27,7 +27,7 @@ class MperfilDeUsuario extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $this->db->where('id_usuario', $id_usuario);
     $this->db->update('usuario', $data);
     $consulta = $this->db->query("select id_usuario from usuario where id_usuario=$id_usuario");
@@ -52,7 +52,7 @@ class MperfilDeUsuario extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $this->db->where('id_cliente', $id_cliente);
     $this->db->where('id_usuario_cliente', $id_usuario_cliente);
     $this->db->update('usuario_appweb', $data);

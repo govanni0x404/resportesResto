@@ -13,7 +13,7 @@ class Mfamilias extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT id_familia, nombre_familia, venta_directa, orden_familia, imprimir_en_detalle_pedido, alias
 		from familia 
     order by id_familia asc";
@@ -47,7 +47,7 @@ class Mfamilias extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     if ($id) {
       $this->db->where('id_familia', $id);
       $this->db->update('familia', $data);

@@ -13,7 +13,7 @@ class MlistadoDeClientes extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT c.id_cliente, c.rut, c.dv, c.nombre_cliente, c.giro, c.direccion, co.nombre_comuna, c.telefono  from cliente c 
         join comuna co on c.id_comuna=co.id_comuna
         order by c.nombre_cliente";

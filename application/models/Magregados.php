@@ -13,7 +13,7 @@ class Magregados extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT a.id_agregado, a.id_producto_maestro, a.id_producto, round(a.cantidad) as cantidad, a.valor, a.vigente, p.nombre_producto, pm.nombre_producto as producto_maestro, a.usar_destino_impresion
         from agregados a
         join producto p on p.id_producto=a.id_producto
@@ -53,7 +53,7 @@ class Magregados extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
 		if ($id) {
 			// Actualizar existente por id_agregado

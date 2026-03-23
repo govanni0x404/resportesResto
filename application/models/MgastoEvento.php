@@ -13,7 +13,7 @@ class MgastoEvento extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT g.id_gasto_evento, g.nombre_gasto_evento from gasto_evento g
     order by g.id_gasto_evento asc";
 
@@ -42,7 +42,7 @@ class MgastoEvento extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     if ($id) {
       $this->db->where('id_gasto_evento', $id);
       $this->db->update('gasto_evento', $data);

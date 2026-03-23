@@ -91,6 +91,15 @@ $fechaActual = date('Y-m-d');
                                         class="btn btn-primary"></i>Agregar</button>
                                 </div>
                             </fieldset>
+                            <br>
+                            <div class="col-md-11">
+                                <label for="txtObservaciones">Observaciones</label>
+                                <textarea id="txtObservaciones"
+                                        class="form-control input-sm"
+                                        rows="3"
+                                        maxlength="250"
+                                        placeholder="Ingrese observaciones de la salida a bodega"></textarea>
+                            </div>
                         </div>
 
                         <div class="container-padding">

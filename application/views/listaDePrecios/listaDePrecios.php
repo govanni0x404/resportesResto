@@ -105,12 +105,18 @@ $fechaActual = date('Y-m-d');
                                                 <th class="text text-left" style='height:45px'>FAMILIA</th>
                                                 <th class="text text-left" style='height:45px'>UNIDAD DE MEDIDA</th>
                                                 <th class="text text-right" style='height:45px'>PRECIO DE VENTA</th>
-                                                <th class="text text-right" style='height:45px'>PRECIO DE COMPRA</th>
-
+                                                <!-- <th class="text text-right" style='height:45px'>PRECIO DE COMPRA</th> -->
+                                                <th class="text text-right" style='height:45px'>Ganancia</th>
+                                                <th class="text text-right" style='height:45px'>Costo</th>
+                                                <th class="text text-right" style='height:45px'>% Costo</th>
+                                                <th class="text text-right" style='height:45px'>Monto Comision</th>
                                             </tr>
                                         </thead>
                                         <tfoot>
                                             <tr>
+                                                <th></th>
+                                                <th></th>
+                                                <th></th>
                                                 <th></th>
                                                 <th></th>
                                                 <th></th>
@@ -195,6 +201,7 @@ $fechaActual = date('Y-m-d');
                                                                     <th style= 'display:none'>ID</th>
                                                                     <th>LISTA DE PRECIOS</th>
                                                                     <th class="text-right">PRECIO BRUTO UN</th>
+                                                                    <th class="text-right">MONTO COMISIÓN</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody id="detallePrecioVenta">

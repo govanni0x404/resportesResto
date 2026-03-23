@@ -3,7 +3,7 @@
         <i class="pe-7s-map-marker"></i>
     </div>
     <div class="header-title">
-        <h1>Asignar Mesas a Recinto</h1>
+        <h1>Mesas por Recinto</h1>
         <small id="caja"></small>
         <ol class="breadcrumb">
             <li><a href="<?php echo base_url() ?>index.php/Dashboard"><i class="pe-7s-home"></i> Mantencion</a></li>
@@ -21,7 +21,7 @@
                     <div class="panel-heading">
                         <div class="panel-title">
                             <i class="pe-7s-map-marker"></i>
-                            <h4>Mesas Sin Asignar a Recinto</h4>
+                            <h4>Mesas por Recinto</h4>
                         </div>
                     </div>
                     <br>

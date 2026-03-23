@@ -13,7 +13,7 @@ class Musuarios extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     
     // Verificar si existe la tabla rol, si no, usar solo usuario
     $q = "SELECT u.id_usuario, u.nombre_usuario, u.clave, u.esadmin, 
@@ -63,7 +63,7 @@ class Musuarios extends CI_Model
           redirect(base_url());
       }
 
-      $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+      $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
       try {
 
@@ -104,7 +104,7 @@ class Musuarios extends CI_Model
           redirect(base_url());
       }
       
-      $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+      $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
       try {
           $data['esadmin'] = false;

@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <title>Reportes Dat@Resto</title>
+    <title>RestoWebadmin</title>
 
     <!-- Favicon and touch icons -->
     <link rel="shortcut icon" href="<?php echo base_url() ?>assets/dist/img/ico/datamaule36x36.png" type="image/x-icon">
@@ -186,6 +186,100 @@
 
 
     /*fin spiner */
+
+    /* Fix scrolling for dropdown menus */
+    /* .navbar-top-links > .dropdown > .dropdown-menu {
+      max-height: 80vh;
+      overflow-y: auto;
+      overflow-x: visible;
+      position: relative;
+      z-index: 1000;
+    } */
+
+    /* Scrollable nested dropdowns */
+    .dropdown-menu .dropdown-menu {
+      max-height: 70vh;
+      overflow-y: scroll;
+      overflow-x: visible;
+      position: absolute;
+      z-index: 1001;
+    }
+    
+    /* Ensure dropdown items don't clip their children */
+    .dropdown-menu .dropdown {
+      position: relative;
+      overflow: visible;
+    }
+
+    /* Responsive adjustments for tablets */
+    @media (max-width: 768px) {
+      .navbar-top-links > .dropdown > .dropdown-menu {
+        max-height: 60vh;
+      }
+
+      .dropdown-menu .dropdown-menu {
+        max-height: 60vh;
+      }
+    }
+
+    /* Responsive adjustments for small phones */
+    @media (max-width: 480px) {
+      .navbar-top-links > .dropdown > .dropdown-menu {
+        max-height: 50vh;
+      }
+
+      .dropdown-menu .dropdown-menu {
+        max-height: 50vh;
+      }
+    }
+
+    /* Estilos para dropdowns anidados */
+    .dropdown-menu .dropdown .dropdown-menu {
+      display: none !important;
+      position: fixed;
+      left: auto;
+      top: auto;
+      margin: 0;
+      min-width: 250px;
+      z-index: 2000;
+      background: white;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+
+    .dropdown-menu .dropdown:hover > .dropdown-menu {
+      display: block !important;
+    }
+
+    .dropdown-menu .dropdown.open > .dropdown-menu {
+      display: block !important;
+    }
+
+    .dropdown-menu .dropdown > a {
+      position: relative;
+      padding-right: 20px;
+    }
+
+    .dropdown-menu .dropdown > a::after {
+      content: '›';
+      position: absolute;
+      right: 5px;
+      font-size: 18px;
+    }
+
+    .navbar-top-links > .dropdown {
+    position: relative;
+    }
+
+    .navbar-top-links > .dropdown > .dropdown-menu {
+    position: absolute !important;
+    top: 100%;
+    right: 0;
+    left: auto;
+    margin-top: 0;
+    max-height: none !important;
+    overflow: visible !important;
+    }
 </style>
 
 
@@ -195,6 +289,63 @@
       <div class="loader-text" data-loader-text>Cargando…</div>
     </div>
   </div>
+  
+  <script>
+    // Manejar dropdowns anidados dentro de menús
+    document.addEventListener('DOMContentLoaded', function() {
+      // Encontrar todos los dropdowns anidados
+      const nestedDropdowns = document.querySelectorAll('.dropdown-menu .dropdown > a.dropdown-toggle');
+      const dropdownItems = document.querySelectorAll('.dropdown-menu .dropdown');
+      
+      nestedDropdowns.forEach(function(toggle) {
+        toggle.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const li = this.closest('.dropdown');
+          const menu = li.querySelector('.dropdown-menu');
+          
+          if (menu) {
+            const isOpen = li.classList.contains('open');
+            // Cerrar otros dropdowns al mismo nivel
+            const siblings = li.parentElement.querySelectorAll('.dropdown.open');
+            siblings.forEach(function(sibling) {
+              sibling.classList.remove('open');
+            });
+            // Toggle del actual
+            if (!isOpen) {
+              li.classList.add('open');
+              posicionarSubmenu(li, menu);
+            } else {
+              li.classList.remove('open');
+            }
+          }
+        });
+        
+        // Cerrar otros cuando se hace hover
+        toggle.closest('.dropdown').addEventListener('mouseenter', function() {
+          const parent = toggle.closest('.dropdown-menu');
+          if (parent) {
+            const siblings = parent.querySelectorAll('.dropdown.open');
+            siblings.forEach(function(sibling) {
+              if (sibling !== this) {
+                sibling.classList.remove('open');
+              }
+            }.bind(this));
+          }
+        });
+      });
+      
+      // Función para posicionar el submenú correctamente
+      function posicionarSubmenu(parentLi, menu) {
+        setTimeout(function() {
+          const rect = parentLi.getBoundingClientRect();
+          menu.style.top = rect.top + 'px';
+          menu.style.left = (rect.right) + 'px';
+        }, 0);
+      }
+    });
+  </script>
 </head>
 
 <body>
@@ -317,12 +468,8 @@
                                 }
                                 ?>
                                 <?php if ($this->session->userdata('id_rol') == 1) : ?>
-                                    <!--<li><a href="<?php echo base_url() ?>index.php/Usuarios"><i class="ti-user"></i>&nbsp; Usuarios</a></li> -->
-                                    <!--<li><a href="<?php echo base_url() ?>index.php/Roles"><i class="ti-user"></i>&nbsp; Roles De Usuarios</a></li>-->
-                                    <li><a href="<?php echo base_url() ?>index.php/Configuraciones"><i class="ti-gear"></i>&nbsp; Configuraciones</a></li>
+                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Configuraciones"><i class=""></i>Configuraciones</a></li>
                                 <?php endif; ?>
-                                <!-- <li><a href="<?php echo base_url() ?>index.php/PerfilDeUsuario"><i
-                                            class="ti-user"></i>&nbsp; Perfil De Usuario</a></li>-->
                                 <li><a href="<?php echo base_url() ?>index.php/Login/logout_ci"><i class=" pe-7s-power"></i>&nbsp; Cerrar Sesion</a></li>
                             </ul>
                             <div class="modal fade modal-success" id="modalCambioClienteSucursal" tabindex="-1" role="dialog">
@@ -466,6 +613,7 @@
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/EntradaBodega"><i class="ti-money"></i>Entrada a Bodega</a></li>
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/SalidaBodega"><i class="ti-money"></i>Salida a Bodega</a></li>
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/Compras"><i class="ti-money"></i>Compras</a></li>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Inventario"><i class="ti-money"></i>Inventario</a></li>
                                         </ul>
                                     </li>                                
                                 </ul>
@@ -666,16 +814,17 @@
 
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Consultas</a>
                                 <ul class="dropdown-menu">
+                                    <li><a href="<?php echo base_url() ?>index.php/InsumosPorBodega"><i class="ti-alert"></i>Stock de Insumos</a></li>
+                                    <li><a href="<?php echo base_url() ?>index.php/DetalleOperaciones"><i class="pe-7s-cash"></i>Detalle De Ventas</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/CierresDeCaja"><i class="ti-clipboard"></i>Cierres de Caja</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/InsumosPorBodega"><i class="ti-alert"></i>Stock Por Bodega</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/ResumenDeCompras"><i class="fa fa-crop"></i>Resumen De Compras</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/ConsolidadoVentas"><i class="fa fa-crop"></i>Consolidado De Ventas</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/DetalleOperaciones"><i class="pe-7s-cash"></i>Detalle De Operaciones</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/VentasPorProducto"><i class="pe-7s-cash"></i>Ventas Por Producto</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/PropinasPorGarzon"><i class="pe-7s-cash"></i>Propinas Por Garzon</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/ResumenAnulaciones"><i class="pe-7s-cash"></i>Resumen De Anulaciones/Eliminaciones</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/ListadoDeClientes"><i class="pe-7s-cash"></i>Listado De Clientes</a></li>
                                     <li><a href="<?php echo base_url() ?>index.php/VentasMensualesTotalizadas"><i class="pe-7s-cash"></i>Resumen Ventas Mensuales</a></li>
+                                    <li><a href="<?php echo base_url() ?>index.php/ResumenVentasProductosMes"><i class="pe-7s-cash"></i>Resumen De Venta de Productos Mensuales</a></li>
                                     <li class="dropdown">
                                         <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Movimientos De Bodega</a>
                                         <ul class="dropdown-menu">

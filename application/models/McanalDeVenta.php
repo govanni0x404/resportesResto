@@ -13,7 +13,7 @@ class McanalDeVenta extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT c.id_canal_venta, c.nombre_canal_venta, c.vigente, c.cortesia, l.nombre_lprecio
 			from canal_venta c 
 			join lprecio l on c.id_lprecio=l.id_lprecio
@@ -47,7 +47,7 @@ class McanalDeVenta extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		if ($id) {
 			$this->db->where('id_canal_venta', $id);
 			$this->db->update('canal_venta', $data);

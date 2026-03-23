@@ -77,7 +77,24 @@
                         image: base_url + 'assets/img/success.gif'
                     });
                     $('#ModalNuevaUmedida').modal('hide');
-                    tablaUmedida.ajax.reload();
+                    if (typeof ListarUmedidas === 'function') {
+						ListarUmedidas("");
+						
+						try {
+							var nuevaUmedida = JSON.parse(response);
+							if (nuevaUmedida.id_umedida) {
+								setTimeout(function() {
+									$('#cboUmedidaReceta').val(nuevaUmedida.id_umedida).trigger('change');
+								}, 500);
+							}
+						} catch(e) {
+							console.log("No se pudo seleccionar automáticamente la nueva unidad de medida");
+						}
+					}
+					
+					if (typeof tablaUmedida !== 'undefined') {
+						tablaUmedida.ajax.reload();
+                    }
                 })
                 .fail(function() {
                     showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {

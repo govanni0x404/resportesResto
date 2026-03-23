@@ -23,7 +23,7 @@ class McierresDeCaja extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-         $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT c.id_caja, c.cerrada, to_char(c.fecha, 'DD-MM-YYYY') as fecha_apertura, COALESCE(to_char(c.fecha_rendicion, 'DD-MM-YYYY'),'0') as fecha_rendicion, fondo_fijo, 
 			/*coalesce(c.ventas, 0) as total_sistema,*/ c.descuento, coalesce(c.ventas, 0) as ventas, c.cortesia, c.ventas_local, c.ingresos, c.egresos, 
 			c.efectivo_fpago as subtotal, c.efectivo_fpago as efectivo, c.efectivo_entregado, c.diferencia, c.propina, u.nombre_usuario as cajero, sum(fondo_fijo+c.ventas_local) as total_sistema
@@ -78,7 +78,7 @@ class McierresDeCaja extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT * from empresa";
         $consulta = $this->db->query($q);
         return $consulta->result();
@@ -90,7 +90,7 @@ class McierresDeCaja extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         if ($id_caja) {
             $q = "SELECT c.*, t.nombre_turno, u.nombre_usuario, to_char(c.fecha, 'DD/MM/YYYY') as fecha_caja, to_char(c.fecha_movimiento, 'DD/MM/YYYY')||' '||c.fecha_movimiento :: timestamp(0) :: time as fecha_apertura, to_char(c.fecha_rendicion, 'DD/MM/YYYY')||' '||c.fecha_rendicion :: timestamp(0) :: time as fecha_rendicion,
 			c.ingresos, c.egresos, (c.ventas_local) as ventas, (suma_detalle_caja) as total_recaudacion, c.fondo_fijo_anterior as sencillo_apertura, c.fondo_fijo as sencillo_cierre, c.suma_detalle_caja, sum(c.cortesia) as cortesia
@@ -116,7 +116,7 @@ class McierresDeCaja extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-       $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+       $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT fp.id_fpago, fp.nombre_fpago, sum(dpc.monto) as monto
 		from detalle_pagocaja dpc 
 		join fpago fp on dpc.id_fpago = fp.id_fpago";
@@ -139,7 +139,7 @@ class McierresDeCaja extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT fp.id_fpago, fp.nombre_fpago, sum(pv.monto_pagado) as monto, fp.escortesia, fp.vigente
         from pago_venta pv
         join venta v on pv.id_venta = v.id_venta
@@ -163,7 +163,7 @@ class McierresDeCaja extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT f.id_familia, f.nombre_familia, sum(dv.total_bruto) AS total_familia
 		from detalle_venta dv
 		join venta v on dv.id_venta = v.id_venta
@@ -188,7 +188,7 @@ class McierresDeCaja extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT f.id_familia, count(p.id_producto) as cantidad, p.nombre_producto, sum(dv.total_bruto) as total_producto
 		from detalle_venta dv
 		join venta v on dv.id_venta = v.id_venta
@@ -212,7 +212,7 @@ class McierresDeCaja extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT sum(dv.subtotal) as total_ventas, sum(dv.monto_descuento_global) AS descuentos
 		from detalle_venta dv
 		join venta v on dv.id_venta = v.id_venta
@@ -233,7 +233,7 @@ class McierresDeCaja extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT * from detalle_caja";
         if ($id_caja) {
             $q = $q . " where id_caja = $id_caja";
@@ -250,7 +250,7 @@ class McierresDeCaja extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT p.nombre_producto, co.id_mesa, to_char(fecha_movimiento, 'HH24:MM') as hora, dc.cantidad, dc.* 
 		from detalle_cotizacion dc
 		join cotizacion co on dc.id_cotizacion = co.id_cotizacion
@@ -270,7 +270,7 @@ class McierresDeCaja extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT u.nombre_usuario, sum(v.valor_propina) as propina
         from venta v
         join usuario u on v.id_usuario_garzon = u.id_usuario";
@@ -291,7 +291,7 @@ class McierresDeCaja extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT u.nombre_usuario, count(co.id_mesa) as mesas_atendidas, sum(co.total - co.descuento) as ventas, co.venta_directa,
 		date_trunc('second',sum(v.fecha_transaccion-co.fecha_transaccion)/count(v.id_mesa)) as promedio_atencion
 		from cotizacion co

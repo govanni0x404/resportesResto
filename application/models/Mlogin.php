@@ -87,7 +87,8 @@ class Mlogin extends CI_Model
 	}
 	public function getNombreUsuario($idUsuario){
 		if (strlen($this->session->userdata('rut_cliente'))>0) {
-			$this->db=$this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+			$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+			//$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 			$query = $this->db->query("select * from usuario where id_usuario=$idUsuario");
 			return $query->row();
 

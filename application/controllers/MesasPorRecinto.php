@@ -35,6 +35,11 @@ class MesasPorRecinto extends CI_Controller
     echo json_encode($this->MmesasPorRecinto->ListadoDeMesasSinAsignar());
   }
 
+  public function ListadoDeMesas()
+  {
+      echo json_encode($this->MmesasPorRecinto->ListadoDeMesas());
+  }
+
   public function ListadoDeRecintos()
   {
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {

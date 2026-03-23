@@ -13,7 +13,7 @@ class Mroles extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT r.id_rol, r.nombre_rol from rol r where r.id_rol>1 order by r.nombre_rol asc";
 
     $consulta = $this->db->query($q);
@@ -41,7 +41,7 @@ class Mroles extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = " SELECT pu.id_pusuario, r.nombre_rol, ps.nombre_psistema, ps.nombre_vb, pu.autoriza, pu.id_rol, pu.id_psistema from pusuario pu
         join rol r on pu.id_rol=r.id_rol
         join psistema ps on pu.id_psistema=ps.id_psistema
@@ -56,7 +56,7 @@ class Mroles extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT autoriza from pusuario where id_rol=$id_rol";
     $query = $this->db->query($q);
     return json_encode($query->result());
@@ -67,7 +67,7 @@ class Mroles extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT * from usuario u where u.id_rol=$id_rol";
     $query = $this->db->query($q);
     return json_encode($query->result());
@@ -78,7 +78,7 @@ class Mroles extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db=$this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "UPDATE pusuario set autoriza=false where id_pusuario=$id_pusuario";
     $consulta = $this->db->query($q);
     return $consulta;
@@ -89,7 +89,7 @@ class Mroles extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db=$this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "UPDATE pusuario set autoriza=true where id_pusuario=$id_pusuario";
     $consulta = $this->db->query($q);
     return $consulta;
@@ -100,7 +100,7 @@ class Mroles extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db=$this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "UPDATE pusuario set autoriza=true where id_rol=$id_rol";
     $consulta = $this->db->query($q);
     return $consulta;
@@ -111,7 +111,7 @@ class Mroles extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db=$this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "UPDATE pusuario set autoriza=false where id_rol=$id_rol";
     $consulta = $this->db->query($q);
     return $consulta;
@@ -123,7 +123,7 @@ class Mroles extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     if ($id) {
       $this->db->where('id_rol', $id);
       $this->db->update('rol', $data);

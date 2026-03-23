@@ -29,7 +29,7 @@ class MresumenSalidaBodega extends CI_Model
         $de = $desde; 
         $a = $hasta . ' 23:59:59'; // Incluye hasta el final del día
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT eb.id_esbodega, b.nombre_bodega, eb.fecha, u.nombre_usuario, to_char(eb.fecha_transaccion, 'HH24:MI:SS') AS hora, eb.observaciones
         from esbodega eb 
 		join bodega b on eb.id_bodega=b.id_bodega
@@ -71,7 +71,7 @@ class MresumenSalidaBodega extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT deb.id_esbodega, i.nombre_insumo, u.nombre_umedida, deb.cantidad, deb.stock_anterior, deb.nuevo_stock from detalle_esbodega deb
 		left join insumo i on deb.id_insumo=i.id_insumo
         left join umedida u on i.id_umedida_inventario=u.id_umedida

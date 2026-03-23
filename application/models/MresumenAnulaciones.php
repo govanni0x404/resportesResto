@@ -23,7 +23,7 @@ class MresumenAnulaciones extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT dc.id_cotizacion, p.nombre_producto, dc.cantidad, dc.total_bruto,
         to_char(dc.hora_anulacion, 'DD/MM/YYYY HH24:MM:SS') AS hora_anulacion,
         dc.motivo_anulacion, u.nombre_usuario, dc.eseliminado, dc.esanulado

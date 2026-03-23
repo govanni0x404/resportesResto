@@ -37,6 +37,7 @@
 										</div>
 										<div class="col-md-3">
 											<label for="cboUnMedida">UNIDAD MEDIDA</label>
+											<sup><a onclick="AbrirModalNuevaUmedida()">Nuevo</a></sup>
 											<select style="width:100%;" id="cboUnMedida" nombre="cboUnMedida" class="form-control input-sm" requerido="si">
 												<option value="">--Seleccione--</option>
 											</select>
@@ -185,9 +186,7 @@
 	</div>
 </div>
 <!-- FIN  MODAL NUEVO REGISTRO  -->
-
-
-
+ <?php $this->load->view('umedida/jsNuevaUmedida.php'); ?>
 
 <script>
 	var tableInsumoReceta = $("#tableInsumoReceta").on("draw.dt", function() {
@@ -279,9 +278,11 @@
 	});
 
 	$("#cantidadInsumoReceta").on('keyup', function() {
-		cantidad = $("#cantidadInsumoReceta").val();
-		costo_unitario = $('#costoInsumoReceta').val();
-		$('#costoTotalInsumoReceta').val(cantidad * costo_unitario);
+		var cantidad = parseFloat($("#cantidadInsumoReceta").val()) || 0;
+		var costo_unitario = parseFloat($('#costoInsumoReceta').val()) || 0;
+
+		var total = cantidad * costo_unitario;
+		$('#costoTotalInsumoReceta').val(total.toFixed(2));
 	});
 
 	$("#btnAgregarInsumoTabla").on('click', function() {
@@ -457,8 +458,8 @@
 		var subreceta = $('#esSubreceta').val();
 		var cantidad_insumo = $('#cantidadInsumoReceta').val();
 		var uMedida = $('#unMedidaInsumoReceta').val();
-		var costoInsumo = $('#costoInsumoReceta').val();
-		var costoTotal = $('#costoTotalInsumoReceta').val();
+		var costoInsumo = parseFloat($('#costoInsumoReceta').val());
+		var costoTotal = 0; // se calculará en la tabla
 		var errorexiste = 0;
 		//RECORRE LA TABLA EN BUSCA DEL PRODUCTO EN CASO DE QUE YA ESTE, SI ESTA NO DEJA AGREGAR
 		$("#tableInsumoReceta tbody tr").each(function(index) {
@@ -762,7 +763,7 @@
 	}
 
 	function calcularDatos(rnd) {
-		var costoUn = parseFloat($('#' + rnd).children('td')[7].innerHTML.replace(/,./g, ''));
+		var costoUn = parseFloat($('#' + rnd).children('td')[7].innerHTML.replace(/,/g, ''));
 		var cantidad = parseFloat($('#txt' + rnd).val());
 
 		if (isNaN(cantidad) || cantidad == null || cantidad == "" || parseFloat(cantidad) < 0) {
@@ -770,7 +771,7 @@
 			cantidad = 0.1;
 		}
 		var totalLinea = costoUn * cantidad;
-		$('#' + rnd).children('td')[8].innerHTML = Math.round(totalLinea);
+		$('#' + rnd).children('td')[8].innerHTML = totalLinea.toFixed(2);
 	}
 
 	function validate(evt) {

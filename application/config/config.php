@@ -24,9 +24,10 @@ defined('BASEPATH') or exit('No direct script access allowed');
 |
 */
 //$config['base_url'] = 'http://localhost/reportesResto/';
-$root  = "http://".$_SERVER['HTTP_HOST'];
+$root  = "https://".$_SERVER['HTTP_HOST'];
 $root .= str_replace(basename($_SERVER['SCRIPT_NAME']),"",$_SERVER['SCRIPT_NAME']);
-$config['base_url']    = $root;
+/*$config['base_url']    = $root;*/
+$config['base_url']    = 'http://localhost:8001/';
 
 /*
 |--------------------------------------------------------------------------
@@ -390,6 +391,7 @@ $config['sess_driver'] = 'files';
 $config['sess_cookie_name'] = 'RestoWeb_session';
 $config['sess_samesite'] = 'Lax';
 $config['sess_expiration'] = 7200;
+//$config['sess_save_path'] = APPPATH . 'cache';
 $config['sess_save_path'] = NULL;
 $config['sess_match_ip'] = FALSE;
 $config['sess_time_to_update'] = 300;

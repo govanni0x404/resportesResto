@@ -211,7 +211,7 @@ function ListadoDeMenu(objSelected) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione El Menu</option>';
         $.each(obj, function(index, v) { // recorro el array
-            if (v.nombre_menu == objSelected) {
+            if (v.nombre_menu == objSelected || v.id_menu == objSelected) {
                 tbl = tbl + '<option selected value="' + v.id_menu + '">' + v.nombre_menu + '</option>';
             } else {
                 tbl = tbl + '<option value="' + v.id_menu + '">' + v.nombre_menu + '</option>';
@@ -292,7 +292,7 @@ function ListadoMenuModalCategorias(objSelected) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione El Menu</option>';
         $.each(obj, function(index, v) { // recorro el array
-            if (v.nombre_menu == objSelected) {
+            if (v.nombre_menu == objSelected || v.id_menu == objSelected) {
                 tbl = tbl + '<option selected value="' + v.id_menu + '">' + v.nombre_menu + '</option>';
             } else {
                 tbl = tbl + '<option value="' + v.id_menu + '">' + v.nombre_menu + '</option>';
@@ -323,23 +323,44 @@ function listadoDeCategorias(objSelected) {
     });
 }
 
-function ListadoDeAgregadosParaElProducto(objSelected) {
-    $.post(base_url + "index.php/Productos/ListadoDeProductos", {
-        id: ""
-    }, function(datos) {
-        var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
-        tbl = "";
-        tbl = '<option selected  value="0">SELECCIONE EL PRODUCTO</option>';
-        $.each(obj, function(index, v) { // recorro el array
-            if (v.nombre_producto == objSelected) {
-                tbl = tbl + '<option selected value="' + v.id_producto + '">' + v.nombre_producto +
-                    '</option>';
+var productosCarta = {};
+function ListadoDeAgregadosParaElProducto(objSelected, selectorId) {
+    if (!selectorId) selectorId = "#cboSelectorProductosFinal";
+    
+    console.log("Iniciando carga de productos desde (FUNC):", base_url + "index.php/Productos/ListadoDeProductos", "Para selector:", selectorId);
+    
+    $.ajax({
+        url: base_url + "index.php/Productos/ListadoDeProductos",
+        type: "POST",
+        dataType: "json",
+        data: { id: "" },
+        success: function(obj) {
+            console.log("Objetos recibidos (FUNC):", obj);
+            let tbl = '<option value="0">SELECCIONE EL PRODUCTO</option>';
+            productosCarta = {};
+            
+            let items = obj.aaData || obj; 
+            if (Array.isArray(items)) {
+                $.each(items, function(index, v) {
+                    productosCarta[v.id_producto] = v;
+                    if (v.nombre_producto == objSelected) {
+                        tbl += '<option selected value="' + v.id_producto + '">' + v.nombre_producto + '</option>';
+                    } else {
+                        tbl += '<option value="' + v.id_producto + '">' + v.nombre_producto + '</option>';
+                    }
+                });
             } else {
-                tbl = tbl + '<option value="' + v.id_producto + '">' + v.nombre_producto + '</option>';
+                console.warn("La respuesta no contiene una lista de ítems válida:", items);
             }
-        }); //fin each
-        $("#cboListadoProductosParaCategoria").html(tbl);
-        $("#cboListadoProductosParaCategoria").select2();
+            
+            $(selectorId).html(tbl);
+            if ($.fn.select2) {
+                $(selectorId).select2();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("Error detallado en la petición AJAX (FUNC):", {xhr: xhr, status: status, error: error});
+        }
     });
 }
 

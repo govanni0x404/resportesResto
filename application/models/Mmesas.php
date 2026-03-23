@@ -13,10 +13,11 @@ class Mmesas extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-    
+    //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+      
     $q = "SELECT m.id_mesa, m.disponible, m.bloqueo_caja, m.id_cotizacion, 
-                 m.bloqueo_pedido, m.id_garzon, m.id_recinto, m.vigente, m.cod_dispositivo
+                 m.bloqueo_pedido, m.id_garzon, m.id_recinto, m.vigente
           FROM mesa m
           ORDER BY m.id_mesa ASC";
 
@@ -34,7 +35,6 @@ class Mmesas extends CI_Model
         "id_garzon" => $key->id_garzon,
         "id_recinto" => $key->id_recinto,
         "vigente" => $key->vigente,
-        "cod_dispositivo" => $key->cod_dispositivo,
       ));
     }
     
@@ -53,7 +53,8 @@ class Mmesas extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     
     $resultados = array();
     
@@ -65,8 +66,7 @@ class Mmesas extends CI_Model
         'bloqueo_pedido' => false,
         'id_garzon' => 0,
         'id_recinto' => 0,
-        'vigente' => true,
-        'cod_dispositivo' => null
+        'vigente' => true
       );
       
       $this->db->insert('mesa', $data);
@@ -87,7 +87,8 @@ class Mmesas extends CI_Model
       if (strlen($this->session->userdata('nombre_usuario')) == 0) {
           redirect(base_url());
       }
-      $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+      //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+      $this->load->helper('tenant'); $this->db = get_tenant_db($this);
       
       $this->db->where('id_mesa', $id);
       $exists = $this->db->get('mesa');

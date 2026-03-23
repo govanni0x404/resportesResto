@@ -24,7 +24,7 @@ class MpropinasPorGarzon extends CI_Model
 			$a = date('Y-m-d', $jsDateTS);
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT v.id_caja, to_char(v.fecha, 'DD/MM/YYYY') as fecha, sum(v.valor_propina) as total_propina, u.nombre_usuario, fp.nombre_fpago from venta v
         join usuario u on v.id_usuario_garzon=u.id_usuario
         join fpago fp on v.id_fpagopropina=fp.id_fpago
@@ -71,7 +71,7 @@ class MpropinasPorGarzon extends CI_Model
 			$a = date('Y-m-d', $jsDateTS);
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT u.nombre_usuario, sum(v.valor_propina) as total_propina from venta v
         join usuario u on v.id_usuario_garzon=u.id_usuario
         where v.fecha between '" . $de . "' and '" . $a . "'
@@ -97,7 +97,7 @@ class MpropinasPorGarzon extends CI_Model
 			$a = date('Y-m-d', $jsDateTS);
 		}
 
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT fp.nombre_fpago, sum(v.valor_propina) as total_propina from venta v
         join fpago fp on v.id_fpagopropina=fp.id_fpago
         where v.fecha between '" . $de . "' and '" . $a . "'

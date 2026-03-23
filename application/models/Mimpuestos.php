@@ -13,7 +13,7 @@ class Mimpuestos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT i.id_impuesto, i.nombre_impuesto, i.valor, i.observacion, i.codigo_sii
         from impuesto i
         order by i.id_impuesto asc";
@@ -46,7 +46,7 @@ class Mimpuestos extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         if ($id) {
             $this->db->where('id_impuesto', $id);
             $this->db->update('impuesto', $data);

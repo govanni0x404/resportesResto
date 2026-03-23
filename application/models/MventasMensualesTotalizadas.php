@@ -16,7 +16,7 @@ class MventasMensualesTotalizadas extends CI_Model
 
         $de = date('Y-m-d', strtotime($desde));
         $a = date('Y-m-d', strtotime($hasta));
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT 
             DATE(v.fecha) AS ventas_del_dia,
             COUNT(v.id_venta) AS total_documentos,
@@ -73,7 +73,7 @@ class MventasMensualesTotalizadas extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT 
             DATE(v.fecha) AS ventas_del_dia,
@@ -109,7 +109,7 @@ class MventasMensualesTotalizadas extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT 
                 DATE(v.fecha) AS ventas_del_dia,
@@ -146,7 +146,7 @@ class MventasMensualesTotalizadas extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT 
             DATE(v.fecha) AS ventas_del_dia,
@@ -174,7 +174,7 @@ class MventasMensualesTotalizadas extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT v.id_venta, c.nombre_cliente, t.nombre_tdocumento, v.fecha, v.folio, v.total
         FROM venta v
         JOIN cliente c ON v.id_cliente = c.id_cliente

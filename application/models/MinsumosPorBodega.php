@@ -13,7 +13,7 @@ class MinsumosPorBodega extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());//redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT * from bodega";
 
 		$query = $this->db->query($q)->result();
@@ -25,7 +25,7 @@ class MinsumosPorBodega extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());//redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		/*	$q = "SELECT i.id_insumo, i.nombre_insumo, round(sum(si.saldo)) as saldo, gi.nombre_grupo_insumo, b.nombre_bodega
 																		 from stock_insumo si
 																		 join insumo i on si.id_insumo = i.id_insumo
@@ -84,7 +84,7 @@ class MinsumosPorBodega extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());//redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT i.nombre_insumo, cast(si.saldo as int) as saldo, b.nombre_bodega
 			from stock_insumo si
 			join insumo i on si.id_insumo = i.id_insumo
@@ -100,7 +100,7 @@ class MinsumosPorBodega extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());//redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT coalesce(sum((((i.umedida_inventario/i.umedida_receta)*dr.cantidad)/r.rendimiento)*dc.cantidad), 0) as cantidad_salida, i.nombre_insumo, i.id_insumo
 		from detalle_receta dr
 		left outer join insumo i on dr.id_insumo = i.id_insumo

@@ -85,7 +85,8 @@ class ListaDePrecios extends CI_Controller
             //$idProducto=$value['id_producto'];
             $idDetalleLprecio = $value['id_detalle_lprecio'];
             $miData = array(
-                'total' => $value['total']
+                'total' => $value['total'],
+                'monto_comision' => $value['monto_comision']
             );
             $r = $this->MlistaDePrecios->grabarPrecios($idDetalleLprecio, $miData);
             $respueta[] = $r;

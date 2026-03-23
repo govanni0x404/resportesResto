@@ -13,7 +13,7 @@ class MfamiliasInsumo extends CI_Model
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT g.id_grupo_insumo, g.nombre_grupo_insumo from grupo_insumo g order by g.id_grupo_insumo asc";
 
         $consulta = $this->db->query($q);
@@ -41,7 +41,7 @@ class MfamiliasInsumo extends CI_Model
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         if ($id) {
             $this->db->where('id_grupo_insumo', $id);
             $this->db->update('grupo_insumo', $data);
@@ -58,7 +58,7 @@ class MfamiliasInsumo extends CI_Model
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT id_grupo_insumo, nombre_grupo_insumo from grupo_insumo order by nombre_grupo_insumo asc";
         $query = $this->db->query($q)->result();
         return $query;

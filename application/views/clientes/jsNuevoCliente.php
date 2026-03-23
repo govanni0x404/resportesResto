@@ -21,7 +21,7 @@
 						<fieldset>
 							<div class="col-md-6 ">
 								<label for="idCliente">ID</label>
-								<input type="number" disabled class="form-control input-sm input-sm" name="idCliente" id="idCliente" requerido="no" value="" />
+								<input type="number" readonly class="form-control input-sm input-sm" name="idCliente" id="idCliente" requerido="no" value="" />
 							</div>
 						</fieldset>
 						<fieldset>
@@ -132,10 +132,13 @@
 		});
 	}
 
-
-	$('#RutCliente').on('change', function() {
-		var rut = parseFloat($('#RutCliente').val());
-		$('#DvRutCliente').val(validarDV(rut));
+	$('#RutCliente').on('input', function () {
+		let rut = $(this).val();
+		if (rut.length >= 7) {
+			$('#DvRutCliente').val(validarDV(rut));
+		} else {
+			$('#DvRutCliente').val('');
+		}
 	});
 
 	function obtenerDatosSII(rut, dv) {

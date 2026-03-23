@@ -12,7 +12,7 @@ class MsalidaBodega extends CI_Model
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT s.saldo, u.nombre_umedida from stock_insumo s 
     join insumo i on s.id_insumo=i.id_insumo
     join umedida u on i.id_umedida_inventario=u.id_umedida
@@ -27,7 +27,7 @@ class MsalidaBodega extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $this->db->insert('esbodega', $data);
     $consulta = $this->db->query("SELECT CURRVAL('esbodega_id_esbodega_seq'::regclass) as id_esbodega");
     return $consulta->result();
@@ -38,7 +38,7 @@ class MsalidaBodega extends CI_Model
       if (strlen($this->session->userdata('nombre_usuario')) == 0) {
           redirect(base_url());
       }
-      $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+      $this->load->helper('tenant'); $this->db = get_tenant_db($this);
       
       $this->db->insert('detalle_esbodega', $data);
       $consulta = $this->db->query("SELECT CURRVAL('detalle_esbodega_id_detalle_esbodega_seq'::regclass) as id_detalle_esbodega");

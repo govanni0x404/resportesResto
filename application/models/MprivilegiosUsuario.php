@@ -13,7 +13,7 @@ class MprivilegiosUsuario extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     
     $q = "SELECT r.id_rol, r.nombre_rol 
           FROM rol r 
@@ -33,7 +33,7 @@ class MprivilegiosUsuario extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     
     // Obtener todos los módulos del sistema y verificar si el rol tiene acceso
     $q = "SELECT ps.id_psistema, ps.nombre_psistema, ps.nombre_vb,
@@ -57,7 +57,7 @@ class MprivilegiosUsuario extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     
     try {
       $data = array('autoriza' => $autoriza);
@@ -77,7 +77,7 @@ class MprivilegiosUsuario extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     
     try {
       $data = array(
@@ -103,7 +103,7 @@ class MprivilegiosUsuario extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     
     try {
       // Primero crear los registros que no existen
@@ -135,7 +135,7 @@ class MprivilegiosUsuario extends CI_Model
     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     
     try {
       $q = "UPDATE pusuario SET autoriza = false WHERE id_rol = " . $id_rol;

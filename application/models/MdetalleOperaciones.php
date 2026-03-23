@@ -24,7 +24,7 @@ class MdetalleOperaciones extends CI_Model
             $a = date('Y-m-d', $jsDateTS);
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT v.id_venta, u.nombre_usuario, co.id_mesa, count(index_comensal) AS comensales, to_char(co.fecha_transaccion, 'DD/MM/YYYY HH24:MM:SS') AS fecha_inicio, 
 				to_char(date_trunc('second',sum(v.fecha_transaccion-co.fecha_transaccion)), 'HH24:MM:SS') as tiempo_atencion, co.mensaje as observacion, fp.nombre_fpago, round(v.total) as total
 			from venta v
@@ -76,7 +76,7 @@ class MdetalleOperaciones extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT dv.id_detalle_venta, p.nombre_producto, dv.cantidad, dv.bruto_un, round(dv.subtotal_neto_con_descuento) as neto, round(dv.monto_iva) as iva, round(dv.total_bruto_con_descuento) as total_bruto 
 		from detalle_venta dv 
 		join producto p on dv.id_producto=p.id_producto
@@ -112,7 +112,7 @@ class MdetalleOperaciones extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT id_fpago, nombre_fpago from fpago order by nombre_fpago";
 
         $query = $this->db->query($q)->result();
@@ -124,7 +124,7 @@ class MdetalleOperaciones extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT id_usuario, nombre_usuario from usuario order by nombre_usuario";
 
         $query = $this->db->query($q)->result();
@@ -136,7 +136,7 @@ class MdetalleOperaciones extends CI_Model
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = 'SELECT  v.id_venta, v.folio, pv.id_fpago, fp.nombre_fpago, td.nombre_tdocumento from venta v
         join pago_venta pv on pv.id_venta=v.id_venta
         join fpago fp on fp.id_fpago=pv.id_fpago
@@ -152,7 +152,7 @@ class MdetalleOperaciones extends CI_Model
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->db->where('id_venta', $id);
         $this->db->update('pago_venta', $data);
         $consulta = $this->db->query("select " . $id . " as id_venta");

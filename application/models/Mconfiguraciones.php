@@ -1,31 +1,75 @@
 <?php
-defined('BASEPATH') or exit('No direct script access allowed');
+defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Mconfiguraciones extends CI_Model
-{
-  function __construct()
-  {
-    parent::__construct();
-  }
+class Mconfiguraciones extends CI_Model {
 
-  public function obtenerConfiguracionesRestoWeb()
-  {
-		if (strlen($this->session->userdata('rut_cliente')) == 0) {
-			redirect(base_url()); //redireccionar al login
-		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-    $q = " SELECT desglozar_monto_neto_iva_total_en_reportes, desglozar_solo_monto_total_en_reportes  from configuracion";
-    $query = $this->db->query($q)->result();
-    return $query;
-  }
+    public function __construct() {
+        parent::__construct();
+        $this->load->database();
+    }
 
-  public function grabarConfiguraciones($data)
-  { //
-		if (strlen($this->session->userdata('rut_cliente')) == 0) {
-			redirect(base_url()); //redireccionar al login
-		}
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-    $r = $this->db->update('configuracion', $data);
-    return $r;
-  }
+    public function get_configuracion() {
+        $query = $this->db->get_where('configuracion', array('id_configuracion' => 1));
+        $row = $query->row_array();
+        if (!$row) {
+            return [];
+        }
+        return $row;
+    }
+
+    public function get_empresa() {
+        $query = $this->db->get('empresa');
+        $row = $query->row_array();
+        
+        // Si no existe ningún registro, crear uno vacío
+        if (!$row) {
+            $data = [
+                'rut_empresa' => 0,
+                'dv_empresa' => '',
+                'razon_social' => '',
+                'giro' => '',
+                'codigo_actividad_economica' => '',
+                'direccion_empresa' => '',
+                'id_comuna' => 0,
+                'codigo_sucursal' => '',
+                'nombre_sucursal' => '',
+                'direccion_sucursal' => '',
+                'id_comuna_sucursal' => 0,
+                'codigo_sii' => 0,
+                'mail' => '',
+                'nombre_fantasia' => '',
+            ];
+            $this->db->insert('empresa', $data);
+            
+            // Obtener el registro recién creado
+            $query = $this->db->get('empresa');
+            $row = $query->row_array();
+        }
+        
+        return $row;
+    }
+
+    public function get_bodegas() {
+        // Obtener bodegas de la tabla bodega con alias para compatibilidad
+        $this->db->select('id_bodega as id, nombre_bodega as nombre');
+        $query = $this->db->get('bodega');
+        return $query->result();
+    }
+
+    public function update_configuracion($data) {
+        if (empty($data)) {
+            return false;
+        }
+        $this->db->where('id_configuracion', 1);
+        return $this->db->update('configuracion', $data);
+    }
+
+    public function update_empresa($data) {
+        if (empty($data)) {
+            return false;
+        }
+        $this->db->where('id_empresa', 1);
+        return $this->db->update('empresa', $data);
+    }
 }
+?>

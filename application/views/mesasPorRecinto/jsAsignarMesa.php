@@ -45,6 +45,8 @@
 <!-- FIN  MODAL ASIGNAR MESA A RECINTO  -->
 
 <script>
+    var recintoSeleccionado = 0;
+
     function cargarRecintos() {
         $.post(base_url + "index.php/MesasPorRecinto/ListadoDeRecintos")
             .done(function(response) {
@@ -56,6 +58,7 @@
                 recintos.forEach(function(recinto) {
                     select.append('<option value="' + recinto.id_recinto + '">' + recinto.nombre_recinto + '</option>');
                 });
+                select.val(recintoSeleccionado);
             })
             .fail(function() {
                 showAppAlert('error', "Error al cargar los recintos", {
@@ -93,7 +96,8 @@
                     image: base_url + 'assets/img/success.gif'
                 });
                 $('#ModalAsignarMesa').modal('hide');
-                tablaMesasSinAsignar.ajax.reload();
+                //tablaMesasSinAsignar.ajax.reload();
+                tablaMesasSinAsignar.ajax.reload(null, false);
             })
             .fail(function(jqXHR, textStatus, errorThrown) {
                 console.error('Error:', textStatus, errorThrown);

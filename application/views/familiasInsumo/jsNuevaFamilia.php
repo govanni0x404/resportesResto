@@ -55,37 +55,73 @@
     });
   }
 
-  function GrabarNuevaFamiliaInsumo() {
-    if ($('#nombreFamiliaInsumo').val() == 0) {
-      showAppAlert('error',"No Ingreso El nombre de la Familia de Insumos!", {
-        duration: 5000,
-        image: base_url+ 'assets/img/errorGif.gif'
-      });
-    } else {
-      idFamiliaInsumo = $('#idFamiliaInsumo').val();
-      NombreFamiliaInsumo = $('#nombreFamiliaInsumo').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
-      var miJson = {
-        'id_grupo_insumo': idFamiliaInsumo,
-        'nombre_grupo_insumo': NombreFamiliaInsumo
-      };
-      console.log(miJson);
-      $.post(base_url + "index.php/FamiliasInsumos/grabarNuevaFamiliaInsumo", {
-          'prod': miJson
-        }).done(function() {
-          showAppAlert('success', "Se registro Exitosamente La Nueva Familia Insumos!", {
-            duration: 4000,
-            image: base_url + 'assets/img/success.gif'
-          });
-          $('#ModalNuevaFamiliaInsumo').modal('hide');
-          tablaFamiliasInsumo.ajax.reload();
-        })
-        .fail(function() {
-          showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador!", {
+function GrabarNuevaFamiliaInsumo() {
+    if ($('#nombreFamiliaInsumo').val() == 0 || $('#nombreFamiliaInsumo').val().trim() == '') {
+        showAppAlert('error',"No Ingreso El nombre de la Familia de Insumos!", {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
-          });
+        });
+    } else {
+        // Asegurarse que idFamiliaInsumo sea 0 si está vacío
+        idFamiliaInsumo = $('#idFamiliaInsumo').val();
+        if (idFamiliaInsumo === '' || idFamiliaInsumo === null) {
+            idFamiliaInsumo = 0;
+        }
+        
+        NombreFamiliaInsumo = $('#nombreFamiliaInsumo').val().toUpperCase().trim().replace(/[,.'"$#%&]+/g, '');
+        
+        var miJson = {
+            'id_grupo_insumo': parseInt(idFamiliaInsumo) || 0, // Asegurar que sea número
+            'nombre_grupo_insumo': NombreFamiliaInsumo
+        };
+        
+        console.log("Datos a enviar:", miJson);
+        
+        $.post(base_url + "index.php/FamiliasInsumos/grabarNuevaFamiliaInsumo", {
+            'prod': miJson
+        }).done(function(response) {
+            console.log("Respuesta recibida:", response);
+            
+            // Parsear la respuesta
+            var respuesta = typeof response === 'string' ? JSON.parse(response) : response;
+            
+            console.log("Respuesta parseada:", respuesta);
+            
+            if (respuesta.success && respuesta.id_grupo_insumo) {
+                showAppAlert('success', "Se registro Exitosamente La Nueva Familia Insumos!", {
+                    duration: 4000,
+                    image: base_url + 'assets/img/success.gif'
+                });
+                
+                $('#ModalNuevaFamiliaInsumo').modal('hide');
+                
+                // Recargar el combo de familias en el modal de insumos
+                if (typeof llenarGrupoInsumos === 'function') {
+                    // Esperar un momento antes de recargar
+                    setTimeout(function() {
+                        llenarGrupoInsumos('', respuesta.id_grupo_insumo);
+                    }, 300);
+                }
+                
+                // Recargar tabla si existe
+                if (typeof tablaFamiliasInsumo !== 'undefined') {
+                    tablaFamiliasInsumo.ajax.reload();
+                }
+            } else {
+                showAppAlert('error', respuesta.message || "Error al grabar la familia de insumos", {
+                    duration: 5000,
+                    image: base_url+ 'assets/img/errorGif.gif'
+                });
+            }
         })
-        .always(function() {});
+        .fail(function(xhr, status, error) {
+            console.error("Error en la petición:", status, error);
+            console.error("Respuesta:", xhr.responseText);
+            showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador!", {
+                duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+        });
     }
-  }
+}
 </script>
