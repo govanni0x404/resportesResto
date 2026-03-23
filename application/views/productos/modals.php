@@ -883,8 +883,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Salir (Esc)</button>
                 <button onclick="GrabarNuevoMenu()" type="button" class="btn btn-primary">Grabar Datos</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
             </div>
         </div>
     </div>
@@ -1010,8 +1010,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Salir (Esc)</button>
                 <button onclick="GrabarCategoriaMenu()" type="button" class="btn btn-primary">Grabar</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
             </div>
         </div>
     </div>
@@ -1122,10 +1122,10 @@
                 </div>
             </div>
             <div class="modal-footer" style="background-color: #f9f9f9; border-top: 1px solid #e5e5e5;">
-                <button type="button" class="btn btn-default" data-dismiss="modal" style="font-weight: bold; width: 120px;">Salir (Esc)</button>
                 <button onclick="GrabarConfiguracionCategoriaMenu()" type="button" class="btn btn-primary" style="font-weight: bold; width: 120px;">
-                    <i class="fa fa-save"></i> GRABAR
+                    GRABAR
                 </button>
+                <button type="button" class="btn btn-default" data-dismiss="modal" style="font-weight: bold; width: 120px;">Salir</button>                
             </div>
         </div>
     </div>
