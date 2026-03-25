@@ -597,7 +597,8 @@ class Productos extends CI_Controller
 			return;
 		}
 		$id_menu = $this->input->post('id_menu');
-		echo json_encode($this->Mproductos->obtenerCategoriaMenu($id_menu));
+		$solo_vigentes = $this->input->post('solo_vigentes') == '1';
+		echo json_encode($this->Mproductos->obtenerCategoriaMenu($id_menu, $solo_vigentes));
 	}
 
 	public function grabarNuevaCategoria()
@@ -608,17 +609,28 @@ class Productos extends CI_Controller
 		}
 		$d = $this->input->post('prod');
 		$id = intval($d['id_categoria_menu']);
-		$miData = array(
-			'id_menu' => $d['id_menu'],
-			'nombre_categoria_menu' => $d['nombre_categoria_menu'],
-			'cantidad_minima' => 0,
-			'cantidad_maxima' => 0,
-			'costo_promedio_receta' => 0,
-			'orden' => 0,
-			'vigente' => 't',
-			'estricto' => 'f',
-			'permite_porcion' => 'f',
-		);
+		$vigente = isset($d['vigente']) ? ($d['vigente'] == 1 || $d['vigente'] === 't' ? 't' : 'f') : 't';
+		if ($id) {
+			// Edición: solo actualizar nombre, menú y vigente (preservar configuraciones existentes)
+			$miData = array(
+				'id_menu' => $d['id_menu'],
+				'nombre_categoria_menu' => $d['nombre_categoria_menu'],
+				'vigente' => $vigente,
+			);
+		} else {
+			// Inserción: inicializar todos los campos
+			$miData = array(
+				'id_menu' => $d['id_menu'],
+				'nombre_categoria_menu' => $d['nombre_categoria_menu'],
+				'cantidad_minima' => 0,
+				'cantidad_maxima' => 0,
+				'costo_promedio_receta' => 0,
+				'orden' => 0,
+				'vigente' => $vigente,
+				'estricto' => 'f',
+				'permite_porcion' => 'f',
+			);
+		}
 		$r = $this->Mproductos->grabarNuevaCategoria($id, $miData);
 		echo json_encode($r);
 	}

@@ -504,7 +504,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 		return $consulta->result();
 	}
 
-	public function obtenerCategoriaMenu($id_menu)
+	public function obtenerCategoriaMenu($id_menu, $soloVigentes = false)
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
@@ -515,12 +515,21 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 			from categoria_menu cm
 			join menu m on cm.id_menu=m.id_menu";
 		
-		// MODIFICAR AQUÍ: Solo filtrar si id_menu > 0
+		$where = array();
+		
 		if ($id_menu > 0) {
-			$q = $q . " WHERE cm.id_menu=$id_menu";
+			$where[] = "cm.id_menu=$id_menu";
 		}
 		
-		$q = $q . " ORDER BY m.nombre_menu, cm.nombre_categoria_menu";  // Ordenar por menú y categoría
+		if ($soloVigentes) {
+			$where[] = "cm.vigente = 't'";
+		}
+		
+		if (!empty($where)) {
+			$q .= " WHERE " . implode(" AND ", $where);
+		}
+		
+		$q .= " ORDER BY m.nombre_menu, cm.nombre_categoria_menu";
 
 		$consulta = $this->db->query($q);
 		$sampleData = $consulta->result();
@@ -530,7 +539,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 			array_push($data, array(
 				"id_categoria_menu" => $key->id_categoria_menu,
 				"id_menu" => $key->id_menu,
-				"nombre_menu" => $key->nombre_menu,  // Agregar nombre del menú
+				"nombre_menu" => $key->nombre_menu,
 				"nombre_categoria_menu" => $key->nombre_categoria_menu,
 				"costo_promedio_receta" => $key->costo_promedio_receta,
 				'vigente' => ($key->vigente == 't' ? 'SI' : 'NO'),

@@ -286,6 +286,7 @@
                 // Recargar combos y seleccionar el nuevo
                 ListadoDeMenu(newId); 
                 ListadoDeMenuModal(newId);
+                $('#txtNombreMenu').val("");
                 
                 showAppAlert('success', "Se registro Exitosamente El Menu!", {
                     duration: 4000,
@@ -378,6 +379,7 @@
                 "type": "POST",
                 "data": {
                     'id_menu': id_menu, 
+                    'solo_vigentes': '1',
                 }
             },
             "bPaginate": false,
@@ -454,6 +456,7 @@
                 // Recargar listado en el modal principal y asegurar que el menú siga seleccionado
                 ListadoDeMenuModal(IdMenu);
                 ListadoCategoriaMenuModal(IdMenu);
+                $('#txtNombreCategoria').val("");
                 
                 showAppAlert('success', "Se registro Exitosamente La Categoria!", {
                     duration: 4000,
