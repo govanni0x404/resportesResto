@@ -270,15 +270,20 @@ class Mproductos extends CI_Model
 	{
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
-		// Obtener el último código de barras como número
-		$query = $this->db->query("
-			SELECT COALESCE(MAX(CAST(cbarra AS INTEGER)), 0) + 1 as siguiente_codigo
-			FROM producto
-			WHERE cbarra ~ '^[0-9]+$'
-		");
+		// Priorizar la secuencia interna de la base de datos para generar el siguiente ID/Código
+		// Esto evita que códigos de barras manuales largos (EAN13) alteren la correlatividad
+		$querySeq = $this->db->query("SELECT COALESCE(last_value, (SELECT MAX(id_producto) FROM producto)) + 1 as siguiente from producto_id_producto_seq");
+		$rowSeq = $querySeq->row();
+		
+		if ($rowSeq && $rowSeq->siguiente) {
+			return $rowSeq->siguiente;
+		}
 
-		$row = $query->row();
-		return $row ? $row->siguiente_codigo : 1;
+		// Fallback: si la secuencia falla, obtener el máximo ID + 1
+		$queryMax = $this->db->query("SELECT MAX(id_producto) + 1 as siguiente FROM producto");
+		$rowMax = $queryMax->row();
+		
+		return ($rowMax && $rowMax->siguiente) ? $rowMax->siguiente : 1;
 	}
 
 	public function grabarNuevaSubFamilia($id, $data)

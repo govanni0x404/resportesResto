@@ -129,13 +129,24 @@
 		console.log(miJson);
 		$.post(base_url + "index.php/Familias/grabarNuevaFamilia", {
 				'prod': miJson
-			}).done(function() {
+			}).done(function(response) {
 				showAppAlert('success', "Se registro Exitosamente La Nueva Familia!", {
                        duration: 4000,
                        image: base_url + 'assets/img/success.gif'
                    });
 				$('#ModalNuevaFamilia').modal('hide');
-				tablaFamilias.ajax.reload();
+				
+				if (typeof ListadoDeFamilias === 'function') {
+					ListadoDeFamilias(NombreFamilia);
+				}
+				
+				if (typeof ListadoDeFamiliasMantenedor === 'function') {
+					ListadoDeFamiliasMantenedor(NombreFamilia);
+				}
+				
+				if (typeof tablaFamilias !== 'undefined') {
+					tablaFamilias.ajax.reload();
+				}
 			})
 			.fail(function() {
 				showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador!", {

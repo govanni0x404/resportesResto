@@ -6,7 +6,7 @@ function ListarProveedores(objSelected) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected value="0">Seleccione El Proveedor</option>';
         $.each(obj, function(index, v) { // recorro el array
-            if (v.nombre_proveedor == objSelected) {
+            if (v.nombre_proveedor == objSelected || v.id_proveedor == objSelected) {
                 tbl = tbl + '<option selected value="' + v.id_proveedor + '">' + v.nombre_proveedor +
                     '</option>';
             } else {

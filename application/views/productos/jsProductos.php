@@ -252,14 +252,29 @@ function cargarSiguienteCodigoBarra() {
         type: "POST",
         dataType: "json",
         success: function(resp) {
-            if (resp.codigo) {
+            console.log("Respuesta siguiente código:", resp);
+            if (resp && resp.codigo) {
                 $('#txtCbarra').val(resp.codigo);
+            } else {
+                // Fallback manual si el controlador falla
+                console.warn("Respuesta inválida del servidor para código de barra");
             }
         },
-        error: function() {
-            showAppAlert('error', "No se pudo obtener el código de barras", {
-                duration: 5000,
-                image: base_url + 'assets/img/errorGif.gif'
+        error: function(xhr, status, error) {
+            console.error("Error al obtener código de barra:", xhr.responseText);
+            // Intentar usar la función alternativa si la principal falla
+            $.post(base_url + "index.php/Productos/ObtenerUltimoIdProducto", {}, function(datos) {
+                try {
+                    var obj = JSON.parse(datos);
+                    if (obj && obj[0] && obj[0].new_id) {
+                        $('#txtCbarra').val(obj[0].new_id);
+                    }
+                } catch(e) {
+                    showAppAlert('error', "No se pudo obtener el código de barras automático", {
+                        duration: 5000,
+                        image: base_url + 'assets/img/errorGif.gif'
+                    });
+                }
             });
         }
     });
@@ -286,22 +301,13 @@ function ObtenerUltimoIdProducto(objSelected) {
             var obj = $.parseJSON(datos);
             var tbl = '';
             
+            // Siempre mostrar comisión si el sistema lo soporta
+            var tieneComision = true; 
+            
             // Verificar si tenemos precios existentes cargados
             var hayPreciosExistentes = preciosExistentes && preciosExistentes.length > 0;
             
-            // Verificar si existe la columna de comisión
-            var tieneComision = hayPreciosExistentes && 
-                            typeof preciosExistentes[0].monto_comision !== 'undefined';
-            
-            console.log("Tiene comisión:", tieneComision);
-            console.log("Precios existentes:", preciosExistentes);
-            
-            // Mostrar/ocultar header de comisión
-            if (tieneComision) {
-                $('#headerComision').show();
-            } else {
-                $('#headerComision').hide();
-            }
+            console.log("Cargando listas de precios. Precios existentes:", preciosExistentes);
             
             $.each(obj, function(index, v) {
                 var precioExistente = null;
@@ -312,7 +318,7 @@ function ObtenerUltimoIdProducto(objSelected) {
                 }
                 
                 var precio = precioExistente ? precioExistente.total : 0;
-                var comision = (tieneComision && precioExistente) ? 
+                var comision = (precioExistente) ? 
                             (precioExistente.monto_comision || 0) : 0;
                 
                 tbl += "<tr>";
@@ -324,22 +330,17 @@ function ObtenerUltimoIdProducto(objSelected) {
                 tbl += '<input class="text-right form-control precio-input" type="number" min="0" max="1000000" value="' + precio + '">';
                 tbl += '</td>';
                 
-                // Input de comisión - SOLO si la columna existe
-                if (tieneComision) {
-                    tbl += '<td style="width:30%" class="text-right">';
-                    tbl += '<input class="text-right form-control comision-input" type="number" min="0" max="100" step="0.01" value="' + comision + '" placeholder="0.00">';
-                    tbl += '</td>';
-                }
+                // Input de comisión
+                tbl += '<td style="width:30%" class="text-right">';
+                tbl += '<input class="text-right form-control comision-input" type="number" min="0" max="100" step="0.01" value="' + comision + '" placeholder="0.00">';
+                tbl += '</td>';
                 
                 tbl += "</tr>";
             });
             
             $("#detallePrecioVenta").html(tbl);
             maxPrecioVenta();
-            
-            if (tieneComision) {
-                maxComision();
-            }
+            maxComision();
         });
     }
 

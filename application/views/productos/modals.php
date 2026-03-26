@@ -1040,6 +1040,7 @@
                     <div class="col-md-1">
                         <label style="color: #558b2f;">ID</label>
                         <input type="text" disabled class="form-control input-sm" id="IdDetalleCategoria" style="background-color: #f5f5f5; border: 1px solid #ccc; font-weight: bold; text-align: center;">
+                        <input type="hidden" id="IdDetalleCategoriaReal" value="">
                     </div>
                     <div class="col-md-6">
                         <label style="color: #558b2f;">Producto <span id="labelRecetaProducto" style="font-weight: bold; color: #5cb85c; margin-left: 15px; background: white; padding: 2px 8px; border-radius: 10px; border: 1px solid #5cb85c; font-size: 10px;">SIN RECETA</span></label>
@@ -1052,6 +1053,19 @@
                     <div class="col-md-3">
                         <label style="color: #558b2f;">$ Adicional Vta</label>
                         <input type="number" class="form-control input-sm text-right" id="AdicionalCategoriaMenu" value="0" style="border: 1px solid #5cb85c; font-weight: bold;">
+                    </div>
+                </div>
+
+                <div class="row" style="background-color: #f9fdf9; padding: 10px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #d6e9c6; display: flex; align-items: center; gap: 20px;">
+                    <div style="margin-left: 15px;">
+                        <label style="cursor: pointer; color: #3c763d; font-weight: bold;">
+                            <input type="checkbox" id="ckPermiteCambio" style="transform: scale(1.3); vertical-align: middle;"> &nbsp;Permitir Cambio
+                        </label>
+                    </div>
+                    <div>
+                        <label style="cursor: pointer; color: #3c763d; font-weight: bold;">
+                            <input type="checkbox" id="ckImprimir" style="transform: scale(1.3); vertical-align: middle;"> &nbsp;Imprimir
+                        </label>
                     </div>
                 </div>
 

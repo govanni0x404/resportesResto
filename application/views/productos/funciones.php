@@ -1,13 +1,17 @@
 <script>
 /////////////////////////////////Listado Cbos/////////////////////////////
-function ListadoDeFamilias() {
+function ListadoDeFamilias(objSelected) {
     $.post(base_url + "index.php/ListaDePrecios/ListadoDeFamilias", {
         id: ""
     }, function(datos) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
-        tbl = "<option value='0' disabled>Seleccione La Familia</option>";
+        tbl = "<option value='0' disabled " + (objSelected ? "" : "selected") + ">Seleccione La Familia</option>";
         $.each(obj, function(index, v) { // recorro el array
-            tbl += '<option selected value="' + v.id_familia + '">' + v.nombre_familia + '</option>';
+            if (v.nombre_familia == objSelected || v.id_familia == objSelected) {
+                tbl += '<option selected value="' + v.id_familia + '">' + v.nombre_familia + '</option>';
+            } else {
+                tbl += '<option value="' + v.id_familia + '">' + v.nombre_familia + '</option>';
+            }
         }); //fin each
         $("#cboFamilias").html(tbl);
         $("#cboFamilias").select2();

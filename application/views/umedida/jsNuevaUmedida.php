@@ -71,26 +71,24 @@
             console.log(miJson);
             $.post(base_url + "index.php/Umedida/grabarNuevaUmedida", {
                     'prod': miJson
-                }).done(function() {
+                }).done(function(response) {
                     showAppAlert('success', "Se registro Exitosamente La Nueva Unidad De Medida!", {
                         duration: 4000,
                         image: base_url + 'assets/img/success.gif'
                     });
                     $('#ModalNuevaUmedida').modal('hide');
+                    
                     if (typeof ListarUmedidas === 'function') {
-						ListarUmedidas("");
-						
-						try {
-							var nuevaUmedida = JSON.parse(response);
-							if (nuevaUmedida.id_umedida) {
-								setTimeout(function() {
-									$('#cboUmedidaReceta').val(nuevaUmedida.id_umedida).trigger('change');
-								}, 500);
-							}
-						} catch(e) {
-							console.log("No se pudo seleccionar automáticamente la nueva unidad de medida");
-						}
+						ListarUmedidas(NombreUmedida);
 					}
+                    
+                    if (typeof ListadoDeUmedida === 'function') {
+						ListadoDeUmedida(NombreUmedida);
+					}
+
+                    if (typeof llenarCboUnMedidaModalReceta === 'function') {
+                        llenarCboUnMedidaModalReceta(NombreUmedida);
+                    }
 					
 					if (typeof tablaUmedida !== 'undefined') {
 						tablaUmedida.ajax.reload();

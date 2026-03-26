@@ -85,13 +85,20 @@
             };
             $.post(base_url + "index.php/SubFamilias/grabarNuevaSubFamilia", {
                     'prod': miJson
-                }).done(function() {
+                }).done(function(response) {
                     showAppAlert('success', "Se registro Exitosamente La Nueva Sub Familia!", {
                         duration: 4000,
                         image: base_url + 'assets/img/success.gif'
                     });
                     $('#ModalNuevaSubFamilia').modal('hide');
-                    tablaSubFamilia.ajax.reload();
+                    
+                    if (typeof ListadoDeSubFamilias === 'function') {
+                        ListadoDeSubFamilias(NombreSubFamilia);
+                    }
+                    
+                    if (typeof tablaSubFamilia !== 'undefined') {
+                        tablaSubFamilia.ajax.reload();
+                    }
                 })
                 .fail(function() {
                     showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador", {

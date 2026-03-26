@@ -220,7 +220,15 @@
 											'id_insumo': listaInsumos
 										}, function() {}).done(function(datos) {
 											$('#modalReceta').modal('hide');
-											tableRecetas.ajax.reload();
+											
+											if (typeof ListadoDeReceta === 'function') {
+												ListadoDeReceta(nombre_receta);
+											}
+											
+											if (typeof tableRecetas !== 'undefined') {
+												tableRecetas.ajax.reload();
+											}
+											
 											showAppAlert('success', "Se registro Exitosamente La Receta!", {
                                     			duration: 4000,
                                     			image: base_url + 'assets/img/success.gif'

@@ -586,9 +586,12 @@
 
     function NuevoDetalleProducto() {
         $('#IdDetalleCategoria').val("");
+        $('#IdDetalleCategoriaReal').val("");
         $('#cboSelectorProductosFinal').val(0).trigger('change');
         $('#CostoCategoriaMenu').val("0");
         $('#AdicionalCategoriaMenu').val("0");
+        $('#ckPermiteCambio').prop('checked', true);
+        $('#ckImprimir').prop('checked', true);
         $('#labelRecetaProducto').text("SIN RECETA");
         $("#tableDetalleCategoria tbody tr").removeClass('selected');
     }
@@ -627,9 +630,14 @@
             $('#cboSelectorProductosFinal').append(newOption).trigger('change');
         }
 
-        $('#IdDetalleCategoria').val(v.id_detalle_categoria_menu);
+        // Guardar el ID real para la lógica y el ID de visualización para el usuario
+        $('#IdDetalleCategoriaReal').val(v.id_detalle_categoria_menu);
+        $('#IdDetalleCategoria').val(v.id_detalle_categoria_menu > 0 ? v.id_detalle_categoria_menu : "");
+        
         $('#CostoCategoriaMenu').val(v.costo_receta);
         $('#AdicionalCategoriaMenu').val(v.costo_adicional_venta);
+        $('#ckPermiteCambio').prop('checked', v.permite_cambio == 't' || v.permite_cambio == true);
+        $('#ckImprimir').prop('checked', v.imprimir == 't' || v.imprimir == true);
         $('#labelRecetaProducto').text(v.costo_receta > 0 ? "CON RECETA" : "SIN RECETA");
     }
 
@@ -720,7 +728,9 @@
         let nombre_producto = $('#cboSelectorProductosFinal option:selected').text();
         let costo_receta = $('#CostoCategoriaMenu').val();
         let costo_adicional_venta = $('#AdicionalCategoriaMenu').val();
-        let id_detalle = $('#IdDetalleCategoria').val();
+        let permite_cambio = $('#ckPermiteCambio').is(':checked');
+        let imprimir = $('#ckImprimir').is(':checked');
+        let id_detalle = $('#IdDetalleCategoriaReal').val();
         
         if(!id_producto || id_producto == "0") {
              showAppAlert('error', "Debe seleccionar un producto", {
@@ -755,6 +765,8 @@
                     item.nombre_producto = nombre_producto;
                     item.costo_receta = costo_receta;
                     item.costo_adicional_venta = costo_adicional_venta;
+                    item.permite_cambio = permite_cambio;
+                    item.imprimir = imprimir;
                     return false;
                 }
             });
@@ -767,8 +779,8 @@
                 'nombre_producto': nombre_producto,
                 'costo_receta': costo_receta,
                 'costo_adicional_venta': costo_adicional_venta,
-                'permite_cambio': true,
-                'imprimir': true,
+                'permite_cambio': permite_cambio,
+                'imprimir': imprimir,
                 '_es_nuevo': true
             });
             nextTempId--;
@@ -784,7 +796,7 @@
 
     // QUITAR: solo elimina del array local (no llama al servidor)
     function QuitarProductoDeCategoria() {
-        let id_detalle = $('#IdDetalleCategoria').val();
+        let id_detalle = $('#IdDetalleCategoriaReal').val();
         
         if(!id_detalle || id_detalle == "" || id_detalle == "0") {
             showAppAlert('error', "Por favor, seleccione un producto de la tabla haciendo clic sobre él.", {
@@ -845,6 +857,8 @@
             if(!orig) return false;
             return (String(orig.costo_receta) !== String(item.costo_receta) ||
                     String(orig.costo_adicional_venta) !== String(item.costo_adicional_venta) ||
+                    String(orig.permite_cambio) !== String(item.permite_cambio) ||
+                    String(orig.imprimir) !== String(item.imprimir) ||
                     String(orig.id_producto) !== String(item.id_producto));
         });
 
@@ -877,8 +891,8 @@
                         'id_producto': item.id_producto,
                         'costo_receta': item.costo_receta,
                         'costo_adicional_venta': item.costo_adicional_venta,
-                        'permite_cambio': true,
-                        'imprimir': true
+                        'permite_cambio': item.permite_cambio,
+                        'imprimir': item.imprimir
                     }
                 })
             );

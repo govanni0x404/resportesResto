@@ -410,18 +410,7 @@ function grabarNuevoProveedor() {
         $('#ModalNuevoProveedor').modal('hide');
         
         if (typeof ListarProveedores === 'function') {
-            ListarProveedores("");
-            
-            try {
-                var nuevoProveedor = JSON.parse(response);
-                if (nuevoProveedor && nuevoProveedor[0] && nuevoProveedor[0].id_proveedor) {
-                    setTimeout(function() {
-                        $('#cboProveedorCompra').val(nuevoProveedor[0].id_proveedor).trigger('change');
-                    }, 500);
-                }
-            } catch(e) {
-                console.log("No se pudo seleccionar el proveedor:", e);
-            }
+            ListarProveedores(miJson.nombre_proveedor);
         }
         
         if (typeof tablaProveedor !== 'undefined') {

@@ -71,13 +71,25 @@
       console.log(miJson);
       $.post(base_url + "index.php/FamiliasReceta/grabarNuevaFamiliaReceta", {
           'prod': miJson
-        }).done(function() {
+        }).done(function(response) {
           showAppAlert('success', "Se registro Exitosamente La Nueva Familia Receta!", {
             duration: 4000,
             image: base_url + 'assets/img/success.gif'
           });
           $('#ModalNuevaFamiliaReceta').modal('hide');
-          tablaFamiliasReceta.ajax.reload();
+          
+          if (typeof llenarFamiliaReceta === 'function') {
+              try {
+                  var res = JSON.parse(response);
+                  llenarFamiliaReceta(res[0].id_familia_receta);
+              } catch(e) {
+                  llenarFamiliaReceta(NombreFamiliaReceta);
+              }
+          }
+          
+          if (typeof tablaFamiliasReceta !== 'undefined') {
+              tablaFamiliasReceta.ajax.reload();
+          }
         })
         .fail(function() {
           showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador!", {
