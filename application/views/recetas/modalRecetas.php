@@ -532,7 +532,7 @@
 			tbl = "";
 			tbl = "<option selected value = 0>Seleccione La Unidad De Medida</option>";
 			$.each(obj, function(index, v) { // recorro el array
-				if (v.id_umedida == id_umedida) {
+				if (v.id_umedida == id_umedida || v.nombre_umedida == id_umedida) {
 					tbl = tbl + '<option selected value="' + v.id_umedida + '">' + v.nombre_umedida + '</option>';
 				} else {
 					tbl = tbl + '<option value="' + v.id_umedida + '">' + v.nombre_umedida + '</option>';

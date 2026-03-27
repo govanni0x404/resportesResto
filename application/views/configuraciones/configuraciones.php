@@ -38,9 +38,10 @@
                         <form id="configForm" method="post" action="<?php echo site_url('ConfiguracionesGenerales/guardar'); ?>">
                             <!-- Tab General -->
                             <div id="general" class="tab active">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="panel panel-default">
+                                <div class="config-grid">
+                                    <!-- Columna 1 -->
+                                    <div class="config-col">
+                                        <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Ver en Caja</h3>
                                             </div>
@@ -52,19 +53,8 @@
                                                 <label><input type="checkbox" name="mostrar_nombre_garzon_venta" value="1" <?php echo ($config['mostrar_nombre_garzon_venta'] ?? true) ? 'checked' : ''; ?>> Garzon</label>
                                             </div>
                                         </div>
-                                        <!-- <div class="panel panel-default">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title">Configuraciones Caja</h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <label><input type="checkbox" name="usar_impresion_grafica_precuenta" value="1" <?php echo ($config['usar_impresion_grafica_precuenta'] ?? true) ? 'checked' : ''; ?>> Impresion grafica y precuentas</label>
-                                                <input type="text" class="form-control" name="impresion_grafica_precuenta" value="<?php echo $config['impresion_grafica_precuenta'] ?? ''; ?>">
-                                                <label><input type="checkbox" name="" value="1" <?php echo ($config[''] ?? true) ? 'checked' : ''; ?>> Impresora Local</label>
-                                                <input type="text" class="form-control" name="impresora_local_precuenta" value="<?php echo $config['impresora_local_precuenta'] ?? ''; ?>">
-                                                <label><input type="checkbox" name="imprimir_comprobante_venta" value="1" <?php echo ($config['imprimir_comprobante_venta'] ?? true) ? 'checked' : ''; ?>> Imprimir comprobante de venta</label>
-                                            </div>
-                                        </div> -->
-                                        <div class="panel panel-default">
+
+                                        <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Precuentas</h3>
                                             </div>
@@ -75,7 +65,8 @@
                                                 <label><input type="checkbox" name="omitir_productos_sin_precio_precuenta" value="1" <?php echo ($config['omitir_productos_sin_precio_precuenta'] ?? false) ? 'checked' : ''; ?>> No imprimir productos sin valor</label>
                                             </div>
                                         </div>
-                                        <div class="panel panel-default">
+
+                                        <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Propinas</h3>
                                             </div>
@@ -87,7 +78,11 @@
                                                 <label><input type="checkbox" name="propina_en_venta_directa" value="1" <?php echo ($config['propina_en_venta_directa'] ?? false) ? 'checked' : ''; ?>> Propina en venta directa</label>
                                             </div>
                                         </div>
-                                        <div class="panel panel-default">
+                                    </div>
+
+                                    <!-- Columna 2 -->
+                                    <div class="config-col">
+                                        <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Otros restorant</h3>
                                             </div>
@@ -106,75 +101,8 @@
                                                 <label><input type="checkbox" name="imprimir_valor_producto_cocina" value="1" <?php echo ($config['imprimir_valor_producto_cocina'] ?? false) ? 'checked' : ''; ?>> Imprimir Valor productos en destino de impresion</label>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="panel panel-default">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title">Informes por Correo Electrónico</h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <label><input type="checkbox" name="usar_correo_electronico" value="1" <?php echo ($config['usar_correo_electronico'] ?? false) ? 'checked' : ''; ?>> Enviar Cierre de caja por correo electrónico</label>
-                                                <div class="form-group">
-                                                    <input type="email" class="form-control" name="correo_electronico" placeholder="yeldmartin@gmail.com" value="<?php echo $config['correo_electronico'] ?? ''; ?>">
-                                                </div>
-                                                <label><input type="checkbox" name="informar_anulaciones_mail" value="1" <?php echo ($config['informar_anulaciones_mail'] ?? false) ? 'checked' : ''; ?>> Informar anulaciones y comisiones de precio</label>
-                                                <button type="button" class="btn btn-orange">Probar envío</button>
-                                                <p class="p">Separar los correos por coma y luego presionar enter</p>
-                                            </div>
-                                        </div>
-                                        <div class="panel panel-default">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title">Imprimir cierre de caja</h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <label><input type="checkbox" name="ver_ingresos_egresos_cierre_caja" value="1" <?php echo ($config['ver_ingresos_egresos_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Ingresos y Egresos</label>
-                                                <label><input type="checkbox" name="ver_creditos_a_clientes_cierre_caja" value="1" <?php echo ($config['ver_creditos_a_clientes_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Creditos a clientes</label>
-                                                <label><input type="checkbox" name="ver_cortesias_cierre_caja" value="1" <?php echo ($config['ver_cortesias_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Cortesías</label>
-                                                <label><input type="checkbox" name="ver_anulaciones_eliminaciones_cierre_caja" value="1" <?php echo ($config['ver_anulaciones_eliminaciones_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Anulaciones y eliminaciones</label>
-                                                <label><input type="checkbox" name="ver_detalle_atencion_cierre_caja" value="1" <?php echo ($config['ver_detalle_atencion_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Detalle de atención</label>
-                                            </div>
-                                        </div>
-                                        <div class="panel panel-default">
-                                            <div class="panel-body">
-                                                <label><input type="checkbox" name="mostrar_recaudacion_cierre_no_efectivo" value="1" <?php echo ($config['mostrar_recaudacion_cierre_no_efectivo'] ?? true) ? 'checked' : ''; ?>> Llenar forma de pago que no sea efectivo en cierre manual</label>
-                                                <label><input type="checkbox" name="cierre_caja_manual" value="1" <?php echo ($config['cierre_caja_manual'] ?? true) ? 'checked' : ''; ?>> Cierre de caja indicando cada forma de pago</label>
-                                                <label><input type="checkbox" name="imprimir_cierre_caja_impresora_termica" value="1" <?php echo ($config['imprimir_cierre_caja_impresora_termica'] ?? true) ? 'checked' : ''; ?>> Imprimir cierre de caja</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- <div class="col-md-4">
-                                        <div class="panel panel-default">
-                                            <div class="panel-body">
-                                                <div class="form-group">
-                                                    <label>Bloquear la selecicon de las mesas luego de</label>
-                                                    <input type="number" class="form-seg_bloqueo_seleccion_mesa input-small" name="seg_bloqueo_seleccion_mesa" value="<?php echo $config['seg_bloqueo_seleccion_mesa'] ?? 1000; ?>"> Seg.
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Enviar pedido luego de</label>
-                                                    <input type="number" class="form-control input-small" name="seg_envio_pedido_mesa" value="<?php echo $config['seg_envio_pedido_mesa'] ?? 1000; ?>"> Seg.
-                                                </div>
-                                                <label><input type="checkbox" name="sin_imagenes_recintos" value="1" <?php echo ($config['sin_imagenes_recintos'] ?? false) ? 'checked' : ''; ?>> Sin imagenes de recintos</label>
-                                                <label><input type="checkbox" name="cajero_agregar_cualquier_mesa" value="1" <?php echo ($config['cajero_agregar_cualquier_mesa'] ?? false) ? 'checked' : ''; ?>> Cajero puede agregar a cualquier mesa</label>
-                                                <label><input type="checkbox" name="validar_productos_cortesia" value="1" <?php echo ($config['validar_productos_cortesia'] ?? false) ? 'checked' : ''; ?>> Validar Cortesía venta Producto</label>
-                                                <div class="form-group">
-                                                    <label>Familia de favoritos </label>
-                                                    <input type="number" class="form-control input-small" name="id_familia_favoritos" value="<?php echo $config['id_familia_favoritos'] ?? ''; ?>"> Seg.
-                                                </div>
-                                            </div>
-                                        </div> -->
-                                        <div class="panel panel-default">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title">Descuentos</h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <div class="form-group">
-                                                    <label>Máximo Permitido</label>
-                                                    <input type="number" step="0.01" class="form-control" name="por_maximodescuento" value="<?php echo $config['por_maximodescuento'] ?? ''; ?>">
-                                                </div>
-                                                <label><input type="checkbox" name="requiere_cliente_descuento" value="1" <?php echo ($config['requiere_cliente_descuento'] ?? false) ? 'checked' : ''; ?>> Requerir Cliente</label>
-                                            </div>
-                                        </div>
-                                        <div class="panel panel-default">
+
+                                        <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Clave de administrador</h3>
                                             </div>
@@ -187,15 +115,64 @@
                                                 <label><input type="checkbox" name="admin_anulacion_eliminacion" value="1" <?php echo ($config['admin_anulacion_eliminacion'] ?? false) ? 'checked' : ''; ?>> Requerir clave admin para anulacion</label>
                                             </div>
                                         </div>
-                                        <div class="panel panel-default">
+                                    </div>
+
+                                    <!-- Columna 3 -->
+                                    <div class="config-col">
+                                        <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">REQUIERE USUARIO ADMINISTRADOR PARA:</h3>
+                                                <h3 class="panel-title">Informes por Correo</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <label><input type="checkbox" name="usar_correo_electronico" value="1" <?php echo ($config['usar_correo_electronico'] ?? false) ? 'checked' : ''; ?>> Enviar Cierre de caja por correo</label>
+                                                <div class="form-group">
+                                                    <input type="email" class="form-control" name="correo_electronico" placeholder="ejemplo@correo.com" value="<?php echo $config['correo_electronico'] ?? ''; ?>">
+                                                </div>
+                                                <label><input type="checkbox" name="informar_anulaciones_mail" value="1" <?php echo ($config['informar_anulaciones_mail'] ?? false) ? 'checked' : ''; ?>> Informar anulaciones y comisiones</label>
+                                                <button type="button" class="btn btn-orange">Probar envío</button>
+                                                <p class="p">Separar por coma para múltiples correos</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title">Imprimir cierre de caja</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <label><input type="checkbox" name="ver_ingresos_egresos_cierre_caja" value="1" <?php echo ($config['ver_ingresos_egresos_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Ingresos y Egresos</label>
+                                                <label><input type="checkbox" name="ver_creditos_a_clientes_cierre_caja" value="1" <?php echo ($config['ver_creditos_a_clientes_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Creditos a clientes</label>
+                                                <label><input type="checkbox" name="ver_cortesias_cierre_caja" value="1" <?php echo ($config['ver_cortesias_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Cortesías</label>
+                                                <label><input type="checkbox" name="ver_anulaciones_eliminaciones_cierre_caja" value="1" <?php echo ($config['ver_anulaciones_eliminaciones_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Anulaciones y eliminaciones</label>
+                                                <label><input type="checkbox" name="ver_detalle_atencion_cierre_caja" value="1" <?php echo ($config['ver_detalle_atencion_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Detalle de atención</label>
+                                                <hr style="margin: 10px 0;">
+                                                <label><input type="checkbox" name="mostrar_recaudacion_cierre_no_efectivo" value="1" <?php echo ($config['mostrar_recaudacion_cierre_no_efectivo'] ?? true) ? 'checked' : ''; ?>> Llenar forma de pago no efectivo</label>
+                                                <label><input type="checkbox" name="cierre_caja_manual" value="1" <?php echo ($config['cierre_caja_manual'] ?? true) ? 'checked' : ''; ?>> Cierre de caja detallado</label>
+                                                <label><input type="checkbox" name="imprimir_cierre_caja_impresora_termica" value="1" <?php echo ($config['imprimir_cierre_caja_impresora_termica'] ?? true) ? 'checked' : ''; ?>> Imprimir cierre de caja</label>
+                                            </div>
+                                        </div>
+
+                                        <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title">Descuentos</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="form-group">
+                                                    <label>Máximo Permitido (%)</label>
+                                                    <input type="number" step="0.01" class="form-control" name="por_maximodescuento" value="<?php echo $config['por_maximodescuento'] ?? ''; ?>">
+                                                </div>
+                                                <label><input type="checkbox" name="requiere_cliente_descuento" value="1" <?php echo ($config['requiere_cliente_descuento'] ?? false) ? 'checked' : ''; ?>> Requerir Cliente</label>
+                                            </div>
+                                        </div>
+
+                                        <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title">REQUERIR ADMIN PARA:</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="requerir_usuario_admin_credito" value="1" <?php echo ($config['requerir_usuario_admin_credito'] ?? false) ? 'checked' : ''; ?>> Ventas a credito</label>
                                                 <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> cortesias</label>
                                                 <label><input type="checkbox" name="requerir_usuario_admin_descuento" value="1" <?php echo ($config['requerir_usuario_admin_descuento'] ?? false) ? 'checked' : ''; ?>> Descuentos en caja</label>
-                                                <label><input type="checkbox" name="boton_apertura_caja_solo_admin" value="1" <?php echo ($config['boton_apertura_caja_solo_admin'] ?? false) ? 'checked' : ''; ?>> Apertura de gaveta en caja</label>
+                                                <label><input type="checkbox" name="boton_apertura_caja_solo_admin" value="1" <?php echo ($config['boton_apertura_caja_solo_admin'] ?? false) ? 'checked' : ''; ?>> Apertura de gaveta</label>
                                             </div>
                                         </div>
                                     </div>
@@ -206,7 +183,7 @@
                             <div id="otras" class="tab">
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <div class="panel panel-default">
+                                        <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Configuración por defecto de Compras</h3>
                                             </div>
@@ -238,7 +215,8 @@
                                                         </select>
                                                     </div>
                                                 </div>
-                                                <h4>Créditos</h4>
+                                                <hr>
+                                                <h4 style="font-size: 14px; font-weight: 700; color: #4a5568; margin-bottom: 15px;">Créditos</h4>
                                                 <div class="row">
                                                     <div class="col-md-6 form-group">
                                                         <label>Formas de pago credito a clientes</label>
@@ -255,7 +233,8 @@
                                                         </select>
                                                     </div>
                                                 </div>
-                                                <h4>Bodegas</h4>
+                                                <hr>
+                                                <h4 style="font-size: 14px; font-weight: 700; color: #4a5568; margin-bottom: 15px;">Bodegas</h4>
                                                 <div class="row">
                                                     <div class="col-md-4 form-group">
                                                         <label>Compras</label>
@@ -283,7 +262,7 @@
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="panel panel-default">
+                                        <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Configuración por defecto de Venta</h3>
                                             </div>
@@ -344,6 +323,7 @@
                                                         <option value="1">COMPROBANTE INTERNO</option>
                                                     </select>
                                                 </div>
+                                                <hr>
                                                 <label><input type="checkbox" name="permitir_retiro_fondo_fijo" value="1" <?php echo ($config['permitir_retiro_fondo_fijo'] ?? false) ? 'checked' : ''; ?>> Permitir retiro fondo fijo</label>
                                                 <label><input type="checkbox" name="lprecio_x_sector" value="1" <?php echo ($config['lprecio_x_sector'] ?? false) ? 'checked' : ''; ?>> Listar precios por sector</label>
                                                 <label><input type="checkbox" name="agregar_comision_a_venta" value="1" <?php echo ($config['agregar_comision_a_venta'] ?? false) ? 'checked' : ''; ?>> Agregar comision a venta</label>
@@ -352,7 +332,7 @@
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="panel panel-default">
+                                        <div class="config-card">
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="inventario_cierre_caja" value="1" <?php echo ($config['inventario_cierre_caja'] ?? false) ? 'checked' : ''; ?>> Inventario insumos cierre de caja</label>
                                                 <label><input type="checkbox" name="permitir_repetir_producto_menu" value="1" <?php echo ($config['permitir_repetir_producto_menu'] ?? false) ? 'checked' : ''; ?>> Permitir repetir el producto en el menu</label>
@@ -367,18 +347,19 @@
                             <!-- Tab Facturación Electrónica -->
                             <div id="facturacion" class="tab">
                                 <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="panel panel-default">
+                                    <div class="col-md-6">
+                                        <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Facturacion electronica</h3>
+                                                <h3 class="panel-title">Facturación Electrónica</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="habilitar_facturacion_electronica" value="1" <?php echo ($config['habilitar_facturacion_electronica'] ?? false) ? 'checked' : ''; ?>> Habilitar factura electronica</label>
+                                                <hr>
                                                 <div class="form-group">
                                                     <label>EMPRESA PROVEEDORA DTE</label>
-                                                    <div class="radio-group">
-                                                        <label><input type="radio" name="proveedor_dte" value="1" <?php echo ($config['acepta'] ?? false) ? 'checked' : ''; ?>> ACEPTA</label>
-                                                        <label><input type="radio" name="proveedor_dte" value="2" <?php echo ($config['acierto'] ?? false) ? 'checked' : ''; ?>> ACIERTO</label>
+                                                    <div style="display: flex; gap: 20px; margin-top: 5px;">
+                                                        <label style="margin:0"><input type="radio" name="proveedor_dte" value="1" <?php echo ($config['acepta'] ?? false) ? 'checked' : ''; ?>> ACEPTA</label>
+                                                        <label style="margin:0"><input type="radio" name="proveedor_dte" value="2" <?php echo ($config['acierto'] ?? false) ? 'checked' : ''; ?>> ACIERTO</label>
                                                     </div>
                                                 </div>
                                                 <div class="form-group">
@@ -414,16 +395,41 @@
                                                         <option value="0">BOLETA ELECTRONICA</option>
                                                     </select>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title">Parámetros Web y DTE</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="form-group">
+                                                    <label>Ruta API Get PDF</label>
+                                                    <input type="text" class="form-control" name="ruta_api_get_pdf" value="<?php echo $config['ruta_api_get_pdf'] ?? ''; ?>">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Ruta API Get QR</label>
+                                                    <input type="text" class="form-control" name="ruta_api_get_qr" value="<?php echo $config['ruta_api_get_qr'] ?? ''; ?>">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Ruta DTE Código QR</label>
+                                                    <input type="text" class="form-control" name="ruta_dte_qr" value="<?php echo $config['ruta_dte_qr'] ?? ''; ?>">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Ruta Consulta Folio DTE</label>
+                                                    <input type="text" class="form-control" name="url_consulta_folio_dte" value="<?php echo $config['url_consulta_folio_dte'] ?? ''; ?>">
+                                                </div>
+                                                <hr>
                                                 <label><input type="checkbox" name="imprimir_pdf_dte" value="1" <?php echo ($config['imprimir_pdf_dte'] ?? false) ? 'checked' : ''; ?>> Imprimir pdf</label>
                                                 <div class="form-group">
-                                                    <label>Imrpesora</label>
+                                                    <label>Ruta Impresora/PDF</label>
                                                     <input type="text" class="form-control" name="ruta_dte_pdf" value="<?php echo $config['ruta_dte_pdf'] ?? '/17.0.1/caja'; ?>">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Formato pdf</label>
                                                     <input type="text" class="form-control" name="formato_dte" value="<?php echo $config['formato_dte'] ?? ''; ?>">
                                                 </div>
-
                                                 <div class="form-group">
                                                     <label>Copias dte</label>
                                                     <input type="number" class="form-control" name="copias_dte" value="<?php echo $config['copias_dte'] ?? 1; ?>">
@@ -431,14 +437,16 @@
                                                 <label><input type="checkbox" name="imprimir_copia_cedible" value="1" <?php echo ($config['imprimir_copia_cedible'] ?? false) ? 'checked' : ''; ?>> Imprimir copia cedible</label>
                                                 <label><input type="checkbox" name="enviar_dte_sii" value="1" <?php echo ($config['enviar_dte_sii'] ?? false) ? 'checked' : ''; ?>> enviar dte al sii</label>
                                                 <div class="form-group">
-                                                    <label>Timeout</label>
+                                                    <label>Timeout (Seg)</label>
                                                     <input type="number" class="form-control" name="timeout" value="<?php echo $config['timeout'] ?? 20; ?>">
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="panel panel-default">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Certificacionn</h3>
+                                                <h3 class="panel-title">Certificación SII</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
@@ -446,7 +454,7 @@
                                                     <input type="number" class="form-control" name="id_comuna_sii" value="<?php echo $config['id_comuna_sii'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>resolucion</label>
+                                                    <label>Resolución SII</label>
                                                     <input type="text" class="form-control" name="resolucion_sii" value="<?php echo $config['resolucion_sii'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
@@ -455,9 +463,11 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="panel panel-default">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Acceso facturacion</h3>
+                                                <h3 class="panel-title">Acceso Facturación</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
@@ -470,29 +480,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="panel panel-default">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title">PARAMETROS WEB</h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <div class="form-group">
-                                                    <label>Ruta API Get PDF</label>
-                                                    <input type="text" class="form-control" name="ruta_api_get_pdf" value="<?php echo $config['ruta_api_get_pdf'] ?? ''; ?>">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Ruta API Get QR</label>
-                                                    <input type="text" class="form-control" name="ruta_api_get_qr" value="<?php echo $config['ruta_api_get_qr'] ?? ''; ?>">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>ruta dte codigo qr</label>
-                                                    <input type="text" class="form-control" name="ruta_dte_qr" value="<?php echo $config['ruta_dte_qr'] ?? ''; ?>">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Ruta consulta de folios</label>
-                                                    <input type="text" class="form-control" name="url_consulta_folio_dte" value="<?php echo $config['url_consulta_folio_dte'] ?? ''; ?>">
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -501,33 +488,33 @@
                             <div id="empresa" class="tab">
                                 <div class="row">
                                     <div class="col-md-12">
-                                        <div class="panel panel-default">
+                                        <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Datos de la Empresa</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
-                                                    <div class="col-md-6 form-group">
+                                                    <div class="col-md-4 form-group">
                                                         <label>Rut</label>
                                                         <input type="text" class="form-control" name="rut_empresa" value="<?php echo $empresa['rut_empresa'] ?? ''; ?>">
                                                     </div>
-                                                    <div class="col-md-6 form-group">
+                                                    <div class="col-md-2 form-group">
                                                         <label>DV</label>
                                                         <input type="text" class="form-control" name="dv_empresa" maxlength="1" value="<?php echo $empresa['dv_empresa'] ?? ''; ?>">
                                                     </div>
-                                                    <div class="col-md-12 form-group">
+                                                    <div class="col-md-6 form-group">
                                                         <label>Razón Social</label>
                                                         <input type="text" class="form-control" name="razon_social" value="<?php echo $empresa['razon_social'] ?? ''; ?>">
                                                     </div>
-                                                    <div class="col-md-12 form-group">
+                                                    <div class="col-md-6 form-group">
                                                         <label>Nombre Fantasía</label>
                                                         <input type="text" class="form-control" name="nombre_fantasia" value="<?php echo $empresa['nombre_fantasia'] ?? ''; ?>">
                                                     </div>
-                                                    <div class="col-md-6 form-group">
+                                                    <div class="col-md-3 form-group">
                                                         <label>Código Act. Económica</label>
                                                         <input type="text" class="form-control" name="codigo_actividad_economica" value="<?php echo $empresa['codigo_actividad_economica'] ?? ''; ?>">
                                                     </div>
-                                                    <div class="col-md-6 form-group">
+                                                    <div class="col-md-3 form-group">
                                                         <label>Giro</label>
                                                         <input type="text" class="form-control" name="giro" value="<?php echo $empresa['giro'] ?? ''; ?>">
                                                     </div>
@@ -535,44 +522,44 @@
                                                         <label>Dirección</label>
                                                         <input type="text" class="form-control" name="direccion_empresa" value="<?php echo $empresa['direccion_empresa'] ?? ''; ?>">
                                                     </div>
-                                                    <div class="col-md-6 form-group">
+                                                    <div class="col-md-4 form-group">
                                                         <label>Comuna</label>
                                                         <input type="number" class="form-control" name="id_comuna" value="<?php echo $empresa['id_comuna'] ?? ''; ?>">
                                                     </div>
-                                                    <div class="col-md-6 form-group">
+                                                    <div class="col-md-4 form-group">
                                                         <label>Correo</label>
                                                         <input type="email" class="form-control" name="mail" value="<?php echo $empresa['mail'] ?? ''; ?>">
                                                     </div>
-                                                    <div class="col-md-6 form-group">
+                                                    <div class="col-md-4 form-group">
                                                         <label>Teléfono</label>
                                                         <input type="text" class="form-control" name="telefono" value="<?php echo $empresa['telefono'] ?? ''; ?>">
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="panel panel-default">
+                                        <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Sucursal</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
-                                                    <div class="col-md-6 form-group">
+                                                    <div class="col-md-4 form-group">
                                                         <label>Código SII Sucursal</label>
                                                         <input type="number" class="form-control" name="codigo_sii" value="<?php echo $empresa['codigo_sii'] ?? ''; ?>">
                                                     </div>
-                                                    <div class="col-md-6 form-group">
+                                                    <div class="col-md-4 form-group">
                                                         <label>Código Sucursal</label>
                                                         <input type="text" class="form-control" name="codigo_sucursal" value="<?php echo $empresa['codigo_sucursal'] ?? ''; ?>">
                                                     </div>
-                                                    <div class="col-md-6 form-group">
+                                                    <div class="col-md-4 form-group">
                                                         <label>Nombre Sucursal</label>
                                                         <input type="text" class="form-control" name="nombre_sucursal" value="<?php echo $empresa['nombre_sucursal'] ?? ''; ?>">
                                                     </div>
-                                                    <div class="col-md-12 form-group">
+                                                    <div class="col-md-8 form-group">
                                                         <label>Dirección Sucursal</label>
                                                         <input type="text" class="form-control" name="direccion_sucursal" value="<?php echo $empresa['direccion_sucursal'] ?? ''; ?>">
                                                     </div>
-                                                    <div class="col-md-6 form-group">
+                                                    <div class="col-md-4 form-group">
                                                         <label>Comuna Sucursal</label>
                                                         <input type="number" class="form-control" name="id_comuna_sucursal" value="<?php echo $empresa['id_comuna_sucursal'] ?? ''; ?>">
                                                     </div>
@@ -597,31 +584,211 @@
 
 
 <style>
-    .tabs {
-        padding: 0;
-        margin-bottom: 20px;
+    /* Estilos Modernos para Configuraciones */
+    .content-header {
+        padding: 20px 25px !important;
+        margin-bottom: 20px !important;
     }
-    .tablink {
-        background: #f1f1f1;
+    
+    .panel-success.lobidisable {
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         border: none;
-        padding: 12px 20px;
+    }
+
+    .panel-success > .panel-heading {
+        background: #558B2F !important;
+        color: white !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 15px 20px;
+    }
+
+    .tabs {
+        background: #f8f9fa;
+        padding: 5px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        display: inline-flex;
+        border: 1px solid #e9ecef;
+    }
+    
+    .tablink {
+        background: transparent;
+        border: none;
+        padding: 10px 25px;
         cursor: pointer;
         font-size: 14px;
-        border-right: 1px solid #ccc;
+        font-weight: 600;
+        color: #7f8c8d;
+        border-radius: 6px;
+        transition: all 0.3s ease;
     }
-    .tablink:last-child { border-right: none; }
+    
+    .tablink:hover {
+        color: #34495e;
+        background: rgba(26, 188, 156, 0.05);
+    }
+    
     .tablink.active {
-        background: #5cb85c;
+        background: #558B2F;
         color: white;
+        box-shadow: 0 4px 10px rgba(26, 188, 156, 0.2);
     }
+
     .tab {
         display: none;
+        animation: fadeIn 0.4s ease;
     }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
     .tab.active {
         display: block;
     }
-    .p { font-size: 11px; color: #666; margin: 5px 0; }
-    .input-small { width: 80px; display: inline-block; }
-    .radio-group { display: flex; }
-    .radio-group label { margin-right: 20px; }
+
+    /* Cards de configuración */
+    .config-card {
+        background: white;
+        border: 1px solid #edf2f7;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .config-card:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .config-card .panel-heading {
+        background: #fcfcfc;
+        border-bottom: 1px solid #edf2f7;
+        padding: 12px 15px;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .config-card .panel-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #2d3748;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .config-card .panel-body {
+        padding: 15px;
+    }
+
+    /* Checkbox styling */
+    .config-card label {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        font-weight: 500;
+        color: #4a5568;
+        cursor: pointer;
+        font-size: 13px;
+        transition: color 0.2s ease;
+    }
+
+    .config-card label:hover {
+        color: #558B2F;
+    }
+
+    .config-card input[type="checkbox"] {
+        margin-right: 10px;
+        width: 16px;
+        height: 16px;
+        accent-color: #558B2F;
+    }
+
+    .form-group label {
+        font-size: 12px;
+        color: #718096;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .form-control {
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        padding: 8px 12px;
+        height: auto;
+        font-size: 13px;
+    }
+
+    .form-control:focus {
+        border-color: #558B2F;
+        box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.1);
+    }
+
+    .btn-orange {
+        background: #f39c12;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 12px;
+        margin-top: 10px;
+    }
+
+    .p { font-size: 11px; color: #a0aec0; margin: 5px 0; }
+    
+    .modal-footer {
+        border-top: 1px solid #edf2f7;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 0 0 12px 12px;
+    }
+
+    .btn-primary {
+        background: #558B2F;
+        border: none;
+        padding: 10px 30px;
+        font-weight: 700;
+        border-radius: 6px;
+        box-shadow: 0 4px 10px rgba(26, 188, 156, 0.2);
+    }
+
+    .btn-primary:hover {
+        background: #16a085;
+        transform: translateY(-1px);
+    }
+
+    /* Ajuste de columnas para evitar espacios en blanco */
+    .config-grid {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -10px;
+    }
+    
+    .config-col {
+        flex: 1;
+        min-width: 300px;
+        padding: 0 10px;
+    }
+
+    @media (max-width: 992px) {
+        .config-col {
+            flex: 0 0 50%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .config-col {
+            flex: 0 0 100%;
+        }
+        .tabs {
+            display: flex;
+            flex-direction: column;
+        }
+        .tablink {
+            border-right: none;
+            border-bottom: 1px solid #e9ecef;
+        }
+    }
 </style>

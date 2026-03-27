@@ -46,7 +46,9 @@
 <!-- FIN  MODAL NUEVO REGISTRO  -->
 
 <script>
-    function AbrirModalNuevaUmedida() {
+    var originUmedida = "";
+    function AbrirModalNuevaUmedida(origin) {
+        originUmedida = origin || "";
         $('#idUmedida').val("");
         $('#nombreUmedida').val("");
         $('#ModalNuevaUmedida').modal({
@@ -88,6 +90,27 @@
 
                     if (typeof llenarCboUnMedidaModalReceta === 'function') {
                         llenarCboUnMedidaModalReceta(NombreUmedida);
+                    }
+
+                    if (typeof llenarCboUnMedida === 'function') {
+                        llenarCboUnMedida(NombreUmedida);
+                    }
+					
+					if (typeof llenarUnMedida === 'function') {
+                        var selInv = $("#cboUnMedInventario option:selected").attr("nombreUm");
+                        var selRec = $("#cboUnMedReceta option:selected").text();
+
+                        if (originUmedida === 'inventario') {
+                            selInv = NombreUmedida;
+                        } else if (originUmedida === 'receta') {
+                            selRec = NombreUmedida;
+                        }
+
+						llenarUnMedida(selInv, selRec);
+					}
+
+                    if (typeof cargarUnidadesMedidaParaReceta === 'function') {
+                        cargarUnidadesMedidaParaReceta(NombreUmedida);
                     }
 					
 					if (typeof tablaUmedida !== 'undefined') {

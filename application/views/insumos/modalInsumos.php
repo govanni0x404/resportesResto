@@ -106,7 +106,7 @@
 									</div>
 									<div class="col-md-6">
 										<label for="cboUnMedInventario">U. MEDIDA INVENTARIO/COMPRA *</label>
-										<sup style="color:#568c30;" ><a onclick="AbrirModalNuevaUmedida()">Nuevo</a></sup>
+										<sup style="color:#568c30;" ><a onclick="AbrirModalNuevaUmedida('inventario')">Nuevo</a></sup>
 										<select style="width:100%;" id="cboUnMedInventario" nombre="cboUnMedInventario" class="form-control input-sm" requerido="si">
 											<option value="">--Seleccione--</option>
 										</select>
@@ -120,7 +120,7 @@
 									</div>
 									<div class="col-md-6">
 										<label for="cboUnMedReceta">U. MEDIDA RECETA *</label>
-										<sup style="color:#568c30;" ><a onclick="AbrirModalNuevaUmedida()">Nuevo</a></sup>
+										<sup style="color:#568c30;" ><a onclick="AbrirModalNuevaUmedida('receta')">Nuevo</a></sup>
 										<select style="width:100%;" id="cboUnMedReceta" nombre="cboUnMedReceta" class="form-control input-sm" requerido="si">
 											<option value="">--Seleccione--</option>
 										</select>
@@ -1212,14 +1212,18 @@ function cargarInsumosParaReceta() {
     });
 }
 
-function cargarUnidadesMedidaParaReceta() {
+function cargarUnidadesMedidaParaReceta(selectedUmedida) {
     $.post(base_url + "index.php/Insumos/llenarCboUnMedida", {}, function(datos) {
         var obj = jQuery.parseJSON(datos);
         
         var tbl = '<option value="0">-- Seleccione --</option>';
         
         $.each(obj, function(index, v) {
-            tbl += '<option value="' + v.id_umedida + '">' + v.nombre_umedida + '</option>';
+            if (v.nombre_umedida == selectedUmedida || v.id_umedida == selectedUmedida) {
+                tbl += '<option selected value="' + v.id_umedida + '">' + v.nombre_umedida + '</option>';
+            } else {
+                tbl += '<option value="' + v.id_umedida + '">' + v.nombre_umedida + '</option>';
+            }
         });
         
         $("#cboUnidadMedidaReceta").html(tbl);
