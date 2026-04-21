@@ -57,7 +57,7 @@
 <script src="<?php echo base_url() ?>assets/plugins/amcharts/light.js"></script>
 <script src="<?php echo base_url() ?>assets/plugins/amcharts/pie.js"></script>
 <!-- datatables -->
-<!-- <script src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.js"></script> -->
+<script src="<?php echo base_url() ?>assets/plugins/amcharts/plugins/export/libs/jszip/jszip.min.js"></script>
 <script src="<?php echo base_url() ?>assets/plugins/datatables/dataTables.min.js"></script>
 <script src="<?php echo base_url() ?>assets/plugins/datatables/dataTables.responsive.js"></script>
 <script src="https://cdn.datatables.net/select/1.3.3/js/dataTables.select.min.js"></script>

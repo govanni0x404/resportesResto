@@ -178,7 +178,7 @@
     }
 
     function resumenDeOperaciones(desde, hasta, idFpago, idUsuario) {
-        let tituloExport = "Ventas Por Producto";
+        let tituloExport = "Detalle De Ventas";
         if ($.fn.dataTable.isDataTable('#tableDetalleOperaciones')) {
             tablaDetalleOperaciones = $('#tableDetalleOperaciones').DataTable();
             tablaDetalleOperaciones.destroy();
@@ -218,7 +218,7 @@
             "ordering": true,
             "filter": true,
             "info": false,
-            "footer": false,
+            "footer": true,
             "responsive": {
                 details: {
                     type: 'column',
@@ -259,13 +259,6 @@
                 mData: "btn_ver_detalle",
                 className: "text-center"
             },
-                /*{
-                    mData: "test",
-                    "width": "1%",
-                    className: 'dtr-control',
-                    orderable: false,
-                    targets: -1
-                }*/
             ],
             "drawCallback": function () {
                 var totalVentas = this.api();
@@ -290,12 +283,36 @@
                     }
                 }
             },
-            'buttons': []
+            'buttons': [{
+                text: "PDF",
+                extend: 'pdfHtml5',
+                orientation: 'landscape',
+                pageSize: 'LEGAL',
+                title: "Detalle De Ventas",
+                className: "btn btn-danger",
+                exportOptions: {
+                    modifier: {
+                        selected: null
+                    },
+                    columns: [0, 1, 2, 3, 4, 5, 6]
+                }
+            }, {
+                text: "Excel",
+                extend: 'excelHtml5',
+                title: "Detalle De Ventas",
+                className: "btn btn-success",
+                exportOptions: {
+                    modifier: {
+                        selected: null
+                    },
+                    columns: [0, 1, 2, 3, 4, 5, 6]
+                }
+            }]
         });
     }
 
     function resumenVerDetalleDeOperaciones(id_venta) {
-        let tituloExport = "Ventas Por Producto";
+        let tituloExport = "Detalle Venta " + id_venta;
         if ($.fn.dataTable.isDataTable('#tablaModalVerDetalleDeOperaciones')) {
             tableModalVerDetalleOperaciones = $('#tablaModalVerDetalleDeOperaciones').DataTable();
             tableModalVerDetalleOperaciones.destroy();
@@ -316,7 +333,7 @@
             "ordering": true,
             "filter": true,
             "info": false,
-            "footer": false,
+            "footer": true,
             "responsive": {
                 details: {
                     type: 'column',
@@ -336,16 +353,6 @@
                 className: "text-center",
                 render: $.fn.dataTable.render.number(',', '.', 0, '$')
             },
-            /*{
-                mData: "neto",
-                className: "text-right",
-                render: $.fn.dataTable.render.number(',', '.', 0, '$')
-            },
-            {
-                mData: "iva",
-                className: "text-right",
-                render: $.fn.dataTable.render.number(',', '.', 0, '$')
-            },*/
             {
                 mData: "total_bruto",
                 className: "text-center",
@@ -359,27 +366,7 @@
                         page: 'current'
                     }).data().sum()
                 )
-                /*
-                var totalNeto = this.api();
-                var totalN = totalNeto.column(3, { page: 'current' }).data().sum();
-                function formatNumber(num) {
-                    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                }
-                var totalFormatted = formatNumber(totalN.toFixed(0));
-                $(totalNeto.column(3).footer()).html(
-                    '$' + totalFormatted
-                );
 
-                var totalIva = this.api();
-                var totalI = totalIva.column(4, { page: 'current' }).data().sum();
-                function formatNumber(num) {
-                    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                }
-                var totalFormatted = formatNumber(totalI.toFixed(0));
-                $(totalIva.column(4).footer()).html(
-                    '$' + totalFormatted
-                );
-*/
                 var montoTotal = this.api();
                 var total = montoTotal.column(3, { page: 'current' }).data().sum();
                 function formatNumber(num) {
@@ -389,10 +376,6 @@
                 $(montoTotal.column(3).footer()).html(
                     '$' + totalFormatted
                 );
-
-
-
-
             },
             'language': {
                 url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
@@ -405,7 +388,29 @@
                     }
                 }
             },
-            'buttons': []
+            'buttons': [{
+                text: "PDF",
+                extend: 'pdfHtml5',
+                title: tituloExport,
+                className: "btn btn-danger",
+                exportOptions: {
+                    modifier: {
+                        selected: null
+                    },
+                    columns: [0, 1, 2, 3]
+                }
+            }, {
+                text: "Excel",
+                extend: 'excelHtml5',
+                title: tituloExport,
+                className: "btn btn-success",
+                exportOptions: {
+                    modifier: {
+                        selected: null
+                    },
+                    columns: [0, 1, 2, 3]
+                }
+            }]
         });
     }
 
@@ -413,6 +418,7 @@
         resumenVerDetalleDeOperaciones(id_venta);
         DetalleFormaDePagoVenta(id_venta);
         DetalleCambioFormaDePagoVenta(id_venta);
+        cargarValidacionDetalleDeOperaciones();
         $('#modalVerDetalleDeOperaciones').modal({
             backdrop: 'static',
             keyboard: false

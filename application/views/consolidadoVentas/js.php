@@ -341,4 +341,54 @@
 			'hasta': hasta,
 		}, 'POST', 'wDteD');
 	}
+
+	function ExcelConsolidadoDeVentas() {
+		var desde = $('#date-range-picker').data('daterangepicker').startDate.format('DD-MM-YYYY');
+		var hasta = $('#date-range-picker').data('daterangepicker').endDate.format('DD-MM-YYYY');
+
+		var html = "<table border='1'>";
+		html += "<tr><td colspan='5' style='font-size:18px; font-weight:bold; text-align:center;'>CONSOLIDADO DE VENTAS</td></tr>";
+		html += "<tr><td colspan='5' style='text-align:center;'>Desde: " + desde + " - Hasta: " + hasta + "</td></tr>";
+		html += "<tr></tr>";
+
+		html += "<tr><td colspan='2' style='font-weight:bold; background-color:#f2f2f2;'>RESUMEN GENERAL</td><td colspan='3'></td></tr>";
+		html += "<tr><td>Cantidad Ventas</td><td>" + $('#cantidadVentas').text() + "</td><td colspan='3'></td></tr>";
+		html += "<tr><td>Total Neto</td><td>" + $('#totalNeto').text() + "</td><td colspan='3'></td></tr>";
+		html += "<tr><td>Total Iva</td><td>" + $('#totalIva').text() + "</td><td colspan='3'></td></tr>";
+		html += "<tr><td>Total Ventas</td><td>" + $('#totalVentas').text() + "</td><td colspan='3'></td></tr>";
+		html += "<tr><td>Total Descuentos</td><td>" + $('#totalDescuentos').text() + "</td><td colspan='3'></td></tr>";
+		html += "<tr><td>Total General</td><td>" + $('#TotalGeneral').text() + "</td><td colspan='3'></td></tr>";
+		html += "<tr><td>Monto Venta Total</td><td>" + $('#MontoVentaTotal').text() + "</td><td colspan='3'></td></tr>";
+		html += "<tr></tr>";
+
+		html += "<tr><td colspan='5' style='font-weight:bold; background-color:#f2f2f2;'>VENTAS POR FAMILIA</td></tr>";
+		html += "<tr><th style='background-color:#dff0d8;'>Familia</th><th style='background-color:#dff0d8;'>Cantidad</th><th style='background-color:#dff0d8;'>Neto</th><th style='background-color:#dff0d8;'>Iva</th><th style='background-color:#dff0d8;'>Total</th></tr>";
+		$('#resumenVentasPorFamilia tr').each(function() {
+			html += "<tr>";
+			$(this).find('td').each(function() {
+				html += "<td>" + $(this).text() + "</td>";
+			});
+			html += "</tr>";
+		});
+		html += "<tr></tr>";
+
+		html += "<tr><td colspan='5' style='font-weight:bold; background-color:#f2f2f2;'>VENTAS POR CANAL</td></tr>";
+		html += "<tr><th style='background-color:#dff0d8;'>Canal</th><th style='background-color:#dff0d8;'>Cantidad</th><th style='background-color:#dff0d8;'>Neto</th><th style='background-color:#dff0d8;'>Iva</th><th style='background-color:#dff0d8;'>Total</th></tr>";
+		$('#resumenVentasPorCanal tr').each(function() {
+			html += "<tr>";
+			$(this).find('td').each(function() {
+				html += "<td>" + $(this).text() + "</td>";
+			});
+			html += "</tr>";
+		});
+		html += "</table>";
+
+		var blob = new Blob(['\ufeff', html], {
+			type: 'application/vnd.ms-excel'
+		});
+		var link = document.createElement("a");
+		link.href = URL.createObjectURL(blob);
+		link.download = "ConsolidadoVentas_" + desde + "_" + hasta + ".xls";
+		link.click();
+	}
 </script>

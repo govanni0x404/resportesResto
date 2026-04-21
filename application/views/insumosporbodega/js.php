@@ -176,18 +176,28 @@
             },
             "buttons": [{
                 text: "PDF",
-                extend: 'pdf',
+                extend: 'pdfHtml5',
+                orientation: 'landscape',
+                pageSize: 'LEGAL',
+                title: tituloExport,
+                className: "btn btn-danger",
                 exportOptions: {
                     modifier: {
                         selected: null
                     },
                     columns: [1, 2, 3]
-                },
-                extend: 'pdfHtml5',
-                orientation: 'landscape',
-                pageSize: 'LEGAL',
+                }
+            }, {
+                text: "Excel",
+                extend: 'excelHtml5',
                 title: tituloExport,
-                className: "btn btn-danger"
+                className: "btn btn-success",
+                exportOptions: {
+                    modifier: {
+                        selected: null
+                    },
+                    columns: [1, 2, 3]
+                }
             }]
         });
         tableInventarioPorBodega

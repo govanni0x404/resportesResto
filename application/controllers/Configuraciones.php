@@ -19,6 +19,13 @@ class Configuraciones extends CI_Controller {
         $this->load->view('configuraciones/js', $data);
     }
 
+    public function obtenerConfiguracionesRestoWeb() {
+        $this->load->helper('tenant'); 
+        $this->db = get_tenant_db($this);
+        $config = $this->Mconfiguraciones->get_configuracion();
+        echo json_encode([$config]);
+    }
+
     public function guardar() {
         $post = $this->input->post();
         $update_config = [];

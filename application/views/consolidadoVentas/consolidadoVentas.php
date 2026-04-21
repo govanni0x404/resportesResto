@@ -47,6 +47,7 @@ $fechaActual = date('d-m-Y');
 
 
 				<button onclick="PDFConsolidadoDeVentas()" class="btn btn-danger w-md m-b-1"><i class="hvr-buzz-out fa fa-pdf"></i>EXPORTAR PDF</button>
+				<button onclick="ExcelConsolidadoDeVentas()" class="btn btn-success w-md m-b-1"><i class="hvr-buzz-out fa fa-file-excel-o"></i>EXPORTAR EXCEL</button>
 
 			</div>
 		</ul>

@@ -149,7 +149,7 @@
             "bProcessing": false,
             "pageLength": 10,
             "select": true,
-            "dom": "frtip",
+            "dom": "Bfrtip",
             "ordering": true,
             "filter": true,
             "info": false,
@@ -208,7 +208,29 @@
                 }
             },
             "buttons": [{
-
+                text: "PDF",
+                extend: 'pdfHtml5',
+                orientation: 'landscape',
+                pageSize: 'LEGAL',
+                title: "Propinas Por Garzon",
+                className: "btn btn-danger",
+                exportOptions: {
+                    modifier: {
+                        selected: null
+                    },
+                    columns: [0, 1, 2, 3, 4]
+                }
+            }, {
+                text: "Excel",
+                extend: 'excelHtml5',
+                title: "Propinas Por Garzon",
+                className: "btn btn-success",
+                exportOptions: {
+                    modifier: {
+                        selected: null
+                    },
+                    columns: [0, 1, 2, 3, 4]
+                }
             }]
         });
     }

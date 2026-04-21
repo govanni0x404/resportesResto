@@ -298,6 +298,15 @@ function detalleProductoMes(id_producto, mes) {
                 },
                 title: "Detalle Ventas Producto",
                 className: "btn btn-danger"
+            },
+            {
+                text: "Excel",
+                extend: 'excelHtml5',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4, 5]
+                },
+                title: "Detalle Ventas Producto",
+                className: "btn btn-success"
             }
         ]
     });

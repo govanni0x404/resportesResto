@@ -272,7 +272,31 @@
                     }
                 }
             },
-            'buttons': []
+            'buttons': [{
+                text: "PDF",
+                extend: 'pdfHtml5',
+                orientation: 'landscape',
+                pageSize: 'LEGAL',
+                title: tituloExport,
+                className: "btn btn-danger",
+                exportOptions: {
+                    modifier: {
+                        selected: null
+                    },
+                    columns: [0, 1, 2, 3, 4]
+                }
+            }, {
+                text: "Excel",
+                extend: 'excelHtml5',
+                title: tituloExport,
+                className: "btn btn-success",
+                exportOptions: {
+                    modifier: {
+                        selected: null
+                    },
+                    columns: [0, 1, 2, 3, 4]
+                }
+            }]
         });
     }
 
@@ -337,7 +361,31 @@
                     }
                 }
             },
-            'buttons': []
+            'buttons': [{
+                text: "PDF",
+                extend: 'pdfHtml5',
+                orientation: 'landscape',
+                pageSize: 'LEGAL',
+                title: tituloExport,
+                className: "btn btn-danger",
+                exportOptions: {
+                    modifier: {
+                        selected: null
+                    },
+                    columns: [0, 1, 2, 3, 4]
+                }
+            }, {
+                text: "Excel",
+                extend: 'excelHtml5',
+                title: tituloExport,
+                className: "btn btn-success",
+                exportOptions: {
+                    modifier: {
+                        selected: null
+                    },
+                    columns: [0, 1, 2, 3, 4]
+                }
+            }]
         });
     }
 
