@@ -89,8 +89,8 @@ class ListaDePrecios extends CI_Controller
                 'monto_comision' => $value['monto_comision']
             );
             $r = $this->MlistaDePrecios->grabarPrecios($idDetalleLprecio, $miData);
-            $respueta[] = $r;
+            $respuesta[] = $r;
         }
-        echo json_encode($respueta);
+        echo json_encode($respuesta);
     }
 }

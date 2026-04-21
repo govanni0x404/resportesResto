@@ -8,6 +8,27 @@ class MlistaDePrecios extends CI_Model
         parent::__construct();
     }
 
+    public function verificarColumnaExiste($tabla, $columna)
+    {
+        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+            redirect(base_url());
+        }
+
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+
+        $query = $this->db->query("
+			SELECT EXISTS (
+				SELECT 1 
+				FROM information_schema.columns 
+				WHERE table_name = '$tabla' 
+				AND column_name = '$columna'
+			) as existe
+		");
+
+        $result = $query->row();
+        return $result->existe === 't' || $result->existe === true;
+    }
+
     public function ListadoListasDePrecios()
     {
         if (strlen($this->session->userdata('nombre_usuario')) == 0) {
@@ -41,7 +62,10 @@ class MlistaDePrecios extends CI_Model
         // join umedida u on p.id_umedida=u.id_umedida
         // join detalle_lprecio dl on dl.id_producto=p.id_producto
         // where p.vigente=true and p.venta_publico=true";
-        $q = "SELECT p.id_producto, p.cbarra, p.nombre_producto, p.id_familia, f.nombre_familia, u.nombre_umedida, dl.total, dl.por_ganancia, dl.costo, dl.por_costo, dl.monto_comision,
+        $tieneComision = $this->verificarColumnaExiste('detalle_lprecio', 'monto_comision');
+        $selectComision = $tieneComision ? "COALESCE(dl.monto_comision, 0) as monto_comision" : "0 as monto_comision";
+
+        $q = "SELECT p.id_producto, p.cbarra, p.nombre_producto, p.id_familia, f.nombre_familia, u.nombre_umedida, dl.total, dl.por_ganancia, dl.costo, dl.por_costo, $selectComision,
         p.precio_ucompra, dl.id_lprecio
         FROM Producto p
         JOIN familia f ON f.id_familia = p.id_familia
@@ -50,10 +74,12 @@ class MlistaDePrecios extends CI_Model
         WHERE p.vigente = true 
         AND p.venta_publico = true";
 
-        if ($id_familia > 0) {
+        if ((int)$id_familia > 0) {
+            $id_familia = (int)$id_familia;
             $q = $q . " and f.id_familia=$id_familia";
         }
-        if ($id_lprecio > 0) {
+        if ((int)$id_lprecio > 0) {
+            $id_lprecio = (int)$id_lprecio;
             $q = $q . " and dl.id_lprecio=$id_lprecio";
         }
 
@@ -122,8 +148,18 @@ class MlistaDePrecios extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+
+        $tieneComision = $this->verificarColumnaExiste('detalle_lprecio', 'monto_comision');
+        $dataToSave = array(
+            'total' => $data['total']
+        );
+        if ($tieneComision && array_key_exists('monto_comision', $data)) {
+            $dataToSave['monto_comision'] = $data['monto_comision'];
+        }
+
+        $idDetalleLprecio = (int)$idDetalleLprecio;
         $this->db->where('id_detalle_lprecio', $idDetalleLprecio);
-        $this->db->update('detalle_lprecio', $data);
+        $this->db->update('detalle_lprecio', $dataToSave);
         $consulta = $this->db->query("select $idDetalleLprecio as id_detalle_lprecio from detalle_lprecio where id_detalle_lprecio=$idDetalleLprecio");
         return $consulta->result();
     }
