@@ -7,7 +7,7 @@ class Mfamilias extends CI_Model
   {
     parent::__construct();
   }
-
+  
   public function ListadoDeFamilias()
   {
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {

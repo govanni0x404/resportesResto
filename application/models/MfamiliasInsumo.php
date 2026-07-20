@@ -45,12 +45,27 @@ class MfamiliasInsumo extends CI_Model
         if ($id) {
             $this->db->where('id_grupo_insumo', $id);
             $this->db->update('grupo_insumo', $data);
-            $consulta = $this->db->query("select " . $id . " as id_grupo_insumo");
+            return array(
+                'success' => true,
+                'id_grupo_insumo' => (int)$id,
+                'message' => 'Familia/Grupo Insumo actualizado exitosamente'
+            );
         } else {
             $this->db->insert('grupo_insumo', $data);
             $consulta = $this->db->query("SELECT CURRVAL('grupo_insumo_id_grupo_insumo_seq'::regclass) as id_grupo_insumo");
+            $resultado = $consulta->row();
+            if ($resultado) {
+                return array(
+                    'success' => true,
+                    'id_grupo_insumo' => (int)$resultado->id_grupo_insumo,
+                    'message' => 'Familia/Grupo Insumo grabado exitosamente'
+                );
+            }
         }
-        return $consulta->result();
+        return array(
+            'success' => false,
+            'message' => 'No fue posible grabar la familia/grupo de insumo'
+        );
     }
 
     public function ListarFamiliasInsumo()

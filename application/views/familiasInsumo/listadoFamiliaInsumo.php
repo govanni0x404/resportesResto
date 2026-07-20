@@ -41,7 +41,8 @@ function hideTableLoader() {
 function ListadoDeFamiliasInsumo() {
     if ($.fn.dataTable.isDataTable('#tablaFamiliasInsumo')) {
         tablaFamiliasInsumo = $('#tablaFamiliasInsumo').DataTable();
-        tablaFamiliasInsumo.destroy();
+        tablaFamiliasInsumo.clear().destroy();
+        $('#tablaFamiliasInsumo tbody').empty();
     }
     tablaFamiliasInsumo = $("#tablaFamiliasInsumo").DataTable({
         "ajax": {

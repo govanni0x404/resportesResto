@@ -105,7 +105,9 @@ function GrabarNuevaFamiliaInsumo() {
                 
                 // Recargar tabla si existe
                 if (typeof tablaFamiliasInsumo !== 'undefined') {
-                    tablaFamiliasInsumo.ajax.reload();
+                    tablaFamiliasInsumo.ajax.reload(null, false);
+                } else if (typeof ListadoDeFamiliasInsumo === 'function') {
+                    ListadoDeFamiliasInsumo();
                 }
             } else {
                 showAppAlert('error', respuesta.message || "Error al grabar la familia de insumos", {

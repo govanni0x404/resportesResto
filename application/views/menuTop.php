@@ -349,6 +349,40 @@
 </head>
 
 <body>
+    <?php
+    $__menuAccesos = array();
+    $__rolId = (int)$this->session->userdata('id_rol');
+
+    try {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+
+        $q = "SELECT ps.nombre_vb, COALESCE(pu.autoriza, false) as autoriza
+              FROM psistema ps
+              LEFT JOIN pusuario pu 
+                ON pu.id_psistema = ps.id_psistema 
+               AND pu.id_rol = $__rolId
+              WHERE ps.vigente = true
+                AND ps.nombre_psistema = 'RESTO WEB'";
+        $rows = $this->db->query($q)->result();
+        foreach ($rows as $r) {
+            $__menuAccesos[strtolower(trim($r->nombre_vb))] = ($r->autoriza === 't' || $r->autoriza === true);
+        }
+    } catch (Exception $e) {
+        $__menuAccesos = array();
+    }
+
+    if (!function_exists('menu_visible')) {
+        function menu_visible($nombreVb)
+        {
+            global $__menuAccesos;
+            $k = strtolower(trim((string)$nombreVb));
+            if (!is_array($__menuAccesos) || !array_key_exists($k, $__menuAccesos)) {
+                return true;
+            }
+            return $__menuAccesos[$k] === true;
+        }
+    }
+    ?>
     <div class="wrapper animsition">
         <!-- main header -->
         <header class="main-header">
@@ -467,7 +501,7 @@
                                 <?php
                                 }
                                 ?>
-                                <?php if ($this->session->userdata('id_rol') == 1) : ?>
+                                <?php if ($this->session->userdata('id_rol') == 1 && menu_visible('Configuraciones')) : ?>
                                     <li class="active"><a href="<?php echo base_url() ?>index.php/Configuraciones"><i class=""></i>Configuraciones</a></li>
                                 <?php endif; ?>
                                 <li><a href="<?php echo base_url() ?>index.php/Login/logout_ci"><i class=" pe-7s-power"></i>&nbsp; Cerrar Sesion</a></li>
@@ -600,100 +634,252 @@
                         <a class="navbar-brand hidden-md hidden-lg" href="#brand"><img src="<?php echo base_url() ?>assets/dist/img/logo2.png" class="logo" alt=""></a>
                     </div>
                     <div class="collapse navbar-collapse" id="navbar-menu">
+                        <?php
+                        $__showDashboard = menu_visible('Dashboard');
+
+                        $__showEntradaBodega = menu_visible('EntradaBodega');
+                        $__showSalidaBodega = menu_visible('SalidaBodega');
+                        $__showCompras = menu_visible('Compras');
+                        $__showInventario = menu_visible('Inventario');
+                        $__showProcesosComprasInv = $__showEntradaBodega || $__showSalidaBodega || $__showCompras || $__showInventario;
+                        $__showProcesos = $__showProcesosComprasInv;
+
+                        $__showListaDePrecios = menu_visible('ListaDePrecios');
+                        $__showCliente = menu_visible('Cliente');
+                        $__showProveedor = menu_visible('Proveedor');
+
+                        $__showAgregados = menu_visible('Agregados');
+                        $__showBodegas = menu_visible('Bodegas');
+                        $__showCanalDeventa = menu_visible('CanalDeventa');
+                        $__showCentroCosto = menu_visible('CentroCosto');
+                        $__showComuna = menu_visible('Comuna');
+                        $__showDelivery = menu_visible('Delivery');
+                        $__showDestinoDeImpresion = menu_visible('DestinoDeImpresion');
+                        $__showGastoEventos = menu_visible('GastoEventos');
+                        $__showIngresoEventos = menu_visible('IngresoEventos');
+                        $__showTipoEvento = menu_visible('TipoEvento');
+                        $__showFamilias = menu_visible('Familias');
+                        $__showFamiliasInsumos = menu_visible('FamiliasInsumos');
+                        $__showFamiliasReceta = menu_visible('FamiliasReceta');
+                        $__showFormasDePago = menu_visible('FormasDePago');
+                        $__showImpuestos = menu_visible('Impuestos');
+                        $__showMensajesPorProductos = menu_visible('MensajesPorProductos');
+                        $__showMoneda = menu_visible('Moneda');
+                        $__showProvincias = menu_visible('Provincias');
+                        $__showSubFamilias = menu_visible('SubFamilias');
+                        $__showTurnos = menu_visible('Turnos');
+                        $__showUmedida = menu_visible('Umedida');
+                        $__showItemGastosMensuales = menu_visible('ItemGastosMensuales');
+                        $__showUsuario = menu_visible('Usuario');
+
+                        $__showTablasDelivery = $__showDelivery;
+                        $__showTablasEventos = $__showGastoEventos || $__showIngresoEventos || $__showTipoEvento;
+                        $__showTablasGruposFamilias = $__showFamilias || $__showFamiliasInsumos || $__showFamiliasReceta;
+                        $__showTablas = $__showAgregados || $__showBodegas || $__showCanalDeventa || $__showCentroCosto || $__showComuna || $__showTablasDelivery || $__showDestinoDeImpresion || $__showTablasEventos || $__showTablasGruposFamilias || $__showFormasDePago || $__showImpuestos || $__showMensajesPorProductos || $__showMoneda || $__showProvincias || $__showSubFamilias || $__showTurnos || $__showUmedida || $__showItemGastosMensuales || $__showUsuario;
+
+                        $__showInsumos = menu_visible('Insumos');
+                        $__showRecetas = menu_visible('Recetas');
+                        $__showProductos = menu_visible('Productos');
+                        $__showRecintos = menu_visible('Recintos');
+                        $__showMesasPorRecinto = menu_visible('MesasPorRecinto');
+                        $__showRecintosGrupo = $__showRecintos || $__showMesasPorRecinto;
+
+                        $__showMantencion = $__showListaDePrecios || $__showCliente || $__showProveedor || $__showTablas || $__showInsumos || $__showRecetas || $__showRecintosGrupo || $__showProductos;
+
+                        $__showInsumosPorBodega = menu_visible('InsumosPorBodega');
+                        $__showDetalleOperaciones = menu_visible('DetalleOperaciones');
+                        $__showCierresDeCaja = menu_visible('CierresDeCaja');
+                        $__showResumenDeCompras = menu_visible('ResumenDeCompras');
+                        $__showConsolidadoVentas = menu_visible('ConsolidadoVentas');
+                        $__showVentasPorProducto = menu_visible('VentasPorProducto');
+                        $__showPropinasPorGarzon = menu_visible('PropinasPorGarzon');
+                        $__showResumenAnulaciones = menu_visible('ResumenAnulaciones');
+                        $__showListadoDeClientes = menu_visible('ListadoDeClientes');
+                        $__showVentasMensualesTotalizadas = menu_visible('VentasMensualesTotalizadas');
+                        $__showResumenVentasProductosMes = menu_visible('ResumenVentasProductosMes');
+                        $__showResumenEntradaBodega = menu_visible('ResumenEntradaBodega');
+                        $__showResumenSalidaBodega = menu_visible('ResumenSalidaBodega');
+                        $__showMovimientosBodega = $__showResumenEntradaBodega || $__showResumenSalidaBodega;
+
+                        $__showConsultas = $__showInsumosPorBodega || $__showDetalleOperaciones || $__showCierresDeCaja || $__showResumenDeCompras || $__showConsolidadoVentas || $__showVentasPorProducto || $__showPropinasPorGarzon || $__showResumenAnulaciones || $__showListadoDeClientes || $__showVentasMensualesTotalizadas || $__showResumenVentasProductosMes || $__showMovimientosBodega;
+
+                        $__isAdmin = ((int)$this->session->userdata('id_rol') === 1);
+                        $__showPrivilegiosUsuario = $__isAdmin || menu_visible('PrivilegiosUsuario');
+                        $__showMesas = $__isAdmin || menu_visible('Mesas');
+                        $__showHerramientas = $__showPrivilegiosUsuario || $__showMesas;
+
+                        ?>
                         <ul class="nav navbar-nav navbar-left" data-in="" data-out="">
-                            <li class="active"><a href="<?php echo base_url() ?>index.php/Dashboard"><i class="ti-home"></i> Mis Ventas</a></li>
+                            <?php if ($__showDashboard) : ?>
+                                <li class="active"><a href="<?php echo base_url() ?>index.php/Dashboard"><i class="ti-home"></i> Mis Ventas</a></li>
+                            <?php endif; ?>
 
-                            <li class="dropdown">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i>
-                                    Procesos</a>
-                                <ul class="dropdown-menu">
-                                    <li class="dropdown">
-                                        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Compras e Inventario</a>
-                                        <ul class="dropdown-menu">
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/EntradaBodega"><i class="ti-money"></i>Entrada a Bodega</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/SalidaBodega"><i class="ti-money"></i>Salida a Bodega</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Compras"><i class="ti-money"></i>Compras</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Inventario"><i class="ti-money"></i>Inventario</a></li>
-                                        </ul>
-                                    </li>                                
-                                </ul>
-                            </li>
-
-                            <li class="dropdown">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Mantencion</a>
-                                <ul class="dropdown-menu">
-
-                                    <!-- <li class="active"><a href="<?php echo base_url() ?>index.php/Cliente"><i class="ti-money"></i>Clientes</a></li>
-                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Proveedor"><i class="ti-money"></i>Proveedor</a></li> -->
-                                    
-                                    <!-- <li class="dropdown">
-                                        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Usuarios</a>
-                                        <ul class="dropdown-menu">
-                                        </ul>
-                                    </li> -->
-                                    <li class="active"><a href="<?php echo base_url() ?>index.php/ListaDePrecios"><i class="ti-money"></i>Lista de Precios</a></li>
-                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Cliente"><i class="ti-money"></i>Clientes</a></li>
-                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Proveedor"><i class="ti-money"></i>Proveedor</a></li>
-
-                                    <li class="dropdown">
-                                        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Tablas</a>
-                                        <ul class="dropdown-menu">
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Agregados"><i class="ti-money"></i>Agregados</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Bodegas"><i class="ti-money"></i>Bodegas</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/CanalDeventa"><i class="ti-money"></i>Canal De venta</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/CentroCosto"><i class="ti-money"></i>Centro Costo</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Comuna"><i class="ti-money"></i>Comunas</a></li>
+                            <?php if ($__showProcesos) : ?>
+                                <li class="dropdown">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i>
+                                        Procesos</a>
+                                    <ul class="dropdown-menu">
+                                        <?php if ($__showProcesosComprasInv) : ?>
                                             <li class="dropdown">
-                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Delivery</a>
+                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Compras e Inventario</a>
                                                 <ul class="dropdown-menu">
-                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Delivery"><i class="ti-money"></i>Sector</a></li>
+                                                    <?php if ($__showEntradaBodega) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/EntradaBodega"><i class="ti-money"></i>Entrada a Bodega</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showSalidaBodega) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/SalidaBodega"><i class="ti-money"></i>Salida a Bodega</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showCompras) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/Compras"><i class="ti-money"></i>Compras</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showInventario) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/Inventario"><i class="ti-money"></i>Inventario</a></li>
+                                                    <?php endif; ?>
                                                 </ul>
                                             </li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/DestinoDeImpresion"><i class="ti-money"></i>Destino De Impresion</a></li>
+                                        <?php endif; ?>
+                                    </ul>
+                                </li>
+                            <?php endif; ?>
+
+                            <?php if ($__showMantencion) : ?>
+                                <li class="dropdown">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Mantencion</a>
+                                    <ul class="dropdown-menu">
+
+                                        <?php if ($__showListaDePrecios) : ?>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/ListaDePrecios"><i class="ti-money"></i>Lista de Precios</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showCliente) : ?>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Cliente"><i class="ti-money"></i>Clientes</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showProveedor) : ?>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Proveedor"><i class="ti-money"></i>Proveedor</a></li>
+                                        <?php endif; ?>
+
+                                        <?php if ($__showTablas) : ?>
                                             <li class="dropdown">
-                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Eventos O Presupuestos</a>
+                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Tablas</a>
                                                 <ul class="dropdown-menu">
-                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/GastoEventos"><i class="ti-money"></i>Gastos En Eventos</a></li>
-                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/IngresoEventos"><i class="ti-money"></i>Ingreso En Eventos</a></li>
-                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/TipoEvento"><i class="ti-money"></i>Tipo De Eventos</a></li>
+                                                    <?php if ($__showAgregados) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/Agregados"><i class="ti-money"></i>Agregados</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showBodegas) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/Bodegas"><i class="ti-money"></i>Bodegas</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showCanalDeventa) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/CanalDeventa"><i class="ti-money"></i>Canal De venta</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showCentroCosto) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/CentroCosto"><i class="ti-money"></i>Centro Costo</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showComuna) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/Comuna"><i class="ti-money"></i>Comunas</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showTablasDelivery) : ?>
+                                                        <li class="dropdown">
+                                                            <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Delivery</a>
+                                                            <ul class="dropdown-menu">
+                                                                <?php if ($__showDelivery) : ?>
+                                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Delivery"><i class="ti-money"></i>Sector</a></li>
+                                                                <?php endif; ?>
+                                                            </ul>
+                                                        </li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showDestinoDeImpresion) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/DestinoDeImpresion"><i class="ti-money"></i>Destino De Impresion</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showTablasEventos) : ?>
+                                                        <li class="dropdown">
+                                                            <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Eventos O Presupuestos</a>
+                                                            <ul class="dropdown-menu">
+                                                                <?php if ($__showGastoEventos) : ?>
+                                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/GastoEventos"><i class="ti-money"></i>Gastos En Eventos</a></li>
+                                                                <?php endif; ?>
+                                                                <?php if ($__showIngresoEventos) : ?>
+                                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/IngresoEventos"><i class="ti-money"></i>Ingreso En Eventos</a></li>
+                                                                <?php endif; ?>
+                                                                <?php if ($__showTipoEvento) : ?>
+                                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/TipoEvento"><i class="ti-money"></i>Tipo De Eventos</a></li>
+                                                                <?php endif; ?>
+                                                            </ul>
+                                                        </li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showTablasGruposFamilias) : ?>
+                                                        <li class="dropdown">
+                                                            <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Grupos/Familias</a>
+                                                            <ul class="dropdown-menu">
+                                                                <?php if ($__showFamilias) : ?>
+                                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Familias"><i class="ti-money"></i>Familias Productos Carta</a></li>
+                                                                <?php endif; ?>
+                                                                <?php if ($__showFamiliasInsumos) : ?>
+                                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/FamiliasInsumos"><i class="ti-money"></i>Familias Insumos</a></li>
+                                                                <?php endif; ?>
+                                                                <?php if ($__showFamiliasReceta) : ?>
+                                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/FamiliasReceta"><i class="ti-money"></i>Familias Recetas</a></li>
+                                                                <?php endif; ?>
+                                                            </ul>
+                                                        </li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showFormasDePago) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/FormasDePago"><i class="ti-money"></i>Formas De Pago</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showImpuestos) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/Impuestos"><i class="ti-money"></i>Impuestos</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showMensajesPorProductos) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/MensajesPorProductos"><i class="ti-money"></i>Mensajes Por Productos</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showMoneda) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/Moneda"><i class="ti-money"></i>Moneda</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showProvincias) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/Provincias"><i class="ti-money"></i>Provincias</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showSubFamilias) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/SubFamilias"><i class="ti-money"></i>SubFamilias</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showTurnos) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/Turnos"><i class="ti-money"></i>Turnos</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showUmedida) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/Umedida"><i class="ti-money"></i>Unidad De Medida</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showItemGastosMensuales) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/ItemGastosMensuales"><i class="ti-money"></i>Item Gastos Mensuales</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showUsuario) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/Usuario"><i class="ti-money"></i>Usuario</a></li>
+                                                    <?php endif; ?>
                                                 </ul>
                                             </li>
+                                        <?php endif; ?>
+
+                                        <?php if ($__showInsumos) : ?>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Insumos"><i class="ti-money"></i>Insumos</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showRecetas) : ?>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Recetas"><i class="ti-money"></i>Recetas</a></li>
+                                        <?php endif; ?>
+
+
+                                        <?php if ($__showRecintosGrupo) : ?>
                                             <li class="dropdown">
-                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Grupos/Familias</a>
+                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Recintos</a>
                                                 <ul class="dropdown-menu">
-                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Familias"><i class="ti-money"></i>Familias Productos Carta</a></li>
-                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/FamiliasInsumos"><i class="ti-money"></i>Familias Insumos</a></li>
-                                                    <li class="active"><a href="<?php echo base_url() ?>index.php/FamiliasReceta"><i class="ti-money"></i>Familias Recetas</a></li>
+                                                    <?php if ($__showRecintos) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/Recintos"><i class="ti-money"></i>Recintos</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showMesasPorRecinto) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/MesasPorRecinto"><i class="ti-money"></i>Mesas Por Recinto</a></li>
+                                                    <?php endif; ?>
                                                 </ul>
                                             </li>
+                                        <?php endif; ?>
 
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/FormasDePago"><i class="ti-money"></i>Formas De Pago</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Impuestos"><i class="ti-money"></i>Impuestos</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/MensajesPorProductos"><i class="ti-money"></i>Mensajes Por Productos</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Moneda"><i class="ti-money"></i>Moneda</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Provincias"><i class="ti-money"></i>Provincias</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/SubFamilias"><i class="ti-money"></i>SubFamilias</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Turnos"><i class="ti-money"></i>Turnos</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Umedida"><i class="ti-money"></i>Unidad De Medida</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/ItemGastosMensuales"><i class="ti-money"></i>Item Gastos Mensuales</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Usuario"><i class="ti-money"></i>Usuario</a></li>
-                                        </ul>
-                                    </li>
-
-
-                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Insumos"><i class="ti-money"></i>Insumos</a></li>
-                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Recetas"><i class="ti-money"></i>Recetas</a></li>
-
-
-                                    <li class="dropdown">
-                                        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Recintos</a>
-                                        <ul class="dropdown-menu">
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Recintos"><i class="ti-money"></i>Recintos</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/MesasPorRecinto"><i class="ti-money"></i>Mesas Por Recinto</a></li>
-                                        </ul>
-                                    </li>
-
-                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Productos"><i class="ti-money"></i>Productos de la Carta</a></li>
+                                        <?php if ($__showProductos) : ?>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Productos"><i class="ti-money"></i>Productos de la Carta</a></li>
+                                        <?php endif; ?>
 
 
 
@@ -807,52 +993,101 @@
                                     <?php endif; ?>
 
 
-                                </ul>
-                            </li>
+                                    </ul>
+                                </li>
+                            <?php endif; ?>
 
-                            <li class="dropdown">
+                            <?php if ($__showConsultas) : ?>
+                                <li class="dropdown">
 
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Consultas</a>
-                                <ul class="dropdown-menu">
-                                    <li><a href="<?php echo base_url() ?>index.php/InsumosPorBodega"><i class="ti-alert"></i>Stock de Insumos</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/DetalleOperaciones"><i class="pe-7s-cash"></i>Detalle De Ventas</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/CierresDeCaja"><i class="ti-clipboard"></i>Cierres de Caja</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/ResumenDeCompras"><i class="fa fa-crop"></i>Resumen De Compras</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/ConsolidadoVentas"><i class="fa fa-crop"></i>Consolidado De Ventas</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/VentasPorProducto"><i class="pe-7s-cash"></i>Ventas Por Producto</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/PropinasPorGarzon"><i class="pe-7s-cash"></i>Propinas Por Garzon</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/ResumenAnulaciones"><i class="pe-7s-cash"></i>Resumen De Anulaciones/Eliminaciones</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/ListadoDeClientes"><i class="pe-7s-cash"></i>Listado De Clientes</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/VentasMensualesTotalizadas"><i class="pe-7s-cash"></i>Resumen Ventas Mensuales</a></li>
-                                    <li><a href="<?php echo base_url() ?>index.php/ResumenVentasProductosMes"><i class="pe-7s-cash"></i>Resumen De Venta de Productos Mensuales</a></li>
-                                    <li class="dropdown">
-                                        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Movimientos De Bodega</a>
-                                        <ul class="dropdown-menu">
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/ResumenEntradaBodega"><i class="ti-money"></i>Entrada De Stock</a></li>
-                                            <li class="active"><a href="<?php echo base_url() ?>index.php/ResumenSalidaBodega"><i class="ti-money"></i>Salida De Stock</a></li>
-                                        </ul>
-                                    </li>
-                                </ul>
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Consultas</a>
+                                    <ul class="dropdown-menu">
+                                        <?php if ($__showInsumosPorBodega) : ?>
+                                            <li><a href="<?php echo base_url() ?>index.php/InsumosPorBodega"><i class="ti-alert"></i>Stock de Insumos</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showDetalleOperaciones) : ?>
+                                            <li><a href="<?php echo base_url() ?>index.php/DetalleOperaciones"><i class="pe-7s-cash"></i>Detalle De Ventas</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showCierresDeCaja) : ?>
+                                            <li><a href="<?php echo base_url() ?>index.php/CierresDeCaja"><i class="ti-clipboard"></i>Cierres de Caja</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showResumenDeCompras) : ?>
+                                            <li><a href="<?php echo base_url() ?>index.php/ResumenDeCompras"><i class="fa fa-crop"></i>Resumen De Compras</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showConsolidadoVentas) : ?>
+                                            <li><a href="<?php echo base_url() ?>index.php/ConsolidadoVentas"><i class="fa fa-crop"></i>Consolidado De Ventas</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showVentasPorProducto) : ?>
+                                            <li><a href="<?php echo base_url() ?>index.php/VentasPorProducto"><i class="pe-7s-cash"></i>Ventas Por Producto</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showPropinasPorGarzon) : ?>
+                                            <li><a href="<?php echo base_url() ?>index.php/PropinasPorGarzon"><i class="pe-7s-cash"></i>Propinas Por Garzon</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showResumenAnulaciones) : ?>
+                                            <li><a href="<?php echo base_url() ?>index.php/ResumenAnulaciones"><i class="pe-7s-cash"></i>Resumen De Anulaciones/Eliminaciones</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showListadoDeClientes) : ?>
+                                            <li><a href="<?php echo base_url() ?>index.php/ListadoDeClientes"><i class="pe-7s-cash"></i>Listado De Clientes</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showVentasMensualesTotalizadas) : ?>
+                                            <li><a href="<?php echo base_url() ?>index.php/VentasMensualesTotalizadas"><i class="pe-7s-cash"></i>Resumen Ventas Mensuales</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showResumenVentasProductosMes) : ?>
+                                            <li><a href="<?php echo base_url() ?>index.php/ResumenVentasProductosMes"><i class="pe-7s-cash"></i>Resumen De Venta de Productos Mensuales</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showMovimientosBodega) : ?>
+                                            <li class="dropdown">
+                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i> Movimientos De Bodega</a>
+                                                <ul class="dropdown-menu">
+                                                    <?php if ($__showResumenEntradaBodega) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/ResumenEntradaBodega"><i class="ti-money"></i>Entrada De Stock</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showResumenSalidaBodega) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/ResumenSalidaBodega"><i class="ti-money"></i>Salida De Stock</a></li>
+                                                    <?php endif; ?>
+                                                </ul>
+                                            </li>
+                                        <?php endif; ?>
+                                    </ul>
 
                             
                             
-                            <li class="active"><a href="<?php echo base_url() ?>index.php/Productos"><i class="ti-money"></i>Carta</a></li>
-                            <li class="active"><a href="<?php echo base_url() ?>index.php/Cliente"><i class="ti-money"></i>Clientes</a></li>
-                            <li class="active"><a href="<?php echo base_url() ?>index.php/Proveedor"><i class="ti-money"></i>Proveedor</a></li>
+                                </li>
+                            <?php endif; ?>
+
+                            <?php if ($__showProductos) : ?>
+                                <li class="active"><a href="<?php echo base_url() ?>index.php/Productos"><i class="ti-money"></i>Carta</a></li>
+                            <?php endif; ?>
+                            <?php if ($__showCliente) : ?>
+                                <li class="active"><a href="<?php echo base_url() ?>index.php/Cliente"><i class="ti-money"></i>Clientes</a></li>
+                            <?php endif; ?>
+                            <?php if ($__showProveedor) : ?>
+                                <li class="active"><a href="<?php echo base_url() ?>index.php/Proveedor"><i class="ti-money"></i>Proveedor</a></li>
+                            <?php endif; ?>
                             <!-- <li class="active"><a href="<?php echo base_url() ?>index.php/Insumos"><i class="ti-money"></i>Insumos</a></li>
                             <li class="active"><a href="<?php echo base_url() ?>index.php/Recetas"><i class="ti-money"></i>Recetas</a></li> -->
-                            <li class="active"><a href="<?php echo base_url() ?>index.php/Compras"><i class="ti-money"></i>Compras</a></li>
-                            <li class="active"><a href="<?php echo base_url() ?>index.php/ListaDePrecios"><i class="ti-money"></i>Precios</a></li>
+                            <?php if ($__showCompras) : ?>
+                                <li class="active"><a href="<?php echo base_url() ?>index.php/Compras"><i class="ti-money"></i>Compras</a></li>
+                            <?php endif; ?>
+                            <?php if ($__showListaDePrecios) : ?>
+                                <li class="active"><a href="<?php echo base_url() ?>index.php/ListaDePrecios"><i class="ti-money"></i>Precios</a></li>
+                            <?php endif; ?>
                             <!--<li class="active"><a href="<?php echo base_url() ?>index.php/Usuarios"><i class="ti-user"></i>Usuarios</a></li>-->
 
-                            <li class="dropdown">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i>
-                                    Herramientas</a>
-                                <ul class="dropdown-menu">
-                                    <li class="active"><a href="<?php echo base_url() ?>index.php/PrivilegiosUsuario"><i class="ti-money"></i>Privilegios</a></li>
-                                    <li class="active"><a href="<?php echo base_url() ?>index.php/Mesas"><i class="ti-money"></i>Mesas</a></li>
-                                </ul>
-                            </li>
+                            <?php if ($__showHerramientas) : ?>
+                                <li class="dropdown">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="pe-7s-news-paper"></i>
+                                        Herramientas</a>
+                                    <ul class="dropdown-menu">
+                                        <?php if ($__showPrivilegiosUsuario) : ?>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/PrivilegiosUsuario"><i class="ti-money"></i>Privilegios</a></li>
+                                        <?php endif; ?>
+                                        <?php if ($__showMesas) : ?>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/Mesas"><i class="ti-money"></i>Mesas</a></li>
+                                        <?php endif; ?>
+                                    </ul>
+                                </li>
+                            <?php endif; ?>
 
 
                             <!-- <li class="dropdown">

@@ -1,6 +1,6 @@
 <script>
 var base_url = "<?php echo base_url(); ?>";
-tablaFamilias = $('#tablaFamilias').DataTable();
+//tablaFamilias = $('#tablaFamilias').DataTable();
 
 $(document).ready(function() {
     ListadoDeFamilias();
@@ -41,9 +41,11 @@ function hideTableLoader() {
 function ListadoDeFamilias() {
     if ($.fn.dataTable.isDataTable('#tablaFamilias')) {
         tablaFamilias = $('#tablaFamilias').DataTable();
-        tablaFamilias.destroy();
+        tablaFamilias.clear().destroy();
+        $('#tablaFamilias tbody').empty();
     }
     tablaFamilias = $("#tablaFamilias").DataTable({
+        "bDestroy": true,
         "ajax": {
             "url": base_url + "index.php/Familias/ListadoDeFamilias",
             "data": {

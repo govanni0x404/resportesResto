@@ -136,16 +136,14 @@
                    });
 				$('#ModalNuevaFamilia').modal('hide');
 				
-				if (typeof ListadoDeFamilias === 'function') {
-					ListadoDeFamilias(NombreFamilia);
-				}
-				
 				if (typeof ListadoDeFamiliasMantenedor === 'function') {
 					ListadoDeFamiliasMantenedor(NombreFamilia);
 				}
 				
 				if (typeof tablaFamilias !== 'undefined') {
-					tablaFamilias.ajax.reload();
+					tablaFamilias.ajax.reload(null, false);
+				} else if (typeof ListadoDeFamilias === 'function') {
+					ListadoDeFamilias();
 				}
 			})
 			.fail(function() {

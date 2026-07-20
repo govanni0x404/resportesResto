@@ -46,15 +46,7 @@ class FamiliasInsumos extends CI_Controller
             'nombre_grupo_insumo' => $d['nombre_grupo_insumo'],
         );
         $r = $this->MfamiliasInsumo->grabarNuevaFamiliaInsumo($id, $miData);
-        if ($r && isset($r['id_grupo_insumo'])) {
-            echo json_encode(array(
-                'success' => true,
-                'id_grupo_insumo' => $r['id_grupo_insumo'],
-                'message' => 'Familia/Grupo Insumo grabado exitosamente'
-            ));
-        } else {
-            echo json_encode($r);
-        }
+        echo json_encode($r);
     }
 
     public function ListarFamiliasInsumo()
