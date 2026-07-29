@@ -10,6 +10,12 @@ class Configuraciones extends CI_Controller {
     }
 
     public function index() {
+        $this->load->helper('tenant');
+
+        $tenantDb = get_tenant_db($this);
+        $data['conexion_actual'] = $this->session->userdata('nombre_conexion');
+        $data['base_datos_actual'] = isset($tenantDb->database) ? $tenantDb->database : '';
+
         $data['config'] = $this->Mconfiguraciones->get_configuracion();
         $data['empresa'] = $this->Mconfiguraciones->get_empresa();
         $data['bodegas'] = $this->Mconfiguraciones->get_bodegas();

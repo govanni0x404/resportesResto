@@ -21,13 +21,14 @@ $fechaActual = date('Y-m-d');
 
 
 
-<div class="container-padding">
+<div class="container-padding lista-precios-page">
     <input type="number" class="form-control" style="display: none;" name="id_rol" id="id_rol" value="0" min="0" oninput="validity.valid||(value='');">
 
     <div class="row">
         <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
             <div class="panel-body">
-                <div class="col-md-3">
+                <div class="row lista-precios-filtros">
+                <div class="col-xs-12 col-sm-6 col-md-3 lista-precios-filtros__item">
                     <br>
                     <label>Lista De Precios:
                         
@@ -44,7 +45,7 @@ $fechaActual = date('Y-m-d');
                     </select>
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-xs-12 col-sm-6 col-md-3 lista-precios-filtros__item">
                     <br>
                     <label>Familias:
 
@@ -60,14 +61,16 @@ $fechaActual = date('Y-m-d');
                         </option>
                     </select>
                 </div>
-                <br>
-                <div class="col-md-2">
+
+                <div class="col-xs-12 col-sm-6 col-md-2 lista-precios-filtros__item lista-precios-filtros__item--boton">
                     <br>
-                    <button id="btnFiltrar" style="width:5px;" class="btn btn-success btn-rounded w-md m-b-1"><i class="hvr-buzz-out fa fa-search"></i></button>
+                    <button id="btnFiltrar" class="btn btn-success btn-rounded w-md m-b-1 lista-precios-btn-filtrar"><i class="hvr-buzz-out fa fa-search"></i><span class="lista-precios-btn-filtrar__text"> Filtrar</span></button>
                 </div>
-                <br>
-                <div class="col-md-4">
-                    <button onclick="crearNuevaLprecio()" type="button" class="btn btn-primary"></i>Crear Nueva Lista De Precios</button>
+
+                <div class="col-xs-12 col-sm-6 col-md-4 lista-precios-filtros__item lista-precios-filtros__item--accion">
+                    <br>
+                    <button onclick="crearNuevaLprecio()" type="button" class="btn btn-primary lista-precios-btn-crear"></i>Crear Nueva Lista De Precios</button>
+                </div>
                 </div>
                 <div class="panel lobidisable">
                     <div class="panel-heading">
@@ -95,7 +98,7 @@ $fechaActual = date('Y-m-d');
                                         <h4>PRODUCTOS</h4>
                                     </div>
                                 </div>
-                                <div class="table-responsive" style="margin-top:10px; padding:5px;">
+                                <div class="table-responsive lista-precios-tabla-principal" style="margin-top:10px; padding:5px;">
                                     <table id="tableResumenListaPrecios" class="display responsive" style="width: 100%">
                                         <thead>
                                             <tr>
@@ -194,7 +197,7 @@ $fechaActual = date('Y-m-d');
                                         <fieldset>
                                             <div class="col-md-12">
                                                 <div class="panel panel-default">
-                                                    <div class="panel-body table-responsive">
+                                                    <div class="panel-body table-responsive lista-precios-tabla-modal">
                                                         <table id="tablePrecios" class="table table-hover display" style="width:100%">
                                                             <thead>
                                                                 <tr>
@@ -222,3 +225,79 @@ $fechaActual = date('Y-m-d');
                                 </div>
                             </div>
                         </div> <!-- End Moda Code -->
+
+<style>
+    .lista-precios-filtros {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        margin-bottom: 10px;
+    }
+
+    .lista-precios-filtros__item {
+        margin-bottom: 12px;
+    }
+
+    .lista-precios-btn-filtrar,
+    .lista-precios-btn-crear {
+        min-height: 38px;
+    }
+
+    .lista-precios-tabla-principal,
+    .lista-precios-tabla-modal {
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .lista-precios-tabla-principal table,
+    .lista-precios-tabla-modal table {
+        width: max-content !important;
+        min-width: 100%;
+    }
+
+    @media (max-width: 768px) {
+        .lista-precios-page .panel-body {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .lista-precios-filtros__item--boton,
+        .lista-precios-filtros__item--accion {
+            margin-top: 0;
+        }
+
+        .lista-precios-btn-filtrar,
+        .lista-precios-btn-crear {
+            width: 100%;
+        }
+
+        .lista-precios-tabla-principal table thead th,
+        .lista-precios-tabla-principal table tbody td {
+            white-space: nowrap;
+            font-size: 12px;
+            padding: 8px 6px;
+        }
+
+        .lista-precios-tabla-modal table thead th,
+        .lista-precios-tabla-modal table tbody td {
+            white-space: nowrap;
+            font-size: 12px;
+        }
+
+        .lista-precios-tabla-modal input.form-control {
+            min-width: 110px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .lista-precios-btn-filtrar__text {
+            display: inline;
+        }
+
+        .lista-precios-tabla-principal table thead th,
+        .lista-precios-tabla-principal table tbody td {
+            font-size: 11px;
+            padding: 7px 5px;
+        }
+    }
+</style>

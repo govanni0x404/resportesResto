@@ -581,6 +581,18 @@
     </div>
 </section>
 
+<div class="config-db-indicator">
+    <div class="config-db-indicator__title">Conexion actual</div>
+    <div class="config-db-indicator__row">
+        <span class="config-db-indicator__label">Conexion:</span>
+        <span class="config-db-indicator__value"><?php echo !empty($conexion_actual) ? htmlspecialchars($conexion_actual, ENT_QUOTES, 'UTF-8') : 'N/D'; ?></span>
+    </div>
+    <div class="config-db-indicator__row">
+        <span class="config-db-indicator__label">Base de datos:</span>
+        <span class="config-db-indicator__value"><?php echo !empty($base_datos_actual) ? htmlspecialchars($base_datos_actual, ENT_QUOTES, 'UTF-8') : 'N/D'; ?></span>
+    </div>
+</div>
+
 
 
 <style>
@@ -772,6 +784,43 @@
         padding: 0 10px;
     }
 
+    .config-db-indicator {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 1030;
+        max-width: 320px;
+        padding: 10px 14px;
+        border: 1px solid #dfe7d6;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        font-size: 12px;
+        color: #2d3748;
+    }
+
+    .config-db-indicator__title {
+        margin-bottom: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #558B2F;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .config-db-indicator__row + .config-db-indicator__row {
+        margin-top: 4px;
+    }
+
+    .config-db-indicator__label {
+        font-weight: 700;
+        color: #4a5568;
+    }
+
+    .config-db-indicator__value {
+        word-break: break-word;
+    }
+
     @media (max-width: 992px) {
         .config-col {
             flex: 0 0 50%;
@@ -789,6 +838,13 @@
         .tablink {
             border-right: none;
             border-bottom: 1px solid #e9ecef;
+        }
+
+        .config-db-indicator {
+            right: 12px;
+            left: 12px;
+            bottom: 12px;
+            max-width: none;
         }
     }
 </style>

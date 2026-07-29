@@ -35,92 +35,114 @@ $(document).ready(function() {
     
     console.log("Botón GrabaIngresoDeCompra encontrado:", $('#GrabaIngresoDeCompra').length);
     console.log("Botón btnAgregarALista encontrado:", $('#btnAgregarALista').length);
+
+    registrarEventosCompras();
 });
 
 // Variable para controlar si estamos en proceso de validación
 var validandoCompra = false;
 
-// Validar cuando se selecciona un producto
-$('#cboProductosCompra').on('change', function() {
-    var idInsumo = $(this).val();
+function registrarEventosCompras() {
+    $(document)
+        .off('change.compras', '#cboProductosCompra')
+        .on('change.compras', '#cboProductosCompra', function() {
+            var idInsumo = $(this).val();
     
-    // Si no hay producto seleccionado, salir
-    if (!idInsumo || idInsumo == 0) {
-        $('#spanUnidadCantidad').text('');
-        return;
-    }
+            // Si no hay producto seleccionado, salir
+            if (!idInsumo || idInsumo == 0) {
+                $('#spanUnidadCantidad').text('');
+                return;
+            }
     
-    // Si ya está validada la compra, solo cargar la unidad de medida
-    if (compraValidada) {
-        cargarUnidadMedida(idInsumo);
-        return;
-    }
+            // Si ya está validada la compra, solo cargar la unidad de medida
+            if (compraValidada) {
+                cargarUnidadMedida(idInsumo);
+                return;
+            }
     
-    // Si estamos en proceso de validación, no hacer nada
-    if (validandoCompra) {
-        return;
-    }
+            // Si estamos en proceso de validación, no hacer nada
+            if (validandoCompra) {
+                return;
+            }
     
-    // Verificar que los campos de cabecera estén llenos
-    var idProveedor = $('#cboProveedorCompra').val();
-    var idTdocumento = $('#cboDocumentoCompra').val();
-    var NumeroDocumento = $('#FolioDocumento').val();
-    var fechaSeleccionada = $('#FechaCompra').val();
+            // Verificar que los campos de cabecera estén llenos
+            var idProveedor = $('#cboProveedorCompra').val();
+            var idTdocumento = $('#cboDocumentoCompra').val();
+            var NumeroDocumento = $('#FolioDocumento').val();
+            var fechaSeleccionada = $('#FechaCompra').val();
     
-    if (!idProveedor || idProveedor == 0) {
-        showAppAlert('error',"Debe seleccionar primero al proveedor", {
-            duration: 5000,
-            image: base_url+ 'assets/img/errorGif.gif'
+            if (!idProveedor || idProveedor == 0) {
+                showAppAlert('error',"Debe seleccionar primero al proveedor", {
+                    duration: 5000,
+                    image: base_url+ 'assets/img/errorGif.gif'
+                });
+                return;
+            }
+
+            if (!idTdocumento || idTdocumento == 0) {
+                showAppAlert('error',"- Debe seleccionar el documento de compra primero", {
+                    duration: 5000,
+                    image: base_url+ 'assets/img/errorGif.gif'
+                });
+                return;
+            }
+
+            if (!NumeroDocumento || NumeroDocumento == 0 || NumeroDocumento.length == 0) {
+                showAppAlert('error',"- Debe indicar el folio dle documento primero", {
+                    duration: 5000,
+                    image: base_url+ 'assets/img/errorGif.gif'
+                });
+                return;
+            }
+
+            if (!fechaSeleccionada || fechaSeleccionada == 'undefined' || fechaSeleccionada.length == 0) {
+                showAppAlert('error',"- Debe indicar la fecha de compra primero", {
+                    duration: 5000,
+                    image: base_url+ 'assets/img/errorGif.gif'
+                });
+                return;
+            }
+
+            // Guardar el producto seleccionado
+            var productoSeleccionado = idInsumo;
+
+            // Marcar que estamos validando
+            validandoCompra = true;
+
+            // Validar la compra
+            ValidarCompra(function(success) {
+                validandoCompra = false;
+
+                if (success) {
+                    // Si la validación fue exitosa, cargar unidad de medida
+                    cargarUnidadMedida(productoSeleccionado);
+                } else {
+                    // Si falló, limpiar la selección
+                    setTimeout(function() {
+                        $('#cboProductosCompra').val(null).trigger('change');
+                    }, 100);
+                    $('#spanUnidadCantidad').text('');
+                }
+            });
+        })
+        .off('click.compras', '#TotalBruto')
+        .on('click.compras', '#TotalBruto', function() {
+            calcularValores();
+        })
+        .off('input.compras', '#CantidadComprada, #BrutoUnitario')
+        .on('input.compras', '#CantidadComprada, #BrutoUnitario', function() {
+            calcularValores();
+        })
+        .off('click.compras', '#btnAgregarALista')
+        .on('click.compras', '#btnAgregarALista', function() {
+            agregarProductoALaGrilla();
+        })
+        .off('click.compras', '#GrabaIngresoDeCompra')
+        .on('click.compras', '#GrabaIngresoDeCompra', function() {
+            console.log("=== BOTÓN GRABAR COMPRA PRESIONADO ===");
+            GrabarIngresoDeCompra();
         });
-        return;
-    }
-    
-    if (!idTdocumento || idTdocumento == 0) {
-        showAppAlert('error',"- Debe seleccionar el documento de compra primero", {
-            duration: 5000,
-            image: base_url+ 'assets/img/errorGif.gif'
-        });
-        return;
-    }
-    
-    if (!NumeroDocumento || NumeroDocumento == 0 || NumeroDocumento.length == 0) {
-        showAppAlert('error',"- Debe indicar el folio dle documento primero", {
-            duration: 5000,
-            image: base_url+ 'assets/img/errorGif.gif'
-        });
-        return;
-    }
-    
-    if (!fechaSeleccionada || fechaSeleccionada == 'undefined' || fechaSeleccionada.length == 0) {
-        showAppAlert('error',"- Debe indicar la fecha de compra primero", {
-            duration: 5000,
-            image: base_url+ 'assets/img/errorGif.gif'
-        });
-        return;
-    }
-    
-    // Guardar el producto seleccionado
-    var productoSeleccionado = idInsumo;
-    
-    // Marcar que estamos validando
-    validandoCompra = true;
-    
-    // Validar la compra
-    ValidarCompra(function(success) {
-        validandoCompra = false;
-        
-        if (success) {
-            // Si la validación fue exitosa, cargar unidad de medida
-            cargarUnidadMedida(productoSeleccionado);
-        } else {
-            // Si falló, limpiar la selección
-            setTimeout(function() {
-                $('#cboProductosCompra').val(null).trigger('change');
-            }, 100);
-            $('#spanUnidadCantidad').text('');
-        }
-    });
-});
+}
 
 function cargarUnidadMedida(idInsumo) {
     $.post(base_url + "index.php/Insumos/ObtenerUnidadMedida", {
@@ -220,14 +242,6 @@ function calcularValores() {
     }
 }
 
-$('#TotalBruto').click(function() {
-    calcularValores();
-})
-
-$('#CantidadComprada, #BrutoUnitario').on('input', function() {
-    calcularValores();
-});
-
 function agregarProductoALaGrilla() {
     var idProveedor = $('#cboProveedorCompra').val();
     if (!idProveedor || idProveedor == 0) {
@@ -288,6 +302,12 @@ function continuarAgregandoProducto() {
     var BrutoUn = parseFloat($('#BrutoUnitario').val());
     var BrutoTotal = parseFloat($('#TotalBruto').val());
     var ProductoComprado = $("#cboProductosCompra").val();
+
+    if ((BrutoTotal == null || BrutoTotal <= 0 || isNaN(BrutoTotal)) &&
+        CantidadCompra > 0 && BrutoUn > 0) {
+        calcularValores();
+        BrutoTotal = parseFloat($('#TotalBruto').val());
+    }
     
     if (ProductoComprado == null || ProductoComprado == 0) {
         showAppAlert('error',"Debe seleccionar el producto a ingresar!", {
@@ -325,13 +345,16 @@ function continuarAgregandoProducto() {
         }, function(datos) {
             var obj = jQuery.parseJSON(datos);
             $.each(obj, function(index, v) {
-                tbl = "<tr id='" + v.rnd + "'>";
+                var rowId = 'detalleCompra_' + new Date().getTime() + '_' + index;
+                var unidadMedida = v.unidad_medida ? v.unidad_medida : $('#spanUnidadCantidad').text();
+
+                tbl = "<tr id='" + rowId + "'>";
                 tbl = tbl + "<td style='display:none;'>" + v.id_insumo + "</td>";
                 tbl = tbl + "<td class='text-center'>" + v.nombre_insumo + "</td>";
-                tbl = tbl + "<td class='text-center'>" + commaSeparateNumber($('#CantidadComprada').val()) + " " + (v.unidad_medida ? v.unidad_medida : "") + "</td>";
+                tbl = tbl + "<td class='text-center'>" + commaSeparateNumber($('#CantidadComprada').val()) + " " + unidadMedida + "</td>";
                 tbl = tbl + "<td class='text-center'>" + commaSeparateNumber($('#BrutoUnitario').val()) + "</td>";
                 tbl = tbl + "<td class='text-center TotalBRUTO'>" + commaSeparateNumber($('#TotalBruto').val()) + "</td>";
-                tbl = tbl + "<td class='text-center'><a onclick='removeRow(" + v.rnd + ")' href='#' class='btn btn-danger btn-icon'><i class='fa fa-trash-o'></i></a></td>";
+                tbl = tbl + "<td class='text-center'><a onclick=\"removeRow('" + rowId + "')\" href='#' class='btn btn-danger btn-icon'><i class='fa fa-trash-o'></i></a></td>";
                 tbl = tbl + "</tr>";
                 $('#detalleCompra').append(tbl);
                 nuevoProducto();
@@ -374,15 +397,6 @@ function sumarTotalesTabla() {
     }
     $('#txtTotalCompra').val(totalCompra.toFixed(0));
 }
-
-$('#btnAgregarALista').click(function() {
-    agregarProductoALaGrilla();
-})
-
-$('#GrabaIngresoDeCompra').click(function() {
-    console.log("=== BOTÓN GRABAR COMPRA PRESIONADO ===");
-    GrabarIngresoDeCompra();
-})
 
 function GrabarIngresoDeCompra() {
     console.log("=== FUNCIÓN GrabarIngresoDeCompra INICIADA ===");

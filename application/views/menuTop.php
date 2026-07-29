@@ -78,11 +78,20 @@
         .container {
             width: 95% !important;
             max-width: 95% !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
+            padding-left: 15px !important;
+            padding-right: 15px !important;
         }
         .content-header {
             margin: 0 auto 0px !important;
+        }
+
+        @media (max-width: 991px) {
+            .container {
+                width: auto !important;
+                max-width: none !important;
+                padding-left: 15px !important;
+                padding-right: 15px !important;
+            }
         }
     
             /* ===========================
@@ -199,7 +208,7 @@
     /* Scrollable nested dropdowns */
     .dropdown-menu .dropdown-menu {
       max-height: 70vh;
-      overflow-y: scroll;
+      overflow-y: auto;
       overflow-x: visible;
       position: absolute;
       z-index: 1001;
@@ -214,38 +223,73 @@
     /* Responsive adjustments for tablets */
     @media (max-width: 768px) {
       .navbar-top-links > .dropdown > .dropdown-menu {
-        max-height: 60vh;
+        position: fixed !important;
+        top: 56px;
+        left: 10px !important;
+        right: 10px !important;
+        margin-top: 0;
+        max-height: calc(100vh - 70px) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+      }
+
+      .navbar-top-links .dropdown-user {
+        width: auto !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+      }
+
+      .navbar-top-links .dropdown-user::before {
+        display: none;
       }
 
       .dropdown-menu .dropdown-menu {
-        max-height: 60vh;
+        max-height: none;
+        position: static !important;
+        min-width: 100%;
+        width: 100%;
+        overflow: visible;
+        border: 0;
+        box-shadow: none;
+        padding-left: 12px;
+      }
+
+      .dropdown-menu .dropdown:hover > .dropdown-menu {
+        display: none !important;
+      }
+
+      .dropdown-menu .dropdown.open > .dropdown-menu {
+        display: block !important;
       }
     }
 
     /* Responsive adjustments for small phones */
     @media (max-width: 480px) {
       .navbar-top-links > .dropdown > .dropdown-menu {
-        max-height: 50vh;
+        top: 52px;
+        left: 8px !important;
+        right: 8px !important;
+        max-height: calc(100vh - 64px) !important;
       }
 
-      .dropdown-menu .dropdown-menu {
-        max-height: 50vh;
+      .navbar-top-links .dropdown-user {
+        width: auto !important;
       }
     }
 
     /* Estilos para dropdowns anidados */
-    .dropdown-menu .dropdown .dropdown-menu {
-      display: none !important;
-      position: fixed;
-      left: auto;
-      top: auto;
-      margin: 0;
-      min-width: 250px;
-      z-index: 2000;
-      background: white;
-      border: 1px solid #ddd;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    }
+      .dropdown-menu .dropdown .dropdown-menu {
+        display: none !important;
+        position: fixed;
+        left: auto;
+        top: auto;
+        margin: 0;
+        min-width: 250px;
+        z-index: 2000;
+        background: white;
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      }
 
     .dropdown-menu .dropdown:hover > .dropdown-menu {
       display: block !important;
@@ -271,15 +315,17 @@
     position: relative;
     }
 
-    .navbar-top-links > .dropdown > .dropdown-menu {
-    position: absolute !important;
-    top: 100%;
-    right: 0;
-    left: auto;
-    margin-top: 0;
-    max-height: none !important;
-    overflow: visible !important;
-    }
+      @media (min-width: 769px) {
+        .navbar-top-links > .dropdown > .dropdown-menu {
+        position: absolute !important;
+        top: 100%;
+        right: 0;
+        left: auto;
+        margin-top: 0;
+        max-height: none !important;
+        overflow: visible !important;
+        }
+      }
 </style>
 
 
@@ -291,11 +337,18 @@
   </div>
   
   <script>
-    // Manejar dropdowns anidados dentro de menús
+      // Manejar dropdowns anidados dentro de menús
     document.addEventListener('DOMContentLoaded', function() {
-      // Encontrar todos los dropdowns anidados
       const nestedDropdowns = document.querySelectorAll('.dropdown-menu .dropdown > a.dropdown-toggle');
-      const dropdownItems = document.querySelectorAll('.dropdown-menu .dropdown');
+
+        function isMobileViewport() {
+          return window.innerWidth <= 768;
+        }
+
+        function resetSubmenu(menu) {
+          menu.style.top = '';
+          menu.style.left = '';
+        }
       
       nestedDropdowns.forEach(function(toggle) {
         toggle.addEventListener('click', function(e) {
@@ -315,28 +368,33 @@
             // Toggle del actual
             if (!isOpen) {
               li.classList.add('open');
-              posicionarSubmenu(li, menu);
+                if (!isMobileViewport()) {
+                  posicionarSubmenu(li, menu);
+                } else {
+                  resetSubmenu(menu);
+                }
             } else {
               li.classList.remove('open');
+                resetSubmenu(menu);
             }
           }
         });
         
-        // Cerrar otros cuando se hace hover
-        toggle.closest('.dropdown').addEventListener('mouseenter', function() {
-          const parent = toggle.closest('.dropdown-menu');
-          if (parent) {
-            const siblings = parent.querySelectorAll('.dropdown.open');
-            siblings.forEach(function(sibling) {
-              if (sibling !== this) {
-                sibling.classList.remove('open');
+          if (!isMobileViewport()) {
+            toggle.closest('.dropdown').addEventListener('mouseenter', function() {
+              const parent = toggle.closest('.dropdown-menu');
+              if (parent) {
+                const siblings = parent.querySelectorAll('.dropdown.open');
+                siblings.forEach(function(sibling) {
+                  if (sibling !== this) {
+                    sibling.classList.remove('open');
+                  }
+                }.bind(this));
               }
-            }.bind(this));
+            });
           }
-        });
       });
       
-      // Función para posicionar el submenú correctamente
       function posicionarSubmenu(parentLi, menu) {
         setTimeout(function() {
           const rect = parentLi.getBoundingClientRect();
@@ -344,6 +402,26 @@
           menu.style.left = (rect.right) + 'px';
         }, 0);
       }
+
+        document.addEventListener('click', function(e) {
+          if (!e.target.closest('.dropdown-menu')) {
+            document.querySelectorAll('.dropdown-menu .dropdown.open').forEach(function(item) {
+              item.classList.remove('open');
+              const menu = item.querySelector('.dropdown-menu');
+              if (menu) {
+                resetSubmenu(menu);
+              }
+            });
+          }
+        });
+
+        window.addEventListener('resize', function() {
+          if (isMobileViewport()) {
+            document.querySelectorAll('.dropdown-menu .dropdown .dropdown-menu').forEach(function(menu) {
+              resetSubmenu(menu);
+            });
+          }
+        });
     });
   </script>
 </head>
@@ -631,7 +709,6 @@
                         <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-menu">
                             <i class="fa fa-bars"></i>
                         </button>
-                        <a class="navbar-brand hidden-md hidden-lg" href="#brand"><img src="<?php echo base_url() ?>assets/dist/img/logo2.png" class="logo" alt=""></a>
                     </div>
                     <div class="collapse navbar-collapse" id="navbar-menu">
                         <?php

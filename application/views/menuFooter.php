@@ -197,6 +197,32 @@
   })();
   </script>
 
+ <script>
+  $(function() {
+    function ajustarTablasResponsivas() {
+      if (!window.jQuery || !$.fn || !$.fn.dataTable) {
+        return;
+      }
+
+      var tableNodes = $.fn.dataTable.tables({ visible: true, api: false });
+      if (!tableNodes || !tableNodes.length) {
+        return;
+      }
+
+      $(tableNodes).each(function() {
+        if ($.fn.dataTable.isDataTable(this)) {
+          $(this).DataTable().columns.adjust();
+        }
+      });
+    }
+
+    $(window).on('resize orientationchange', ajustarTablasResponsivas);
+    $(document).on('shown.bs.modal', '.modal', ajustarTablasResponsivas);
+
+    setTimeout(ajustarTablasResponsivas, 250);
+  });
+ </script>
+
 </body>
 
 </html>

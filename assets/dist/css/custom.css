@@ -1,12 +1,448 @@
 /*
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
-*/
-/* 
-    Created on : Jun 6, 2017, 11:35:42 AM
-    Author     : Use
-*/
+ * Ajustes responsivos globales del sistema.
+ * La idea es mejorar móvil sin alterar el comportamiento base en desktop.
+ */
 
+html,
+body {
+    max-width: 100%;
+}
 
-/*YOUR CUSTOM STYLE STARTED IN HERE*/
+img,
+svg,
+canvas,
+video,
+iframe {
+    max-width: 100%;
+    height: auto;
+}
+
+.content-wrapper,
+.content,
+.main-footer,
+.modal,
+.modal-body,
+.box,
+.panel,
+.nav,
+.navbar,
+.row,
+[class*="col-"] {
+    min-width: 0;
+}
+
+.form-control,
+.input-group,
+.input-group .form-control,
+.btn,
+.btn-group,
+.btn-group-vertical,
+.select2-container,
+.select2-selection,
+textarea,
+select {
+    max-width: 100%;
+}
+
+.select2-container {
+    width: 100% !important;
+}
+
+.table-responsive,
+.panel-body.table-responsive,
+.box-body.table-responsive,
+.modal-body .table-responsive,
+.dataTables_wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dataTables_wrapper table,
+.table-responsive > .table,
+.table-responsive > table {
+    margin-bottom: 0;
+}
+
+.dataTables_wrapper .dataTables_paginate .pagination {
+    margin: 10px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.checkbox,
+.radio {
+    white-space: normal;
+}
+
+.modal-dialog.modal-xl,
+.modal-xl {
+    width: auto;
+    max-width: 1280px;
+}
+
+#toTop {
+    right: 14px !important;
+    bottom: 14px !important;
+    z-index: 1040;
+}
+
+#toTop.back-top,
+.back-top {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px !important;
+    min-width: 38px;
+    height: 38px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    line-height: 1;
+}
+
+.back-top span,
+#toTop span {
+    font-size: 14px;
+}
+
+@media (max-width: 991px) {
+    .navbar-brand img,
+    #logoHeader {
+        max-height: 42px;
+        width: auto;
+    }
+
+    .box,
+    .panel,
+    .small-box,
+    .info-box {
+        margin-bottom: 15px;
+    }
+
+    .pull-right,
+    .pull-left {
+        float: none !important;
+    }
+
+    .dataTables_wrapper .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .dataTables_wrapper .row > div {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    div.dataTables_wrapper div.dataTables_length,
+    div.dataTables_wrapper div.dataTables_filter,
+    div.dataTables_wrapper div.dataTables_info,
+    div.dataTables_wrapper div.dataTables_paginate {
+        text-align: left !important;
+    }
+
+    div.dataTables_wrapper div.dataTables_filter input,
+    div.dataTables_wrapper div.dataTables_length select {
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .modal-dialog,
+    .modal-lg,
+    .modal-xl {
+        width: auto !important;
+        margin: 10px;
+    }
+
+    .modal-body {
+        max-height: calc(100vh - 140px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    .content-header h1,
+    .content-header .header-title,
+    .page-header {
+        font-size: 22px;
+        line-height: 1.3;
+    }
+
+    .content-header small,
+    .page-header small {
+        display: block;
+        margin-top: 6px;
+    }
+
+    .content,
+    .box-body,
+    .panel-body,
+    .modal-body {
+        word-wrap: break-word;
+    }
+
+    .btn {
+        white-space: normal;
+    }
+
+    .content .btn,
+    .modal-footer .btn,
+    .panel-heading .btn,
+    .box-header .btn {
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+        margin-bottom: 10px;
+    }
+
+    .input-group {
+        width: 100%;
+    }
+
+    .input-group .form-control {
+        width: 100%;
+    }
+
+    .input-group-btn {
+        width: auto;
+        white-space: nowrap;
+    }
+
+    .table-responsive,
+    .dataTables_wrapper {
+        border: 0;
+    }
+
+    .table-responsive > .table,
+    .table-responsive > table,
+    .dataTables_wrapper table {
+        width: max-content !important;
+        min-width: 100%;
+        table-layout: auto;
+    }
+
+    .table-responsive > .table th,
+    .table-responsive > .table td,
+    .table-responsive > table th,
+    .table-responsive > table td,
+    .dataTables_wrapper table th,
+    .dataTables_wrapper table td {
+        padding: 8px 6px;
+        font-size: 12px;
+        white-space: nowrap;
+        word-break: normal;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    div.dataTables_wrapper div.dataTables_filter label,
+    div.dataTables_wrapper div.dataTables_length label {
+        display: inline-block;
+        width: auto;
+        max-width: 100%;
+    }
+
+    div.dataTables_wrapper div.dataTables_paginate .pagination {
+        justify-content: center;
+    }
+
+    div.dataTables_wrapper div.dataTables_info {
+        white-space: nowrap;
+        font-size: 12px;
+        margin-top: 8px;
+    }
+
+    div.dataTables_wrapper div.dataTables_filter input {
+        width: 160px !important;
+        max-width: 100%;
+    }
+
+    div.dataTables_wrapper div.dataTables_length select {
+        width: auto !important;
+        min-width: 64px;
+    }
+
+    .daterangepicker {
+        position: fixed !important;
+        top: 70px !important;
+        left: 8px !important;
+        right: 8px !important;
+        width: auto !important;
+        max-width: calc(100vw - 16px) !important;
+        max-height: calc(100vh - 82px) !important;
+        padding: 8px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box;
+        z-index: 4000 !important;
+    }
+
+    .daterangepicker::before,
+    .daterangepicker::after {
+        display: none !important;
+    }
+
+    .daterangepicker.opensleft .ranges,
+    .daterangepicker.opensleft .calendar,
+    .daterangepicker.opensright .ranges,
+    .daterangepicker.opensright .calendar,
+    .daterangepicker.openscenter .ranges,
+    .daterangepicker.openscenter .calendar,
+    .daterangepicker.single .ranges,
+    .daterangepicker.single .calendar {
+        float: none !important;
+        margin: 0 0 8px 0 !important;
+    }
+
+    .daterangepicker .ranges,
+    .daterangepicker .calendar,
+    .daterangepicker .calendar-date,
+    .daterangepicker table {
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    .daterangepicker .calendar th,
+    .daterangepicker .calendar td,
+    .daterangepicker td,
+    .daterangepicker th {
+        min-width: 0;
+        width: 14.285%;
+        padding: 6px 3px;
+        font-size: 12px;
+    }
+
+    .daterangepicker .ranges ul {
+        width: 100%;
+    }
+
+    .daterangepicker .ranges li {
+        margin-bottom: 6px;
+        text-align: center;
+        white-space: normal;
+    }
+
+    .daterangepicker .ranges .range_inputs > div {
+        float: none;
+        width: 100%;
+        padding-left: 0 !important;
+    }
+
+    .daterangepicker .ranges .input-mini {
+        width: 100%;
+    }
+
+    .daterangepicker select.monthselect,
+    .daterangepicker select.yearselect {
+        min-width: 0;
+        width: 48%;
+    }
+
+    .modal textarea {
+        min-height: 140px;
+        height: auto !important;
+    }
+
+    nav.navbar.bootsnav .navbar-collapse {
+        max-height: calc(100vh - 120px);
+        overflow-y: auto !important;
+    }
+
+    nav.navbar.bootsnav ul.nav > li {
+        width: 100%;
+    }
+
+    nav.navbar.bootsnav ul.nav > li > a {
+        white-space: normal;
+        line-height: 1.4;
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+
+    nav.navbar.bootsnav li.dropdown ul.dropdown-menu,
+    nav.navbar.bootsnav ul.nav li.dropdown ul.dropdown-menu {
+        position: static !important;
+        float: none;
+        width: 100%;
+        min-width: 100%;
+        box-shadow: none;
+    }
+
+}
+
+@media (max-width: 480px) {
+    .content-header h1,
+    .content-header .header-title,
+    .page-header {
+        font-size: 20px;
+    }
+
+    .btn:not(.back-top),
+    .btn-group,
+    .btn-group-vertical {
+        width: 100%;
+    }
+
+    .btn + .btn,
+    .btn-group + .btn,
+    .btn + .btn-group {
+        margin-top: 8px;
+    }
+
+    .table-responsive > .table,
+    .table-responsive > table,
+    .dataTables_wrapper table {
+        width: max-content !important;
+        min-width: 100%;
+    }
+
+    .table-responsive > .table th,
+    .table-responsive > .table td,
+    .table-responsive > table th,
+    .table-responsive > table td,
+    .dataTables_wrapper table th,
+    .dataTables_wrapper table td {
+        padding: 7px 5px;
+        font-size: 11px;
+    }
+
+    #toTop {
+        right: 10px !important;
+        bottom: 10px !important;
+    }
+
+    #toTop.back-top,
+    .back-top {
+        width: 34px !important;
+        min-width: 34px;
+        height: 34px !important;
+    }
+
+    .back-top span,
+    #toTop span {
+        font-size: 12px;
+    }
+
+    .daterangepicker {
+        top: 62px !important;
+        left: 6px !important;
+        right: 6px !important;
+        max-width: calc(100vw - 12px) !important;
+        max-height: calc(100vh - 70px) !important;
+    }
+
+    .daterangepicker .calendar th,
+    .daterangepicker .calendar td,
+    .daterangepicker td,
+    .daterangepicker th {
+        padding: 5px 2px;
+        font-size: 11px;
+    }
+}

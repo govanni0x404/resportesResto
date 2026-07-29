@@ -1,6 +1,6 @@
 <script>
     var base_url = "<?php echo base_url(); ?>";
-    tableResumenListaPrecios = $('#tableResumenListaPrecios').DataTable();
+    var tableResumenListaPrecios = null;
     $(document).ready(function() {
         ListadoListasDePrecios();
         ListadoDeFamilias();
@@ -113,13 +113,10 @@
             "ordering": true,
             "filter": true,
             "info": false,
+            "scrollX": true,
+            "autoWidth": false,
             "footer": false,
-            "responsive": {
-                details: {
-                    type: 'column',
-                    target: -1
-                }
-            },
+            "responsive": false,
             "columns": [{
                     mData: "id_producto",
                     className: "text-center",
@@ -187,7 +184,10 @@
                     }
                 }
             },
-            'buttons': []
+            'buttons': [],
+            "initComplete": function() {
+                this.api().columns.adjust();
+            }
         });
         tableResumenListaPrecios
             .on('select', function(e, dt, type, indexes) {
@@ -208,6 +208,12 @@
 
             })
     }
+
+    $(window).on('resize', function() {
+        if ($.fn.dataTable.isDataTable('#tableResumenListaPrecios')) {
+            $('#tableResumenListaPrecios').DataTable().columns.adjust();
+        }
+    });
 
 
     function ListadoListasDePrecios() {
