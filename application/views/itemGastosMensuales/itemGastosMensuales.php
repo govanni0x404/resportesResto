@@ -29,7 +29,7 @@
                     </div>
                     <br>
                     <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
-                    <button onclick="AbrirModalNuevoItemGastoMensual()" type="button" class="btn btn-primary" style="margin-right: 20px; margin-bottom:20px;"></i>Crear Nuevo Item Gasto Mensual</button>
+                    <button onclick="AbrirModalNuevoItemGastoMensual()" type="button" class="btn btn-primary btn-crear-nuevo" style="margin-right: 20px; margin-bottom:20px;"></i>Crear Nuevo Item Gasto Mensual</button>
                     </div>
                     <div class="table-responsive" style="margin-top:10px; padding:5px;">
                         <table id="tablaItemGastosMensuales" class="display responsive" style="width: 100%">
@@ -44,3 +44,12 @@
                     </div>
                 </div>
             </div>
+
+<style>
+@media (max-width: 480px) {
+    .btn-crear-nuevo {
+        width: 100%;
+        margin-right: 0 !important;
+    }
+}
+</style>

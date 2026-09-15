@@ -45,6 +45,14 @@
 </div>
 <!-- FIN  MODAL NUEVO REGISTRO  -->
 
+<style>
+    @media (max-width: 991px) {
+        #ModalNuevaMoneda fieldset > [class*="col-"] {
+            margin-bottom: 12px;
+        }
+    }
+</style>
+
 <script>
     function AbrirModalNuevaMoneda() {
         $('#idMoneda').val("");

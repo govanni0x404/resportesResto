@@ -9,7 +9,7 @@ class Mconfiguraciones extends CI_Model {
 
     public function get_configuracion() {
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $query = $this->db->get_where('configuracion', array('id_configuracion' => 1));
+        $query = $this->db->get('configuracion');
         $row = $query->row_array();
         if (!$row) {
             return [];
@@ -63,7 +63,11 @@ class Mconfiguraciones extends CI_Model {
             return false;
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $this->db->where('id_configuracion', 1);
+        $existente = $this->db->select('id_configuracion')->get('configuracion')->row();
+        if (!$existente) {
+            return false;
+        }
+        $this->db->where('id_configuracion', $existente->id_configuracion);
         return $this->db->update('configuracion', $data);
     }
 
@@ -72,7 +76,11 @@ class Mconfiguraciones extends CI_Model {
             return false;
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $this->db->where('id_empresa', 1);
+        $existente = $this->db->select('id_empresa')->get('empresa')->row();
+        if (!$existente) {
+            return $this->db->insert('empresa', $data);
+        }
+        $this->db->where('id_empresa', $existente->id_empresa);
         return $this->db->update('empresa', $data);
     }
 }

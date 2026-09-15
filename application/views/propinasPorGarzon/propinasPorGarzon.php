@@ -23,10 +23,22 @@ $fechaActual = date('d-m-Y');
 <div class="container-padding">
   <input type="number" class="form-control" style="display: none;" name="id_rol" id="id_rol" value="0" min="0" oninput="validity.valid||(value='');">
 
+  <style>
+  @media (max-width: 767px) {
+    #filtroPropinasGarzon > div {
+      margin-bottom: 10px;
+    }
+    #filtroPropinasGarzon #btnFiltrar {
+      width: 100% !important;
+    }
+  }
+  </style>
+
   <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
       <div class="panel-body">
-<div class="col-md-4">
+<div id="filtroPropinasGarzon" class="row">
+<div class="col-md-4 col-sm-6 col-xs-12">
 				<div class="control-group">
 					<div class="controls">
 						<label> Seleccione la fecha </label>
@@ -38,12 +50,13 @@ $fechaActual = date('d-m-Y');
 					</div>
 				</div>
 			</div>
-            <div class="col-md-4">
+            <div class="col-md-4 col-sm-6 col-xs-12">
               <br>
                 <button id="btnFiltrar" style="width:5px;" class="btn btn-success btn-rounded w-md m-b-1"><i class="hvr-buzz-out fa fa-search"></i></button>
             </div>
-             <div class="col-md-4">
+             <div class="col-md-4 col-sm-12 col-xs-12">
             </div>
+</div>
         <div class="panel lobidisable">
           <div class="panel-heading">
             <div class="panel-title">

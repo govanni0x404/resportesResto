@@ -255,6 +255,12 @@ $fechaActual = date('Y-m-d');
         min-width: 100%;
     }
 
+    @media (max-width: 991px) {
+        #ModalNuevaLprecios fieldset > [class*="col-"] {
+            margin-bottom: 12px;
+        }
+    }
+
     @media (max-width: 768px) {
         .lista-precios-page .panel-body {
             padding-left: 10px;

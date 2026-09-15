@@ -19,12 +19,26 @@ $date->modify('last day of this month');
 	</div>
 </div> <!-- /.Content Header (Page header) -->
 
+<style>
+@media (max-width: 767px) {
+	#filtroCierreCaja > div {
+		margin-bottom: 10px;
+	}
+	#filtroCierreCaja br {
+		display: none;
+	}
+	#filtroCierreCaja #btnTest {
+		width: 100% !important;
+	}
+}
+</style>
+
 <div class="row">
 	<div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
 		<!-- Nav tabs -->
-		<ul class="nav nav-tabs">
-			<div class="col-md-7"></div>
-			<div class="col-md-3">
+		<ul id="filtroCierreCaja" class="nav nav-tabs">
+			<div class="col-md-7 col-sm-12 col-xs-12"></div>
+			<div class="col-md-3 col-sm-6 col-xs-12">
 				<br>
 				<label>Fecha Caja</label>
 				<div class="input-prepend input-group">
@@ -32,7 +46,7 @@ $date->modify('last day of this month');
 					<input type="text" id="fechaCaja" class="form-control" value="<?php echo $fechaActual; ?> - <?php echo $fechaActual; ?>" />
 				</div>
 			</div>
-			<div class="col-md-2">
+			<div class="col-md-2 col-sm-6 col-xs-12">
 				<br>
 				<br>
 				<button id="btnTest" style="width:5px;" class="btn btn-success btn-rounded w-md m-b-1"><i class="hvr-buzz-out fa fa-search"></i></button>

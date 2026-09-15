@@ -21,7 +21,7 @@ $fechaActual = date('d-m-Y');
 <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
         <!-- Nav tabs -->
-        <ul class="nav nav-tabs">
+        <ul class="nav nav-tabs resumen-compras-filtros">
             <div class="col-md-4">
                 <!-- <br>
 				<label>Bodegas:</label>
@@ -47,7 +47,7 @@ $fechaActual = date('d-m-Y');
             <div class="col-md-2">
                 <br>
                 <br>
-                <button id="btnFiltrar" style="width:5px;" class="btn btn-success btn-rounded w-md m-b-1"><i
+                <button id="btnFiltrar" class="btn btn-success btn-rounded w-md m-b-1"><i
                         class="hvr-buzz-out fa fa-search"></i></button>
             </div>
         </ul>
@@ -152,3 +152,23 @@ $fechaActual = date('d-m-Y');
 </div>
 </div>
 </div>
+
+<style>
+    @media (max-width: 991px) {
+        .resumen-compras-filtros {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: none;
+        }
+
+        .resumen-compras-filtros > [class*="col-"] {
+            width: 100%;
+            float: none;
+            margin-bottom: 10px;
+        }
+
+        .resumen-compras-filtros #btnFiltrar {
+            width: 100%;
+        }
+    }
+</style>

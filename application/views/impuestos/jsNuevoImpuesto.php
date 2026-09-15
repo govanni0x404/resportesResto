@@ -61,6 +61,15 @@
 		</div>
 	</div>
 </div>
+
+<style>
+    @media (max-width: 991px) {
+        #ModalNuevoImpuesto fieldset > [class*="col-"] {
+            margin-bottom: 12px;
+        }
+    }
+</style>
+
 <script>
 	function AbrirModalNuevoImpuesto() {
 		$('#idImpuesto').val("");

@@ -35,7 +35,7 @@
                             <button class="tablink" onclick="openTab(event, 'empresa')">Datos de la Empresa</button>
                         </div>
 
-                        <form id="configForm" method="post" action="<?php echo site_url('ConfiguracionesGenerales/guardar'); ?>">
+                        <form id="configForm" method="post" action="<?php echo site_url('Configuraciones/guardar'); ?>">
                             <!-- Tab General -->
                             <div id="general" class="tab active">
                                 <div class="config-grid">
@@ -442,7 +442,9 @@
                                             <div class="panel-body">
                                                 <div class="form-group">
                                                     <label>Comuna SII</label>
-                                                    <input type="number" class="form-control" name="id_comuna_sii" value="<?php echo $config['id_comuna_sii'] ?? ''; ?>">
+                                                    <select class="form-control" id="cboIdComunaSii" name="id_comuna_sii" data-selected="<?php echo $config['id_comuna_sii'] ?? 0; ?>">
+                                                        <option value="0">Seleccione la comuna</option>
+                                                    </select>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Resolución SII</label>
@@ -515,7 +517,9 @@
                                                     </div>
                                                     <div class="col-md-4 form-group">
                                                         <label>Comuna</label>
-                                                        <input type="number" class="form-control" name="id_comuna" value="<?php echo $empresa['id_comuna'] ?? ''; ?>">
+                                                        <select class="form-control" id="cboIdComuna" name="id_comuna" data-selected="<?php echo $empresa['id_comuna'] ?? 0; ?>">
+                                                            <option value="0">Seleccione la comuna</option>
+                                                        </select>
                                                     </div>
                                                     <div class="col-md-4 form-group">
                                                         <label>Correo</label>
@@ -552,7 +556,9 @@
                                                     </div>
                                                     <div class="col-md-4 form-group">
                                                         <label>Comuna Sucursal</label>
-                                                        <input type="number" class="form-control" name="id_comuna_sucursal" value="<?php echo $empresa['id_comuna_sucursal'] ?? ''; ?>">
+                                                        <select class="form-control" id="cboIdComunaSucursal" name="id_comuna_sucursal" data-selected="<?php echo $empresa['id_comuna_sucursal'] ?? 0; ?>">
+                                                            <option value="0">Seleccione la comuna</option>
+                                                        </select>
                                                     </div>
                                                 </div>
                                             </div>

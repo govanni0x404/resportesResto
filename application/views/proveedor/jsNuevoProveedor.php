@@ -85,6 +85,14 @@
 </div>
 <!-- FIN  MODAL NUEVO REGISTRO  -->
 
+<style>
+    @media (max-width: 991px) {
+        #ModalNuevoProveedor fieldset > [class*="col-"] {
+            margin-bottom: 12px;
+        }
+    }
+</style>
+
 <script>
 // ============================================
 // FUNCIONES AUXILIARES (DEBEN ESTAR PRIMERO)

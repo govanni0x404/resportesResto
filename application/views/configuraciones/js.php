@@ -1,4 +1,36 @@
 <script>
+    var base_url = "<?php echo base_url(); ?>";
+
+    function cargarCombosComuna() {
+        $.ajax({
+            url: base_url + "index.php/Comuna/ListarComunas",
+            type: "POST",
+            data: { id: "" },
+            dataType: "json"
+        }).done(function(obj) {
+            console.log("Comunas recibidas:", obj);
+            var opciones = '<option value="0">Seleccione la comuna</option>';
+            if (!obj || obj.length === 0) {
+                console.warn("El servidor no devolvió comunas. Verifica que la tabla 'comuna' tenga datos en esta base.");
+            }
+            $.each(obj, function(index, v) {
+                opciones += '<option value="' + v.id_comuna + '">' + v.nombre_comuna + '</option>';
+            });
+
+            $('#cboIdComuna, #cboIdComunaSucursal, #cboIdComunaSii').each(function() {
+                var $select = $(this);
+                var seleccionado = $select.data('selected');
+                $select.html(opciones);
+                if (seleccionado) {
+                    $select.val(String(seleccionado));
+                }
+                $select.select2();
+            });
+        }).fail(function(xhr, status, error) {
+            console.error("Error al cargar comunas:", status, error, xhr.responseText);
+        });
+    }
+
     function toggleMostrarClaveAdmin() {
         var input = document.getElementById('txtclaveAdmin');
         var chk = document.getElementById('chkMostrarClaveAdmin');
@@ -21,6 +53,8 @@
     }
 
     $(document).ready(function() {
+        cargarCombosComuna();
+
         $('#configForm').submit(function(e) {
             e.preventDefault();
             var $submitBtn = $(this).find('button[type="submit"]');

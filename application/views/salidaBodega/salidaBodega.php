@@ -110,6 +110,7 @@ $fechaActual = date('Y-m-d');
                                 <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
                                     <div class="panel-body">
                                         <fieldset>
+                                            <div class="table-responsive">
                                             <table id="tableSalidaBodega" style=""
                                                 class="table table-hover table-bordered">
                                                 <thead class="btn-success">
@@ -124,6 +125,7 @@ $fechaActual = date('Y-m-d');
                                                 <tbody id="detalleSalidaBodega">
                                                 </tbody>
                                             </table>
+                                            </div>
                                             <div class="container-padding">
                                         <input type="number" class="form-control" style="display: none;" name="id_rol"
                                             id="id_rol" value="0" min="0" oninput="validity.valid||(value='');">

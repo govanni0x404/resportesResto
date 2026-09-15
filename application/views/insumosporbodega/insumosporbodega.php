@@ -22,7 +22,7 @@ $fechaActual = date('Y-m-d');
     <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
         <!-- Nav tabs -->
         <ul class="nav nav-tabs">
-            <div class="col-md-3">
+            <div class="col-xs-12 col-sm-6 col-md-3">
                 <br>
                 <label>Bodegas
 
@@ -37,7 +37,7 @@ $fechaActual = date('Y-m-d');
                     </option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-xs-12 col-sm-6 col-md-3">
                 <br>
                 <label>Familias
                     <div class="checkbox checkbox-success checkbox-inline">
@@ -52,12 +52,12 @@ $fechaActual = date('Y-m-d');
                 </select>
 
             </div>
-            <div class="col-md-2">
+            <div class="col-xs-12 col-sm-6 col-md-2">
             </div>
-            <div class="col-md-2">
+            <div class="col-xs-12 col-sm-6 col-md-2">
                 <br>
                 <br>
-                <button id="btnFiltrar" style="width:5px;" class="btn btn-success btn-rounded w-md m-b-1"><i
+                <button id="btnFiltrar" class="btn btn-success btn-rounded w-md m-b-1"><i
                         class="hvr-buzz-out fa fa-search"></i></button>
             </div>
         </ul>

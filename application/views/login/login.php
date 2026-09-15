@@ -36,10 +36,10 @@
             background-size: cover;
             min-height: 100vh;
             display: flex;
-            align-items: center;
             justify-content: center;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         /* Elementos decorativos de fondo - overlay oscuro para mejor contraste */
@@ -76,6 +76,7 @@
             width: 100%;
             max-width: 450px;
             padding: 20px;
+            margin: auto 0;
             position: relative;
             z-index: 10;
         }

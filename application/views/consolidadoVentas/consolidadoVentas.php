@@ -69,7 +69,7 @@ $fechaActual = date('d-m-Y');
 						<div class="col-md-12 col-lg-12">
 							<div class="panel panel-default">
 								<div class="panel-body">
-									<fieldset>
+									<fieldset class="consolidado-stats">
 										<div class="col-xs-3 col-sm-3 col-md-3 col-lg-4">
 											<div class="statistic-box statistic-filled-6 btn-primary">
 												<h2><span class="count-number1" id="cantidadVentas">0</span><span class="slight"><i class=" fa-rotate-90 c-white"> </i></span></h2>
@@ -226,3 +226,35 @@ $fechaActual = date('d-m-Y');
 
 
 			</div>
+
+<style>
+@media (max-width: 768px) {
+	.consolidado-stats > [class*="col-"] {
+		width: 50%;
+	}
+	.consolidado-stats .statistic-box {
+		padding: 10px;
+	}
+	.consolidado-stats .statistic-box h2 {
+		font-size: 24px;
+	}
+	.consolidado-stats .statistic_icon {
+		font-size: 28px;
+		right: 10px;
+		top: 12px;
+	}
+}
+
+@media (max-width: 480px) {
+	.consolidado-stats > [class*="col-"] {
+		width: 100%;
+	}
+	.consolidado-stats .statistic-box h2 {
+		font-size: 22px;
+		word-break: break-word;
+	}
+	.consolidado-stats .statistic_icon {
+		display: none;
+	}
+}
+</style>

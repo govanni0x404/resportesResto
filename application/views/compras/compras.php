@@ -4,7 +4,7 @@ $date = new DateTime('now');
 $date->modify('last day of this month');
 $fechaActual = date('Y-m-d');
 ?>
-<div class="container">
+<div class="container compras-page">
     <div class="content-header">
     <div class="header-icon">
         <i class="pe-7s-home"></i>
@@ -137,13 +137,12 @@ $fechaActual = date('Y-m-d');
                         </table>
                     </div>
 
-                    <div class="" style="margin-top: 20px;">
-                        <div class="col-md-10">
-                        </div>
-                        <div class="col-md-1">
+                    <div class="compras-total-row" style="margin-top: 20px;">
+                        <div class="compras-total-row__spacer"></div>
+                        <div class="compras-total-row__label">
                             <label class="control-label">Total Compra:</label>
                         </div>
-                        <div class="col-md-0" style="margin-bottom: 30px;">
+                        <div class="compras-total-row__input" style="margin-bottom: 30px;">
                             <div class="input-group">
                                 <span class="input-group-addon">$</span>
                                 <input type="number" disabled
@@ -170,6 +169,46 @@ $fechaActual = date('Y-m-d');
     </div>
 </div>
 </div>
+
+<style>
+    .compras-total-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    .compras-total-row__spacer {
+        display: none;
+    }
+
+    .compras-total-row__label {
+        margin-right: 10px;
+    }
+
+    .compras-total-row__label,
+    .compras-total-row__input {
+        width: auto;
+    }
+
+    @media (max-width: 991px) {
+        .compras-page .panel-body fieldset > [class*="col-"] {
+            margin-bottom: 12px;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .compras-total-row {
+            justify-content: space-between;
+        }
+
+        .compras-total-row__input {
+            flex: 1 1 auto;
+            min-width: 140px;
+        }
+    }
+</style>
+
 <?php $this->load->view('proveedor/jsNuevoProveedor.php'); ?>
 <?php $this->load->view('insumos/js.php'); ?>
 <?php $this->load->view('insumos/modalInsumos.php'); ?>

@@ -1,4 +1,3 @@
-<div class="container">
 <div class="content-header">
     <div class="header-icon">
         <i class="pe-7s-box2"></i>
@@ -47,11 +46,11 @@
 
             <div class="row">
                 <!-- TABLA IZQUIERDA - INVENTARIOS REALIZADOS -->
-                <div class="col-md-3">
+                <div class="col-xs-12 col-sm-4 col-md-3">
                     <div style="background: #e9ecef; padding: 8px; font-weight: bold; border: 1px solid #ddd;">
                         INVENTARIOS REALIZADOS
                     </div>
-                    <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd; border-top: none;">
+                    <div style="max-height: 500px; overflow-y: auto; overflow-x: auto; border: 1px solid #ddd; border-top: none;">
                         <table class="table table-hover table-bordered table-condensed" style="margin-bottom: 0;">
                             <thead style="background: #f8f9fa;">
                                 <tr>
@@ -89,7 +88,7 @@
                 </div>
 
                 <!-- TABLA DERECHA - DETALLE -->
-                <div class="col-md-9">
+                <div class="col-xs-12 col-sm-8 col-md-9">
                     <!-- Checkbox Solo Diferencias -->
                     <div style="padding: 8px; background: white; border: 1px solid #ddd;">
                         <label style="margin: 0;">
@@ -103,7 +102,7 @@
                     </div>
 
                     <!-- Tabla de detalle -->
-                    <div style="max-height: 450px; overflow-y: auto; border: 1px solid #ddd; border-top: none;">
+                    <div style="max-height: 450px; overflow-y: auto; overflow-x: auto; border: 1px solid #ddd; border-top: none;">
                         <table class="table table-striped table-bordered table-condensed" 
                                id="tablaDetalle" 
                                style="margin-bottom: 0; font-size: 11px;">
@@ -173,6 +172,13 @@
 </div>
 
 <style>
+    @media (max-width: 991px) {
+        #tablaDetalle th,
+        #tablaDetalle td {
+            white-space: nowrap;
+        }
+    }
+
     .inventario-row:hover {
         background-color: #d4edda !important;
     }
@@ -223,5 +229,3 @@
         background-color: white !important;
     }
 </style>
-
-</div>

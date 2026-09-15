@@ -28,8 +28,15 @@
                         </div>
                     </div>
                     <br>
+                    <style>
+                    @media (max-width: 480px) {
+                      .btn-crear-nuevo {
+                        margin-right: 0 !important;
+                      }
+                    }
+                    </style>
                     <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
-                    <button onclick="AbrirModalNuevaFormaDePago()" type="button" class="btn btn-primary" style = "margin-right: 20px; margin-bottom:20px;"></i>Crear Nueva Forma De Pago</button>
+                    <button onclick="AbrirModalNuevaFormaDePago()" type="button" class="btn btn-primary btn-crear-nuevo" style = "margin-right: 20px; margin-bottom:20px;"></i>Crear Nueva Forma De Pago</button>
                     </div>
                     <div class="table-responsive" style="margin-top:10px; padding:5px;">
                         <table id="tablaFormasDePago" class="display responsive" style="width: 100%">
