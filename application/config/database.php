@@ -167,3 +167,26 @@ $db['77115675-4'] = array(
 	'save_queries' => TRUE,
 	'schema'=>'public'
 );
+
+$db['10918252-4'] = array(
+	'dsn' => '',
+	'hostname' => 'datamaule.cl',
+	'username' => 'ccerda',
+	'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
+	'database' => 'ccerda_bajon_alameda_web',
+	'dbdriver' => 'postgre',
+	'dbprefix' => '',
+	'pconnect' => FALSE,
+	'db_debug' => TRUE,
+	'cache_on' => FALSE,
+	'cachedir' => '',
+	'char_set' => 'utf8',
+	'dbcollat' => 'utf8_general_ci',
+	'swap_pre' => '',
+	'encrypt' => FALSE,
+	'compress' => FALSE,
+	'stricton' => FALSE,
+	'failover' => array(),
+	'save_queries' => TRUE,
+	'schema'=>'public'
+);

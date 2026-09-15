@@ -39,8 +39,6 @@
                             <!-- Tab General -->
                             <div id="general" class="tab active">
                                 <div class="config-grid">
-                                    <!-- Columna 1 -->
-                                    <div class="config-col">
                                         <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Ver en Caja</h3>
@@ -78,10 +76,7 @@
                                                 <label><input type="checkbox" name="propina_en_venta_directa" value="1" <?php echo ($config['propina_en_venta_directa'] ?? false) ? 'checked' : ''; ?>> Propina en venta directa</label>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <!-- Columna 2 -->
-                                    <div class="config-col">
                                         <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Otros restorant</h3>
@@ -109,16 +104,13 @@
                                             <div class="panel-body">
                                                 <div class="form-group">
                                                     <label>Clave de administrador</label>
-                                                    <input type="password" class="form-control" name="txtclaveAdmin" value="<?php echo $config['pass_admin'] ?? ''; ?>">
+                                                    <input type="password" id="txtclaveAdmin" class="form-control" name="txtclaveAdmin" value="<?php echo $config['pass_admin'] ?? ''; ?>">
                                                 </div>
-                                                <label><input type="checkbox" name="mostrar_clave_admin" value="1" <?php echo ($config['mostrar_clave_admin'] ?? false) ? 'checked' : ''; ?>> Mostrar clave</label>
+                                                <label><input type="checkbox" id="chkMostrarClaveAdmin" onchange="toggleMostrarClaveAdmin()" name="mostrar_clave_admin" value="1" <?php echo ($config['mostrar_clave_admin'] ?? false) ? 'checked' : ''; ?>> Mostrar clave</label>
                                                 <label><input type="checkbox" name="admin_anulacion_eliminacion" value="1" <?php echo ($config['admin_anulacion_eliminacion'] ?? false) ? 'checked' : ''; ?>> Requerir clave admin para anulacion</label>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <!-- Columna 3 -->
-                                    <div class="config-col">
                                         <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Informes por Correo</h3>
@@ -175,7 +167,6 @@
                                                 <label><input type="checkbox" name="boton_apertura_caja_solo_admin" value="1" <?php echo ($config['boton_apertura_caja_solo_admin'] ?? false) ? 'checked' : ''; ?>> Apertura de gaveta</label>
                                             </div>
                                         </div>
-                                    </div>
                                 </div>
                             </div>
 
@@ -666,8 +657,8 @@
         background: white;
         border: 1px solid #edf2f7;
         border-radius: 10px;
-        margin-bottom: 20px;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
+        align-self: start;
     }
     
     .config-card:hover {
@@ -771,17 +762,14 @@
         transform: translateY(-1px);
     }
 
-    /* Ajuste de columnas para evitar espacios en blanco */
+    /* Grid real: las tarjetas se acomodan fila por fila en vez de apilarse
+       por columna, así no quedan espacios vacíos cuando una columna tiene
+       más contenido que las otras */
     .config-grid {
-        display: flex;
-        flex-wrap: wrap;
-        margin: 0 -10px;
-    }
-    
-    .config-col {
-        flex: 1;
-        min-width: 300px;
-        padding: 0 10px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        align-items: start;
+        gap: 20px;
     }
 
     .config-db-indicator {
@@ -822,14 +810,14 @@
     }
 
     @media (max-width: 992px) {
-        .config-col {
-            flex: 0 0 50%;
+        .config-grid {
+            grid-template-columns: repeat(2, 1fr);
         }
     }
 
     @media (max-width: 768px) {
-        .config-col {
-            flex: 0 0 100%;
+        .config-grid {
+            grid-template-columns: 1fr;
         }
         .tabs {
             display: flex;

@@ -270,20 +270,19 @@ class Mproductos extends CI_Model
 	{
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
-		// Priorizar la secuencia interna de la base de datos para generar el siguiente ID/Código
-		// Esto evita que códigos de barras manuales largos (EAN13) alteren la correlatividad
-		$querySeq = $this->db->query("SELECT COALESCE(last_value, (SELECT MAX(id_producto) FROM producto)) + 1 as siguiente from producto_id_producto_seq");
-		$rowSeq = $querySeq->row();
-		
-		if ($rowSeq && $rowSeq->siguiente) {
-			return $rowSeq->siguiente;
-		}
+		// Se calcula en base a los datos reales de la tabla (MAX id_producto / MAX cbarra numérico)
+		// en lugar de la secuencia interna: si la secuencia queda desincronizada (p.ej. tras
+		// recrear/restaurar la tabla) el código propuesto se queda pegado en el mismo valor
+		// aunque se sigan creando productos con id_producto nuevos.
+		$query = $this->db->query(
+			"SELECT COALESCE(GREATEST(
+				(SELECT MAX(id_producto) FROM producto),
+				(SELECT MAX(cbarra::bigint) FROM producto WHERE cbarra ~ '^[0-9]+$')
+			), 0) + 1 as siguiente"
+		);
+		$row = $query->row();
 
-		// Fallback: si la secuencia falla, obtener el máximo ID + 1
-		$queryMax = $this->db->query("SELECT MAX(id_producto) + 1 as siguiente FROM producto");
-		$rowMax = $queryMax->row();
-		
-		return ($rowMax && $rowMax->siguiente) ? $rowMax->siguiente : 1;
+		return ($row && $row->siguiente) ? $row->siguiente : 1;
 	}
 
 	public function grabarNuevaSubFamilia($id, $data)
@@ -671,7 +670,12 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $query = $this->db->query("SELECT last_value+1 as new_id from producto_id_producto_seq");
+        $query = $this->db->query(
+            "SELECT COALESCE(GREATEST(
+                (SELECT MAX(id_producto) FROM producto),
+                (SELECT MAX(cbarra::bigint) FROM producto WHERE cbarra ~ '^[0-9]+$')
+            ), 0) + 1 as new_id"
+        );
         return $query->result();
     }
 

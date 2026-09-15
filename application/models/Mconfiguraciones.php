@@ -5,10 +5,10 @@ class Mconfiguraciones extends CI_Model {
 
     public function __construct() {
         parent::__construct();
-        $this->load->database();
     }
 
     public function get_configuracion() {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $query = $this->db->get_where('configuracion', array('id_configuracion' => 1));
         $row = $query->row_array();
         if (!$row) {
@@ -18,6 +18,7 @@ class Mconfiguraciones extends CI_Model {
     }
 
     public function get_empresa() {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $query = $this->db->get('empresa');
         $row = $query->row_array();
         
@@ -50,6 +51,7 @@ class Mconfiguraciones extends CI_Model {
     }
 
     public function get_bodegas() {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         // Obtener bodegas de la tabla bodega con alias para compatibilidad
         $this->db->select('id_bodega as id, nombre_bodega as nombre');
         $query = $this->db->get('bodega');
@@ -60,6 +62,7 @@ class Mconfiguraciones extends CI_Model {
         if (empty($data)) {
             return false;
         }
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->db->where('id_configuracion', 1);
         return $this->db->update('configuracion', $data);
     }
@@ -68,6 +71,7 @@ class Mconfiguraciones extends CI_Model {
         if (empty($data)) {
             return false;
         }
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->db->where('id_empresa', 1);
         return $this->db->update('empresa', $data);
     }

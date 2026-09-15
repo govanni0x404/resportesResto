@@ -1,4 +1,11 @@
 <script>
+    function toggleMostrarClaveAdmin() {
+        var input = document.getElementById('txtclaveAdmin');
+        var chk = document.getElementById('chkMostrarClaveAdmin');
+        if (!input || !chk) return;
+        input.type = chk.checked ? 'text' : 'password';
+    }
+
     function openTab(evt, tabName) {
         var i, tabcontent, tablinks;
         tabcontent = document.getElementsByClassName("tab");

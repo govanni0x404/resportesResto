@@ -136,9 +136,11 @@ function ListadoDestinoDeImpresion(objSelected) {
         id: ""
     }, function(datos) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
-        tbl = '<option selected disabled value="0">Seleccione El Destino De Impresion</option>';
+        var encontrado = false;
+        tbl = '<option disabled value="0">Seleccione El Destino De Impresion</option>';
         $.each(obj, function(index, v) { // recorro el array
             if (v.nombre_dimpresion == objSelected) {
+                encontrado = true;
                 tbl = tbl + '<option selected value="' + v.id_dimpresion + '">' + v.nombre_dimpresion +
                     '</option>';
             } else {
@@ -147,6 +149,10 @@ function ListadoDestinoDeImpresion(objSelected) {
             }
         }); //fin each
         $("#cboDestinoDeImpresion").html(tbl);
+        // Si no hubo coincidencia con objSelected, dejar seleccionado el primer destino real de la lista
+        if (!encontrado && obj.length > 0) {
+            $("#cboDestinoDeImpresion").val(obj[0].id_dimpresion);
+        }
         $("#cboDestinoDeImpresion").select2();
     });
 }
