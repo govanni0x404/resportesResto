@@ -97,7 +97,7 @@ class ConsolidadoVentas extends CI_Controller
 
 
 
-        $pdf->Image(base_url() . 'assets/img/logo.png', 10, 5, 35, 35, 'PNG');
+        $pdf->Image(FCPATH . 'assets/img/logo.png', 10, 5, 35, 35, 'PNG');
 
         $pdf->SetXY(78, 15);
         $pdf->Cell(0, 10, utf8_decode($datosEmpresa[0]->razon_social));

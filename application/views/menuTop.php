@@ -449,10 +449,19 @@
         $__menuAccesos = array();
     }
 
+    // La vista se incluye dentro de un método de CI_Loader: sus variables no son globales,
+    // por eso se publican en $GLOBALS para que menu_visible() las lea.
+    $GLOBALS['__menuAccesos'] = $__menuAccesos;
+    $GLOBALS['__menuEsAdmin'] = ($__rolId === 1);
+
     if (!function_exists('menu_visible')) {
         function menu_visible($nombreVb)
         {
-            global $__menuAccesos;
+            global $__menuAccesos, $__menuEsAdmin;
+            // Gerencia (rol 1) ve todo, para que nunca quede sin acceso a Privilegios de Usuario
+            if ($__menuEsAdmin) {
+                return true;
+            }
             $k = strtolower(trim((string)$nombreVb));
             if (!is_array($__menuAccesos) || !array_key_exists($k, $__menuAccesos)) {
                 return true;
@@ -713,6 +722,7 @@
                     <div class="collapse navbar-collapse" id="navbar-menu">
                         <?php
                         $__showDashboard = menu_visible('Dashboard');
+                        $__showCaja = menu_visible('Caja');
 
                         $__showEntradaBodega = menu_visible('EntradaBodega');
                         $__showSalidaBodega = menu_visible('SalidaBodega');
@@ -789,6 +799,10 @@
                         <ul class="nav navbar-nav navbar-left" data-in="" data-out="">
                             <?php if ($__showDashboard) : ?>
                                 <li class="active"><a href="<?php echo base_url() ?>index.php/Dashboard"><i class="ti-home"></i> Mis Ventas</a></li>
+                            <?php endif; ?>
+
+                            <?php if ($__showCaja) : ?>
+                                <li><a href="<?php echo base_url() ?>index.php/Caja"><i class="pe-7s-cart"></i> Caja</a></li>
                             <?php endif; ?>
 
                             <?php if ($__showProcesos) : ?>

@@ -226,7 +226,7 @@ class Dashboard extends CI_Controller
 
 		$pdf->AliasNbPages();
 		$pdf->AddPage();
-		$pdf->Image(base_url() . 'assets/img/logo.png', 10, 5, 35, 35, 'PNG');
+		$pdf->Image(FCPATH . 'assets/img/logo.png', 10, 5, 35, 35, 'PNG');
 
 		$pdf->SetFont('Arial', 'B', 12);
 		$pdf->SetXY(78, 15);

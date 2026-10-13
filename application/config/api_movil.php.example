@@ -1,0 +1,10 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+/*
+ * Copiar como application/config/api_movil.php (NO subirlo al repo).
+ * Clave para firmar los tokens de la app móvil, mínimo 32 caracteres.
+ * Generar una con:  php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"
+ * Si se cambia, todos los celulares deben volver a iniciar sesión.
+ */
+$config['api_movil_secret'] = '';

@@ -97,7 +97,7 @@ class CierresDeCaja extends CI_Controller
         $pdf->AddPage();
         $pdf->SetFont('Arial', '', 11);
 
-        $pdf->Image(base_url() . 'assets/img/logo.png', 10, 5, 35, 35, 'PNG');
+        $pdf->Image(FCPATH . 'assets/img/logo.png', 10, 5, 35, 35, 'PNG');
 
         // Cambiar la fuente a Arial, negrita, tamaño 12 para los encabezados
         $pdf->SetFont('Arial', 'B', 12);
