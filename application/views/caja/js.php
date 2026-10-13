@@ -58,7 +58,11 @@
 				}
 				$('#panelApertura').hide();
 				$('#panelCaja').show();
-				$('#infoCaja').text('Caja N° ' + resumen.id_caja + ' · abierta ' + resumen.apertura + ' · fondo ' + fmt(resumen.fondo));
+				$('#infoCaja').text('Caja N° ' + resumen.id_caja + ' abierta');
+				$('#estCaja').text('N° ' + resumen.id_caja);
+				$('#estApertura').text(resumen.apertura);
+				$('#estFondo').text(fmt(resumen.fondo));
+				$('#estVentas').text(fmt(resumen.ventas) + ' (' + resumen.cantidad_ventas + ')');
 				if (!catalogo) cargarCatalogo(0);
 			});
 		}
@@ -155,7 +159,7 @@
 			});
 			var $c = $('#productos').empty();
 			if (!lista.length) {
-				$c.append('<div class="caja-vacio">No hay productos</div>');
+				$c.append('<div class="caja-vacio"><i class="pe-7s-search"></i>No se encontraron productos</div>');
 				return;
 			}
 			var html = '';
@@ -209,8 +213,9 @@
 			$('#opcionesMaxAgregados').text(max > 0 ? '(máximo ' + max + ')' : '');
 			$('#listaAgregados').html($.map(ags, function (a) {
 				var marcado = linea && $.inArray(a.id_agregado, linea.agregados) >= 0;
-				return '<div class="checkbox"><label><input type="checkbox" class="chk-agregado" value="' + a.id_agregado + '"' + (marcado ? ' checked' : '') + '> '
-					+ esc(a.nombre) + (a.valor ? ' <span class="valor">+' + fmt(a.valor) + '</span>' : '') + '</label></div>';
+				// Estructura del tema (checkbox-success): el input va antes del label
+				return '<div class="checkbox checkbox-success"><input type="checkbox" class="chk-agregado" id="ag' + a.id_agregado + '" value="' + a.id_agregado + '"' + (marcado ? ' checked' : '') + '>'
+					+ '<label for="ag' + a.id_agregado + '">' + esc(a.nombre) + (a.valor ? ' <span class="valor">+' + fmt(a.valor) + '</span>' : '') + '</label></div>';
 			}).join(''));
 
 			// La nota guarda las indicaciones elegidas + el texto libre, separados por coma
@@ -219,7 +224,8 @@
 			$('#opcionesMensajes').toggle(msgs.length > 0);
 			$('#listaMensajes').html($.map(msgs, function (m, i) {
 				var marcado = $.inArray(m.mensaje, partes) >= 0;
-				return '<div class="checkbox"><label><input type="checkbox" class="chk-mensaje" data-i="' + i + '"' + (marcado ? ' checked' : '') + '> ' + esc(m.mensaje) + '</label></div>';
+				return '<div class="checkbox checkbox-success"><input type="checkbox" class="chk-mensaje" id="msg' + i + '" data-i="' + i + '"' + (marcado ? ' checked' : '') + '>'
+					+ '<label for="msg' + i + '">' + esc(m.mensaje) + '</label></div>';
 			}).join(''));
 			var textos = $.map(msgs, function (m) { return m.mensaje; });
 			$('#txtNotaProducto').val($.grep(partes, function (x) { return $.inArray(x, textos) < 0; }).join(', '));
@@ -300,43 +306,62 @@
 		function renderCarro() {
 			var $t = $('#lineas').empty();
 			if (!carro.length) {
-				$t.append('<tr><td colspan="4" class="text-center text-muted">Agrega productos a la venta</td></tr>');
+				$t.append('<div class="caja-carro-vacio"><i class="pe-7s-cart"></i>Toca un producto para agregarlo a la venta</div>');
 			}
+			var unidades = 0;
 			$.each(carro, function (i, l) {
+				unidades += l.cantidad;
 				var detalle = $.map(l.agregados, function (id) { var a = agregado(id); return a ? '+ ' + esc(a.nombre) : null; });
 				if (l.nota) detalle.push('<i>' + esc(l.nota) + '</i>');
 				var nombre = tieneOpciones(l.id_producto) ? '<a href="#" class="editar" title="Cambiar agregados / indicaciones">' + esc(l.nombre) + '</a>' : esc(l.nombre);
-				$t.append('<tr data-i="' + i + '">'
-					+ '<td>' + nombre + (detalle.length ? '<div class="detalle-linea">' + detalle.join('<br>') + '</div>' : '')
-					+ '<small class="text-muted">' + fmt(precioLinea(l)) + ' c/u</small></td>'
-					+ '<td class="text-center"><input type="number" class="form-control cant" min="1" step="1" value="' + l.cantidad + '"></td>'
-					+ '<td class="caja-num">' + fmt(Math.round(precioLinea(l) * l.cantidad)) + '</td>'
-					+ '<td><button class="btn btn-xs btn-danger quitar" title="Quitar"><i class="fa fa-times"></i></button></td></tr>');
+				$t.append('<div class="caja-linea" data-i="' + i + '">'
+					+ '<div class="info"><div class="nombre">' + nombre + '</div>'
+					+ (detalle.length ? '<div class="detalle-linea">' + detalle.join('<br>') + '</div>' : '')
+					+ '<div class="unitario">' + fmt(precioLinea(l)) + ' c/u</div></div>'
+					+ '<div class="input-group input-group-sm cantidad">'
+					+ '<span class="input-group-btn"><button class="btn btn-default menos" type="button" title="Quitar uno"><i class="fa fa-minus"></i></button></span>'
+					+ '<input type="number" class="form-control cant" min="1" step="1" value="' + l.cantidad + '">'
+					+ '<span class="input-group-btn"><button class="btn btn-default mas" type="button" title="Agregar uno"><i class="fa fa-plus"></i></button></span></div>'
+					+ '<div class="subtotal">' + fmt(Math.round(precioLinea(l) * l.cantidad)) + '</div>'
+					+ '<button class="quitar" title="Quitar producto"><i class="fa fa-trash"></i></button></div>');
 			});
+			$('#cantItems, #barraItems').text(unidades);
+			$('#barraMovil').toggleClass('visible', carro.length > 0);
+			$('.caja').toggleClass('con-barra', carro.length > 0);
 			var t = totales();
 			$('#lblSubtotal').text(fmt(t.subtotal));
 			$('#lblDescuento').text(fmt(-t.descuento));
 			$('#lblNeto').text(fmt(t.neto));
 			$('#lblIva').text(fmt(t.iva));
 			$('#lblTotal').text(fmt(t.total));
+			$('#lblCobrar').text(carro.length ? fmt(t.total) : '');
+			$('#barraTotal').text(fmt(t.total));
 			$('#btnCobrar').prop('disabled', !carro.length || t.subtotal <= 0);
 		}
 
 		$('#lineas').on('change', '.cant', function () {
-			var i = $(this).closest('tr').data('i');
+			var i = $(this).closest('[data-i]').data('i');
 			var c = Math.round(Number($(this).val()));
 			if (c > 0) carro[i].cantidad = c; else carro.splice(i, 1);
 			renderCarro();
 		}).on('click', '.quitar', function () {
-			carro.splice($(this).closest('tr').data('i'), 1);
+			carro.splice($(this).closest('[data-i]').data('i'), 1);
+			renderCarro();
+		}).on('click', '.mas, .menos', function () {
+			var i = $(this).closest('[data-i]').data('i');
+			carro[i].cantidad += $(this).hasClass('mas') ? 1 : -1;
+			if (carro[i].cantidad < 1) carro.splice(i, 1);
 			renderCarro();
 		}).on('click', '.editar', function (e) {
 			e.preventDefault();
-			var i = $(this).closest('tr').data('i');
+			var i = $(this).closest('[data-i]').data('i');
 			abrirOpciones(carro[i].id_producto, i);
 		});
 
 		$('#txtDescuento').on('input', renderCarro);
+		$('#barraMovil').on('click', function () {
+			$('html, body').animate({ scrollTop: $('.caja-carro').offset().top - 10 }, 250);
+		});
 		$('[data-tipo-desc]').on('click', function () {
 			tipoDesc = $(this).data('tipo-desc');
 			$('[data-tipo-desc]').removeClass('active');
@@ -369,6 +394,7 @@
 			$('#modalCliente a[href="#tabBuscarCliente"]').tab('show');
 			setTimeout(function () { $('#txtBuscarCliente').val('').focus(); buscarClientes(''); }, 300);
 		});
+		$('#txtCliente').on('click', function () { $('#btnBuscarCliente').click(); });
 		$('#btnQuitarCliente').on('click', function () {
 			cliente = null;
 			$('#txtCliente').val('');
@@ -666,6 +692,7 @@
 				$('#ventaOkPdf').attr('href', base + 'pdf/' + r.id_venta);
 				$('#modalVentaOk').modal('show');
 				limpiarVenta();
+				cargarEstado();
 			}, terminar);
 		});
 
