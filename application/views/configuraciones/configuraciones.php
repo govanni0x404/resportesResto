@@ -460,16 +460,63 @@
                                     <div class="col-md-6">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Acceso Facturación</h3>
+                                                <h3 class="panel-title">Acceso Facturación (Cloud Apps)</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
                                                     <label>Usuario</label>
-                                                    <input type="text" class="form-control" name="usuario_dte" value="<?php echo $config['usuario_dte'] ?? ''; ?>">
+                                                    <?php $rutEmpresaDte = !empty($empresa['rut_empresa']) ? number_format((float)$empresa['rut_empresa'], 0, '', '') . '-' . strtoupper(trim($empresa['dv_empresa'] ?? '')) : ''; ?>
+                                                    <input type="text" class="form-control" name="usuario_dte" id="txtUsuarioDte" value="<?php echo htmlspecialchars($config['usuario_dte'] ?? '', ENT_QUOTES); ?>" placeholder="<?php echo $rutEmpresaDte ? 'Ej: ' . $rutEmpresaDte : 'RUT de la empresa'; ?>">
+                                                    <p class="help-block">RUT de la empresa con guion<?php echo $rutEmpresaDte ? ' (' . $rutEmpresaDte . ')' : ''; ?>.</p>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Contraseña</label>
-                                                    <input type="password" class="form-control" name="clave_usuario_dte" value="<?php echo $config['clave_usuario_dte'] ?? ''; ?>">
+                                                    <input type="password" class="form-control" name="clave_usuario_dte" id="txtClaveDte" value="<?php echo htmlspecialchars($config['clave_usuario_dte'] ?? '', ENT_QUOTES); ?>">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Terminal</label>
+                                                    <input type="text" class="form-control" name="terminal_dte" id="txtTerminalDte" maxlength="60" value="<?php echo htmlspecialchars($config['terminal_dte'] ?? '', ENT_QUOTES); ?>" placeholder="Ej: DATAPDV-CAJA1">
+                                                    <p class="help-block">Terminal registrado en Cloud Apps para la caja web. Sin terminal no se emiten boletas ni facturas.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title">Folios electrónicos</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <p class="text-muted">Consulta en Cloud Apps los folios autorizados por el SII para cada documento, con el usuario, la contraseña y el terminal de arriba (no hace falta grabar antes).</p>
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered table-condensed" id="tablaFoliosDte">
+                                                        <thead>
+                                                            <tr><th>Documento</th><th class="text-center">Cód. SII</th><th>Rango autorizado</th>
+                                                                <th class="text-right">Último usado</th><th class="text-right">Disponibles</th><th>Vence</th><th>Estado</th>
+                                                                <th class="text-center" style="width:150px">
+                                                                    <button type="button" class="btn btn-success btn-xs" id="btnFoliosTodos"><i class="fa fa-refresh"></i> Consultar todos</button>
+                                                                </th></tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php if (empty($documentos_dte)) : ?>
+                                                                <tr><td colspan="8" class="text-center text-muted">No hay documentos electrónicos (con código SII) en Tipos de documento.</td></tr>
+                                                            <?php endif; ?>
+                                                            <?php foreach ($documentos_dte as $d) : ?>
+                                                                <tr data-tipo="<?php echo (int)$d->cod_sii; ?>">
+                                                                    <td><?php echo htmlspecialchars($d->nombre_tdocumento, ENT_QUOTES); ?></td>
+                                                                    <td class="text-center"><?php echo (int)$d->cod_sii; ?></td>
+                                                                    <td class="f-rango">—</td>
+                                                                    <td class="text-right f-ultimo">—</td>
+                                                                    <td class="text-right f-disp">—</td>
+                                                                    <td class="f-vence">—</td>
+                                                                    <td class="f-estado text-muted">Sin consultar</td>
+                                                                    <td class="text-center">
+                                                                        <button type="button" class="btn btn-default btn-xs btn-folios"><i class="fa fa-download"></i> Obtener folios</button>
+                                                                    </td>
+                                                                </tr>
+                                                            <?php endforeach; ?>
+                                                        </tbody>
+                                                    </table>
                                                 </div>
                                             </div>
                                         </div>

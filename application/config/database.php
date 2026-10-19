@@ -72,16 +72,21 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 (ENVIRONMENT !== 'production')
 */
-$active_group = 'default';
+$active_group = '76193938-6';
 $query_builder = TRUE;
 
 
 $db['default'] = array(
 	'dsn'	=> '',
-	'hostname' => 'datamaule.cl',
-	'username' => 'ccerda',
-	'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
-	'database' => 'ccerda_intranet2',
+	// Intranet remota (por VPN); para volver, descomentar estas 4 líneas y borrar las 4 locales:
+	//'hostname' => '10.66.66.1',
+	//'username' => 'ccerda',
+	//'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
+	//'database' => 'ccerda_intranet2',
+	'hostname' => 'localhost',
+	'username' => 'postgres',
+	'password' => '123datamaule2019.,#-',
+	'database' => 'intranet_local',
 	'dbdriver' => 'postgre',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
@@ -124,7 +129,7 @@ $db['76193938-6'] = array(
 
 $db['9209734-K'] = array(
 	'dsn' => '',
-	'hostname' => 'datamaule.cl',
+	'hostname' => '10.66.66.1',
 	'username' => 'ccerda',
 	'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
 	'database' => 'ccerda_escuela_artilleria',
@@ -147,7 +152,7 @@ $db['9209734-K'] = array(
 
 $db['77115675-4'] = array(
 	'dsn' => '',
-	'hostname' => 'datamaule.cl',
+	'hostname' => '10.66.66.1',
 	'username' => 'ccerda',
 	'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
 	'database' => 'ccerda_pruebasrestoweb',
@@ -170,7 +175,7 @@ $db['77115675-4'] = array(
 
 $db['10918252-4'] = array(
 	'dsn' => '',
-	'hostname' => 'datamaule.cl',
+	'hostname' => '10.66.66.1',
 	'username' => 'ccerda',
 	'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
 	'database' => 'ccerda_bajon_alameda_web',

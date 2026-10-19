@@ -16,7 +16,9 @@ class Configuraciones extends CI_Controller {
         $data['conexion_actual'] = $this->session->userdata('nombre_conexion');
         $data['base_datos_actual'] = isset($tenantDb->database) ? $tenantDb->database : '';
 
+        $this->Mconfiguraciones->asegurar_columnas_dte();
         $data['config'] = $this->Mconfiguraciones->get_configuracion();
+        $data['documentos_dte'] = $this->Mconfiguraciones->get_documentos_dte();
         $data['empresa'] = $this->Mconfiguraciones->get_empresa();
         $data['bodegas'] = $this->Mconfiguraciones->get_bodegas();
         $this->load->view('menuTop.php', $data);
@@ -30,6 +32,26 @@ class Configuraciones extends CI_Controller {
         $this->db = get_tenant_db($this);
         $config = $this->Mconfiguraciones->get_configuracion();
         echo json_encode([$config]);
+    }
+
+    /**
+     * Consulta a Cloud Apps los folios disponibles de un tipo de documento.
+     * Usa los datos del formulario (aunque no estén guardados) para poder probarlos antes.
+     */
+    public function obtenerFolios() {
+        header('Content-Type: application/json');
+        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+            http_response_code(401);
+            echo json_encode(array('ok' => false, 'mensaje' => 'Sesión expirada'));
+            return;
+        }
+        $this->load->model('Mdte');
+        echo json_encode($this->Mdte->consultarFolios(
+            trim((string)$this->input->post('usuario')),
+            (string)$this->input->post('clave'),
+            trim((string)$this->input->post('terminal')),
+            (int)$this->input->post('tipo')
+        ));
     }
 
     public function guardar() {
@@ -139,6 +161,7 @@ class Configuraciones extends CI_Controller {
             'formato_dte',
             'usuario_dte',
             'clave_usuario_dte',
+            'terminal_dte',
             'ruta_api_get_pdf',
             'ruta_api_get_qr',
             'url_consulta_folio_dte'
@@ -185,6 +208,11 @@ class Configuraciones extends CI_Controller {
                 $update_empresa[$f] = $post[$f];
             }
         }
+
+        foreach (array('usuario_dte', 'clave_usuario_dte', 'terminal_dte') as $f) {
+            if (isset($update_config[$f])) $update_config[$f] = trim($update_config[$f]);
+        }
+        $this->Mconfiguraciones->asegurar_columnas_dte();
 
         // Guardar ambas tablas
         $ok_config = $this->Mconfiguraciones->update_configuracion($update_config);

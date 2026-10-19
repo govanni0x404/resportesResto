@@ -31,6 +31,8 @@ $cant = function ($n) {
 		.total td { font-size: 15px; font-weight: bold; }
 		.nota { font-size: 10px; margin-top: 6px; }
 		.anulada { color: #c00; font-weight: bold; font-size: 14px; }
+		.timbre { margin: 8px 0 2px; }
+		.timbre img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
 		.acciones { text-align: center; margin: 10px; }
 		.acciones button { font-size: 14px; padding: 6px 14px; margin: 0 4px; cursor: pointer; }
 		@media print {
@@ -60,6 +62,7 @@ $cant = function ($n) {
 			N° <?php echo (int)$v->folio; ?>
 		</div>
 		<?php if ($anulada) : ?><div class="c anulada">*** ANULADA ***</div><?php endif; ?>
+		<?php if ($nc) : ?><div class="c b">Devolución de <?php echo $h($referencia); ?></div><?php endif; ?>
 
 		<div>Fecha: <?php echo $h($v->fecha_texto); ?></div>
 		<div>Cajero: <?php echo $h($v->nombre_usuario); ?></div>
@@ -87,7 +90,7 @@ $cant = function ($n) {
 			<?php endif; ?>
 			<tr><td>Neto</td><td class="r"><?php echo $m($v->neto); ?></td></tr>
 			<tr><td>IVA</td><td class="r"><?php echo $m($v->iva); ?></td></tr>
-			<tr class="total"><td>TOTAL</td><td class="r"><?php echo $m($v->total); ?></td></tr>
+			<tr class="total"><td><?php echo $nc ? 'TOTAL DEVUELTO' : 'TOTAL'; ?></td><td class="r"><?php echo $m($v->total); ?></td></tr>
 			<?php $propina = isset($v->valor_propina) ? (int)$v->valor_propina : 0; ?>
 			<?php if ($propina > 0) : ?>
 				<tr><td>Propina (voluntaria)</td><td class="r"><?php echo $m($propina); ?></td></tr>
@@ -98,7 +101,7 @@ $cant = function ($n) {
 			<hr>
 			<table>
 				<?php foreach ($pagos as $p) : ?>
-					<tr><td><?php echo $h($p->nombre_fpago); ?></td><td class="r"><?php echo $m($p->paga_con); ?></td></tr>
+					<tr><td><?php echo $h(($nc ? 'Devuelto en ' : '') . $p->nombre_fpago); ?></td><td class="r"><?php echo $m($p->paga_con); ?></td></tr>
 					<?php if ((int)$p->vuelto > 0) : ?>
 						<tr><td>Vuelto</td><td class="r"><?php echo $m($p->vuelto); ?></td></tr>
 					<?php endif; ?>
@@ -109,11 +112,15 @@ $cant = function ($n) {
 			<hr>
 			<div class="nota"><?php echo $h($v->mensaje_pedido); ?></div>
 		<?php endif; ?>
-		<?php if ($electronico) : ?>
-			<div class="nota c">Documento interno. Pendiente de emisión electrónica ante el SII.</div>
+		<?php if ($electronico && !$emitido) : ?>
+			<div class="nota c b">Documento pendiente de envío al SII.</div>
+		<?php elseif (!empty($timbre)) : ?>
+			<div class="timbre"><img src="<?php echo $timbre; ?>" alt="Timbre electrónico"></div>
+			<div class="c b" style="font-size:11px">Timbre Electrónico SII</div>
+			<div class="c" style="font-size:10px">Verifique documento: www.sii.cl</div>
 		<?php endif; ?>
 		<hr>
-		<div class="c">¡Gracias por su compra!</div>
+		<div class="c"><?php echo $nc ? 'Firma cliente: ____________________' : '¡Gracias por su compra!'; ?></div>
 	</div>
 	<script>
 		if (/[?&]imprimir=1/.test(location.search)) {

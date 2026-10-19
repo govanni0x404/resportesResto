@@ -96,6 +96,18 @@
 	.caja .table > thead > tr > th { background: #f7f9fa; color: #374767; font-weight: 600; border-bottom-width: 1px; }
 	#tablaVentas tr.anulada td { color: #aab2c0; text-decoration: line-through; }
 	#tablaVentas tr.anulada td.acciones { text-decoration: none; }
+	#tablaVentas tr.nc td.caja-num { color: #d9534f; }
+	#tabVentas .panel-heading, #tabCierre .panel-heading { position: relative; }
+	.caja-btn-titulo { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
+	.dev-info { background: #f7f9fc; border: 1px solid #e1e6ef; padding: 10px 12px; margin-bottom: 12px; color: #374767; }
+	.dev-info b { font-size: 15px; }
+	#devLineas td { vertical-align: middle; }
+	#devLineas input { text-align: center; }
+	#devLineas .dev-col-cant { width: 130px; }
+	@media (max-width: 767px) { #devLineas .dev-col-cant { width: 80px; } }
+	#devLineas tr.agotada td { color: #aab2c0; }
+	.caja-chk-imprimir { float: left; margin: 8px 0 0; }
+	.caja-frame-impresion { position: absolute; left: -10000px; top: 0; width: 400px; height: 600px; border: 0; }
 	.caja-apertura { max-width: 460px; margin: 30px auto; }
 	.caja-apertura .icono { font-size: 54px; color: #558B2F; text-align: center; display: block; }
 	.caja-tipo-mov { display: flex; gap: 6px; }
@@ -148,6 +160,7 @@
 						<span class="input-group-addon">$</span>
 						<input type="number" min="0" step="1" class="form-control input-lg" id="fondoInicial" value="0">
 					</div>
+					<p class="help-block" id="ayudaFondo" style="display:none">Sencillo que quedó en el último cierre.</p>
 				</div>
 				<button id="btnAbrirCaja" class="btn btn-success btn-lg btn-block"><i class="fa fa-unlock"></i> Abrir caja</button>
 			</div>
@@ -260,6 +273,9 @@
 					<div class="panel panel-success lobidisable">
 						<div class="panel-heading">
 							<div class="panel-title"><h4><i class="pe-7s-note2"></i>Ventas de la caja</h4></div>
+							<button class="btn btn-default btn-sm caja-btn-titulo" id="btnDevolucionBuscar" title="Devolver productos de una venta de cualquier caja">
+								<i class="fa fa-undo"></i> Devolución
+							</button>
 						</div>
 						<div class="panel-body table-responsive">
 							<table class="table table-bordered table-hover" id="tablaVentas">
@@ -325,6 +341,9 @@
 							<div class="panel panel-success lobidisable">
 								<div class="panel-heading">
 									<div class="panel-title"><h4><i class="pe-7s-graph1"></i>Resumen del sistema</h4></div>
+									<button class="btn btn-default btn-sm caja-btn-titulo" id="btnInformeX" title="Imprimir el resumen del turno sin cerrar la caja">
+										<i class="fa fa-print"></i> Informe X
+									</button>
 								</div>
 								<div class="panel-body">
 									<table class="table table-condensed cierre-tabla">
@@ -340,10 +359,23 @@
 								</div>
 								<div class="panel-body">
 									<div class="form-group">
-										<label for="efectivoContado">Efectivo contado (incluye el fondo inicial)</label>
+										<label for="efectivoContado">Efectivo contado (incluye el fondo inicial, ya pagadas las propinas)</label>
 										<div class="input-group">
 											<span class="input-group-addon">$</span>
 											<input type="number" min="0" step="1" class="form-control input-lg" id="efectivoContado">
+										</div>
+									</div>
+									<div class="row">
+										<div class="col-xs-6 form-group">
+											<label for="fondoSiguiente">Fondo para el próximo turno</label>
+											<div class="input-group">
+												<span class="input-group-addon">$</span>
+												<input type="number" min="0" step="1" class="form-control" id="fondoSiguiente">
+											</div>
+										</div>
+										<div class="col-xs-6 form-group">
+											<label>Efectivo a entregar</label>
+											<p class="form-control-static"><b id="lblEntregar">$0</b></p>
 										</div>
 									</div>
 									<div id="declaradoOtros"></div>
@@ -395,6 +427,9 @@
 				</div>
 			</div>
 			<div class="modal-footer">
+				<div class="checkbox checkbox-success caja-chk-imprimir">
+					<input type="checkbox" id="chkImprimirVenta" class="chk-imprimir"><label for="chkImprimirVenta"><i class="fa fa-print"></i> Imprimir ticket</label>
+				</div>
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
 				<button type="button" class="btn btn-success btn-lg" id="btnConfirmarPago" disabled>Confirmar venta</button>
 			</div>
@@ -468,14 +503,77 @@
 	<div class="modal-dialog modal-sm" role="document">
 		<div class="modal-content">
 			<div class="modal-body text-center">
-				<h3 style="color:#37a000; margin-top:5px;"><i class="fa fa-check-circle"></i> Venta registrada</h3>
+				<h3 style="color:#37a000; margin-top:5px;"><i class="fa fa-check-circle"></i> <span id="ventaOkTitulo">Venta registrada</span></h3>
 				<p id="ventaOkDoc" style="font-size:16px"></p>
 				<p id="ventaOkVuelto" style="font-size:22px; font-weight:bold"></p>
+				<p id="ventaOkAviso" class="alert alert-danger" style="display:none; text-align:left; padding:8px 10px"></p>
 				<div class="btn-group btn-group-justified" style="margin-bottom:10px">
 					<a class="btn btn-default" id="ventaOkTicket" target="_blank"><i class="fa fa-print"></i> Ticket</a>
 					<a class="btn btn-default" id="ventaOkPdf" target="_blank"><i class="fa fa-file-pdf-o"></i> PDF</a>
 				</div>
 				<button class="btn btn-success btn-block" data-dismiss="modal" id="btnNuevaVenta">Nueva venta</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal devolución (nota de crédito interna) -->
+<div class="modal fade" id="modalDevolucion" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header btn-success">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 class="modal-title"><i class="fa fa-undo"></i> Devolución · Nota de crédito interna</h4>
+			</div>
+			<div class="modal-body">
+				<form id="devBusqueda" class="row">
+					<div class="col-sm-6 form-group">
+						<label for="devDocumento">Documento de la venta</label>
+						<select id="devDocumento" class="form-control"></select>
+					</div>
+					<div class="col-sm-3 form-group">
+						<label for="devFolio">Folio</label>
+						<input type="number" min="1" step="1" id="devFolio" class="form-control">
+					</div>
+					<div class="col-sm-3 form-group">
+						<label class="hidden-xs">&nbsp;</label>
+						<button type="submit" class="btn btn-success btn-block"><i class="fa fa-search"></i> Buscar</button>
+					</div>
+				</form>
+				<div id="devContenido" style="display:none">
+					<div class="dev-info" id="devInfo"></div>
+					<div class="table-responsive">
+						<table class="table table-bordered table-condensed" id="devLineas">
+							<thead>
+								<tr><th>Producto</th><th class="text-center hidden-xs">Vendido</th><th class="text-center hidden-xs">Ya devuelto</th>
+									<th class="text-center dev-col-cant">Devolver</th><th class="caja-num">Monto</th></tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+					</div>
+					<button type="button" class="btn btn-default btn-sm" id="btnDevTodo"><i class="fa fa-check-square-o"></i> Devolver todo</button>
+					<div class="row" style="margin-top:12px">
+						<div class="col-sm-7 form-group">
+							<label for="devMotivo">Motivo</label>
+							<input type="text" id="devMotivo" class="form-control" maxlength="150" placeholder="Ej: producto en mal estado">
+						</div>
+						<div class="col-sm-5 form-group">
+							<label for="devFpago">Devolver el dinero en</label>
+							<select id="devFpago" class="form-control"></select>
+						</div>
+					</div>
+					<div class="caja-totales">
+						<div class="fila total"><span>Total a devolver</span><b id="devTotal">$0</b></div>
+					</div>
+					<p class="text-muted small" style="margin:6px 0 0">Se devuelve lo pagado (con el descuento de la venta, sin propina) y el stock vuelve a bodega.</p>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<div class="checkbox checkbox-success caja-chk-imprimir">
+					<input type="checkbox" id="chkImprimirDev" class="chk-imprimir"><label for="chkImprimirDev"><i class="fa fa-print"></i> Imprimir ticket</label>
+				</div>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+				<button type="button" class="btn btn-danger" id="btnConfirmarDevolucion" disabled><i class="fa fa-undo"></i> Registrar devolución</button>
 			</div>
 		</div>
 	</div>
@@ -506,10 +604,11 @@
 								<div class="col-sm-5 form-group"><label>RUT</label><input name="rut" class="form-control" placeholder="12.345.678-9" maxlength="12"></div>
 								<div class="col-sm-6 form-group"><label>Giro</label><input name="giro" class="form-control" maxlength="100"></div>
 								<div class="col-sm-6 form-group"><label>Dirección</label><input name="direccion" class="form-control" maxlength="100"></div>
+								<div class="col-sm-6 form-group"><label for="cboComuna">Comuna</label><select name="id_comuna" id="cboComuna" class="form-control"></select></div>
 								<div class="col-sm-6 form-group"><label>Teléfono</label><input name="telefono" class="form-control" maxlength="30"></div>
 								<div class="col-sm-6 form-group"><label>Correo</label><input name="mail" type="email" class="form-control" maxlength="100"></div>
 							</div>
-							<p class="text-muted">Para facturas el cliente necesita RUT, giro y dirección.</p>
+							<p class="text-muted">Para facturas el cliente necesita RUT, giro, dirección y comuna.</p>
 							<button type="submit" class="btn btn-primary">Guardar y usar</button>
 						</form>
 					</div>

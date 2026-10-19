@@ -71,6 +71,34 @@ class Mconfiguraciones extends CI_Model {
         return $this->db->update('configuracion', $data);
     }
 
+    /**
+     * Columnas de acceso a Cloud Apps en configuracion. terminal_dte es nueva (la caja web
+     * la necesita); usuario/clave ya existen en las bases del POS, pero no en todas.
+     */
+    public function asegurar_columnas_dte() {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $existentes = array();
+        foreach ($this->db->query("SELECT column_name FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'configuracion'
+            AND column_name IN ('usuario_dte', 'clave_usuario_dte', 'terminal_dte')")->result() as $c) {
+            $existentes[] = $c->column_name;
+        }
+        $tipos = array('usuario_dte' => 'varchar(100)', 'clave_usuario_dte' => 'varchar(100)', 'terminal_dte' => 'varchar(60)');
+        foreach ($tipos as $col => $tipo) {
+            if (!in_array($col, $existentes)) {
+                $this->db->query("ALTER TABLE configuracion ADD COLUMN IF NOT EXISTS $col $tipo");
+            }
+        }
+    }
+
+    /** Tipos de documento electrónicos (con código SII) para consultar sus folios. */
+    public function get_documentos_dte() {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        return $this->db->query('SELECT id_tdocumento, nombre_tdocumento, cod_sii FROM tdocumento
+            WHERE cod_sii IN (33, 34, 39, 41, 43, 46, 52, 56, 61, 110, 111, 112)
+            ORDER BY cod_sii, id_tdocumento')->result();
+    }
+
     public function update_empresa($data) {
         if (empty($data)) {
             return false;

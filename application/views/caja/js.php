@@ -45,6 +45,26 @@
 			return $.grep(catalogo.documentos, function (d) { return d.id_tdocumento === id; })[0];
 		}
 
+		// ---------------- impresión ----------------
+		// Preferencia por computador (la impresora es de cada caja). Por defecto se imprime, como el POS.
+		var CLAVE_IMPRIMIR = 'cajaWeb.imprimirTicket';
+		function imprimeTicket() {
+			try { return localStorage.getItem(CLAVE_IMPRIMIR) !== '0'; } catch (e) { return true; }
+		}
+		$('.chk-imprimir').prop('checked', imprimeTicket()).on('change', function () {
+			var on = $(this).prop('checked');
+			$('.chk-imprimir').prop('checked', on);
+			try { localStorage.setItem(CLAVE_IMPRIMIR, on ? '1' : '0'); } catch (e) {}
+		});
+
+		// La página del ticket se imprime sola al cargar (?imprimir=1). En un iframe oculto no hay
+		// ventana emergente que bloquear, y con Chrome --kiosk-printing sale directo a la impresora.
+		function imprimir(url) {
+			$('#frameImpresion').remove();
+			$('<iframe id="frameImpresion" class="caja-frame-impresion" aria-hidden="true">')
+				.attr('src', url + (url.indexOf('?') < 0 ? '?' : '&') + 'imprimir=1').appendTo('body');
+		}
+
 		// ---------------- estado de caja ----------------
 		function cargarEstado() {
 			return get('estado').done(function (r) {
@@ -53,6 +73,9 @@
 					$('#panelCaja').hide();
 					$('#panelApertura').show();
 					$('#infoCaja').text('Sin caja abierta');
+					var sugerido = r.fondo_sugerido;
+					$('#fondoInicial').val(sugerido === null || sugerido === undefined ? 0 : sugerido);
+					$('#ayudaFondo').toggle(sugerido !== null && sugerido !== undefined);
 					$('#fondoInicial').focus();
 					return;
 				}
@@ -62,7 +85,8 @@
 				$('#estCaja').text('N° ' + resumen.id_caja);
 				$('#estApertura').text(resumen.apertura);
 				$('#estFondo').text(fmt(resumen.fondo));
-				$('#estVentas').text(fmt(resumen.ventas) + ' (' + resumen.cantidad_ventas + ')');
+				$('#estVentas').text(fmt(resumen.ventas + resumen.devoluciones) + ' (' + resumen.cantidad_ventas + ')'
+					+ (resumen.cantidad_devoluciones ? ' · devol. ' + fmt(resumen.devoluciones) : ''));
 				if (!catalogo) cargarCatalogo(0);
 			});
 		}
@@ -84,10 +108,16 @@
 				catalogo = r;
 				if (primeraVez) {
 					var $d = $('#cboDocumento').empty();
-					$.each(r.documentos, function (i, d) { $d.append($('<option>').val(d.id_tdocumento).text(d.nombre)); });
-					if (r.config.id_tdocumento_defecto && $.grep(r.documentos, function (d) { return d.id_tdocumento === r.config.id_tdocumento_defecto; }).length) {
-						$d.val(r.config.id_tdocumento_defecto);
-					}
+					// Los electrónicos se habilitan si la empresa emite por Cloud Apps (credenciales y terminal)
+					$.each(r.documentos, function (i, d) {
+						$d.append($('<option>').val(d.id_tdocumento).prop('disabled', !d.habilitado)
+							.text(d.nombre + (d.habilitado ? '' : ' (requiere emisión SII)')));
+					});
+					var disponibles = $.grep(r.documentos, function (d) { return d.habilitado; });
+					var $c = $('#cboComuna').empty().append('<option value="0">— Comuna —</option>');
+					$.each(r.comunas || [], function (i, c) { $c.append($('<option>').val(c.id_comuna).text(c.nombre_comuna)); });
+					var porDefecto = $.grep(disponibles, function (d) { return d.id_tdocumento === r.config.id_tdocumento_defecto; })[0] || disponibles[0];
+					if (porDefecto) $d.val(porDefecto.id_tdocumento);
 					var $l = $('#cboLista').empty();
 					$.each(r.listas_precio, function (i, l) { $l.append($('<option>').val(l.id_lprecio).text(l.nombre_lprecio)); });
 				}
@@ -413,7 +443,8 @@
 					var rut = c.rut ? c.rut + '-' + c.dv : '';
 					$r.append($('<a href="#" class="list-group-item">')
 						.data('cliente', { id_cliente: Number(c.id_cliente), nombre_cliente: c.nombre_cliente, rut: rut })
-						.html('<b>' + esc(c.nombre_cliente) + '</b> <small class="text-muted">' + esc(rut) + (c.giro ? ' · ' + esc(c.giro) : '') + '</small>'));
+						.html('<b>' + esc(c.nombre_cliente) + '</b> <small class="text-muted">' + esc(rut) + (c.giro ? ' · ' + esc(c.giro) : '')
+							+ (c.comuna ? ' · ' + esc(c.comuna) : '') + '</small>'));
 				});
 			});
 		}
@@ -503,7 +534,7 @@
 
 		$('#btnCobrar').on('click', function () {
 			var d = documentoActual();
-			if (!d) { swal('Atención', 'No hay documentos de venta configurados (tdocumento.para_venta)', 'warning'); return; }
+			if (!d || !d.habilitado) { swal('Atención', 'No hay documentos de venta disponibles (tdocumento.para_venta)', 'warning'); return; }
 			if (d.requiere_cliente && !cliente) {
 				swal('Falta el cliente', d.nombre + ' requiere seleccionar un cliente', 'warning');
 				return;
@@ -686,17 +717,30 @@
 				terminar();
 				$('#modalPago').modal('hide');
 				if (r.total !== t.total) toastr.warning('El total se recalculó con los precios vigentes: ' + fmt(r.total));
-				$('#ventaOkDoc').text(r.documento + ' N° ' + r.folio + ' · ' + fmt(r.total) + (r.propina > 0 ? ' + propina ' + fmt(r.propina) : ''));
+				$('#ventaOkTitulo').text('Venta registrada');
+				$('#btnNuevaVenta').text('Nueva venta');
+				mostrarResultadoDte(r.dte);
+				$('#ventaOkDoc').text(r.documento + (r.folio ? ' N° ' + r.folio : '') + ' · ' + fmt(r.total) + (r.propina > 0 ? ' + propina ' + fmt(r.propina) : ''));
 				$('#ventaOkVuelto').text(r.vuelto > 0 ? 'Vuelto: ' + fmt(r.vuelto) : '');
 				$('#ventaOkTicket').attr('href', base + 'ticket/' + r.id_venta + '?imprimir=1');
 				$('#ventaOkPdf').attr('href', base + 'pdf/' + r.id_venta);
 				$('#modalVentaOk').modal('show');
+				if (imprimeTicket()) imprimir(base + 'ticket/' + r.id_venta);
 				limpiarVenta();
 				cargarEstado();
 			}, terminar);
 		});
 
 		$('#modalVentaOk').on('hidden.bs.modal', function () { $('#buscarProducto').focus(); });
+
+		// Emisión electrónica: si Cloud Apps no respondió, la venta queda pendiente y se reenvía desde Ventas
+		function mostrarResultadoDte(dte) {
+			var $a = $('#ventaOkAviso').hide();
+			if (dte && !dte.ok) {
+				$a.html('<i class="fa fa-exclamation-triangle"></i> Pendiente de envío al SII: ' + esc(dte.mensaje)
+					+ '<br><small>Reenvíalo desde la pestaña Ventas.</small>').show();
+			}
+		}
 
 		// ---------------- ventas de la caja ----------------
 		function cargarVentas() {
@@ -707,9 +751,17 @@
 					var acciones = '<a class="btn btn-xs btn-default" target="_blank" href="' + base + 'ticket/' + v.id_venta + '?imprimir=1" title="Ticket"><i class="fa fa-print"></i></a> '
 						+ '<a class="btn btn-xs btn-default" target="_blank" href="' + base + 'pdf/' + v.id_venta + '" title="PDF"><i class="fa fa-file-pdf-o"></i></a> '
 						+ (v.anulada ? '<span class="label label-danger">Anulada</span>'
-							: '<button class="btn btn-xs btn-danger anular" data-id="' + v.id_venta + '" data-folio="' + v.folio + '">Anular</button>');
-					$t.append('<tr class="' + (v.anulada ? 'anulada' : '') + '">'
-						+ '<td>' + esc(v.hora) + '</td><td>' + esc(v.nombre_tdocumento) + (v.cortesia ? ' <span class="label label-warning">Cortesía</span>' : '') + '</td>'
+							: (v.pendiente_dte
+								? '<button class="btn btn-xs btn-info reenviar" data-id="' + v.id_venta + '" title="Reintentar la emisión ante el SII"><i class="fa fa-refresh"></i> Reenviar</button> ' : '')
+							+ (!v.es_nc && !v.cortesia && v.total > 0 && !v.pendiente_dte
+								? '<button class="btn btn-xs btn-warning devolver" data-id="' + v.id_venta + '" title="Devolver productos"><i class="fa fa-undo"></i> Devolver</button> ' : '')
+							// Un documento electrónico ya emitido no se anula: se devuelve con nota de crédito
+							+ (v.electronico && !v.pendiente_dte ? ''
+								: '<button class="btn btn-xs btn-danger anular" data-id="' + v.id_venta + '" data-folio="' + v.folio + '">Anular</button>'));
+					$t.append('<tr class="' + (v.anulada ? 'anulada' : '') + (v.es_nc ? ' nc' : '') + '">'
+						+ '<td>' + esc(v.hora) + '</td><td>' + esc(v.nombre_tdocumento) + (v.cortesia ? ' <span class="label label-warning">Cortesía</span>' : '')
+						+ (v.es_nc && v.referencia ? '<br><small class="text-muted">Ref. ' + esc(v.referencia) + '</small>' : '')
+						+ (v.pendiente_dte ? ' <span class="label label-danger">Pendiente SII</span>' : '') + '</td>'
 						+ '<td>' + esc(v.folio) + '</td><td>' + esc(v.nombre_cliente) + '</td><td>' + esc(v.pagos) + '</td>'
 						+ '<td class="caja-num">' + fmt(v.total) + '</td><td class="acciones" style="white-space:nowrap">' + acciones + '</td></tr>');
 				});
@@ -717,6 +769,14 @@
 		}
 
 		$('#lnkVentas').on('shown.bs.tab', cargarVentas);
+
+		$('#tablaVentas').on('click', '.reenviar', function () {
+			var $b = $(this).prop('disabled', true);
+			post('reenviarDte', { id_venta: $b.data('id') }).done(function (r) {
+				toastr.success('Documento emitido: folio ' + r.folio);
+				cargarVentas();
+			}).always(function () { $b.prop('disabled', false); });
+		});
 
 		$('#tablaVentas').on('click', '.anular', function () {
 			var id = $(this).data('id'), folio = $(this).data('folio');
@@ -769,6 +829,124 @@
 			}).always(function () { $b.prop('disabled', false); });
 		});
 
+		// ---------------- devoluciones (nota de crédito interna) ----------------
+		var devolucion = null;
+
+		function abrirDevolucion(idVenta) {
+			devolucion = null;
+			$('#devContenido').hide();
+			$('#devMotivo').val('');
+			$('#btnConfirmarDevolucion').prop('disabled', true);
+			var $d = $('#devDocumento').empty();
+			$.each(catalogo.documentos, function (i, d) { $d.append($('<option>').val(d.id_tdocumento).text(d.nombre)); });
+			$d.val($('#cboDocumento').val());
+			$('#devFolio').val('');
+			$('#devBusqueda').toggle(!idVenta);
+			$('#modalDevolucion').modal('show');
+			if (idVenta) cargarDevolucion({ id_venta: idVenta });
+		}
+
+		function cargarDevolucion(params) {
+			get('devolucionVenta', params).done(function (r) {
+				devolucion = r;
+				$('#devInfo').html('<b>' + esc(r.documento) + ' N° ' + esc(r.folio) + '</b> · ' + esc(r.fecha)
+					+ (r.cliente ? ' · ' + esc(r.cliente) : '')
+					+ '<br>Pagado ' + fmt(r.total) + ' en ' + esc($.map(r.pagos, function (p) { return p.nombre_fpago; }).join(', ') || '—')
+					+ (r.monto_devuelto ? ' · <span class="text-danger">Ya devuelto ' + fmt(r.monto_devuelto) + '</span>' : '')
+					+ '<br><small>Se emitirá: <b>' + (r.nc_electronica ? 'Nota de crédito electrónica (SII)' : 'Nota de crédito interna') + '</b></small>');
+				var $t = $('#devLineas tbody').empty();
+				$.each(r.lineas, function (i, l) {
+					var entero = Math.round(l.cantidad) === l.cantidad;
+					$t.append('<tr class="' + (l.disponible > 0 ? '' : 'agotada') + '"><td>' + esc(l.nombre) + '<br><small class="text-muted">' + fmt(l.bruto_un) + ' c/u'
+						+ '<span class="visible-xs-inline"> · vendido ' + l.cantidad + (l.devuelto ? ' · devuelto ' + l.devuelto : '') + '</span></small></td>'
+						+ '<td class="text-center hidden-xs">' + l.cantidad + '</td><td class="text-center hidden-xs">' + (l.devuelto || '—') + '</td>'
+						+ '<td><input type="number" class="form-control input-sm dev-cant" data-i="' + i + '" min="0" max="' + l.disponible + '" step="' + (entero ? 1 : 0.001) + '" value="0"'
+						+ (l.disponible > 0 ? '' : ' disabled') + '></td>'
+						+ '<td class="caja-num dev-monto">$0</td></tr>');
+				});
+				// Por defecto se devuelve en la misma forma de pago, si fue una sola
+				var $f = $('#devFpago').empty();
+				$.each(catalogo.formas_pago, function (i, f) { if (!f.cortesia) $f.append($('<option>').val(f.id_fpago).text(f.nombre)); });
+				var efectivo = $.grep(catalogo.formas_pago, function (f) { return f.efectivo; })[0];
+				$f.val(r.pagos.length === 1 && $f.find('option[value="' + r.pagos[0].id_fpago + '"]').length ? r.pagos[0].id_fpago : (efectivo ? efectivo.id_fpago : $f.val()));
+				$('#devContenido').show();
+				if (r.disponible <= 0) toastr.info('Esta venta ya fue devuelta por completo');
+				calcularDevolucion();
+			});
+		}
+
+		// Misma regla del servidor: precio con el descuento de la venta; si se devuelve todo lo que queda, lo pagado exacto
+		function calcularDevolucion() {
+			if (!devolucion) return;
+			var subtotal = 0, completa = true, hay = false;
+			$('#devLineas .dev-cant').each(function () {
+				var l = devolucion.lineas[$(this).data('i')];
+				var cant = Math.min(Math.max(Number($(this).val()) || 0, 0), l.disponible);
+				if (cant + 0.0001 < l.disponible) completa = false;
+				if (cant > 0) hay = true;
+				var bruto = Math.round(l.bruto_un * cant);
+				subtotal += bruto;
+				$(this).closest('tr').find('.dev-monto').text(fmt(Math.round(bruto * devolucion.factor)));
+			});
+			var total = !hay ? 0 : (completa ? devolucion.disponible : Math.min(devolucion.disponible, Math.round(subtotal * devolucion.factor)));
+			$('#devTotal').text(fmt(total));
+			$('#btnConfirmarDevolucion').prop('disabled', total <= 0);
+		}
+
+		$('#btnDevolucionBuscar').on('click', function () { abrirDevolucion(0); });
+		$('#tablaVentas').on('click', '.devolver', function () { abrirDevolucion($(this).data('id')); });
+		$('#modalDevolucion').on('shown.bs.modal', function () {
+			if ($('#devBusqueda').is(':visible')) $('#devFolio').focus();
+		});
+		$('#devBusqueda').on('submit', function (e) {
+			e.preventDefault();
+			var folio = Number($('#devFolio').val());
+			if (!(folio > 0)) { toastr.warning('Ingresa el folio'); return; }
+			$('#devContenido').hide();
+			cargarDevolucion({ id_tdocumento: $('#devDocumento').val(), folio: folio });
+		});
+		$('#devLineas').on('input', '.dev-cant', calcularDevolucion);
+		$('#btnDevTodo').on('click', function () {
+			$('#devLineas .dev-cant:enabled').each(function () { $(this).val(devolucion.lineas[$(this).data('i')].disponible); });
+			calcularDevolucion();
+		});
+
+		$('#btnConfirmarDevolucion').on('click', function () {
+			if (!devolucion) return;
+			var motivo = $.trim($('#devMotivo').val());
+			if (!motivo) { toastr.warning('Indica el motivo de la devolución'); $('#devMotivo').focus(); return; }
+			var datos = {
+				id_venta: devolucion.id_venta,
+				id_fpago: Number($('#devFpago').val()),
+				motivo: motivo,
+				lineas: []
+			};
+			$('#devLineas .dev-cant').each(function () {
+				var cant = Number($(this).val()) || 0;
+				if (cant > 0) datos.lineas.push({ id_detalle_venta: devolucion.lineas[$(this).data('i')].id_detalle_venta, cantidad: cant });
+			});
+			var $b = $(this).prop('disabled', true);
+			enviarConAutorizacion(function (aut) {
+				datos.autorizacion = aut;
+				return $.ajax({ url: base + 'devolver', type: 'POST', contentType: 'application/json', data: JSON.stringify(datos), dataType: 'json' });
+			}, function (r) {
+				$b.prop('disabled', false);
+				$('#modalDevolucion').modal('hide');
+				$('#ventaOkTitulo').text('Devolución registrada');
+				$('#btnNuevaVenta').text('Listo');
+				mostrarResultadoDte(r.dte);
+				$('#ventaOkDoc').text(r.documento + (r.folio ? ' N° ' + r.folio : '') + ' · ' + fmt(r.total) + ' en ' + r.forma_pago);
+				var efectivo = $.grep(catalogo.formas_pago, function (f) { return f.efectivo && f.nombre === r.forma_pago; }).length;
+				$('#ventaOkVuelto').text(efectivo ? 'Entregar al cliente: ' + fmt(r.total) : '');
+				$('#ventaOkTicket').attr('href', base + 'ticket/' + r.id_venta + '?imprimir=1');
+				$('#ventaOkPdf').attr('href', base + 'pdf/' + r.id_venta);
+				$('#modalVentaOk').modal('show');
+				if (imprimeTicket()) imprimir(base + 'ticket/' + r.id_venta);
+				if ($('#tabVentas').hasClass('active')) cargarVentas();
+				cargarEstado();
+			}, function () { $b.prop('disabled', false); });
+		});
+
 		// ---------------- cierre ----------------
 		function cargarCierre() {
 			cargarEstado().done(function () {
@@ -776,10 +954,11 @@
 				var r = resumen;
 				var filas = [
 					['Fondo inicial', r.fondo],
-					['Ventas (' + r.cantidad_ventas + ')', r.ventas],
+					['Ventas (' + r.cantidad_ventas + ')', r.ventas + r.devoluciones],
+					['Devoluciones (' + r.cantidad_devoluciones + ')', -r.devoluciones],
 					['Descuentos otorgados', r.descuentos],
 					['Cortesías', r.cortesias],
-					['Propinas', r.propinas],
+					['Propinas (se pagan a los garzones desde la caja)', r.propinas],
 					['Ventas anuladas', r.anuladas, true],
 					['Ingresos de caja', r.ingresos],
 					['Retiros de caja', -r.egresos]
@@ -793,7 +972,7 @@
 					html += '<tr><td>' + esc(f.nombre) + (f.cortesia ? ' (no se rinde)' : '') + '</td><td class="caja-num">' + fmt(f.monto)
 						+ (f.propina ? ' <small class="text-muted">+ ' + fmt(f.propina) + ' propina</small>' : '') + '</td></tr>';
 				});
-				html += '<tr class="info"><td><b>Efectivo esperado en caja</b>' + (r.propinas ? ' <small>(incluye propinas en efectivo)</small>' : '') + '</td><td class="caja-num"><b>' + fmt(r.efectivo_esperado) + '</b></td></tr>';
+				html += '<tr class="info"><td><b>Efectivo esperado en caja</b>' + (r.propinas ? ' <small>(ya pagadas las propinas)</small>' : '') + '</td><td class="caja-num"><b>' + fmt(r.efectivo_esperado) + '</b></td></tr>';
 				$('#resumenCierre').html(html);
 
 				var $d = $('#declaradoOtros').empty();
@@ -803,6 +982,7 @@
 						+ '<input type="number" min="0" step="1" class="form-control declarado" data-id="' + f.id_fpago + '" value="' + (f.monto + f.propina) + '"></div>');
 				});
 				$('#efectivoContado').val(r.efectivo_esperado);
+				$('#fondoSiguiente').val(Math.min(r.fondo, Math.max(0, r.efectivo_esperado)));
 				calcularDiferencia();
 			});
 		}
@@ -816,15 +996,23 @@
 			$('#lblEsperado').text(fmt(esperado));
 			$('#lblDeclarado').text(fmt(declarado));
 			$('#lblDiferencia').text(fmt(dif)).css('color', dif === 0 ? '#37a000' : (dif < 0 ? '#d9534f' : '#f0ad4e'));
+			var entregar = (Number($('#efectivoContado').val()) || 0) - (Number($('#fondoSiguiente').val()) || 0);
+			$('#lblEntregar').text(fmt(entregar)).css('color', entregar < 0 ? '#d9534f' : '');
 		}
 
 		$('#lnkCierre').on('shown.bs.tab', cargarCierre);
+		$('#btnInformeX').on('click', function () {
+			if (resumen) imprimir(base + 'cierreTicket/' + resumen.id_caja);
+		});
 		$('#tabCierre').on('input', 'input', calcularDiferencia);
 
 		$('#btnCerrarCaja').on('click', function () {
 			var efectivo = $('#efectivoContado').val();
 			if (efectivo === '' || Number(efectivo) < 0) { swal('Atención', 'Ingresa el efectivo contado', 'warning'); return; }
-			var datos = { efectivo_contado: Math.round(Number(efectivo)) };
+			var fondoSig = $('#fondoSiguiente').val();
+			if (fondoSig === '' || Number(fondoSig) < 0) { swal('Atención', 'Ingresa el fondo que queda para el próximo turno', 'warning'); return; }
+			if (Number(fondoSig) > Number(efectivo)) { swal('Atención', 'El fondo para el próximo turno no puede superar el efectivo contado', 'warning'); return; }
+			var datos = { efectivo_contado: Math.round(Number(efectivo)), fondo_siguiente: Math.round(Number(fondoSig)) };
 			$('.declarado').each(function () { datos['declarado[' + $(this).data('id') + ']'] = Math.round(Number($(this).val()) || 0); });
 			swal({
 				title: '¿Cerrar la caja?',
@@ -837,8 +1025,12 @@
 			}, function (ok) {
 				if (!ok) return;
 				var idCaja = resumen.id_caja;
+				var cierreTermica = catalogo && catalogo.config.imprimir_cierre_termica;
 				post('cerrar', datos).done(function (r) {
-					swal({ title: 'Caja cerrada', text: 'Diferencia: ' + fmt(r.diferencia), type: 'success' }, function () {
+					// Como el POS: si Configuraciones lo indica, el cierre sale también en la térmica
+					if (cierreTermica) imprimir(base + 'cierreTicket/' + idCaja);
+					swal({ title: 'Caja cerrada', text: 'Entregar ' + fmt(r.entregado) + ' en efectivo. Quedan ' + fmt(r.fondo_siguiente)
+						+ ' de fondo para el próximo turno. Diferencia: ' + fmt(r.diferencia), type: 'success' }, function () {
 						// Informe de cierre con el reporte existente
 						$.redirect("<?php echo base_url(); ?>index.php/CierresDeCaja/cierreCajaPDF", { id_caja: idCaja }, 'POST', '_blank');
 						limpiarVenta();

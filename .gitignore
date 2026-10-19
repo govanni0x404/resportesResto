@@ -31,3 +31,6 @@ user_guide_src/cilexer/pycilexer.egg-info/*
 /tests/tests/
 /tests/results/
 application/config/api_movil.php
+
+# Caja web: configuración local (modo pruebas DTE)
+application/config/caja_local.php

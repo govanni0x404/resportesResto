@@ -35,7 +35,8 @@ class Caja extends CI_Controller
 	{
 		$this->ejecutar(function () {
 			$caja = $this->Mcaja->cajaAbierta($this->idUsuario());
-			return array('caja' => $caja ? $this->Mcaja->resumenCaja($caja) : null);
+			if ($caja) return array('caja' => $this->Mcaja->resumenCaja($caja));
+			return array('caja' => null, 'fondo_sugerido' => $this->Mcaja->fondoSugerido($this->idUsuario()));
 		});
 	}
 
@@ -95,6 +96,34 @@ class Caja extends CI_Controller
 		}, true);
 	}
 
+	/** Reintenta emitir ante el SII un documento electrónico pendiente. */
+	public function reenviarDte()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			return $this->Mcaja->reenviarDte((int)$this->input->post('id_venta'));
+		}, true);
+	}
+
+	/** Venta a devolver: por id_venta o por documento + folio (de cualquier caja). */
+	public function devolucionVenta()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			return $this->Mcaja->ventaParaDevolucion((int)$this->input->get('id_venta'),
+				(int)$this->input->get('id_tdocumento'), (int)$this->input->get('folio'));
+		});
+	}
+
+	public function devolver()
+	{
+		$this->ejecutar(function () {
+			$body = json_decode($this->input->raw_input_stream, true);
+			if (!is_array($body)) throw new Exception('Datos de devolución inválidos', 400);
+			return $this->Mcaja->registrarDevolucion($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $body);
+		}, true);
+	}
+
 	public function movimientos()
 	{
 		$this->ejecutar(function () {
@@ -118,8 +147,10 @@ class Caja extends CI_Controller
 			foreach ((array)$this->input->post('declarado') as $idFpago => $monto) {
 				$declarado[(int)$idFpago] = (int)$monto;
 			}
+			$fondoSiguiente = $this->input->post('fondo_siguiente');
 			return $this->Mcaja->cerrarCaja($this->cajaRequerida(), $this->idUsuario(),
-				(int)$this->input->post('efectivo_contado'), $declarado);
+				(int)$this->input->post('efectivo_contado'),
+				$fondoSiguiente === null || $fondoSiguiente === '' ? null : (int)$fondoSiguiente, $declarado);
 		}, true);
 	}
 
@@ -131,7 +162,20 @@ class Caja extends CI_Controller
 		}
 		$doc = $this->Mcaja->documento((int)$idVenta);
 		if (!$doc) show_404();
+		$this->load->model('Mdte');
+		$doc['timbre'] = $doc['emitido'] ? $this->Mdte->timbre($doc['ted']) : null;
 		$this->load->view('caja/ticket.php', $doc);
+	}
+
+	/** Cierre (caja cerrada) o informe X (caja abierta) en ticket 80mm. */
+	public function cierreTicket($idCaja = 0)
+	{
+		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+			redirect(base_url());
+		}
+		$datos = $this->Mcaja->datosCierre((int)$idCaja);
+		if (!$datos) show_404();
+		$this->load->view('caja/cierre_ticket.php', $datos);
 	}
 
 	/** Documento tamaño carta en PDF. */
@@ -191,6 +235,7 @@ class Caja extends CI_Controller
 			array('Cliente', $v->nombre_cliente, 'RUT', $rut),
 			array('Giro', $v->giro, 'Dirección', $v->direccion),
 		);
+		if ($doc['nc']) $filas[] = array('Ref.', $doc['referencia'], '', '');
 		foreach ($filas as $f) {
 			$pdf->SetFont('Arial', 'B', 9);
 			$pdf->Cell(20, 6, $t($f[0]), 'LTB');
@@ -243,7 +288,7 @@ class Caja extends CI_Controller
 		if ($doc['pagos']) {
 			$pdf->Ln(2);
 			$pdf->SetFont('Arial', 'B', 9);
-			$pdf->Cell(186, 5, 'Forma de pago', 0, 1);
+			$pdf->Cell(186, 5, $t($doc['nc'] ? 'Devuelto en' : 'Forma de pago'), 0, 1);
 			$pdf->SetFont('Arial', '', 9);
 			foreach ($doc['pagos'] as $p) {
 				$linea = $p->nombre_fpago . ': ' . $m($p->paga_con) . ((int)$p->vuelto > 0 ? '  (vuelto ' . $m($p->vuelto) . ')' : '');
@@ -260,8 +305,25 @@ class Caja extends CI_Controller
 		} elseif ($v->mensaje_pedido) {
 			$pdf->MultiCell(186, 5, $t('Observación: ' . $v->mensaje_pedido));
 		}
-		if ($doc['electronico']) {
-			$pdf->MultiCell(186, 5, $t('Documento interno. Pendiente de emisión electrónica ante el SII.'), 0, 'C');
+		if ($doc['electronico'] && !$doc['emitido']) {
+			$pdf->MultiCell(186, 5, $t('Documento pendiente de envío al SII.'), 0, 'C');
+		} elseif ($doc['emitido']) {
+			// Timbre electrónico (PDF417 del TED), abajo a la izquierda como en los DTE impresos
+			$this->load->model('Mdte');
+			$png = $this->Mdte->timbre($doc['ted'], 'png');
+			if ($png) {
+				$tmp = tempnam(sys_get_temp_dir(), 'ted') . '.png';
+				file_put_contents($tmp, $png);
+				$pdf->Ln(4);
+				$y = $pdf->GetY();
+				$pdf->Image($tmp, 15, $y, 70);
+				@unlink($tmp);
+				$pdf->SetXY(15, $y + 37);
+				$pdf->SetFont('Arial', 'B', 8);
+				$pdf->Cell(70, 4, $t('Timbre Electrónico SII'), 0, 2, 'C');
+				$pdf->SetFont('Arial', '', 7);
+				$pdf->Cell(70, 4, $t('Verifique documento: www.sii.cl'), 0, 2, 'C');
+			}
 		}
 
 		$pdf->Output('I', $t($v->nombre_tdocumento . '_' . $v->folio . '.pdf'));
