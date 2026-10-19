@@ -500,10 +500,11 @@ class Mcaja extends CI_Model
 		$db = $this->conexion();
 		$v = $this->q($db, "SELECT v.*, to_char(v.fecha_transaccion, 'DD/MM/YYYY HH24:MI') AS fecha_texto,
 				td.nombre_tdocumento, COALESCE(td.cod_sii, 0) AS cod_sii,
-				c.nombre_cliente, c.rut, c.dv, c.giro, c.direccion, u.nombre_usuario
+				c.nombre_cliente, c.rut, c.dv, c.giro, c.direccion, cc.nombre_comuna AS comuna, u.nombre_usuario
 			FROM venta v
 			LEFT JOIN tdocumento td ON td.id_tdocumento = v.id_tdocumento
 			LEFT JOIN cliente c ON c.id_cliente = v.id_cliente
+			LEFT JOIN comuna cc ON cc.id_comuna = c.id_comuna
 			LEFT JOIN usuario u ON u.id_usuario = v.id_usuario
 			WHERE v.id_venta = ?", array((int)$idVenta))->row();
 		if (!$v) return null;
@@ -519,6 +520,16 @@ class Mcaja extends CI_Model
 			FROM pago_venta pv JOIN fpago f ON f.id_fpago = pv.id_fpago
 			WHERE pv.id_venta = ? ORDER BY pv.id_pventa", array((int)$idVenta))->result();
 		$empresa = $this->q($db, "SELECT * FROM empresa ORDER BY id_empresa LIMIT 1")->row();
+
+		// Venta sin cliente elegido (cliente público / 66.666.666-6): no se imprimen sus datos
+		$config = $this->configuracion($db);
+		if ((int)$v->id_cliente === (int)$config['id_cliente_publico'] || (int)$v->rut === 66666666) {
+			$v->nombre_cliente = $v->rut = $v->dv = $v->giro = $v->direccion = $v->comuna = '';
+		}
+		if ($empresa) {
+			$r = $this->q($db, 'SELECT nombre_comuna FROM comuna WHERE id_comuna = ?', array((int)$empresa->id_comuna))->row();
+			$empresa->comuna = $r ? $r->nombre_comuna : '';
+		}
 
 		// La NC se guarda en negativo; impresa se muestra en positivo con su documento de referencia
 		$esNc = in_array((int)$v->id_tdocumento, $this->idsNotaCredito($db), true);
@@ -549,6 +560,27 @@ class Mcaja extends CI_Model
 			// Emitido ante el SII (folio de Cloud Apps); si no, el documento está pendiente de envío
 			'emitido' => (int)$v->folio_dte > 0,
 			'ted' => isset($v->ted_dte) ? (string)$v->ted_dte : '',
+			'sii' => in_array((int)$v->cod_sii, self::COD_SII_ELECTRONICOS) ? $this->leyendaSii($db, (int)$v->cod_sii) : null,
+		);
+	}
+
+	/**
+	 * Datos que el SII exige en la representación impresa de un DTE: oficina del SII bajo el
+	 * recuadro, resolución de autorización bajo el timbre y dónde verificar el documento
+	 * (las boletas se verifican en el sitio del emisor; facturas y notas en www.sii.cl).
+	 */
+	private function leyendaSii($db, $codSii)
+	{
+		$c = $this->q($db, 'SELECT c.resolucion_sii, c.anio_resolucion_sii, co.nombre_comuna
+			FROM configuracion c LEFT JOIN comuna co ON co.id_comuna = c.id_comuna_sii LIMIT 1')->row();
+		$this->config->load('caja', true);
+		$esBoleta = in_array($codSii, array(39, 41), true);
+		return array(
+			'oficina' => $c && $c->nombre_comuna ? 'S.I.I. - ' . mb_strtoupper($c->nombre_comuna) : '',
+			'resolucion' => $c && (int)$c->resolucion_sii > 0
+				? 'Resolución ' . (int)$c->resolucion_sii . ' de ' . (int)$c->anio_resolucion_sii : '',
+			'verificacion' => $esBoleta ? (string)$this->config->item('caja_url_verificacion_boleta', 'caja') : 'www.sii.cl',
+			'publicidad' => (array)$this->config->item('caja_ticket_publicidad', 'caja'),
 		);
 	}
 

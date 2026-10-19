@@ -107,6 +107,7 @@
 	@media (max-width: 767px) { #devLineas .dev-col-cant { width: 80px; } }
 	#devLineas tr.agotada td { color: #aab2c0; }
 	.caja-chk-imprimir { float: left; margin: 8px 0 0; }
+	.caja-chk-imprimir .cbo-papel { margin-left: 8px; height: 24px; padding: 0 4px; }
 	.caja-frame-impresion { position: absolute; left: -10000px; top: 0; width: 400px; height: 600px; border: 0; }
 	.caja-apertura { max-width: 460px; margin: 30px auto; }
 	.caja-apertura .icono { font-size: 54px; color: #558B2F; text-align: center; display: block; }
@@ -429,6 +430,7 @@
 			<div class="modal-footer">
 				<div class="checkbox checkbox-success caja-chk-imprimir">
 					<input type="checkbox" id="chkImprimirVenta" class="chk-imprimir"><label for="chkImprimirVenta"><i class="fa fa-print"></i> Imprimir ticket</label>
+					<select class="cbo-papel" title="Ancho del papel de la impresora"><option value="80">80 mm</option><option value="58">58 mm</option></select>
 				</div>
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
 				<button type="button" class="btn btn-success btn-lg" id="btnConfirmarPago" disabled>Confirmar venta</button>
@@ -571,6 +573,7 @@
 			<div class="modal-footer">
 				<div class="checkbox checkbox-success caja-chk-imprimir">
 					<input type="checkbox" id="chkImprimirDev" class="chk-imprimir"><label for="chkImprimirDev"><i class="fa fa-print"></i> Imprimir ticket</label>
+					<select class="cbo-papel" title="Ancho del papel de la impresora"><option value="80">80 mm</option><option value="58">58 mm</option></select>
 				</div>
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
 				<button type="button" class="btn btn-danger" id="btnConfirmarDevolucion" disabled><i class="fa fa-undo"></i> Registrar devolución</button>

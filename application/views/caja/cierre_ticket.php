@@ -9,6 +9,7 @@ $m = function ($n) {
 	return ($n < 0 ? '-' : '') . '$' . number_format(abs((float)$n), 0, ',', '.');
 };
 $titulo = $cerrada ? 'CIERRE DE CAJA' : 'INFORME X';
+$papel = isset($papel) ? (int)$papel : 80;
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -18,7 +19,7 @@ $titulo = $cerrada ? 'CIERRE DE CAJA' : 'INFORME X';
 	<title><?php echo $h($titulo . ' ' . $c->id_caja); ?></title>
 	<style>
 		@page { size: 80mm auto; margin: 0; }
-		body { margin: 0; background: #eee; font-family: 'Courier New', monospace; color: #000; }
+		body { margin: 0; background: #eee; font-family: Arial, Helvetica, sans-serif; color: #000; }
 		.ticket { width: 72mm; margin: 10px auto; padding: 4mm; background: #fff; font-size: 12px; line-height: 1.35; }
 		.c { text-align: center; }
 		.r { text-align: right; }
@@ -30,16 +31,25 @@ $titulo = $cerrada ? 'CIERRE DE CAJA' : 'INFORME X';
 		th { text-align: right; font-weight: bold; }
 		th:first-child { text-align: left; }
 		.total td { font-size: 14px; font-weight: bold; }
-		.nota { font-size: 10px; margin-top: 6px; }
+		.nota { font-size: 11px; margin-top: 6px; }
 		.firma { margin-top: 28px; border-top: 1px solid #000; padding-top: 2px; text-align: center; font-size: 11px; }
 		.acciones { text-align: center; margin: 10px; }
 		.acciones button { font-size: 14px; padding: 6px 14px; margin: 0 4px; cursor: pointer; }
 		@media print {
 			body { background: #fff; }
-			.ticket { margin: 0; width: 72mm; }
+			/* Térmica (203 dpi): trazos gruesos y negro puro; los finos se pierden al rasterizar */
+			.ticket { margin: 0; width: 72mm; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 			.acciones { display: none; }
 		}
 	</style>
+	<?php if ($papel == 58) : ?>
+	<style>
+		/* POS58: área imprimible de ~48mm */
+		@page { size: 58mm auto; margin: 0; }
+		.ticket { width: 48mm; padding: 3mm 5mm; font-size: 11px; }
+		.total td { font-size: 12px; }
+	</style>
+	<?php endif; ?>
 </head>
 <body>
 	<div class="acciones">

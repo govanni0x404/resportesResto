@@ -10,6 +10,8 @@ $m = function ($n) {
 $cant = function ($n) {
 	return rtrim(rtrim(number_format((float)$n, 3, ',', ''), '0'), ',');
 };
+$papel = isset($papel) ? (int)$papel : 80;
+$sii = isset($sii) ? $sii : null;
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -19,7 +21,7 @@ $cant = function ($n) {
 	<title><?php echo $h($v->nombre_tdocumento . ' ' . $v->folio); ?></title>
 	<style>
 		@page { size: 80mm auto; margin: 0; }
-		body { margin: 0; background: #eee; font-family: 'Courier New', monospace; color: #000; }
+		body { margin: 0; background: #eee; font-family: Arial, Helvetica, sans-serif; color: #000; }
 		.ticket { width: 72mm; margin: 10px auto; padding: 4mm; background: #fff; font-size: 12px; line-height: 1.35; }
 		.c { text-align: center; }
 		.r { text-align: right; }
@@ -29,7 +31,7 @@ $cant = function ($n) {
 		table { width: 100%; border-collapse: collapse; }
 		td { vertical-align: top; padding: 1px 0; }
 		.total td { font-size: 15px; font-weight: bold; }
-		.nota { font-size: 10px; margin-top: 6px; }
+		.nota { font-size: 11px; margin-top: 6px; }
 		.anulada { color: #c00; font-weight: bold; font-size: 14px; }
 		.timbre { margin: 8px 0 2px; }
 		.timbre img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
@@ -37,10 +39,20 @@ $cant = function ($n) {
 		.acciones button { font-size: 14px; padding: 6px 14px; margin: 0 4px; cursor: pointer; }
 		@media print {
 			body { background: #fff; }
-			.ticket { margin: 0; width: 72mm; }
+			/* Térmica (203 dpi): trazos gruesos y negro puro; los finos se pierden al rasterizar */
+			.ticket { margin: 0; width: 72mm; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+			.anulada { color: #000; }
 			.acciones { display: none; }
 		}
 	</style>
+	<?php if ($papel == 58) : ?>
+	<style>
+		/* POS58: área imprimible de ~48mm */
+		@page { size: 58mm auto; margin: 0; }
+		.ticket { width: 48mm; padding: 3mm 5mm; font-size: 11px; }
+		.total td { font-size: 13px; }
+	</style>
+	<?php endif; ?>
 </head>
 <body>
 	<div class="acciones">
@@ -53,14 +65,16 @@ $cant = function ($n) {
 			<?php if ($e->nombre_fantasia && $e->razon_social) : ?><div class="c"><?php echo $h($e->razon_social); ?></div><?php endif; ?>
 			<div class="c">RUT <?php echo $h(number_format((float)$e->rut_empresa, 0, ',', '.') . '-' . $e->dv_empresa); ?></div>
 			<?php if ($e->giro) : ?><div class="c"><?php echo $h($e->giro); ?></div><?php endif; ?>
-			<div class="c"><?php echo $h($e->direccion_empresa); ?></div>
+			<div class="c"><?php echo $h(trim($e->direccion_empresa . (!empty($e->comuna) ? ', ' . $e->comuna : ''))); ?></div>
 			<?php if ($e->telefono) : ?><div class="c">Fono <?php echo $h($e->telefono); ?></div><?php endif; ?>
 		<?php endif; ?>
 
 		<div class="doc c b">
+			<?php if ($sii && $e) : ?>R.U.T.: <?php echo $h(number_format((float)$e->rut_empresa, 0, ',', '.') . '-' . $e->dv_empresa); ?><br><?php endif; ?>
 			<?php echo $h(mb_strtoupper($v->nombre_tdocumento)); ?><br>
 			N° <?php echo (int)$v->folio; ?>
 		</div>
+		<?php if ($sii && $sii['oficina']) : ?><div class="c b"><?php echo $h($sii['oficina']); ?></div><?php endif; ?>
 		<?php if ($anulada) : ?><div class="c anulada">*** ANULADA ***</div><?php endif; ?>
 		<?php if ($nc) : ?><div class="c b">Devolución de <?php echo $h($referencia); ?></div><?php endif; ?>
 
@@ -71,6 +85,7 @@ $cant = function ($n) {
 			<?php if ($v->rut) : ?><div>RUT: <?php echo $h(number_format((float)$v->rut, 0, ',', '.') . '-' . $v->dv); ?></div><?php endif; ?>
 			<?php if ($v->giro) : ?><div>Giro: <?php echo $h($v->giro); ?></div><?php endif; ?>
 			<?php if ($v->direccion) : ?><div>Dir: <?php echo $h($v->direccion); ?></div><?php endif; ?>
+			<?php if ($v->comuna) : ?><div>Comuna: <?php echo $h($v->comuna); ?></div><?php endif; ?>
 		<?php endif; ?>
 		<hr>
 		<table>
@@ -117,10 +132,14 @@ $cant = function ($n) {
 		<?php elseif (!empty($timbre)) : ?>
 			<div class="timbre"><img src="<?php echo $timbre; ?>" alt="Timbre electrónico"></div>
 			<div class="c b" style="font-size:11px">Timbre Electrónico SII</div>
-			<div class="c" style="font-size:10px">Verifique documento: www.sii.cl</div>
+			<?php if ($sii['resolucion']) : ?><div class="c" style="font-size:11px"><?php echo $h($sii['resolucion']); ?></div><?php endif; ?>
+			<div class="c" style="font-size:11px">Verifique documento: <?php echo $h($sii['verificacion']); ?></div>
 		<?php endif; ?>
 		<hr>
 		<div class="c"><?php echo $nc ? 'Firma cliente: ____________________' : '¡Gracias por su compra!'; ?></div>
+		<?php if ($sii && $sii['publicidad']) : ?>
+			<div class="c nota"><?php echo implode('<br>', array_map($h, $sii['publicidad'])); ?></div>
+		<?php endif; ?>
 	</div>
 	<script>
 		if (/[?&]imprimir=1/.test(location.search)) {

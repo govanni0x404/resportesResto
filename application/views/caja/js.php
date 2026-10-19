@@ -57,6 +57,17 @@
 			try { localStorage.setItem(CLAVE_IMPRIMIR, on ? '1' : '0'); } catch (e) {}
 		});
 
+		// Ancho del papel (POS80 / POS58), también por computador. Va en cookie para que el
+		// servidor arme el ticket a ese ancho, incluso al abrirlo desde un enlace.
+		function papelTicket() {
+			return /(?:^|;\s*)caja_papel=58(?:;|$)/.test(document.cookie) ? '58' : '80';
+		}
+		$('.cbo-papel').val(papelTicket()).on('change', function () {
+			var papel = $(this).val();
+			$('.cbo-papel').val(papel);
+			document.cookie = 'caja_papel=' + papel + '; path=/; max-age=315360000; SameSite=Lax';
+		});
+
 		// La página del ticket se imprime sola al cargar (?imprimir=1). En un iframe oculto no hay
 		// ventana emergente que bloquear, y con Chrome --kiosk-printing sale directo a la impresora.
 		function imprimir(url) {

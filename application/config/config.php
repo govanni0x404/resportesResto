@@ -27,7 +27,12 @@ defined('BASEPATH') or exit('No direct script access allowed');
 $root  = "https://".$_SERVER['HTTP_HOST'];
 $root .= str_replace(basename($_SERVER['SCRIPT_NAME']),"",$_SERVER['SCRIPT_NAME']);
 /*$config['base_url']    = $root;*/
-$config['base_url']    = 'http://localhost:8001/';
+// Toma el host de la petición (localhost o la IP de la red local) para probar desde otros equipos
+$esHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+	|| (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+$config['base_url'] = isset($_SERVER['HTTP_HOST'])
+	? ($esHttps ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . str_replace(basename($_SERVER['SCRIPT_NAME']), '', $_SERVER['SCRIPT_NAME'])
+	: 'http://localhost:8001/';
 
 /*
 |--------------------------------------------------------------------------

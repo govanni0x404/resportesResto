@@ -154,7 +154,14 @@ class Caja extends CI_Controller
 		}, true);
 	}
 
-	/** Ticket 80mm listo para imprimir. */
+	/** Ancho del papel de la impresora de esta caja (POS80 / POS58); lo elige cada computador. */
+	private function papelTicket()
+	{
+		$papel = $this->input->get('papel') ?: $this->input->cookie('caja_papel');
+		return (int)$papel === 58 ? 58 : 80;
+	}
+
+	/** Ticket 80mm o 58mm listo para imprimir. */
 	public function ticket($idVenta = 0)
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
@@ -164,10 +171,11 @@ class Caja extends CI_Controller
 		if (!$doc) show_404();
 		$this->load->model('Mdte');
 		$doc['timbre'] = $doc['emitido'] ? $this->Mdte->timbre($doc['ted']) : null;
+		$doc['papel'] = $this->papelTicket();
 		$this->load->view('caja/ticket.php', $doc);
 	}
 
-	/** Cierre (caja cerrada) o informe X (caja abierta) en ticket 80mm. */
+	/** Cierre (caja cerrada) o informe X (caja abierta) en ticket 80mm o 58mm. */
 	public function cierreTicket($idCaja = 0)
 	{
 		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
@@ -175,6 +183,7 @@ class Caja extends CI_Controller
 		}
 		$datos = $this->Mcaja->datosCierre((int)$idCaja);
 		if (!$datos) show_404();
+		$datos['papel'] = $this->papelTicket();
 		$this->load->view('caja/cierre_ticket.php', $datos);
 	}
 
@@ -202,14 +211,19 @@ class Caja extends CI_Controller
 		$pdf->SetMargins(15, 15, 15);
 
 		// Empresa (izquierda) y recuadro del documento (derecha)
-		$pdf->SetFont('Arial', 'B', 13);
+		$razon = $t($e ? ($e->razon_social ?: $e->nombre_fantasia) : '');
+		// Nombres largos: letra más chica para no chocar con el recuadro del documento
+		$tam = 13;
+		do {
+			$pdf->SetFont('Arial', 'B', $tam);
+		} while ($pdf->GetStringWidth($razon) > 115 && --$tam > 8);
 		$pdf->SetXY(15, 15);
-		$pdf->Cell(110, 7, $t($e ? ($e->razon_social ?: $e->nombre_fantasia) : ''), 0, 2);
+		$pdf->Cell(110, 7, $razon, 0, 2);
 		$pdf->SetFont('Arial', '', 9);
 		if ($e) {
 			if ($e->giro) $pdf->MultiCell(110, 4.5, $t('Giro: ' . $e->giro));
 			$pdf->SetX(15);
-			$pdf->Cell(110, 4.5, $t($e->direccion_empresa), 0, 2);
+			$pdf->Cell(110, 4.5, $t(trim($e->direccion_empresa . (!empty($e->comuna) ? ', ' . $e->comuna : ''))), 0, 2);
 			if ($e->telefono) $pdf->Cell(110, 4.5, $t('Fono: ' . $e->telefono), 0, 2);
 		}
 		$pdf->SetDrawColor(200, 0, 0);
@@ -222,6 +236,12 @@ class Caja extends CI_Controller
 		$pdf->MultiCell(66, 6, $t(mb_strtoupper($v->nombre_tdocumento)), 0, 'C');
 		$pdf->SetX(135);
 		$pdf->Cell(66, 6, $t('N° ' . $v->folio), 0, 2, 'C');
+		// Oficina del SII bajo el recuadro (exigido en la representación impresa del DTE)
+		if ($doc['sii'] && $doc['sii']['oficina']) {
+			$pdf->SetXY(135, 44);
+			$pdf->SetFont('Arial', 'B', 9);
+			$pdf->Cell(66, 5, $t($doc['sii']['oficina']), 0, 2, 'C');
+		}
 		$pdf->SetTextColor(0, 0, 0);
 		$pdf->SetDrawColor(0, 0, 0);
 		$pdf->SetLineWidth(0.2);
@@ -232,9 +252,12 @@ class Caja extends CI_Controller
 		$rut = $v->rut ? number_format((float)$v->rut, 0, ',', '.') . '-' . $v->dv : '';
 		$filas = array(
 			array('Fecha', $v->fecha_texto, 'Cajero', $v->nombre_usuario),
-			array('Cliente', $v->nombre_cliente, 'RUT', $rut),
-			array('Giro', $v->giro, 'Dirección', $v->direccion),
 		);
+		if ($rut) {
+			$filas[] = array('Cliente', $v->nombre_cliente, 'RUT', $rut);
+			$filas[] = array('Giro', $v->giro, 'Dirección', $v->direccion);
+			if ($v->comuna) $filas[] = array('Comuna', $v->comuna, '', '');
+		}
 		if ($doc['nc']) $filas[] = array('Ref.', $doc['referencia'], '', '');
 		foreach ($filas as $f) {
 			$pdf->SetFont('Arial', 'B', 9);
@@ -322,7 +345,12 @@ class Caja extends CI_Controller
 				$pdf->SetFont('Arial', 'B', 8);
 				$pdf->Cell(70, 4, $t('Timbre Electrónico SII'), 0, 2, 'C');
 				$pdf->SetFont('Arial', '', 7);
-				$pdf->Cell(70, 4, $t('Verifique documento: www.sii.cl'), 0, 2, 'C');
+				if ($doc['sii']['resolucion']) $pdf->Cell(70, 4, $t($doc['sii']['resolucion']), 0, 2, 'C');
+				$pdf->Cell(70, 4, $t('Verifique documento: ' . $doc['sii']['verificacion']), 0, 2, 'C');
+				foreach ($doc['sii']['publicidad'] as $i => $linea) {
+					if ($i === 0) $pdf->Ln(2);
+					$pdf->Cell(70, 4, $t($linea), 0, 2, 'C');
+				}
 			}
 		}
 
