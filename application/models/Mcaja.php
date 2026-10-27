@@ -270,7 +270,8 @@ class Mcaja extends CI_Model
 		$binds = array();
 		$q = "SELECT cl.id_cliente, cl.nombre_cliente, COALESCE(cl.rut::text, '') AS rut, COALESCE(cl.dv, '') AS dv,
 				COALESCE(cl.giro, '') AS giro, COALESCE(cl.direccion, '') AS direccion,
-				COALESCE(cl.id_comuna, 0) AS id_comuna, COALESCE(co.nombre_comuna, '') AS comuna
+				COALESCE(cl.id_comuna, 0) AS id_comuna, COALESCE(co.nombre_comuna, '') AS comuna,
+				COALESCE(cl.telefono, '') AS telefono, COALESCE(cl.mail, '') AS mail
 			FROM cliente cl LEFT JOIN comuna co ON co.id_comuna = cl.id_comuna
 			WHERE cl.nombre_cliente IS NOT NULL";
 		if ($texto !== '') {
@@ -287,24 +288,38 @@ class Mcaja extends CI_Model
 		$nombre = trim(isset($d['nombre_cliente']) ? $d['nombre_cliente'] : '');
 		if ($nombre === '') throw new Exception('El nombre del cliente es obligatorio', 400);
 		list($rut, $dv) = $this->separarRut(isset($d['rut']) ? $d['rut'] : '');
-		if ($rut) {
-			$existe = $this->q($db, 'SELECT id_cliente FROM cliente WHERE rut = ? LIMIT 1', array($rut))->row();
-			if ($existe) throw new Exception('Ya existe un cliente con ese RUT', 409);
+		// cliente.rut y cliente.dv son NOT NULL
+		if (!$rut) throw new Exception('El RUT del cliente es obligatorio', 400);
+		// Con id_cliente se edita un cliente existente (p. ej. completar giro y comuna para facturar)
+		$idCliente = (int)(isset($d['id_cliente']) ? $d['id_cliente'] : 0);
+		if ($idCliente) {
+			if (!$this->q($db, 'SELECT 1 FROM cliente WHERE id_cliente = ?', array($idCliente))->row()) {
+				throw new Exception('El cliente no existe', 404);
+			}
+			if ($idCliente === $this->configuracion($db)['id_cliente_publico']) {
+				throw new Exception('El cliente de venta al público no se puede editar', 400);
+			}
 		}
+		$existe = $this->q($db, 'SELECT id_cliente FROM cliente WHERE rut = ? AND id_cliente <> ? LIMIT 1', array($rut, $idCliente))->row();
+		if ($existe) throw new Exception('Ya existe un cliente con ese RUT', 409);
 		$cols = $this->columnas($db, array('cliente'));
-		$id = $this->insertar($db, $cols, 'cliente', array(
+		$fila = array(
 			'nombre_cliente' => mb_substr($nombre, 0, 100),
-			'rut' => $rut ?: null,
-			'dv' => $rut ? $dv : null,
+			'rut' => $rut,
+			'dv' => $dv,
 			'giro' => mb_substr(trim(isset($d['giro']) ? $d['giro'] : ''), 0, 100),
 			'direccion' => mb_substr(trim(isset($d['direccion']) ? $d['direccion'] : ''), 0, 100),
 			'telefono' => mb_substr(trim(isset($d['telefono']) ? $d['telefono'] : ''), 0, 30),
 			'mail' => mb_substr(trim(isset($d['mail']) ? $d['mail'] : ''), 0, 100),
 			// Sin comuna: NULL (cliente.id_comuna tiene clave foránea a comuna; 0 no existe)
 			'id_comuna' => !empty($d['id_comuna']) ? (int)$d['id_comuna'] : null,
-			'id_lprecio' => 0,
-			'creditomaximo' => 0,
-		), 'id_cliente');
+		);
+		if ($idCliente) {
+			$this->actualizar($db, $cols, 'cliente', $fila, 'id_cliente', $idCliente);
+			$id = $idCliente;
+		} else {
+			$id = $this->insertar($db, $cols, 'cliente', $fila + array('id_lprecio' => 0, 'creditomaximo' => 0), 'id_cliente');
+		}
 		return array('id_cliente' => $id, 'nombre_cliente' => $nombre, 'rut' => $rut ? $rut . '-' . $dv : '',
 			'giro' => trim(isset($d['giro']) ? $d['giro'] : ''), 'direccion' => trim(isset($d['direccion']) ? $d['direccion'] : ''),
 			'id_comuna' => max(0, (int)(isset($d['id_comuna']) ? $d['id_comuna'] : 0)));
@@ -516,13 +531,18 @@ class Mcaja extends CI_Model
 			LEFT JOIN producto p ON p.id_producto = dv.id_producto
 			LEFT JOIN producto pa ON pa.id_producto = dv.id_agregado AND dv.id_agregado > 0
 			WHERE dv.id_venta = ? ORDER BY dv.id_detalle_venta", array((int)$idVenta))->result();
-		$pagos = $this->q($db, "SELECT f.nombre_fpago, pv.monto_pagado, pv.vuelto, pv.paga_con
+		$pagos = $this->q($db, "SELECT pv.id_fpago, f.nombre_fpago, pv.monto_pagado, pv.vuelto, pv.paga_con
 			FROM pago_venta pv JOIN fpago f ON f.id_fpago = pv.id_fpago
 			WHERE pv.id_venta = ? ORDER BY pv.id_pventa", array((int)$idVenta))->result();
 		$empresa = $this->q($db, "SELECT * FROM empresa ORDER BY id_empresa LIMIT 1")->row();
 
 		// Venta sin cliente elegido (cliente público / 66.666.666-6): no se imprimen sus datos
 		$config = $this->configuracion($db);
+		// Copia cedible: documento electrónico emitido y vendido con crédito de confianza
+		$conCredito = false;
+		foreach ($pagos as $pg) {
+			if ($config['id_fpago_credito'] && (int)$pg->id_fpago === $config['id_fpago_credito']) $conCredito = true;
+		}
 		if ((int)$v->id_cliente === (int)$config['id_cliente_publico'] || (int)$v->rut === 66666666) {
 			$v->nombre_cliente = $v->rut = $v->dv = $v->giro = $v->direccion = $v->comuna = '';
 		}
@@ -561,6 +581,8 @@ class Mcaja extends CI_Model
 			'emitido' => (int)$v->folio_dte > 0,
 			'ted' => isset($v->ted_dte) ? (string)$v->ted_dte : '',
 			'sii' => in_array((int)$v->cod_sii, self::COD_SII_ELECTRONICOS) ? $this->leyendaSii($db, (int)$v->cod_sii) : null,
+			'cedible' => $config['copia_cedible'] && $conCredito && !$esNc && (int)$v->folio_dte > 0
+				&& in_array((int)$v->cod_sii, self::COD_SII_ELECTRONICOS),
 		);
 	}
 
@@ -1720,6 +1742,7 @@ class Mcaja extends CI_Model
 			'vueltofpago' => 'id_fpago_vuelto',
 			'por_propina' => 'por_propina',
 			'cant_agregados' => 'max_agregados',
+			'id_tdocumento_ticket' => 'id_comprobante',
 		);
 		// Opciones on/off de Configuraciones
 		$flags = array(
@@ -1731,6 +1754,8 @@ class Mcaja extends CI_Model
 			'requerir_usuario_admin_credito' => 'admin_credito',
 			'admin_anulacion_eliminacion' => 'admin_anulacion',
 			'imprimir_cierre_caja_impresora_termica' => 'imprimir_cierre_termica',
+			'habilitar_facturacion_electronica' => 'facturacion_electronica',
+			'imprimir_copia_cedible' => 'copia_cedible',
 		);
 		$config = array_fill_keys(array_values($mapa), 0) + array_fill_keys(array_values($flags), false);
 		$config['por_iva'] = 19;
@@ -1748,6 +1773,8 @@ class Mcaja extends CI_Model
 				$config[$flags[$c]] = isset($fila[$c]) && ($fila[$c] === 't' || $fila[$c] === true);
 			}
 		}
+		// Bases sin la opción: se mantiene la facturación electrónica disponible
+		if (!in_array('habilitar_facturacion_electronica', $existentes)) $config['facturacion_electronica'] = true;
 		$config['admin_descuento'] = $config['admin_descuento'] || $config['admin_descuento_clave'];
 		unset($config['admin_descuento_clave']);
 		if (!$config['id_cliente_publico']) {
@@ -1792,8 +1819,18 @@ class Mcaja extends CI_Model
 		$q = "SELECT id_tdocumento, nombre_tdocumento, COALESCE(cod_sii, 0) AS cod_sii, $selReq AS requiere, $selFac AS factura
 			FROM tdocumento";
 		if (isset($t['para_venta'])) $q .= ' WHERE para_venta IS TRUE';
+		$tipos = $this->q($db, $q . ' ORDER BY id_tdocumento')->result();
+		// Sin facturación electrónica habilitada, la caja vende solo con comprobante interno
+		$config = $this->configuracion($db);
+		if (!$config['facturacion_electronica']) {
+			$tipos = array_values(array_filter($tipos, function ($d) use ($config) {
+				return $config['id_comprobante']
+					? (int)$d->id_tdocumento === $config['id_comprobante']
+					: stripos($d->nombre_tdocumento, 'COMPROBANTE') !== false;
+			}));
+		}
 		$res = array();
-		foreach ($this->q($db, $q . ' ORDER BY id_tdocumento')->result() as $d) {
+		foreach ($tipos as $d) {
 			$cod = (int)$d->cod_sii;
 			$esFactura = $d->factura === 't' || $d->factura === true || in_array($cod, self::COD_SII_FACTURAS)
 				|| stripos($d->nombre_tdocumento, 'FACTURA') !== false;
@@ -1806,7 +1843,7 @@ class Mcaja extends CI_Model
 				'electronico' => in_array($cod, self::COD_SII_ELECTRONICOS),
 				// Los electrónicos solo si la empresa emite por Cloud Apps
 				'habilitado' => !in_array($cod, self::COD_SII_ELECTRONICOS)
-					|| (in_array($cod, self::COD_SII_EMITIBLES) && $this->dteDisponible($db)),
+					|| ($config['facturacion_electronica'] && in_array($cod, self::COD_SII_EMITIBLES) && $this->dteDisponible($db)),
 			);
 		}
 		return $res;

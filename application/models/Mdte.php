@@ -119,6 +119,7 @@ class Mdte extends CI_Model
 		));
 		$raw = curl_exec($ch);
 		$errorCurl = curl_error($ch);
+		$http = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close($ch);
 
 		if ($raw === false) {
@@ -134,12 +135,13 @@ class Mdte extends CI_Model
 
 		if ($status !== 0 || $folio <= 0) {
 			$msg = $retorno !== '' ? $retorno : 'Respuesta inesperada de Cloud Apps';
-			log_message('error', 'Caja web DTE venta ' . (int)$idVenta . ': ' . substr($raw, 0, 500));
+			log_message('error', 'Caja web DTE venta ' . (int)$idVenta . ' (HTTP ' . $http . '): ' . substr($raw, 0, 500));
 			$this->registrarFalla($db, $idVenta, $msg);
 			return array('ok' => false, 'folio' => 0, 'mensaje' => $msg);
 		}
 
 		$ted = stripos($retorno, '<TED') !== false ? $retorno : '';
+		if ($ted === '') log_message('error', 'Caja web DTE venta ' . (int)$idVenta . ': folio ' . $folio . ' emitido sin TED: ' . substr($raw, 0, 500));
 		$trackid = isset($r['trackid']) ? (int)$r['trackid'] : 0;
 		$this->registrarEmision($db, (int)$idVenta, $folio, $trackid, $ted);
 		return array('ok' => true, 'folio' => $folio, 'trackid' => $trackid, 'mensaje' => 'Documento emitido');

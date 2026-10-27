@@ -431,6 +431,7 @@
 		// ---------------- cliente ----------------
 		var timerCliente = null;
 		$('#btnBuscarCliente').on('click', function () {
+			formClienteNuevo();
 			$('#modalCliente').modal('show');
 			$('#modalCliente a[href="#tabBuscarCliente"]').tab('show');
 			setTimeout(function () { $('#txtBuscarCliente').val('').focus(); buscarClientes(''); }, 300);
@@ -452,9 +453,12 @@
 				if (!r.clientes.length) $r.append('<div class="list-group-item text-muted">Sin resultados</div>');
 				$.each(r.clientes, function (i, c) {
 					var rut = c.rut ? c.rut + '-' + c.dv : '';
+					var publico = Number(c.id_cliente) === catalogo.config.id_cliente_publico;
 					$r.append($('<a href="#" class="list-group-item">')
 						.data('cliente', { id_cliente: Number(c.id_cliente), nombre_cliente: c.nombre_cliente, rut: rut })
-						.html('<b>' + esc(c.nombre_cliente) + '</b> <small class="text-muted">' + esc(rut) + (c.giro ? ' · ' + esc(c.giro) : '')
+						.data('ficha', c)
+						.html((publico ? '' : '<button type="button" class="btn btn-xs btn-default pull-right btn-editar-cliente" title="Editar"><i class="fa fa-pencil"></i></button>')
+							+ '<b>' + esc(c.nombre_cliente) + '</b> <small class="text-muted">' + esc(rut) + (c.giro ? ' · ' + esc(c.giro) : '')
 							+ (c.comuna ? ' · ' + esc(c.comuna) : '') + '</small>'));
 				});
 			});
@@ -471,12 +475,43 @@
 			usarCliente($(this).data('cliente'));
 		});
 
+		// El mismo formulario sirve para crear y para editar (id_cliente oculto)
+		function formClienteNuevo() {
+			var $f = $('#frmCliente');
+			$f[0].reset();
+			$f.find('[name=id_cliente]').val('');
+			$('#cboComuna').val('0').trigger('change');
+			$('#tabClienteForm').text('Nuevo');
+			$('#btnCancelarEdicion').hide();
+		}
+		$('#resultadosCliente').on('click', '.btn-editar-cliente', function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var c = $(this).closest('a').data('ficha');
+			var $f = $('#frmCliente');
+			$f.find('[name=id_cliente]').val(c.id_cliente);
+			$f.find('[name=nombre_cliente]').val(c.nombre_cliente);
+			$f.find('[name=rut]').val(c.rut ? c.rut + '-' + c.dv : '');
+			$f.find('[name=giro]').val(c.giro);
+			$f.find('[name=direccion]').val(c.direccion);
+			$f.find('[name=telefono]').val(c.telefono);
+			$f.find('[name=mail]').val(c.mail);
+			$('#cboComuna').val(String(c.id_comuna || 0)).trigger('change');
+			$('#tabClienteForm').text('Editar').tab('show');
+			$('#btnCancelarEdicion').show();
+		});
+		$('#btnCancelarEdicion').on('click', function () {
+			formClienteNuevo();
+			$('#modalCliente a[href="#tabBuscarCliente"]').tab('show');
+		});
+
 		$('#frmCliente').on('submit', function (e) {
 			e.preventDefault();
 			var $f = $(this);
+			var editando = !!$f.find('[name=id_cliente]').val();
 			post('guardarCliente', $f.serialize()).done(function (r) {
-				$f[0].reset();
-				toastr.success('Cliente creado');
+				formClienteNuevo();
+				toastr.success(editando ? 'Cliente actualizado' : 'Cliente creado');
 				usarCliente({ id_cliente: r.id_cliente, nombre_cliente: r.nombre_cliente, rut: r.rut });
 			});
 		});
@@ -767,7 +802,8 @@
 							+ (!v.es_nc && !v.cortesia && v.total > 0 && !v.pendiente_dte
 								? '<button class="btn btn-xs btn-warning devolver" data-id="' + v.id_venta + '" title="Devolver productos"><i class="fa fa-undo"></i> Devolver</button> ' : '')
 							// Un documento electrónico ya emitido no se anula: se devuelve con nota de crédito
-							+ (v.electronico && !v.pendiente_dte ? ''
+							+ (v.electronico && !v.pendiente_dte
+								? (v.es_nc ? '<span class="label label-success" title="Emitida ante el SII: no se anula">Emitida</span>' : '')
 								: '<button class="btn btn-xs btn-danger anular" data-id="' + v.id_venta + '" data-folio="' + v.folio + '">Anular</button>'));
 					$t.append('<tr class="' + (v.anulada ? 'anulada' : '') + (v.es_nc ? ' nc' : '') + '">'
 						+ '<td>' + esc(v.hora) + '</td><td>' + esc(v.nombre_tdocumento) + (v.cortesia ? ' <span class="label label-warning">Cortesía</span>' : '')

@@ -593,7 +593,7 @@
 			<div class="modal-body">
 				<ul class="nav nav-tabs">
 					<li class="active"><a href="#tabBuscarCliente" data-toggle="tab">Buscar</a></li>
-					<li><a href="#tabNuevoCliente" data-toggle="tab">Nuevo</a></li>
+					<li><a href="#tabNuevoCliente" data-toggle="tab" id="tabClienteForm">Nuevo</a></li>
 				</ul>
 				<div class="tab-content" style="padding-top:12px">
 					<div class="tab-pane active" id="tabBuscarCliente">
@@ -602,9 +602,10 @@
 					</div>
 					<div class="tab-pane" id="tabNuevoCliente">
 						<form id="frmCliente">
+							<input type="hidden" name="id_cliente" value="">
 							<div class="row">
 								<div class="col-sm-7 form-group"><label>Nombre / Razón social *</label><input name="nombre_cliente" class="form-control" maxlength="100" required></div>
-								<div class="col-sm-5 form-group"><label>RUT</label><input name="rut" class="form-control" placeholder="12.345.678-9" maxlength="12"></div>
+								<div class="col-sm-5 form-group"><label>RUT *</label><input name="rut" class="form-control" placeholder="12.345.678-9" maxlength="12" required></div>
 								<div class="col-sm-6 form-group"><label>Giro</label><input name="giro" class="form-control" maxlength="100"></div>
 								<div class="col-sm-6 form-group"><label>Dirección</label><input name="direccion" class="form-control" maxlength="100"></div>
 								<div class="col-sm-6 form-group"><label for="cboComuna">Comuna</label><select name="id_comuna" id="cboComuna" class="form-control"></select></div>
@@ -613,6 +614,7 @@
 							</div>
 							<p class="text-muted">Para facturas el cliente necesita RUT, giro, dirección y comuna.</p>
 							<button type="submit" class="btn btn-primary">Guardar y usar</button>
+							<button type="button" class="btn btn-default" id="btnCancelarEdicion" style="display:none">Cancelar edición</button>
 						</form>
 					</div>
 				</div>

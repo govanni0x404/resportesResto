@@ -12,6 +12,8 @@ $cant = function ($n) {
 };
 $papel = isset($papel) ? (int)$papel : 80;
 $sii = isset($sii) ? $sii : null;
+// Venta electrónica con crédito de confianza: original + copia cedible para el cobro
+$copias = !empty($cedible) ? array('', 'CEDIBLE') : array('');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -32,6 +34,11 @@ $sii = isset($sii) ? $sii : null;
 		td { vertical-align: top; padding: 1px 0; }
 		.total td { font-size: 15px; font-weight: bold; }
 		.nota { font-size: 11px; margin-top: 6px; }
+		.copia { break-before: page; page-break-before: always; }
+		.acuse { border: 1px solid #000; padding: 4px; margin-top: 8px; }
+		.acuse .campo { border-bottom: 1px solid #000; padding-top: 12px; }
+		.acuse .nota { line-height: 1.3; }
+		.cedible { font-size: 16px; margin-top: 6px; }
 		.anulada { color: #c00; font-weight: bold; font-size: 14px; }
 		.timbre { margin: 8px 0 2px; }
 		.timbre img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
@@ -59,7 +66,8 @@ $sii = isset($sii) ? $sii : null;
 		<button onclick="window.print()">Imprimir</button>
 		<button onclick="window.close()">Cerrar</button>
 	</div>
-	<div class="ticket">
+	<?php foreach ($copias as $i => $copia) : ?>
+	<div class="ticket<?php echo $i ? ' copia' : ''; ?>">
 		<?php if ($e) : ?>
 			<div class="c b"><?php echo $h($e->nombre_fantasia ?: $e->razon_social); ?></div>
 			<?php if ($e->nombre_fantasia && $e->razon_social) : ?><div class="c"><?php echo $h($e->razon_social); ?></div><?php endif; ?>
@@ -140,7 +148,20 @@ $sii = isset($sii) ? $sii : null;
 		<?php if ($sii && $sii['publicidad']) : ?>
 			<div class="c nota"><?php echo implode('<br>', array_map($h, $sii['publicidad'])); ?></div>
 		<?php endif; ?>
+		<?php if ($copia) : ?>
+			<div class="acuse">
+				<div class="c b">ACUSE DE RECIBO</div>
+				<div class="campo">Nombre:</div>
+				<div class="campo">R.U.T.:</div>
+				<div class="campo">Fecha:</div>
+				<div class="campo">Recinto:</div>
+				<div class="campo">Firma:</div>
+				<div class="nota">El acuse de recibo que se declara en este acto, de acuerdo a lo dispuesto en la letra b) del Art. 4°, y la letra c) del Art. 5° de la Ley 19.983, acredita que la entrega de mercaderías o servicio(s) prestado(s) ha(n) sido recibido(s).</div>
+			</div>
+			<div class="c b cedible">CEDIBLE</div>
+		<?php endif; ?>
 	</div>
+	<?php endforeach; ?>
 	<script>
 		if (/[?&]imprimir=1/.test(location.search)) {
 			window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 300); });
