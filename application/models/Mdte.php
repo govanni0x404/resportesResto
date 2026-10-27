@@ -4,7 +4,10 @@ defined('BASEPATH') or exit('No direct script access allowed');
 /**
  * Emisión electrónica con Cloud Apps (mismo formato que el POS y AppCaja).
  * Cloud Apps asigna el folio (Folio "0") desde el CAF del terminal y devuelve el TED.
- * Los montos van netos en el detalle (IndMntNeto = 1), como los documentos del POS.
+ * Boletas (39): detalle en montos brutos, como lo pide el formato de boleta del SII; el neto y el IVA son
+ * informativos: Neto = round(Afecto / 1,19) e IVA = Afecto - Neto, igual que la pantalla y el ticket.
+ * Facturas y notas de crédito: detalle en neto (IndMntNeto = 1); Neto e IVA = round(Neto x 19%) los
+ * calcula la venta (Mcaja::montos). Productos exentos: línea con IndExe = 1 y su suma en MntExe.
  */
 class Mdte extends CI_Model
 {
@@ -168,7 +171,7 @@ class Mdte extends CI_Model
 		$esNc = $cod === self::COD_NC;
 
 		$q = $db->query("SELECT COALESCE(p.nombre_producto, 'Producto') || COALESCE(' + ' || pa.nombre_producto, '') AS nombre,
-				abs(dv.cantidad) AS cantidad, abs(dv.subtotal) AS subtotal
+				abs(dv.cantidad) AS cantidad, abs(dv.subtotal) AS subtotal, (COALESCE(dv.poriva, 1) = 0) AS exento
 			FROM detalle_venta dv
 			LEFT JOIN producto p ON p.id_producto = dv.id_producto
 			LEFT JOIN producto pa ON pa.id_producto = dv.id_agregado AND dv.id_agregado > 0
@@ -180,38 +183,64 @@ class Mdte extends CI_Model
 		$total = (int)abs($v->total);
 		$tasa = (float)$v->por_iva > 0 ? (float)$v->por_iva : 19;
 		$factor = 1 + $tasa / 100;
-		// Neto e IVA que cuadran con el total pagado: IVA = round(neto * 19%) y neto + IVA = total
+		// Boleta afecta: el detalle va con IVA incluido y el neto / IVA se derivan del total
+		$brutos = $esBoleta && !$exento;
+		// Lo exento por producto (Monto Exento) queda fuera del IVA; el resto es el monto afecto
+		$montoExento = $exento ? $total : min($total, (int)round(abs((float)$v->monto_exento)));
+		$afecto = $total - $montoExento;
 		if ($exento) {
 			$neto = $total;
 			$iva = 0;
+		} elseif ($brutos) {
+			$neto = (int)round($afecto / $factor);
+			$iva = $afecto - $neto;
 		} else {
-			$neto = (int)round($total / $factor);
-			foreach (array(0, -1, 1, -2, 2) as $d) {
-				if (($neto + $d) + (int)round(($neto + $d) * $tasa / 100) === $total) { $neto += $d; break; }
+			// Factura / NC: el neto guardado al vender (montos() en Mcaja) ya cumple IVA = round(Neto x 19%).
+			// Ventas anteriores a ese cálculo: se busca el neto que cuadre con el monto afecto.
+			$neto = (int)round(abs((float)$v->neto));
+			if ($neto + (int)round($neto * $tasa / 100) !== $afecto) {
+				$neto = (int)round($afecto / $factor);
+				foreach (array(0, -1, 1, -2, 2) as $d) {
+					if (($neto + $d) + (int)round(($neto + $d) * $tasa / 100) === $afecto) { $neto += $d; break; }
+				}
 			}
-			$iva = $total - $neto;
+			$iva = $afecto - $neto;
 		}
 
-		// Detalle en neto; el descuento global (neto) es la diferencia con el neto del total
+		// Detalle bruto (boletas y exentos) o neto (facturas y NC); las líneas exentas van con su monto
+		// (IndExe = 1). El descuento global de lo afecto va en la misma base que su detalle y es la
+		// diferencia entre la suma de las líneas afectas y el afecto (o el neto) del documento.
 		$detalle = array();
-		$sumaLineas = 0;
+		$sumaAfecto = 0;
+		$sumaExento = 0;
 		foreach ($lineas as $i => $l) {
-			$monto = $exento ? (int)round((float)$l->subtotal) : (int)round((float)$l->subtotal / $factor);
-			$sumaLineas += $monto;
-			$detalle[] = array('cantidad' => (float)$l->cantidad, 'monto' => $monto, 'nombre' => $l->nombre);
+			$lineaExenta = !$exento && ($l->exento === 't' || $l->exento === true);
+			$monto = ($exento || $brutos || $lineaExenta) ? (int)round((float)$l->subtotal) : (int)round((float)$l->subtotal / $factor);
+			if ($lineaExenta) $sumaExento += $monto; else $sumaAfecto += $monto;
+			$detalle[] = array('cantidad' => (float)$l->cantidad, 'monto' => $monto, 'nombre' => $l->nombre, 'exento' => $lineaExenta);
 		}
-		$descuento = $sumaLineas - $neto;
+		// El descuento que tocó a lo exento se aplica sobre las mismas líneas exentas, desde la última
+		$descExento = $exento ? 0 : $sumaExento - $montoExento;
+		for ($i = count($detalle) - 1; $i >= 0 && $descExento !== 0; $i--) {
+			if (!$detalle[$i]['exento']) continue;
+			$baja = $descExento > 0 ? min($descExento, $detalle[$i]['monto']) : $descExento;
+			$detalle[$i]['monto'] -= $baja;
+			$descExento -= $baja;
+		}
+		$descuento = $sumaAfecto > 0 ? $sumaAfecto - ($exento ? $total : ($brutos ? $afecto : $neto)) : 0;
 		$hayDescuento = (int)abs($v->descuento) > 0;
 		if ($descuento < 0 || ($descuento > 0 && !$hayDescuento)) {
-			// Solo diferencias de redondeo: se ajusta la última línea para que cuadre exacto
-			$detalle[count($detalle) - 1]['monto'] -= $descuento;
+			// Solo diferencias de redondeo: se ajusta la última línea afecta para que cuadre exacto
+			for ($i = count($detalle) - 1; $i >= 0; $i--) {
+				if (!$detalle[$i]['exento']) { $detalle[$i]['monto'] -= $descuento; break; }
+			}
 			$descuento = 0;
 		}
 
 		$det = array();
 		foreach ($detalle as $i => $d) {
 			$qty = $d['cantidad'] > 0 ? $d['cantidad'] : 1;
-			$det[] = array(
+			$linea = array(
 				'NroLinDet' => (string)($i + 1),
 				'NmbItem' => $this->texto($d['nombre'], 80),
 				'QtyItem' => $this->numero($qty),
@@ -220,6 +249,8 @@ class Mdte extends CI_Model
 				'MontoItem' => $d['monto'],
 				'DscItem' => '',
 			);
+			if ($d['exento']) $linea['IndExe'] = '1';
+			$det[] = $linea;
 		}
 
 		$conCliente = (int)$v->rut > 0 && (int)$v->rut !== 66666666;
@@ -236,22 +267,23 @@ class Mdte extends CI_Model
 			throw new Exception('La factura requiere un cliente con RUT');
 		}
 
+		$idDoc = array(
+			'TipoDTE' => (string)$cod,
+			'Folio' => '0',
+			'FchEmis' => $v->dia,
+			'FchVenc' => $v->dia,
+			'FmaPago' => ($v->credito === 't' || $v->credito === true) ? '2' : '1',
+		);
+		// En boletas el detalle va bruto: sin indicador de montos netos
+		if (!$brutos) $idDoc['IndMntNeto'] = '1';
+
 		$doc = array(
 			'Encabezado' => array(
-				'IdDoc' => array(
-					'TipoDTE' => (string)$cod,
-					'Folio' => '0',
-					'FchEmis' => $v->dia,
-					'FchVenc' => $v->dia,
-					'FmaPago' => ($v->credito === 't' || $v->credito === true) ? '2' : '1',
-					'IndMntNeto' => '1',
-				),
+				'IdDoc' => $idDoc,
 				'Emisor' => $cfg['emisor'],
 				'Receptor' => $receptor,
 			),
-			'Totales' => $exento
-				? array('MntNeto' => $total, 'TasaIVA' => '0', 'Iva' => 0, 'MntExe' => $total, 'MntTotal' => $total)
-				: array('MntNeto' => $neto, 'TasaIVA' => $this->numero($tasa), 'Iva' => $iva, 'MntTotal' => $total),
+			'Totales' => $this->totalesDte($exento, $total, $neto, $iva, $montoExento, $tasa),
 			'Detalle' => $det,
 			'DescuentoRecargo' => array(
 				'NroLinDR' => '1',
@@ -284,6 +316,21 @@ class Mdte extends CI_Model
 			));
 		}
 		return $doc;
+	}
+
+	/** Bloque Totales: Monto Neto e IVA solo si hay monto afecto; Monto Exento solo si hay exento. */
+	private function totalesDte($docExento, $total, $neto, $iva, $montoExento, $tasa)
+	{
+		if ($docExento) return array('MntNeto' => $total, 'TasaIVA' => '0', 'Iva' => 0, 'MntExe' => $total, 'MntTotal' => $total);
+		$t = array();
+		if ($total - $montoExento > 0) {
+			$t['MntNeto'] = $neto;
+			$t['TasaIVA'] = $this->numero($tasa);
+			$t['Iva'] = $iva;
+		}
+		if ($montoExento > 0) $t['MntExe'] = $montoExento;
+		$t['MntTotal'] = $total;
+		return $t;
 	}
 
 	/** La NC cubre todo lo pagado en el documento original. */

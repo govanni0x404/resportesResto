@@ -283,18 +283,19 @@ class Caja extends CI_Controller
 			$pdf->SetFont('Arial', '', 9);
 			foreach ($doc['detalle'] as $d) {
 				$pdf->Cell(20, 6, rtrim(rtrim(number_format((float)$d->cantidad, 3, ',', ''), '0'), ','), 'LR', 0, 'C');
-				$pdf->Cell(106, 6, $t(mb_substr($d->nombre, 0, 60)), 'LR');
-				$pdf->Cell(30, 6, $m($d->bruto_un), 'LR', 0, 'R');
-				$pdf->Cell(30, 6, $m($d->subtotal), 'LR', 1, 'R');
+				$pdf->Cell(106, 6, $t(mb_substr($d->nombre, 0, 60) . ($d->exento ? ' (EXENTO)' : '')), 'LR');
+				$pdf->Cell(30, 6, $m($d->precio_mostrar), 'LR', 0, 'R');
+				$pdf->Cell(30, 6, $m($d->monto_mostrar), 'LR', 1, 'R');
 			}
 			$pdf->Cell(186, 0, '', 'T', 1);
 
 			// Totales
 			$pdf->Ln(3);
-			$totales = array(array('Subtotal', $v->subtotal));
-			if ((int)$v->descuento > 0) $totales[] = array('Descuento', -$v->descuento);
-			$totales[] = array('Neto', $v->neto);
-			$totales[] = array('IVA', $v->iva);
+			$totales = array(array($v->en_neto ? 'Subtotal neto' : 'Subtotal', $v->subtotal_mostrar));
+			if ((int)$v->descuento_mostrar > 0) $totales[] = array('Descuento', -$v->descuento_mostrar);
+			$totales[] = array('Monto neto', $v->neto);
+			$totales[] = array('IVA (19%)', $v->iva);
+			if ($v->monto_exento > 0) $totales[] = array('Monto exento', $v->monto_exento);
 			$totales[] = array('TOTAL', $v->total);
 			$propina = isset($v->valor_propina) ? (int)$v->valor_propina : 0;
 			if ($propina > 0) {

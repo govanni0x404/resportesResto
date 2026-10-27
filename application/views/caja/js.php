@@ -83,7 +83,6 @@
 				if (!resumen) {
 					$('#panelCaja').hide();
 					$('#panelApertura').show();
-					$('#infoCaja').text('Sin caja abierta');
 					var sugerido = r.fondo_sugerido;
 					$('#fondoInicial').val(sugerido === null || sugerido === undefined ? 0 : sugerido);
 					$('#ayudaFondo').toggle(sugerido !== null && sugerido !== undefined);
@@ -92,7 +91,7 @@
 				}
 				$('#panelApertura').hide();
 				$('#panelCaja').show();
-				$('#infoCaja').text('Caja N° ' + resumen.id_caja + ' abierta');
+				ajustarAltoVenta();
 				$('#estCaja').text('N° ' + resumen.id_caja);
 				$('#estApertura').text(resumen.apertura);
 				$('#estFondo').text(fmt(resumen.fondo));
@@ -192,47 +191,132 @@
 			renderProductos();
 		});
 
+		// Grilla del modal de productos: familia elegida + filtro propio del modal
 		function renderProductos() {
-			var texto = $.trim($('#buscarProducto').val()).toLowerCase();
+			if (!catalogo) return;
+			var texto = $.trim($('#filtroProductos').val()).toLowerCase();
 			var lista = $.grep(catalogo.productos, function (p) {
-				if (texto) return p.nombre.toLowerCase().indexOf(texto) >= 0 || (p.cbarra && p.cbarra.toLowerCase() === texto);
-				return !familiaActiva || p.id_familia === familiaActiva;
+				return (!familiaActiva || p.id_familia === familiaActiva) && (!texto || p.nombre.toLowerCase().indexOf(texto) >= 0);
 			});
 			var $c = $('#productos').empty();
 			if (!lista.length) {
 				$c.append('<div class="caja-vacio"><i class="pe-7s-search"></i>No se encontraron productos</div>');
 				return;
 			}
+			var enVenta = {};
+			$.each(carro, function (i, l) { enVenta[l.id_producto] = (enVenta[l.id_producto] || 0) + l.cantidad; });
 			var html = '';
-			$.each(lista.slice(0, 300), function (i, p) {
-				html += '<button type="button" class="caja-producto" data-id="' + p.id_producto + '">'
+			$.each(lista, function (i, p) {
+				var n = enVenta[p.id_producto] || 0;
+				html += '<button type="button" class="caja-producto' + (n ? ' agregado' : '') + '" data-id="' + p.id_producto + '">'
+					+ (n ? '<span class="en-venta">' + n + '</span>' : '')
 					+ '<span class="nombre">' + esc(p.nombre) + '</span>'
 					+ (tieneOpciones(p.id_producto) ? '<span class="opciones">+ opciones</span>' : '')
 					+ '<span class="precio">' + fmt(p.precio) + '</span></button>';
 			});
 			$c.html(html);
 		}
+		$('#filtroProductos').on('input', renderProductos);
 
-		$('#buscarProducto').on('input', renderProductos).on('keydown', function (e) {
-			if (e.which !== 13) return;
-			e.preventDefault();
-			var texto = $.trim($(this).val()).toLowerCase();
-			if (!texto) return;
-			// Lector de código de barras: termina con Enter
-			var porCodigo = $.grep(catalogo.productos, function (p) { return p.cbarra && p.cbarra.toLowerCase() === texto; });
-			var visibles = $.grep(catalogo.productos, function (p) { return p.nombre.toLowerCase().indexOf(texto) >= 0; });
-			var p = porCodigo[0] || (visibles.length === 1 ? visibles[0] : null);
-			if (p) {
-				elegir(p.id_producto);
-				$(this).val('');
-				renderProductos();
-			} else if (!visibles.length) {
-				toastr.warning('No se encontró el producto "' + texto + '"');
-			}
-		});
+		function abrirCatalogo() {
+			if (!catalogo) return;
+			cerrarResultados();
+			$('#filtroProductos').val('');
+			renderFamilias();
+			renderProductos();
+			$('#modalProductos').modal('show');
+		}
+		$('#btnCatalogo').on('click', abrirCatalogo);
+		$('#modalProductos').on('shown.bs.modal', function () { $('#filtroProductos').focus(); })
+			.on('hidden.bs.modal', function () {
+				// Producto con opciones elegido en la grilla: su modal se abre cuando este ya cerró
+				if (opcionPendiente) { var id = opcionPendiente; opcionPendiente = null; abrirOpciones(id, null); }
+				else $('#buscarProducto').focus();
+			});
+		var opcionPendiente = null;
 
 		$('#productos').on('click', '.caja-producto', function () {
-			elegir(Number($(this).data('id')));
+			var id = Number($(this).data('id'));
+			if (tieneOpciones(id)) {
+				opcionPendiente = id;
+				$('#modalProductos').modal('hide');
+				return;
+			}
+			agregar(id, [], '');
+			renderProductos();
+		});
+
+		// ---------------- buscador con resultados ----------------
+		var resultados = [], resultadoActivo = -1;
+		function cerrarResultados() {
+			resultados = [];
+			resultadoActivo = -1;
+			$('#resultados').removeClass('visible').empty();
+		}
+		function nombreFamilia(id) {
+			var f = $.grep(catalogo.familias, function (x) { return Number(x.id_familia) === id; })[0];
+			return f ? f.nombre_familia : '';
+		}
+		function renderResultados() {
+			var texto = $.trim($('#buscarProducto').val()).toLowerCase();
+			if (!catalogo || texto.length < 2) { cerrarResultados(); return; }
+			var palabras = texto.split(/\s+/);
+			resultados = $.grep(catalogo.productos, function (p) {
+				var n = p.nombre.toLowerCase();
+				if (p.cbarra && p.cbarra.toLowerCase() === texto) return true;
+				return $.grep(palabras, function (w) { return n.indexOf(w) < 0; }).length === 0;
+			}).slice(0, 40);
+			resultadoActivo = resultados.length ? 0 : -1;
+			var $r = $('#resultados').empty().addClass('visible');
+			if (!resultados.length) { $r.html('<div class="sin-resultados">No se encontraron productos</div>'); return; }
+			$r.html($.map(resultados, function (p, i) {
+				return '<div class="caja-resultado' + (i === 0 ? ' activo' : '') + '" data-i="' + i + '">'
+					+ '<span class="nombre">' + esc(p.nombre) + (tieneOpciones(p.id_producto) ? ' <small class="text-muted">+ opciones</small>' : '')
+					+ '<span class="familia">' + esc(nombreFamilia(p.id_familia)) + '</span></span>'
+					+ '<span class="precio">' + fmt(p.precio) + '</span></div>';
+			}).join(''));
+		}
+		function marcarResultado(i) {
+			resultadoActivo = i;
+			var $items = $('#resultados .caja-resultado').removeClass('activo');
+			var $a = $items.eq(i).addClass('activo');
+			if ($a.length) $a[0].scrollIntoView({ block: 'nearest' });
+		}
+		function elegirResultado(p) {
+			cerrarResultados();
+			$('#buscarProducto').val('');
+			elegir(p.id_producto);
+			if (!tieneOpciones(p.id_producto)) $('#buscarProducto').focus();
+		}
+
+		$('#buscarProducto').on('input', renderResultados).on('keydown', function (e) {
+			if (e.which === 40 || e.which === 38) {
+				e.preventDefault();
+				if (resultados.length) marcarResultado((resultadoActivo + (e.which === 40 ? 1 : -1) + resultados.length) % resultados.length);
+			} else if (e.which === 27) {
+				cerrarResultados();
+			} else if (e.which === 13) {
+				e.preventDefault();
+				var texto = $.trim($(this).val()).toLowerCase();
+				if (!texto) return;
+				// Lector de código de barras: escribe el código completo y termina con Enter
+				var porCodigo = $.grep(catalogo.productos, function (p) { return p.cbarra && p.cbarra.toLowerCase() === texto; })[0];
+				if (!porCodigo && texto.length < 2) return;
+				if (!porCodigo && !resultados.length) renderResultados();
+				var p = porCodigo || resultados[resultadoActivo];
+				if (p) elegirResultado(p);
+				else toastr.warning('No se encontró el producto "' + texto + '"');
+			}
+		}).on('focus', function () { if ($.trim($(this).val()).length >= 2) renderResultados(); });
+		$('#resultados').on('mousedown', '.caja-resultado', function (e) {
+			e.preventDefault();
+			elegirResultado(resultados[$(this).data('i')]);
+		});
+		$(document).on('mousedown', function (e) {
+			if (!$(e.target).closest('.caja-buscar').length) cerrarResultados();
+		}).on('keydown', function (e) {
+			// F2: todos los productos (solo en la pestaña Venta, sin otro modal abierto)
+			if (e.which === 113 && $('#tabVenta').is(':visible') && !$('.modal.in').length) { e.preventDefault(); abrirCatalogo(); }
 		});
 
 		function elegir(id) {
@@ -316,6 +400,8 @@
 		$('#cboDocumento').on('change', function () {
 			var d = documentoActual();
 			if (d && d.requiere_cliente && !cliente) toastr.info(d.nombre + ' requiere seleccionar un cliente');
+			// La factura calcula el IVA sobre el neto: el total puede variar unos pesos
+			renderCarro();
 		});
 
 		// ---------------- carro ----------------
@@ -332,22 +418,53 @@
 			renderCarro();
 		}
 
+		// Líneas brutas como las guarda el servidor: el producto con su primer agregado, y cada agregado
+		// siguiente como línea propia; si el producto es exento, todas sus líneas lo son
+		function lineasBrutas() {
+			var res = [];
+			$.each(carro, function (i, l) {
+				var p = producto(l.id_producto), exento = !!(p && p.exento);
+				var primero = l.agregados.length ? agregado(l.agregados[0]) : null;
+				res.push({ bruto: Math.round((l.precio + (primero ? primero.valor : 0)) * l.cantidad), exento: exento });
+				$.each(l.agregados.slice(1), function (j, id) {
+					var a = agregado(id);
+					if (a) res.push({ bruto: Math.round(a.valor * l.cantidad), exento: exento });
+				});
+			});
+			return res;
+		}
+
+		// Mismo cálculo que Mcaja::montos() (el servidor valida el pago contra su total):
+		// - lo exento queda fuera del IVA (Monto Exento)
+		// - factura: neto por línea, Neto = suma - descuento neto, IVA = round(Neto x 19%), Total = Neto + IVA + Exento
+		// - boleta / interno: Neto = round(Afecto / 1,19), IVA = Afecto - Neto, Total = suma de precios - descuento
 		function totales() {
-			var subtotal = 0;
-			$.each(carro, function (i, l) { subtotal += Math.round(precioLinea(l) * l.cantidad); });
+			var lineas = lineasBrutas(), subtotal = 0, subAfecto = 0;
+			$.each(lineas, function (i, l) { subtotal += l.bruto; if (!l.exento) subAfecto += l.bruto; });
 			var valor = Math.max(0, Number($('#txtDescuento').val()) || 0);
 			var descuento = tipoDesc === 'porc' ? Math.round(subtotal * Math.min(valor, 100) / 100) : Math.round(valor);
 			descuento = Math.min(descuento, subtotal);
-			var total = subtotal - descuento;
-			var factor = 1 + (catalogo ? catalogo.config.por_iva : 19) / 100;
-			var neto = Math.round(total / factor);
-			return { subtotal: subtotal, descuento: descuento, total: total, neto: neto, iva: total - neto };
+			var tasa = catalogo ? catalogo.config.por_iva : 19, factor = 1 + tasa / 100;
+			var descAfecto = subtotal > 0 ? Math.round(descuento * subAfecto / subtotal) : 0;
+			var exento = (subtotal - subAfecto) - (descuento - descAfecto);
+			var d = catalogo ? documentoActual() : null, neto, iva;
+			if (d && d.es_factura) {
+				var netoLineas = 0;
+				$.each(lineas, function (i, l) { if (!l.exento) netoLineas += Math.round(l.bruto / factor); });
+				neto = subAfecto > 0 ? netoLineas - Math.round(descAfecto / factor) : 0;
+				iva = Math.round(neto * tasa / 100);
+			} else {
+				var afecto = subAfecto - descAfecto;
+				neto = Math.round(afecto / factor);
+				iva = afecto - neto;
+			}
+			return { subtotal: subtotal, descuento: descuento, exento: exento, neto: neto, iva: iva, total: neto + iva + exento };
 		}
 
 		function renderCarro() {
 			var $t = $('#lineas').empty();
 			if (!carro.length) {
-				$t.append('<div class="caja-carro-vacio"><i class="pe-7s-cart"></i>Toca un producto para agregarlo a la venta</div>');
+				$t.append('<div class="caja-carro-vacio"><i class="pe-7s-cart"></i>Agrega productos con el buscador o con el botón Productos (F2)</div>');
 			}
 			var unidades = 0;
 			$.each(carro, function (i, l) {
@@ -355,10 +472,13 @@
 				var detalle = $.map(l.agregados, function (id) { var a = agregado(id); return a ? '+ ' + esc(a.nombre) : null; });
 				if (l.nota) detalle.push('<i>' + esc(l.nota) + '</i>');
 				var nombre = tieneOpciones(l.id_producto) ? '<a href="#" class="editar" title="Cambiar agregados / indicaciones">' + esc(l.nombre) + '</a>' : esc(l.nombre);
+				var prod = producto(l.id_producto);
+				if (prod && prod.exento) nombre += ' <span class="label label-default">EXENTO</span>';
 				$t.append('<div class="caja-linea" data-i="' + i + '">'
 					+ '<div class="info"><div class="nombre">' + nombre + '</div>'
 					+ (detalle.length ? '<div class="detalle-linea">' + detalle.join('<br>') + '</div>' : '')
 					+ '<div class="unitario">' + fmt(precioLinea(l)) + ' c/u</div></div>'
+					+ '<div class="precio">' + fmt(precioLinea(l)) + '</div>'
 					+ '<div class="input-group input-group-sm cantidad">'
 					+ '<span class="input-group-btn"><button class="btn btn-default menos" type="button" title="Quitar uno"><i class="fa fa-minus"></i></button></span>'
 					+ '<input type="number" class="form-control cant" min="1" step="1" value="' + l.cantidad + '">'
@@ -366,14 +486,17 @@
 					+ '<div class="subtotal">' + fmt(Math.round(precioLinea(l) * l.cantidad)) + '</div>'
 					+ '<button class="quitar" title="Quitar producto"><i class="fa fa-trash"></i></button></div>');
 			});
-			$('#cantItems, #barraItems').text(unidades);
+			$('#cantItems, #barraItems, #modalProductosItems').text(unidades);
 			$('#barraMovil').toggleClass('visible', carro.length > 0);
 			$('.caja').toggleClass('con-barra', carro.length > 0);
 			var t = totales();
 			$('#lblSubtotal').text(fmt(t.subtotal));
 			$('#lblDescuento').text(fmt(-t.descuento));
+			$('#filaDescuento').toggle(t.descuento > 0);
 			$('#lblNeto').text(fmt(t.neto));
 			$('#lblIva').text(fmt(t.iva));
+			$('#lblExento').text(fmt(t.exento));
+			$('#filaExento').toggle(t.exento > 0);
 			$('#lblTotal').text(fmt(t.total));
 			$('#lblCobrar').text(carro.length ? fmt(t.total) : '');
 			$('#barraTotal').text(fmt(t.total));
@@ -400,6 +523,19 @@
 		});
 
 		$('#txtDescuento').on('input', renderCarro);
+
+		// Escritorio: la venta ocupa el alto visible para que el total y Cobrar queden siempre a la vista
+		function ajustarAltoVenta() {
+			var $v = $('.caja-venta');
+			if (!$v.is(':visible') || window.innerWidth < 992) { $v.removeClass('alto-fijo').css('height', ''); return; }
+			// El pie del sistema queda fijo abajo y taparía el botón Cobrar
+			var $pie = $('.main-footer');
+			var pie = $pie.length && $pie.css('position') === 'fixed' ? $pie.outerHeight() : 0;
+			var alto = Math.max(440, window.innerHeight - $v.offset().top - pie - 16);
+			$v.addClass('alto-fijo').css('height', alto);
+		}
+		$(window).on('resize', ajustarAltoVenta);
+		$('#lnkVenta').on('shown.bs.tab', ajustarAltoVenta);
 		$('#barraMovil').on('click', function () {
 			$('html, body').animate({ scrollTop: $('.caja-carro').offset().top - 10 }, 250);
 		});
@@ -417,7 +553,7 @@
 			$('#txtDescuento').val(0);
 			$('#txtObservacion').val('');
 			$('#buscarProducto').val('');
-			renderProductos();
+			cerrarResultados();
 			renderCarro();
 			$('#buscarProducto').focus();
 		}
@@ -599,14 +735,22 @@
 			propina = cfg.propina && cfg.calcular_propina ? propinaSugerida() : 0;
 			$('#chkPropina').prop('checked', propina > 0).prop('disabled', false);
 			$('#txtPropina').val(propina).prop('disabled', propina === 0);
+			// Efectivo primero, cortesías al final; el resto en el orden de la base
+			var orden = function (f) { return f.cortesia ? 2 : (f.efectivo ? 0 : 1); };
+			var formas = catalogo.formas_pago.slice().sort(function (a, b) { return orden(a) - orden(b); });
 			var $b = $('#botonesFpago').empty();
-			$.each(catalogo.formas_pago, function (i, f) {
-				$b.append($('<button type="button" class="btn">').addClass(f.cortesia ? 'btn-warning' : (f.efectivo ? 'btn-success' : 'btn-primary'))
-					.text(f.nombre).data('id', f.id_fpago));
+			$.each(formas, function (i, f) {
+				var icono = f.cortesia ? 'fa-gift' : (f.efectivo ? 'fa-money' : (/confianza/i.test(f.nombre) ? 'fa-handshake-o' : (/tarjeta|debito|credito/i.test(f.nombre) ? 'fa-credit-card' : 'fa-exchange')));
+				$b.append($('<button type="button" class="btn">').toggleClass('cortesia', !!f.cortesia).data('id', f.id_fpago)
+					.html('<i class="fa ' + icono + '"></i> ' + esc(f.nombre)));
 			});
+			var defecto = fpago(catalogo.config.id_fpago_defecto);
+			if (!defecto || defecto.cortesia) defecto = $.grep(catalogo.formas_pago, function (f) { return f.efectivo; })[0] || formas[0];
 			renderPagos();
+			elegirFpago(defecto.id_fpago);
 			$('#modalPago').modal('show');
 		});
+		$('#modalPago').on('shown.bs.modal', function () { $('#montoPago').focus().select(); });
 
 		$('#chkPropina').on('change', function () {
 			propina = this.checked ? (propinaSugerida() || propina) : 0;
@@ -623,35 +767,58 @@
 		function ajustarPagoUnico() {
 			if (pagos.length === 1 && !pagos[0].tocado && !fpago(pagos[0].id_fpago).cortesia) pagos[0].monto = totalAPagar();
 			renderPagos();
+			if (!montoTocado && fpagoSel && !fpago(fpagoSel).cortesia) $('#montoPago').val(faltaPagar());
 		}
 
-		$('#botonesFpago').on('click', 'button', function () {
-			var f = fpago($(this).data('id'));
-			var total = totalAPagar();
-			if (f.cortesia) {
-				pagos = [{ id_fpago: f.id_fpago, monto: totales().total }];
-			} else {
-				// Se descartan la cortesía y las filas en 0 que quedaron de un cambio anterior
-				pagos = $.grep(pagos, function (p) { return !fpago(p.id_fpago).cortesia && p.monto > 0; });
-				var existente = $.grep(pagos, function (p) { return p.id_fpago === f.id_fpago; })[0];
-				if (existente) {
-					// Tocar de nuevo la misma forma de pago la deja cubriendo el saldo exacto
-					existente.monto = Math.max(0, total - sumaPagos(existente));
-					existente.billetes = false;
-					existente.tocado = false;
-				} else if (pagos.length && sumaPagos(null) >= total) {
-					// Ya estaba todo pagado: es un cambio de forma de pago, no un pago adicional
-					var ultimo = pagos[pagos.length - 1];
-					ultimo.id_fpago = f.id_fpago;
-					ultimo.monto = Math.max(0, total - sumaPagos(ultimo));
-					ultimo.billetes = false;
-					ultimo.tocado = false;
-				} else {
-					pagos.push({ id_fpago: f.id_fpago, monto: Math.max(0, total - sumaPagos(null)) });
-				}
+		// ---- Forma de pago elegida (columna izquierda) y monto a cargar (columna derecha) ----
+		var fpagoSel = null, montoTocado = false;
+		function faltaPagar() { return Math.max(0, totalAPagar() - sumaPagos(null)); }
+		function elegirFpago(id) {
+			fpagoSel = id;
+			var f = fpago(id);
+			$('#botonesFpago .btn').each(function () { $(this).toggleClass('activa', $(this).data('id') === id); });
+			$('#nombreFpagoSel').text(f.nombre.toLowerCase());
+			montoTocado = false;
+			$('#montoPago').val(f.cortesia ? totales().total : faltaPagar()).prop('readonly', !!f.cortesia);
+			var billetes = '';
+			if (f.efectivo) {
+				$.each([1000, 2000, 5000, 10000, 20000], function (j, v) {
+					billetes += '<button type="button" class="btn btn-default" data-v="' + v + '">+' + fmt(v) + '</button>';
+				});
 			}
+			$('#billetesPago').html(billetes);
+		}
+		$('#botonesFpago').on('click', 'button', function () {
+			elegirFpago($(this).data('id'));
+			$('#montoPago').focus().select();
+		});
+		$('#montoPago').on('input', function () { montoTocado = true; })
+			.on('keydown', function (e) { if (e.which === 13) { e.preventDefault(); $('#btnAgregarPago').click(); } });
+		$('#billetesPago').on('click', 'button', function () {
+			// El primer billete reemplaza el saldo sugerido; los siguientes se suman
+			var actual = montoTocado ? (Math.round(Number($('#montoPago').val())) || 0) : 0;
+			montoTocado = true;
+			$('#montoPago').val(actual + Number($(this).data('v'))).focus();
+		});
+
+		// Suma el monto a la lista de pagos (si la forma ya está, se acumula en la misma fila)
+		function agregarPago(id, monto) {
+			var f = fpago(id);
+			if (f.cortesia) { pagos = [{ id_fpago: id, monto: totales().total }]; return; }
+			if (monto <= 0) return;
+			// Una forma normal reemplaza la cortesía y descarta filas en 0
+			pagos = $.grep(pagos, function (p) { return !fpago(p.id_fpago).cortesia && p.monto > 0; });
+			var existente = $.grep(pagos, function (p) { return p.id_fpago === id; })[0];
+			if (existente) { existente.monto += monto; existente.tocado = true; }
+			else pagos.push({ id_fpago: id, monto: monto, tocado: monto !== faltaPagar() });
+		}
+		$('#btnAgregarPago').on('click', function () {
+			agregarPago(fpagoSel, Math.max(0, Math.round(Number($('#montoPago').val())) || 0));
 			renderPagos();
-			$('#filasPago input').last().focus().select();
+			// Queda lista la misma forma con el saldo que falta
+			if (!fpago(fpagoSel).cortesia) { montoTocado = false; $('#montoPago').val(faltaPagar()); }
+			if (!$('#btnConfirmarPago').prop('disabled')) $('#btnConfirmarPago').focus();
+			else $('#montoPago').focus().select();
 		});
 
 		// Suma de los pagos, sin contar la fila "excepto"
@@ -661,42 +828,38 @@
 			return suma;
 		}
 
-		// El último pago (o la forma por defecto) cubre exactamente lo que falta: sin vuelto
+		// Pago exacto: completa lo que falta con la forma elegida (sin vuelto) y registra la venta de inmediato
 		$('#btnPagoExacto').on('click', function () {
-			var total = totalAPagar();
-			pagos = $.grep(pagos, function (p) { return p.monto > 0 || pagos.length === 1; });
-			if (!pagos.length) {
-				var defecto = fpago(catalogo.config.id_fpago_defecto);
-				if (!defecto || defecto.cortesia) defecto = $.grep(catalogo.formas_pago, function (f) { return f.efectivo; })[0] || catalogo.formas_pago[0];
-				pagos.push({ id_fpago: defecto.id_fpago, monto: 0 });
-			}
-			var ultimo = pagos[pagos.length - 1];
-			if (fpago(ultimo.id_fpago).cortesia) {
-				ultimo.monto = totales().total;
+			if (enviando) return;
+			var f = fpago(fpagoSel);
+			if (f.cortesia) {
+				pagos = [{ id_fpago: f.id_fpago, monto: totales().total }];
 			} else {
-				ultimo.monto = Math.max(0, total - sumaPagos(ultimo));
-				ultimo.billetes = false;
-				ultimo.tocado = false;
+				pagos = $.grep(pagos, function (p) { return !fpago(p.id_fpago).cortesia && p.monto > 0; });
+				var sobra = sumaPagos(null) - totalAPagar();
+				if (sobra > 0) {
+					// Lo cargado ya pasa del total: se rebaja hasta dejarlo exacto, empezando por el último pago
+					for (var i = pagos.length - 1; i >= 0 && sobra > 0; i--) {
+						var baja = Math.min(sobra, pagos[i].monto);
+						pagos[i].monto -= baja;
+						sobra -= baja;
+					}
+					pagos = $.grep(pagos, function (p) { return p.monto > 0; });
+				}
+				agregarPago(f.id_fpago, faltaPagar());
 			}
 			renderPagos();
-			$('#btnConfirmarPago').focus();
+			if (!$('#btnConfirmarPago').prop('disabled')) $('#btnConfirmarPago').click();
 		});
 
 		function renderPagos() {
 			var $f = $('#filasPago').empty();
+			if (!pagos.length) $f.html('<div class="vacio">Aún no hay pagos. Elige la forma de pago, ingresa el monto y presiona <b>Agregar pago</b>, o usa <b>Pago exacto</b>.</div>');
 			$.each(pagos, function (i, p) {
 				var f = fpago(p.id_fpago);
-				var rapidos = '';
-				if (f.efectivo) {
-					$.each([1000, 2000, 5000, 10000, 20000], function (j, b) {
-						rapidos += '<button type="button" class="btn btn-xs btn-default sumar" data-v="' + b + '">+' + fmt(b) + '</button> ';
-					});
-				}
-				$f.append('<div data-i="' + i + '">'
-					+ '<div class="pago-fila"><span class="nombre">' + esc(f.nombre) + '</span>'
+				$f.append('<div class="pago-fila" data-i="' + i + '"><span class="nombre">' + esc(f.nombre) + '</span>'
 					+ '<input type="number" min="0" step="1" class="form-control monto" value="' + p.monto + '"' + (f.cortesia ? ' readonly' : '') + '>'
-					+ '<button type="button" class="btn btn-default quitar" title="Quitar"><i class="fa fa-times"></i></button></div>'
-					+ (rapidos ? '<div style="margin:-2px 0 8px">' + rapidos + '</div>' : '') + '</div>');
+					+ '<button type="button" class="btn btn-default quitar" title="Quitar pago"><i class="fa fa-times"></i></button></div>');
 			});
 			// La cortesía no lleva propina
 			var cortesia = esCortesia();
@@ -719,7 +882,8 @@
 			$('#pagoFalta').text(fmt(falta));
 			$('#pagoVuelto').text(fmt(vuelto));
 			var vueltoValido = vuelto === 0 || efectivo > vuelto;
-			$('#pagoVuelto').toggleClass('text-danger', !vueltoValido).toggleClass('text-success', vueltoValido);
+			$('#pagoVuelto').toggleClass('text-danger', !vueltoValido);
+			$('#cajaFalta').toggleClass('cubierto', falta === 0);
 			$('#btnConfirmarPago').prop('disabled', !pagos.length || falta > 0 || !vueltoValido || enviando);
 		}
 
@@ -731,13 +895,7 @@
 		}).on('click', '.quitar', function () {
 			pagos.splice($(this).closest('[data-i]').data('i'), 1);
 			renderPagos();
-		}).on('click', '.sumar', function () {
-			var i = $(this).closest('[data-i]').data('i');
-			// El primer billete reemplaza el saldo cargado automáticamente
-			if (!pagos[i].billetes) { pagos[i].monto = 0; pagos[i].billetes = true; }
-			pagos[i].tocado = true;
-			pagos[i].monto += Number($(this).data('v'));
-			renderPagos();
+			if (!montoTocado && fpagoSel && !fpago(fpagoSel).cortesia) $('#montoPago').val(faltaPagar());
 		});
 
 		$('#btnConfirmarPago').on('click', function () {
@@ -777,7 +935,8 @@
 			}, terminar);
 		});
 
-		$('#modalVentaOk').on('hidden.bs.modal', function () { $('#buscarProducto').focus(); });
+		$('#modalVentaOk').on('shown.bs.modal', function () { $('#btnNuevaVenta').focus(); })
+			.on('hidden.bs.modal', function () { $('#buscarProducto').focus(); });
 
 		// Emisión electrónica: si Cloud Apps no respondió, la venta queda pendiente y se reenvía desde Ventas
 		function mostrarResultadoDte(dte) {

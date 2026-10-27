@@ -98,21 +98,24 @@ $copias = !empty($cedible) ? array('', 'CEDIBLE') : array('');
 		<hr>
 		<table>
 			<?php foreach ($detalle as $d) : ?>
-				<tr><td colspan="2"><?php echo $h($d->nombre); ?></td></tr>
+				<tr><td colspan="2"><?php echo $h($d->nombre); ?><?php echo $d->exento ? ' (EXENTO)' : ''; ?></td></tr>
 				<tr>
-					<td>&nbsp;&nbsp;<?php echo $cant($d->cantidad); ?> x <?php echo $m($d->bruto_un); ?></td>
-					<td class="r"><?php echo $m($d->subtotal); ?></td>
+					<td>&nbsp;&nbsp;<?php echo $cant($d->cantidad); ?> x <?php echo $m($d->precio_mostrar); ?></td>
+					<td class="r"><?php echo $m($d->monto_mostrar); ?></td>
 				</tr>
 			<?php endforeach; ?>
 		</table>
 		<hr>
 		<table>
-			<tr><td>Subtotal</td><td class="r"><?php echo $m($v->subtotal); ?></td></tr>
-			<?php if ((int)$v->descuento > 0) : ?>
-				<tr><td>Descuento</td><td class="r">-<?php echo $m($v->descuento); ?></td></tr>
+			<tr><td>Subtotal<?php echo $v->en_neto ? ' neto' : ''; ?></td><td class="r"><?php echo $m($v->subtotal_mostrar); ?></td></tr>
+			<?php if ((int)$v->descuento_mostrar > 0) : ?>
+				<tr><td>Descuento</td><td class="r">-<?php echo $m($v->descuento_mostrar); ?></td></tr>
 			<?php endif; ?>
-			<tr><td>Neto</td><td class="r"><?php echo $m($v->neto); ?></td></tr>
-			<tr><td>IVA</td><td class="r"><?php echo $m($v->iva); ?></td></tr>
+			<tr><td>Monto neto</td><td class="r"><?php echo $m($v->neto); ?></td></tr>
+			<tr><td>IVA (19%)</td><td class="r"><?php echo $m($v->iva); ?></td></tr>
+			<?php if ($v->monto_exento > 0) : ?>
+				<tr><td>Monto exento</td><td class="r"><?php echo $m($v->monto_exento); ?></td></tr>
+			<?php endif; ?>
 			<tr class="total"><td><?php echo $nc ? 'TOTAL DEVUELTO' : 'TOTAL'; ?></td><td class="r"><?php echo $m($v->total); ?></td></tr>
 			<?php $propina = isset($v->valor_propina) ? (int)$v->valor_propina : 0; ?>
 			<?php if ($propina > 0) : ?>
