@@ -345,7 +345,7 @@
 				text: "Confirma que desea quitar el insumo de la lista?",
 				type: "warning",
 				showCancelButton: true,
-				confirmButtonColor: "#DD6B55",
+				confirmButtonColor: "#C9372C",
 				cancelButtonText: "Cancelar",
 				confirmButtonText: "Eliminar",
 				closeOnConfirm: false

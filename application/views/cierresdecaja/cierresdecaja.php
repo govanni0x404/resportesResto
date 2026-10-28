@@ -5,9 +5,10 @@ $date = new DateTime('now');
 $date->modify('last day of this month');
 ?>
 
-<div class="content-header">
+<link href="<?php echo base_url() ?>assets/dist/css/reportes.css" rel="stylesheet" type="text/css" />
+<div class="content-header rep-encabezado">
 	<div class="header-icon">
-		<i class="pe-7s-home"></i>
+		<i class="pe-7s-lock"></i>
 	</div>
 	<div class="header-title">
 		<h1>Cierres de Caja</h1>
@@ -19,24 +20,11 @@ $date->modify('last day of this month');
 	</div>
 </div> <!-- /.Content Header (Page header) -->
 
-<style>
-@media (max-width: 767px) {
-	#filtroCierreCaja > div {
-		margin-bottom: 10px;
-	}
-	#filtroCierreCaja br {
-		display: none;
-	}
-	#filtroCierreCaja #btnTest {
-		width: 100% !important;
-	}
-}
-</style>
 
 <div class="row">
 	<div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
 		<!-- Nav tabs -->
-		<ul id="filtroCierreCaja" class="nav nav-tabs">
+		<ul id="filtroCierreCaja" class="nav nav-tabs t-filtros reporte-filtros rep-panel-filtros">
 			<div class="col-md-7 col-sm-12 col-xs-12"></div>
 			<div class="col-md-3 col-sm-6 col-xs-12">
 				<br>
@@ -49,15 +37,14 @@ $date->modify('last day of this month');
 			<div class="col-md-2 col-sm-6 col-xs-12">
 				<br>
 				<br>
-				<button id="btnTest" style="width:5px;" class="btn btn-success btn-rounded w-md m-b-1"><i class="hvr-buzz-out fa fa-search"></i></button>
+				<button id="btnTest" class="btn btn-success btn-rounded w-md m-b-1 reporte-buscar" title="Buscar cierres en el rango de fechas"><i class="hvr-buzz-out fa fa-search"></i> Consultar</button>
 			</div>
 		</ul>
-		<br>
 		<!-- Tab panels -->
 		<div class="tab-content">
 			<!---------------------------------------------TAB CAJA ACTUAL ------------------------------------------------------------>
 			<div class="tab-pane fade active in" id="cajaActual">
-				<div class="panel-body">
+				<div class="panel-body reporte-sin-marco">
 					<div class="row">
 					</div>
 					<!---------------------------------------------TABLAS RESUMEN ------------------------------------------------------------>
@@ -65,10 +52,10 @@ $date->modify('last day of this month');
 						<div class="panel-heading">
 							<div class="panel-title">
 								<i class="pe-7s-cash"></i>
-								<h4>Resumen Cierres De Caja</h4>
+								<h4>Resumen de cierres de caja</h4>
 							</div>
 						</div>
-						<div class="table-responsive" style="margin-top:10px; padding:5px;">
+						<div class="table-responsive reporte-tabla">
 							<table id="tableCierresDeCaja" class="display responsive" style="width: 100%">
 								<thead>
 									<tr>

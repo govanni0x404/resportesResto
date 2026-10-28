@@ -1,5 +1,5 @@
 <!--  MODAL NUEVO REGISTRO  -->
-<div id="ModalNuevoTurno" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevoTurno" class="modal fade t-form-modal" role="dialog" style="overflow-y: scroll;">
   <div class="modal-dialog">
     <div class="modal-content">
       <!-- TITULO  MODAL  -->
@@ -18,18 +18,20 @@
           </ul>
           <div class="tab-pane fade active in" id="tabBodegas">
             <!-- CAMPOS DE REGISTRO  -->
+            <div class="t-card-titulo">Datos del turno</div>
             <fieldset>
-              <div class="col-md-4 ">
+              <div class="col-sm-3">
                 <label for="idTurnos">ID</label>
                 <input type="number" disabled class="form-control input-sm input-sm" name="idTurnos" id="idTurnos" requerido="no" value="" />
               </div>
-              <div class="col-md-12 ">
+              <div class="col-sm-9">
                 <label for="nombreTurno">NOMBRE TURNO *</label>
                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreTurno" id="nombreTurno" requerido="si" value="" placeholder="Nombre Turno" />
               </div>
             </fieldset>
+            <div class="t-card-titulo">Opciones de cierre</div>
             <fieldset>
-              <div class="col-md-4">
+              <div class="col-sm-6">
                 <div class="btn-group" role="group" aria-label="...">
                   <div class="checkbox checkbox-success">
                     <br>
@@ -41,7 +43,7 @@
                 </div>
               </div>
 
-              <div class="col-md-4">
+              <div class="col-sm-6">
                 <div class="btn-group" role="group" aria-label="...">
                   <div class="checkbox checkbox-success">
                     <br>
@@ -53,7 +55,7 @@
                 </div>
               </div>
 
-              <div class="col-md-4">
+              <div class="col-sm-12">
                 <div class="btn-group" role="group" aria-label="...">
                   <div class="checkbox checkbox-success">
                     <br>
@@ -73,8 +75,8 @@
 
       <!-- BOTONES  -->
       <div class="modal-footer">
-        <button onclick="grabarNuevoTurno()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
-        <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
+        <button onclick="grabarNuevoTurno()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> Grabar</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
       </div>
       <!-- FIN BOTONES  -->
     </div>

@@ -1,3 +1,37 @@
+<style>
+	/* Formularios en modales (.t-form): filas flexibles en vez de floats + <br>, etiquetas claras y móvil a una columna */
+	.t-form fieldset { display: flex; flex-wrap: wrap; align-items: flex-end; margin: 0 -8px; min-width: 0; }
+	.t-form fieldset > * { flex: 0 0 100%; max-width: 100%; padding-left: 8px; padding-right: 8px; }
+	.t-form fieldset > [class*="col-"] { float: none; flex: 0 0 auto; margin-bottom: 12px; }
+	.t-form fieldset > .table-responsive, .t-form fieldset > .nav-tabs { margin-left: 8px; margin-right: 8px; max-width: calc(100% - 16px); padding-left: 0; padding-right: 0; }
+	.t-form label { font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave); font-weight: 700; margin-bottom: 5px; }
+	.t-form .checkbox label { text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--t-texto); }
+	.t-form label.t-card-titulo { display: block; margin: 4px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--t-borde-suave); }
+	.t-form .form-control.input-sm { height: 36px; font-size: 14px; }
+	.t-form textarea, .t-form textarea.form-control { border: 1px solid var(--t-borde, #EADFD2); border-radius: var(--t-radio-sm); padding: 8px 10px; height: auto; }
+	.t-form textarea:focus { outline: none; border-color: var(--t-primario); box-shadow: 0 0 0 3px rgba(180, 67, 46, .12); }
+	.t-form sup { top: -.3em; }
+	.t-form sup a { cursor: pointer; font-weight: 600; text-transform: none; color: var(--t-primario); margin-left: 4px; }
+	.t-form .nav-tabs { margin-bottom: 14px; }
+	.t-form .tab-pane > fieldset:first-child { margin-top: 2px; }
+	.modal-footer .btn i[class=""] { display: none; }
+	@media (max-width: 991px) {
+		.t-form fieldset > [class*="col-md-"]:not([class*="col-sm-"]):not([class*="col-xs-"]) { width: 100%; }
+		.t-form fieldset > .col-md-1:empty, .t-form fieldset > .col-md-2:empty, .t-form fieldset > .col-md-5:empty, .t-form fieldset > .col-md-8:empty { display: none; }
+	}
+</style>
+<style>
+	/* Modal de insumo: datos generales a la izquierda en tarjeta suave, pestañas a la derecha */
+	#modalInsumo .ins-datos { background: var(--t-fondo-alt); border: 1px solid var(--t-borde-suave); border-radius: var(--t-radio); padding: 4px 14px 6px; margin-bottom: 12px; }
+	#modalInsumo .ins-datos .nav-tabs { border-bottom-color: var(--t-borde); }
+	#modalInsumo .ins-datos .form-control { background-color: #fff; }
+	#modalInsumo .ins-datos .form-control[disabled] { background-color: var(--t-fondo-alt); }
+	#modalInsumo #myTab2 { display: flex; flex-wrap: wrap; }
+	#modalInsumo #myTab2 > li { float: none; }
+	#modalInsumo #myTab2 > li > a { padding: 10px 10px 8px; font-size: 12px; letter-spacing: .3px; }
+	#modalInsumo #btnCrearRecetaProduccion { padding: 0 4px; font-weight: 600; }
+	#modalHistoricoCompras .historico-cuerpo { padding: 14px 20px; float: none; }
+</style>
 <!--  MODAL NUEVO REGISTRO  -->
 <div id="modalInsumo" class="modal fade" role="dialog" style="overflow-y: scroll;">
 	<div class="modal-dialog modal-xl">
@@ -12,18 +46,17 @@
 
 			<!-- CONTENIDO  MODAL  -->
 
-				<div class="modal-body">
+				<div class="modal-body t-form">
 					<div class="h-panel">
 						<div class="row">
 							<div class="col-md-5">
-							<br>
+							<div class="ins-datos">
 							<ul id="myTab" class="nav nav-tabs title font">
 								<li class="active">
 									<a href="#tabDatosInsumo" data-toggle="tab" id="tab1" class="text color1">INSUMO</a>
 								</li>
 							</ul>
 							<div class="tab-pane fade active in" id="tabDatosInsumo">
-								<br>
 								<!-- CAMPOS DE REGISTRO  -->
 								<fieldset>
 									<div class="col-md-4">
@@ -35,24 +68,21 @@
 										<input type="text" class="form-control input-sm input-sm" name="codBarra" id="codBarra" maxlength='50' onkeypress="return sololetrasyNumeros(event)" requerido="no" value="">
 									</div>
 								</fieldset>
-								<br>
 								<fieldset>
 									<div class="col-md-12">
 										<label for="nombreInsumo">NOMBRE INSUMO *</label>
 										<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreInsumo" id="nombreInsumo" requerido="si" value="" placeholder="Nombre Insumo" />
 									</div>
 								</fieldset>
-								<br>
 								<fieldset>
 									<div class="col-md-12">
 										<label for="cboGrupoInsumo">FAMILIA/GRUPO INSUMO *</label>
-										<sup style="color:#568c30;" ><a onclick="AbrirModalNuevaFamiliaInsumo()">Nuevo</a></sup>
+										<sup style="color:#B4432E;" ><a onclick="AbrirModalNuevaFamiliaInsumo()">Nuevo</a></sup>
 										<select style="width:100%;" id="cboGrupoInsumo" nombre="cboGrupoInsumo" class="form-control input-sm" requerido="si">
 											<option value="">--Seleccione--</option>
 										</select>
 									</div>
 								</fieldset>
-								<br>
 								<fieldset>
 									<div class="col-md-6">
 										<label for="cboIva">IVA *</label>
@@ -70,7 +100,7 @@
 								<!-- FIN CAMPOS DE REGISTRO  -->
 							</div>
 							</div>
-							<div><br></div>
+							</div>
 							<div class="col-md-7">
 							<ul id="myTab2" class="nav nav-tabs title font">
 								<li id="tabUmedida" class="active">
@@ -93,10 +123,9 @@
 								</li>
 							</ul>
 							<div class="tab-pane fade active in" id="tabUnidadMedidaInsumo">
-								<br>
 								<fieldset>
 									<div class="col-md-12">
-										<label>Unidades de medida compra e inventario</label>
+										<label class="t-card-titulo">Unidades de medida compra e inventario</label>
 									</div>
 								</fieldset>
 								<fieldset>
@@ -106,13 +135,12 @@
 									</div>
 									<div class="col-md-6">
 										<label for="cboUnMedInventario">U. MEDIDA INVENTARIO/COMPRA *</label>
-										<sup style="color:#568c30;" ><a onclick="AbrirModalNuevaUmedida('inventario')">Nuevo</a></sup>
+										<sup style="color:#B4432E;" ><a onclick="AbrirModalNuevaUmedida('inventario')">Nuevo</a></sup>
 										<select style="width:100%;" id="cboUnMedInventario" nombre="cboUnMedInventario" class="form-control input-sm" requerido="si">
 											<option value="">--Seleccione--</option>
 										</select>
 									</div>
 								</fieldset>
-								<br>
 								<fieldset>
 									<div class="col-md-6">
 										<label for="medReceta">MEDIDA RECETA (EJ. 1000) *</label>
@@ -120,7 +148,7 @@
 									</div>
 									<div class="col-md-6">
 										<label for="cboUnMedReceta">U. MEDIDA RECETA *</label>
-										<sup style="color:#568c30;" ><a onclick="AbrirModalNuevaUmedida('receta')">Nuevo</a></sup>
+										<sup style="color:#B4432E;" ><a onclick="AbrirModalNuevaUmedida('receta')">Nuevo</a></sup>
 										<select style="width:100%;" id="cboUnMedReceta" nombre="cboUnMedReceta" class="form-control input-sm" requerido="si">
 											<option value="">--Seleccione--</option>
 										</select>
@@ -128,10 +156,9 @@
 								</fieldset>
 							</div>
 							<div class="tab-pane fade" id="tabStock">
-								<br>
 								<fieldset>
 									<div class="col-md-4">
-										<label>Stock por Bodega</label>
+										<label class="t-card-titulo">Stock por Bodega</label>
 									</div>
 									<div class="col-md-2"></div>
 									<div class="col-md-6" style="height:25px; padding:0px; margin: 0px;">
@@ -160,10 +187,9 @@
 								</fieldset>
 							</div>
 							<div class="tab-pane fade" id="tabCosto">
-								<br>
 								<fieldset>
 									<div class="col-md-12">
-										<label>Costo Compras</label>
+										<label class="t-card-titulo">Costo Compras</label>
 									</div>
 								</fieldset>
 								<fieldset>
@@ -180,7 +206,6 @@
 										<input type="number" class="form-control input-sm input-sm" name="costoUltCompra" onkeypress="return soloNumeros(event)" id="costoUltCompra" requerido="no" value="">
 									</div>
 								</fieldset>
-								<br>
 								<fieldset>
 									<div class="col-md-8"></div>
 									<div class="col-md-4">
@@ -189,13 +214,12 @@
 								</fieldset>
 							</div>
 							<div class="tab-pane fade" id="tabProduccion">
-								<br>
 								<fieldset>
 									<div class="col-md-9">
-										<label>Receta de producción</label>
+										<label class="t-card-titulo" style="display:inline-block; border:0; margin-bottom:0;">Receta de producción</label>
 										<button type="button" class="btn btn-sm" 
 												id="btnCrearRecetaProduccion" 
-												title="Crear nueva receta de producción" style="color: #568c30; text-decoration: underline;
+												title="Crear nueva receta de producción" style="color: #B4432E; text-decoration: underline;
 												background: none; border: none; background-color: transparent;">
 											<i class=""></i> Nueva
 										</button>
@@ -213,7 +237,6 @@
 										</button>
 									</div>
 								</fieldset>
-								<br>
 								<fieldset>
 									<ul id="myTab2" class="nav nav-tabs title font">
 										<li id="tabUmStockInsumosRecetas" class="active">
@@ -258,10 +281,9 @@
 							</div>
 
 							<div class="tab-pane fade" id="tabRecetas">
-								<br>
 								<fieldset>
 									<div class="col-md-12">
-										<label>Listado de recetas que contienen este insumo</label>
+										<label class="t-card-titulo">Listado de recetas que contienen este insumo</label>
 									</div>
 								</fieldset>
 								<fieldset>
@@ -280,15 +302,14 @@
 								</fieldset>
 							</div>
 							<div class="tab-pane fade" id="tabObservaciones">
-								<br>
 								<fieldset>
 									<div class="col-md-12">
-										<label>Observaciones</label>
+										<label class="t-card-titulo">Observaciones</label>
 									</div>
 								</fieldset>
 								<fieldset>
 									<div class="col-md-12">
-										<textarea style="resize:none;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box; width:100%; height:100px;" type='text' cols="40" maxlength='250' name="obsInsumo" onkeypress="return sololetrasyNumeros(event)" id="obsInsumo" rows="4"></textarea>
+										<textarea style="resize:none;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box; width:100%; height:100px;" type='text' cols="40" maxlength='250' name="obsInsumo" class="t-textarea" onkeypress="return sololetrasyNumeros(event)" id="obsInsumo" rows="4"></textarea>
 									</div>
 								</fieldset>
 							</div>
@@ -325,7 +346,7 @@
 			<!-- FIN TITULO  MODAL  -->
 
 			<!-- CONTENIDO  MODAL  -->
-			<div class="col-md-12">
+			<div class="col-md-12 historico-cuerpo">
 				<fieldset>
 					<div class="table-responsive" style="margin-top:10px; padding:5px;">
 						<table id="tableHistoricoCompras" class="display responsive" style="width: 100%">
@@ -370,7 +391,7 @@
             </div>
 
             <!-- CONTENIDO MODAL -->
-            <div class="modal-body">
+            <div class="modal-body t-form">
                 <div class="h-panel">
                     <!-- CAMPOS DE REGISTRO -->
                     <div class="row">
@@ -398,7 +419,6 @@
                                 </div>
 								<div class="col-md-3">
                                     <div class="checkbox checkbox-success">
-										<br>
                                             <input type="checkbox" id="ckVigenteReceta">
                                         <label for='ckVigenteReceta'>
 											Vigente
@@ -436,7 +456,6 @@
                             </fieldset>
                         </div>
                     </div>
-                    <br>
                     
                     <!-- BOTON VER/AGREGAR INSUMOS -->
                     <!-- <div class="row">
@@ -447,7 +466,6 @@
                         </div>
                     </div> -->
                     
-                    <br>
                     
                     <!-- TABLA DE INSUMOS -->
                     <div class="row">

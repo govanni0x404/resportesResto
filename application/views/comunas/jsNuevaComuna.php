@@ -1,4 +1,4 @@
-<div id="ModalNuevaComuna" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevaComuna" class="modal fade t-form-modal" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -24,11 +24,11 @@
                             </div>
                         </fieldset>
                         <fieldset>
-                            <div class="col-md-10 ">
+                            <div class="col-md-12">
                                 <label for="nombreComuna">COMUNA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreComuna" id="nombreComuna" requerido="si" value="" placeholder="Nombre Comuna" />
                             </div>
-                            <div class="col-md-10">
+                            <div class="col-md-12">
                                 <label for="cboIdProvincia">PROVINCIA *</label>
                                 <select id="cboIdProvincia" nombre="cboIdProvincia" class="form-control input-sm" style="width:100%" requerido="si"></select>
                             </div>
@@ -41,8 +41,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="grabarNuevaComuna()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
+                <button onclick="grabarNuevaComuna()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> Grabar</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>

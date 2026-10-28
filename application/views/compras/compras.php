@@ -29,7 +29,7 @@ $fechaActual = date('Y-m-d');
             <div class="panel panel-bd">
                 <div class="panel-heading">
                     <div class="panel-title">
-                        <h4>Datos de la Compra</h4>
+                        <h4><i class="fa fa-file-text-o"></i> Datos de la Compra</h4>
                     </div>
                 </div>
                 <div class="panel-body">
@@ -67,7 +67,7 @@ $fechaActual = date('Y-m-d');
             <div class="panel panel-bd">
                 <div class="panel-heading">
                     <div class="panel-title">
-                        <h4>Detalle de Productos</h4>
+                        <h4><i class="fa fa-plus-square-o"></i> Detalle de Productos</h4>
                     </div>
                 </div>
                 <div class="panel-body">
@@ -85,8 +85,7 @@ $fechaActual = date('Y-m-d');
                                 <input min="0" type="number" class="form-control input-sm" maxlength='28'
                                     onpaste="return false;" ondrop="return false;" autocomplete="off" 
                                     name="CantidadComprada" id="CantidadComprada" requerido="si" value="" />
-                                <span class="input-group-addon" id="spanUnidadCantidad" 
-                                    style="padding: 6px 12px; font-size: 14px; font-weight: 400; line-height: 1; color: #555; text-align: center; background-color: #eee; border: 1px solid #ccc; border-radius: 4px; border-left: none;"></span>
+                                <span class="input-group-addon" id="spanUnidadCantidad"></span>
                             </div>
                         </div>
                         
@@ -116,7 +115,7 @@ $fechaActual = date('Y-m-d');
             <div class="panel panel-bd">
                 <div class="panel-heading">
                     <div class="panel-title">
-                        <h4>Lista de Productos</h4>
+                        <h4><i class="fa fa-shopping-cart"></i> Lista de Productos</h4>
                     </div>
                 </div>
                 <div class="panel-body">
@@ -137,12 +136,12 @@ $fechaActual = date('Y-m-d');
                         </table>
                     </div>
 
-                    <div class="compras-total-row" style="margin-top: 20px;">
+                    <div class="compras-total-row">
                         <div class="compras-total-row__spacer"></div>
                         <div class="compras-total-row__label">
                             <label class="control-label">Total Compra:</label>
                         </div>
-                        <div class="compras-total-row__input" style="margin-bottom: 30px;">
+                        <div class="compras-total-row__input">
                             <div class="input-group">
                                 <span class="input-group-addon">$</span>
                                 <input type="number" disabled
@@ -153,15 +152,12 @@ $fechaActual = date('Y-m-d');
                         </div>
                     </div>
 
-                    <div class="row" style="margin-top: 30px;">
-                        <div class="col-md-12 text-right">
-                            <button id="GrabaIngresoDeCompra"
-                                type="button"
-                                class="btn btn-primary btn-lg" 
-                                style="padding: 10px 20px; font-size: 16px;">
-                                <i class=""></i> INGRESAR COMPRA
-                            </button>
-                        </div>
+                    <div class="t-acciones compras-acciones">
+                        <button id="GrabaIngresoDeCompra"
+                            type="button"
+                            class="btn btn-primary btn-lg">
+                            <i class="fa fa-check"></i> INGRESAR COMPRA
+                        </button>
                     </div>
                 </div>
             </div>
@@ -171,6 +167,34 @@ $fechaActual = date('Y-m-d');
 </div>
 
 <style>
+    /* Filas de campos flexibles: inputs alineados abajo aunque las etiquetas tengan distinto largo */
+    .compras-page .panel-body > fieldset { display: flex; flex-wrap: wrap; align-items: flex-end; margin: 0 -15px; min-width: 0; }
+    .compras-page .panel-body > fieldset > [class*="col-"] { float: none; margin-bottom: 10px; }
+    @media (max-width: 991px) { .compras-page .panel-body > fieldset > [class*="col-md-"] { width: 100%; } }
+    .compras-page .panel-body label { font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave); font-weight: 700; margin-bottom: 5px; }
+    .compras-page .panel-body sup a { cursor: pointer; font-weight: 600; text-transform: none; margin-left: 4px; }
+    .compras-page .form-control.input-sm { height: 38px; font-size: 14px; }
+    .compras-page #spanUnidadCantidad { min-width: 44px; font-size: 13px; font-weight: 600; }
+    .compras-page #spanUnidadCantidad:empty { display: none; }
+    .compras-page .input-group:has(#spanUnidadCantidad:empty) .form-control { border-radius: var(--t-radio-sm); }
+    .compras-page #btnAgregarALista { height: 38px; }
+    .compras-page .panel-heading h4 i { color: var(--t-primario); margin-right: 4px; }
+    .compras-page #tableCompra { margin-bottom: 0; }
+    .compras-page #tableCompra > thead > tr > th { background: var(--t-fondo-alt) !important; color: var(--t-texto) !important; border-color: var(--t-borde-suave) !important; }
+
+    /* Total de la compra como indicador destacado */
+    .compras-page .compras-total-row { margin: 16px 0 0 auto; max-width: 360px; background: var(--t-primario-suave); border: 1px solid var(--t-primario-borde);
+        border-radius: var(--t-radio); padding: 10px 14px; }
+    .compras-page .compras-total-row__label .control-label { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-primario); }
+    .compras-page .compras-total-row__input { flex: 1 1 auto; }
+    .compras-page .compras-total-row .input-group-addon { background: transparent; border: 0; font-size: 20px; font-weight: 800; color: var(--t-primario); padding-right: 4px; }
+    .compras-page #txtTotalCompra { background: transparent; border: 0; box-shadow: none; font-size: 24px; font-weight: 800; color: var(--t-primario); height: 40px; padding-left: 0; }
+    .compras-page .compras-acciones { margin: 16px 0 0; }
+    @media (max-width: 767px) {
+        .compras-page .compras-total-row { max-width: none; }
+        .compras-page .compras-acciones .btn { width: 100%; }
+    }
+
     .compras-total-row {
         display: flex;
         flex-wrap: wrap;

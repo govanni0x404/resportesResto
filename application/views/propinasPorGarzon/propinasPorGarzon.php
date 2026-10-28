@@ -5,7 +5,8 @@ $date->modify('last day of this month');
 //$fechaActual = date('Y-m-d');
 $fechaActual = date('d-m-Y');
 ?>
-<div class="content-header">
+<link href="<?php echo base_url() ?>assets/dist/css/reportes.css" rel="stylesheet" type="text/css" />
+<div class="content-header rep-encabezado">
   <div class="header-icon">
     <i class="pe-7s-home"></i>
   </div>
@@ -20,24 +21,22 @@ $fechaActual = date('d-m-Y');
 </div> <!-- /.Content Header (Page header) -->
 
 
-<div class="container-padding">
+<div class="container-padding rep-propinas">
   <input type="number" class="form-control" style="display: none;" name="id_rol" id="id_rol" value="0" min="0" oninput="validity.valid||(value='');">
 
   <style>
-  @media (max-width: 767px) {
-    #filtroPropinasGarzon > div {
-      margin-bottom: 10px;
-    }
-    #filtroPropinasGarzon #btnFiltrar {
-      width: 100% !important;
-    }
-  }
+  /* Filtros, tarjetas y tablas: assets/dist/css/reportes.css */
+  .rep-panel-vacio { border: 0; box-shadow: none; background: transparent; margin-bottom: 0; }
+  .rep-panel-vacio > .panel-heading, .rep-panel-vacio > br { display: none; }
+  .rep-panel-vacio:after { content: ""; display: table; clear: both; }
+  .rep-panel-vacio.rep-fila { margin-left: -15px; margin-right: -15px; }
+  .rep-propinas .panel-body { padding-left: 0; padding-right: 0; }
   </style>
 
   <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
       <div class="panel-body">
-<div id="filtroPropinasGarzon" class="row">
+<div id="filtroPropinasGarzon" class="row t-filtros rep-filtros rep-panel-filtros">
 <div class="col-md-4 col-sm-6 col-xs-12">
 				<div class="control-group">
 					<div class="controls">
@@ -50,14 +49,13 @@ $fechaActual = date('d-m-Y');
 					</div>
 				</div>
 			</div>
-            <div class="col-md-4 col-sm-6 col-xs-12">
-              <br>
-                <button id="btnFiltrar" style="width:5px;" class="btn btn-success btn-rounded w-md m-b-1"><i class="hvr-buzz-out fa fa-search"></i></button>
+            <div class="col-md-3 col-sm-6 col-xs-12">
+                <button id="btnFiltrar" style="width:5px;" class="btn btn-success btn-rounded w-md m-b-1"><i class="hvr-buzz-out fa fa-search"></i> Consultar</button>
             </div>
-             <div class="col-md-4 col-sm-12 col-xs-12">
+             <div class="col-md-4 col-sm-12 col-xs-12 rep-espacio">
             </div>
 </div>
-        <div class="panel lobidisable">
+        <div class="panel lobidisable rep-panel-vacio">
           <div class="panel-heading">
             <div class="panel-title">
               
@@ -69,7 +67,7 @@ $fechaActual = date('d-m-Y');
       </div>
 
 
-<div class="container-padding">
+<div class="container-padding rep-propinas">
   <input type="number" class="form-control" style="display: none;" name="id_rol" id="id_rol" value="0" min="0" oninput="validity.valid||(value='');">
 
   <div class="row">
@@ -112,14 +110,14 @@ $fechaActual = date('d-m-Y');
       </div>
 
 
-      <div class="container-padding">
+      <div class="container-padding rep-propinas">
   <input type="number" class="form-control" style="display: none;" name="id_rol" id="id_rol" value="0" min="0" oninput="validity.valid||(value='');">
 
   <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
       <div class="panel-body">
 
-        <div class="panel  lobidisable">
+        <div class="panel  lobidisable rep-panel-vacio rep-fila">
           <div class="panel-heading">
             <div class="panel-title">
              

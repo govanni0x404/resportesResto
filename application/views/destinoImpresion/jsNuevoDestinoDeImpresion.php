@@ -1,4 +1,4 @@
-<div id="ModalNuevoDestinoDeImpresion" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevoDestinoDeImpresion" class="modal fade t-form-modal" role="dialog" style="overflow-y: scroll;">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<!-- TITULO  MODAL  -->
@@ -17,6 +17,7 @@
 					</ul>
 					<div class="tab-pane fade active in" id="tabDatosUsuarios">
 						<!-- CAMPOS DE REGISTRO  -->
+						<div class="t-card-titulo">Identificación</div>
 						<fieldset>
 							<div class="col-md-4 ">
 								<label for="idDestinoDeImpresion">ID</label>
@@ -24,12 +25,12 @@
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-10 ">
+							<div class="col-md-12">
 								<label for="nombreDestinoDeImpresion">NOMBRE DESTINO IMPRESION *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreDestinoDeImpresion" id="nombreDestinoDeImpresion" requerido="si" value="" placeholder="Nombre Destino De Impresion" />
 							</div>
 
-							<div class="col-md-10 ">
+							<div class="col-md-12">
 								<label for="rutaImpresora">RUTA DE LA IMPRESORA/IP *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return rutas(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="rutaImpresora" id="rutaImpresora" requerido="si" value="" placeholder="Ruta Destino De Impresion" />
 							</div>
@@ -45,8 +46,9 @@
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return rutas(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="RutaWindowsImpresora" id="RutaWindowsImpresora" requerido="si" value="" placeholder="Ruta Windows Destino De Impresion" />
 							</div>
 						</fieldset>
+						<div class="t-card-titulo">Opciones de impresión</div>
 						<fieldset>
-							<div class="col-md-4">
+							<div class="col-sm-6">
 								<div class=" btn-group" role="group" aria-label="...">
 									<div class="checkbox checkbox-success checkbox-circle">
 										<input id="ckImpresionGraficaWindows" type="checkbox">
@@ -57,7 +59,7 @@
 								</div>
 							</div>
 
-							<div class="col-md-4">
+							<div class="col-sm-6">
 								<div class=" btn-group" role="group" aria-label="...">
 									<div class="checkbox checkbox-success checkbox-circle">
 										<input id="ckPermitirImpresionLocal" type="checkbox">
@@ -68,7 +70,7 @@
 								</div>
 							</div>
 
-							<div class="col-md-4">
+							<div class="col-sm-6">
 								<div class=" btn-group" role="group" aria-label="...">
 									<div class="checkbox checkbox-success checkbox-circle">
 										<input id="ckUsarLogoPrecuenta" type="checkbox">
@@ -80,7 +82,7 @@
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-4">
+							<div class="col-sm-6">
 								<div class=" btn-group" role="group" aria-label="...">
 									<div class="checkbox checkbox-success checkbox-circle">
 										<input id="ckNoImprimirComprobantes" type="checkbox">
@@ -91,7 +93,7 @@
 								</div>
 							</div>
 
-							<div class="col-md-4">
+							<div class="col-sm-6">
 								<div class=" btn-group" role="group" aria-label="...">
 									<div class="checkbox checkbox-success checkbox-circle">
 										<input id="CkReemplazarPorDestinoRecinto" type="checkbox">
@@ -102,7 +104,7 @@
 								</div>
 							</div>
 
-							<div class="col-md-4">
+							<div class="col-sm-6">
 								<div class=" btn-group" role="group" aria-label="...">
 									<div class="checkbox checkbox-success checkbox-circle">
 										<input id="CkPermitirImpresionPrecuenta" type="checkbox">
@@ -115,6 +117,7 @@
 
 
 						</fieldset>
+						<div class="t-card-titulo">Formato</div>
 						<fieldset>
 							<div class="col-md-6 ">
 								<label for="size_font">TAMAÑO FUENTE</label>
@@ -132,8 +135,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarNuevoDestinoDeImpresion()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
+				<button onclick="grabarNuevoDestinoDeImpresion()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> Grabar</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>

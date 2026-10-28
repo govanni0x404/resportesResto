@@ -4,9 +4,10 @@ $date = new DateTime('now');
 $date->modify('last day of this month');
 $fechaActual = date('d-m-Y');
 ?>
-<div class="content-header">
+<link href="<?php echo base_url() ?>assets/dist/css/reportes.css" rel="stylesheet" type="text/css" />
+<div class="content-header rep-encabezado">
     <div class="header-icon">
-        <i class="pe-7s-home"></i>
+        <i class="pe-7s-note2"></i>
     </div>
     <div class="header-title">
         <h1>Detalle De Operaciones</h1>
@@ -18,15 +19,34 @@ $fechaActual = date('d-m-Y');
     </div>
 </div> <!-- /.Content Header (Page header) -->
 
+<style>
+	/* Modal de detalle (filtros, tarjetas y tablas: assets/dist/css/reportes.css) */
+	#modalVerDetalleDeOperaciones .modal-body > .row > .col-md-12 > .panel { box-shadow: none; margin-bottom: 0; }
+	#modalVerDetalleDeOperaciones fieldset { padding: 14px 8px 4px; overflow: hidden; background: var(--t-fondo-alt, #FBF8F3); border-bottom: 1px solid var(--t-borde, #EADFD2); border-radius: 14px 14px 0 0; }
+	#modalVerDetalleDeOperaciones fieldset label, #ModalCambioFormaDePago fieldset label { font-size: 12px; color: var(--t-texto-suave, #7A6A5E); letter-spacing: .3px; font-weight: 600; margin-bottom: 5px; }
+	#modalVerDetalleDeOperaciones fieldset > div { margin-bottom: 10px; }
+	#modalVerDetalleDeOperaciones fieldset input[disabled] { background: #fff; font-weight: 600; color: var(--t-texto, #3A2A22); }
+	#modalVerDetalleDeOperaciones fieldset sup { top: 0; margin-left: 6px; }
+	#modalVerDetalleDeOperaciones fieldset sup a { cursor: pointer; display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--t-primario-suave, #FBEEE8); border: 1px solid var(--t-primario-borde, #EFD2C6); color: var(--t-primario, #B4432E); text-decoration: none; }
+	#modalVerDetalleDeOperaciones fieldset sup a:hover { background: var(--t-primario, #B4432E); border-color: var(--t-primario, #B4432E); color: #fff; }
+	#modalVerDetalleDeOperaciones .modal-body .modal-footer { margin: 16px -20px -18px; }
+	#ModalCambioFormaDePago fieldset { overflow: hidden; margin: 0 -10px; }
+	#ModalCambioFormaDePago fieldset > div { margin-bottom: 12px; }
+	#ModalCambioFormaDePago #myTab:empty, #ModalCambioFormaDePago #myTab { border: 0; margin: 0; }
+	@media (max-width: 767px) {
+		#modalVerDetalleDeOperaciones .modal-body .modal-footer { margin: 14px -14px -14px; }
+	}
+</style>
+
 <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
         <!-- Nav tabs -->
-        <ul class="nav nav-tabs">
+        <ul class="nav nav-tabs t-filtros reporte-filtros rep-panel-filtros">
             <div class="col-md-3">
                 <br>
                 <div class="control-group">
                     <div class="controls">
-                        <label> Seleccione la fecha </label>
+                        <label>Rango de fechas</label>
                         <div class="input-prepend input-group">
                             <span class="add-on input-group-addon"><i class="fa fa-calendar"></i></span>
                             <input type="text" id="date-range-picker" class="form-control"
@@ -37,7 +57,7 @@ $fechaActual = date('d-m-Y');
             </div>
             <div class="col-md-3">
                 <br>
-                <label>Forma De Pago:
+                <label>Forma de pago
 
                     <div class="checkbox checkbox-success checkbox-inline">
                         <input type="checkbox" id="ckTodasLasFpago" value="option1">
@@ -53,7 +73,7 @@ $fechaActual = date('d-m-Y');
             </div>
             <div class="col-md-3">
                 <br>
-                <label>Usuario:
+                <label>Usuario
                     <div class="checkbox checkbox-success checkbox-inline">
                         <input type="checkbox" id="ckTodosLosUsuarios" value="option1">
                         <label for="ckTodosLosUsuarios"> Todos </label>
@@ -68,12 +88,11 @@ $fechaActual = date('d-m-Y');
             <div class="col-md-3">
                 <br>
                 <br>
-                <button id="btnFiltrar" style="width:5px;" class="btn btn-success btn-rounded w-md m-b-1"><i
-                        class="hvr-buzz-out fa fa-search"></i></button>
+                <button id="btnFiltrar" class="btn btn-success btn-rounded w-md m-b-1 reporte-buscar" title="Aplicar filtros"><i
+                        class="hvr-buzz-out fa fa-search"></i> Consultar</button>
             </div>
         </ul>
-        <br>
-        <div class="panel-body">
+        <div class="panel-body reporte-sin-marco">
             <div class="row">
             </div>
             <!---------------------------------------------TABLAS RESUMEN STOCK POR BODEGA ------------------------------------------------------------>
@@ -81,10 +100,10 @@ $fechaActual = date('d-m-Y');
                 <div class="panel-heading">
                     <div class="panel-title">
                         <i class="pe-7s-cash"></i>
-                        <h4>Detalle Operaciones</h4>
+                        <h4>Detalle de operaciones</h4>
                     </div>
                 </div>
-                <div class="table-responsive" style="margin-top:10px; padding:5px;">
+                <div class="table-responsive reporte-tabla">
                     <table id="tableDetalleOperaciones" class="display responsive" style="width: 100%">
                         <thead>
                             <tr>

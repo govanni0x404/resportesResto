@@ -4,9 +4,10 @@ $date = new DateTime('now');
 $date->modify('last day of this month');
 $fechaActual = date('d-m-Y');
 ?>
-<div class="content-header">
+<link href="<?php echo base_url() ?>assets/dist/css/reportes.css" rel="stylesheet" type="text/css" />
+<div class="content-header rep-encabezado">
     <div class="header-icon">
-        <i class="pe-7s-home"></i>
+        <i class="pe-7s-close-circle"></i>
     </div>
     <div class="header-title">
         <h1>Resumen De Anulaciones/Eliminaciones</h1>
@@ -18,15 +19,22 @@ $fechaActual = date('d-m-Y');
     </div>
 </div> <!-- /.Content Header (Page header) -->
 
+<style>
+	/* Tipo: Todas / Anulaciones / Eliminaciones, uno bajo otro (filtros: assets/dist/css/reportes.css) */
+	.rep-panel-filtros .reporte-tipo { display: flex; flex-direction: column; gap: 4px; align-self: center; }
+	.rep-panel-filtros .reporte-tipo .checkbox, .rep-panel-filtros .reporte-tipo .radio { display: block; margin: 0; padding-left: 20px; }
+	.rep-panel-filtros .reporte-tipo .radio input[disabled] + label { color: var(--t-texto-tenue, #98A6B8); }
+</style>
+
 <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
         <!-- Nav tabs -->
-        <ul class="nav nav-tabs">
+        <ul class="nav nav-tabs t-filtros reporte-filtros rep-panel-filtros">
             <div class="col-md-3">
                 <br>
                 <div class="control-group">
                     <div class="controls">
-                        <label> Seleccione la fecha </label>
+                        <label>Rango de fechas</label>
                         <div class="input-prepend input-group">
                             <span class="add-on input-group-addon"><i class="fa fa-calendar"></i></span>
                             <input type="text" id="date-range-picker" class="form-control"
@@ -37,7 +45,7 @@ $fechaActual = date('d-m-Y');
             </div>
             <div class="col-md-3">
                 <br>
-                <label>Usuario:
+                <label>Usuario
                     <div class="checkbox checkbox-success checkbox-inline">
                         <input type="checkbox" id="ckTodosLosUsuarios" value="option1">
                         <label for="ckTodosLosUsuarios"> Todos </label>
@@ -50,7 +58,7 @@ $fechaActual = date('d-m-Y');
                 </select>
             </div>
             <br>
-            <div class="col-md-2">
+            <div class="col-md-2 reporte-tipo">
                  <div class="checkbox checkbox-success checkbox-inline">
                      <input checked type="checkbox" id="ckTodos" value="option1">
                      <label for="ckTodos"> Todas </label>
@@ -69,12 +77,11 @@ $fechaActual = date('d-m-Y');
             <div class="col-md-3">
                 <br>
                 <br>
-                <button id="btnFiltrar" style="width:5px;" class="btn btn-success btn-rounded w-md m-b-1"><i
-                        class="hvr-buzz-out fa fa-search"></i></button>
+                <button id="btnFiltrar" class="btn btn-success btn-rounded w-md m-b-1 reporte-buscar" title="Aplicar filtros"><i
+                        class="hvr-buzz-out fa fa-search"></i> Consultar</button>
             </div>
         </ul>
-        <br>
-        <div class="panel-body">
+        <div class="panel-body reporte-sin-marco">
             <div class="row">
             </div>
             <!---------------------------------------------TABLAS RESUMEN STOCK POR BODEGA ------------------------------------------------------------>
@@ -82,10 +89,10 @@ $fechaActual = date('d-m-Y');
                 <div class="panel-heading">
                     <div class="panel-title">
                         <i class="pe-7s-cash"></i>
-                        <h4>Detalle Anulaciones</h4>
+                        <h4>Detalle de anulaciones</h4>
                     </div>
                 </div>
-                <div class="table-responsive" style="margin-top:10px; padding:5px;">
+                <div class="table-responsive reporte-tabla">
                     <table id="tableDetalleAnulaciones" class="display responsive" style="width: 100%">
                         <thead>
                             <tr>

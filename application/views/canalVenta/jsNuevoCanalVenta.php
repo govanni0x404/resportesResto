@@ -1,5 +1,5 @@
 <!--  MODAL NUEVO REGISTRO  -->
-<div id="ModalNuevoCanalDeVenta" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevoCanalDeVenta" class="modal fade t-form-modal" role="dialog" style="overflow-y: scroll;">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<!-- TITULO  MODAL  -->
@@ -25,11 +25,11 @@
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-10 ">
+							<div class="col-md-12">
 								<label for="nombreCanalDeVenta">NOMBRE CANAL DE VENTA *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreCanalDeVenta" id="nombreCanalDeVenta" requerido="si" value="" placeholder="Nombre Canal De Venta" />
 							</div>
-							<div class="col-md-10">
+							<div class="col-md-12">
 								<label for="cboIdLprecio">LISTA DE PRECIOS *</label>
 								<select id="cboIdLprecio" nombre="cboIdLprecio" class="form-control input-sm" style="width:100%" requerido="si"></select>
 							</div>
@@ -67,8 +67,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarNuevoCanalDeVenta()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
+				<button onclick="grabarNuevoCanalDeVenta()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> Grabar</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>

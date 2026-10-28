@@ -1,5 +1,5 @@
 <!--  MODAL NUEVO REGISTRO  -->
-<div id="ModalNuevaProvincia" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevaProvincia" class="modal fade t-form-modal" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -19,11 +19,11 @@
                     <div class="tab-pane fade active in" id="tabBodegas">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-4 ">
+                            <div class="col-sm-3">
                                 <label for="idProvincia">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idProvincia" id="idProvincia" requerido="no" value="" />
                             </div>
-                            <div class="col-md-12 ">
+                            <div class="col-sm-9">
                                 <label for="nombreProvincia">NOMBRE PROVINCIA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreProvincia" id="nombreProvincia" requerido="si" value="" placeholder="Nombre Provincia" />
                             </div>
@@ -36,8 +36,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="grabarNuevaProvincia()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
+                <button onclick="grabarNuevaProvincia()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> Grabar</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>

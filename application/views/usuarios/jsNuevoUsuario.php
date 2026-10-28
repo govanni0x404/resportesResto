@@ -31,7 +31,7 @@ function cargarRoles(callback) {
 </script>
 
 <!--  MODAL NUEVO REGISTRO  -->
-<div id="ModalNuevoUsuario" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevoUsuario" class="modal fade t-form-modal" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -82,8 +82,8 @@ function cargarRoles(callback) {
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="grabarNuevoUsuario()" type="button" class="btn btn-primary"><i class=""></i> GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i> SALIR</button>
+                <button onclick="grabarNuevoUsuario()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> Grabar</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>

@@ -1,3 +1,39 @@
+<style>
+	/* Formularios en modales (.t-form): filas flexibles en vez de floats + <br>, etiquetas claras y móvil a una columna */
+	.t-form fieldset { display: flex; flex-wrap: wrap; align-items: flex-end; margin: 0 -8px; min-width: 0; }
+	.t-form fieldset > * { flex: 0 0 100%; max-width: 100%; padding-left: 8px; padding-right: 8px; }
+	.t-form fieldset > [class*="col-"] { float: none; flex: 0 0 auto; margin-bottom: 12px; }
+	.t-form fieldset > .table-responsive, .t-form fieldset > .nav-tabs { margin-left: 8px; margin-right: 8px; max-width: calc(100% - 16px); padding-left: 0; padding-right: 0; }
+	.t-form label { font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave); font-weight: 700; margin-bottom: 5px; }
+	.t-form .checkbox label { text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--t-texto); }
+	.t-form label.t-card-titulo { display: block; margin: 4px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--t-borde-suave); }
+	.t-form .form-control.input-sm { height: 36px; font-size: 14px; }
+	.t-form textarea, .t-form textarea.form-control { border: 1px solid var(--t-borde, #EADFD2); border-radius: var(--t-radio-sm); padding: 8px 10px; height: auto; }
+	.t-form textarea:focus { outline: none; border-color: var(--t-primario); box-shadow: 0 0 0 3px rgba(180, 67, 46, .12); }
+	.t-form sup { top: -.3em; }
+	.t-form sup a { cursor: pointer; font-weight: 600; text-transform: none; color: var(--t-primario); margin-left: 4px; }
+	.t-form .nav-tabs { margin-bottom: 14px; }
+	.t-form .tab-pane > fieldset:first-child { margin-top: 2px; }
+	.modal-footer .btn i[class=""] { display: none; }
+	@media (max-width: 991px) {
+		.t-form fieldset > [class*="col-md-"]:not([class*="col-sm-"]):not([class*="col-xs-"]) { width: 100%; }
+		.t-form fieldset > .col-md-1:empty, .t-form fieldset > .col-md-2:empty, .t-form fieldset > .col-md-5:empty, .t-form fieldset > .col-md-8:empty { display: none; }
+	}
+</style>
+<style>
+	/* Modal de recetas: datos generales y detalle de insumos como dos tarjetas */
+	#modalReceta > .modal-dialog > .modal-content > .col-md-12 { float: none; padding: 0; }
+	#modalReceta .panel { box-shadow: none; margin-bottom: 14px; }
+	#modalReceta .panel > .panel-body { padding: 14px 16px 4px; }
+	#modalReceta .panel > .panel-body > .col-md-12 { float: none; padding: 0; }
+	#modalReceta .rec-agregar { flex: 0 0 auto; }
+	#modalReceta #btnAgregarInsumoTabla { width: 100%; height: 36px; padding: 0 10px; white-space: normal; line-height: 1.1;
+		background: var(--t-primario); border-color: var(--t-primario); }
+	#modalReceta #btnAgregarInsumoTabla:hover, #modalReceta #btnAgregarInsumoTabla:focus { background: var(--t-primario-osc); border-color: var(--t-primario-osc); }
+	#modalReceta #preparacionReceta { border: 1px solid var(--t-borde, #EADFD2); border-radius: var(--t-radio-sm); padding: 10px 12px; }
+	#modalReceta #preparacionReceta:focus { outline: none; border-color: var(--t-primario); box-shadow: 0 0 0 3px rgba(180, 67, 46, .12); }
+	#modalReceta .modal-footer { clear: both; }
+</style>
 <!--  MODAL NUEVO REGISTRO  -->
 <div id="modalReceta" class="modal fade" role="dialog" style="overflow-y: scroll;">
 	<div class="modal-dialog modal-xl">
@@ -15,10 +51,11 @@
 				<input type="number" class="form-control" style="display: none;" name="cant_lineas" id="cant_lineas" value="0" min="0" oninput="validity.valid||(value='');">
 			</div>
 			<div class="col-md-12">
-				<div class="modal-body">
+				<div class="modal-body t-form">
 					<div class="h-panel">
 						<div class="panel panel-default">
 							<div class="panel-body">
+								<div class="t-card-titulo">Datos de la receta</div>
 								<div>
 									<!-- CAMPOS DE REGISTRO  -->
 									<fieldset>
@@ -47,7 +84,6 @@
 											<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="brutoSugerido" id="brutoSugerido" requerido="si" value="" />
 										</div> -->
 									</fieldset>
-									<br>
 									<fieldset>
 										<div class="col-md-3">
 											<label for="brutoSugerido">PRECIO BRUTO SUG/VEN</label>
@@ -82,7 +118,6 @@
 						<div class="panel panel-default">
 							<div class="panel-body">
 								<div class="col-md-12">
-									<br>
 									<ul id="myTab" class="nav nav-tabs title font">
 										<li class="active" id="tabDetallesReceta">
 											<a href="#tabDetalleInsumosReceta" data-toggle="tab" id="tab1" class="text color1">DETALLE DE INSUMOS DE LA RECETA</a>
@@ -92,7 +127,6 @@
 										</li>
 									</ul>
 									<div class="tab-pane fade active in" id="tabDetalleInsumosReceta">
-										<br>
 										<!-- CAMPOS DE REGISTRO  -->
 										<fieldset>
 											<div class="col-md-3">
@@ -112,7 +146,6 @@
 												<input type="text" disabled class="form-control input-sm input-sm" name="esSubreceta" id="esSubreceta" requerido="si" value="">
 											</div> -->
 										</fieldset>
-										<br>
 										<fieldset>
 											<div class="col-md-2">
 												<label for="idInsumoReceta">ID INSUMO</label>
@@ -135,12 +168,10 @@
 												<label for="costoTotalInsumoReceta">COSTO TOTAL</label>
 												<input type="number" disabled class="form-control input-sm input-sm" onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="costoTotalInsumoReceta" id="costoTotalInsumoReceta" requerido="si" value="" />
 											</div>
-											<div class="col-md-2">
-												<br>
+											<div class="col-md-2 rec-agregar">
 												<button type="button" class="btn btn-rounded btn-danger" id="btnAgregarInsumoTabla"><i class="fa fa-check-circle"></i> AGREGAR INSUMO</button>
 											</div>
 										</fieldset>
-										<br>
 										<fieldset>
 											<div class="table-responsive" style="margin-top:10px; padding:5px;">
 												<table id="tableInsumoReceta" class="display responsive" style="width: 100%;">
@@ -164,7 +195,6 @@
 										<!-- FIN CAMPOS DE REGISTRO  -->
 									</div>
 									<div class="tab-pane fade" id="tabPreparacionReceta">
-										<br>
 										<textarea style="resize:none;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box; width:100%; height:500px;" type='text' cols="200" maxlength='10000' name="preparacionReceta" onkeypress="return sololetrasyNumeros(event)" id="preparacionReceta" rows="20"></textarea>
 									</div>
 								</div>
@@ -720,7 +750,7 @@
 				text: "Confirma que desea quitar el insumo de la lista?",
 				type: "warning",
 				showCancelButton: true,
-				confirmButtonColor: "#DD6B55",
+				confirmButtonColor: "#C9372C",
 				cancelButtonText: "Cancelar",
 				confirmButtonText: "Eliminar",
 				closeOnConfirm: true

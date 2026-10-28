@@ -138,7 +138,7 @@ function removeRow(rnd) {
             text: "Confirma que desea quitar el producto de la lista?",
             type: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#DD6B55",
+            confirmButtonColor: "#C9372C",
             cancelButtonText: "Cancelar",
             confirmButtonText: "Eliminar",
             closeOnConfirm: true

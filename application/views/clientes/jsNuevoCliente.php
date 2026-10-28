@@ -1,5 +1,5 @@
 <!--  MODAL NUEVO REGISTRO  -->
-<div id="ModalNuevoCliente" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevoCliente" class="modal fade t-form-modal" role="dialog" style="overflow-y: scroll;">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<!-- TITULO  MODAL  -->
@@ -18,8 +18,9 @@
 					</ul>
 					<div class="tab-pane fade active in" id="tabBodegas">
 						<!-- CAMPOS DE REGISTRO  -->
+						<div class="t-card-titulo">Identificación</div>
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-sm-4">
 								<label for="idCliente">ID</label>
 								<input type="number" readonly class="form-control input-sm input-sm" name="idCliente" id="idCliente" requerido="no" value="" />
 							</div>
@@ -40,6 +41,7 @@
 								<input type="text" class="form-control input-sm input-sm" maxlength='200' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreCliente" id="nombreCliente" requerido="si" value="" placeholder="Nombre Cliente" />
 							</div>
 						</fieldset>
+						<div class="t-card-titulo">Dirección y contacto</div>
 						<fieldset>
 							<div class="col-md-12 ">
 								<label for="DireccionCliente">DIRECCION *</label>
@@ -79,6 +81,7 @@
 								<input type="text" class="form-control input-sm input-sm" maxlength='100' onkeypress="return sololetrasyNumerosCorreo(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="CorreoCliente" id="CorreoCliente" requerido="si" value="" placeholder="Correo Cliente" />
 							</div>
 						</fieldset>
+						<div class="t-card-titulo">Datos comerciales</div>
 						<fieldset>
 							<div class="col-md-12 ">
 								<label for="GiroCliente">GIRO *</label>
@@ -103,8 +106,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarNuevoCliente()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
+				<button onclick="grabarNuevoCliente()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> Grabar</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>

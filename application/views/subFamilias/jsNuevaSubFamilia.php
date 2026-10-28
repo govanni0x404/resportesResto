@@ -1,4 +1,4 @@
-<div id="ModalNuevaSubFamilia" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevaSubFamilia" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -41,8 +41,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarNuevaSubFamilia()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
+                <button onclick="GrabarNuevaSubFamilia()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>

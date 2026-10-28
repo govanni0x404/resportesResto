@@ -1,5 +1,5 @@
 <!--  MODAL NUEVO REGISTRO  -->
-<div id="ModalNuevaMesa" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevaMesa" class="modal fade t-form-modal" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -43,8 +43,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="grabarNuevaMesa()" type="button" class="btn btn-primary"><i class=""></i> GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i> SALIR</button>
+                <button onclick="grabarNuevaMesa()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> Grabar</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>

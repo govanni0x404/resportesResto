@@ -498,7 +498,7 @@
     // Listener para seleccionar filas en la tabla de categorías del listado
     $(document).on('click', '#tableCategoriasMenuModal tbody tr', function() {
         $("#tableCategoriasMenuModal tbody tr").removeClass('selected').css('background-color', '');
-        $(this).addClass('selected').css('background-color', '#E8F5E9');
+        $(this).addClass('selected').css('background-color', '#FBEEE8');
     });
 
     //PRODUCTOS AGREGADOS A LA CATEGORIA

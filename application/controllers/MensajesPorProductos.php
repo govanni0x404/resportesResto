@@ -23,7 +23,7 @@ class MensajesPorProductos extends CI_Controller
 		$this->load->view('mensajesPorProductos/mensajesPorProducto.php');
 		$this->load->view('menuFooter.php');
 		$this->load->view('mensajesPorProductos/listadoMensajesPorProductos.php');
-		$this->load->view('mensajesPorProductos/jsNuevomensaje.php');
+		$this->load->view('mensajesPorProductos/jsNuevoMensaje.php');
 		$this->load->view('funciones.php');
 	}
 

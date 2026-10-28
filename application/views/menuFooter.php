@@ -196,6 +196,141 @@
     };
   })();
   </script>
+ <script>
+  // Barra lateral: marca la sección actual (todas las opciones traen class="active", por eso se usa una clase propia).
+  // Si la página está como opción directa de la barra (p. ej. "Carta") solo se marca esa; si no, se marca la ruta de submenús.
+  (function(){
+    var actual = (location.pathname.split('/index.php/')[1] || '').split('/')[0].toLowerCase();
+    if (!actual) return;
+    function destino(a){ return ((a.getAttribute('href') || '').split('/index.php/')[1] || '').split('/')[0].toLowerCase(); }
+    var $nav = $('nav.bootsnav ul.nav.navbar-nav').first();
+    var $directo = $nav.children('li').children('a[href*="/index.php/"]').filter(function(){ return destino(this) === actual; }).first();
+    if ($directo.length) { $directo.parent().addClass('t-actual'); return; }
+    var $sub = $nav.find('.dropdown-menu a[href*="/index.php/"]').filter(function(){ return destino(this) === actual; }).first();
+    $sub.parents('li').addClass('t-actual');
+  })();
+
+  // Algunas secciones (p. ej. Compras) cargan su vista después de menuFooter: su contenido quedaba fuera de
+  // .content-wrapper, arriba del pie y debajo de la barra lateral. Se mueve al área de contenido antes de que
+  // corra el JS de la vista (mover nodos conserva ids y eventos).
+  $(function(){
+    var $destino = $('.content-wrapper > .container > .content').first();
+    if (!$destino.length) return;
+    // Bloques de contenido que quedaron fuera de .content-wrapper (como hijos directos de body o de un .wrapper;
+    // bootsnav puede envolver la página en otro .wrapper, así que no basta con mirar los hermanos del pie)
+    $('div.content-header, section, div.container, div.container-padding, div.content, div.row, div.panel').filter(function(){
+      var $p = $(this).parent();
+      if (!($p.is('body') || $p.is('.wrapper'))) return false;
+      return !$(this).is('.modal, .content-wrapper, .main-header') && !$(this).closest('.content-wrapper, .modal, .main-header, .main-footer, nav').length;
+    }).appendTo($destino);
+  });
+
+  // Barra lateral (escritorio): los submenús se despliegan hacia abajo dentro de la misma barra, con clic.
+  // Se quitan los eventos hover de bootsnav (que los abrían hacia el lado) y se vuelven a quitar tras cada resize.
+  $(function(){
+    var $nav = $('nav.bootsnav');
+    function esEscritorio(){ return window.innerWidth >= 993; }
+    function quitarHover(){
+      if (!esEscritorio()) return;
+      $nav.find('ul.nav').off('mouseleave').find('li.dropdown').off('mouseenter mouseleave');
+    }
+    quitarHover();
+    $(window).on('resize', function(){ setTimeout(quitarHover, 50); });
+
+    // Primer nivel (Procesos, Mantención, Consultas, Herramientas)
+    $nav.find('ul.nav.navbar-nav > li.dropdown > a.dropdown-toggle').on('click.tLateral', function(e){
+      if (!esEscritorio()) return;
+      e.preventDefault();
+      var $li = $(this).parent(), $menu = $li.children('.dropdown-menu');
+      var abrir = !$li.hasClass('t-abierto');
+      $li.siblings('.t-abierto').removeClass('t-abierto').children('.dropdown-menu').stop(true, true).slideUp(160);
+      $li.toggleClass('t-abierto', abrir);
+      $menu.stop(true, true)[abrir ? 'slideDown' : 'slideUp'](160);
+    });
+
+    // Al entrar, deja abierto el grupo de la sección actual
+    if (esEscritorio()) {
+      $nav.find('ul.nav.navbar-nav > li.dropdown.t-actual').addClass('t-abierto').children('.dropdown-menu').show();
+      $nav.find('.dropdown-menu li.dropdown.t-actual').addClass('open');
+    }
+  });
+  </script>
+ <script>
+  // Aviso de carga: al abrir una página, al salir hacia otra sección y mientras se esperan datos del servidor (AJAX)
+  (function(){
+    var loader = document.getElementById('page-loader');
+    if (!loader) return;
+    var texto = loader.querySelector('.page-loader-text');
+    var navegando = true, cargandoDatos = false;
+    var timerNav = null, timerDatos = null, timerSeguridad = null;
+
+    function pintar(){
+      loader.classList.toggle('visible', navegando || cargandoDatos);
+      // Mientras se esperan datos también se bloquea la pantalla (velo suave), para no presionar botones a medio cargar
+      loader.classList.toggle('solo-datos', !navegando && cargandoDatos);
+      texto.textContent = navegando ? 'Cargando…' : 'Cargando datos…';
+    }
+    function finNavegacion(){
+      clearTimeout(timerNav); clearTimeout(timerSeguridad);
+      navegando = false; pintar();
+    }
+    function inicioNavegacion(){
+      clearTimeout(timerNav);
+      // Pequeño retraso para no parpadear cuando la página responde al instante
+      timerNav = setTimeout(function(){ navegando = true; pintar(); }, 150);
+      // Por si la navegación no ocurre (descargas, enlaces cancelados), no dejarlo pegado
+      clearTimeout(timerSeguridad);
+      timerSeguridad = setTimeout(finNavegacion, 15000);
+    }
+
+    pintar();
+    window.addEventListener('load', finNavegacion);
+    timerSeguridad = setTimeout(finNavegacion, 15000);
+    // Al volver con el botón atrás el navegador puede restaurar la página con el aviso visible
+    window.addEventListener('pageshow', function(e){ if (e.persisted) finNavegacion(); });
+
+    document.addEventListener('click', function(e){
+      if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      var a = e.target.closest ? e.target.closest('a[href]') : null;
+      if (!a) return;
+      // Se evalúa después de los manejadores de la página, que pueden cancelar el clic
+      setTimeout(function(){
+        if (e.defaultPrevented) return;
+        var href = a.getAttribute('href') || '';
+        if (!href || href.charAt(0) === '#' || /^(javascript|mailto|tel):/i.test(href)) return;
+        if (a.target && a.target !== '_self') return;
+        if (a.hasAttribute('download') || a.getAttribute('data-toggle')) return;
+        if (a.host !== window.location.host) return;
+        if (a.pathname === window.location.pathname && a.search === window.location.search && a.hash) return;
+        inicioNavegacion();
+      }, 0);
+    });
+
+    document.addEventListener('submit', function(e){
+      var f = e.target;
+      setTimeout(function(){
+        if (e.defaultPrevented) return;
+        if (f.target && f.target !== '_self') return;
+        inicioNavegacion();
+      }, 0);
+    });
+
+    // Peticiones AJAX (listados, pestañas de la caja, reportes): solo se avisa si tardan más de 200 ms
+    if (window.jQuery) {
+      // Tope de seguridad: si un callback de la página lanza un error, jQuery 1.12 no dispara ajaxStop y el
+      // aviso (que ahora bloquea la pantalla) quedaría pegado. Se libera tras 12 s sin nuevas peticiones.
+      var timerTope = null;
+      function liberarDatos(){ clearTimeout(timerDatos); clearTimeout(timerTope); cargandoDatos = false; pintar(); }
+      jQuery(document).ajaxStart(function(){
+        clearTimeout(timerDatos);
+        timerDatos = setTimeout(function(){ cargandoDatos = true; pintar(); }, 200);
+      }).ajaxSend(function(){
+        clearTimeout(timerTope);
+        timerTope = setTimeout(liberarDatos, 12000);
+      }).ajaxStop(liberarDatos);
+    }
+  })();
+ </script>
 
  <script>
   $(function() {

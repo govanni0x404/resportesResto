@@ -1,5 +1,5 @@
 <!--  MODAL NUEVO REGISTRO  -->
-<div id="ModalNuevaMoneda" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevaMoneda" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -19,11 +19,11 @@
                     <div class="tab-pane fade active in" id="tabBodegas">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-4 ">
+                            <div class="col-sm-3">
                                 <label for="idMoneda">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idMoneda" id="idMoneda" requerido="no" value="" />
                             </div>
-                            <div class="col-md-12 ">
+                            <div class="col-sm-9">
                                 <label for="nombreMoneda">NOMBRE MONEDA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreMoneda" id="nombreMoneda" requerido="si" value="" placeholder="Nombre Moneda" />
                             </div>
@@ -36,8 +36,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="grabarNuevaMoneda()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
+                <button onclick="grabarNuevaMoneda()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>

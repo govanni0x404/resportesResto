@@ -1,0 +1,178 @@
+/*
+ * Reportes y consultas (solo estilos). Paleta "Perla y azul".
+ * Se carga desde cada vista de reporte, después de theme.css, y solo afecta a esas páginas.
+ * Clases nuevas: .rep-encabezado (content-header), .rep-panel-filtros (barra de filtros),
+ * .rep-kpi-celda-primera (celda del indicador destacado). El resto usa las clases que ya tenían las vistas.
+ */
+
+/* ---------- Encabezado: eyebrow pequeño en mayúsculas + título grande azul profundo ---------- */
+.content-header.rep-encabezado {
+    display: flex; align-items: flex-end; gap: 0;
+    background: transparent; border: 0; box-shadow: none; border-radius: 0;
+    padding: 6px 0 0; margin: 0 0 20px !important;
+}
+.rep-encabezado .header-icon { display: none; }
+.rep-encabezado .header-title { display: flex; flex-direction: column; margin: 0; padding: 0; min-width: 0; }
+.rep-encabezado .header-title .breadcrumb {
+    order: -1; position: static; float: none !important; display: block;
+    margin: 0 0 6px; padding: 0; background: none; border: 0; border-radius: 0; font-weight: 600; line-height: 1.4;
+}
+.rep-encabezado .breadcrumb > li,
+.rep-encabezado .breadcrumb > li a {
+    font-size: 11px; letter-spacing: .9px; text-transform: uppercase; font-weight: 600;
+    color: var(--t-texto-tenue, #A89A8C);
+}
+.rep-encabezado .breadcrumb > li a:hover { color: var(--t-primario, #B4432E); text-decoration: none; }
+.rep-encabezado .breadcrumb > .active { color: var(--t-texto-suave, #7A6A5E); }
+.rep-encabezado .breadcrumb > li + li:before { content: "/"; padding: 0 7px; color: #D9CBBB; }
+.rep-encabezado .breadcrumb i { display: none; }
+.rep-encabezado .header-title h1 {
+    margin: 0; font-size: 26px; font-weight: 700; line-height: 1.2; letter-spacing: -.4px;
+    color: var(--t-texto, #3A2A22);
+}
+.rep-encabezado .header-title small { padding: 4px 0 0; font-size: 13px; color: var(--t-texto-suave, #7A6A5E); }
+.rep-encabezado .header-title small:empty { display: none; }
+@media (max-width: 767px) {
+    .rep-encabezado .header-title h1 { font-size: 21px; }
+}
+
+/* ---------- Filtros: tarjeta blanca en grilla, botón principal ancho ---------- */
+/* .nav.nav-tabs.* iguala la especificidad de las reglas de filtros de theme.css */
+.rep-panel-filtros, .nav.nav-tabs.rep-panel-filtros {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr));
+    gap: 14px 16px; align-items: end;
+    background: #fff; border: 1px solid var(--t-borde, #EADFD2); border-radius: 14px;
+    box-shadow: var(--t-sombra, 0 1px 2px rgba(58, 42, 34, .05));
+    padding: 18px 20px; margin: 0 0 18px !important; list-style: none;
+}
+.rep-panel-filtros::before, .rep-panel-filtros::after { display: none !important; content: none; }
+.rep-panel-filtros > [class*="col-"] {
+    float: none; width: auto; min-width: 0; min-height: 0; padding: 0; margin: 0 !important;
+}
+.rep-panel-filtros > br, .rep-panel-filtros > div > br,
+.rep-panel-filtros > .rep-espacio, .rep-panel-filtros > div:empty { display: none !important; }
+.rep-panel-filtros .control-group, .rep-panel-filtros .controls { margin: 0; }
+.rep-panel-filtros label, .nav.nav-tabs.rep-panel-filtros label {
+    display: block; margin: 0 0 6px; font-size: 12px; font-weight: 600; line-height: 22px;
+    text-transform: none; letter-spacing: 0; color: var(--t-texto-suave, #7A6A5E);
+}
+.rep-panel-filtros .form-control,
+.rep-panel-filtros .input-group-addon { height: 40px; }
+.rep-panel-filtros .form-control { border-color: var(--t-borde, #EADFD2); color: var(--t-texto, #3A2A22); }
+.rep-panel-filtros .input-group-addon { background: var(--t-fondo-alt, #FBF8F3); border-color: var(--t-borde, #EADFD2); color: var(--t-texto-tenue, #A89A8C); }
+.rep-panel-filtros .select2-container { width: 100% !important; }
+.rep-panel-filtros .select2-container--default .select2-selection--single { height: 40px; border-color: var(--t-borde, #EADFD2); border-radius: 6px; }
+.rep-panel-filtros .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 38px; color: var(--t-texto, #3A2A22); }
+.rep-panel-filtros .select2-container--default .select2-selection--single .select2-selection__arrow { height: 38px; }
+
+/* "Todas / Todos" junto a la etiqueta: chip azul suave */
+.rep-panel-filtros label > .checkbox {
+    display: inline-flex; align-items: center; vertical-align: middle;
+    margin: -2px 0 0 8px; padding: 1px 10px 1px 28px; min-height: 22px;
+    border-radius: 999px; background: var(--t-primario-suave, #FBEEE8); border: 1px solid var(--t-primario-borde, #EFD2C6);
+}
+.rep-panel-filtros.rep-panel-filtros label > .checkbox label {
+    display: inline-block; margin: 0; padding-left: 4px; min-height: 0; line-height: 18px;
+    font-size: 12px; font-weight: 600; color: var(--t-primario, #B4432E);
+}
+.rep-panel-filtros.rep-panel-filtros .checkbox label, .rep-panel-filtros.rep-panel-filtros .radio label {
+    display: inline-block; margin: 0; font-size: 13px; font-weight: 500; line-height: 18px; color: var(--t-texto, #3A2A22);
+}
+
+/* Botón principal (Consultar): azul, ancho completo de su celda */
+.rep-panel-filtros .btn {
+    width: 100% !important; height: 40px; margin: 0 !important; padding: 0 18px;
+    border-radius: 10px; font-size: 14px; font-weight: 600; letter-spacing: 0;
+}
+.rep-panel-filtros .btn-success, .rep-panel-filtros .btn-primary {
+    background: var(--t-primario, #B4432E); border-color: var(--t-primario, #B4432E); color: #fff;
+}
+.rep-panel-filtros .btn-success:hover, .rep-panel-filtros .btn-success:focus,
+.rep-panel-filtros .btn-primary:hover, .rep-panel-filtros .btn-primary:focus {
+    background: var(--t-primario-osc, #933524); border-color: var(--t-primario-osc, #933524); color: #fff;
+}
+.rep-panel-filtros .btn i { margin-right: 6px; }
+
+/* Exportaciones: botones secundarios blancos al final de la grilla */
+.rep-panel-filtros > .rep-exportar {
+    grid-column: span 2 / -1; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end;
+}
+.rep-panel-filtros .rep-exportar .btn {
+    width: auto !important; flex: 0 1 auto;
+    background: #fff; border: 1px solid var(--t-borde, #EADFD2); color: var(--t-texto, #3A2A22);
+}
+.rep-panel-filtros .rep-exportar .btn:hover, .rep-panel-filtros .rep-exportar .btn:focus {
+    background: var(--t-fondo-alt, #FBF8F3); border-color: var(--t-primario-borde, #EFD2C6); color: var(--t-primario, #B4432E);
+}
+.rep-panel-filtros .rep-exportar .btn i { color: var(--t-texto-suave, #7A6A5E); }
+.rep-panel-filtros .rep-exportar .btn-danger i { color: var(--t-peligro, #C9372C); }
+@media (max-width: 767px) {
+    .rep-panel-filtros { padding: 16px; }
+    .rep-panel-filtros > .rep-exportar { grid-column: 1 / -1; justify-content: stretch; }
+    .rep-panel-filtros .rep-exportar .btn { flex: 1 1 150px; }
+}
+
+/* ---------- Contenedores: el contenido va directo sobre el fondo perla ---------- */
+.rep-cuerpo, .reporte-sin-marco, .rep-mov > .panel-body, .t-lista-contenedor {
+    padding: 0 !important; border: 0 !important; background: none !important; box-shadow: none !important;
+}
+.panel.rep-sin-marco { border: 0; box-shadow: none; background: transparent; margin-bottom: 0; }
+.panel.rep-sin-marco > .panel-body { padding: 0; }
+
+/* ---------- Paneles de tabla: tarjeta blanca, título 15px ---------- */
+.panel { border-radius: 14px; border-color: var(--t-borde, #EADFD2); margin-bottom: 18px; }
+.panel > .panel-heading { padding: 14px 18px; }
+.panel > .panel-heading .panel-title { display: flex; align-items: center; gap: 10px; margin: 0; }
+.panel > .panel-heading .panel-title h4 {
+    margin: 0; font-size: 15px; font-weight: 600; line-height: 1.3; color: var(--t-texto, #3A2A22);
+}
+.panel > .panel-heading .panel-title i { margin: 0; font-size: 18px; color: #C9A27A; }
+.panel > .table-responsive,
+.panel > .t-lista-tabla,
+.panel > .reporte-tabla { padding: 8px 18px 16px !important; margin: 0 !important; border: 0; }
+.panel > .table-responsive > .table { margin-bottom: 0; }
+.panel .table > tfoot > tr > th, .panel .table > tfoot > tr > td,
+.panel table.dataTable tfoot th { color: var(--t-texto, #3A2A22); font-weight: 700; }
+.rep-grafico canvas { max-width: 100%; }
+
+/* ---------- Indicadores (KPI): tarjetas blancas, la destacada en azul suave ---------- */
+body .rep-kpis .statistic-box {
+    position: relative; display: flex; flex-direction: column; justify-content: center;
+    min-height: 96px; margin: 0; padding: 16px 18px;
+    background: #fff !important; border: 1px solid var(--t-borde, #EADFD2) !important; border-radius: 14px !important;
+    box-shadow: var(--t-sombra, 0 1px 2px rgba(58, 42, 34, .05)) !important; color: var(--t-texto, #3A2A22) !important;
+    text-align: left;
+}
+body .rep-kpis .statistic-box .small {
+    order: -1; margin: 0 0 8px; padding-right: 34px; min-height: 0;
+    font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--t-texto-suave, #7A6A5E) !important;
+}
+body .rep-kpis .statistic-box h2 {
+    margin: 0; font-size: 24px; font-weight: 700; line-height: 1.2; letter-spacing: -.3px; white-space: nowrap;
+    color: var(--t-texto, #3A2A22);
+}
+body .rep-kpis .statistic-box .slight { display: none; }
+body .rep-kpis .statistic-box .statistic_icon {
+    position: absolute; top: 14px; right: 16px; width: auto; height: auto; line-height: 1;
+    background: transparent !important; border-radius: 0; font-size: 22px; color: #C9A27A !important;
+}
+body .rep-kpis .statistic-box.rep-kpi-destacado {
+    background: var(--t-primario-suave, #FBEEE8) !important; border-color: var(--t-primario-suave, #FBEEE8) !important; box-shadow: none !important;
+}
+body .rep-kpis .statistic-box.rep-kpi-destacado h2 { color: var(--t-primario, #B4432E); }
+body .rep-kpis .statistic-box.rep-kpi-destacado .statistic_icon { color: var(--t-primario, #B4432E) !important; }
+@media (max-width: 767px) {
+    body .rep-kpis .statistic-box { min-height: 82px; padding: 14px 16px; }
+    body .rep-kpis .statistic-box h2 { font-size: 21px; }
+}
+
+/* ---------- Chips y totales en azul suave ---------- */
+.rep-chip {
+    display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    background: var(--t-primario-suave, #FBEEE8); border: 1px solid var(--t-primario-borde, #EFD2C6); color: var(--t-primario, #B4432E);
+}
+
+/* ---------- Tablas de detalle en modales ---------- */
+.modal .panel { box-shadow: none; }
+.modal .panel > .panel-body.table-responsive { padding: 8px 4px 0; }

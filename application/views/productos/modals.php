@@ -1,4 +1,54 @@
-<div id="modalNuevoProducto" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<style>
+/* Modales de productos (solo estilos) */
+.t-modal-form .modal-header { border-top: 3px solid var(--t-primario, #B4432E); }
+.t-modal-form .modal-title { text-align: left; }
+.t-modal-form .h-panel > .nav { display: none; }
+.t-modal-form .tab-pane > fieldset { margin: 0 -8px; }
+.t-modal-form fieldset::after { content: ""; display: table; clear: both; }
+.t-modal-form fieldset fieldset { margin: 0; }
+.t-modal-form fieldset > [class*="col-"] { padding: 0 8px; margin-bottom: 14px; }
+.t-modal-form fieldset > .t-card-titulo { padding: 0 8px; }
+.t-modal-form label { font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #7A6A5E); margin-bottom: 5px; }
+.t-modal-form .checkbox label { font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--t-texto, #3A2A22); }
+.t-modal-form .checkbox { margin: 0; }
+.t-modal-form label sup a { cursor: pointer; text-transform: none; font-weight: 600; margin-left: 4px; }
+.t-modal-form .t-card-titulo { margin-top: 2px; }
+.t-modal-form .t-card-titulo i { color: var(--t-primario, #B4432E); margin-right: 4px; }
+.t-modal-form .modal-body .panel { box-shadow: none; }
+.t-modal-form .modal-footer .btn { min-width: 110px; }
+
+/* Modal principal: Carta de productos */
+.t-prod-modal .modal-body { background: var(--t-fondo, #F6F1E8); }
+.t-prod-modal .h-panel > .row > [class*="col-md-"] > .nav,
+.t-prod-modal .h-panel > .row > div:not([class]) { display: none; }
+.t-prod-modal .h-panel > .row > [class*="col-md-"] > br,
+.t-prod-modal .h-panel > .row > [class*="col-md-"] > .tab-pane > br { display: none; }
+.t-prod-modal .h-panel > .row > [class*="col-md-"] > .tab-pane {
+    background: #fff; border: 1px solid var(--t-borde, #EADFD2); border-radius: var(--t-radio, 10px);
+    box-shadow: var(--t-sombra); padding: 16px 18px 4px; margin-bottom: 14px;
+}
+.t-prod-modal .tab-pane > .t-card-titulo:not(:first-child) { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--t-borde-suave, #F0E8DD); }
+.t-prod-modal #tabUnidadMedidaInsumo .btn-group {
+    display: block; background: var(--t-fondo-alt, #FBF8F3); border: 1px solid var(--t-borde-suave, #F0E8DD);
+    border-radius: var(--t-radio-sm, 6px); padding: 9px 12px; transition: border-color .15s, background-color .15s;
+}
+.t-prod-modal #tabUnidadMedidaInsumo .btn-group:hover { border-color: var(--t-primario-borde, #EFD2C6); background: var(--t-primario-suave, #FBEEE8); }
+.t-prod-modal #extras { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--t-borde-suave, #F0E8DD); }
+.t-prod-modal #extras .btn-group, .t-prod-modal #extras .btn { display: block; width: 100%; }
+.t-prod-modal #extras .btn { white-space: normal; background: #fff; color: var(--t-primario, #B4432E); border: 1px solid var(--t-primario-borde, #EFD2C6); }
+.t-prod-modal #extras .btn:hover, .t-prod-modal #extras .btn:focus { background: var(--t-primario-suave, #FBEEE8); border-color: var(--t-primario, #B4432E); }
+.t-prod-modal #extras .btn[disabled] { opacity: .55; }
+@media (min-width: 992px) {
+    .t-prod-modal .h-panel > .row { display: flex; flex-wrap: wrap; }
+    .t-prod-modal .h-panel > .row > [class*="col-md-"] { display: flex; flex-direction: column; }
+    .t-prod-modal .h-panel > .row > [class*="col-md-"] > .tab-pane { flex: 1; }
+}
+@media (max-width: 480px) {
+    .t-modal-form .modal-footer { display: flex; flex-direction: column-reverse; gap: 8px; }
+    .t-modal-form .modal-footer .btn { width: 100%; margin: 0 !important; }
+}
+</style>
+<div id="modalNuevoProducto" class="modal fade t-modal-form t-prod-modal" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -24,13 +74,14 @@
                             <div class="tab-pane fade active in" id="tabDatosInsumo">
                                 <br>
                                 <!-- CAMPOS DE REGISTRO  -->
+                                <div class="t-card-titulo"><i class="fa fa-tag"></i> Datos del producto</div>
                                 <fieldset>
-                                    <div class="col-md-2 ">
+                                    <div class="col-sm-3">
                                         <label for="txtID">ID</label>
                                         <input type="text" disabled class="form-control input-sm input-sm" name="txtID"
                                             id="txtID" requerido="no" value="">
                                     </div>
-                                    <div class="col-md-6 ">
+                                    <div class="col-sm-9">
                                         <label for="txtCbarra">Cód. Barra</label>
                                         <input type="text" autocomplete="off" class="form-control input-sm input-sm"
                                             name="txtCbarra" id="txtCbarra" requerido="no" value="">
@@ -47,6 +98,7 @@
 
                                 </fieldset>
                                 <br>
+                                <div class="t-card-titulo"><i class="fa fa-sitemap"></i> Clasificación</div>
                                 <fieldset>
                                     <div class="col-md-6">
                                         <label for="cboFamilia">Familia
@@ -78,6 +130,7 @@
 
                                 </fieldset>
                                 <br>
+                                <div class="t-card-titulo"><i class="fa fa-cubes"></i> Inventario, impuesto y receta</div>
                                 <fieldset>
                                     <div class="col-md-6">
                                         <label for="cboBodega">Bodega
@@ -103,8 +156,8 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label for="cboMenu">Menu
-                                            <sup><a onclick="AbrirModalListadoMenu()" style="color: #4CAF50; cursor: pointer;">Nuevo</a></sup>
-                                            <sup><a onclick="QuitarMenuDeProducto()" style="color: #f44336; cursor: pointer;">Quitar</a></sup>
+                                            <sup><a onclick="AbrirModalListadoMenu()" style="color: var(--t-primario, #B4432E); cursor: pointer;">Nuevo</a></sup>
+                                            <sup><a onclick="QuitarMenuDeProducto()" style="color: var(--t-peligro, #C9372C); cursor: pointer;">Quitar</a></sup>
                                         </label>
                                         <select id="cboMenu" class="form-control input-sm" style="width:100%"
                                             requerido="no"></select>
@@ -124,7 +177,7 @@
 
                             </ul>
                             <div class="tab-pane fade active in" id="tabUnidadMedidaInsumo">
-                                <br>
+                                <div class="t-card-titulo"><i class="fa fa-sliders"></i> Parámetros de venta</div>
                                 <fieldset>
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
@@ -251,23 +304,24 @@
                                 </fieldset>
                                 <br>
                                 <fieldset id="extras">
+                                    <div class="t-card-titulo"><i class="fa fa-puzzle-piece"></i> Configuración adicional</div>
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <button id="btnAgregados" onclick="AbrirModalAgregadosDelProducto()"
-                                                type="button" class="btn btn-success"></i>Agregados Del
+                                                type="button" class="btn btn-success"><i class="fa fa-plus-square"></i> Agregados Del
                                                 Producto</button>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <button id="BtnMensajesXProducto" onclick="AbrirModalMensajesDelProducto()"
-                                                type="button" class="btn btn-success"></i>Mensaje Predefinidos</button>
+                                                type="button" class="btn btn-success"><i class="fa fa-commenting-o"></i> Mensaje Predefinidos</button>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <button id="BtnPrecioVenta" onclick="AbrirModalPrecioVenta()" type="button"
-                                                class="btn btn-success"></i>Precio Venta</button>
+                                                class="btn btn-success"><i class="fa fa-usd"></i> Precio Venta</button>
                                         </div>
                                     </div>
 
@@ -287,16 +341,15 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarProducto()" type="button" class="btn btn-primary"></i>Grabar Producto</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>
-                    SALIR</button>
+                <button onclick="GrabarProducto()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> Grabar Producto</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
     </div>
 </div>
 
-<div id="modalPrecioVentaProducto" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="modalPrecioVentaProducto" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog modal-lg"> <!-- Cambiado a modal-lg para más espacio -->
         <div class="modal-content">
             <div class="modal-header btn-success">
@@ -333,16 +386,16 @@
             <div class="modal-footer">
                 <!-- onclick="grabarPreciosYProducto()" -->
                 <button  id="btnGrabarPrecios" type="button" class="btn btn-primary">
-                    <i class=""></i> Grabar Precios y Comisiones
+                    <i class="fa fa-check"></i> Grabar Precios y Comisiones
                 </button>
                 <button onclick="cancelarEdicionPrecios()" type="button" class="btn btn-default">
-                    <i class=""></i> Cancelar
+                    <i class="fa fa-times"></i> Cancelar
                 </button>
             </div>
         </div>
     </div>
 </div>
-<div id="ModalNuevaFamilia" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevaFamilia" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -364,14 +417,14 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-6 ">
+                            <div class="col-sm-4">
                                 <label for="idFamilia">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idFamilia"
                                     id="idFamilia" requerido="no" value="">
                             </div>
                         </fieldset>
                         <fieldset>
-                            <div class="col-md-11 ">
+                            <div class="col-sm-6">
                                 <label for="nombreFamilia">FAMILIA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -379,7 +432,7 @@
                                     requerido="si" value="" placeholder="Nombre Familia" />
                             </div>
 
-                            <div class="col-md-11 ">
+                            <div class="col-sm-6">
                                 <label for="AliasFamilia">ALIAS FAMILIA</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -434,17 +487,15 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarNuevaFamilia()" type="button" class="btn btn-primary"><i
-                        class=""></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class=""></i>SALIR</button>
+                <button onclick="GrabarNuevaFamilia()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
     </div>
 </div>
 <!-- FIN  MODAL NUEVO REGISTRO  -->
-<div id="ModalNuevaBodega" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevaBodega" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -466,12 +517,12 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-4 ">
+                            <div class="col-sm-3">
                                 <label for="idBodega">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idBodega"
                                     id="idBodega" requerido="no" value="">
                             </div>
-                            <div class="col-md-10 ">
+                            <div class="col-sm-9">
                                 <label for="nombreBodega">BODEGA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -487,10 +538,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarNuevaBodega()" type="button" class="btn btn-primary"><i
-                        class=""></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class=""></i>SALIR</button>
+                <button onclick="GrabarNuevaBodega()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -498,7 +547,7 @@
 </div>
 <!-- FIN  MODAL NUEVO REGISTRO  -->
 
-<div id="ModalNuevaSubFamilia" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevaSubFamilia" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -527,12 +576,12 @@
                             </div>
                         </fieldset>
                         <fieldset>
-                            <div class="col-md-10">
+                            <div class="col-md-12">
                                 <label for="cboFamiliaMsubFamilia">FAMILIA</label>
                                 <select id="cboFamiliaMsubFamilia" nombre="cboFamiliaMsubFamilia"
                                     class="form-control input-sm" style="width:100%" requerido="si"></select>
                             </div>
-                            <div class="col-md-10 ">
+                            <div class="col-md-12">
                                 <label for="nombreSubFamilia">SUB FAMILIA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -548,10 +597,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="GrabarNuevaSubFamilia()" type="button" class="btn btn-primary"><i
-                        class=""></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class=""></i>SALIR</button>
+                <button onclick="GrabarNuevaSubFamilia()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -559,7 +606,7 @@
 </div>
 <!-- FIN  MODAL NUEVO REGISTRO  -->
 
-<div id="ModalAgregadosDelProducto" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalAgregadosDelProducto" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -631,8 +678,7 @@
                         </fieldset>
                         <fieldset>
                             <div class="col-md-4">
-                                <button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-success"><i
-                                        class=""></i>GRABAR AGREGADO</button>
+                                <button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-success"><i class="fa fa-check"></i> GRABAR AGREGADO</button>
                             </div>
                             <!--<div class="col-md-4">
                                 <button type="button" class="btn btn-warning"><i class="fa fa-plus"></i>NUEVO AGREGADO</button>
@@ -673,19 +719,18 @@
             <div class="modal-footer">
                 <button id="btnFinalizarCreacion" onclick="finalizarYCerrarAgregados()" 
                         type="button" class="btn btn-success" style="display:none;">
-                    <i class=""></i> Finalizar y Guardar
+                    <i class="fa fa-check"></i> Finalizar y Guardar
                 </button>   
                 <!-- <button id="btnActualizarAgregado" type="button" class="btn btn-primary"><i
                         class=""></i>ACTUALIZAR AGREGADO</button> -->
-                <button type="button" class="btn btn-default" onclick="cancelarModalAgregados()" data-dismiss="modal"><i
-                        class=""></i>SALIR</button>
+                <button type="button" class="btn btn-default" onclick="cancelarModalAgregados()" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
     </div>
 </div>
 
-<div id="ModalMensajesDelProducto" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalMensajesDelProducto" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -707,7 +752,7 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <fieldset>
                             <div class="col-md-12">
-                                <label for="txtMsgProducto">Mnesaje del Producto</label>
+                                <label for="txtMsgProducto">MENSAJE DEL PRODUCTO</label>
                                 <textarea onpaste="return false;" ondrop="return false;" autocomplete="off"
                                     class="form-control" rows="3" id="txtMsgProducto"
                                     placeholder="Mensaje adicional producto"></textarea>
@@ -728,8 +773,7 @@
                         </fieldset>
                         <fieldset>
                             <div class="col-md-4">
-                                <button onclick="grabarMsgProductos()" type="button" class="btn btn-primary"><i
-                                        class=""></i>GRABAR MENSAJE</button>
+                                <button onclick="grabarMsgProductos()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> GRABAR MENSAJE</button>
                             </div>
                             <!--<div class="col-md-4">
                                 <button type="button" class="btn btn-warning"><i class="fa fa-plus"></i>NUEVO AGREGADO</button>
@@ -767,8 +811,7 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class=""></i>SALIR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
@@ -776,7 +819,7 @@
 </div>
 
 
-<div id="ModalListadoMenus" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalListadoMenus" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO MODAL -->
@@ -829,7 +872,7 @@
     </div>
 </div>
 
-<div id="ModalNuevoMenu" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevoMenu" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO MODAL -->
@@ -890,7 +933,7 @@
     </div>
 </div>
 
-<div id="ModalListadoCategoriasMenu" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalListadoCategoriasMenu" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -945,15 +988,14 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i
-                        class=""></i>SALIR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
     </div>
 </div>
 
-<div id="ModalNuevaCategoria" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevaCategoria" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO MODAL -->
@@ -966,7 +1008,7 @@
                 <div class="row">
                     <div class="col-md-12">
                         <label>Nombre del Menú</label>
-                        <select id="cboMenusModalCategorias" class="form-control input" style="background-color: #fcf8e3; color: black; width: 100%;"></select>
+                        <select id="cboMenusModalCategorias" class="form-control input" style="background-color: #FFF4DF; color: var(--t-texto, #3A2A22); width: 100%;"></select>
                     </div>
                 </div>
                 <br>
@@ -994,7 +1036,7 @@
                             <div class="table-responsive">
                                 <table id="tableCategoriasAbajo" class="table table-bordered table-condensed">
                                     <thead>
-                                        <tr style="background-color: #E8F5E9;">
+                                        <tr style="background-color: #fff;">
                                             <th>Código</th>
                                             <th>Nombre de la categoría</th>
                                             <th>Vigente</th>
@@ -1021,7 +1063,7 @@
     <div class="modal-dialog modal-lg" style="width: 95%;">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
-            <div class="modal-header btn-success" style="border-bottom: 2px solid #558b2f; padding: 15px; background-color: #558b2f !important; height: 50px;">
+            <div class="modal-header btn-success" style="border-bottom: 2px solid #B4432E; padding: 15px; background-color: #B4432E !important; height: 50px;">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 1; margin-top: -5px;"><span aria-hidden="true">&times;</span></button>
             </div>
             <!-- FIN TITULO  MODAL  -->
@@ -1030,40 +1072,40 @@
             <div class="modal-body" style="padding: 20px; background-color: #fff;">
                 <div class="row">
                     <div class="col-md-12">
-                         <div id="labelMenuCategoriaDestacado" style="background-color: #558b2f; color: white; padding: 12px 20px; font-weight: bold; font-size: 18px; margin-bottom: 20px; border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);">
+                         <div id="labelMenuCategoriaDestacado" style="background-color: #B4432E; color: white; padding: 12px 20px; font-weight: bold; font-size: 18px; margin-bottom: 20px; border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);">
                              <!-- Se llena via JS: MENU -> CATEGORIA -->
                          </div>
                     </div>
                 </div>
 
-                <div class="row" style="background-color: #f9fdf9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #d6e9c6;">
+                <div class="row" style="background-color: var(--t-fondo-alt, #FBF8F3); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--t-borde, #EADFD2);">
                     <div class="col-md-1">
-                        <label style="color: #558b2f;">ID</label>
-                        <input type="text" disabled class="form-control input-sm" id="IdDetalleCategoria" style="background-color: #f5f5f5; border: 1px solid #ccc; font-weight: bold; text-align: center;">
+                        <label style="color: #B4432E;">ID</label>
+                        <input type="text" disabled class="form-control input-sm" id="IdDetalleCategoria" style="background-color: var(--t-fondo-alt, #FBF8F3); border: 1px solid var(--t-borde, #EADFD2); font-weight: bold; text-align: center;">
                         <input type="hidden" id="IdDetalleCategoriaReal" value="">
                     </div>
                     <div class="col-md-6">
-                        <label style="color: #558b2f;">Producto <span id="labelRecetaProducto" style="font-weight: bold; color: #5cb85c; margin-left: 15px; background: white; padding: 2px 8px; border-radius: 10px; border: 1px solid #5cb85c; font-size: 10px;">SIN RECETA</span></label>
-                        <select id="cboSelectorProductosFinal" class="form-control input-sm" style="border: 1px solid #5cb85c;"></select>
+                        <label style="color: #B4432E;">Producto <span id="labelRecetaProducto" style="font-weight: bold; color: var(--t-primario, #B4432E); margin-left: 15px; background: var(--t-primario-suave, #FBEEE8); padding: 2px 8px; border-radius: 10px; border: 1px solid var(--t-primario-borde, #EFD2C6); font-size: 10px;">SIN RECETA</span></label>
+                        <select id="cboSelectorProductosFinal" class="form-control input-sm" style="border: 1px solid var(--t-borde, #EADFD2);"></select>
                     </div>
                     <div class="col-md-2">
-                        <label style="color: #558b2f;">Costo</label>
-                        <input type="number" class="form-control input-sm text-right" id="CostoCategoriaMenu" value="0" style="border: 1px solid #5cb85c; font-weight: bold;">
+                        <label style="color: #B4432E;">Costo</label>
+                        <input type="number" class="form-control input-sm text-right" id="CostoCategoriaMenu" value="0" style="border: 1px solid var(--t-borde, #EADFD2); font-weight: bold;">
                     </div>
                     <div class="col-md-3">
-                        <label style="color: #558b2f;">$ Adicional Vta</label>
-                        <input type="number" class="form-control input-sm text-right" id="AdicionalCategoriaMenu" value="0" style="border: 1px solid #5cb85c; font-weight: bold;">
+                        <label style="color: #B4432E;">$ Adicional Vta</label>
+                        <input type="number" class="form-control input-sm text-right" id="AdicionalCategoriaMenu" value="0" style="border: 1px solid var(--t-borde, #EADFD2); font-weight: bold;">
                     </div>
                 </div>
 
-                <div class="row" style="background-color: #f9fdf9; padding: 10px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #d6e9c6; display: flex; align-items: center; gap: 20px;">
+                <div class="row" style="background-color: var(--t-fondo-alt, #FBF8F3); padding: 10px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--t-borde, #EADFD2); display: flex; align-items: center; gap: 20px;">
                     <div style="margin-left: 15px;">
-                        <label style="cursor: pointer; color: #3c763d; font-weight: bold;">
+                        <label style="cursor: pointer; color: var(--t-texto, #3A2A22); font-weight: bold;">
                             <input type="checkbox" id="ckPermiteCambio" style="transform: scale(1.3); vertical-align: middle;"> &nbsp;Permitir Cambio
                         </label>
                     </div>
                     <div>
-                        <label style="cursor: pointer; color: #3c763d; font-weight: bold;">
+                        <label style="cursor: pointer; color: var(--t-texto, #3A2A22); font-weight: bold;">
                             <input type="checkbox" id="ckImprimir" style="transform: scale(1.3); vertical-align: middle;"> &nbsp;Imprimir
                         </label>
                     </div>
@@ -1071,11 +1113,11 @@
 
                 <div class="row">
                      <div class="col-md-10">
-                         <div class="panel panel-default" style="margin-bottom: 0; border: 1px solid #d6e9c6; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
+                         <div class="panel panel-default" style="margin-bottom: 0; border: 1px solid var(--t-borde, #EADFD2); box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
                             <div class="table-responsive" style="height: 380px; overflow-y: auto;">
                                 <table id="tableDetalleCategoria" class="table table-bordered table-condensed table-hover" style="margin-bottom: 0;">
                                     <thead>
-                                        <tr style="background-color: #558b2f; color: white;">
+                                        <tr>
                                             <th style="width: 50px;">ID</th>
                                             <th>Nombre del Producto</th>
                                             <th class="text-right" style="width: 120px;">Costo Receta</th>
@@ -1092,19 +1134,19 @@
                         </div>
                         <style>
                             #tableDetalleCategoria tbody tr.selected {
-                                background-color: #dff0d8 !important;
-                                color: #3c763d !important;
+                                background-color: var(--t-primario-suave, #FBEEE8) !important;
+                                color: var(--t-primario-osc, #933524) !important;
                                 font-weight: bold;
                             }
                         </style>
                      </div>
                      <div class="col-md-2 text-center">
-                         <div style="background-color: #f8f9fa; padding: 20px 10px; border-radius: 10px; border: 1px solid #dee2e6; height: 380px; display: flex; flex-direction: column; justify-content: center; gap: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                             <button onclick="GrabarDetalleCategoriaMenu()" type="button" class="btn btn-warning btn-block" style="background-color: #f0ad4e; border-color: #eea236; color: white; height: 75px; font-weight: bold; font-size: 15px; line-height: 1.3; box-shadow: 0 4px 8px rgba(240,173,78,0.3); border-radius: 8px;">
+                         <div style="background-color: var(--t-fondo-alt, #FBF8F3); padding: 20px 10px; border-radius: 10px; border: 1px solid var(--t-borde, #EADFD2); height: 380px; display: flex; flex-direction: column; justify-content: center; gap: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                             <button onclick="GrabarDetalleCategoriaMenu()" type="button" class="btn btn-warning btn-block" style="height: 75px; font-weight: bold; font-size: 15px; line-height: 1.3; border-radius: 8px;">
                                  <i class="fa fa-plus-circle" style="font-size: 20px;"></i><br>AÑADIR /<br>ACTUALIZAR
                              </button>
                              
-                             <button onclick="NuevoDetalleProducto()" type="button" class="btn btn-default btn-block" style="height: 50px; font-weight: bold; border: 1px solid #ced4da; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-radius: 8px;">
+                             <button onclick="NuevoDetalleProducto()" type="button" class="btn btn-default btn-block" style="height: 50px; font-weight: bold; border: 1px solid var(--t-borde, #EADFD2); box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-radius: 8px;">
                                  <i class="fa fa-eraser"></i> Limpiar / Nuevo
                              </button>
                              
@@ -1115,27 +1157,27 @@
                      </div>
                 </div>
 
-                <div class="row" style="margin-top: 20px; background-color: #f9fdf9; padding: 15px; border-radius: 8px; border: 1px solid #d6e9c6;">
-                    <div class="col-md-2" style="font-weight: bold; font-size: 15px; padding-top: 10px; color: #3c763d;">
-                        Ítems: <span id="lblCantProductosCategoria" class="badge" style="background-color: #5cb85c; font-size: 14px;">0</span>
+                <div class="row" style="margin-top: 20px; background-color: var(--t-fondo-alt, #FBF8F3); padding: 15px; border-radius: 8px; border: 1px solid var(--t-borde, #EADFD2);">
+                    <div class="col-md-2" style="font-weight: bold; font-size: 15px; padding-top: 10px; color: var(--t-texto, #3A2A22);">
+                        Ítems: <span id="lblCantProductosCategoria" class="badge" style="background-color: var(--t-primario, #B4432E); font-size: 14px;">0</span>
                     </div>
                     <div class="col-md-6 text-center">
-                        <div style="border: 2px dashed #5cb85c; padding: 8px 15px; display: inline-block; border-radius: 12px; background-color: white;">
-                            <span style="font-weight: bold; color: #3c763d; margin-right: 15px; font-size: 13px;"><i class="fa fa-sliders"></i> LÍMITES DE SELECCIÓN</span>
-                            Mínima <input type="number" id="CantMinima" style="width: 55px; background-color: #5cb85c; color: white; border: none; text-align: center; border-radius: 4px; font-weight: bold; height: 28px; margin: 0 5px;" value="0">
+                        <div style="border: 2px dashed var(--t-primario-borde, #EFD2C6); padding: 8px 15px; display: inline-block; border-radius: 12px; background-color: white;">
+                            <span style="font-weight: bold; color: var(--t-texto, #3A2A22); margin-right: 15px; font-size: 13px;"><i class="fa fa-sliders"></i> LÍMITES DE SELECCIÓN</span>
+                            Mínima <input type="number" id="CantMinima" style="width: 55px; background-color: var(--t-primario-suave, #FBEEE8); color: var(--t-primario, #B4432E); border: 1px solid var(--t-primario-borde, #EFD2C6); text-align: center; border-radius: 4px; font-weight: bold; height: 28px; margin: 0 5px;" value="0">
                             &nbsp;
-                            Máxima <input type="number" id="CantMaxima" style="width: 55px; background-color: #5cb85c; color: white; border: none; text-align: center; border-radius: 4px; font-weight: bold; height: 28px; margin: 0 5px;" value="5">
+                            Máxima <input type="number" id="CantMaxima" style="width: 55px; background-color: var(--t-primario-suave, #FBEEE8); color: var(--t-primario, #B4432E); border: 1px solid var(--t-primario-borde, #EFD2C6); text-align: center; border-radius: 4px; font-weight: bold; height: 28px; margin: 0 5px;" value="5">
                             &nbsp;
-                            <label style="cursor: pointer; margin-left: 10px; color: #3c763d;"><input type="checkbox" id="ckEstricto" style="transform: scale(1.2); vertical-align: middle;"> &nbsp;Estricto</label>
+                            <label style="cursor: pointer; margin-left: 10px; color: var(--t-texto, #3A2A22);"><input type="checkbox" id="ckEstricto" style="transform: scale(1.2); vertical-align: middle;"> &nbsp;Estricto</label>
                         </div>
                     </div>
                     <div class="col-md-4 text-right">
-                        <div style="display: inline-block; vertical-align: middle; font-weight: bold; font-size: 15px; color: #3c763d; text-transform: uppercase; letter-spacing: 1px;">Costo Promedio</div>
-                        <div id="lblCostoPromedioCategoria" style="display: inline-block; background-color: #4cae4c; color: white; padding: 10px 25px; font-weight: bold; font-size: 22px; margin-left: 15px; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); min-width: 80px; text-align: center;">0</div>
+                        <div style="display: inline-block; vertical-align: middle; font-weight: bold; font-size: 15px; color: var(--t-texto, #3A2A22); text-transform: uppercase; letter-spacing: 1px;">Costo Promedio</div>
+                        <div id="lblCostoPromedioCategoria" style="display: inline-block; background-color: var(--t-primario-suave, #FBEEE8); color: var(--t-primario, #B4432E); padding: 10px 25px; font-weight: bold; font-size: 22px; margin-left: 15px; border-radius: 6px; box-shadow: none; border: 1px solid var(--t-primario-borde, #EFD2C6); min-width: 80px; text-align: center;">0</div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" style="background-color: #f9f9f9; border-top: 1px solid #e5e5e5;">
+            <div class="modal-footer">
                 <button onclick="GrabarConfiguracionCategoriaMenu()" type="button" class="btn btn-primary" style="font-weight: bold; width: 120px;">
                     GRABAR
                 </button>
@@ -1145,7 +1187,7 @@
     </div>
 </div>
 
-<div id="modalReceta" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="modalReceta" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -1361,10 +1403,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" id="btnGrabarInsumo"><i class=""></i>
-                    GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>
-                    SALIR</button>
+                <button type="button" class="btn btn-primary" id="btnGrabarInsumo"><i class="fa fa-check"></i> GRABAR</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>

@@ -22,8 +22,8 @@ class ItemGastosMensuales extends CI_Controller
     $this->load->view('menuTop.php', $data);
     $this->load->view('itemGastosMensuales/itemGastosMensuales.php');
     $this->load->view('menuFooter.php');
-    $this->load->view('itemGastosMensuales/listadoitemGastosMensuales.php');
-    $this->load->view('itemGastosMensuales/jsNuevoitem.php');
+    $this->load->view('itemGastosMensuales/listadoItemGastosMensuales.php');
+    $this->load->view('itemGastosMensuales/jsNuevoItem.php');
     $this->load->view('funciones.php');
   }
 

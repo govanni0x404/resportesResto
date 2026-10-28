@@ -1,10 +1,17 @@
+<style>
+	/* Filtros, tarjetas y tablas: assets/dist/css/reportes.css */
+	.rep-grafico { padding: 18px; border-radius: 14px; }
+	.rep-grafico:after { content: ""; display: table; clear: both; }
+	.rep-grafico canvas { max-width: 100%; }
+</style>
 <?php
 date_default_timezone_set('America/Santiago');
 $date = new DateTime('now');
 $date->modify('last day of this month');
 $fechaActual = date('d-m-Y');
 ?>
-<div class="content-header">
+<link href="<?php echo base_url() ?>assets/dist/css/reportes.css" rel="stylesheet" type="text/css" />
+<div class="content-header rep-encabezado">
     <div class="header-icon">
         <i class="pe-7s-home"></i>
     </div>
@@ -21,9 +28,8 @@ $fechaActual = date('d-m-Y');
 <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
         <!-- Nav tabs -->
-        <ul class="nav nav-tabs">
-            <div class="col-md-3">
-                <br>
+        <ul class="nav nav-tabs rep-filtros rep-panel-filtros">
+            <div class="col-md-4 col-sm-6">
                 <div class="control-group">
                     <div class="controls">
                         <label> Seleccione la fecha </label>
@@ -35,15 +41,12 @@ $fechaActual = date('d-m-Y');
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <br>
-                <br>
+            <div class="col-md-3 col-sm-6">
                 <button id="btnFiltrar" style="width:5px;" class="btn btn-success btn-rounded w-md m-b-1"><i
-                        class="hvr-buzz-out fa fa-search"></i></button>
+                        class="hvr-buzz-out fa fa-search"></i> Consultar</button>
             </div>
         </ul>
-        <br>
-        <div class="panel-body">
+        <div class="panel-body rep-cuerpo">
             <div class="row">
             </div>
             <!---------------------------------------------TABLAS RESUMEN STOCK POR BODEGA ------------------------------------------------------------>
@@ -81,7 +84,7 @@ $fechaActual = date('d-m-Y');
                 </div>
             </div>
 
-            <div class="panel-body" id="grafico">
+            <div class="panel-body t-card rep-grafico" id="grafico">
                 <div class="col-md-2"></div>
                 <div class="col-md-8">
                     <canvas id="chartVentas" style="height: auto;"></canvas>

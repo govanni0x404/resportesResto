@@ -1,4 +1,4 @@
-<div id="ModalNuevoAgregado" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevoAgregado" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<!-- TITULO  MODAL  -->
@@ -17,8 +17,9 @@
 					</ul>
 					<div class="tab-pane fade active in" id="tabDatosUsuarios">
 						<!-- CAMPOS DE REGISTRO  -->
+						<div class="t-card-titulo">Producto</div>
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-sm-4">
 								<label for="idAgregado">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idAgregado" id="idAgregado" requerido="no" value="" />
 							</div>
@@ -29,23 +30,25 @@
 								<select id="cboProductoDeVentaConAgregado" nombre="cboProductoDeVentaConAgregado" class="form-control input-sm" style="width:100%" requerido="si"></select>
 							</div>
 						</fieldset>
+						<div class="t-card-titulo">Agregado</div>
 						<fieldset>
 							<div class="col-md-12">
 								<label for="cboProductoAgregado">PRODUCTO DE AGREGADO</label>
 								<select id="cboProductoAgregado" nombre="cboProductoAgregado" class="form-control input-sm" style="width:100%" requerido="si"></select>
 							</div>
 
-							<div class="col-md-6 ">
+							<div class="col-sm-6">
 								<label for="cantidadAgregado">CANTIDAD</label>
 								<input min="0" type="number" class="form-control input-sm input-sm" maxlength='28' onpaste="return false;" ondrop="return false;" autocomplete="off" name="cantidadAgregado" id="cantidadAgregado" requerido="si" value="" />
 							</div>
-							<div class="col-md-6 ">
+							<div class="col-sm-6">
 								<label for="valorAdicionalAgregado">C. ADICIONAL</label>
 								<input type="number" class="form-control input-sm input-sm" maxlength='28' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="valorAdicionalAgregado" id="valorAdicionalAgregado" requerido="si" value="" />
 							</div>
 						</fieldset>
+						<div class="t-card-titulo">Opciones</div>
 						<fieldset>
-							<div class="col-md-6">
+							<div class="col-sm-6"><div class="t-opciones">
 								<div class="btn-group" role="group" aria-label="...">
 									<div class="checkbox checkbox-success checkbox-circle">
 										<input id="ckUsarDestinoDeImpresion" type="checkbox">
@@ -53,10 +56,10 @@
 											USAR DESTINO DE IMPRESION
 										</label>
 									</div>
-								</div>
+								</div></div>
 							</div>
 
-							<div class="col-md-6">
+							<div class="col-sm-6"><div class="t-opciones">
 								<div class="btn-group" role="group" aria-label="...">
 									<div class="checkbox checkbox-success checkbox-circle">
 										<input id="ckVigenciaAgregado" type="checkbox">
@@ -64,7 +67,7 @@
 											ACTIVO/VIGENTE
 										</label>
 									</div>
-								</div>
+								</div></div>
 							</div>
 
 						</fieldset>
@@ -75,8 +78,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-primary"><i class=""></i> GRABAR AGREGADO</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i> SALIR</button>
+				<button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> GRABAR AGREGADO</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>

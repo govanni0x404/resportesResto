@@ -74,6 +74,8 @@
     <link href="<?php echo base_url() ?>assets/plugins/sweetalert/sweetalert.css" rel="stylesheet" type="text/css" />
     <link href="<?php echo base_url() ?>/assets/plugins/select2/select2.css" rel="stylesheet" />
     <link href="<?php echo base_url() ?>/assets/plugins/date-range-picker/daterangepicker.css" rel="stylesheet" />
+    <link href="<?php echo base_url() ?>assets/dist/css/theme.css?v=23" rel="stylesheet" type="text/css" />
+    <link href="<?php echo base_url() ?>assets/dist/css/tema-f.css?v=1" rel="stylesheet" type="text/css" />
     <style>
         .container {
             width: 95% !important;
@@ -427,6 +429,13 @@
 </head>
 
 <body>
+    <!-- Aviso de carga entre secciones: visible desde el inicio, menuFooter lo oculta al terminar de cargar -->
+    <div id="page-loader" class="page-loader" role="status" aria-live="polite">
+        <div class="page-loader-box">
+            <div class="page-loader-spinner"></div>
+            <div class="page-loader-text">Cargando…</div>
+        </div>
+    </div>
     <?php
     $__menuAccesos = array();
     $__rolId = (int)$this->session->userdata('id_rol');

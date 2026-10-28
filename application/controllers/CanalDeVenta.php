@@ -20,10 +20,10 @@ class CanalDeVenta extends CI_Controller
       //'verificarSiEsAdmin' => json_decode($this->Mroles->verificarSiEsAdmin($this->session->userdata('id_rol')), true)
     );
     $this->load->view('menuTop.php', $data);
-    $this->load->view('canalventa/canalVenta.php');
+    $this->load->view('canalVenta/canalVenta.php');
     $this->load->view('menuFooter.php');
-    $this->load->view('canalventa/listadoCanalventa.php');
-    $this->load->view('canalventa/jsNuevoCanalventa.php');
+    $this->load->view('canalVenta/listadoCanalVenta.php');
+    $this->load->view('canalVenta/jsNuevoCanalVenta.php');
     $this->load->view('funciones.php');
   }
 

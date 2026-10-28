@@ -1,6 +1,35 @@
+<style>
+/* Mantenedores: listado + modal de registro (solo estilos) */
+.t-mant > .row > [class*="col-"] > .panel-body { padding: 0; }
+.t-mant .panel > .t-acciones { padding: 14px 18px 0; margin-bottom: 0; }
+.t-mant .panel > .t-tabla { padding: 6px 18px 18px; margin: 0; border: 0; }
+.t-mant .panel-heading .panel-title { display: flex; align-items: center; }
+@media (max-width: 480px) {
+    .t-mant .panel > .t-acciones, .t-mant .panel > .t-tabla { padding-left: 12px; padding-right: 12px; }
+    .t-mant .t-acciones .btn { width: 100%; }
+}
+.t-modal-form .modal-header { border-top: 3px solid var(--t-primario, #B4432E); }
+.t-modal-form .modal-title { text-align: left; }
+.t-modal-form .h-panel > .nav { display: none; }
+.t-modal-form .tab-pane > fieldset { margin: 0 -8px; }
+.t-modal-form fieldset::after { content: ""; display: table; clear: both; }
+.t-modal-form fieldset fieldset { margin: 0; }
+.t-modal-form fieldset > [class*="col-"] { padding: 0 8px; margin-bottom: 14px; }
+.t-modal-form label { font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #7A6A5E); margin-bottom: 5px; }
+.t-modal-form .checkbox label { font-size: 13px; letter-spacing: 0; color: var(--t-texto, #3A2A22); }
+.t-modal-form .checkbox { margin: 0; }
+.t-modal-form .t-card-titulo { margin-top: 2px; }
+.t-modal-form .t-opciones { background: var(--t-fondo-alt, #FBF8F3); border: 1px solid var(--t-borde-suave, #F0E8DD); border-radius: var(--t-radio-sm, 6px); padding: 10px 12px; height: 100%; }
+.t-modal-form .t-opciones .btn-group { display: block; }
+.t-modal-form .modal-footer .btn { min-width: 110px; }
+@media (max-width: 480px) {
+    .t-modal-form .modal-footer { display: flex; flex-direction: column-reverse; gap: 8px; }
+    .t-modal-form .modal-footer .btn { width: 100%; margin: 0 !important; }
+}
+</style>
 <div class="content-header">
   <div class="header-icon">
-    <i class="pe-7s-home"></i>
+    <i class="pe-7s-network"></i>
   </div>
   <div class="header-title">
     <h1>Sub Familias</h1>
@@ -13,7 +42,7 @@
 </div>
 
 
-<div class="container-padding">
+<div class="container-padding t-mant">
   <input type="number" class="form-control" style="display: none;" name="id_rol" id="id_rol" value="0" min="0" oninput="validity.valid||(value='');">
 
   <div class="row">
@@ -23,15 +52,14 @@
         <div class="panel panel-success lobidisable">
           <div class="panel-heading">
             <div class="panel-title">
-              <i class="pe-7s-cash"></i>
+              <i class="pe-7s-menu"></i>
               <h4>Listado De Sub Familias</h4>
             </div>
           </div>
-          <br>
-          <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
-          <button onclick="AbrirModalNuevaSubFamilia()" type="button" class="btn btn-primary" style = "margin-right: 20px; margin-bottom:20px;"></i>Crear Nueva Sub Familia</button>
-          </div>
-          <div class="table-responsive" style="margin-top:10px; padding:5px;">
+          <div class="t-acciones">
+                        <button onclick="AbrirModalNuevaSubFamilia()" type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Crear Nueva Sub Familia</button>
+                    </div>
+          <div class="table-responsive t-tabla">
             <table id="tablaSubFamilia" class="display responsive" style="width: 100%">
               <thead>
                 <tr>

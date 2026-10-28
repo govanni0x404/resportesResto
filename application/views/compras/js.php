@@ -88,7 +88,7 @@ function registrarEventosCompras() {
             }
 
             if (!NumeroDocumento || NumeroDocumento == 0 || NumeroDocumento.length == 0) {
-                showAppAlert('error',"- Debe indicar el folio dle documento primero", {
+                showAppAlert('error',"- Debe indicar el folio del documento primero", {
                     duration: 5000,
                     image: base_url+ 'assets/img/errorGif.gif'
                 });
@@ -673,7 +673,7 @@ function removeRow(rnd) {
             text: "¿Confirma que desea quitar el producto de la lista?",
             type: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#DD6B55",
+            confirmButtonColor: "#C9372C",
             cancelButtonText: "Cancelar",
             confirmButtonText: "Eliminar",
             closeOnConfirm: true

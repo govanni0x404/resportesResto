@@ -1201,9 +1201,9 @@
 			var dif = declarado - esperado;
 			$('#lblEsperado').text(fmt(esperado));
 			$('#lblDeclarado').text(fmt(declarado));
-			$('#lblDiferencia').text(fmt(dif)).css('color', dif === 0 ? '#37a000' : (dif < 0 ? '#d9534f' : '#f0ad4e'));
+			$('#lblDiferencia').text(fmt(dif)).css('color', dif === 0 ? '#5E7F3A' : (dif < 0 ? '#C9372C' : '#A66C25'));
 			var entregar = (Number($('#efectivoContado').val()) || 0) - (Number($('#fondoSiguiente').val()) || 0);
-			$('#lblEntregar').text(fmt(entregar)).css('color', entregar < 0 ? '#d9534f' : '');
+			$('#lblEntregar').text(fmt(entregar)).css('color', entregar < 0 ? '#C9372C' : '');
 		}
 
 		$('#lnkCierre').on('shown.bs.tab', cargarCierre);

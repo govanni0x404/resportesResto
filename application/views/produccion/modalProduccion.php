@@ -1,3 +1,47 @@
+<style>
+	/* Formularios en modales (.t-form): filas flexibles en vez de floats + <br>, etiquetas claras y móvil a una columna */
+	.t-form fieldset { display: flex; flex-wrap: wrap; align-items: flex-end; margin: 0 -8px; min-width: 0; }
+	.t-form fieldset > * { flex: 0 0 100%; max-width: 100%; padding-left: 8px; padding-right: 8px; }
+	.t-form fieldset > [class*="col-"] { float: none; flex: 0 0 auto; margin-bottom: 12px; }
+	.t-form fieldset > .table-responsive, .t-form fieldset > .nav-tabs { margin-left: 8px; margin-right: 8px; max-width: calc(100% - 16px); padding-left: 0; padding-right: 0; }
+	.t-form label { font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave); font-weight: 700; margin-bottom: 5px; }
+	.t-form .checkbox label { text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--t-texto); }
+	.t-form label.t-card-titulo { display: block; margin: 4px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--t-borde-suave); }
+	.t-form .form-control.input-sm { height: 36px; font-size: 14px; }
+	.t-form textarea, .t-form textarea.form-control { border: 1px solid var(--t-borde, #EADFD2); border-radius: var(--t-radio-sm); padding: 8px 10px; height: auto; }
+	.t-form textarea:focus { outline: none; border-color: var(--t-primario); box-shadow: 0 0 0 3px rgba(180, 67, 46, .12); }
+	.t-form sup { top: -.3em; }
+	.t-form sup a { cursor: pointer; font-weight: 600; text-transform: none; color: var(--t-primario); margin-left: 4px; }
+	.t-form .nav-tabs { margin-bottom: 14px; }
+	.t-form .tab-pane > fieldset:first-child { margin-top: 2px; }
+	.modal-footer .btn i[class=""] { display: none; }
+	@media (max-width: 991px) {
+		.t-form fieldset > [class*="col-md-"]:not([class*="col-sm-"]):not([class*="col-xs-"]) { width: 100%; }
+		.t-form fieldset > .col-md-1:empty, .t-form fieldset > .col-md-2:empty, .t-form fieldset > .col-md-5:empty, .t-form fieldset > .col-md-8:empty { display: none; }
+	}
+</style>
+<style>
+    /* Modal de producción: secciones en tarjetas, total destacado y cabecera legible con el tema blanco */
+    #ModalRealizarProduccion .modal-header .close, #ModalCantidadProduccion .modal-header .close { color: var(--t-texto-tenue) !important; }
+    #ModalRealizarProduccion .panel { box-shadow: none; margin-bottom: 14px; }
+    #ModalRealizarProduccion .panel > .panel-heading { padding: 10px 16px; }
+    #ModalRealizarProduccion .panel > .panel-heading h5 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color: var(--t-texto-suave); }
+    #ModalRealizarProduccion .panel > .panel-heading h5 strong { font-weight: 700 !important; }
+    #ModalRealizarProduccion .panel-elaborado { border-color: var(--t-primario-borde); }
+    #ModalRealizarProduccion .panel-elaborado > .panel-heading { background: var(--t-primario-suave) !important; }
+    #ModalRealizarProduccion .panel-elaborado > .panel-heading h5 { color: var(--t-primario); }
+    #ModalRealizarProduccion #tableInsumosRecetaProduccion { margin-bottom: 0; }
+    #ModalRealizarProduccion #tableInsumosRecetaProduccion > thead > tr > th { background: var(--t-fondo-alt) !important; color: var(--t-texto) !important; }
+    #ModalRealizarProduccion .prod-total { display: inline-block; min-width: 220px; text-align: right; margin: 0; }
+    #ModalRealizarProduccion .prod-total b { font-size: 26px; }
+    #ModalRealizarProduccion #costoUnitarioElaborado { background-color: var(--t-primario-suave) !important; color: var(--t-primario) !important;
+        border-color: var(--t-primario-borde); font-size: 16px; }
+    #ModalRealizarProduccion .panel-body .row > [class*="col-"] { margin-bottom: 10px; }
+    @media (max-width: 991px) {
+        #ModalRealizarProduccion .botones-produccion { margin-top: 0; text-align: left; }
+        #ModalRealizarProduccion .prod-total { display: block; min-width: 0; text-align: left; }
+    }
+</style>
 <!-- MODAL REALIZAR PRODUCCION -->
 <div id="ModalRealizarProduccion" class="modal fade" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog modal-xl">
@@ -11,7 +55,7 @@
             </div>
 
             <!-- CONTENIDO MODAL -->
-            <div class="modal-body">
+            <div class="modal-body t-form">
                 <div class="h-panel">
                     <!-- DATOS DE PRODUCCION -->
                     <div class="row">
@@ -32,11 +76,10 @@
                         </div>
                     </div>
 
-                    <br>
 
                     <!-- SECCION INSUMOS Y COSTOS -->
                     <div class="panel panel-default">
-                        <div class="panel-heading" style="background-color: #f0f0f0;">
+                        <div class="panel-heading">
                             <h5><strong style="font-weight: bold;">INSUMOS Y COSTOS</strong></h5>
                         </div>
                         <div class="panel-body">
@@ -146,7 +189,7 @@
                                 <div class="panel-body" style="padding: 5px;">
                                     <div class="table-responsive">
                                         <table id="tableInsumosRecetaProduccion" class="table table-bordered table-hover table-sm" style="font-size: 12px;">
-                                            <thead style="background-color: #568c30; color: white;">
+                                            <thead style="background-color: #B4432E; color: white;">
                                                 <tr>
                                                     <th class="text-center" style="width: 5%;">N</th>
                                                     <th class="text-left" style="width: 15%;">Insumo</th>
@@ -182,13 +225,14 @@
                                            id="cantidadTotalProduccion" value="1" />
                                 </div>
                                 <div class="col-md-10 text-right">
-                                    <h3 style="color: red; margin-left: 30px;">
-                                        <strong>COSTO TOTAL: <span id="costoTotalFinal">0</span></strong>
-                                    </h3>
+                                    <div class="t-kpi destacado prod-total">
+                                        <small>Costo total</small>
+                                        <b><span id="costoTotalFinal">0</span></b>
+                                    </div>
                                 </div>
                             </fieldset>
                             <fieldset>
-                                <div class="col-md-11">
+                                <div class="col-md-12">
                                     <label>OBSERVACIONES</label>
                                     <textarea class="form-control input-sm" rows="2" 
                                               id="observacionesProduccion" name="observacionesProduccion"
@@ -199,13 +243,12 @@
                         </div>
                     </div>
 
-                    <br>
 
                     <!-- INSUMO ELABORADO -->
                     <div class="row">
                         <div class="col-md-12">
-                            <div class="panel panel-default">
-                                <div class="panel-heading" style="background-color: #568c30; color: white;">
+                            <div class="panel panel-default panel-elaborado">
+                                <div class="panel-heading" style="background-color: #B4432E; color: white;">
                                     <h5><strong>INSUMO ELABORADO</strong></h5>
                                 </div>
                                 <div class="panel-body">
@@ -242,7 +285,7 @@
                                             <label>Costo Unitario</label>
                                             <input type="text" disabled class="form-control input-sm" 
                                                    id="costoUnitarioElaborado" value="0.00" 
-                                                   style="background-color: #d9534f; color: white; font-weight: bold;" />
+                                                   style="background-color: var(--t-primario-suave, #FBEEE8); color: var(--t-primario, #B4432E); border-color: var(--t-primario-borde, #EFD2C6); font-weight: bold;" />
                                         </div>
                                     </div>
                                 </div>
@@ -834,6 +877,6 @@ if (typeof soloNumerosDecimales !== 'function') {
 // Estilos
 $('<style>')
     .prop('type', 'text/css')
-    .html('#tableInsumosRecetaProduccion tbody tr.selected { background-color: #d9edf7 !important; }')
+    .html('#tableInsumosRecetaProduccion tbody tr.selected { background-color: #FBEEE8 !important; }')
     .appendTo('head');
 </script>

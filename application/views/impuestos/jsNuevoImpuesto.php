@@ -1,4 +1,4 @@
-<div id="ModalNuevoImpuesto" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevoImpuesto" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<!-- TITULO  MODAL  -->
@@ -18,11 +18,11 @@
 					<div class="tab-pane fade active in" id="tabDatosUsuarios">
 						<!-- CAMPOS DE REGISTRO  -->
 						<fieldset>
-							<div class="col-md-4 ">
+							<div class="col-sm-3">
 								<label for="idImpuesto">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idImpuesto" id="idImpuesto" requerido="no" value="">
 							</div>
-							<div class="col-md-12 ">
+							<div class="col-sm-9">
 								<label for="nombreImpuesto">NOMBRE IMPUESTO *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreImpuesto" id="nombreImpuesto" requerido="si" value="" placeholder="Nombre Impuesto" />
 							</div>
@@ -54,8 +54,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarNuevoImpuesto()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
+				<button onclick="grabarNuevoImpuesto()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> GRABAR</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>

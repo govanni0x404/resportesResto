@@ -163,9 +163,9 @@
         'background: rgba(255, 255, 255, 0.95); ' +
         'display: flex; flex-direction: column; align-items: center; justify-content: center; ' +
         'z-index: 100; gap: 12px;">' +
-        '<div style="width: 40px; height: 40px; border: 4px solid rgba(0,123,255,0.2); ' +
-        'border-top-color: #007bff; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>' +
-        '<div style="color: #333; font-size: 14px;">' + (message || 'Cargando...') + '</div>' +
+        '<div style="width: 40px; height: 40px; border: 4px solid rgba(180, 67, 46,0.18); ' +
+        'border-top-color: #B4432E; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>' +
+        '<div style="color: #3A2A22; font-size: 14px;">' + (message || 'Cargando...') + '</div>' +
         '</div>';
     
     var $wrapper = $('#tableResumenEntradasBodega').closest('.dataTables_wrapper');

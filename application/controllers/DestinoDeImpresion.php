@@ -20,8 +20,8 @@ class DestinoDeImpresion extends CI_Controller
 			//'verificarSiEsAdmin' => json_decode($this->Mroles->verificarSiEsAdmin($this->session->userdata('id_rol')), true)
 		);
 		$this->load->view('menuTop.php', $data);
-		$this->load->view('menuFooter.php');
 		$this->load->view('destinoImpresion/destinoImpresion.php');
+		$this->load->view('menuFooter.php');
 		$this->load->view('destinoImpresion/listadoDestinoImpresion.php');
 
 		$this->load->view('destinoImpresion/jsNuevoDestinoDeImpresion.php');

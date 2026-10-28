@@ -2,7 +2,6 @@
     <div class="header-icon">
         <i class="pe-7s-box2"></i>
     </div>
-    <br>
     <div class="header-title">
         <h1>Inventario</h1>
         <ol class="breadcrumb">
@@ -12,7 +11,7 @@
     </div>
 </div>
 
-<div class="container-padding">
+<div class="container-padding inv-vista">
     <div class="panel panel-success">
         <div class="panel-heading">
             <div class="panel-title">
@@ -25,7 +24,7 @@
             <!-- Selector de Bodega y Botones -->
             <div class="row m-b-20">
                 <div class="col-md-3">
-                    <label>Bodega:</label>
+                    <label class="inv-etiqueta">Bodega</label>
                     <select class="form-control" id="selectBodega">
                         <?php if(isset($bodegas)): ?>
                             <?php foreach($bodegas as $b): ?>
@@ -47,12 +46,13 @@
             <div class="row">
                 <!-- TABLA IZQUIERDA - INVENTARIOS REALIZADOS -->
                 <div class="col-xs-12 col-sm-4 col-md-3">
-                    <div style="background: #e9ecef; padding: 8px; font-weight: bold; border: 1px solid #ddd;">
-                        INVENTARIOS REALIZADOS
+                    <div class="inv-caja">
+                    <div class="inv-caja-titulo">
+                        <i class="fa fa-history"></i> Inventarios realizados
                     </div>
-                    <div style="max-height: 500px; overflow-y: auto; overflow-x: auto; border: 1px solid #ddd; border-top: none;">
+                    <div class="inv-scroll" style="max-height: 500px;">
                         <table class="table table-hover table-bordered table-condensed" style="margin-bottom: 0;">
-                            <thead style="background: #f8f9fa;">
+                            <thead style="background: #fff;">
                                 <tr>
                                     <th class="text-center" style="width: 50px;">N. Inventario</th>
                                     <th>Fecha/Hora</th>
@@ -85,28 +85,27 @@
                             </tbody>
                         </table>
                     </div>
+                    </div>
                 </div>
 
                 <!-- TABLA DERECHA - DETALLE -->
                 <div class="col-xs-12 col-sm-8 col-md-9">
-                    <!-- Checkbox Solo Diferencias -->
-                    <div style="padding: 8px; background: white; border: 1px solid #ddd;">
-                        <label style="margin: 0;">
+                    <div class="inv-caja">
+                    <div class="inv-caja-titulo inv-caja-titulo-flex">
+                        <span><i class="fa fa-list-ul"></i> Detalle</span>
+                        <!-- Checkbox Solo Diferencias -->
+                        <label class="inv-check">
                             <input type="checkbox" id="chkSoloDiferencias"> 
                             Sólo ver con diferencias
                         </label>
                     </div>
 
-                    <div style="background: #e9ecef; padding: 8px; font-weight: bold; border: 1px solid #ddd; border-top: none;">
-                        DETALLE
-                    </div>
-
                     <!-- Tabla de detalle -->
-                    <div style="max-height: 450px; overflow-y: auto; overflow-x: auto; border: 1px solid #ddd; border-top: none;">
+                    <div class="inv-scroll" style="max-height: 450px;">
                         <table class="table table-striped table-bordered table-condensed" 
                                id="tablaDetalle" 
                                style="margin-bottom: 0; font-size: 11px;">
-                            <thead style="background: #568c30; color: white;">
+                            <thead style="background: #B4432E; color: white;">
                                 <!-- <tr>
                                     <th class="text-center" style="width: 30px; vertical-align: middle;">
                                         <input type="checkbox" id="chkSelectAll">
@@ -133,10 +132,10 @@
                     </div>
 
                     <!-- Barra de búsqueda y total -->
-                    <div style="padding: 10px; background: white; border: 1px solid #ddd; border-top: none;">
+                    <div class="inv-pie">
                         <div class="row">
                             <div class="col-md-5">
-                                <label style="margin-bottom: 5px; font-size: 11px;">Nombre Insumo</label>
+                                <label class="inv-etiqueta">Nombre Insumo</label>
                                 <div class="input-group input-group-sm">
                                     <input type="text" class="form-control" 
                                            id="txtBuscarInsumo" 
@@ -154,16 +153,16 @@
                                     <i class=""></i> Eliminar
                                 </button>
                             </div> -->
-                            <div class="col-md-4 text-right">
-                                <label style="margin-bottom: 5px; font-size: 11px;">Total Dif. Costo</label>
-                                <div>
-                                    <span class="badge badge-danger" id="totalDifCosto" 
-                                          style="font-size: 16px; padding: 8px 15px; background: #d9534f;">
+                            <div class="col-md-4 col-md-offset-3 text-right">
+                                <div class="t-kpi inv-total">
+                                    <small>Total Dif. Costo</small>
+                                    <b><span class="badge badge-danger" id="totalDifCosto">
                                         0
-                                    </span>
+                                    </span></b>
                                 </div>
                             </div>
                         </div>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -172,6 +171,28 @@
 </div>
 
 <style>
+    /* Inventario: dos tarjetas (historial y detalle) con cabecera suave y pie con búsqueda + total */
+    .inv-vista .inv-caja { border: 1px solid var(--t-borde); border-radius: var(--t-radio); background: #fff; overflow: hidden; margin-bottom: 14px; }
+    .inv-vista .inv-caja-titulo { background: var(--t-fondo-alt); border-bottom: 1px solid var(--t-borde-suave); padding: 10px 14px;
+        font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--t-texto-suave); }
+    .inv-vista .inv-caja-titulo i { color: var(--t-primario); margin-right: 4px; }
+    .inv-vista .inv-caja-titulo-flex { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; }
+    .inv-vista .inv-check { margin: 0; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--t-texto); font-size: 13px; cursor: pointer; }
+    .inv-vista .inv-check input { margin: 0 4px 0 0; vertical-align: -2px; }
+    .inv-vista .inv-scroll { overflow: auto; }
+    .inv-vista .inv-scroll .table { margin-bottom: 0; border: 0; }
+    .inv-vista .inv-scroll .table > thead > tr > th { position: sticky; top: 0; z-index: 1; background: var(--t-fondo-alt) !important; color: var(--t-texto) !important; }
+    .inv-vista #tablaDetalle { font-size: 12px; }
+    .inv-vista .inv-pie { border-top: 1px solid var(--t-borde-suave); padding: 12px 14px 2px; background: #fff; }
+    .inv-vista .inv-pie [class*="col-"] { margin-bottom: 10px; }
+    .inv-vista .inv-etiqueta { font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave); font-weight: 700; margin-bottom: 5px; }
+    .inv-vista .inv-total { display: inline-block; min-width: 200px; text-align: right; box-shadow: none; }
+    .inv-vista .inv-total #totalDifCosto { background: none; color: var(--t-peligro); font-size: 22px; font-weight: 800; padding: 0; border-radius: 0; }
+    .inv-vista .inv-total b { line-height: 1.2; }
+    @media (max-width: 991px) {
+        .inv-vista .inv-total { display: block; min-width: 0; text-align: left; }
+        .inv-vista .text-right .inv-total { text-align: left; }
+    }
     @media (max-width: 991px) {
         #tablaDetalle th,
         #tablaDetalle td {
@@ -179,12 +200,13 @@
         }
     }
 
+    .inventario-row { cursor: pointer; }
     .inventario-row:hover {
-        background-color: #d4edda !important;
+        background-color: var(--t-primario-suave) !important;
     }
     
     .inventario-row.selected {
-        background-color: #5bc0de !important;
+        background-color: var(--t-primario) !important;
         color: white !important;
     }
     
@@ -216,12 +238,12 @@
 
     /* Filas con diferencias en VERDE (positivo) */
     tr.diferencia-positiva {
-        background-color: #d4edda !important;
+        background-color: #EEF3E4 !important;
     }
 
     /* Filas con diferencias en AMARILLO (negativo) */
     tr.diferencia-negativa {
-        background-color: #fff3cd !important;
+        background-color: #FFF4DF !important;
     }
 
     /* Filas SIN diferencias */

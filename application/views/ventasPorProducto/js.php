@@ -101,9 +101,9 @@
         'background: rgba(255, 255, 255, 0.95); ' +
         'display: flex; flex-direction: column; align-items: center; justify-content: center; ' +
         'z-index: 100; gap: 12px;">' +
-        '<div style="width: 40px; height: 40px; border: 4px solid rgba(0,123,255,0.2); ' +
-        'border-top-color: #007bff; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>' +
-        '<div style="color: #333; font-size: 14px;">' + (message || 'Cargando...') + '</div>' +
+        '<div style="width: 40px; height: 40px; border: 4px solid rgba(180, 67, 46,0.18); ' +
+        'border-top-color: #B4432E; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>' +
+        '<div style="color: #3A2A22; font-size: 14px;">' + (message || 'Cargando...') + '</div>' +
         '</div>';
     
     var $wrapper = $('#tableVentasPorProducto').closest('.dataTables_wrapper');
@@ -272,32 +272,43 @@
         datasets: [{
             data: totalesProductos,
             backgroundColor: [
-                "rgb(54, 162, 235)",
-                "rgb(255, 99, 132)",
-                "rgb(255, 159, 64)",
-                "rgb(255, 205, 86)",
-                "rgb(75, 192, 192)",
-                "rgb(153, 102, 255)",
-                "rgb(201, 203, 207)",
-                "rgb(255, 0, 0)",
+                "#C0533A",
+                "#E0A93B",
+                "#6F8F3D",
+                "#3E7C8C",
+                "#8B4F6E",
+                "#D98C4F",
+                "#9DB07A",
+                "#5B6B7F",
+                "#D48A8A",
+                "#CBB28B",
+                "#5FA39A",
+                "#6B4A3A",
             ],
         }]
     },
 
         configProductos = {
-            type: 'pie',
+            type: 'doughnut',
             data: dataProductos,
             options: {
                 responsive: true,
                 // maintainAspectRatio: true,
                 // padding: 1000,
-                hoverOffset: 0,
-                hoverBorderColor: '#000',
+                aspectRatio: 2,
+                cutout: '58%',
+                hoverOffset: 8,
+                borderWidth: 2,
+                borderColor: '#FFFFFF',
+                hoverBorderColor: '#FFFFFF',
+                layout: { padding: 8 },
                 plugins: {
                     legend: {
-                        display: false,
-                        position: 'bottom'
-                    }
+                        display: true,
+                        position: 'right',
+                        labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 14, color: '#3A2A22', font: { size: 12 } }
+                    },
+                    tooltip: { backgroundColor: '#2A1A12', padding: 10, cornerRadius: 8 }
                 }
             }
         };
@@ -337,6 +348,9 @@
         $.post(base_url + "index.php/Configuraciones/obtenerConfiguracionesRestoWeb", {
         }, function (datos) {
             var obj = $.parseJSON(datos);
+            // Las columnas Total Neto / Total Iva están comentadas en la vista: la tabla solo tiene 3 columnas
+            // (0..2) y pedir column(3) hacía fallar DataTables. Solo se desglosa si esas columnas existen.
+            if (tablaVentasPorProducto.columns().count() < 5) return;
             $.each(obj, function (index, v) {
                 if (v.desglozar_monto_neto_iva_total_en_reportes == 't') {
                     tablaVentasPorProducto.column(2).visible(true);

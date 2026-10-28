@@ -150,7 +150,7 @@ $('#btnHabilitarTodos').on('click', function() {
         text: "Se habilitarán todos los privilegios para este rol",
         type: "warning",
         showCancelButton: true,
-        confirmButtonColor: "#5cb85c",
+        confirmButtonColor: "#B4432E",
         confirmButtonText: "Sí, habilitar",
         cancelButtonText: "Cancelar",
         closeOnConfirm: false
@@ -184,7 +184,7 @@ $('#btnBloquearTodos').on('click', function() {
         text: "Se Deshabilitaran todos los privilegios para este rol",
         type: "warning",
         showCancelButton: true,
-        confirmButtonColor: "#d9534f",
+        confirmButtonColor: "#C9372C",
         confirmButtonText: "Sí, deshabilitar",
         cancelButtonText: "Cancelar",
         closeOnConfirm: false

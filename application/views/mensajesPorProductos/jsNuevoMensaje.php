@@ -1,4 +1,4 @@
-<div id="ModalMensajesDelProducto" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalMensajesDelProducto" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<!-- TITULO  MODAL  -->
@@ -17,7 +17,7 @@
 					</ul>
 					<div class="tab-pane fade active in" id="tabDatosUsuarios">
 						<fieldset>
-							<div class="col-md-6 ">
+							<div class="col-sm-4">
 								<label for="idMsg">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idMsg" id="idMsg" requerido="no" value="" />
 							</div>
@@ -30,12 +30,12 @@
 						</fieldset>
 						<fieldset>
 							<div class="col-md-12">
-								<label for="txtMsgProducto">Mnesaje del Producto</label>
+								<label for="txtMsgProducto">MENSAJE DEL PRODUCTO</label>
 								<textarea onpaste="return false;" maxlength="50" ondrop="return false;" autocomplete="off" class="form-control" rows="3" id="txtMsgProducto" placeholder="Mensaje adicional producto"></textarea>
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-6">
+							<div class="col-sm-6"><div class="t-opciones">
 								<div class="btn-group" role="group" aria-label="...">
 									<div class="checkbox checkbox-success checkbox-circle">
 										<input id="ckVigenciaMsg" type="checkbox">
@@ -43,7 +43,7 @@
 											ACTIVO/VIGENTE
 										</label>
 									</div>
-								</div>
+								</div></div>
 							</div>
 
 						</fieldset>
@@ -56,8 +56,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
-				<button onclick="grabarMsgProductos()" type="button" class="btn btn-primary"><i class=""></i>GRABAR MENSAJE</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
+				<button onclick="grabarMsgProductos()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> GRABAR MENSAJE</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
 			</div>
 			<!-- FIN BOTONES  -->
 		</div>

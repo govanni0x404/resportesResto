@@ -12,20 +12,27 @@
 	</div>
 </div> <!-- /.Content Header (Page header) -->
 
+<style>
+	/* Listado: acción principal en la cabecera del panel, tabla con aire */
+	.t-lista > .panel-heading .panel-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+	.t-lista > .panel-heading .panel-title h4 { flex: 1 1 auto; }
+	.t-lista > .panel-heading .t-acciones { margin: 0; }
+	.t-lista > .panel-heading .btn i { color: #fff; margin-right: 4px; }
+	.t-lista > .table-responsive { padding: 14px 18px 18px !important; margin: 0 !important; border: 0; }
+	@media (max-width: 767px) { .t-lista > .panel-heading .t-acciones, .t-lista > .panel-heading .t-acciones .btn { width: 100%; } }
+</style>
+
 <div class="row">
 	<div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
 		<div class="panel-body">
 			<!---------------------------------------------TABLAS RESUMEN STOCK POR BODEGA ------------------------------------------------------------>
-			<div class="panel panel-success lobidisable">
+			<div class="panel panel-success lobidisable t-lista">
 				<div class="panel-heading">
 					<div class="panel-title">
 						<i class="pe-7s-cash"></i>
 						<h4>Recetas</h4>
+						<div class="t-acciones"><button id="btnNuevaReceta" type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Crear Receta</button></div>
 					</div>
-				</div>
-				<br>
-				<div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
-				<button style="margin-right:30px; margin-bottom: 20px;" id="btnNuevaReceta" type="button" class="btn btn-primary"></i>Crear Receta</button>
 				</div>
 				<div class="table-responsive" style="margin-top:10px; padding:5px;">
 					<table id="tableRecetas" class="display responsive" style="width: 100%">

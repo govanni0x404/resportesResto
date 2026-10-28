@@ -5,7 +5,8 @@ $date->modify('last day of this month');
 //$fechaActual = date('d-m-Y');
 $fechaActual = date('d-m-Y');
 ?>
-<div class="content-header">
+<link href="<?php echo base_url() ?>assets/dist/css/reportes.css" rel="stylesheet" type="text/css" />
+<div class="content-header rep-encabezado">
 	<div class="header-icon">
 		<i class="pe-7s-home"></i>
 	</div>
@@ -22,9 +23,8 @@ $fechaActual = date('d-m-Y');
 <div class="row">
 	<div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
 		<!-- Nav tabs -->
-		<ul class="nav nav-tabs">
-			<div class="col-md-4">
-				<br>
+		<ul class="nav nav-tabs rep-filtros rep-panel-filtros">
+			<div class="col-md-4 col-sm-6">
 				<div class="control-group">
 					<div class="controls">
 						<label> Seleccione la fecha </label>
@@ -36,23 +36,15 @@ $fechaActual = date('d-m-Y');
 				</div>
 			</div>
 
-			<div class="col-md-2">
-				<br>
-				<br>
-				<button id="btnConsultar" onclick="consultarResumenDeVentas()" style="width:5px;" class="btn btn-success btn-rounded w-md m-b-1"><i class="hvr-buzz-out fa fa-search">Consultar</i></button>
+			<div class="col-md-2 col-sm-6">
+				<button id="btnConsultar" onclick="consultarResumenDeVentas()" style="width:5px;" class="btn btn-success btn-rounded w-md m-b-1"><i class="hvr-buzz-out fa fa-search"></i> Consultar</button>
 			</div>
-			<br>
-			<div class="col-md-3">
-				<br>
-
-
-				<button onclick="PDFConsolidadoDeVentas()" class="btn btn-danger w-md m-b-1"><i class="hvr-buzz-out fa fa-pdf"></i>EXPORTAR PDF</button>
-				<button onclick="ExcelConsolidadoDeVentas()" class="btn btn-success w-md m-b-1"><i class="hvr-buzz-out fa fa-file-excel-o"></i>EXPORTAR EXCEL</button>
-
+			<div class="col-md-6 col-sm-12 rep-exportar">
+				<button onclick="PDFConsolidadoDeVentas()" class="btn btn-danger w-md m-b-1"><i class="hvr-buzz-out fa fa-file-pdf-o"></i> EXPORTAR PDF</button>
+				<button onclick="ExcelConsolidadoDeVentas()" class="btn btn-success w-md m-b-1"><i class="hvr-buzz-out fa fa-file-excel-o"></i> EXPORTAR EXCEL</button>
 			</div>
 		</ul>
-		<br>
-		<div class="panel-body">
+		<div class="panel-body rep-cuerpo">
 			<div class="row">
 			</div>
 			<!---------------------------------------------TABLAS RESUMEN STOCK POR BODEGA ------------------------------------------------------------>
@@ -67,9 +59,9 @@ $fechaActual = date('d-m-Y');
 				<div class="tab-pane fade active in" id="DetalleConsolidadoVentas">
 					<div class="panel-body">
 						<div class="col-md-12 col-lg-12">
-							<div class="panel panel-default">
+							<div class="panel panel-default rep-sin-marco">
 								<div class="panel-body">
-									<fieldset class="consolidado-stats">
+									<fieldset class="consolidado-stats rep-kpis">
 										<div class="col-xs-3 col-sm-3 col-md-3 col-lg-4">
 											<div class="statistic-box statistic-filled-6 btn-primary">
 												<h2><span class="count-number1" id="cantidadVentas">0</span><span class="slight"><i class=" fa-rotate-90 c-white"> </i></span></h2>
@@ -118,8 +110,8 @@ $fechaActual = date('d-m-Y');
 											</div>
 										</div>
 
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<div class="statistic-box statistic-filled-6 btn-primary">
+										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4 rep-kpi-celda-primera">
+											<div class="statistic-box statistic-filled-6 btn-primary rep-kpi-destacado">
 												<h2>$<span class="count-number1" id="MontoVentaTotal">0</span><span class="slight"><i class=" fa-rotate-90 c-white"> </i></span></h2>
 												<div class="small">Monto Venta Total</div>
 												<i class="pe-7s-cash statistic_icon c-white"></i>
@@ -228,33 +220,21 @@ $fechaActual = date('d-m-Y');
 			</div>
 
 <style>
-@media (max-width: 768px) {
-	.consolidado-stats > [class*="col-"] {
-		width: 50%;
+	/* Rejilla de indicadores: se adapta al ancho y oculta las celdas cuyo indicador está oculto por permisos.
+	   Tarjetas, filtros y tablas: assets/dist/css/reportes.css */
+	.consolidado-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; margin: 0 0 4px; padding: 0; border: 0; min-width: 0; }
+	.consolidado-stats > [class*="col-"] { float: none; width: auto; padding: 0; min-height: 0; }
+	.consolidado-stats > [class*="col-"]:has(> .statistic-box[style*="none"]) { display: none; }
+	.consolidado-stats > .rep-kpi-celda-primera { order: -1; }
+	.consolidado-stats .statistic-box { margin: 0; }
+	#DetalleConsolidadoVentas > .panel-body { padding: 16px 18px 4px; }
+	#DetalleConsolidadoVentas > .panel-body > [class*="col-"] { padding-left: 0; padding-right: 0; }
+	#DetalleConsolidadoVentas > .panel-body > .col-sm-6 { padding: 0 0 0 8px; }
+	#DetalleConsolidadoVentas > .panel-body > .col-sm-6:nth-of-type(2) { padding: 0 8px 0 0; }
+	@media (max-width: 767px) {
+		#DetalleConsolidadoVentas > .panel-body > .col-sm-6 { padding: 0; }
 	}
-	.consolidado-stats .statistic-box {
-		padding: 10px;
+	@media (max-width: 480px) {
+		.consolidado-stats { grid-template-columns: 1fr; }
 	}
-	.consolidado-stats .statistic-box h2 {
-		font-size: 24px;
-	}
-	.consolidado-stats .statistic_icon {
-		font-size: 28px;
-		right: 10px;
-		top: 12px;
-	}
-}
-
-@media (max-width: 480px) {
-	.consolidado-stats > [class*="col-"] {
-		width: 100%;
-	}
-	.consolidado-stats .statistic-box h2 {
-		font-size: 22px;
-		word-break: break-word;
-	}
-	.consolidado-stats .statistic_icon {
-		display: none;
-	}
-}
 </style>

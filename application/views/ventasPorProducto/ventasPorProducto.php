@@ -1,3 +1,8 @@
+<style>
+	/* Filtros, tarjetas y tablas: assets/dist/css/reportes.css */
+	.rep-grafico { border-top: 1px solid var(--t-borde, #EADFD2); margin-top: 12px; padding: 18px 0 6px; }
+	.rep-grafico canvas { max-width: 100%; }
+</style>
 <?php
 date_default_timezone_set('America/Santiago');
 $date = new DateTime('now');
@@ -5,7 +10,8 @@ $date->modify('last day of this month');
 $fechaActual = date('d-m-Y');
 
 ?>
-<div class="content-header">
+<link href="<?php echo base_url() ?>assets/dist/css/reportes.css" rel="stylesheet" type="text/css" />
+<div class="content-header rep-encabezado">
 	<div class="header-icon">
 		<i class="pe-7s-home"></i>
 	</div>
@@ -22,20 +28,19 @@ $fechaActual = date('d-m-Y');
 <div class="row">
 	<div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
 		<!-- Nav tabs -->
-		<ul class="nav nav-tabs">
-			<div class="col-md-4">
+		<ul class="nav nav-tabs rep-filtros rep-panel-filtros">
+			<div class="col-md-4 rep-espacio">
 				<!-- <br>
 				<label>Bodegas:</label>
 				<select class="form-control" id="cboBodegas" nombre="cboBodegas">
 					<option selected value="">Todas Las Bodegas</option>
 				</select> -->
 			</div>
-			<div class="col-md-4"></div>
-			<div class="col-md-2">
+			<div class="col-md-4 rep-espacio"></div>
+			<div class="col-md-2 rep-espacio">
 
 			</div>
-			<div class="col-md-4">
-				<br>
+			<div class="col-md-4 col-sm-6">
 				<div class="control-group">
 					<div class="controls">
 						<label> Seleccione la fecha </label>
@@ -47,15 +52,12 @@ $fechaActual = date('d-m-Y');
 					</div>
 				</div>
 			</div>
-			<div class="col-md-2">
-				<br>
-				<br>
+			<div class="col-md-3 col-sm-6">
 				<button id="btnConsultar" onclick="consultarRListadoVentasPorProducto()" style="width:5px;"
-					class="btn btn-success btn-rounded w-md m-b-1"><i class="hvr-buzz-out fa fa-search"></i></button>
+					class="btn btn-success btn-rounded w-md m-b-1"><i class="hvr-buzz-out fa fa-search"></i> Consultar</button>
 			</div>
 		</ul>
-		<br>
-		<div class="panel-body">
+		<div class="panel-body rep-cuerpo">
 			<div class="row">
 			</div>
 			<!---------------------------------------------TABLAS RESUMEN STOCK POR BODEGA ------------------------------------------------------------>
@@ -88,8 +90,7 @@ $fechaActual = date('d-m-Y');
 							</tr>
 						</tfoot>
 					</table>
-					<br>
-					<div class="panel-body" id="grafico">
+					<div class="panel-body rep-grafico" id="grafico">
 						<div class="col-md-2"></div>
 						<div class="col-md-8">
 							<canvas id="chartProductos" style="height: auto;"></canvas>

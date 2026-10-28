@@ -536,32 +536,43 @@
         datasets: [{
             data: totalesFamilias,
             backgroundColor: [
-                "rgb(54, 162, 235)",
-                "rgb(255, 99, 132)",
-                "rgb(255, 159, 64)",
-                "rgb(255, 205, 86)",
-                "rgb(75, 192, 192)",
-                "rgb(153, 102, 255)",
-                "rgb(201, 203, 207)",
-                "rgb(255, 0, 0)",
+                "#C0533A",
+                "#E0A93B",
+                "#6F8F3D",
+                "#3E7C8C",
+                "#8B4F6E",
+                "#D98C4F",
+                "#9DB07A",
+                "#5B6B7F",
+                "#D48A8A",
+                "#CBB28B",
+                "#5FA39A",
+                "#6B4A3A",
             ],
         }]
     },
 
         configFamilias = {
-            type: 'pie',
+            type: 'doughnut',
             data: dataFamilias,
             options: {
                 responsive: true,
                 // maintainAspectRatio: true,
                 // padding: 1000,
-                hoverOffset: 0,
-                hoverBorderColor: '#000',
+                aspectRatio: 2,
+                cutout: '58%',
+                hoverOffset: 8,
+                borderWidth: 2,
+                borderColor: '#FFFFFF',
+                hoverBorderColor: '#FFFFFF',
+                layout: { padding: 8 },
                 plugins: {
                     legend: {
-                        display: false,
-                        position: 'bottom'
-                    }
+                        display: true,
+                        position: 'right',
+                        labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 14, color: '#3A2A22', font: { size: 12 } }
+                    },
+                    tooltip: { backgroundColor: '#2A1A12', padding: 10, cornerRadius: 8 }
                 }
             }
         };
@@ -952,7 +963,7 @@
             var totalPropina = 0;
             $.each(obj, function (index, v) {
                 tbl += "<tr>";
-                tbl += "<td class='text-center' style= 'height:10px'>" + v.nombre_fpago + "</td>";
+                tbl += "<td class='text-center' style= 'height:10px'><span class='dash-chip'>" + v.nombre_fpago + "</span></td>";
                 tbl += "<td class='text-center' style= 'height:10px'>" + v.cantidad + "</td>";
 
                 //tbl += "<td class='text-right ocultarNetoFormaDePago' style= 'height:10px'>$" + commaSeparateNumber(v.neto) + "</td>";

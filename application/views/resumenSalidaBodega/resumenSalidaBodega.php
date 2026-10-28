@@ -4,7 +4,8 @@ $date = new DateTime('now');
 $date->modify('last day of this month');
 $fechaActual = date('d-m-Y');
 ?>
-<div class="content-header">
+<link href="<?php echo base_url() ?>assets/dist/css/reportes.css" rel="stylesheet" type="text/css" />
+<div class="content-header rep-encabezado">
     <div class="header-icon">
         <i class="pe-7s-home"></i>
     </div>
@@ -19,11 +20,10 @@ $fechaActual = date('d-m-Y');
 </div> <!-- /.Content Header (Page header) -->
 
 <div class="row">
-    <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
-        <!-- Nav tabs -->
-        <ul class="nav nav-tabs">
+    <div class="col-xs-12 col-sm-12 col-md-12 m-b-20 rep-mov">
+        <!-- Filtros -->
+        <div class="t-filtros rep-panel-filtros">
             <div class="col-xs-12 col-sm-6 col-md-3">
-                <br>
                 <div class="control-group">
                     <div class="controls">
                         <label> Seleccione la fecha </label>
@@ -36,7 +36,6 @@ $fechaActual = date('d-m-Y');
                 </div>
             </div>
             <div class="col-xs-12 col-sm-6 col-md-3">
-                <br>
                 <label>Usuario:
                     <div class="checkbox checkbox-success checkbox-inline">
                         <input type="checkbox" id="ckTodosLosUsuarios" value="option1">
@@ -50,7 +49,6 @@ $fechaActual = date('d-m-Y');
                 </select>
             </div>
             <div class="col-xs-12 col-sm-6 col-md-3">
-                <br>
                 <label>Bodega:
                     <div class="checkbox checkbox-success checkbox-inline">
                         <input type="checkbox" id="ckTodasLasBodegas" value="option1">
@@ -64,16 +62,11 @@ $fechaActual = date('d-m-Y');
                 </select>
             </div>
             <div class="col-xs-12 col-sm-6 col-md-2">
-                <br>
-                <br>
                 <button id="btnFiltrar" class="btn btn-success btn-rounded w-md m-b-1"><i
-                        class="hvr-buzz-out fa fa-search"></i></button>
+                        class="hvr-buzz-out fa fa-search"></i> Consultar</button>
             </div>
-        </ul>
-        <br>
+        </div>
         <div class="panel-body">
-            <div class="row">
-            </div>
             <!---------------------------------------------TABLAS RESUMEN STOCK POR BODEGA ------------------------------------------------------------>
             <div class="panel panel-success lobidisable">
                 <div class="panel-heading">
@@ -82,7 +75,7 @@ $fechaActual = date('d-m-Y');
                         <h4>Resumen De Salidas</h4>
                     </div>
                 </div>
-                <div class="table-responsive" style="margin-top:10px; padding:5px;">
+                <div class="table-responsive t-lista-tabla" style="margin-top:10px; padding:5px;">
                     <table id="tableResumenSalidasBodega" class="display responsive" style="width: 100%">
                         <thead>
                             <tr>

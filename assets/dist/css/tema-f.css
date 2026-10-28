@@ -1,0 +1,120 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
+
+/*
+ * Tema F ("Claro compacto"): barra lateral gris oscura, acento verde, tablas con cabecera gris,
+ * totales con borde superior verde. Se carga DESPUÉS de theme.css y solo sobreescribe variables
+ * y reglas visuales. Para volver al diseño anterior basta quitar el <link> de tema-f.css en menuTop.php.
+ */
+:root {
+    --t-primario: #15803D;
+    --t-primario-osc: #116632;
+    --t-primario-suave: #E8F5EC;
+    --t-primario-borde: #BBE3C9;
+    --t-texto: #1F2937;
+    --t-texto-fuerte: #111827;
+    --t-texto-suave: #4B5563;
+    --t-texto-tenue: #6B7280;
+    --t-borde: #E5E7EB;
+    --t-borde-suave: #EEF0F3;
+    --t-fondo: #F5F6F8;
+    --t-fondo-alt: #F3F4F6;
+    --t-tinte: #F7FBF8;
+    --t-tinte-2: #EEF7F1;
+    --t-radio: 8px;
+    --t-radio-sm: 6px;
+    --t-sombra: 0 1px 2px rgba(17, 24, 39, .05);
+    --t-sombra-alta: 0 8px 24px rgba(17, 24, 39, .14);
+    --t-sidebar: 220px;
+    --t-cabecera: 60px;
+    --tf-lateral: #1F2937;
+    --tf-lateral-borde: #111827;
+}
+
+/* ---------- Tipografía ---------- */
+body, input, button, select, textarea, .btn, .form-control, table, .dropdown-menu {
+    font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+body { font-size: 14px; }
+
+/* ---------- Barra lateral oscura ---------- */
+nav.navbar.bootsnav, nav.navbar.bootsnav.navbar-default, nav.navbar.bootsnav.sticked {
+    background-color: var(--tf-lateral) !important;
+    border-right-color: var(--tf-lateral-borde) !important;
+}
+nav.navbar.bootsnav ul.nav > li > a { color: #D1D5DB !important; }
+nav.navbar.bootsnav ul.nav > li > a i { color: #9CA3AF !important; }
+nav.navbar.bootsnav ul.nav > li > a:hover, nav.navbar.bootsnav ul.nav > li > a:focus,
+nav.navbar.bootsnav ul.nav > li.open > a, nav.navbar.bootsnav ul.nav > li.on > a {
+    color: #fff !important; background-color: rgba(255, 255, 255, .08) !important;
+}
+nav.navbar.bootsnav ul.nav > li > a:hover i, nav.navbar.bootsnav ul.nav > li.on > a i,
+nav.navbar.bootsnav ul.nav > li.open > a i { color: #fff !important; }
+nav.navbar.bootsnav ul.nav > li.t-actual > a { color: #fff !important; background: var(--t-primario) !important; }
+nav.navbar.bootsnav ul.nav > li.t-actual > a i { color: #fff !important; }
+nav.navbar.bootsnav ul.nav > li.dropdown > a::after { color: #9CA3AF; }
+nav.navbar.bootsnav .navbar-toggle, nav.navbar.bootsnav .navbar-toggle i { color: #fff !important; }
+/* Los submenús siguen blancos para que se lean bien sobre el contenido */
+nav.navbar.bootsnav li.dropdown ul.dropdown-menu { background: #fff; }
+
+/* ---------- Encabezado y tarjetas ---------- */
+.content-header .header-icon { border-radius: 8px; }
+.content-header .header-title h1 { font-size: 22px; font-weight: 700; letter-spacing: -.2px; color: var(--t-texto-fuerte); }
+.panel, .box { border-radius: var(--t-radio); }
+.panel > .panel-heading,
+.panel-default > .panel-heading, .panel-success > .panel-heading, .panel-primary > .panel-heading,
+.panel-info > .panel-heading, .panel-bd > .panel-heading { border-radius: var(--t-radio) var(--t-radio) 0 0; }
+
+/* ---------- Filtros ---------- */
+.t-filtros, .nav.nav-tabs[class*="filtros"], .dash .dash-filtros {
+    border-radius: var(--t-radio); border-color: var(--t-borde);
+}
+.t-filtros label, .nav.nav-tabs[class*="filtros"] label { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 600; color: var(--t-texto-suave); }
+
+/* ---------- Totales (KPI) con borde superior verde ---------- */
+.t-kpi, body .rep-kpis .statistic-box, .dash .dash-kpi {
+    border-top: 3px solid var(--t-primario) !important; border-radius: var(--t-radio) !important;
+}
+.t-kpi.destacado, body .rep-kpis .statistic-box.rep-kpi-destacado, .dash .dash-kpi.destacado {
+    background: var(--t-primario-suave) !important; border-color: var(--t-primario-borde) !important; border-top-color: var(--t-primario) !important;
+}
+body .rep-kpis .statistic-box .statistic_icon i, .dash .dash-kpi-icono { color: #6B7280; }
+body .rep-kpis .statistic-box.rep-kpi-destacado .statistic_icon i { color: var(--t-primario); }
+
+/* ---------- Tablas ---------- */
+.table > thead > tr > th,
+table.dataTable thead th, table.dataTable thead td,
+.table > thead.btn-success > tr > th, .table > thead.btn-success > tr > td {
+    background: #F3F4F6 !important; color: #374151 !important;
+    border-bottom: 1px solid var(--t-borde) !important;
+    font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0;
+}
+.table > tbody > tr > td { color: var(--t-texto); border-top-color: var(--t-borde); }
+.table-striped > tbody > tr:nth-of-type(odd),
+table.dataTable.stripe tbody tr.odd, table.dataTable.display tbody tr.odd { background: #FAFAFB; }
+.table-hover > tbody > tr:hover, table.dataTable.hover tbody tr:hover, table.dataTable.display tbody tr:hover { background: var(--t-tinte-2) !important; }
+table.dataTable tbody tr.selected, .table > tbody > tr.selected { background: var(--t-primario-suave) !important; }
+.table > tfoot > tr > th, .table > tfoot > tr > td { background: #F3F4F6; font-weight: 600; }
+
+/* ---------- Formularios y botones ---------- */
+.form-control { border-color: #D1D5DB; border-radius: var(--t-radio-sm); }
+.form-control:focus { border-color: var(--t-primario); box-shadow: 0 0 0 3px rgba(21, 128, 61, .15) !important; }
+.input-group-addon { border-color: #D1D5DB; }
+.select2-container--default .select2-selection--single,
+.select2-container--default .select2-selection--multiple { border-color: #D1D5DB; border-radius: var(--t-radio-sm); }
+.btn { border-radius: var(--t-radio-sm); font-weight: 600; }
+.btn:focus, .btn.focus { box-shadow: 0 0 0 3px rgba(21, 128, 61, .25); }
+.btn-default { border-color: #D1D5DB; }
+.btn-default:hover, .btn-default:focus { background: #F3F4F6; border-color: #9CA3AF; }
+.btn-info { background: var(--t-primario-suave); border-color: var(--t-primario-borde); color: var(--t-primario-osc); }
+.btn-info:hover, .btn-info:focus { background: #D5ECDD; border-color: #A5D6B8; color: var(--t-primario-osc); }
+.dash .dash-filtros #btnTest { background: var(--t-primario); border-color: var(--t-primario); }
+.dash .dash-filtros #btnTest:hover, .dash .dash-filtros #btnTest:focus { background: var(--t-primario-osc); border-color: var(--t-primario-osc); }
+
+/* ---------- Paginación y pestañas ---------- */
+.pagination > .active > a, .pagination > .active > span,
+.pagination > .active > a:hover, .pagination > .active > span:hover { background: var(--t-primario); border-color: var(--t-primario); color: #fff; }
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover { background: var(--t-primario) !important; border-color: var(--t-primario) !important; color: #fff !important; }
+
+/* ---------- Modales ---------- */
+.modal-content { border-radius: 12px; }

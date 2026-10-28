@@ -1,6 +1,36 @@
+<style>
+    /* Mantenedores: listado con acción en la cabecera, tabla limpia y formulario del modal ordenado (solo estilos) */
+    .t-lista-contenedor { padding: 0 !important; }
+    .t-lista > .panel-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    .t-lista > .panel-heading .panel-title { display: flex; align-items: center; margin: 0; }
+    .t-lista > .panel-heading .t-acciones { margin: 0; }
+    .t-lista .t-acciones .btn i { color: inherit; margin-right: 4px; }
+    .t-lista-ayuda { margin: 0; padding: 12px 18px 0; font-size: 13px; color: var(--t-texto-tenue); }
+    .t-lista-ayuda i { margin-right: 4px; }
+    .t-lista-tabla { padding: 12px 18px 18px; margin: 0; border: 0; }
+    .t-lista-tabla table.dataTable tbody tr { cursor: pointer; }
+    @media (max-width: 480px) {
+        .t-lista > .panel-heading .t-acciones, .t-lista > .panel-heading .t-acciones .btn { width: 100%; }
+        .t-lista-tabla { padding: 10px; }
+    }
+
+    .t-form-modal .h-panel > ul.nav { display: none; }
+    .t-form-modal fieldset { margin: 0 -8px; }
+    .t-form-modal fieldset::after { content: ""; display: table; clear: both; }
+    .t-form-modal fieldset > [class*="col-"] { padding: 0 8px; margin-bottom: 14px; }
+    .t-form-modal fieldset label { font-size: 12px; color: var(--t-texto-suave); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 5px; }
+    .t-form-modal .btn-group { display: block; }
+    .t-form-modal .checkbox { display: flex; align-items: center; min-height: 40px; margin: 0; padding: 8px 12px 8px 34px;
+        border: 1px solid var(--t-borde); border-radius: var(--t-radio-sm); background: var(--t-fondo-alt); }
+    .t-form-modal .checkbox br { display: none; }
+    .t-form-modal .checkbox label { margin: 0; font-size: 13px; font-weight: 600; color: var(--t-texto); text-transform: none; letter-spacing: 0; }
+    .t-form-modal .t-card-titulo { padding-top: 12px; border-top: 1px solid var(--t-borde-suave); }
+    .t-form-modal .t-card-titulo:first-child { padding-top: 0; border-top: 0; }
+    .t-form-modal .modal-footer .btn i { margin-right: 4px; }
+</style>
 <div class="content-header">
     <div class="header-icon">
-        <i class="pe-7s-home"></i>
+        <i class="pe-7s-wallet"></i>
     </div>
     <div class="header-title">
         <h1>Gastos En Eventos</h1>
@@ -18,37 +48,28 @@
 
     <div class="row">
         <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
-            <div class="panel-body">
+            <div class="panel-body t-lista-contenedor">
 
-                <div class="panel panel-success lobidisable">
+                <div class="panel panel-success lobidisable t-lista">
                     <div class="panel-heading">
                         <div class="panel-title">
-                            <i class="pe-7s-cash"></i>
+                            <i class="pe-7s-wallet"></i>
                             <h4>Listado De Gastos En Eventos</h4>
                         </div>
+                        <div class="t-acciones">
+                            <button onclick="AbrirModalNuevoGastoEvento()" type="button" class="btn btn-primary btn-crear-nuevo"><i class="fa fa-plus"></i> Crear Nuevo Gasto Eventos</button>
+                        </div>
                     </div>
-                    <br>
-                    <div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
-                    <button onclick="AbrirModalNuevoGastoEvento()" type="button" class="btn btn-primary btn-crear-nuevo" style= "margin-right: 20px; margin-bottom:20px;"></i>Crear Nuevo Gasto Eventos</button>
-                    </div>
-                    <div class="table-responsive" style="margin-top:10px; padding:5px;">
+                    <p class="t-lista-ayuda"><i class="fa fa-hand-pointer-o"></i> Haga clic en una fila para ver o editar el registro.</p>
+                    <div class="table-responsive t-lista-tabla">
                         <table id="tablaGastoEvento" class="display responsive" style="width: 100%">
                             <thead>
                                 <tr>
-                                    <th class="text text-center" style='height:10px'>ID</th>
-                                    <th class="text text-center" style='height:45px'>GASTO EVENTOS</th>
+                                    <th class="text text-center">ID</th>
+                                    <th class="text text-center">GASTO EVENTOS</th>
                                 </tr>
                             </thead>
                         </table>
                     </div>
                 </div>
             </div>
-
-<style>
-@media (max-width: 480px) {
-    .btn-crear-nuevo {
-        width: 100%;
-        margin-right: 0 !important;
-    }
-}
-</style>

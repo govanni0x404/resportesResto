@@ -10,9 +10,20 @@
             <li class="active">Configuraciones Generales</li>
         </ol>
     </div>
+    <div class="config-db-indicator">
+        <div class="config-db-indicator__title"><i class="fa fa-database"></i> Conexión actual</div>
+        <div class="config-db-indicator__row">
+            <span class="config-db-indicator__label">Conexión:</span>
+            <span class="config-db-indicator__value"><?php echo !empty($conexion_actual) ? htmlspecialchars($conexion_actual, ENT_QUOTES, 'UTF-8') : 'N/D'; ?></span>
+        </div>
+        <div class="config-db-indicator__row">
+            <span class="config-db-indicator__label">Base de datos:</span>
+            <span class="config-db-indicator__value"><?php echo !empty($base_datos_actual) ? htmlspecialchars($base_datos_actual, ENT_QUOTES, 'UTF-8') : 'N/D'; ?></span>
+        </div>
+    </div>
 </div>
 
-<section class="content">
+<section class="content t-config">
         <input type="number" class="form-control" style="display: none;" name="id_rol" id="id_rol" value="0" min="0" oninput="validity.valid||(value='');">
     <div class="row">
         <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
@@ -25,23 +36,23 @@
                             <h4>Configuraciones del Sistema</h4>
                         </div>
                     </div>
-                    <br>
                     <div class="panel-body">
                         <!-- Tabs -->
                         <div class="tabs">
-                            <button class="tablink active" onclick="openTab(event, 'general')">General</button>
-                            <button class="tablink" onclick="openTab(event, 'otras')">Otras Configuraciones</button>
-                            <button class="tablink" onclick="openTab(event, 'facturacion')">Facturación Electrónica</button>
-                            <button class="tablink" onclick="openTab(event, 'empresa')">Datos de la Empresa</button>
+                            <button class="tablink active" onclick="openTab(event, 'general')"><i class="fa fa-sliders"></i>General</button>
+                            <button class="tablink" onclick="openTab(event, 'otras')"><i class="fa fa-cogs"></i>Valores por defecto</button>
+                            <button class="tablink" onclick="openTab(event, 'facturacion')"><i class="fa fa-file-text-o"></i>Facturación Electrónica</button>
+                            <button class="tablink" onclick="openTab(event, 'empresa')"><i class="fa fa-building-o"></i>Datos de la Empresa</button>
                         </div>
 
                         <form id="configForm" method="post" action="<?php echo site_url('Configuraciones/guardar'); ?>">
                             <!-- Tab General -->
                             <div id="general" class="tab active">
+                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Opciones de la caja, precuentas, propinas y permisos. Los cambios se aplican al presionar Grabar.</p>
                                 <div class="config-grid">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Ver en Caja</h3>
+                                                <h3 class="panel-title"><i class="fa fa-desktop"></i>Ver en Caja</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="ver_delivery_caja" value="1" <?php echo ($config['ver_delivery_caja'] ?? true) ? 'checked' : ''; ?>> DELIVERY</label>
@@ -54,7 +65,7 @@
 
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Precuentas</h3>
+                                                <h3 class="panel-title"><i class="fa fa-file-text-o"></i>Precuentas</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="garzon_emite_precuenta" value="1" <?php echo ($config['garzon_emite_precuenta'] ?? false) ? 'checked' : ''; ?>> Garzon Puede emitir Precuenta</label>
@@ -66,7 +77,7 @@
 
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Propinas</h3>
+                                                <h3 class="panel-title"><i class="fa fa-money"></i>Propinas</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="calcular_valor_propina" value="1" <?php echo ($config['calcular_valor_propina'] ?? false) ? 'checked' : ''; ?>> Mostar valor de propína en precuenta</label>
@@ -79,7 +90,7 @@
 
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Otros restorant</h3>
+                                                <h3 class="panel-title"><i class="fa fa-cutlery"></i>Otros del restaurante</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="permitircambiarppp" value="1" <?php echo ($config['permitircambiarppp'] ?? true) ? 'checked' : ''; ?>> Permitir el cambio del costo de insumo</label>
@@ -99,7 +110,7 @@
 
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Clave de administrador</h3>
+                                                <h3 class="panel-title"><i class="fa fa-key"></i>Clave de administrador</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
@@ -113,7 +124,7 @@
 
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Informes por Correo</h3>
+                                                <h3 class="panel-title"><i class="fa fa-envelope-o"></i>Informes por correo</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="usar_correo_electronico" value="1" <?php echo ($config['usar_correo_electronico'] ?? false) ? 'checked' : ''; ?>> Enviar Cierre de caja por correo</label>
@@ -128,7 +139,7 @@
 
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Imprimir cierre de caja</h3>
+                                                <h3 class="panel-title"><i class="fa fa-print"></i>Imprimir cierre de caja</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="ver_ingresos_egresos_cierre_caja" value="1" <?php echo ($config['ver_ingresos_egresos_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Ingresos y Egresos</label>
@@ -136,7 +147,7 @@
                                                 <label><input type="checkbox" name="ver_cortesias_cierre_caja" value="1" <?php echo ($config['ver_cortesias_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Cortesías</label>
                                                 <label><input type="checkbox" name="ver_anulaciones_eliminaciones_cierre_caja" value="1" <?php echo ($config['ver_anulaciones_eliminaciones_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Anulaciones y eliminaciones</label>
                                                 <label><input type="checkbox" name="ver_detalle_atencion_cierre_caja" value="1" <?php echo ($config['ver_detalle_atencion_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Detalle de atención</label>
-                                                <hr style="margin: 10px 0;">
+                                                <hr>
                                                 <label><input type="checkbox" name="mostrar_recaudacion_cierre_no_efectivo" value="1" <?php echo ($config['mostrar_recaudacion_cierre_no_efectivo'] ?? true) ? 'checked' : ''; ?>> Llenar forma de pago no efectivo</label>
                                                 <label><input type="checkbox" name="cierre_caja_manual" value="1" <?php echo ($config['cierre_caja_manual'] ?? true) ? 'checked' : ''; ?>> Cierre de caja detallado</label>
                                                 <label><input type="checkbox" name="imprimir_cierre_caja_impresora_termica" value="1" <?php echo ($config['imprimir_cierre_caja_impresora_termica'] ?? true) ? 'checked' : ''; ?>> Imprimir cierre de caja</label>
@@ -145,7 +156,7 @@
 
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Descuentos</h3>
+                                                <h3 class="panel-title"><i class="fa fa-percent"></i>Descuentos</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
@@ -158,7 +169,7 @@
 
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">REQUERIR ADMIN PARA:</h3>
+                                                <h3 class="panel-title"><i class="fa fa-shield"></i>Requerir administrador para</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="requerir_usuario_admin_credito" value="1" <?php echo ($config['requerir_usuario_admin_credito'] ?? false) ? 'checked' : ''; ?>> Ventas a credito</label>
@@ -172,11 +183,12 @@
 
                             <!-- Tab Otras Configuraciones -->
                             <div id="otras" class="tab">
+                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Documentos, formas de pago y bodegas que se proponen por defecto en compras y ventas.</p>
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Configuración por defecto de Compras</h3>
+                                                <h3 class="panel-title"><i class="fa fa-shopping-cart"></i>Configuración por defecto de compras</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
@@ -207,7 +219,7 @@
                                                     </div>
                                                 </div>
                                                 <hr>
-                                                <h4 style="font-size: 14px; font-weight: 700; color: #4a5568; margin-bottom: 15px;">Créditos</h4>
+                                                <h4>Créditos</h4>
                                                 <div class="row">
                                                     <div class="col-md-6 form-group">
                                                         <label>Formas de pago credito a clientes</label>
@@ -225,7 +237,7 @@
                                                     </div>
                                                 </div>
                                                 <hr>
-                                                <h4 style="font-size: 14px; font-weight: 700; color: #4a5568; margin-bottom: 15px;">Bodegas</h4>
+                                                <h4>Bodegas</h4>
                                                 <div class="row">
                                                     <div class="col-md-4 form-group">
                                                         <label>Compras</label>
@@ -255,7 +267,7 @@
                                     <div class="col-md-6">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Configuración por defecto de Venta</h3>
+                                                <h3 class="panel-title"><i class="fa fa-shopping-bag"></i>Configuración por defecto de venta</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
@@ -324,6 +336,9 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"><i class="fa fa-cutlery"></i>Operación de mesas e inventario</h3>
+                                            </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="inventario_cierre_caja" value="1" <?php echo ($config['inventario_cierre_caja'] ?? false) ? 'checked' : ''; ?>> Inventario insumos cierre de caja</label>
                                                 <label><input type="checkbox" name="permitir_repetir_producto_menu" value="1" <?php echo ($config['permitir_repetir_producto_menu'] ?? false) ? 'checked' : ''; ?>> Permitir repetir el producto en el menu</label>
@@ -337,11 +352,12 @@
 
                             <!-- Tab Facturación Electrónica -->
                             <div id="facturacion" class="tab">
+                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Proveedor DTE, documentos electrónicos, acceso a Cloud Apps y folios autorizados por el SII.</p>
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Facturación Electrónica</h3>
+                                                <h3 class="panel-title"><i class="fa fa-file-text-o"></i>Facturación electrónica</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="habilitar_facturacion_electronica" value="1" <?php echo ($config['habilitar_facturacion_electronica'] ?? false) ? 'checked' : ''; ?>> Habilitar factura electronica</label>
@@ -392,7 +408,7 @@
                                     <div class="col-md-6">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Parámetros Web y DTE</h3>
+                                                <h3 class="panel-title"><i class="fa fa-globe"></i>Parámetros web y DTE</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
@@ -437,7 +453,7 @@
                                     <div class="col-md-6">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Certificación SII</h3>
+                                                <h3 class="panel-title"><i class="fa fa-certificate"></i>Certificación SII</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
@@ -460,7 +476,7 @@
                                     <div class="col-md-6">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Acceso Facturación (Cloud Apps)</h3>
+                                                <h3 class="panel-title"><i class="fa fa-cloud"></i>Acceso facturación (Cloud Apps)</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
@@ -484,7 +500,7 @@
                                     <div class="col-md-12">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Folios electrónicos</h3>
+                                                <h3 class="panel-title"><i class="fa fa-list-ol"></i>Folios electrónicos</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <p class="text-muted">Consulta en Cloud Apps los folios autorizados por el SII para cada documento, con el usuario, la contraseña y el terminal de arriba (no hace falta grabar antes).</p>
@@ -526,11 +542,12 @@
 
                             <!-- Tab Datos de la Empresa -->
                             <div id="empresa" class="tab">
+                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Datos tributarios de la empresa y de la sucursal que aparecen en los documentos.</p>
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Datos de la Empresa</h3>
+                                                <h3 class="panel-title"><i class="fa fa-building-o"></i>Datos de la empresa</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
@@ -581,7 +598,7 @@
                                         </div>
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">Sucursal</h3>
+                                                <h3 class="panel-title"><i class="fa fa-map-marker"></i>Sucursal</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
@@ -613,9 +630,9 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="modal-footer">
-                                <button type="submit" form="configForm" class="btn btn-primary">Grabar</button>
+                            <div class="modal-footer t-config-footer">
                                 <button type="button" onclick="location.reload();" class="btn btn-default">Cancelar</button>
+                                <button type="submit" form="configForm" class="btn btn-primary"><i class="fa fa-check"></i> Grabar</button>
                             </div>
                         </form>
                     </div>
@@ -625,267 +642,137 @@
     </div>
 </section>
 
-<div class="config-db-indicator">
-    <div class="config-db-indicator__title">Conexion actual</div>
-    <div class="config-db-indicator__row">
-        <span class="config-db-indicator__label">Conexion:</span>
-        <span class="config-db-indicator__value"><?php echo !empty($conexion_actual) ? htmlspecialchars($conexion_actual, ENT_QUOTES, 'UTF-8') : 'N/D'; ?></span>
-    </div>
-    <div class="config-db-indicator__row">
-        <span class="config-db-indicator__label">Base de datos:</span>
-        <span class="config-db-indicator__value"><?php echo !empty($base_datos_actual) ? htmlspecialchars($base_datos_actual, ENT_QUOTES, 'UTF-8') : 'N/D'; ?></span>
-    </div>
-</div>
+
 
 
 
 <style>
-    /* Estilos Modernos para Configuraciones */
-    .content-header {
-        padding: 20px 25px !important;
-        margin-bottom: 20px !important;
-    }
-    
-    .panel-success.lobidisable {
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        border: none;
-    }
+    /* Configuraciones: pestañas, tarjetas por tema y barra de grabado fija. Todo acotado a .t-config (solo estilos) */
+    .t-config { padding-top: 0; }
+    .t-config > .row > div > .panel-body { padding: 0; }
+    .t-config .panel-success.lobidisable > .panel-body { padding: 0 18px 0; }
 
-    .panel-success > .panel-heading {
-        background: #558B2F !important;
-        color: white !important;
-        border-radius: 12px 12px 0 0 !important;
-        padding: 15px 20px;
+    /* Pestañas con subrayado, como el resto del sistema; en móvil se desplazan horizontalmente */
+    .t-config .tabs {
+        display: flex; gap: 2px; margin: 0 -18px 20px; padding: 0 10px; border-bottom: 1px solid var(--t-borde);
+        overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
     }
+    .t-config .tabs::-webkit-scrollbar { display: none; }
+    .t-config .tablink {
+        flex: 0 0 auto; background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0;
+        padding: 13px 14px 11px; margin-bottom: -1px; font-size: 14px; font-weight: 600; color: var(--t-texto-suave);
+        cursor: pointer; white-space: nowrap; transition: color .15s, border-color .15s;
+    }
+    .t-config .tablink i { margin-right: 6px; color: var(--t-texto-tenue); }
+    .t-config .tablink:hover { color: var(--t-texto); }
+    .t-config .tablink.active { color: var(--t-primario); border-bottom-color: var(--t-primario); }
+    .t-config .tablink.active i { color: var(--t-primario); }
+    .t-config .tablink:focus { outline: none; }
+    .t-config .tablink:focus-visible { box-shadow: inset 0 0 0 2px rgba(180, 67, 46, .25); }
 
-    .tabs {
-        background: #f8f9fa;
-        padding: 5px;
-        border-radius: 8px;
-        margin-bottom: 25px;
-        display: inline-flex;
-        border: 1px solid #e9ecef;
-    }
-    
-    .tablink {
-        background: transparent;
-        border: none;
-        padding: 10px 25px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
-        color: #7f8c8d;
-        border-radius: 6px;
-        transition: all 0.3s ease;
-    }
-    
-    .tablink:hover {
-        color: #34495e;
-        background: rgba(26, 188, 156, 0.05);
-    }
-    
-    .tablink.active {
-        background: #558B2F;
-        color: white;
-        box-shadow: 0 4px 10px rgba(26, 188, 156, 0.2);
-    }
+    .t-config .tab { display: none; animation: tConfigEntrada .25s ease; }
+    .t-config .tab.active { display: block; }
+    @keyframes tConfigEntrada { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .t-config-intro { margin: -6px 0 16px; font-size: 13px; color: var(--t-texto-tenue); }
+    .t-config-intro i { margin-right: 4px; }
 
-    .tab {
-        display: none;
-        animation: fadeIn 0.4s ease;
+    /* Tarjetas de configuración */
+    .t-config .config-card {
+        background: #fff; border: 1px solid var(--t-borde); border-radius: var(--t-radio); box-shadow: var(--t-sombra);
+        margin-bottom: 18px; align-self: start;
     }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
+    .t-config .config-grid .config-card { margin-bottom: 0; }
+    .t-config .config-card > .panel-heading {
+        background: var(--t-fondo-alt); border-bottom: 1px solid var(--t-borde-suave); padding: 11px 16px; border-radius: var(--t-radio) var(--t-radio) 0 0;
     }
-    
-    .tab.active {
-        display: block;
+    .t-config .config-card .panel-title {
+        margin: 0; font-size: 12px; font-weight: 700; color: var(--t-texto-suave); text-transform: uppercase; letter-spacing: .4px;
     }
+    .t-config .config-card .panel-title i { margin-right: 6px; color: var(--t-primario); font-size: 14px; }
+    .t-config .config-card > .panel-body { padding: 10px 16px 14px; }
 
-    /* Cards de configuración */
-    .config-card {
-        background: white;
-        border: 1px solid #edf2f7;
-        border-radius: 10px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        align-self: start;
+    /* Cada casilla es una fila clicable */
+    .t-config .config-card label {
+        display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 8px 6px; font-size: 13px; font-weight: 500;
+        color: var(--t-texto); cursor: pointer; border-radius: var(--t-radio-sm); line-height: 1.35; transition: background-color .15s;
     }
-    
-    .config-card:hover {
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    .t-config .config-card label:hover { background: var(--t-primario-suave); }
+    .t-config .config-card input[type="checkbox"], .t-config .config-card input[type="radio"] {
+        flex: 0 0 auto; width: 16px; height: 16px; margin: 1px 0 0; accent-color: var(--t-primario); cursor: pointer;
     }
+    .t-config .config-card hr { margin: 10px 0; }
+    .t-config .config-card h4 { margin: 4px 0 12px; font-size: 12px; font-weight: 700; color: var(--t-texto-suave); text-transform: uppercase; letter-spacing: .4px; }
 
-    .config-card .panel-heading {
-        background: #fcfcfc;
-        border-bottom: 1px solid #edf2f7;
-        padding: 12px 15px;
-        border-radius: 10px 10px 0 0;
+    /* Campos de texto y selects: la etiqueta vuelve a ser un título pequeño, sin fila clicable */
+    .t-config .form-group { margin: 6px 0 12px; }
+    .t-config .form-group > label,
+    .t-config .config-card .form-group > label {
+        display: block; padding: 0; margin-bottom: 5px; font-size: 12px; font-weight: 700; color: var(--t-texto-suave);
+        text-transform: uppercase; letter-spacing: .3px; cursor: default; background: none;
     }
+    .t-config .form-group > label:hover { background: none; }
+    .t-config .config-card .form-group label[style] { display: inline-flex; padding: 6px 10px; text-transform: none; font-size: 13px;
+        border: 1px solid var(--t-borde); border-radius: var(--t-radio-sm); color: var(--t-texto); cursor: pointer; }
+    .t-config .help-block { font-size: 12px; color: var(--t-texto-tenue); margin: 5px 0 0; }
+    .t-config .p { font-size: 12px; color: var(--t-texto-tenue); margin: 6px 0 0; }
 
-    .config-card .panel-title {
-        font-size: 14px;
-        font-weight: 700;
-        color: #2d3748;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .t-config .btn-orange {
+        background: #fff; color: var(--t-texto); border: 1px solid var(--t-borde, #EADFD2); border-radius: var(--t-radio-sm);
+        padding: 6px 12px; font-weight: 600; font-size: 12px; margin-top: 6px;
     }
+    .t-config .btn-orange:hover { border-color: var(--t-primario); color: var(--t-primario); }
 
-    .config-card .panel-body {
-        padding: 15px;
+    /* Grilla de tarjetas: se acomodan fila por fila sin huecos */
+    /* Mosaico en columnas: cada tarjeta ocupa su alto real y la siguiente se ubica justo debajo, sin huecos */
+    .t-config .config-grid { display: block; column-count: 3; column-gap: 18px; }
+    .t-config .config-grid > .config-card { display: inline-block; width: 100%; vertical-align: top; -webkit-column-break-inside: avoid; break-inside: avoid; page-break-inside: avoid; margin: 0 0 18px !important; }
+
+    /* Folios */
+    .t-config #tablaFoliosDte { margin-bottom: 0; }
+    .t-config #tablaFoliosDte th { font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave); }
+
+    /* Barra de grabado: queda visible al bajar por la página */
+    .t-config .t-config-footer {
+        position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
+        margin: 20px -18px 0; padding: 12px 18px; background: rgba(248, 250, 253, .97); border-top: 1px solid var(--t-borde);
+        border-radius: 0 0 var(--t-radio) var(--t-radio); text-align: right;
     }
+    .t-config .t-config-footer .btn { min-width: 120px; }
+    .t-config .t-config-footer .btn i { margin-right: 4px; }
 
-    /* Checkbox styling */
-    .config-card label {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-        font-weight: 500;
-        color: #4a5568;
-        cursor: pointer;
-        font-size: 13px;
-        transition: color 0.2s ease;
+    /* Indicador de conexión: tarjeta compacta dentro del encabezado de la página (sobre la foto) */
+    .content-header .config-db-indicator {
+        margin-left: auto; flex: 0 1 auto; display: flex; flex-direction: column; gap: 3px; min-width: 220px; max-width: 360px;
+        padding: 10px 16px; border-radius: 14px; font-size: 12px; color: #fff;
+        background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .28);
+        -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
     }
+    .content-header .config-db-indicator__title { font-size: 11px; font-weight: 700; color: var(--t-mostaza, #E3B04B); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 2px; }
+    .content-header .config-db-indicator__title i { margin-right: 4px; }
+    .content-header .config-db-indicator__row { display: flex; gap: 6px; }
+    .content-header .config-db-indicator__label { font-weight: 600; color: #EAD9C2; }
+    .content-header .config-db-indicator__value { font-weight: 600; color: #fff; word-break: break-word; }
 
-    .config-card label:hover {
-        color: #558B2F;
-    }
-
-    .config-card input[type="checkbox"] {
-        margin-right: 10px;
-        width: 16px;
-        height: 16px;
-        accent-color: #558B2F;
-    }
-
-    .form-group label {
-        font-size: 12px;
-        color: #718096;
-        margin-bottom: 5px;
-        text-transform: uppercase;
-        font-weight: 600;
-    }
-
-    .form-control {
-        border-radius: 6px;
-        border: 1px solid #e2e8f0;
-        padding: 8px 12px;
-        height: auto;
-        font-size: 13px;
-    }
-
-    .form-control:focus {
-        border-color: #558B2F;
-        box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.1);
-    }
-
-    .btn-orange {
-        background: #f39c12;
-        color: white;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 12px;
-        margin-top: 10px;
-    }
-
-    .p { font-size: 11px; color: #a0aec0; margin: 5px 0; }
-    
-    .modal-footer {
-        border-top: 1px solid #edf2f7;
-        padding: 20px;
-        background: #f8f9fa;
-        border-radius: 0 0 12px 12px;
-    }
-
-    .btn-primary {
-        background: #558B2F;
-        border: none;
-        padding: 10px 30px;
-        font-weight: 700;
-        border-radius: 6px;
-        box-shadow: 0 4px 10px rgba(26, 188, 156, 0.2);
-    }
-
-    .btn-primary:hover {
-        background: #16a085;
-        transform: translateY(-1px);
-    }
-
-    /* Grid real: las tarjetas se acomodan fila por fila en vez de apilarse
-       por columna, así no quedan espacios vacíos cuando una columna tiene
-       más contenido que las otras */
-    .config-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        align-items: start;
-        gap: 20px;
-    }
-
-    .config-db-indicator {
-        position: fixed;
-        right: 18px;
-        bottom: 18px;
-        z-index: 1030;
-        max-width: 320px;
-        padding: 10px 14px;
-        border: 1px solid #dfe7d6;
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.96);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-        font-size: 12px;
-        color: #2d3748;
-    }
-
-    .config-db-indicator__title {
-        margin-bottom: 6px;
-        font-size: 12px;
-        font-weight: 700;
-        color: #558B2F;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-    }
-
-    .config-db-indicator__row + .config-db-indicator__row {
-        margin-top: 4px;
-    }
-
-    .config-db-indicator__label {
-        font-weight: 700;
-        color: #4a5568;
-    }
-
-    .config-db-indicator__value {
-        word-break: break-word;
-    }
-
-    @media (max-width: 992px) {
-        .config-grid {
-            grid-template-columns: repeat(2, 1fr);
+    /* Mismo mosaico en las otras pestañas (Valores por defecto, Facturación, Empresa): las tarjetas en col-md-6
+       se apilan por columnas sin huecos; las de ancho completo (col-md-12) ocupan las dos columnas */
+    @media (min-width: 992px) {
+        .t-config .tab > .row { display: block; column-count: 2; column-gap: 18px; margin: 0; }
+        .t-config .tab > .row > [class*="col-md-"] {
+            float: none; display: inline-block; width: 100%; vertical-align: top; padding: 0;
+            -webkit-column-break-inside: avoid; break-inside: avoid; page-break-inside: avoid;
         }
+        .t-config .tab > .row > .col-md-12 { -webkit-column-span: all; column-span: all; display: block; }
+        .t-config .tab > .row > [class*="col-md-"] > .config-card { margin: 0 0 18px; }
     }
-
-    @media (max-width: 768px) {
-        .config-grid {
-            grid-template-columns: 1fr;
-        }
-        .tabs {
-            display: flex;
-            flex-direction: column;
-        }
-        .tablink {
-            border-right: none;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .config-db-indicator {
-            right: 12px;
-            left: 12px;
-            bottom: 12px;
-            max-width: none;
-        }
+    @media (max-width: 1199px) { .t-config .config-grid { column-count: 2; } }
+    @media (max-width: 767px) {
+        .t-config .config-grid { column-count: 1; }
+        .t-config .config-grid > .config-card { margin-bottom: 14px !important; }
+        .t-config .panel-success.lobidisable > .panel-body { padding: 0 12px; }
+        .t-config .tabs { margin: 0 -12px 16px; }
+        .t-config .t-config-footer { margin: 16px -12px 0; padding: 10px 12px; }
+        .t-config .t-config-footer .btn { flex: 1 1 0; min-width: 0; }
+        .content-header { flex-wrap: wrap; }
+        .content-header .config-db-indicator { margin: 12px 0 0; max-width: none; width: 100%; }
     }
 </style>

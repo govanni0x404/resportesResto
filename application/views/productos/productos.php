@@ -6,7 +6,7 @@ $fechaActual = date('Y-m-d');
 ?>
 <div class="content-header">
 	<div class="header-icon">
-		<i class="pe-7s-home"></i>
+		<i class="pe-7s-photo-gallery"></i>
 	</div>
 	<div class="header-title">
 		<h1>Carta De Productos</h1>
@@ -18,23 +18,21 @@ $fechaActual = date('Y-m-d');
 	</div>
 </div>
 
-<div class="container-padding">
+<div class="container-padding t-productos">
 	<input type="number" class="form-control" style="display: none;" name="id_rol" id="id_rol" value="0" min="0" oninput="validity.valid||(value='');">
 	<div class="row">
 		<div class="col-xs-12">
-			<div class="panel panel-success lobidisable" style="margin-top: 20px;">
+			<div class="panel panel-success lobidisable">
 				<div class="panel-heading">
 					<div class="panel-title">
-						<i class="pe-7s-cash"></i>
-						<h4>LISTADO DE PRODUCTOS</h4>
+						<i class="pe-7s-menu"></i>
+						<h4>Listado De Productos</h4>
 					</div>
 				</div>
-				<div class="row " style="margin-bottom: 5px; margin-top: 20px; margin-right: 50px;">
-				<div class="col-xs-12 text-end" style="display: flex; justify-content: flex-end; width: 100%;">
+				<div class="t-acciones">
 					<button onclick="crearNuevoProducto()" type="button" class="btn btn-primary">
-						<i class=""></i> Crear Nuevo Producto
+						<i class="fa fa-plus"></i> Crear Nuevo Producto
 					</button>
-				</div>
 				</div>
 				<div class="panel-body">
 					<div class="table-responsive">

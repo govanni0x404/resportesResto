@@ -2,7 +2,8 @@
 date_default_timezone_set('America/Santiago');
 $fechaActual = date('d-m-Y');
 ?>
-<div class="content-header">
+<link href="<?php echo base_url() ?>assets/dist/css/reportes.css" rel="stylesheet" type="text/css" />
+<div class="content-header rep-encabezado">
     <div class="header-icon">
         <i class="pe-7s-graph2"></i>
     </div>
@@ -18,10 +19,9 @@ $fechaActual = date('d-m-Y');
 
 <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
-        <ul class="nav nav-tabs">
-            <div class="col-md-7"></div>
-            <div class="col-md-3">
-                <br>
+        <ul class="nav nav-tabs rep-filtros rep-panel-filtros">
+            <div class="col-md-7 rep-espacio"></div>
+            <div class="col-md-4 col-sm-6">
                 <div class="control-group">
                     <div class="controls">
                         <label>Seleccione el período</label>
@@ -33,16 +33,14 @@ $fechaActual = date('d-m-Y');
                     </div>
                 </div>
             </div>
-            <div class="col-md-2">
-                <br><br>
+            <div class="col-md-3 col-sm-6">
                 <button id="btnFiltrar" class="btn btn-success btn-rounded w-md m-b-1">
-                    <i class="hvr-buzz-out fa fa-search"></i>
+                    <i class="hvr-buzz-out fa fa-search"></i> Consultar
                 </button>
             </div>
         </ul>
-        <br>
-        
-        <div class="panel-body">
+
+        <div class="panel-body rep-cuerpo">
             <!-- TABLA PRINCIPAL -->
             <div class="panel panel-success lobidisable">
                 <div class="panel-heading">
@@ -141,6 +139,7 @@ $fechaActual = date('d-m-Y');
 </div>
 
 <style>
+	/* Filtros, tarjetas y tablas: assets/dist/css/reportes.css */
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

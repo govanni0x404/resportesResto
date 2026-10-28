@@ -22,7 +22,7 @@ class FormasDePago extends CI_Controller
         $this->load->view('menuTop.php', $data);
         $this->load->view('formasDePago/formasDePago.php');
         $this->load->view('menuFooter.php');
-        $this->load->view('formasDePago/listadoformasDePago.php');
+        $this->load->view('formasDePago/listadoFormasDePago.php');
         $this->load->view('formasDePago/jsNuevaFormaDePago.php');
         $this->load->view('funciones.php');
     }

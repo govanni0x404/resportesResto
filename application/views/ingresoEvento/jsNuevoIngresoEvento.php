@@ -1,4 +1,4 @@
-<div id="ModalNuevoIngresoEvento" class="modal fade" role="dialog" style="overflow-y: scroll;">
+<div id="ModalNuevoIngresoEvento" class="modal fade t-form-modal" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- TITULO  MODAL  -->
@@ -18,11 +18,11 @@
                     <div class="tab-pane fade active in" id="tabBodegas">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-4 ">
+                            <div class="col-sm-3">
                                 <label for="idIngresoEvento">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idIngresoEvento" id="idIngresoEvento" requerido="no" value="" />
                             </div>
-                            <div class="col-md-10 ">
+                            <div class="col-sm-9">
                                 <label for="nombreIngresoEvento">NOMBRE INGRESO EVENTO *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreIngresoEvento" id="nombreIngresoEvento" requerido="si" value="" placeholder="Nombre Ingreso De Evento" />
                             </div>
@@ -35,8 +35,8 @@
 
             <!-- BOTONES  -->
             <div class="modal-footer">
-                <button onclick="grabarNuevoIngresoEvento()" type="button" class="btn btn-primary"><i class=""></i>GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class=""></i>SALIR</button>
+                <button onclick="grabarNuevoIngresoEvento()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> Grabar</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
             </div>
             <!-- FIN BOTONES  -->
         </div>
