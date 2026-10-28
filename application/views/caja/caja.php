@@ -46,6 +46,15 @@
 	.caja-resultado.activo, .caja-resultado:hover { background: var(--t-primario-suave, #FBEEE8); }
 	.caja-resultado .nombre { flex: 1; min-width: 0; font-weight: 600; color: #3A2A22; font-size: 13px; }
 	.caja-resultado .familia { font-size: 11px; color: var(--t-texto-tenue, #A89A8C); font-weight: 400; display: block; }
+	/* Código de barras del producto: en el buscador (junto a la familia) y sobre el nombre en el carro */
+	.caja-resultado .familia .cbarra { margin-right: 8px; padding: 1px 7px; border-radius: 6px; background: var(--t-fondo-alt, #FBF8F3); border: 1px solid var(--t-borde, #EADFD2); color: var(--t-texto-suave, #7A6A5E); font-weight: 600; letter-spacing: .3px; }
+	/* Pesables: unidad (kg) junto a la cantidad y campo algo más ancho para los decimales */
+	.caja-linea .cantidad .caja-umedida { padding: 0 6px; font-size: 11px; font-weight: 700; background: var(--t-fondo-alt, #FBF8F3); color: var(--t-texto-suave, #7A6A5E); }
+	.caja-linea .cantidad .cant.fraccion { min-width: 64px; }
+	/* Resumen: total después del descuento, antes del desglose neto / IVA */
+	#filaConDescuento { font-weight: 700; color: var(--t-texto-fuerte, #2A1D17); border-bottom: 1px dashed var(--t-borde, #EADFD2); padding-bottom: 6px; margin-bottom: 6px; }
+	.caja-linea .cbarra { font-size: 11px; font-weight: 600; letter-spacing: .3px; color: var(--t-texto-tenue, #A89A8C); line-height: 1.2; margin-bottom: 2px; }
+	.caja-resultado .cbarra i, .caja-linea .cbarra i { margin-right: 3px; }
 	.caja-resultado .precio { font-weight: 700; color: var(--t-primario, #B4432E); white-space: nowrap; }
 	.caja-resultados .sin-resultados { padding: 14px; color: var(--t-texto-tenue, #A89A8C); text-align: center; }
 	.caja-busqueda .btn-catalogo { height: 44px; border-radius: 8px; font-weight: 600; padding: 0 16px; white-space: nowrap; }
@@ -125,6 +134,14 @@
 	.caja-producto .nombre { font-size: 12px; font-weight: 600; line-height: 1.35; color: #3A2A22; word-break: break-word; text-transform: uppercase; }
 	.caja-producto .opciones { font-size: 11px; color: var(--t-texto-tenue, #A89A8C); margin-top: 3px; }
 	.caja-producto .precio { font-weight: 700; font-size: 15px; color: var(--t-primario, #B4432E); margin-top: 8px; }
+	/* Tarjetas con imagen del producto (o inicial cuando no tiene) */
+	.caja-producto.con-foto { padding: 0 0 10px; overflow: hidden; display: flex; flex-direction: column; text-align: left; }
+	.caja-producto.con-foto .foto { display: block; width: 100%; aspect-ratio: 4 / 3; background: var(--t-fondo-alt, #FBF8F3); border-bottom: 1px solid var(--t-borde, #EADFD2); margin-bottom: 8px; overflow: hidden; }
+	.caja-producto.con-foto .foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+	.caja-producto.con-foto .foto.sin-foto { display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 700; color: var(--t-primario-borde, #EFD2C6); background: linear-gradient(135deg, #FBF7F1 0%, #F3ECE1 100%); }
+	.caja-producto.con-foto .nombre, .caja-producto.con-foto .opciones, .caja-producto.con-foto .precio { padding: 0 12px; }
+	.caja-producto.con-foto .precio { margin-top: auto; padding-top: 6px; }
+	.caja-producto.con-foto .en-venta { z-index: 2; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
 	.caja-producto .en-venta { position: absolute; top: 6px; right: 6px; background: var(--t-primario, #B4432E); color: #fff; border-radius: 10px; font-size: 11px; font-weight: 700; padding: 1px 7px; }
 	.caja-vacio { color: var(--t-texto-tenue, #A89A8C); padding: 40px 10px; text-align: center; grid-column: 1 / -1; }
 	.caja-vacio i { display: block; font-size: 36px; margin-bottom: 6px; }
@@ -162,6 +179,12 @@
 	#devLineas tr.agotada td { color: #B4C0CF; }
 	.caja-chk-imprimir { float: left; margin: 8px 0 0; }
 	.caja-chk-imprimir .cbo-papel { margin-left: 8px; height: 24px; padding: 0 4px; }
+	.caja-chk-comanda { margin-left: 16px !important; }
+	/* Botón de mensaje para la comanda en cada línea del carro */
+	.caja-linea .caja-btn-mensaje { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin-left: 6px; border-radius: 8px;
+		color: var(--t-texto-tenue, #A89A8C); border: 1px dashed var(--t-borde, #EADFD2); font-size: 13px; vertical-align: middle; text-decoration: none; }
+	.caja-linea .caja-btn-mensaje:hover { color: var(--t-primario, #B4432E); border-color: var(--t-primario-borde, #EFD2C6); background: var(--t-primario-suave, #FBEEE8); }
+	.caja-linea .caja-btn-mensaje.con-mensaje { color: var(--t-primario, #B4432E); border-style: solid; border-color: var(--t-primario-borde, #EFD2C6); background: var(--t-primario-suave, #FBEEE8); }
 	.caja-frame-impresion { position: absolute; left: -10000px; top: 0; width: 400px; height: 600px; border: 0; }
 	.caja-apertura { max-width: 460px; margin: 30px auto; }
 	.caja-apertura .icono { width: 88px; height: 88px; line-height: 88px; margin: 6px auto 14px; border-radius: 50%; background: var(--t-primario-suave, #FBEEE8);
@@ -525,6 +548,7 @@
 							<div class="caja-tarjeta caja-resumen">
 								<div class="fila"><span>Subtotal</span><span id="lblSubtotal">$0</span></div>
 								<div class="fila descuento" id="filaDescuento" style="display:none"><span>Descuento</span><span id="lblDescuento">$0</span></div>
+								<div class="fila con-descuento" id="filaConDescuento" style="display:none"><span>Total con descuento</span><span id="lblConDescuento">$0</span></div>
 								<div class="fila"><span>Neto</span><span id="lblNeto">$0</span></div>
 								<div class="fila"><span>IVA (19%)</span><span id="lblIva">$0</span></div>
 								<div class="fila" id="filaExento" style="display:none"><span>Exento</span><span id="lblExento">$0</span></div>
@@ -731,6 +755,9 @@
 				<div class="checkbox checkbox-success caja-chk-imprimir">
 					<input type="checkbox" id="chkImprimirVenta" class="chk-imprimir"><label for="chkImprimirVenta"><i class="fa fa-print"></i> Imprimir ticket</label>
 					<select class="cbo-papel" title="Ancho del papel de la impresora"><option value="80">80 mm</option><option value="58">58 mm</option></select>
+				</div>
+				<div class="checkbox checkbox-success caja-chk-imprimir caja-chk-comanda">
+					<input type="checkbox" id="chkImprimirComanda" class="chk-comanda"><label for="chkImprimirComanda" title="Una comanda por destino de impresión (cocina, barra…) con el mensaje de cada producto"><i class="fa fa-cutlery"></i> Imprimir comanda</label>
 				</div>
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
 				<button type="button" class="btn btn-primary btn-lg" id="btnConfirmarPago" disabled><i class="fa fa-check"></i> Confirmar venta</button>

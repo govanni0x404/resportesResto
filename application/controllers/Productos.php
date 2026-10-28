@@ -31,6 +31,7 @@ class Productos extends CI_Controller
 				$this->load->view('productos/jsPrecioVenta.php');
 				$this->load->view('productos/jsMenu.php');
 				$this->load->view('productos/jsReceta.php');
+				$this->load->view('productos/jsImagen.php');
 				$this->load->view('recetas/jsNewFamiliaReceta.php');
 				$this->load->view('recetas/jsNewSeccion.php');
 	}

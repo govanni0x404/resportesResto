@@ -34,3 +34,6 @@ application/config/api_movil.php
 
 # Caja web: configuración local (modo pruebas DTE)
 application/config/caja_local.php
+
+# Imágenes de productos subidas desde la Carta (una carpeta por cliente)
+assets/uploads/productos/*/

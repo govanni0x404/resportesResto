@@ -175,6 +175,56 @@ class Caja extends CI_Controller
 		$this->load->view('caja/ticket.php', $doc);
 	}
 
+	/**
+	 * Comanda web: una copia por destino de impresión (cocina, barra...) con los productos de la venta y
+	 * el mensaje de cada uno. La Caja envía las líneas por POST (campo "datos", JSON) justo después de cobrar,
+	 * porque el mensaje por producto no queda guardado en detalle_venta en todos los clientes.
+	 */
+	public function comanda()
+	{
+		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+			redirect(base_url());
+		}
+		$datos = json_decode((string)$this->input->post('datos'), true);
+		if (!is_array($datos) || empty($datos['lineas']) || !is_array($datos['lineas'])) show_404();
+
+		$lineas = array();
+		foreach ($datos['lineas'] as $l) {
+			if (!is_array($l) || empty($l['id_producto'])) continue;
+			$agregados = array();
+			foreach ((isset($l['agregados']) && is_array($l['agregados'])) ? $l['agregados'] : array() as $a) {
+				$a = trim((string)$a);
+				if ($a !== '') $agregados[] = mb_substr($a, 0, 80);
+			}
+			$lineas[] = array(
+				'id_producto' => (int)$l['id_producto'],
+				'nombre' => mb_substr(trim((string)(isset($l['nombre']) ? $l['nombre'] : '')), 0, 120),
+				'cantidad' => max(0, (float)(isset($l['cantidad']) ? $l['cantidad'] : 0)),
+				'agregados' => $agregados,
+				'nota' => mb_substr(trim((string)(isset($l['nota']) ? $l['nota'] : '')), 0, 200),
+			);
+		}
+
+		// Agrupa por destino de impresión; los productos sin destino (o "sin impresión") no salen en la comanda
+		$destinos = $this->Mcaja->destinosComanda(array_column($lineas, 'id_producto'));
+		$grupos = array();
+		foreach ($lineas as $l) {
+			if (!isset($destinos[$l['id_producto']])) continue;
+			$d = $destinos[$l['id_producto']];
+			if (!isset($grupos[$d['id']])) $grupos[$d['id']] = array('nombre' => $d['nombre'], 'lineas' => array());
+			$grupos[$d['id']]['lineas'][] = $l;
+		}
+
+		$idVenta = isset($datos['id_venta']) ? (int)$datos['id_venta'] : 0;
+		$doc = $idVenta ? $this->Mcaja->documento($idVenta) : null;
+		$this->load->view('caja/comanda.php', array(
+			'grupos' => $grupos,
+			'venta' => $doc ? $doc['venta'] : null,
+			'observacion' => mb_substr(trim((string)(isset($datos['observacion']) ? $datos['observacion'] : '')), 0, 200),
+			'papel' => $this->papelTicket(),
+		));
+	}
+
 	/** Cierre (caja cerrada) o informe X (caja abierta) en ticket 80mm o 58mm. */
 	public function cierreTicket($idCaja = 0)
 	{

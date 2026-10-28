@@ -326,6 +326,22 @@
                                     </div>
 
                                 </fieldset>
+                                <br>
+                                <!-- Imagen del producto (se ve en la Caja). La maneja productos/jsImagen.php -->
+                                <div class="t-card-titulo"><i class="fa fa-picture-o"></i> Imagen</div>
+                                <div class="prod-imagen prod-imagen-grande" id="prodImagen">
+                                    <div class="prod-imagen-vista" id="prodImagenVista">
+                                        <img id="prodImagenImg" alt="" style="display:none">
+                                        <span class="prod-imagen-vacia" id="prodImagenVacia"><i class="fa fa-picture-o"></i>Sin imagen</span>
+                                    </div>
+                                    <div class="prod-imagen-acciones">
+                                        <input type="file" id="prodImagenArchivo" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">
+                                        <button type="button" class="btn btn-default btn-sm" id="btnProdImagenSubir"><i class="fa fa-upload"></i> Subir imagen</button>
+                                        <button type="button" class="btn btn-default btn-sm" id="btnProdImagenBuscar"><i class="fa fa-search"></i> Buscar en línea</button>
+                                        <button type="button" class="btn btn-default btn-sm" id="btnProdImagenQuitar" style="display:none"><i class="fa fa-trash"></i> Quitar</button>
+                                        <small class="prod-imagen-ayuda" id="prodImagenAyuda">JPG, PNG o WEBP de hasta 6 MB. Se guarda al elegirla.</small>
+                                    </div>
+                                </div>
 
 
 
@@ -1426,3 +1442,24 @@ $(document).ready(function() {
     });
 });
 </script>
+
+<!-- Buscar imagen en línea (Openverse: imágenes de uso libre) -->
+<div class="modal fade" id="modalBuscarImagen" tabindex="-1" role="dialog" style="z-index: 1060;">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-search"></i> Buscar imagen en línea</h4>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="txtBuscarImagen" placeholder="Nombre del producto (ej: pan amasado, croissant, café latte)">
+                    <span class="input-group-btn"><button class="btn btn-primary" type="button" id="btnBuscarImagenIr"><i class="fa fa-search"></i> Buscar</button></span>
+                </div>
+                <p class="prod-busqueda-nota">Imágenes de uso libre (Creative Commons) de Flickr, Wikimedia y otros. Toca una para usarla. Si no aparece nada, prueba con el nombre en inglés.</p>
+                <div class="prod-busqueda-grilla" id="gridBuscarImagen"></div>
+            </div>
+        </div>
+    </div>
+</div>
+

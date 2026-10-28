@@ -65,16 +65,31 @@ class Mcaja extends CI_Model
 		$familias = $this->q($db, $q . " ORDER BY nombre_familia")->result_array();
 
 		// Precio de la lista elegida; si el producto no está en la lista, su precio_bruto
+		// Productos fraccionables (permite_porcion, p. ej. pan por kilo): la caja acepta cantidad con decimales.
+		// pedir_cantidad_en_venta: al agregarlo, el cursor va directo a la cantidad.
+		$tieneUm = $this->columnas($db, array('umedida'));
+		$colFraccion = isset($tiene['producto']['permite_porcion']) ? '(p.permite_porcion IS TRUE)' : 'false';
+		$colPedir = isset($tiene['producto']['pedir_cantidad_en_venta']) ? '(p.pedir_cantidad_en_venta IS TRUE)' : 'false';
+		$usaUm = isset($tiene['producto']['id_umedida']) && isset($tieneUm['umedida']['nombre_umedida']);
 		$q = "SELECT p.id_producto, p.nombre_producto, COALESCE(p.cbarra, '') AS cbarra,
 				COALESCE(p.id_familia, 0) AS id_familia,
-				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, " . $this->sqlExento($db, 'p') . " AS exento
+				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, " . $this->sqlExento($db, 'p') . " AS exento,
+				$colFraccion AS fraccion, $colPedir AS pedir_cantidad, " . ($usaUm ? "COALESCE(um.nombre_umedida, '')" : "''") . " AS umedida
 			FROM producto p
 			LEFT JOIN detalle_lprecio dl ON dl.id_producto = p.id_producto AND dl.id_lprecio = ?
+			" . ($usaUm ? "LEFT JOIN umedida um ON um.id_umedida = p.id_umedida" : "") . "
 			WHERE p.vigente IS TRUE AND p.venta_publico IS NOT FALSE";
 		if (isset($tiene['producto']['permitir_venta_sin_precio'])) {
 			$q .= " AND (COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) > 0 OR p.permitir_venta_sin_precio IS TRUE)";
 		} else {
 			$q .= " AND COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) > 0";
+		}
+		// Imágenes de la Carta (controlador ImagenProducto): assets/uploads/productos/<cliente>/<id>.jpg
+		$carpetaImg = preg_replace('/[^a-z0-9_-]/', '', strtolower((string)$this->session->userdata('nombre_conexion')));
+		$carpetaImg = $carpetaImg !== '' ? $carpetaImg : 'general';
+		$imagenes = array();
+		foreach ((array)glob(FCPATH . 'assets/uploads/productos/' . $carpetaImg . '/*.jpg') as $f) {
+			$imagenes[(int)basename($f, '.jpg')] = base_url() . 'assets/uploads/productos/' . $carpetaImg . '/' . basename($f) . '?v=' . filemtime($f);
 		}
 		$productos = array();
 		foreach ($this->q($db, $q . " ORDER BY p.nombre_producto", array($idLprecio))->result() as $p) {
@@ -85,6 +100,10 @@ class Mcaja extends CI_Model
 				'id_familia' => (int)$p->id_familia,
 				'precio' => (int)round((float)$p->precio),
 				'exento' => $p->exento === 't' || $p->exento === true,
+				'fraccion' => $p->fraccion === 't' || $p->fraccion === true,
+				'pedir_cantidad' => $p->pedir_cantidad === 't' || $p->pedir_cantidad === true,
+				'umedida' => $this->abreviaturaUmedida($p->umedida),
+				'imagen' => isset($imagenes[(int)$p->id_producto]) ? $imagenes[(int)$p->id_producto] : null,
 			);
 		}
 
@@ -508,6 +527,34 @@ class Mcaja extends CI_Model
 			'formas' => $formas,
 			'empresa' => $this->q($db, 'SELECT * FROM empresa ORDER BY id_empresa LIMIT 1')->row(),
 		);
+	}
+
+	/**
+	 * Destino de impresión (cocina, barra...) de cada producto para la comanda web: el del producto y,
+	 * si no tiene, el de su familia. Se omiten los destinos marcados sin impresión (o llamados "SIN IMPRESION").
+	 * Devuelve [id_producto => ['id' => id_dimpresion, 'nombre' => nombre_dimpresion]].
+	 */
+	public function destinosComanda($idsProducto)
+	{
+		$ids = array_values(array_unique(array_filter(array_map('intval', (array)$idsProducto))));
+		if (!$ids) return array();
+		$db = $this->conexion();
+		$cols = $this->columnas($db, array('producto', 'familia', 'dimpresion'));
+		if (!isset($cols['dimpresion']) || !isset($cols['producto']['id_dimpresion'])) return array();
+		$famDest = isset($cols['familia']['id_dimpresion']) ? 'NULLIF(f.id_dimpresion, 0)' : 'NULL';
+		$sinImp = isset($cols['dimpresion']['sin_impresion']) ? 'COALESCE(d.sin_impresion, false)' : 'false';
+		$rows = $this->q($db, "SELECT p.id_producto, d.id_dimpresion, d.nombre_dimpresion
+			FROM producto p
+			LEFT JOIN familia f ON f.id_familia = p.id_familia
+			JOIN dimpresion d ON d.id_dimpresion = COALESCE(NULLIF(p.id_dimpresion, 0), $famDest)
+			WHERE p.id_producto IN ?
+				AND NOT $sinImp
+				AND upper(trim(COALESCE(d.nombre_dimpresion, ''))) NOT LIKE 'SIN IMPRES%'", array($ids))->result();
+		$res = array();
+		foreach ($rows as $r) {
+			$res[(int)$r->id_producto] = array('id' => (int)$r->id_dimpresion, 'nombre' => (string)$r->nombre_dimpresion);
+		}
+		return $res;
 	}
 
 	/** Cabecera, detalle y pagos para imprimir un documento. */
@@ -1883,6 +1930,18 @@ class Mcaja extends CI_Model
 	}
 
 	// ====================== Helpers ======================
+
+	/** Abreviatura para mostrar junto a la cantidad (kg, g, lt...); vacía para "unidad". */
+	private function abreviaturaUmedida($nombre)
+	{
+		$n = strtoupper(trim((string)$nombre));
+		if ($n === '' || strpos($n, 'UNID') === 0) return '';
+		$mapa = array('KILO' => 'kg', 'GRAMO' => 'g', 'LITRO' => 'lt', 'MILILITRO' => 'ml', 'METRO' => 'm', 'CENTIMETRO' => 'cm');
+		foreach ($mapa as $k => $abr) {
+			if (strpos($n, $k) === 0) return $abr;
+		}
+		return strtolower(mb_substr($n, 0, 6));
+	}
 
 	private function conexion()
 	{

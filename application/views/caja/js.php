@@ -76,6 +76,35 @@
 				.attr('src', url + (url.indexOf('?') < 0 ? '?' : '&') + 'imprimir=1').appendTo('body');
 		}
 
+		// Comanda web (cocina, barra...): se imprime después del ticket, con el mensaje de cada producto.
+		// Las líneas van por POST porque el mensaje no queda guardado en detalle_venta en todos los clientes.
+		var CLAVE_COMANDA = 'cajaWeb.imprimirComanda';
+		function imprimeComanda() {
+			try { return localStorage.getItem(CLAVE_COMANDA) !== '0'; } catch (e) { return true; }
+		}
+		$('.chk-comanda').prop('checked', imprimeComanda()).on('change', function () {
+			var on = this.checked;
+			$('.chk-comanda').prop('checked', on);
+			try { localStorage.setItem(CLAVE_COMANDA, on ? '1' : '0'); } catch (e) {}
+		});
+		function lineasComanda() {
+			return $.map(carro, function (l) {
+				return {
+					id_producto: l.id_producto, nombre: l.nombre, cantidad: l.cantidad, nota: l.nota || '',
+					agregados: $.map(l.agregados, function (id) { var a = agregado(id); return a ? a.nombre : null; })
+				};
+			});
+		}
+		function imprimirComanda(idVenta, lineas, observacion) {
+			if (!lineas.length) return;
+			$('#frameComanda, #formComanda').remove();
+			$('<iframe id="frameComanda" name="frameComanda" class="caja-frame-impresion" aria-hidden="true">').appendTo('body');
+			$('<form id="formComanda" method="post" target="frameComanda" style="display:none">')
+				.attr('action', base + 'comanda?imprimir=1')
+				.append($('<input type="hidden" name="datos">').val(JSON.stringify({ id_venta: idVenta, lineas: lineas, observacion: observacion || '' })))
+				.appendTo('body').submit();
+		}
+
 		// ---------------- estado de caja ----------------
 		function cargarEstado() {
 			return get('estado').done(function (r) {
@@ -208,8 +237,13 @@
 			var html = '';
 			$.each(lista, function (i, p) {
 				var n = enVenta[p.id_producto] || 0;
-				html += '<button type="button" class="caja-producto' + (n ? ' agregado' : '') + '" data-id="' + p.id_producto + '">'
-					+ (n ? '<span class="en-venta">' + n + '</span>' : '')
+				// Con imagen (cargada en la Carta) la tarjeta la muestra arriba; sin imagen, una inicial de color
+				var foto = p.imagen
+					? '<span class="foto"><img src="' + esc(p.imagen) + '" alt="" loading="lazy"></span>'
+					: '<span class="foto sin-foto">' + esc((p.nombre || '?').charAt(0)) + '</span>';
+				html += '<button type="button" class="caja-producto con-foto' + (n ? ' agregado' : '') + '" data-id="' + p.id_producto + '">'
+					+ (n ? '<span class="en-venta">' + (esFraccion(p.id_producto) ? fmtCant(n) : n) + '</span>' : '')
+					+ foto
 					+ '<span class="nombre">' + esc(p.nombre) + '</span>'
 					+ (tieneOpciones(p.id_producto) ? '<span class="opciones">+ opciones</span>' : '')
 					+ '<span class="precio">' + fmt(p.precio) + '</span></button>';
@@ -272,7 +306,7 @@
 			$r.html($.map(resultados, function (p, i) {
 				return '<div class="caja-resultado' + (i === 0 ? ' activo' : '') + '" data-i="' + i + '">'
 					+ '<span class="nombre">' + esc(p.nombre) + (tieneOpciones(p.id_producto) ? ' <small class="text-muted">+ opciones</small>' : '')
-					+ '<span class="familia">' + esc(nombreFamilia(p.id_familia)) + '</span></span>'
+					+ '<span class="familia">' + (p.cbarra ? '<span class="cbarra"><i class="fa fa-barcode"></i> ' + esc(p.cbarra) + '</span>' : '') + esc(nombreFamilia(p.id_familia)) + '</span></span>'
 					+ '<span class="precio">' + fmt(p.precio) + '</span></div>';
 			}).join(''));
 		}
@@ -405,6 +439,18 @@
 		});
 
 		// ---------------- carro ----------------
+		// Productos fraccionables (permite_porcion, p. ej. por kilo): cantidad con hasta 3 decimales.
+		// El resto se vende por unidades enteras.
+		function esFraccion(id) { var p = producto(id); return !!(p && p.fraccion); }
+		function pideCantidad(id) { var p = producto(id); return !!(p && (p.pedir_cantidad || p.fraccion)); }
+		function ajustarCantidad(id, c) {
+			c = Number(String(c).replace(',', '.'));
+			if (!isFinite(c)) return 0;
+			return esFraccion(id) ? Math.round(c * 1000) / 1000 : Math.round(c);
+		}
+		function fmtCant(c) { return String(Math.round(c * 1000) / 1000).replace('.', ','); }
+		var enfocarCantidad = null;   // índice de la línea cuya cantidad se debe escribir al agregar
+
 		function agregar(id, agregados, nota) {
 			var p = producto(id);
 			if (!p) return;
@@ -413,9 +459,18 @@
 			var l = $.grep(carro, function (x) {
 				return x.id_producto === id && x.nota === nota && x.agregados.join(',') === agregados.join(',');
 			})[0];
-			if (l) l.cantidad += 1;
+			if (pideCantidad(id)) {
+				// Pesables / "pedir cantidad": no se suma 1 a ciegas; se deja la cantidad lista para escribir
+				if (!l) { carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: 1, agregados: agregados, nota: nota }); l = carro[carro.length - 1]; }
+				enfocarCantidad = $.inArray(l, carro);
+			} else if (l) l.cantidad += 1;
 			else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: 1, agregados: agregados, nota: nota });
 			renderCarro();
+			if (enfocarCantidad !== null) {
+				var $c = $('#lineas .caja-linea[data-i="' + enfocarCantidad + '"] .cant');
+				enfocarCantidad = null;
+				setTimeout(function () { $c.focus().select(); }, 30);
+			}
 		}
 
 		// Líneas brutas como las guarda el servidor: el producto con su primer agregado, y cada agregado
@@ -468,20 +523,25 @@
 			}
 			var unidades = 0;
 			$.each(carro, function (i, l) {
-				unidades += l.cantidad;
+				var fraccion = esFraccion(l.id_producto);
+				// Un producto pesado cuenta como 1 ítem, no como 0,35
+				unidades += fraccion ? 1 : l.cantidad;
 				var detalle = $.map(l.agregados, function (id) { var a = agregado(id); return a ? '+ ' + esc(a.nombre) : null; });
 				if (l.nota) detalle.push('<i>' + esc(l.nota) + '</i>');
 				var nombre = tieneOpciones(l.id_producto) ? '<a href="#" class="editar" title="Cambiar agregados / indicaciones">' + esc(l.nombre) + '</a>' : esc(l.nombre);
+				// Mensaje para la comanda: disponible en cualquier producto, tenga o no mensajes predefinidos
+				nombre += ' <a href="#" class="editar caja-btn-mensaje' + (l.nota ? ' con-mensaje' : '') + '" title="' + (l.nota ? 'Editar mensaje para la comanda' : 'Agregar mensaje para la comanda') + '"><i class="fa fa-commenting-o"></i></a>';
 				var prod = producto(l.id_producto);
 				if (prod && prod.exento) nombre += ' <span class="label label-default">EXENTO</span>';
 				$t.append('<div class="caja-linea" data-i="' + i + '">'
-					+ '<div class="info"><div class="nombre">' + nombre + '</div>'
+					+ '<div class="info">' + (prod && prod.cbarra ? '<div class="cbarra"><i class="fa fa-barcode"></i> ' + esc(prod.cbarra) + '</div>' : '') + '<div class="nombre">' + nombre + '</div>'
 					+ (detalle.length ? '<div class="detalle-linea">' + detalle.join('<br>') + '</div>' : '')
-					+ '<div class="unitario">' + fmt(precioLinea(l)) + ' c/u</div></div>'
+					+ '<div class="unitario">' + fmt(precioLinea(l)) + (prod && prod.umedida ? ' / ' + esc(prod.umedida) : ' c/u') + (fraccion && l.cantidad !== Math.round(l.cantidad) ? ' · ' + fmtCant(l.cantidad) + ' ' + esc(prod.umedida || '') : '') + '</div></div>'
 					+ '<div class="precio">' + fmt(precioLinea(l)) + '</div>'
 					+ '<div class="input-group input-group-sm cantidad">'
 					+ '<span class="input-group-btn"><button class="btn btn-default menos" type="button" title="Quitar uno"><i class="fa fa-minus"></i></button></span>'
-					+ '<input type="number" class="form-control cant" min="1" step="1" value="' + l.cantidad + '">'
+					+ '<input type="number" class="form-control cant' + (fraccion ? ' fraccion' : '') + '" min="' + (fraccion ? '0.001' : '1') + '" step="' + (fraccion ? '0.001' : '1') + '" inputmode="' + (fraccion ? 'decimal' : 'numeric') + '" value="' + l.cantidad + '"' + (fraccion ? ' title="Cantidad con decimales (ej: 0,350)"' : '') + '>'
+					+ (fraccion && prod.umedida ? '<span class="input-group-addon caja-umedida">' + esc(prod.umedida) + '</span>' : '')
 					+ '<span class="input-group-btn"><button class="btn btn-default mas" type="button" title="Agregar uno"><i class="fa fa-plus"></i></button></span></div>'
 					+ '<div class="subtotal">' + fmt(Math.round(precioLinea(l) * l.cantidad)) + '</div>'
 					+ '<button class="quitar" title="Quitar producto"><i class="fa fa-trash"></i></button></div>');
@@ -493,6 +553,8 @@
 			$('#lblSubtotal').text(fmt(t.subtotal));
 			$('#lblDescuento').text(fmt(-t.descuento));
 			$('#filaDescuento').toggle(t.descuento > 0);
+			$('#lblConDescuento').text(fmt(t.total));
+			$('#filaConDescuento').toggle(t.descuento > 0);
 			$('#lblNeto').text(fmt(t.neto));
 			$('#lblIva').text(fmt(t.iva));
 			$('#lblExento').text(fmt(t.exento));
@@ -503,9 +565,13 @@
 			$('#btnCobrar').prop('disabled', !carro.length || t.subtotal <= 0);
 		}
 
+		// Enter en la cantidad: la confirma y vuelve al buscador (flujo rápido con balanza / teclado)
+		$('#lineas').on('keydown', '.cant', function (e) {
+			if (e.which === 13) { e.preventDefault(); $(this).trigger('change'); $('#buscarProducto').focus(); }
+		});
 		$('#lineas').on('change', '.cant', function () {
 			var i = $(this).closest('[data-i]').data('i');
-			var c = Math.round(Number($(this).val()));
+			var c = ajustarCantidad(carro[i].id_producto, $(this).val());
 			if (c > 0) carro[i].cantidad = c; else carro.splice(i, 1);
 			renderCarro();
 		}).on('click', '.quitar', function () {
@@ -513,8 +579,10 @@
 			renderCarro();
 		}).on('click', '.mas, .menos', function () {
 			var i = $(this).closest('[data-i]').data('i');
-			carro[i].cantidad += $(this).hasClass('mas') ? 1 : -1;
-			if (carro[i].cantidad < 1) carro.splice(i, 1);
+			// Pesables: +/- de a 0,1 (100 g); el resto de a una unidad
+			var paso = esFraccion(carro[i].id_producto) ? 0.1 : 1;
+			carro[i].cantidad = ajustarCantidad(carro[i].id_producto, carro[i].cantidad + ($(this).hasClass('mas') ? paso : -paso));
+			if (carro[i].cantidad <= 0) carro.splice(i, 1);
 			renderCarro();
 		}).on('click', '.editar', function (e) {
 			e.preventDefault();
@@ -911,6 +979,7 @@
 				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota }; }),
 				pagos: $.map(pagos, function (p) { return p.monto > 0 ? { id_fpago: p.id_fpago, monto: p.monto } : null; })
 			};
+			var comanda = lineasComanda();
 			enviando = true;
 			actualizarResumenPago();
 			var terminar = function () { enviando = false; actualizarResumenPago(); };
@@ -930,6 +999,8 @@
 				$('#ventaOkPdf').attr('href', base + 'pdf/' + r.id_venta);
 				$('#modalVentaOk').modal('show');
 				if (imprimeTicket()) imprimir(base + 'ticket/' + r.id_venta);
+				// La comanda sale después del ticket para no cruzar los dos diálogos de impresión
+				if (imprimeComanda()) setTimeout(function () { imprimirComanda(r.id_venta, comanda, venta.observacion); }, imprimeTicket() ? 1500 : 0);
 				limpiarVenta();
 				cargarEstado();
 			}, terminar);
