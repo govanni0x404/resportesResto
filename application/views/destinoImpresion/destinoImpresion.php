@@ -57,6 +57,7 @@
               <h4>Listado De Destino De Impresion</h4>
             </div>
             <div class="t-acciones">
+                <a href="<?php echo base_url() ?>index.php/AgenteImpresion" class="btn btn-default"><i class="fa fa-plug"></i> Agente de impresión (Windows)</a>
                 <button onclick="AbrirModalNuevoDestinoDeImpresion()" type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Crear Nuevo Destino De Impresion</button>
             </div>
           </div>

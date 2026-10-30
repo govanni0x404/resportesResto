@@ -358,6 +358,60 @@
   });
  </script>
 
+
+ <script>
+  // Alinea las columnas de todas las tablas según su contenido: cifras a la derecha, texto a la izquierda,
+  // columnas de botones/estados al centro. Reemplaza el "text-center" que traían las columnas.
+  (function () {
+    var reNum = /^[-+]?\s*\$?\s*[-+]?[\d.,]+\s*(%|\$|[a-zA-Z]{0,3})?$/;
+    function tipo(celdas) {
+      var n = 0, num = 0, ctl = 0;
+      celdas.each(function () {
+        var $c = $(this);
+        if ($c.find('.btn, button, input, select, .label, .badge, .fa, .glyphicon').length && $.trim($c.clone().find('i,.fa,.glyphicon').remove().end().text()).length <= 12) { ctl++; n++; return; }
+        var t = $.trim($c.text());
+        if (!t) return;
+        n++;
+        if (reNum.test(t) && /\d/.test(t) && t.length < 20) num++;
+      });
+      if (!n) return 't';
+      if (ctl / n >= .6) return 'c';
+      return num / n >= .7 ? 'n' : 't';
+    }
+    function marca($th, $celdas, clase) {
+      var todos = $th.add($celdas);
+      todos.removeClass('col-t col-n col-c text-center text-right text-left').addClass(clase);
+    }
+    function alinear(tabla) {
+      var $t = $(tabla);
+      if ($t.is('.no-alinear, .inv-cierre-tabla') || $t.closest('.no-alinear').length) return;
+      if ($.fn.dataTable && $.fn.dataTable.isDataTable(tabla)) {
+        var api = $t.DataTable();
+        api.columns().every(function () {
+          var $celdas = $(this.nodes());
+          var $h = $(this.header());
+          var $hClon = $t.closest('.dataTables_scroll').find('.dataTables_scrollHead th').eq(this.index());
+          marca($h.add($hClon), $celdas, tipo($celdas));
+        });
+        return;
+      }
+      var $filas = $t.children('tbody').children('tr');
+      var cols = $t.children('thead').find('tr').last().children('th,td').length;
+      for (var i = 0; i < cols; i++) {
+        var $celdas = $filas.children(':nth-child(' + (i + 1) + ')').filter(function () { return !this.colSpan || this.colSpan === 1; });
+        marca($t.children('thead').find('tr').last().children().eq(i), $celdas, tipo($celdas));
+      }
+    }
+    var timer;
+    function todas() {
+      clearTimeout(timer);
+      timer = setTimeout(function () { $('table.table, table.dataTable').each(function () { try { alinear(this); } catch (e) {} }); }, 60);
+    }
+    $(document).on('draw.dt init.dt', todas).on('shown.bs.modal', todas).ajaxStop(todas);
+    $(todas);
+  })();
+ </script>
+
 </body>
 
 </html>

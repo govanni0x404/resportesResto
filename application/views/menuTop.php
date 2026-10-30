@@ -74,7 +74,7 @@
     <link href="<?php echo base_url() ?>assets/plugins/sweetalert/sweetalert.css" rel="stylesheet" type="text/css" />
     <link href="<?php echo base_url() ?>/assets/plugins/select2/select2.css" rel="stylesheet" />
     <link href="<?php echo base_url() ?>/assets/plugins/date-range-picker/daterangepicker.css" rel="stylesheet" />
-    <link href="<?php echo base_url() ?>assets/dist/css/theme.css?v=23" rel="stylesheet" type="text/css" />
+    <link href="<?php echo base_url() ?>assets/dist/css/theme.css?v=25" rel="stylesheet" type="text/css" />
     <link href="<?php echo base_url() ?>assets/dist/css/tema-f.css?v=1" rel="stylesheet" type="text/css" />
     <style>
         .container {

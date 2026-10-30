@@ -148,10 +148,21 @@ class Caja extends CI_Controller
 				$declarado[(int)$idFpago] = (int)$monto;
 			}
 			$fondoSiguiente = $this->input->post('fondo_siguiente');
+			// Inventario de insumos marcados "al cierre de turno": {"idInsumo:idBodega": cantidad contada}
 			return $this->Mcaja->cerrarCaja($this->cajaRequerida(), $this->idUsuario(),
 				(int)$this->input->post('efectivo_contado'),
-				$fondoSiguiente === null || $fondoSiguiente === '' ? null : (int)$fondoSiguiente, $declarado);
+				$fondoSiguiente === null || $fondoSiguiente === '' ? null : (int)$fondoSiguiente, $declarado,
+				(array)$this->input->post('inventario'));
 		}, true);
+	}
+
+	/** Insumos con inventario al cierre de turno y su stock actual (para el cuadro previo al cierre). */
+	public function inventarioCierre()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			return array('insumos' => $this->Mcaja->insumosInventarioCierre());
+		});
 	}
 
 	/** Ancho del papel de la impresora de esta caja (POS80 / POS58); lo elige cada computador. */
@@ -175,19 +186,11 @@ class Caja extends CI_Controller
 		$this->load->view('caja/ticket.php', $doc);
 	}
 
-	/**
-	 * Comanda web: una copia por destino de impresión (cocina, barra...) con los productos de la venta y
-	 * el mensaje de cada uno. La Caja envía las líneas por POST (campo "datos", JSON) justo después de cobrar,
-	 * porque el mensaje por producto no queda guardado en detalle_venta en todos los clientes.
-	 */
-	public function comanda()
+	/** Líneas de la comanda enviadas por la Caja (campo "datos", JSON), ya saneadas. */
+	private function datosComanda()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
-			redirect(base_url());
-		}
 		$datos = json_decode((string)$this->input->post('datos'), true);
-		if (!is_array($datos) || empty($datos['lineas']) || !is_array($datos['lineas'])) show_404();
-
+		if (!is_array($datos) || empty($datos['lineas']) || !is_array($datos['lineas'])) return null;
 		$lineas = array();
 		foreach ($datos['lineas'] as $l) {
 			if (!is_array($l) || empty($l['id_producto'])) continue;
@@ -204,25 +207,70 @@ class Caja extends CI_Controller
 				'nota' => mb_substr(trim((string)(isset($l['nota']) ? $l['nota'] : '')), 0, 200),
 			);
 		}
-
-		// Agrupa por destino de impresión; los productos sin destino (o "sin impresión") no salen en la comanda
+		// Agrupa por destino de impresión; los productos sin destino (o "sin impresión") no salen en ninguna comanda
 		$destinos = $this->Mcaja->destinosComanda(array_column($lineas, 'id_producto'));
 		$grupos = array();
 		foreach ($lineas as $l) {
 			if (!isset($destinos[$l['id_producto']])) continue;
 			$d = $destinos[$l['id_producto']];
-			if (!isset($grupos[$d['id']])) $grupos[$d['id']] = array('nombre' => $d['nombre'], 'lineas' => array());
+			if (!isset($grupos[$d['id']])) $grupos[$d['id']] = array('nombre' => $d['nombre'], 'destino' => $d, 'lineas' => array());
 			$grupos[$d['id']]['lineas'][] = $l;
 		}
-
 		$idVenta = isset($datos['id_venta']) ? (int)$datos['id_venta'] : 0;
 		$doc = $idVenta ? $this->Mcaja->documento($idVenta) : null;
-		$this->load->view('caja/comanda.php', array(
+		return array(
 			'grupos' => $grupos,
 			'venta' => $doc ? $doc['venta'] : null,
 			'observacion' => mb_substr(trim((string)(isset($datos['observacion']) ? $datos['observacion'] : '')), 0, 200),
-			'papel' => $this->papelTicket(),
-		));
+		);
+	}
+
+	/**
+	 * Comanda en pantalla (vista previa / respaldo): una hoja por destino de impresión.
+	 * La impresión normal es imprimirComanda, que va directo a la impresora de cada destino.
+	 */
+	public function comanda()
+	{
+		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+			redirect(base_url());
+		}
+		$c = $this->datosComanda();
+		if (!$c) show_404();
+		$c['papel'] = $this->papelTicket();
+		$this->load->view('caja/comanda.php', $c);
+	}
+
+	/**
+	 * Envía la comanda de cada destino de impresión a SU impresora (ruta de Windows o IP y puerto configurados
+	 * en Destino de impresión). La boleta/factura sigue saliendo por la impresora de la caja.
+	 * Responde por destino: [{destino, ok, detalle}].
+	 */
+	public function imprimirComanda()
+	{
+		$this->ejecutar(function () {
+			$c = $this->datosComanda();
+			if (!$c) throw new Exception('No hay productos para la comanda', 400);
+			$this->load->library('Comanda_impresion');
+			$this->load->model('Mcola_impresion');
+			$this->Mcola_impresion->conectar();
+			// Con un agente de Windows conectado, la comanda va a la cola y la imprime el equipo que tiene la impresora;
+			// si no, el servidor intenta enviarla directo (ruta de Windows o IP y puerto)
+			$conAgente = $this->Mcola_impresion->hayAgenteActivo();
+			$res = array();
+			foreach ($c['grupos'] as $g) {
+				$bytes = $this->comanda_impresion->armar($g, $c['venta'], $c['observacion']);
+				if ($conAgente) {
+					$d = $g['destino'];
+					$this->Mcola_impresion->encolar($g['nombre'], Mcola_impresion::nombreImpresora($d['ruta_windows']), $d['ip'], $d['puerto'], $bytes);
+					$ok = true;
+					$detalle = 'en cola para el agente';
+				} else {
+					list($ok, $detalle) = $this->comanda_impresion->enviar($g['destino'], $bytes);
+				}
+				$res[] = array('destino' => $g['nombre'], 'ok' => $ok, 'detalle' => $detalle);
+			}
+			return array('comandas' => $res);
+		}, true);
 	}
 
 	/** Cierre (caja cerrada) o informe X (caja abierta) en ticket 80mm o 58mm. */

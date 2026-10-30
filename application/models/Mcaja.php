@@ -525,6 +525,7 @@ class Mcaja extends CI_Model
 			'cerrada' => $cerrada,
 			'resumen' => $resumen,
 			'formas' => $formas,
+			'inventario' => $cerrada ? $this->inventarioCierreDeCaja($db, (int)$idCaja) : array(),
 			'empresa' => $this->q($db, 'SELECT * FROM empresa ORDER BY id_empresa LIMIT 1')->row(),
 		);
 	}
@@ -532,6 +533,7 @@ class Mcaja extends CI_Model
 	/**
 	 * Destino de impresión (cocina, barra...) de cada producto para la comanda web: el del producto y,
 	 * si no tiene, el de su familia. Se omiten los destinos marcados sin impresión (o llamados "SIN IMPRESION").
+	 * Incluye los datos de la impresora del destino (ip, puerto, ruta_windows).
 	 * Devuelve [id_producto => ['id' => id_dimpresion, 'nombre' => nombre_dimpresion]].
 	 */
 	public function destinosComanda($idsProducto)
@@ -543,7 +545,7 @@ class Mcaja extends CI_Model
 		if (!isset($cols['dimpresion']) || !isset($cols['producto']['id_dimpresion'])) return array();
 		$famDest = isset($cols['familia']['id_dimpresion']) ? 'NULLIF(f.id_dimpresion, 0)' : 'NULL';
 		$sinImp = isset($cols['dimpresion']['sin_impresion']) ? 'COALESCE(d.sin_impresion, false)' : 'false';
-		$rows = $this->q($db, "SELECT p.id_producto, d.id_dimpresion, d.nombre_dimpresion
+		$rows = $this->q($db, "SELECT p.id_producto, d.id_dimpresion, d.nombre_dimpresion, d.ip, d.puerto, d.ruta_windows
 			FROM producto p
 			LEFT JOIN familia f ON f.id_familia = p.id_familia
 			JOIN dimpresion d ON d.id_dimpresion = COALESCE(NULLIF(p.id_dimpresion, 0), $famDest)
@@ -552,7 +554,8 @@ class Mcaja extends CI_Model
 				AND upper(trim(COALESCE(d.nombre_dimpresion, ''))) NOT LIKE 'SIN IMPRES%'", array($ids))->result();
 		$res = array();
 		foreach ($rows as $r) {
-			$res[(int)$r->id_producto] = array('id' => (int)$r->id_dimpresion, 'nombre' => (string)$r->nombre_dimpresion);
+			$res[(int)$r->id_producto] = array('id' => (int)$r->id_dimpresion, 'nombre' => (string)$r->nombre_dimpresion,
+				'ip' => (string)$r->ip, 'puerto' => (string)$r->puerto, 'ruta_windows' => (string)$r->ruta_windows);
 		}
 		return $res;
 	}
@@ -1205,10 +1208,13 @@ class Mcaja extends CI_Model
 	 * - $declarado = {id_fpago: monto} para formas no efectivo, tal cual los vouchers (con propina).
 	 * - diferencia = rendido + (fondo siguiente - fondo inicial) - (ventas + ingresos - egresos).
 	 */
-	public function cerrarCaja($caja, $idUsuario, $efectivoContado, $fondoSiguiente, $declarado)
+	public function cerrarCaja($caja, $idUsuario, $efectivoContado, $fondoSiguiente, $declarado, $inventario = array())
 	{
 		$db = $this->conexion();
 		$cols = $this->columnas($db, array('caja', 'detalle_pagocaja'));
+		// Inventario de insumos al cierre: se exige todo lo marcado en el insumo y se valida antes de tocar nada
+		$filasInventario = $this->insumosInventarioCierre();
+		$contados = $this->validarInventarioCierre($filasInventario, is_array($inventario) ? $inventario : array());
 		$res = $this->resumenCaja($caja);
 		$fondo = $res['fondo'];
 		$efectivoContado = (int)$efectivoContado;
@@ -1280,13 +1286,150 @@ class Mcaja extends CI_Model
 					), null);
 				}
 			}
+			// El inventario contado reemplaza al stock del sistema; va en la misma transacción que el cierre
+			$resInventario = $this->aplicarInventarioCierre($db, (int)$caja->id_caja, $filasInventario, $contados);
 			$db->trans_commit();
 		} catch (Exception $e) {
 			$db->trans_rollback();
 			throw $e;
 		}
 		return array('id_caja' => (int)$caja->id_caja, 'diferencia' => $diferencia, 'rendido' => array_sum($rendido),
-			'esperado' => $suma, 'entregado' => $entregado, 'fondo_siguiente' => $fondoSiguiente);
+			'esperado' => $suma, 'entregado' => $entregado, 'fondo_siguiente' => $fondoSiguiente, 'inventario' => $resInventario);
+	}
+
+	// ====================== Inventario de insumos al cierre ======================
+
+	/**
+	 * Insumos marcados con "Inventario en cierre de turno" y su stock por bodega (stock_insumo).
+	 * Cada fila: {clave "idInsumo:idBodega", id_insumo, nombre, id_bodega, bodega, umedida, stock, existe}.
+	 * Por insumo se listan las bodegas donde hay (o hubo) movimiento; si no tiene ninguna, va en la bodega
+	 * principal con stock 0 para que igual se cuente. Devuelve [] si el cliente no tiene las tablas.
+	 */
+	public function insumosInventarioCierre()
+	{
+		$db = $this->conexion();
+		$c = $this->columnas($db, array('insumo', 'stock_insumo', 'bodega', 'inventario_turno', 'detalle_inventario_turno'));
+		if (!isset($c['insumo']['inventario_cierre_turno'], $c['stock_insumo'], $c['bodega'], $c['inventario_turno'], $c['detalle_inventario_turno'])) return array();
+
+		$filas = $this->q($db, "SELECT i.id_insumo, i.nombre_insumo, COALESCE(um.nombre_umedida, '') AS umedida,
+				s.id_bodega, b.nombre_bodega, COALESCE(s.saldo, 0) AS saldo,
+				(s.id_stock_insumo IS NOT NULL AND (COALESCE(s.cantidad_entrada, 0) <> 0 OR COALESCE(s.cantidad_salida, 0) <> 0 OR COALESCE(s.saldo, 0) <> 0)) AS con_mov
+			FROM insumo i
+			LEFT JOIN umedida um ON um.id_umedida = i.id_umedida_inventario
+			LEFT JOIN stock_insumo s ON s.id_insumo = i.id_insumo
+			LEFT JOIN bodega b ON b.id_bodega = s.id_bodega
+			WHERE i.vigente IS NOT FALSE AND i.inventario_cierre_turno IS TRUE
+			ORDER BY b.nombre_bodega, i.nombre_insumo, i.id_insumo")->result();
+
+		$porInsumo = array();
+		foreach ($filas as $f) $porInsumo[(int)$f->id_insumo][] = $f;
+		$principal = $this->q($db, 'SELECT id_bodega, nombre_bodega FROM bodega ORDER BY id_bodega LIMIT 1')->row();
+
+		$res = array();
+		foreach ($porInsumo as $idInsumo => $lista) {
+			$usar = array_values(array_filter($lista, function ($f) { return $f->id_bodega !== null && ($f->con_mov === 't' || $f->con_mov === true); }));
+			if (!$usar) {
+				// Sin movimientos en ninguna bodega: se cuenta en la primera fila existente o en la bodega principal
+				$f0 = $lista[0];
+				if ($f0->id_bodega === null && $principal) {
+					$f0 = (object)array('id_insumo' => $idInsumo, 'nombre_insumo' => $f0->nombre_insumo, 'umedida' => $f0->umedida,
+						'id_bodega' => $principal->id_bodega, 'nombre_bodega' => $principal->nombre_bodega, 'saldo' => 0, 'sin_fila' => true);
+				}
+				if ($f0->id_bodega === null) continue;
+				$usar = array($f0);
+			}
+			foreach ($usar as $f) {
+				$res[] = array(
+					'clave' => $idInsumo . ':' . (int)$f->id_bodega,
+					'id_insumo' => $idInsumo,
+					'nombre' => $f->nombre_insumo,
+					'id_bodega' => (int)$f->id_bodega,
+					'bodega' => (string)$f->nombre_bodega,
+					'umedida' => $this->abreviaturaUmedida($f->umedida),
+					'stock' => round((float)$f->saldo, 3),
+				);
+			}
+		}
+		usort($res, function ($a, $b) {
+			return strcmp($a['bodega'] . '|' . $a['nombre'], $b['bodega'] . '|' . $b['nombre']);
+		});
+		return $res;
+	}
+
+	/** Exige un número >= 0 por cada insumo marcado. Devuelve [clave => cantidad contada]. */
+	private function validarInventarioCierre($filas, $inventario)
+	{
+		$contados = array();
+		$faltan = array();
+		foreach ($filas as $f) {
+			$v = isset($inventario[$f['clave']]) ? str_replace(',', '.', trim((string)$inventario[$f['clave']])) : '';
+			if ($v === '' || !is_numeric($v) || (float)$v < 0) { $faltan[] = $f['nombre']; continue; }
+			$contados[$f['clave']] = round((float)$v, 3);
+		}
+		if ($faltan) {
+			throw new Exception('Falta el inventario de: ' . implode(', ', array_slice($faltan, 0, 5)) . (count($faltan) > 5 ? ' y ' . (count($faltan) - 5) . ' más' : ''), 400);
+		}
+		return $contados;
+	}
+
+	/**
+	 * El stock contado reemplaza al del sistema. Se conserva saldo = entrada - salida: una diferencia positiva
+	 * se suma a la entrada y una negativa a la salida. Queda registrado en inventario_turno (una por bodega)
+	 * y detalle_inventario_turno (stock del sistema antes, cantidad contada).
+	 * Devuelve {insumos, con_diferencia}. Debe llamarse dentro de la transacción del cierre.
+	 */
+	private function aplicarInventarioCierre($db, $idCaja, $filas, $contados)
+	{
+		if (!$filas) return array('insumos' => 0, 'con_diferencia' => 0);
+		$cols = $this->columnas($db, array('stock_insumo', 'inventario_turno', 'detalle_inventario_turno'));
+		$ahora = date('Y-m-d H:i:s');
+		$turnos = array();
+		$conDiferencia = 0;
+		foreach ($filas as $f) {
+			$idBodega = $f['id_bodega'];
+			if (!isset($turnos[$idBodega])) {
+				$turnos[$idBodega] = $this->insertar($db, $cols, 'inventario_turno',
+					array('id_bodega' => $idBodega, 'id_caja' => $idCaja, 'fecha_hora' => $ahora), 'id_inventario_turno');
+			}
+			$contado = $contados[$f['clave']];
+			// Se bloquea la fila: el stock puede haber cambiado por ventas desde que se abrió el cuadro de inventario
+			$s = $this->q($db, 'SELECT id_stock_insumo, COALESCE(cantidad_entrada, 0) AS entrada, COALESCE(cantidad_salida, 0) AS salida
+				FROM stock_insumo WHERE id_insumo = ? AND id_bodega = ? ORDER BY id_stock_insumo LIMIT 1 FOR UPDATE',
+				array($f['id_insumo'], $idBodega))->row();
+			$actual = $s ? round((float)$s->entrada - (float)$s->salida, 6) : 0.0;
+			$dif = round($contado - $actual, 6);
+			if (abs($dif) > 0.0005) $conDiferencia++;
+			if ($s) {
+				$this->q($db, 'UPDATE stock_insumo SET cantidad_entrada = ?, cantidad_salida = ?, saldo = ? WHERE id_stock_insumo = ?',
+					array(round((float)$s->entrada + max($dif, 0), 6), round((float)$s->salida + max(-$dif, 0), 6), $contado, (int)$s->id_stock_insumo));
+			} else {
+				$this->insertar($db, $cols, 'stock_insumo', array('id_insumo' => $f['id_insumo'], 'id_bodega' => $idBodega,
+					'cantidad_entrada' => max($dif, 0), 'cantidad_salida' => max(-$dif, 0), 'saldo' => $contado), null);
+			}
+			$this->insertar($db, $cols, 'detalle_inventario_turno', array('id_inventario_turno' => $turnos[$idBodega],
+				'id_insumo' => $f['id_insumo'], 'stock' => $actual, 'cantidad' => $contado, 'fecha_hora' => $ahora), null);
+		}
+		return array('insumos' => count($filas), 'con_diferencia' => $conDiferencia);
+	}
+
+	/** Comparación guardada al cerrar una caja: [{nombre, bodega, umedida, stock, contado, diferencia}]. */
+	private function inventarioCierreDeCaja($db, $idCaja)
+	{
+		$c = $this->columnas($db, array('inventario_turno', 'detalle_inventario_turno', 'insumo', 'bodega'));
+		if (!isset($c['inventario_turno'], $c['detalle_inventario_turno'], $c['insumo'], $c['bodega'])) return array();
+		$res = array();
+		foreach ($this->q($db, "SELECT i.nombre_insumo, COALESCE(um.nombre_umedida, '') AS umedida, b.nombre_bodega,
+				COALESCE(d.stock, 0) AS stock, COALESCE(d.cantidad, 0) AS contado
+			FROM inventario_turno t
+			JOIN detalle_inventario_turno d ON d.id_inventario_turno = t.id_inventario_turno
+			JOIN insumo i ON i.id_insumo = d.id_insumo
+			LEFT JOIN umedida um ON um.id_umedida = i.id_umedida_inventario
+			LEFT JOIN bodega b ON b.id_bodega = t.id_bodega
+			WHERE t.id_caja = ? ORDER BY b.nombre_bodega, i.nombre_insumo", array((int)$idCaja))->result() as $r) {
+			$res[] = array('nombre' => $r->nombre_insumo, 'bodega' => (string)$r->nombre_bodega, 'umedida' => $this->abreviaturaUmedida($r->umedida),
+				'stock' => round((float)$r->stock, 3), 'contado' => round((float)$r->contado, 3), 'diferencia' => round((float)$r->contado - (float)$r->stock, 3));
+		}
+		return $res;
 	}
 
 	// ====================== Devoluciones (nota de crédito interna) ======================

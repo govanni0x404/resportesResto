@@ -102,6 +102,32 @@ $papel = isset($papel) ? (int)$papel : 80;
 				<tr class="total"><td>EFECTIVO EN CAJA</td><td class="r"><?php echo $m($r['efectivo_esperado']); ?></td></tr>
 			<?php endif; ?>
 		</table>
+		<?php if ($cerrada && !empty($inventario)) : ?>
+			<?php
+			$cn = function ($n) { return rtrim(rtrim(number_format((float)$n, 3, ',', '.'), '0'), ','); };
+			$bodegaActual = null;
+			$conDif = 0;
+			foreach ($inventario as $iv) { if (abs($iv['diferencia']) > 0.0005) $conDif++; }
+			?>
+			<hr>
+			<div class="doc c b">INVENTARIO DE CIERRE</div>
+			<div class="nota c">Lo contado reemplaza al stock del sistema (queda como "Contado").</div>
+			<table>
+				<tr><th>Insumo</th><th>Sistema</th><th>Contado</th><th>Dif.</th></tr>
+				<?php foreach ($inventario as $iv) : ?>
+					<?php if ($iv['bodega'] !== $bodegaActual) : $bodegaActual = $iv['bodega']; ?>
+						<tr><td colspan="4" class="b"><?php echo $h($bodegaActual); ?></td></tr>
+					<?php endif; ?>
+					<tr>
+						<td><?php echo $h($iv['nombre']); ?><?php echo $iv['umedida'] ? ' <small>(' . $h($iv['umedida']) . ')</small>' : ''; ?></td>
+						<td class="r"><?php echo $cn($iv['stock']); ?></td>
+						<td class="r b"><?php echo $cn($iv['contado']); ?></td>
+						<td class="r"><?php echo (abs($iv['diferencia']) <= 0.0005 ? '0' : ($iv['diferencia'] > 0 ? '+' : '') . $cn($iv['diferencia'])); ?></td>
+					</tr>
+				<?php endforeach; ?>
+			</table>
+			<div class="nota c"><?php echo count($inventario); ?> insumo(s) · <?php echo $conDif ? $conDif . ' con diferencia' : 'sin diferencias'; ?></div>
+		<?php endif; ?>
 		<?php if ($cerrada) : ?>
 			<div class="firma">Firma cajero</div>
 			<div class="firma">Firma supervisor</div>

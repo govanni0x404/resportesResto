@@ -918,3 +918,15 @@ html body div:has(> canvas#chartProductos), html body div:has(> canvas#chartFami
 
 /* Aviso de carga de datos: ahora bloquea la pantalla (velo suave) para que no se pueda presionar nada mientras carga */
 .page-loader.solo-datos { background: rgba(246, 241, 232, .35); pointer-events: auto; cursor: progress; }
+
+/* Alineación de tablas: texto a la izquierda, cifras a la derecha, estados/botones al centro (clases puestas por menuFooter.php) */
+html body table .col-t, html body table th.col-t { text-align: left !important; }
+html body table .col-n, html body table th.col-n { text-align: right !important; font-variant-numeric: tabular-nums; white-space: nowrap; }
+html body table .col-c, html body table th.col-c { text-align: center !important; }
+html body table.dataTable thead th.col-n { padding-right: 24px; }
+html body table.dataTable td, html body table.dataTable th { padding-left: 12px; padding-right: 12px; }
+html body table.dataTable thead th.col-n.sorting, html body table.dataTable thead th.col-n.sorting_asc, html body table.dataTable thead th.col-n.sorting_desc { padding-right: 26px; }
+
+/* Pie de página (copyright/versión): siempre debajo de todo el contenido, nunca encima de las tablas */
+.content-wrapper, .content-wrapper > .container, .content-wrapper .content { display: flow-root; }
+.main-footer { position: relative !important; clear: both; margin-top: 24px; bottom: auto !important; }

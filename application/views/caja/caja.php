@@ -48,6 +48,24 @@
 	.caja-resultado .familia { font-size: 11px; color: var(--t-texto-tenue, #A89A8C); font-weight: 400; display: block; }
 	/* Código de barras del producto: en el buscador (junto a la familia) y sobre el nombre en el carro */
 	.caja-resultado .familia .cbarra { margin-right: 8px; padding: 1px 7px; border-radius: 6px; background: var(--t-fondo-alt, #FBF8F3); border: 1px solid var(--t-borde, #EADFD2); color: var(--t-texto-suave, #7A6A5E); font-weight: 600; letter-spacing: .3px; }
+	/* Inventario de insumos al cierre */
+	#modalInventarioCierre .inv-cierre-nota { margin: 0 0 12px; color: var(--t-texto-suave, #7A6A5E); font-size: 13px; }
+	.inv-cierre-tabla { margin: 0; }
+	.inv-cierre-tabla > thead > tr > th { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+	.inv-cierre-tabla > tbody > tr > td { vertical-align: middle; padding: 6px 8px; }
+	.inv-cierre-tabla tr.inv-bodega td { background: var(--t-fondo-alt, #FBF8F3); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--t-texto-suave, #7A6A5E); }
+	.inv-cierre-tabla .inv-nombre { font-weight: 600; color: var(--t-texto-fuerte, #2A1D17); }
+	.inv-cierre-tabla .inv-unidad { margin-left: 4px; font-size: 11px; font-weight: 600; color: var(--t-texto-tenue, #A89A8C); }
+	.inv-cierre-tabla .inv-stock { text-align: right; white-space: nowrap; color: var(--t-texto-suave, #7A6A5E); }
+	.inv-cierre-tabla .inv-contado { width: 130px; margin-left: auto; text-align: right; font-weight: 700; height: 36px; }
+	.inv-cierre-tabla .inv-contado.falta { border-color: #C9372C; box-shadow: 0 0 0 3px rgba(201, 55, 44, .15); }
+	.inv-cierre-tabla .inv-dif { text-align: right; white-space: nowrap; font-weight: 700; color: var(--t-texto-tenue, #A89A8C); }
+	.inv-cierre-tabla .inv-dif.cero { color: #5E7F3A; }
+	.inv-cierre-tabla .inv-dif.menos { color: #C9372C; }
+	.inv-cierre-tabla .inv-dif.mas { color: #A66C25; }
+	#modalInventarioCierre .modal-body { max-height: 60vh; overflow-y: auto; }
+	.inv-cierre-resumen { float: left; margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--t-texto-suave, #7A6A5E); }
+	.inv-cierre-resumen.listo { color: #5E7F3A; }
 	/* Pesables: unidad (kg) junto a la cantidad y campo algo más ancho para los decimales */
 	.caja-linea .cantidad .caja-umedida { padding: 0 6px; font-size: 11px; font-weight: 700; background: var(--t-fondo-alt, #FBF8F3); color: var(--t-texto-suave, #7A6A5E); }
 	.caja-linea .cantidad .cant.fraccion { min-width: 64px; }
@@ -828,6 +846,32 @@
 </div>
 
 <!-- Modal venta registrada -->
+<!-- Inventario de insumos al cierre de turno (los marcados con "Inventario en cierre de turno" en Insumos) -->
+<div class="modal fade" id="modalInventarioCierre" tabindex="-1" role="dialog" data-backdrop="static">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title"><i class="fa fa-cubes"></i> Inventario de cierre</h4>
+			</div>
+			<div class="modal-body">
+				<p class="inv-cierre-nota">Cuenta lo que queda de cada insumo. <b>Lo que ingreses reemplaza al stock del sistema</b> al cerrar la caja.</p>
+				<div class="table-responsive">
+					<table class="table inv-cierre-tabla">
+						<thead><tr><th>Insumo</th><th class="text-right">Stock sistema</th><th class="text-right">Contado</th><th class="text-right">Diferencia</th></tr></thead>
+						<tbody id="invCierreFilas"></tbody>
+					</table>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<span class="inv-cierre-resumen" id="invCierreResumen"></span>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+				<button type="button" class="btn btn-primary btn-lg" id="btnInvCierreContinuar"><i class="fa fa-check"></i> Continuar al cierre</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <div class="modal fade" id="modalVentaOk" tabindex="-1" role="dialog" data-backdrop="static">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content venta-ok">

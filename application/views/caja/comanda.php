@@ -1,5 +1,5 @@
 <?php
-// Comanda web: una hoja por destino de impresión (cocina, barra...) con cada producto y su mensaje.
+// Comanda web: una hoja por destino de impresión Cocina con cada producto y su mensaje.
 $h = function ($s) {
 	return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 };
@@ -57,7 +57,7 @@ $hora = $v && !empty($v->fecha_texto) ? $v->fecha_texto : date('d/m/Y H:i');
 		<button onclick="window.close()">Cerrar</button>
 	</div>
 	<?php if (!$grupos) : ?>
-		<div class="vacia">Ningún producto de esta venta tiene destino de impresión (cocina, barra…).</div>
+		<div class="vacia">Ningún producto de esta venta tiene destino de impresión Cocina.</div>
 	<?php endif; ?>
 	<?php foreach ($grupos as $g) : ?>
 	<div class="ticket">

@@ -95,14 +95,21 @@
 				};
 			});
 		}
+		// Cada destino de impresión (cocina, barra...) imprime en su propia impresora; lo envía el servidor
 		function imprimirComanda(idVenta, lineas, observacion) {
 			if (!lineas.length) return;
-			$('#frameComanda, #formComanda').remove();
-			$('<iframe id="frameComanda" name="frameComanda" class="caja-frame-impresion" aria-hidden="true">').appendTo('body');
-			$('<form id="formComanda" method="post" target="frameComanda" style="display:none">')
-				.attr('action', base + 'comanda?imprimir=1')
-				.append($('<input type="hidden" name="datos">').val(JSON.stringify({ id_venta: idVenta, lineas: lineas, observacion: observacion || '' })))
-				.appendTo('body').submit();
+			$.ajax({
+				url: base + 'imprimirComanda', type: 'POST', dataType: 'json',
+				data: { datos: JSON.stringify({ id_venta: idVenta, lineas: lineas, observacion: observacion || '' }) }
+			}).done(function (r) {
+				var com = r.comandas || [];
+				$.each(com, function (i, c) {
+					if (c.ok) toastr.success('Comanda enviada a ' + c.destino, '', { timeOut: 2500 });
+					else toastr.error('Comanda de ' + c.destino + ': ' + c.detalle, '', { timeOut: 9000 });
+				});
+			}).fail(function (x) {
+				toastr.error('No se pudo enviar la comanda: ' + ((x.responseJSON && x.responseJSON.error) || 'error de conexión'), '', { timeOut: 9000 });
+			});
 		}
 
 		// ---------------- estado de caja ----------------
@@ -1000,7 +1007,7 @@
 				$('#modalVentaOk').modal('show');
 				if (imprimeTicket()) imprimir(base + 'ticket/' + r.id_venta);
 				// La comanda sale después del ticket para no cruzar los dos diálogos de impresión
-				if (imprimeComanda()) setTimeout(function () { imprimirComanda(r.id_venta, comanda, venta.observacion); }, imprimeTicket() ? 1500 : 0);
+				if (imprimeComanda()) imprimirComanda(r.id_venta, comanda, venta.observacion);
 				limpiarVenta();
 				cargarEstado();
 			}, terminar);
@@ -1283,6 +1290,78 @@
 		});
 		$('#tabCierre').on('input', 'input', calcularDiferencia);
 
+		// ---------------- inventario de insumos al cierre ----------------
+		// Los insumos marcados con "Inventario en cierre de turno" se cuentan antes de cerrar la caja: lo contado
+		// reemplaza al stock del sistema (lo hace el servidor al cerrar). Aquí solo se pide y se compara.
+		var invFilas = [];
+		function fmtInv(n) { return String(Math.round(n * 1000) / 1000).replace('.', ','); }
+		function numInv(v) { v = String(v).replace(',', '.').trim(); return v === '' || isNaN(Number(v)) || Number(v) < 0 ? null : Number(v); }
+
+		function actualizarFilaInv($tr) {
+			var f = invFilas[$tr.data('i')], c = numInv($tr.find('.inv-contado').val());
+			var $d = $tr.find('.inv-dif').removeClass('cero mas menos');
+			if (c === null) { $d.text('—'); return; }
+			var dif = Math.round((c - f.stock) * 1000) / 1000;
+			$d.addClass(dif === 0 ? 'cero' : (dif < 0 ? 'menos' : 'mas')).text((dif > 0 ? '+' : '') + fmtInv(dif));
+		}
+		function actualizarResumenInv() {
+			var faltan = 0, difs = 0;
+			$('#invCierreFilas tr[data-i]').each(function () {
+				var c = numInv($(this).find('.inv-contado').val());
+				if (c === null) { faltan++; return; }
+				if (Math.round((c - invFilas[$(this).data('i')].stock) * 1000) !== 0) difs++;
+			});
+			$('#invCierreResumen').toggleClass('listo', faltan === 0)
+				.text(faltan ? 'Faltan ' + faltan + ' por contar' : (difs ? difs + ' con diferencia' : 'Sin diferencias'));
+		}
+
+		$('#invCierreFilas').on('input', '.inv-contado', function () {
+			$(this).removeClass('falta');
+			actualizarFilaInv($(this).closest('tr'));
+			actualizarResumenInv();
+		}).on('keydown', '.inv-contado', function (e) {
+			if (e.which !== 13) return;
+			e.preventDefault();
+			var $sig = $('#invCierreFilas .inv-contado').eq($('#invCierreFilas .inv-contado').index(this) + 1);
+			if ($sig.length) $sig.focus().select(); else $('#btnInvCierreContinuar').click();
+		});
+
+		// Pide el inventario (si hay insumos marcados) y llama a continuar(inventario) con {clave: cantidad};
+		// sin insumos marcados continúa directo con {}. Cancelar el cuadro no cierra nada.
+		function pedirInventarioCierre(continuar) {
+			get('inventarioCierre').done(function (r) {
+				invFilas = r.insumos || [];
+				if (!invFilas.length) { continuar({}); return; }
+				var html = '', bodega = null;
+				$.each(invFilas, function (i, f) {
+					if (f.bodega !== bodega) { bodega = f.bodega; html += '<tr class="inv-bodega"><td colspan="4"><i class="fa fa-archive"></i> ' + esc(f.bodega) + '</td></tr>'; }
+					html += '<tr data-i="' + i + '"><td><span class="inv-nombre">' + esc(f.nombre) + '</span>' + (f.umedida ? '<span class="inv-unidad">' + esc(f.umedida) + '</span>' : '') + '</td>'
+						+ '<td class="inv-stock">' + fmtInv(f.stock) + '</td>'
+						+ '<td><input type="text" inputmode="decimal" autocomplete="off" class="form-control inv-contado" placeholder="0"></td>'
+						+ '<td class="inv-dif">—</td></tr>';
+				});
+				$('#invCierreFilas').html(html);
+				var listo = null;
+				$('#btnInvCierreContinuar').off('click').on('click', function () {
+					var inv = {}, primero = null;
+					$('#invCierreFilas tr[data-i]').each(function () {
+						var $in = $(this).find('.inv-contado'), c = numInv($in.val());
+						if (c === null) { $in.addClass('falta'); if (!primero) primero = $in; return; }
+						inv[invFilas[$(this).data('i')].clave] = Math.round(c * 1000) / 1000;
+					});
+					if (primero) { primero.focus(); toastr.warning('Ingresa la cantidad contada de todos los insumos (0 si no queda nada)'); return; }
+					listo = inv;
+					$('#modalInventarioCierre').modal('hide');
+				});
+				$('#modalInventarioCierre').off('shown.bs.modal hidden.bs.modal')
+					.on('shown.bs.modal', function () { $('#invCierreFilas .inv-contado').first().focus(); })
+					// Se continúa recién al terminar de cerrar el cuadro, para no encimar el aviso de confirmación
+					.on('hidden.bs.modal', function () { if (listo) { var inv = listo; listo = null; continuar(inv); } })
+					.modal('show');
+				actualizarResumenInv();
+			});
+		}
+
 		$('#btnCerrarCaja').on('click', function () {
 			var efectivo = $('#efectivoContado').val();
 			if (efectivo === '' || Number(efectivo) < 0) { swal('Atención', 'Ingresa el efectivo contado', 'warning'); return; }
@@ -1291,9 +1370,13 @@
 			if (Number(fondoSig) > Number(efectivo)) { swal('Atención', 'El fondo para el próximo turno no puede superar el efectivo contado', 'warning'); return; }
 			var datos = { efectivo_contado: Math.round(Number(efectivo)), fondo_siguiente: Math.round(Number(fondoSig)) };
 			$('.declarado').each(function () { datos['declarado[' + $(this).data('id') + ']'] = Math.round(Number($(this).val()) || 0); });
+			pedirInventarioCierre(function (inventario) {
+			$.each(inventario, function (clave, cant) { datos['inventario[' + clave + ']'] = cant; });
+			var conInventario = !$.isEmptyObject(inventario);
 			swal({
 				title: '¿Cerrar la caja?',
-				text: 'Diferencia: ' + $('#lblDiferencia').text() + '. Después de cerrar no podrás registrar más ventas en esta caja.',
+				text: 'Diferencia: ' + $('#lblDiferencia').text() + '. Después de cerrar no podrás registrar más ventas en esta caja.'
+					+ (conInventario ? ' El stock de los insumos contados quedará igual a lo que ingresaste.' : ''),
 				type: 'warning',
 				showCancelButton: true,
 				closeOnConfirm: false,
@@ -1306,8 +1389,10 @@
 				post('cerrar', datos).done(function (r) {
 					// Como el POS: si Configuraciones lo indica, el cierre sale también en la térmica
 					if (cierreTermica) imprimir(base + 'cierreTicket/' + idCaja);
+					var inv = r.inventario && r.inventario.insumos
+						? ' Inventario: ' + r.inventario.insumos + ' insumo(s) actualizado(s)' + (r.inventario.con_diferencia ? ', ' + r.inventario.con_diferencia + ' con diferencia.' : ', sin diferencias.') : '';
 					swal({ title: 'Caja cerrada', text: 'Entregar ' + fmt(r.entregado) + ' en efectivo. Quedan ' + fmt(r.fondo_siguiente)
-						+ ' de fondo para el próximo turno. Diferencia: ' + fmt(r.diferencia), type: 'success' }, function () {
+						+ ' de fondo para el próximo turno. Diferencia: ' + fmt(r.diferencia) + '.' + inv, type: 'success' }, function () {
 						// Informe de cierre con el reporte existente
 						$.redirect("<?php echo base_url(); ?>index.php/CierresDeCaja/cierreCajaPDF", { id_caja: idCaja }, 'POST', '_blank');
 						limpiarVenta();
@@ -1316,6 +1401,7 @@
 						cargarEstado();
 					});
 				});
+			});
 			});
 		});
 
