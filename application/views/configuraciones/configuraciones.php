@@ -53,6 +53,21 @@
                                 <div class="config-grid">
                                         <div class="config-card">
                                             <div class="panel-heading">
+                                                <h3 class="panel-title"><i class="fa fa-th"></i>Modo de la Caja web</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <?php $modoCaja = in_array($config['modo_caja_web'] ?? '', array('directa', 'mesas', 'ambos'), true) ? $config['modo_caja_web'] : 'ambos'; ?>
+                                                <select class="form-control" name="modo_caja_web">
+                                                    <option value="ambos" <?php echo $modoCaja === 'ambos' ? 'selected' : ''; ?>>Ambos: venta directa y mesas</option>
+                                                    <option value="directa" <?php echo $modoCaja === 'directa' ? 'selected' : ''; ?>>Venta directa (sin mesas)</option>
+                                                    <option value="mesas" <?php echo $modoCaja === 'mesas' ? 'selected' : ''; ?>>Mesas (toda venta se hace en una mesa)</option>
+                                                </select>
+                                                <p class="help-block" style="margin-top:8px">En modo Mesas deja siempre una mesa libre para la venta rápida (por ejemplo "Mostrador").</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="config-card">
+                                            <div class="panel-heading">
                                                 <h3 class="panel-title"><i class="fa fa-desktop"></i>Ver en Caja</h3>
                                             </div>
                                             <div class="panel-body">

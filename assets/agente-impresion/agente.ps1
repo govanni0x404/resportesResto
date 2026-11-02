@@ -1,4 +1,4 @@
-# Agente de impresión de RestoWeb (Windows PowerShell 5.1, sin dependencias).
+﻿# Agente de impresión de RestoWeb (Windows PowerShell 5.1, sin dependencias).
 # Pregunta al sistema cada 2 segundos si hay comandas para las impresoras de este equipo y las imprime en bruto
 # (ESC/POS) en la impresora de Windows indicada en "Destino de impresión" o, si no está aquí, en IP y puerto.
 # Configuración: config.json junto a este archivo ({"url": ".../index.php/AgenteImpresion/", "token": "..."}).
@@ -60,6 +60,8 @@ function Impresoras {
 }
 
 function PostJson($accion, $cuerpo) {
+    # Se relee config.json en cada consulta: si se reinstala con una clave nueva, el agente la toma sin reiniciarse.
+    try { $script:cfg = Get-Content $cfgPath -Raw | ConvertFrom-Json; $script:base = ([string]$cfg.url).TrimEnd('/') + '/' } catch {}
     $cuerpo['token'] = $cfg.token
     return Invoke-RestMethod -Method Post -Uri ($base + $accion) -Body $cuerpo -TimeoutSec 20
 }
@@ -76,13 +78,14 @@ function ImprimirRed($ip, $puerto, [byte[]]$bytes) {
 }
 
 Log 'Agente iniciado'
-$ultimaLista = 0; $nombres = @()
+$ultimaLista = 0; $nombres = @(); $ultimoError = ''
 while ($true) {
     try {
         if (((Get-Date) - [datetime]'1970-01-01').TotalSeconds - $ultimaLista -gt 60 -or -not $nombres.Count) {
             $nombres = Impresoras; $ultimaLista = ((Get-Date) - [datetime]'1970-01-01').TotalSeconds
         }
         $r = PostJson 'pendientes' @{ impresoras = (ConvertTo-Json -InputObject @($nombres) -Compress) }
+        if ($ultimoError) { Log 'Conexión con el sistema restablecida'; $ultimoError = '' }
         foreach ($t in @($r.trabajos)) {
             if (-not $t) { continue }
             $bytes = [Convert]::FromBase64String([string]$t.datos)
@@ -95,7 +98,11 @@ while ($true) {
             try { PostJson 'resultado' @{ id = $t.id; ok = $(if ($err) { 0 } else { 1 }); error = [string]$err } | Out-Null } catch { Log "No se pudo informar el resultado: $_" }
         }
     } catch {
-        Log "Sin conexión con el sistema: $($_.Exception.Message)"
+        $msg = $_.Exception.Message
+        if ($msg -match '401') { $msg = 'La clave de este equipo no es válida o fue quitada en el sistema. Descarga el instalador de nuevo desde Agente de impresión y ejecútalo.' }
+        else { $msg = "Sin conexión con el sistema: $msg" }
+        # Se anota una sola vez mientras el error sea el mismo, para no llenar el registro.
+        if ($msg -ne $ultimoError) { Log $msg; $ultimoError = $msg }
         Start-Sleep -Seconds 8
     }
     Start-Sleep -Seconds 2

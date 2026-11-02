@@ -86,10 +86,11 @@ class Mconfiguraciones extends CI_Model {
         $existentes = array();
         foreach ($this->db->query("SELECT column_name FROM information_schema.columns
             WHERE table_schema = 'public' AND table_name = 'configuracion'
-            AND column_name IN ('usuario_dte', 'clave_usuario_dte', 'terminal_dte')")->result() as $c) {
+            AND column_name IN ('usuario_dte', 'clave_usuario_dte', 'terminal_dte', 'modo_caja_web')")->result() as $c) {
             $existentes[] = $c->column_name;
         }
-        $tipos = array('usuario_dte' => 'varchar(100)', 'clave_usuario_dte' => 'varchar(100)', 'terminal_dte' => 'varchar(60)');
+        // modo_caja_web: 'directa', 'mesas' o 'ambos' (Caja web; el POS de escritorio no la usa)
+        $tipos = array('usuario_dte' => 'varchar(100)', 'clave_usuario_dte' => 'varchar(100)', 'terminal_dte' => 'varchar(60)', 'modo_caja_web' => 'varchar(10)');
         foreach ($tipos as $col => $tipo) {
             if (!in_array($col, $existentes)) {
                 $this->db->query("ALTER TABLE configuracion ADD COLUMN IF NOT EXISTS $col $tipo");

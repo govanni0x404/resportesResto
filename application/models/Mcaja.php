@@ -175,6 +175,7 @@ class Mcaja extends CI_Model
 			'config' => $config,
 			// Emisión con la cuenta de pruebas de Cloud Apps (config/caja_local.php): la Caja lo avisa en pantalla
 			'dte_prueba' => (bool)$this->dtePrueba($db),
+			'modo_caja' => $this->modoCaja($db),
 		);
 	}
 
@@ -562,6 +563,19 @@ class Mcaja extends CI_Model
 		return $res;
 	}
 
+	/** Impresora de la caja (configuracion.id_dimpresion_caja) con la forma de destinosComanda(); null si no está definida. */
+	public function destinoCaja()
+	{
+		$db = $this->conexion();
+		$c = $this->columnas($db, array('configuracion', 'dimpresion'));
+		if (!isset($c['configuracion']['id_dimpresion_caja']) || !isset($c['dimpresion'])) return null;
+		$r = $this->q($db, 'SELECT d.id_dimpresion, d.nombre_dimpresion, d.ip, d.puerto, d.ruta_windows
+			FROM configuracion c JOIN dimpresion d ON d.id_dimpresion = c.id_dimpresion_caja LIMIT 1')->row();
+		if (!$r) return null;
+		return array('id' => (int)$r->id_dimpresion, 'nombre' => (string)$r->nombre_dimpresion,
+			'ip' => (string)$r->ip, 'puerto' => (string)$r->puerto, 'ruta_windows' => (string)$r->ruta_windows);
+	}
+
 	/** Cabecera, detalle y pagos para imprimir un documento. */
 	public function documento($idVenta)
 	{
@@ -787,6 +801,9 @@ class Mcaja extends CI_Model
 
 		// --- Detalle: precios del servidor; en una mesa, lo ya pedido (con el precio al que se pidió)
 		$idMesa = (int)(isset($p['id_mesa']) ? $p['id_mesa'] : 0);
+		if (!$idMesa && $this->modoCaja($db) === 'mesas') {
+			throw new Exception('Este local vende solo por mesas: abre una mesa para cobrar (deja una libre para la venta rápida)', 409);
+		}
 		$cotMesa = null;
 		$cotCobro = null;
 		$parcial = null;
@@ -2047,6 +2064,23 @@ class Mcaja extends CI_Model
 
 	// ====================== Mesas ======================
 
+	/**
+	 * Modo de la Caja web del cliente (Configuraciones): 'directa' (sin mesas), 'mesas' (solo se vende por mesa) o 'ambos'.
+	 * Sin configurar se comporta como antes: 'ambos'. Un cliente sin tablas de mesas siempre es 'directa'.
+	 */
+	public function modoCaja($db = null)
+	{
+		$db = $db ?: $this->conexion();
+		if (!$this->tieneMesas($db)) return 'directa';
+		$c = $this->columnas($db, array('configuracion'));
+		$modo = '';
+		if (isset($c['configuracion']['modo_caja_web'])) {
+			$r = $this->q($db, "SELECT trim(COALESCE(modo_caja_web, '')) AS m FROM configuracion LIMIT 1")->row();
+			$modo = $r ? $r->m : '';
+		}
+		return in_array($modo, array('directa', 'mesas', 'ambos'), true) ? $modo : 'ambos';
+	}
+
 	/** Las tablas de mesas existen en este cliente. */
 	private function tieneMesas($db)
 	{
@@ -2107,6 +2141,9 @@ class Mcaja extends CI_Model
 	{
 		$db = $this->conexion();
 		if (!$this->tieneMesas($db)) return array('habilitado' => false, 'mesas' => array());
+		// Modo venta directa: sin pestaña Mesas, salvo que queden mesas abiertas de antes (para cobrarlas o anularlas)
+		$modo = $this->modoCaja($db);
+		if ($modo === 'directa' && !$this->mesasAbiertas($db)) return array('habilitado' => false, 'mesas' => array(), 'modo' => $modo);
 		// La mesa técnica de venta directa no es una mesa real
 		$cfg = $this->columnas($db, array('configuracion'));
 		$directa = 0;
@@ -2149,7 +2186,7 @@ class Mcaja extends CI_Model
 		foreach ($this->q($db, 'SELECT id_recinto, nombre_recinto FROM recinto WHERE vigente IS NOT FALSE ORDER BY id_recinto')->result() as $r) {
 			$sectores[] = array('id' => (int)$r->id_recinto, 'nombre' => $r->nombre_recinto);
 		}
-		return array('habilitado' => true, 'mesas' => $res, 'sectores' => $sectores);
+		return array('habilitado' => true, 'mesas' => $res, 'sectores' => $sectores, 'modo' => $modo);
 	}
 
 	/** Nombre visible de una mesa (ej: "Terraza 2"); sin nombre propio, "Mesa N". */
@@ -2225,6 +2262,7 @@ class Mcaja extends CI_Model
 		$db = $this->conexion();
 		if (!$this->tieneMesas($db)) throw new Exception('Este cliente no tiene mesas', 400);
 		$idMesa = (int)(isset($p['id_mesa']) ? $p['id_mesa'] : 0);
+		if ($this->modoCaja($db) === 'directa') throw new Exception('Este local usa la Caja en modo venta directa: las mesas están desactivadas (Configuraciones)', 409);
 		$config = $this->configuracion($db);
 		$cols = $this->columnas($db, array('cotizacion', 'detalle_cotizacion', 'producto'));
 		$idLprecio = !empty($p['id_lprecio']) ? (int)$p['id_lprecio'] : $config['id_lprecio_publico'];

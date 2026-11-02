@@ -178,6 +178,9 @@ class Configuraciones extends CI_Controller {
                 $update_config[$f] = $post[$f];
             }
         }
+        if (isset($post['modo_caja_web']) && in_array($post['modo_caja_web'], array('directa', 'mesas', 'ambos'), true)) {
+            $update_config['modo_caja_web'] = $post['modo_caja_web'];
+        }
 
         // Campo especial para clave admin
         if (isset($post['txtclaveAdmin'])) {

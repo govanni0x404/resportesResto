@@ -290,10 +290,12 @@ class Caja extends CI_Controller
 		}
 		// Agrupa por destino de impresión; los productos sin destino (o "sin impresión") no salen en ninguna comanda
 		$destinos = $this->Mcaja->destinosComanda(array_column($lineas, 'id_producto'));
+		// Venta directa: la comanda sale completa en la impresora de la caja (Configuraciones), no en cocina/barra
+		$caja = !empty($datos['directa']) && empty($datos['id_mesa']) ? $this->Mcaja->destinoCaja() : null;
 		$grupos = array();
 		foreach ($lineas as $l) {
 			if (!isset($destinos[$l['id_producto']])) continue;
-			$d = $destinos[$l['id_producto']];
+			$d = $caja ? $caja : $destinos[$l['id_producto']];
 			if (!isset($grupos[$d['id']])) $grupos[$d['id']] = array('nombre' => $d['nombre'], 'destino' => $d, 'lineas' => array());
 			$grupos[$d['id']]['lineas'][] = $l;
 		}

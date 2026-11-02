@@ -14,6 +14,7 @@
 		var mesa = null;         // Venta por mesa: {id_mesa, id_cotizacion, inicio (ms)}; null en venta directa
 		var cobroParcial = null; // Cobro de una parte de la mesa: {id_detalle: cantidad}; null = toda la mesa
 		var cerrandoCaja = false;
+		var modoCaja = 'ambos';  // Configuraciones: 'directa' | 'mesas' | 'ambos'
 		// Los avisos llevan nombres de mesas, productos y destinos escritos por usuarios: siempre como texto
 		if (window.toastr) toastr.options.escapeHtml = true;
 
@@ -117,7 +118,7 @@
 			var que = anulacion ? 'Anulación' : (aviso.traslado_desde ? 'Cambio de mesa' : (aviso.reenvio ? 'Reenvío' : 'Comanda'));
 			$.ajax({
 				url: base + 'imprimirComanda', type: 'POST', dataType: 'json',
-				data: { datos: JSON.stringify({ id_venta: idVenta, id_mesa: idMesa || 0, lineas: lineas, observacion: observacion || '', anulacion: anulacion, motivo: aviso.motivo || '', traslado_desde: aviso.traslado_desde || 0, reenvio: !!aviso.reenvio }) }
+				data: { datos: JSON.stringify({ id_venta: idVenta, id_mesa: idMesa || 0, lineas: lineas, observacion: observacion || '', anulacion: anulacion, motivo: aviso.motivo || '', traslado_desde: aviso.traslado_desde || 0, reenvio: !!aviso.reenvio, directa: !!aviso.directa }) }
 			}).done(function (r) {
 				var com = r.comandas || [];
 				$.each(com, function (i, c) {
@@ -169,6 +170,8 @@
 		function cargarCatalogo(idLista) {
 			return get('catalogo', { id_lprecio: idLista }).done(function (r) {
 				$('#avisoDtePrueba').toggle(!!r.dte_prueba);
+				modoCaja = r.modo_caja || 'ambos';
+				aplicarModoCaja();
 				var primeraVez = !catalogo;
 				catalogo = r;
 				if (primeraVez) {
@@ -634,6 +637,15 @@
 			$('#barraTotal').text(fmt(t.total));
 			$('#btnCobrar').prop('disabled', !carro.length || t.subtotal <= 0);
 			$('#btnEnviarMesa').prop('disabled', !pendientesMesa().length);
+			botonesMesa();
+		}
+		// En una mesa va un paso a la vez: con productos sin enviar solo se puede "Enviar a mesa";
+		// el cobro aparece cuando todo lo pedido ya está en la mesa (se cobra al final, cuando el cliente pide la cuenta)
+		function botonesMesa() {
+			if (!mesa) { $('#btnEnviarMesa').hide(); $('#btnCobrar').show(); return; }
+			var porEnviar = pendientesMesa().length > 0, hayEnviado = carro.length > 0 && !porEnviar;
+			$('#btnEnviarMesa').toggle(!hayEnviado);
+			$('#btnCobrar').toggle(hayEnviado);
 		}
 
 		// Enter en la cantidad: la confirma y vuelve al buscador (flujo rápido con balanza / teclado)
@@ -890,8 +902,9 @@
 		}
 
 		$('#btnCobrar').on('click', function () {
-			// En una mesa se cobra lo enviado: lo que falte se envía primero
-			if (mesa && pendientesMesa().length) enviarAMesa(true); else abrirPago();
+			// En una mesa solo se cobra lo ya enviado
+			if (mesa && pendientesMesa().length) { toastr.warning('Primero envía a la mesa los productos nuevos'); return; }
+			abrirPago();
 		});
 		// Antes del pago se pregunta por la propina (si corresponde): Sí = monto sugerido o el que se escriba, No = 0
 		function abrirPago() {
@@ -1140,7 +1153,9 @@
 				$('#modalPago').modal('hide');
 				if (r.total !== t.total) toastr.warning('El total se recalculó con los precios vigentes: ' + fmt(r.total));
 				$('#ventaOkTitulo').text('Venta registrada');
-				$('#btnNuevaVenta').text('Nueva venta');
+				// Mesa cobrada completa: se vuelve al panel de mesas, no a la venta directa
+				var mesaCerrada = idMesa && r.mesa_liberada !== false;
+				$('#btnNuevaVenta').text(mesaCerrada ? 'Volver a mesas' : 'Nueva venta');
 				mostrarResultadoDte(r.dte);
 				$('#ventaOkDoc').text(r.documento + (r.folio ? ' N° ' + r.folio : '') + ' · ' + fmt(r.total) + (r.propina > 0 ? ' + propina ' + fmt(r.propina) : ''));
 				$('#ventaOkVuelto').text(r.vuelto > 0 ? 'Vuelto: ' + fmt(r.vuelto) : '');
@@ -1150,12 +1165,12 @@
 				if (imprimeTicket()) imprimir(base + 'ticket/' + r.id_venta);
 				// La comanda sale después del ticket para no cruzar los dos diálogos de impresión
 				// En una mesa la comanda ya salió al enviar el pedido
-				if (imprimeComanda() && !idMesa) imprimirComanda(r.id_venta, comanda, venta.observacion);
+				if (imprimeComanda() && !idMesa) imprimirComanda(r.id_venta, comanda, venta.observacion, 0, { directa: true });
 				limpiarVenta();
 				cargarEstado();
 				// Se cobró una parte: la mesa sigue abierta con el resto
 				if (idMesa && r.mesa_liberada === false) { cargarMesas(); abrirMesa(idMesa); }
-				else if (idMesa) cargarMesas();
+				else if (mesaCerrada) { cargarMesas(); $('#lnkMesas').tab('show'); }
 			}, terminar);
 		});
 
@@ -1326,9 +1341,16 @@
 			if (mesa && mesa.inicio) $('#bannerMesaTiempo').text(fmtTiempo(Date.now() - mesa.inicio));
 		}, 1000);
 
+		// Modo Mesas: la pestaña Venta solo existe dentro de una mesa; sin mesa abierta se trabaja en la grilla
+		function aplicarModoCaja() {
+			var soloMesas = modoCaja === 'mesas';
+			$('#lnkVenta').parent().toggle(!soloMesas || !!mesa);
+			if (soloMesas && !mesa && !$('#tabMesas').hasClass('active') && $('#tabVenta').hasClass('active')) $('#lnkMesas').tab('show');
+		}
 		function actualizarModoMesa() {
+			aplicarModoCaja();
 			$('#bannerMesa').toggle(!!mesa);
-			$('#btnEnviarMesa').toggle(!!mesa);
+			botonesMesa();
 			$('#cboLista').prop('disabled', !!(mesa && mesa.id_cotizacion));
 			if (!mesa) return;
 			$('#bannerMesaNum').text(nombreMesa(mesa.id_mesa));
