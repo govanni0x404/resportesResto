@@ -144,13 +144,13 @@
                         alert('Configuración guardada exitosamente');
                         location.reload();
                     } else {
-                        alert('Error al guardar la configuración');
+                        alert(response.mensaje || 'Error al guardar la configuración');
                         $submitBtn.prop('disabled', false).text('Grabar');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('Error:', xhr.responseText);
-                    alert('Error en la solicitud: ' + error);
+                    alert((xhr.responseJSON && xhr.responseJSON.mensaje) || ('Error en la solicitud: ' + error));
                     $submitBtn.prop('disabled', false).text('Grabar');
                 }
             });

@@ -53,7 +53,8 @@
  *
  * NOTE: If you change these, also change the error_reporting() code below
  */
-	define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'production');
+	// php -S (servidor de desarrollo) no copia las variables de entorno a $_SERVER: también se lee con getenv()
+	define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : (getenv('CI_ENV') ?: 'production'));
 	error_reporting(0);
 
 /*

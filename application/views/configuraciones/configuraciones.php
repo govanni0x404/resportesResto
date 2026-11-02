@@ -45,7 +45,8 @@
                             <button class="tablink" onclick="openTab(event, 'empresa')"><i class="fa fa-building-o"></i>Datos de la Empresa</button>
                         </div>
 
-                        <form id="configForm" method="post" action="<?php echo site_url('Configuraciones/guardar'); ?>">
+                        <!-- novalidate: un campo inválido en una pestaña oculta impedía guardar sin mostrar nada -->
+                        <form id="configForm" method="post" action="<?php echo site_url('Configuraciones/guardar'); ?>" novalidate>
                             <!-- Tab General -->
                             <div id="general" class="tab active">
                                 <p class="t-config-intro"><i class="fa fa-info-circle"></i> Opciones de la caja, precuentas, propinas y permisos. Los cambios se aplican al presionar Grabar.</p>
@@ -129,7 +130,7 @@
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="usar_correo_electronico" value="1" <?php echo ($config['usar_correo_electronico'] ?? false) ? 'checked' : ''; ?>> Enviar Cierre de caja por correo</label>
                                                 <div class="form-group">
-                                                    <input type="email" class="form-control" name="correo_electronico" placeholder="ejemplo@correo.com" value="<?php echo $config['correo_electronico'] ?? ''; ?>">
+                                                    <input type="email" multiple class="form-control" name="correo_electronico" placeholder="ejemplo@correo.com, otro@correo.com" title="Uno o varios correos separados por coma" value="<?php echo htmlspecialchars((string)($config['correo_electronico'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                                                 </div>
                                                 <label><input type="checkbox" name="informar_anulaciones_mail" value="1" <?php echo ($config['informar_anulaciones_mail'] ?? false) ? 'checked' : ''; ?>> Informar anulaciones y comisiones</label>
                                                 <button type="button" class="btn btn-orange">Probar envío</button>
@@ -587,7 +588,7 @@
                                                     </div>
                                                     <div class="col-md-4 form-group">
                                                         <label>Correo</label>
-                                                        <input type="email" class="form-control" name="mail" value="<?php echo $empresa['mail'] ?? ''; ?>">
+                                                        <input type="email" class="form-control" name="mail" value="<?php echo htmlspecialchars((string)($empresa['mail'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                                                     </div>
                                                     <div class="col-md-4 form-group">
                                                         <label>Teléfono</label>

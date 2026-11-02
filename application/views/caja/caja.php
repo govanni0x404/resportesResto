@@ -598,7 +598,7 @@
 							<div class="caja-tarjeta caja-busqueda">
 								<div class="caja-buscar">
 									<i class="fa fa-search"></i>
-									<input type="text" id="buscarProducto" class="form-control" placeholder="Buscar producto por nombre o código de barras" autocomplete="off">
+									<input type="text" id="buscarProducto" class="form-control" placeholder="Buscar por nombre o código · cantidad*código para varios (ej: 3*5)" autocomplete="off">
 									<div class="caja-resultados" id="resultados"></div>
 								</div>
 								<button type="button" class="btn btn-success btn-catalogo" id="btnCatalogo" title="Ver todos los productos por familia (F2)"><i class="fa fa-th-large"></i> Productos</button>

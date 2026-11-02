@@ -360,6 +360,22 @@
 				e.preventDefault();
 				var texto = $.trim($(this).val()).toLowerCase();
 				if (!texto) return;
+				// Ingreso rápido "cantidad*código": 3*5 = tres del código 5; 0,350*4 = 0,350 kg del código 4
+				var mult = /^(\d+(?:[.,]\d+)?)\s*\*\s*(.+)$/.exec(texto);
+				if (mult) {
+					var cant = Number(mult[1].replace(',', '.')), cod = $.trim(mult[2]);
+					var palabras = cod.split(/\s+/);
+					var pm = $.grep(catalogo.productos, function (x) { return x.cbarra && x.cbarra.toLowerCase() === cod; })[0]
+						|| $.grep(catalogo.productos, function (x) { var n = x.nombre.toLowerCase(); return $.grep(palabras, function (w) { return n.indexOf(w) < 0; }).length === 0; })[0];
+					if (!pm) { toastr.warning('No se encontró el producto "' + cod + '"'); return; }
+					if (!(cant > 0)) { toastr.warning('Cantidad no válida'); return; }
+					cerrarResultados();
+					$(this).val('');
+					if (tieneOpciones(pm.id_producto)) { abrirOpciones(pm.id_producto, null); toastr.info('Este producto tiene opciones: ajusta la cantidad en la venta'); return; }
+					agregar(pm.id_producto, [], '', cant);
+					$(this).focus();
+					return;
+				}
 				// Lector de código de barras: escribe el código completo y termina con Enter
 				var porCodigo = $.grep(catalogo.productos, function (p) { return p.cbarra && p.cbarra.toLowerCase() === texto; })[0];
 				if (!porCodigo && texto.length < 2) return;
@@ -476,11 +492,12 @@
 			return esFraccion(id) ? Math.round(c * 1000) / 1000 : Math.round(c);
 		}
 		function fmtCant(c) { return String(Math.round(c * 1000) / 1000).replace('.', ','); }
-		var enfocarCantidad = null;   // índice de la línea cuya cantidad se debe escribir al agregar
 
-		function agregar(id, agregados, nota) {
+		// cantidad: la del ingreso rápido "cantidad*código"; sin ella se agrega 1
+		function agregar(id, agregados, nota, cantidad) {
 			var p = producto(id);
 			if (!p) return;
+			var dada = cantidad ? ajustarCantidad(id, cantidad) : 0;
 			// Con un cobro parcial a medias, lo nuevo no entraría en ese cobro: se cancela y se avisa
 			if (cobroParcial) {
 				cobroParcial = null;
@@ -492,18 +509,15 @@
 			var l = $.grep(carro, function (x) {
 				return !x.enviada && x.id_producto === id && x.nota === nota && x.agregados.join(',') === agregados.join(',');
 			})[0];
-			if (pideCantidad(id)) {
-				// Pesables / "pedir cantidad": no se suma 1 a ciegas; se deja la cantidad lista para escribir
-				if (!l) { carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: 1, agregados: agregados, nota: nota }); l = carro[carro.length - 1]; }
-				enfocarCantidad = $.inArray(l, carro);
-			} else if (l) l.cantidad += 1;
-			else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: 1, agregados: agregados, nota: nota });
+			// El cursor se queda en el buscador para seguir ingresando (la cantidad se cambia en la línea o con cantidad*código).
+			// Un pesable ya agregado no suma 1 kg a ciegas: solo suma si se indicó la cantidad.
+			if (dada > 0) {
+				if (l) l.cantidad = ajustarCantidad(id, l.cantidad + dada);
+				else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: dada, agregados: agregados, nota: nota });
+			} else if (l) {
+				if (!esFraccion(id)) l.cantidad += 1;
+			} else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: 1, agregados: agregados, nota: nota });
 			renderCarro();
-			if (enfocarCantidad !== null) {
-				var $c = $('#lineas .caja-linea[data-i="' + enfocarCantidad + '"] .cant');
-				enfocarCantidad = null;
-				setTimeout(function () { $c.focus().select(); }, 30);
-			}
 		}
 
 		// Líneas brutas como las guarda el servidor: el producto con su primer agregado, y cada agregado
@@ -883,7 +897,7 @@
 		function abrirPago() {
 			var cfg = catalogo.config;
 			if (!validarCobro()) return;
-			if (!(cfg.propina || mesa)) { mostrarPago(null); return; }
+			if (!mesa) { mostrarPago(0); return; }   // la propina es solo para las mesas
 			var sugerida = propinaSugerida();
 			$('#propinaPregunta').text(fmt(totales().total));
 			$('#propinaPorcentaje').text(cfg.por_propina > 0 ? 'Sugerida: ' + cfg.por_propina + '% (' + fmt(sugerida) + ')' : 'Escribe el monto de la propina');
@@ -917,7 +931,7 @@
 			pagos = [];
 			// Propina sugerida (Configuraciones: propina en venta directa / calcular valor de propina)
 			var cfg = catalogo.config;
-			var conPropina = cfg.propina || !!mesa;   // "propina en venta directa" no aplica a las mesas
+			var conPropina = !!mesa;   // venta directa sin propina: solo se cobra propina en las mesas
 			$('#bloquePropina').toggle(conPropina);
 			$('#lblPorPropina').text(cfg.por_propina > 0 ? '(sugerida ' + cfg.por_propina + '%)' : '');
 			propina = propinaElegida !== null ? propinaElegida : (conPropina && (cfg.calcular_propina || mesa) ? propinaSugerida() : 0);
@@ -1573,7 +1587,9 @@
 							: (v.pendiente_dte
 								? '<button class="btn btn-xs btn-info reenviar" data-id="' + v.id_venta + '" title="Reintentar la emisión ante el SII"><i class="fa fa-refresh"></i> Reenviar</button> ' : '')
 							+ (!v.es_nc && !v.cortesia && v.total > 0 && !v.pendiente_dte
-								? '<button class="btn btn-xs btn-warning devolver" data-id="' + v.id_venta + '" title="Devolver productos"><i class="fa fa-undo"></i> Devolver</button> ' : '')
+								? (v.electronico
+									? '<button class="btn btn-xs btn-danger devolver" data-id="' + v.id_venta + '" data-anular="1" title="Anula con nota de crédito electrónica (todo o algunos productos)"><i class="fa fa-ban"></i> Anular</button> '
+									: '<button class="btn btn-xs btn-warning devolver" data-id="' + v.id_venta + '" title="Devolver productos"><i class="fa fa-undo"></i> Devolver</button> ') : '')
 							// Un documento electrónico ya emitido no se anula: se devuelve con nota de crédito
 							+ (v.electronico && !v.pendiente_dte
 								? (v.es_nc ? '<span class="label label-success" title="Emitida ante el SII: no se anula">Emitida</span>' : '')
@@ -1652,7 +1668,10 @@
 		// ---------------- devoluciones (nota de crédito interna) ----------------
 		var devolucion = null;
 
-		function abrirDevolucion(idVenta) {
+		// anularTodo: anular un documento electrónico = nota de crédito por todo lo que queda (se puede ajustar)
+		var devAnularTodo = false;
+		function abrirDevolucion(idVenta, anularTodo) {
+			devAnularTodo = !!anularTodo;
 			devolucion = null;
 			$('#devContenido').hide();
 			$('#devMotivo').val('');
@@ -1691,6 +1710,8 @@
 				$f.val(r.pagos.length === 1 && $f.find('option[value="' + r.pagos[0].id_fpago + '"]').length ? r.pagos[0].id_fpago : (efectivo ? efectivo.id_fpago : $f.val()));
 				$('#devContenido').show();
 				if (r.disponible <= 0) toastr.info('Esta venta ya fue devuelta por completo');
+				// Anular: queda marcado todo lo que se puede devolver
+				if (devAnularTodo && r.disponible > 0) $('#btnDevTodo').click();
 				calcularDevolucion();
 			});
 		}
@@ -1714,7 +1735,7 @@
 		}
 
 		$('#btnDevolucionBuscar').on('click', function () { abrirDevolucion(0); });
-		$('#tablaVentas').on('click', '.devolver', function () { abrirDevolucion($(this).data('id')); });
+		$('#tablaVentas').on('click', '.devolver', function () { abrirDevolucion($(this).data('id'), !!$(this).data('anular')); });
 		$('#modalDevolucion').on('shown.bs.modal', function () {
 			if ($('#devBusqueda').is(':visible')) $('#devFolio').focus();
 		});
