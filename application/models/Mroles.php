@@ -10,7 +10,7 @@ class Mroles extends CI_Model
 
   public function ListarRoles()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -38,7 +38,7 @@ class Mroles extends CI_Model
 
   public function ListarPrivilegioDeRoles($id_rol)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -53,7 +53,7 @@ class Mroles extends CI_Model
 
   /*public function modulosDisponibles($id_rol)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -64,7 +64,7 @@ class Mroles extends CI_Model
 
   public function modulosDisponibles($id_rol)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -75,7 +75,7 @@ class Mroles extends CI_Model
 
   public function BloquearAccesoModulos($id_pusuario)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -86,7 +86,7 @@ class Mroles extends CI_Model
 
   public function HabilitarAccesoModulos($id_pusuario)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -97,7 +97,7 @@ class Mroles extends CI_Model
 
   public function HabilitarAccesoTodosLosModulos($id_rol)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -108,7 +108,7 @@ class Mroles extends CI_Model
 
   public function BloquearAccesoTodosLosModulos($id_rol)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -120,7 +120,7 @@ class Mroles extends CI_Model
 
   public function grabarRoles($id, $data)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);

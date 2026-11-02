@@ -11,7 +11,7 @@ class Familias extends CI_Controller
 
   public function index()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $data = array(
@@ -29,7 +29,7 @@ class Familias extends CI_Controller
 
   public function ListadoDeFamilias()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     echo json_encode($this->Mfamilias->ListadoDeFamilias());
@@ -37,7 +37,7 @@ class Familias extends CI_Controller
 
   public function grabarNuevaFamilia()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $d = $this->input->post('prod');

@@ -10,7 +10,7 @@ class MresumenEntradaBodega extends CI_Model
 
 	public function resumenEntradaBodega($desde, $hasta, $id_usuario, $id_bodega)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -66,7 +66,7 @@ class MresumenEntradaBodega extends CI_Model
 
 	public function detalleResumenEntradaBodega($id_esbodega)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 

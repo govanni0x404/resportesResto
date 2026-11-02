@@ -10,7 +10,7 @@ class MfamiliasReceta extends CI_Model
 
   public function ListadoFamiliasReceta()
   {
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -38,7 +38,7 @@ class MfamiliasReceta extends CI_Model
 
   public function grabarNuevaFamiliaReceta($id, $data)
   {
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);

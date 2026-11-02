@@ -12,7 +12,7 @@ class Productos extends CI_Controller
 	public function index()
 	{
 
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$data = array(
@@ -38,7 +38,7 @@ class Productos extends CI_Controller
 
 	public function ListadoCartaDeProductos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return; 
 		}
@@ -47,7 +47,7 @@ class Productos extends CI_Controller
 
 	public function obtenerPreciosDeVenta()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -57,7 +57,7 @@ class Productos extends CI_Controller
 
 	public function obtenerPreciosYComisiones()
 	{
-    	if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    	if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
         	redirect(base_url());
     	}
     	$idProducto = $this->input->post('id_producto');
@@ -66,7 +66,7 @@ class Productos extends CI_Controller
 
 	public function ListadoDeSubFamilias()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -76,7 +76,7 @@ class Productos extends CI_Controller
 
 	public function ListadoDeUmedida()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -86,7 +86,7 @@ class Productos extends CI_Controller
 
 	public function ListadoDestinoDeImpresion()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -96,7 +96,7 @@ class Productos extends CI_Controller
 
 	public function ListadoDeBodega()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -106,7 +106,7 @@ class Productos extends CI_Controller
 
 	public function ListadoDeImpuestos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -115,7 +115,7 @@ class Productos extends CI_Controller
 
 	public function ListadoDeImpuestosAdicionales()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -124,7 +124,7 @@ class Productos extends CI_Controller
 
 	public function ListadoDeReceta()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -133,7 +133,7 @@ class Productos extends CI_Controller
 
 	public function ListadoDeMenu()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -142,7 +142,7 @@ class Productos extends CI_Controller
 
 	public function grabarProductoConPrecios()	{
 		
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -266,7 +266,7 @@ class Productos extends CI_Controller
 
 	public function obtenerEAN13()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -290,7 +290,7 @@ class Productos extends CI_Controller
 
 	function digitoEAN13($cod)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -317,7 +317,7 @@ class Productos extends CI_Controller
 
 	public function grabarNuevaFamilia()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -337,7 +337,7 @@ class Productos extends CI_Controller
 
 	public function grabarNuevaSubFamilia()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -353,7 +353,7 @@ class Productos extends CI_Controller
 
 	public function grabarNuevaBodega()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -368,7 +368,7 @@ class Productos extends CI_Controller
 
 	public function ListadoDeProductos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -378,7 +378,7 @@ class Productos extends CI_Controller
 
 	public function obtenerAgregadosDelProducto()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -388,7 +388,7 @@ class Productos extends CI_Controller
 
 	public function grabarAgregados()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -411,7 +411,7 @@ class Productos extends CI_Controller
 
 	public function actualizarCantidadProductoAgregado()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -430,7 +430,7 @@ class Productos extends CI_Controller
 
 	public function actualizarPreciosYComisiones()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -474,7 +474,7 @@ class Productos extends CI_Controller
 
 	public function actualizarValorAdicionalProductoAgregado()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -493,7 +493,7 @@ class Productos extends CI_Controller
 
 	public function HabilitarAgregado()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) > 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
 			$id = $this->input->post('data');
 			$miData = array(
 				'vigente' => 't'
@@ -505,7 +505,7 @@ class Productos extends CI_Controller
 
 	public function DeshabilitarAgregado()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) > 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
 			$id = $this->input->post('data');
 			$miData = array(
 				'vigente' => 'f'
@@ -517,7 +517,7 @@ class Productos extends CI_Controller
 
 	public function obtenerMensajesDelProducto()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -527,7 +527,7 @@ class Productos extends CI_Controller
 
 	public function grabarMsgProductos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -544,7 +544,7 @@ class Productos extends CI_Controller
 
 	public function HabilitarMensajeProducto()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) > 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
 			$id = $this->input->post('data');
 			$miData = array(
 				'vigente' => 't'
@@ -556,7 +556,7 @@ class Productos extends CI_Controller
 
 	public function DeshabilitarMensajeProducto()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) > 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
 			$id = $this->input->post('data');
 			$miData = array(
 				'vigente' => 'f'
@@ -568,7 +568,7 @@ class Productos extends CI_Controller
 
 	public function obtenerListadoMenu()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -577,7 +577,7 @@ class Productos extends CI_Controller
 
 	public function grabarNuevoMenu()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -593,7 +593,7 @@ class Productos extends CI_Controller
 
 	public function obtenerCategoriaMenu()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -604,7 +604,7 @@ class Productos extends CI_Controller
 
 	public function grabarNuevaCategoria()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -638,7 +638,7 @@ class Productos extends CI_Controller
 
 	public function listadoDeCategorias()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -647,7 +647,7 @@ class Productos extends CI_Controller
 
 	public function obtenerProductosQueConformanElMenu()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -657,7 +657,7 @@ class Productos extends CI_Controller
 
 	public function actualizarCostoRecetaCategoriaMenu()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -676,7 +676,7 @@ class Productos extends CI_Controller
 
 	public function actualizarCostoAdicionalVentaCategoriaMenu()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -692,7 +692,7 @@ class Productos extends CI_Controller
 
 	public function grabarDetalleCategoria()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -714,7 +714,7 @@ class Productos extends CI_Controller
 
 	public function ObtenerConfiguracionesCategoriaMenu()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -724,7 +724,7 @@ class Productos extends CI_Controller
 
 	public function actualizarConfiguracionCategoriaMenu()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}
@@ -746,7 +746,7 @@ class Productos extends CI_Controller
 
 	public function ObtenerUltimoIdProducto()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         echo json_encode($this->Mproductos->ObtenerUltimoIdProducto());
@@ -754,7 +754,7 @@ class Productos extends CI_Controller
 
 	public function obtenerListasDePrecios()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		
@@ -765,7 +765,7 @@ class Productos extends CI_Controller
 
 	public function verificarColumnaComision()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		
@@ -780,7 +780,7 @@ class Productos extends CI_Controller
 
 	public function DeshabilitarDetalleCategoria()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(['error' => 'Sesión expirada']);
 			return;
 		}

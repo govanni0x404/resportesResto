@@ -11,7 +11,7 @@ class RecetaProduccion extends CI_Controller
 
     public function ListadoRecetasProduccion()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         echo json_encode($this->MrecetaProduccion->ListadoRecetasProduccion());
@@ -19,7 +19,7 @@ class RecetaProduccion extends CI_Controller
 
     public function grabarRecetaProduccion()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -52,7 +52,7 @@ class RecetaProduccion extends CI_Controller
 
     public function buscarRecetaPorNombre()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -62,7 +62,7 @@ class RecetaProduccion extends CI_Controller
 
     public function obtenerDetalleReceta()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -72,7 +72,7 @@ class RecetaProduccion extends CI_Controller
 
     public function grabarDetalleReceta()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -89,7 +89,7 @@ class RecetaProduccion extends CI_Controller
 
     public function eliminarDetalleReceta()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         

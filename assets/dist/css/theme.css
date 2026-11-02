@@ -929,4 +929,33 @@ html body table.dataTable thead th.col-n.sorting, html body table.dataTable thea
 
 /* Pie de página (copyright/versión): siempre debajo de todo el contenido, nunca encima de las tablas */
 .content-wrapper, .content-wrapper > .container, .content-wrapper .content { display: flow-root; }
-.main-footer { position: relative !important; clear: both; margin-top: 24px; bottom: auto !important; }
+.main-footer { position: relative !important; clear: both; margin-top: 0; bottom: auto !important; }
+/* Pie pegado abajo: en páginas cortas el contenido crece y lo empuja hasta el borde inferior de la ventana */
+.wrapper.animsition { display: flex; flex-direction: column; min-height: 100vh; }
+.wrapper.animsition > .content-wrapper { flex: 1 0 auto; min-width: 0; }
+.wrapper.animsition > .main-footer { flex: 0 0 auto; }
+
+/* Ventanas de aviso y confirmación (SweetAlert): mismo diseño en todo el sistema.
+   El color del botón Confirmar lo pone SweetAlert (por defecto el del tema, ver menuFooter.php). */
+.sweet-overlay { background-color: rgba(42, 29, 23, .5) !important; }
+html body .sweet-alert { padding: 26px 28px 22px; border-radius: 16px !important; border: 1px solid var(--t-borde); box-shadow: 0 18px 50px rgba(42, 29, 23, .28);
+    font-family: inherit; color: var(--t-texto); }
+@media (min-width: 541px) {
+    html body .sweet-alert { width: 430px; margin-left: -215px; }
+}
+html body .sweet-alert .sa-icon { margin: 2px auto 16px; zoom: .8; }
+html body .sweet-alert h2 { margin: 0 0 8px; font-size: 21px; font-weight: 700; line-height: 1.25; color: var(--t-texto-fuerte); text-transform: none; }
+html body .sweet-alert p { margin: 0; font-size: 14px; font-weight: 400; line-height: 1.45; color: var(--t-texto-suave); }
+html body .sweet-alert fieldset { padding: 0; margin: 0; }
+html body .sweet-alert input { height: 44px; margin: 14px 0 4px; padding: 0 12px; border: 1px solid var(--t-borde); border-radius: var(--t-radio-sm); box-shadow: none; font-size: 15px; color: var(--t-texto); }
+html body .sweet-alert input:focus { border-color: var(--t-primario); box-shadow: 0 0 0 3px var(--t-primario-suave); }
+html body .sweet-alert .sa-error-container { border-radius: var(--t-radio-sm); }
+html body .sweet-alert .sa-button-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; }
+html body .sweet-alert .sa-confirm-button-container { flex: 1 1 140px; max-width: 240px; }
+html body .sweet-alert[data-has-cancel-button="false"] .sa-confirm-button-container { flex: 0 1 180px; }
+html body .sweet-alert button { width: auto; min-height: 44px; margin: 0; padding: 0 18px; border-radius: 10px !important; box-shadow: none !important; font-size: 15px; font-weight: 600; transition: filter .15s; }
+html body .sweet-alert button.confirm { width: 100%; color: #fff; }
+html body .sweet-alert button.confirm:hover { filter: brightness(.93); }
+html body .sweet-alert button.cancel { flex: 1 1 110px; max-width: 170px; background: #fff !important; border: 1px solid var(--t-borde); color: var(--t-texto); }
+html body .sweet-alert button.cancel:hover { background: var(--t-fondo-alt) !important; }
+html body .sweet-alert button:focus { outline: 2px solid var(--t-primario-borde); outline-offset: 2px; }

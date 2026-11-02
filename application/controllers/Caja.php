@@ -15,7 +15,7 @@ class Caja extends CI_Controller
 
 	public function index()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->Mcaja->registrarModulo();
@@ -78,6 +78,68 @@ class Caja extends CI_Controller
 			if (!is_array($body)) throw new Exception('Datos de venta inválidos', 400);
 			return $this->Mcaja->registrarVenta($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $body);
 		}, true);
+	}
+
+	// ---------------- mesas ----------------
+
+	public function mesas()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			return $this->Mcaja->mesas();
+		});
+	}
+
+	public function guardarPlanoMesas()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			return $this->Mcaja->guardarPlanoMesas($this->cuerpoJson());
+		}, true);
+	}
+
+	public function detalleMesa()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			return $this->Mcaja->detalleMesa((int)$this->input->get('id_mesa'));
+		});
+	}
+
+	public function enviarMesa()
+	{
+		$this->ejecutar(function () {
+			return $this->Mcaja->enviarMesa($this->cajaRequerida(), $this->idUsuario(), $this->cuerpoJson());
+		}, true);
+	}
+
+	public function anularLineaMesa()
+	{
+		$this->ejecutar(function () {
+			return $this->Mcaja->anularLineaMesa($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $this->cuerpoJson());
+		}, true);
+	}
+
+	public function anularPedidoMesa()
+	{
+		$this->ejecutar(function () {
+			return $this->Mcaja->anularPedidoMesa($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $this->cuerpoJson());
+		}, true);
+	}
+
+	public function liberarMesa()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			return $this->Mcaja->liberarMesa($this->idUsuario(), $this->idRol(), $this->cuerpoJson());
+		}, true);
+	}
+
+	private function cuerpoJson()
+	{
+		$body = json_decode($this->input->raw_input_stream, true);
+		if (!is_array($body)) throw new Exception('Datos inválidos', 400);
+		return $body;
 	}
 
 	public function ventas()
@@ -175,7 +237,7 @@ class Caja extends CI_Controller
 	/** Ticket 80mm o 58mm listo para imprimir. */
 	public function ticket($idVenta = 0)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		$doc = $this->Mcaja->documento((int)$idVenta);
@@ -222,6 +284,9 @@ class Caja extends CI_Controller
 			'grupos' => $grupos,
 			'venta' => $doc ? $doc['venta'] : null,
 			'observacion' => mb_substr(trim((string)(isset($datos['observacion']) ? $datos['observacion'] : '')), 0, 200),
+			'mesa' => isset($datos['id_mesa']) ? (int)$datos['id_mesa'] : 0,
+			'anulacion' => !empty($datos['anulacion']),
+			'motivo' => mb_substr(trim((string)(isset($datos['motivo']) ? $datos['motivo'] : '')), 0, 100),
 		);
 	}
 
@@ -231,7 +296,7 @@ class Caja extends CI_Controller
 	 */
 	public function comanda()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		$c = $this->datosComanda();
@@ -258,7 +323,7 @@ class Caja extends CI_Controller
 			$conAgente = $this->Mcola_impresion->hayAgenteActivo();
 			$res = array();
 			foreach ($c['grupos'] as $g) {
-				$bytes = $this->comanda_impresion->armar($g, $c['venta'], $c['observacion']);
+				$bytes = $this->comanda_impresion->armar($g, $c['venta'], $c['observacion'], $c['mesa'], $c['anulacion'] ? $c['motivo'] : null);
 				if ($conAgente) {
 					$d = $g['destino'];
 					$this->Mcola_impresion->encolar($g['nombre'], Mcola_impresion::nombreImpresora($d['ruta_windows']), $d['ip'], $d['puerto'], $bytes);
@@ -276,7 +341,7 @@ class Caja extends CI_Controller
 	/** Cierre (caja cerrada) o informe X (caja abierta) en ticket 80mm o 58mm. */
 	public function cierreTicket($idCaja = 0)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		$datos = $this->Mcaja->datosCierre((int)$idCaja);
@@ -288,7 +353,7 @@ class Caja extends CI_Controller
 	/** Documento tamaño carta en PDF. */
 	public function pdf($idVenta = 0)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		$doc = $this->Mcaja->documento((int)$idVenta);
@@ -512,7 +577,7 @@ class Caja extends CI_Controller
 	private function ejecutar($accion, $soloPost = false)
 	{
 		$this->output->set_content_type('application/json', 'utf-8');
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			return $this->output->set_status_header(401)->set_output(json_encode(array('error' => 'Sesión expirada, vuelve a ingresar')));
 		}
 		if ($soloPost && $this->input->method() !== 'post') {

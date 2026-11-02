@@ -10,7 +10,7 @@ class Mdelivery extends CI_Model
 
   public function ListadoDeSectores()
   {
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -38,7 +38,7 @@ class Mdelivery extends CI_Model
 
   public function grabarNuevoSector($id, $data)
   {
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);

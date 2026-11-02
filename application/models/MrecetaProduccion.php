@@ -10,7 +10,7 @@ class MrecetaProduccion extends CI_Model
 
     public function ListadoRecetasProduccion()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -62,7 +62,7 @@ class MrecetaProduccion extends CI_Model
 
     public function grabarRecetaProduccion($id, $data)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -85,7 +85,7 @@ class MrecetaProduccion extends CI_Model
 
     public function buscarRecetaPorNombre($nombre)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -101,7 +101,7 @@ class MrecetaProduccion extends CI_Model
 
     public function obtenerDetalleReceta($id_receta_produccion)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -147,7 +147,7 @@ class MrecetaProduccion extends CI_Model
 
     public function grabarDetalleReceta($data)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -158,7 +158,7 @@ class MrecetaProduccion extends CI_Model
 
     public function eliminarDetalleReceta($id_detalle)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         

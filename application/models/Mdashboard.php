@@ -10,7 +10,7 @@ class Mdashboard extends CI_Model
 
     public function empresa()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -22,7 +22,7 @@ class Mdashboard extends CI_Model
 
     public function totalVentas($id_caja, $desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -53,7 +53,7 @@ class Mdashboard extends CI_Model
 
     public function resumenCaja($id_caja, $desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -93,7 +93,7 @@ class Mdashboard extends CI_Model
 
     public function resumenTipoDocumento($id_caja, $desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -129,7 +129,7 @@ class Mdashboard extends CI_Model
 
     public function resumenFormaPago($id_caja, $desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -165,7 +165,7 @@ class Mdashboard extends CI_Model
 
     public function resumenCortesias($id_caja, $desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -201,7 +201,7 @@ class Mdashboard extends CI_Model
 
     public function resumenVentasPorPagar()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -249,7 +249,7 @@ class Mdashboard extends CI_Model
 
     public function detalleMesas($id_cotizacion)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -290,7 +290,7 @@ class Mdashboard extends CI_Model
 
     public function detalleAtencion($id_caja, $desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -349,7 +349,7 @@ class Mdashboard extends CI_Model
 
     public function pieVentasPorFamilia($id_caja, $desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -391,7 +391,7 @@ class Mdashboard extends CI_Model
 
     public function tableVentasPorFamilia($id_caja, $desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -453,7 +453,7 @@ class Mdashboard extends CI_Model
 
     public function ventasPorProducto($id_caja, $id_familia, $desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -510,7 +510,7 @@ class Mdashboard extends CI_Model
 
     public function ventasPorMesas($id_caja, $desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -568,7 +568,7 @@ class Mdashboard extends CI_Model
 
     public function cajasAbiertas($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -595,7 +595,7 @@ class Mdashboard extends CI_Model
 
     public function datosEmpresa()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -608,7 +608,7 @@ class Mdashboard extends CI_Model
 
     public function datosCaja($desde, $hasta, $idCaja)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $jsDateTS = strtotime($desde);
@@ -651,7 +651,7 @@ class Mdashboard extends CI_Model
 
     public function datosTipoDte($desde, $hasta, $idCaja)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $jsDateTS = strtotime($desde);
@@ -687,7 +687,7 @@ class Mdashboard extends CI_Model
 
     public function datosFpago($desde, $hasta, $idCaja)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $jsDateTS = strtotime($desde);
@@ -721,7 +721,7 @@ class Mdashboard extends CI_Model
 
     public function datosCortesias($desde, $hasta, $idCaja)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $jsDateTS = strtotime($desde);
@@ -754,7 +754,7 @@ class Mdashboard extends CI_Model
 
     public function totalSistema($desde, $hasta, $idCaja)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $jsDateTS = strtotime($desde);
@@ -787,7 +787,7 @@ class Mdashboard extends CI_Model
 
     public function obtenerDetalleDeIngresos($id_caja, $desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $jsDateTS = strtotime($desde);
@@ -817,7 +817,7 @@ class Mdashboard extends CI_Model
     }
     public function obtenerDetalleDeRetiros($id_caja, $desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $jsDateTS = strtotime($desde);
@@ -850,7 +850,7 @@ class Mdashboard extends CI_Model
 
     public function obtenerDetalleDeDescuentos($id_caja, $desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $jsDateTS = strtotime($desde);
@@ -882,7 +882,7 @@ class Mdashboard extends CI_Model
 
     public function obtenerDetalleDePropinas($id_caja, $desde, $hasta, $id_usuario)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $jsDateTS = strtotime($desde);

@@ -12,7 +12,7 @@ class ListadoDeClientes extends CI_Controller
     public function index()
     {
 
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $data = array(
@@ -29,7 +29,7 @@ class ListadoDeClientes extends CI_Controller
 
     public function ListadoDeClientes()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         echo json_encode($this->MlistadoDeClientes->ListadoDeClientes());

@@ -11,7 +11,7 @@ class Insumos extends CI_Controller
 
 	public function index()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -41,7 +41,7 @@ class Insumos extends CI_Controller
 
 	public function listadoInsumos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		echo json_encode($this->Minsumos->listadoInsumos());
@@ -49,7 +49,7 @@ class Insumos extends CI_Controller
 
 	public function llenarCboGrupoInsumo()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		echo json_encode($this->Minsumos->llenarCboGrupoInsumo());
@@ -57,7 +57,7 @@ class Insumos extends CI_Controller
 
 	public function llenarCboImpto()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		echo json_encode($this->Minsumos->llenarCboImpto());
@@ -65,7 +65,7 @@ class Insumos extends CI_Controller
 
 	public function llenarCboUnMedida()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		echo json_encode($this->Minsumos->llenarCboUnMedida());
@@ -73,7 +73,7 @@ class Insumos extends CI_Controller
 
 	public function llenarCboRecetaProduccion()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id = $this->input->post('id_insumo');
@@ -82,7 +82,7 @@ class Insumos extends CI_Controller
 
 	public function getSiguienteInsumo()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		echo json_encode($this->Minsumos->getSiguienteInsumo());
@@ -90,7 +90,7 @@ class Insumos extends CI_Controller
 
 	public function grabarInsumo()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$d = $this->input->post('prod');
@@ -131,7 +131,7 @@ class Insumos extends CI_Controller
 
 	public function buscarInsumo()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -141,7 +141,7 @@ class Insumos extends CI_Controller
 
 	public function listadoStockInsumo()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id = $this->input->post('id_insumo');
@@ -150,7 +150,7 @@ class Insumos extends CI_Controller
 
 	public function listadoHistoricoCompras()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id = $this->input->post('id_insumo');
@@ -159,7 +159,7 @@ class Insumos extends CI_Controller
 
 	public function listadoInsumosReceta()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id = $this->input->post('id_insumo');
@@ -168,7 +168,7 @@ class Insumos extends CI_Controller
 
 	public function listadoInsumoProduccion()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id = $this->input->post('id_insumo');
@@ -177,7 +177,7 @@ class Insumos extends CI_Controller
 
 	public function listadoRecetas()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id = $this->input->post('id_insumo');
@@ -186,7 +186,7 @@ class Insumos extends CI_Controller
 
 	public function ListarInsumos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		echo json_encode($this->Minsumos->ListarInsumos());
@@ -194,7 +194,7 @@ class Insumos extends CI_Controller
 
 	public function ObtenerDatosInsumos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id = $this->input->post('id_insumo');
@@ -202,7 +202,7 @@ class Insumos extends CI_Controller
 	}
     public function ObtenerUnidadMedida()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         $id_insumo = $this->input->post('id_insumo');

@@ -11,7 +11,7 @@ class FamiliasInsumos extends CI_Controller
 
     public function index()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $data = array(
@@ -29,7 +29,7 @@ class FamiliasInsumos extends CI_Controller
 
     public function ListadoFamiliasInsumo()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         echo json_encode($this->MfamiliasInsumo->ListadoFamiliasInsumo());
@@ -37,7 +37,7 @@ class FamiliasInsumos extends CI_Controller
 
     public function grabarNuevaFamiliaInsumo()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $d = $this->input->post('prod');
@@ -51,7 +51,7 @@ class FamiliasInsumos extends CI_Controller
 
     public function ListarFamiliasInsumo()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         echo json_encode($this->MfamiliasInsumo->ListarFamiliasInsumo());

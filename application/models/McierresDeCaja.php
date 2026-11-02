@@ -10,7 +10,7 @@ class McierresDeCaja extends CI_Model
 
     public function tableCierresDeCaja($desde, $hasta)
     {
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -74,7 +74,7 @@ class McierresDeCaja extends CI_Model
 
     public function datosEmpresa()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -86,7 +86,7 @@ class McierresDeCaja extends CI_Model
 
     public function datosCaja($id_caja, $listadoCajas)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -112,7 +112,7 @@ class McierresDeCaja extends CI_Model
 
     public function datosFormaPago($id_caja, $listadoCajas)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -135,7 +135,7 @@ class McierresDeCaja extends CI_Model
 
     public function datosCortesias($id_caja, $listadoCajas)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -159,7 +159,7 @@ class McierresDeCaja extends CI_Model
 
     public function datosFamiliaProducto($id_caja, $listadoCajas)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -184,7 +184,7 @@ class McierresDeCaja extends CI_Model
 
     public function datosProductos($id_caja, $listadoCajas)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -208,7 +208,7 @@ class McierresDeCaja extends CI_Model
 
     public function totalVentasProductos($id_caja, $listadoCajas)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -229,7 +229,7 @@ class McierresDeCaja extends CI_Model
 
     public function detalleCaja($id_caja, $listadoCajas)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -246,7 +246,7 @@ class McierresDeCaja extends CI_Model
 
     public function detalleCotizacion($id_caja, $listadoCajas)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -266,7 +266,7 @@ class McierresDeCaja extends CI_Model
 
     public function detallePropinas($id_caja, $listadoCajas)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -287,7 +287,7 @@ class McierresDeCaja extends CI_Model
 
     public function detalleAtencion($id_caja, $listadoCajas)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 

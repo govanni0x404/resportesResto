@@ -12,7 +12,7 @@ class Configuraciones extends CI_Controller
     public function index()
     {
         /*
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $data = array(
@@ -42,7 +42,7 @@ class Configuraciones extends CI_Controller
 
     public function obtenerConfiguracionesRestoWeb()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         echo json_encode($this->Mconfiguraciones->obtenerConfiguracionesRestoWeb());
@@ -50,7 +50,7 @@ class Configuraciones extends CI_Controller
 
     public function grabarConfiguraciones()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) > 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
             $d = $this->input->post('prod');
             $miData = array(
                 'desglozar_monto_neto_iva_total_en_reportes' => $d['desglozar_monto_neto_iva_total_en_reportes'],

@@ -11,7 +11,7 @@ class VentasPorProducto extends CI_Controller
 
     public function index()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $data = array(
@@ -26,7 +26,7 @@ class VentasPorProducto extends CI_Controller
 
     public function ListadoVentasPorProducto()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $desde = $this->input->post('desde');
@@ -36,7 +36,7 @@ class VentasPorProducto extends CI_Controller
 
     public function pieVentasPorProducto()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $desde = $this->input->post('desde');

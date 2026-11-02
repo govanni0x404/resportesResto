@@ -11,7 +11,7 @@ class Comuna extends CI_Controller
 
   public function index()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $data = array(
@@ -29,7 +29,7 @@ class Comuna extends CI_Controller
 
   public function ListadoDeComunas()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     echo json_encode($this->Mcomuna->ListadoDeComunas());
@@ -37,7 +37,7 @@ class Comuna extends CI_Controller
 
   public function grabarNuevaComuna()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $d = $this->input->post('prod');
@@ -60,7 +60,7 @@ class Comuna extends CI_Controller
 
   public function ListarComunas()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     echo json_encode($this->Mcomuna->ListarComunas());

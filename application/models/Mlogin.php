@@ -10,7 +10,7 @@ class Mlogin extends CI_Model
 	}
 
 	public function getListaDeClientesParaElUsuario(){
-		if (strlen($this->session->userdata('rut_cliente'))>0) {
+		if (strlen((string)$this->session->userdata('rut_cliente'))>0) {
 			$this->db=$this->load->database('default', TRUE);
 			$q="select u.*,c.nombre_cliente,c.nombre_fantasia
 					from usuario_appweb u
@@ -22,7 +22,7 @@ class Mlogin extends CI_Model
 	}
 
 	public function obtenerListaConexionesUsuario($idUsuario){
-		if (strlen($this->session->userdata('rut_cliente'))>0) {
+		if (strlen((string)$this->session->userdata('rut_cliente'))>0) {
 			$this->db=$this->load->database('default', TRUE);
 			$q="select  u.nombre_conexion from usuario_appweb u where u.id_cliente=$idUsuario group by u.nombre_conexion order by 1";
 			return json_encode($consulta=$this->db->query($q)->result());
@@ -86,7 +86,7 @@ class Mlogin extends CI_Model
 		return $query->row();
 	}
 	public function getNombreUsuario($idUsuario){
-		if (strlen($this->session->userdata('rut_cliente'))>0) {
+		if (strlen((string)$this->session->userdata('rut_cliente'))>0) {
 			$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 			//$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 			$query = $this->db->query("select * from usuario where id_usuario=$idUsuario");
@@ -106,7 +106,7 @@ class Mlogin extends CI_Model
 
 	// public function getNombreUsuario($idUsuario)
 	// {
-	// 	if (strlen($this->session->userdata('rut_cliente')) > 0) {
+	// 	if (strlen((string)$this->session->userdata('rut_cliente')) > 0) {
 	// 		$this->db = $this->load->database($this->session->userdata('rut_cliente'), TRUE);
 	// 		$query = $this->db->query("select * from usuario where id_usuario=$idUsuario");
 	// 		return $query->row();

@@ -10,7 +10,7 @@ class MresumenDeCompras extends CI_Model
 
 	public function resumenDeCompras($desde, $hasta)
 	{
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         
@@ -61,7 +61,7 @@ class MresumenDeCompras extends CI_Model
 
 	public function detalleFacturas($id_compra)
 	{
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         
@@ -97,7 +97,7 @@ class MresumenDeCompras extends CI_Model
 
 	public function resumenDeComprasPDF($idCompra, $listadoCompras)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		

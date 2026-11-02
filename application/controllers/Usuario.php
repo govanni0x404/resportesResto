@@ -11,7 +11,7 @@ class Usuario extends CI_Controller
 
     public function index()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         $data = array(
@@ -27,7 +27,7 @@ class Usuario extends CI_Controller
 
     public function ListadoDeUsuarios()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -48,7 +48,7 @@ class Usuario extends CI_Controller
 
     public function grabarNuevoUsuario()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -71,7 +71,7 @@ class Usuario extends CI_Controller
 
     public function editarUsuario()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
 

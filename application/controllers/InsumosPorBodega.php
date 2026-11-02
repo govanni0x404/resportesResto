@@ -11,7 +11,7 @@ class InsumosPorBodega extends CI_Controller
 
 	public function index()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$data = array(
@@ -26,7 +26,7 @@ class InsumosPorBodega extends CI_Controller
 
 	public function inventarioPorBodega()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_bodega = $this->input->post('id_bodega');
@@ -36,7 +36,7 @@ class InsumosPorBodega extends CI_Controller
 
 	public function consultaBodegas()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		echo json_encode($this->MinsumosPorBodega->consultaBodegas());
@@ -44,7 +44,7 @@ class InsumosPorBodega extends CI_Controller
 
 	public function detalleStockInsumos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		$id_insumo = $this->input->post('id_insumo');
@@ -53,7 +53,7 @@ class InsumosPorBodega extends CI_Controller
 
 	public function descuentosInsumos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		echo json_encode($this->MinsumosPorBodega->descuentosInsumos());

@@ -10,7 +10,7 @@ class MprivilegiosUsuario extends CI_Model
 
   public function ListadoDeRoles()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -30,7 +30,7 @@ class MprivilegiosUsuario extends CI_Model
 
   public function ListarPrivilegiosPorRol($id_rol)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -54,7 +54,7 @@ class MprivilegiosUsuario extends CI_Model
 
   public function actualizarPrivilegio($id_pusuario, $autoriza)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -74,7 +74,7 @@ class MprivilegiosUsuario extends CI_Model
 
   public function crearPrivilegio($id_rol, $id_psistema)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -100,7 +100,7 @@ class MprivilegiosUsuario extends CI_Model
 
   public function HabilitarTodosLosPrivilegios($id_rol)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -132,7 +132,7 @@ class MprivilegiosUsuario extends CI_Model
 
   public function BloquearTodosLosPrivilegios($id_rol)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);

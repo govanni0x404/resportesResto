@@ -10,7 +10,7 @@ class MmensajePorProducto extends CI_Model
 
   public function ListadoDeMensajesPorProductos()
   {
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -43,7 +43,7 @@ class MmensajePorProducto extends CI_Model
 
   public function grabarMsgProductos($id, $data)
     {
-			if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+			if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 				redirect(base_url()); //redireccionar al login
 			}
 			$this->load->helper('tenant'); $this->db = get_tenant_db($this);

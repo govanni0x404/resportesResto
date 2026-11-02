@@ -11,7 +11,7 @@ class Recetas extends CI_Controller
 
 	public function index()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 
@@ -30,7 +30,7 @@ class Recetas extends CI_Controller
 
 	public function listadoRecetas()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		echo json_encode($this->Mrecetas->listadoRecetas());
@@ -38,7 +38,7 @@ class Recetas extends CI_Controller
 
 	public function llenarCboInsumos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		echo json_encode($this->Mrecetas->llenarCboInsumos());
@@ -46,7 +46,7 @@ class Recetas extends CI_Controller
 
 	public function llenarCboUnMedida()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		echo json_encode($this->Mrecetas->llenarCboUnMedida());
@@ -54,7 +54,7 @@ class Recetas extends CI_Controller
 
 	public function llenarFamiliaReceta()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		echo json_encode($this->Mrecetas->llenarFamiliaReceta());
@@ -62,7 +62,7 @@ class Recetas extends CI_Controller
 
 	public function llenarSeccionReceta()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		echo json_encode($this->Mrecetas->llenarSeccionReceta());
@@ -70,7 +70,7 @@ class Recetas extends CI_Controller
 
 	public function getInsumosReceta()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		$id = $this->input->post('id_receta');
@@ -79,7 +79,7 @@ class Recetas extends CI_Controller
 
 	public function grabarReceta()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(array('status' => 'error', 'message' => 'Sesión no válida'));
 			return;
 		}
@@ -149,7 +149,7 @@ class Recetas extends CI_Controller
 
 	public function updateInsumoDelete()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		$idReceta = $this->input->post('id_receta');
@@ -162,7 +162,7 @@ class Recetas extends CI_Controller
 
 	public function grabarNuevaFamiliaReceta()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(array('status' => 'error', 'message' => 'Sesión no válida'));
 			return;
 		}
@@ -182,7 +182,7 @@ class Recetas extends CI_Controller
 
 	public function grabarNuevaSeccion()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			echo json_encode(array('status' => 'error', 'message' => 'Sesión no válida'));
 			return;
 		}

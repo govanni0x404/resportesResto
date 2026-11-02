@@ -10,7 +10,7 @@ class Mbodegas extends CI_Model
 
 	public function ListadoDeBodegas()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -38,7 +38,7 @@ class Mbodegas extends CI_Model
 
 	public function grabarNuevaBodega($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);

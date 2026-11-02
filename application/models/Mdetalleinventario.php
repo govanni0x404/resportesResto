@@ -10,7 +10,7 @@ class Mdetalleinventario extends CI_Model {
 
     public function get_detalle($id_inventario)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
 
@@ -39,7 +39,7 @@ class Mdetalleinventario extends CI_Model {
 
     public function eliminar_items($ids)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
 

@@ -10,7 +10,7 @@ class MventasPorProducto extends CI_Model
 
     public function ListadoVentasPorProducto($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -60,7 +60,7 @@ class MventasPorProducto extends CI_Model
 
     public function pieVentasPorProducto($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 

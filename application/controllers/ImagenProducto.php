@@ -206,7 +206,7 @@ class ImagenProducto extends CI_Controller
 	private function responder($accion, $soloPost = false)
 	{
 		$this->output->set_content_type('application/json', 'utf-8');
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			return $this->output->set_status_header(401)->set_output(json_encode(array('error' => 'Sesión expirada, vuelve a ingresar')));
 		}
 		if ($soloPost && $this->input->method() !== 'post') {

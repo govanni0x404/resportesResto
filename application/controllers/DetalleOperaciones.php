@@ -11,7 +11,7 @@ class DetalleOperaciones extends CI_Controller
 
 	public function index()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$data = array(
@@ -26,7 +26,7 @@ class DetalleOperaciones extends CI_Controller
 
 	public function resumenDeOperaciones()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$desde = $this->input->post('desde');
@@ -39,7 +39,7 @@ class DetalleOperaciones extends CI_Controller
 
 	public function ResumenDetalleOperaciones()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_venta = $this->input->post('id_venta');
@@ -48,7 +48,7 @@ class DetalleOperaciones extends CI_Controller
 
 	public function ListarFormasDePago()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		echo json_encode($this->MdetalleOperaciones->ListarFormasDePago());
@@ -56,7 +56,7 @@ class DetalleOperaciones extends CI_Controller
 
 	public function ListarUsuarios()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		echo json_encode($this->MdetalleOperaciones->ListarUsuarios());
@@ -64,7 +64,7 @@ class DetalleOperaciones extends CI_Controller
 
 	public function DetalleFormaDePagoVenta()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_venta = $this->input->post('id_venta');
@@ -73,7 +73,7 @@ class DetalleOperaciones extends CI_Controller
 
 	public function actualizarFormaDePagoVenta()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$d = $this->input->post('prod');

@@ -10,7 +10,7 @@ class Mconfiguraciones extends CI_Model
 
   public function obtenerConfiguracionesRestoWeb()
   {
-		if (strlen($this->session->userdata('rut_cliente')) == 0) {
+		if (strlen((string)$this->session->userdata('rut_cliente')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -21,7 +21,7 @@ class Mconfiguraciones extends CI_Model
 
   public function grabarConfiguraciones($data)
   { //
-		if (strlen($this->session->userdata('rut_cliente')) == 0) {
+		if (strlen((string)$this->session->userdata('rut_cliente')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);

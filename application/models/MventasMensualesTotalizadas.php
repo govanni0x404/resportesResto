@@ -10,7 +10,7 @@ class MventasMensualesTotalizadas extends CI_Model
 
     public function ventasMensualesTotalizadas($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); // redireccionar al login
         }
 
@@ -59,7 +59,7 @@ class MventasMensualesTotalizadas extends CI_Model
 
     public function ventasMensualesTotalizadasPie($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -95,7 +95,7 @@ class MventasMensualesTotalizadas extends CI_Model
 
     public function ventasMensualesTotalizadasTopDiezDiasMasVentas($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -132,7 +132,7 @@ class MventasMensualesTotalizadas extends CI_Model
 
     public function ventasMensualesTotalizadasTopDiezDiasMenosVentas($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -170,7 +170,7 @@ class MventasMensualesTotalizadas extends CI_Model
 
     public function ResumenVentasDelDia($ventas_del_dia)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 

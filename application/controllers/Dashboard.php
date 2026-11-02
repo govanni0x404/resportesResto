@@ -11,7 +11,7 @@ class Dashboard extends CI_Controller
 
 	public function index()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$data = array(
@@ -30,7 +30,7 @@ class Dashboard extends CI_Controller
 
 	public function empresa()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		echo json_encode($this->Mdashboard->empresa());
@@ -38,7 +38,7 @@ class Dashboard extends CI_Controller
 
 	public function totalVentas()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');
@@ -51,7 +51,7 @@ class Dashboard extends CI_Controller
 
 	public function resumenCaja()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');
@@ -63,7 +63,7 @@ class Dashboard extends CI_Controller
 
 	public function resumenTipoDocumento()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');
@@ -75,7 +75,7 @@ class Dashboard extends CI_Controller
 
 	public function resumenFormaPago()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');
@@ -87,7 +87,7 @@ class Dashboard extends CI_Controller
 
 	public function resumenCortesias()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');
@@ -99,7 +99,7 @@ class Dashboard extends CI_Controller
 
 	public function resumenVentasPorPagar()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		// $fecha = $this->input->post('fecha');
@@ -108,7 +108,7 @@ class Dashboard extends CI_Controller
 
 	public function detalleMesas()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_cotizacion = $this->input->post('id_cotizacion');
@@ -117,7 +117,7 @@ class Dashboard extends CI_Controller
 
 	public function ventasPorMesas()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');
@@ -129,7 +129,7 @@ class Dashboard extends CI_Controller
 
 	public function detalleAtencion()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');
@@ -141,7 +141,7 @@ class Dashboard extends CI_Controller
 
 	public function pieVentasPorFamilia()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');
@@ -153,7 +153,7 @@ class Dashboard extends CI_Controller
 
 	public function tableVentasPorFamilia()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');
@@ -165,7 +165,7 @@ class Dashboard extends CI_Controller
 
 	public function ventasPorProducto()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');
@@ -178,7 +178,7 @@ class Dashboard extends CI_Controller
 
 	public function cajasAbiertas()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		//$fecha = $this->input->post('fecha');
@@ -189,7 +189,7 @@ class Dashboard extends CI_Controller
 
 	public function PDFDetalleCaja()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$desde = $this->input->post('desde');
@@ -537,7 +537,7 @@ class Dashboard extends CI_Controller
 
 	public function obtenerDetalleDeIngresos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');
@@ -547,7 +547,7 @@ class Dashboard extends CI_Controller
 	}
 	public function obtenerDetalleDeRetiros()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');
@@ -558,7 +558,7 @@ class Dashboard extends CI_Controller
 
 	public function obtenerDetalleDeDescuentos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');
@@ -569,7 +569,7 @@ class Dashboard extends CI_Controller
 
 	public function obtenerDetalleDePropinas()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$id_caja = $this->input->post('id_caja');

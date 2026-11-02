@@ -11,7 +11,7 @@ class EntradaBodega extends CI_Controller
 
   public function index()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $data = array(
@@ -26,7 +26,7 @@ class EntradaBodega extends CI_Controller
 
   public function obtenerStockActualPorBodega()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) > 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
 
       $d = $this->input->post('midata');
       $idInsumo =  $this->input->post('id_insumo');
@@ -36,7 +36,7 @@ class EntradaBodega extends CI_Controller
   }
 
   public function grabarEntradaBodega(){
-    if (strlen($this->session->userdata('nombre_usuario')) > 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
       
       // Decodificar el JSON recibido
       $d = json_decode($this->input->post('el_json'), true);
@@ -62,7 +62,7 @@ class EntradaBodega extends CI_Controller
 
 
   public function grabarDetalleEntradaBodega(){
-    if (strlen($this->session->userdata('nombre_usuario'))>0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario'))>0) {
         $d = $this->input->post('detalle');
         $idEsBodega = $this->input->post('id');
 

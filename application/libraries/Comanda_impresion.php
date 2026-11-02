@@ -11,8 +11,11 @@ class Comanda_impresion
 {
 	const ANCHO = 42;   // columnas de una térmica de 80 mm
 
-	/** Texto ESC/POS de la comanda de un destino. $grupo = ['nombre' =>, 'lineas' => [...]]. */
-	public function armar($grupo, $venta, $observacion)
+	/**
+	 * Texto ESC/POS de la comanda de un destino. $grupo = ['nombre' =>, 'lineas' => [...]].
+	 * Con $motivoAnulacion (no null) es un aviso de anulación: mismos productos, para que no se preparen.
+	 */
+	public function armar($grupo, $venta, $observacion, $mesa = 0, $motivoAnulacion = null)
 	{
 		$W = self::ANCHO;
 		$centro = "\x1ba\x01";
@@ -26,8 +29,16 @@ class Comanda_impresion
 		$b = "\x1b@\x1bt\x13" . $normal;                       // iniciar + CP858 (acentos)
 		// Cabecera: destino en recuadro negro
 		$b .= $centro . $inv . $doble . $this->t(str_pad('', 0)) . $this->centrar(mb_strtoupper($grupo['nombre']), $W / 2) . $normal . "\n";
-		$b .= $centro . $neg . "C O M A N D A" . $normal . "\n";
-		if ($venta) {
+		$anula = $motivoAnulacion !== null;
+		if ($anula) {
+			$b .= $centro . $inv . $doble . $this->centrar('ANULACION', $W / 2) . $normal . "\n";
+			$b .= $centro . $neg . "NO PREPARAR" . $normal . "\n";
+		} else {
+			$b .= $centro . $neg . "C O M A N D A" . $normal . "\n";
+		}
+		if ($mesa) {
+			$b .= $centro . $doble . $this->t('MESA ' . $mesa) . $normal . "\n";
+		} elseif ($venta) {
 			$b .= $centro . $doble . $this->t('N ' . $venta->folio) . $normal . "\n";
 			$b .= $centro . $this->t((string)$venta->nombre_tdocumento) . "\n";
 		}
@@ -51,7 +62,8 @@ class Comanda_impresion
 		}
 		$b .= str_repeat('=', $W) . "\n";
 		$cantTxt = rtrim(rtrim(number_format($total, 3, ',', ''), '0'), ',');
-		$b .= $neg . $this->t('TOTAL: ' . $cantTxt . ($total == 1 ? ' producto' : ' productos')) . $normal . "\n";
+		$b .= $neg . $this->t(($anula ? 'ANULADO: ' : 'TOTAL: ') . $cantTxt . ($total == 1 ? ' producto' : ' productos')) . $normal . "\n";
+		if ($anula && $motivoAnulacion !== '') $b .= "\n" . $neg . $this->envolver('Motivo: ' . $motivoAnulacion, $W) . $normal;
 		if ($observacion !== '') {
 			$b .= "\n" . $inv . $neg . $this->t(str_pad(' OBSERVACION', $W)) . $normal . "\n" . $neg . $alto . $this->envolver($observacion, $W) . $normal;
 		}

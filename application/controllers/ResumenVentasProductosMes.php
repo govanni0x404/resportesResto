@@ -11,7 +11,7 @@ class ResumenVentasProductosMes extends CI_Controller
 
     public function index()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -27,7 +27,7 @@ class ResumenVentasProductosMes extends CI_Controller
 
     public function resumenVentasProductos()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -39,7 +39,7 @@ class ResumenVentasProductosMes extends CI_Controller
 
     public function detalleProductoMes()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -51,7 +51,7 @@ class ResumenVentasProductosMes extends CI_Controller
 
     public function resumenVentasProductosPDF()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
 

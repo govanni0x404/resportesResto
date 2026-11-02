@@ -10,7 +10,7 @@ class MitemGastosMensuales extends CI_Model
 
   public function ListadoDeItemGastosMensuales()
   {
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -40,7 +40,7 @@ class MitemGastosMensuales extends CI_Model
 
   public function grabarNuevoItemGastoMensual($id, $data)
   {
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);

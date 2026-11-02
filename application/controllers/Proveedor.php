@@ -11,7 +11,7 @@ class Proveedor extends CI_Controller
 
   public function index()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $data = array(
@@ -29,7 +29,7 @@ class Proveedor extends CI_Controller
 
   public function ListadoDeProveedores()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     echo json_encode($this->Mproveedor->ListadoDeProveedores());
@@ -37,7 +37,7 @@ class Proveedor extends CI_Controller
 
   public function grabarNuevoProveedor()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $d = $this->input->post('prod');
@@ -73,7 +73,7 @@ class Proveedor extends CI_Controller
 
   public function busquedaProveedorPorRut()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $rut = $this->input->post('rut');
@@ -82,7 +82,7 @@ class Proveedor extends CI_Controller
 
     public function ListarProveedores()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         echo json_encode($this->Mproveedor->ListarProveedores());

@@ -10,7 +10,7 @@ class MfamiliasInsumo extends CI_Model
 
     public function ListadoFamiliasInsumo()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -38,7 +38,7 @@ class MfamiliasInsumo extends CI_Model
 
     public function grabarNuevaFamiliaInsumo($id, $data)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -70,7 +70,7 @@ class MfamiliasInsumo extends CI_Model
 
     public function ListarFamiliasInsumo()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);

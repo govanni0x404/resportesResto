@@ -10,7 +10,7 @@ class MsubFamilias extends CI_Model
 
     public function ListadoDeSubFamilias()
     {
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 		  redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -41,7 +41,7 @@ class MsubFamilias extends CI_Model
 
     public function grabarNuevaSubFamilia($id, $data)
     {
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 		  redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -58,7 +58,7 @@ class MsubFamilias extends CI_Model
 
     public function ListadoSubFamiliasXFamilias($id_familia)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
           }
           $this->load->helper('tenant'); $this->db = get_tenant_db($this);

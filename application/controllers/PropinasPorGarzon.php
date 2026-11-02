@@ -11,7 +11,7 @@ class PropinasPorGarzon extends CI_Controller
 
 	public function index()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$data = array(
@@ -26,7 +26,7 @@ class PropinasPorGarzon extends CI_Controller
 
 	public function resumenDePropinasEntreFechas()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$desde = $this->input->post('desde');
@@ -36,7 +36,7 @@ class PropinasPorGarzon extends CI_Controller
 
     public function resumenTotalPropinaPorGarzon()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$desde = $this->input->post('desde');
@@ -46,7 +46,7 @@ class PropinasPorGarzon extends CI_Controller
 
     public function resumenTotalPropinaPorFormaDePago()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$desde = $this->input->post('desde');
@@ -57,7 +57,7 @@ class PropinasPorGarzon extends CI_Controller
     
     public function PDFResumenDePropinasPorGarzon()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $desde = $this->input->post('desde');

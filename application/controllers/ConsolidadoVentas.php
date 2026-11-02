@@ -11,7 +11,7 @@ class ConsolidadoVentas extends CI_Controller
 
     public function index()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $data = array(
@@ -26,7 +26,7 @@ class ConsolidadoVentas extends CI_Controller
 
     public function ResumenConsolidadoVentas()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $desde = $this->input->post('desde');
@@ -36,7 +36,7 @@ class ConsolidadoVentas extends CI_Controller
 
     public function MontoTotalventas()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         echo json_encode($this->MconsolidadoVentas->MontoTotalventas());
@@ -44,7 +44,7 @@ class ConsolidadoVentas extends CI_Controller
 
     public function ResumenVentasPorFamilia()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $desde = $this->input->post('desde');
@@ -54,7 +54,7 @@ class ConsolidadoVentas extends CI_Controller
 
     public function ResumenVentasPorCanal()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $desde = $this->input->post('desde');
@@ -64,7 +64,7 @@ class ConsolidadoVentas extends CI_Controller
 
     public function PDFConsolidadoDeVentas()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $desde = $this->input->post('desde');

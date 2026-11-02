@@ -10,7 +10,7 @@ class Mproduccion extends CI_Model
 
     public function listadoProducciones()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -41,7 +41,7 @@ class Mproduccion extends CI_Model
 
     public function grabarProduccion($data)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -52,7 +52,7 @@ class Mproduccion extends CI_Model
 
     public function obtenerStockActual($id_insumo, $id_bodega)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -74,7 +74,7 @@ class Mproduccion extends CI_Model
 
     public function actualizarStock($id_insumo, $id_bodega, $nuevo_stock)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         

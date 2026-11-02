@@ -10,7 +10,7 @@ class MtipoEvento extends CI_Model
 
   public function ListadoDeTipoEventos()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -39,7 +39,7 @@ class MtipoEvento extends CI_Model
 
   public function grabarNuevoTipoEvento($id, $data)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);

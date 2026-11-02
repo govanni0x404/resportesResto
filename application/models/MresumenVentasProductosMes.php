@@ -10,7 +10,7 @@ class MresumenVentasProductosMes extends CI_Model
 
     public function resumenVentasProductos($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -77,7 +77,7 @@ class MresumenVentasProductosMes extends CI_Model
 
     // public function detalleProductoMes($id_producto, $mes)
     // {
-    //     if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    //     if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
     //         redirect(base_url());
     //     }
         
@@ -126,7 +126,7 @@ class MresumenVentasProductosMes extends CI_Model
 
     public function resumenVentasProductosPDF($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         

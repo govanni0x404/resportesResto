@@ -10,7 +10,7 @@ class MpropinasPorGarzon extends CI_Model
 
 	public function resumenDePropinasEntreFechas($desde, $hasta)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -57,7 +57,7 @@ class MpropinasPorGarzon extends CI_Model
 
 	public function resumenTotalPropinaPorGarzon($desde, $hasta)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -83,7 +83,7 @@ class MpropinasPorGarzon extends CI_Model
 
 	public function resumenTotalPropinaPorFormaDePago($desde, $hasta)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 

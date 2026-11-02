@@ -10,7 +10,7 @@ class MresumenAnulaciones extends CI_Model
 
     public function resumenDeAnulaciones($desde, $hasta, $id_usuario, $todasLasAnulacionesYeliminaciones, $soloAnulaciones, $soloEliminaciones)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $jsDateTS = strtotime($desde);

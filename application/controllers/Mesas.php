@@ -11,7 +11,7 @@ class Mesas extends CI_Controller
 
   public function index()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     
@@ -29,7 +29,7 @@ class Mesas extends CI_Controller
 
   public function ListadoDeMesas()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     echo json_encode($this->Mmesas->ListadoDeMesas());
@@ -37,7 +37,7 @@ class Mesas extends CI_Controller
 
   public function crearMultiplesMesas()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     
@@ -50,7 +50,7 @@ class Mesas extends CI_Controller
 
   public function editarMesa()
   {
-      if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+      if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
           redirect(base_url());
       }
       

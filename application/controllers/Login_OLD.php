@@ -116,13 +116,13 @@ class Login extends CI_Controller
 
 	// public function validarSesion()
 	// {
-	// 	if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+	// 	if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 	// 		redirect(base_url()); //redireccionar al login
 	// 	}
 	// }
 	// public function consultaSesionValida()
 	// {
-	// 	if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+	// 	if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 	// 		echo false;
 	// 	} else {
 	// 		echo true;

@@ -10,7 +10,7 @@ class Mproductos extends CI_Model
 
 	public function verificarColumnaExiste($tabla, $columna)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		
@@ -31,7 +31,7 @@ class Mproductos extends CI_Model
 
 	public function ListadoCartaDeProductos(/*$id_familia*/)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -99,7 +99,7 @@ class Mproductos extends CI_Model
 	}
 
 	public function obtenerPreciosDeVenta($idProducto){
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		
@@ -128,7 +128,7 @@ class Mproductos extends CI_Model
 
 	public function ListadoDeSubFamilias()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -139,7 +139,7 @@ class Mproductos extends CI_Model
 
 	public function ListadoDeUmedida()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -150,7 +150,7 @@ class Mproductos extends CI_Model
 
 	public function ListadoDestinoDeImpresion()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -161,7 +161,7 @@ class Mproductos extends CI_Model
 
 	public function ListadoDeBodega()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -172,7 +172,7 @@ class Mproductos extends CI_Model
 
 	public function ListadoDeImpuestos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -185,7 +185,7 @@ class Mproductos extends CI_Model
 
 	public function ListadoDeImpuestosAdicionales()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -197,7 +197,7 @@ class Mproductos extends CI_Model
 
 	public function ListadoDeMenu()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -208,7 +208,7 @@ class Mproductos extends CI_Model
 
 	public function ListadoDeReceta()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -219,7 +219,7 @@ class Mproductos extends CI_Model
 
 	public function grabarNuevoProducto($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -237,7 +237,7 @@ class Mproductos extends CI_Model
 
 	public function grabarNuevaFamilia($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -287,7 +287,7 @@ class Mproductos extends CI_Model
 
 	public function grabarNuevaSubFamilia($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -304,7 +304,7 @@ class Mproductos extends CI_Model
 
 	public function grabarNuevaBodega($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -321,7 +321,7 @@ class Mproductos extends CI_Model
 
 	public function ListadoDeProductos(/*$id_producto*/)
 	{
-if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
+if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return array(); }
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT id_producto, nombre_producto, pponderado, precio_ucompra from producto order by nombre_producto asc";
 		$query = $this->db->query($q)->result();
@@ -330,7 +330,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function obtenerAgregadosDelProducto($idProducto)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -345,7 +345,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function grabarAgregados($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -362,7 +362,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function actualizarCantidadProductoAgregado($idAgregado, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -374,7 +374,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function actualizarValorAdicionalProductoAgregado($idAgregado, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -386,7 +386,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function HabilitarAgregado($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -397,7 +397,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function DeshabilitarAgregado($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -408,7 +408,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function obtenerMensajesDelProducto($idProducto)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -422,7 +422,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function grabarMsgProductos($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -439,7 +439,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function HabilitarMensajeProducto($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -450,7 +450,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function DeshabilitarMensajeProducto($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -461,7 +461,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function obtenerListadoMenu()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -493,7 +493,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function grabarNuevoMenu($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -510,7 +510,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function obtenerCategoriaMenu($id_menu, $soloVigentes = false)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -563,7 +563,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function grabarNuevaCategoria($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -591,7 +591,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function actualizarCostoRecetaCategoriaMenu($idDetalleCategoriaMenu, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -603,7 +603,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function actualizarCostoAdicionalVentaCategoriaMenu($idDetalleCategoriaMenu, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -615,7 +615,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function grabarDetalleCategoria($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -631,7 +631,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 	}
 	public function listadoDeCategorias()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -642,7 +642,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function ObtenerConfiguracionesCategoriaMenu($id_categoria_menu)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -654,7 +654,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function actualizarConfiguracionCategoriaMenu($idCategoriaMenu, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -666,7 +666,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function ObtenerUltimoIdProducto()
     {
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -681,7 +681,7 @@ if (strlen($this->session->userdata("nombre_usuario")) == 0) { return array(); }
 
 	public function grabarPrecioProducto($data, $idDetalle = null)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
 		

@@ -11,6 +11,7 @@
 		var enviando = false;
 		var propina = 0;
 		var opcionEdicion = null; // {id_producto, indice} mientras el modal de opciones está abierto
+		var mesa = null;         // Venta por mesa: {id_mesa, id_cotizacion, inicio (ms)}; null en venta directa
 
 		// ---------------- utilidades ----------------
 		function fmt(n) {
@@ -88,7 +89,7 @@
 			try { localStorage.setItem(CLAVE_COMANDA, on ? '1' : '0'); } catch (e) {}
 		});
 		function lineasComanda() {
-			return $.map(carro, function (l) {
+			return $.map(pendientesMesa(), function (l) {
 				return {
 					id_producto: l.id_producto, nombre: l.nombre, cantidad: l.cantidad, nota: l.nota || '',
 					agregados: $.map(l.agregados, function (id) { var a = agregado(id); return a ? a.nombre : null; })
@@ -96,15 +97,19 @@
 			});
 		}
 		// Cada destino de impresión (cocina, barra...) imprime en su propia impresora; lo envía el servidor
-		function imprimirComanda(idVenta, lineas, observacion) {
+		function pendientesMesa() {
+			return $.grep(carro, function (l) { return !l.enviada; });
+		}
+		function imprimirComanda(idVenta, lineas, observacion, idMesa, motivoAnulacion) {
 			if (!lineas.length) return;
+			var anulacion = motivoAnulacion !== undefined;
 			$.ajax({
 				url: base + 'imprimirComanda', type: 'POST', dataType: 'json',
-				data: { datos: JSON.stringify({ id_venta: idVenta, lineas: lineas, observacion: observacion || '' }) }
+				data: { datos: JSON.stringify({ id_venta: idVenta, id_mesa: idMesa || 0, lineas: lineas, observacion: observacion || '', anulacion: anulacion, motivo: motivoAnulacion || '' }) }
 			}).done(function (r) {
 				var com = r.comandas || [];
 				$.each(com, function (i, c) {
-					if (c.ok) toastr.success('Comanda enviada a ' + c.destino, '', { timeOut: 2500 });
+					if (c.ok) toastr.success((anulacion ? 'Anulación enviada a ' : 'Comanda enviada a ') + c.destino, '', { timeOut: 2500 });
 					else toastr.error('Comanda de ' + c.destino + ': ' + c.detalle, '', { timeOut: 9000 });
 				});
 			}).fail(function (x) {
@@ -127,6 +132,7 @@
 				}
 				$('#panelApertura').hide();
 				$('#panelCaja').show();
+				cargarMesas();
 				ajustarAltoVenta();
 				$('#estCaja').text('N° ' + resumen.id_caja);
 				$('#estApertura').text(resumen.apertura);
@@ -171,6 +177,7 @@
 				// Re-precio del carro con la lista nueva
 				var quitados = [];
 				carro = $.grep(carro, function (l) {
+					if (l.enviada) return true;   // lo enviado a la mesa conserva su precio
 					var p = producto(l.id_producto);
 					if (!p) { quitados.push(l.nombre); return false; }
 					l.precio = p.precio;
@@ -464,7 +471,7 @@
 			agregados = agregados.slice().sort(function (a, b) { return a - b; });
 			// Solo se suma a una línea existente si tiene exactamente las mismas opciones
 			var l = $.grep(carro, function (x) {
-				return x.id_producto === id && x.nota === nota && x.agregados.join(',') === agregados.join(',');
+				return !x.enviada && x.id_producto === id && x.nota === nota && x.agregados.join(',') === agregados.join(',');
 			})[0];
 			if (pideCantidad(id)) {
 				// Pesables / "pedir cantidad": no se suma 1 a ciegas; se deja la cantidad lista para escribir
@@ -485,6 +492,7 @@
 		function lineasBrutas() {
 			var res = [];
 			$.each(carro, function (i, l) {
+				if (l.enviada) { res.push({ bruto: l.bruto, exento: l.exento }); return; }
 				var p = producto(l.id_producto), exento = !!(p && p.exento);
 				var primero = l.agregados.length ? agregado(l.agregados[0]) : null;
 				res.push({ bruto: Math.round((l.precio + (primero ? primero.valor : 0)) * l.cantidad), exento: exento });
@@ -530,6 +538,19 @@
 			}
 			var unidades = 0;
 			$.each(carro, function (i, l) {
+				if (l.enviada) {
+					unidades += l.cantidad === Math.round(l.cantidad) ? l.cantidad : 1;
+					$t.append('<div class="caja-linea enviada" data-i="' + i + '"><div class="info">'
+						+ '<div class="nombre"><i class="fa fa-lock" title="Ya enviado a la mesa"></i>' + esc(l.nombre) + '</div>'
+						+ (l.agregado ? '<div class="detalle-linea">+ ' + esc(l.agregado) + '</div>' : '')
+						+ (l.nota ? '<div class="detalle-linea"><i>' + esc(l.nota) + '</i></div>' : '')
+						+ '<div class="hora">Enviado ' + esc(l.hora) + '</div></div>'
+						+ '<div class="precio">' + fmt(l.precio) + '</div>'
+						+ '<div class="cantidad">' + fmtCant(l.cantidad) + '</div>'
+						+ '<div class="subtotal">' + fmt(l.bruto) + '</div>'
+						+ '<button class="quitar" title="Anular producto"><i class="fa fa-ban"></i></button></div>');
+					return;
+				}
 				var fraccion = esFraccion(l.id_producto);
 				// Un producto pesado cuenta como 1 ítem, no como 0,35
 				unidades += fraccion ? 1 : l.cantidad;
@@ -570,6 +591,7 @@
 			$('#lblCobrar').text(carro.length ? fmt(t.total) : '');
 			$('#barraTotal').text(fmt(t.total));
 			$('#btnCobrar').prop('disabled', !carro.length || t.subtotal <= 0);
+			$('#btnEnviarMesa').prop('disabled', !pendientesMesa().length);
 		}
 
 		// Enter en la cantidad: la confirma y vuelve al buscador (flujo rápido con balanza / teclado)
@@ -582,7 +604,9 @@
 			if (c > 0) carro[i].cantidad = c; else carro.splice(i, 1);
 			renderCarro();
 		}).on('click', '.quitar', function () {
-			carro.splice($(this).closest('[data-i]').data('i'), 1);
+			var i = $(this).closest('[data-i]').data('i');
+			if (carro[i].enviada) { anularLineaMesa(carro[i]); return; }
+			carro.splice(i, 1);
 			renderCarro();
 		}).on('click', '.mas, .menos', function () {
 			var i = $(this).closest('[data-i]').data('i');
@@ -623,6 +647,8 @@
 
 		function limpiarVenta() {
 			carro = [];
+			mesa = null;
+			actualizarModoMesa();
 			cliente = null;
 			$('#txtCliente').val('');
 			$('#txtDescuento').val(0);
@@ -634,6 +660,7 @@
 		}
 
 		$('#btnLimpiar').on('click', function () {
+			if (mesa) { $('#btnSalirMesa').click(); return; }
 			if (!carro.length) return;
 			swal({ title: '¿Vaciar la venta?', type: 'warning', showCancelButton: true, confirmButtonText: 'Sí, vaciar', cancelButtonText: 'No' },
 				function (ok) { if (ok) limpiarVenta(); });
@@ -790,6 +817,10 @@
 		}
 
 		$('#btnCobrar').on('click', function () {
+			// En una mesa se cobra lo enviado: lo que falte se envía primero
+			if (mesa && pendientesMesa().length) enviarAMesa(true); else abrirPago();
+		});
+		function abrirPago() {
 			var d = documentoActual();
 			if (!d || !d.habilitado) { swal('Atención', 'No hay documentos de venta disponibles (tdocumento.para_venta)', 'warning'); return; }
 			if (d.requiere_cliente && !cliente) {
@@ -805,9 +836,10 @@
 			$('#pagoTotal').text(fmt(t.total));
 			// Propina sugerida (Configuraciones: propina en venta directa / calcular valor de propina)
 			var cfg = catalogo.config;
-			$('#bloquePropina').toggle(cfg.propina);
+			var conPropina = cfg.propina || !!mesa;   // "propina en venta directa" no aplica a las mesas
+			$('#bloquePropina').toggle(conPropina);
 			$('#lblPorPropina').text(cfg.por_propina > 0 ? '(sugerida ' + cfg.por_propina + '%)' : '');
-			propina = cfg.propina && cfg.calcular_propina ? propinaSugerida() : 0;
+			propina = conPropina && (cfg.calcular_propina || mesa) ? propinaSugerida() : 0;
 			$('#chkPropina').prop('checked', propina > 0).prop('disabled', false);
 			$('#txtPropina').val(propina).prop('disabled', propina === 0);
 			// Efectivo primero, cortesías al final; el resto en el orden de la base
@@ -824,7 +856,7 @@
 			renderPagos();
 			elegirFpago(defecto.id_fpago);
 			$('#modalPago').modal('show');
-		});
+		}
 		$('#modalPago').on('shown.bs.modal', function () { $('#montoPago').focus().select(); });
 
 		$('#chkPropina').on('change', function () {
@@ -976,7 +1008,9 @@
 		$('#btnConfirmarPago').on('click', function () {
 			if (enviando) return;
 			var t = totales();
+			var idMesa = mesa ? mesa.id_mesa : 0;
 			var venta = {
+				id_mesa: idMesa,
 				id_tdocumento: Number($('#cboDocumento').val()),
 				id_lprecio: Number($('#cboLista').val()),
 				id_cliente: cliente ? cliente.id_cliente : 0,
@@ -1007,7 +1041,8 @@
 				$('#modalVentaOk').modal('show');
 				if (imprimeTicket()) imprimir(base + 'ticket/' + r.id_venta);
 				// La comanda sale después del ticket para no cruzar los dos diálogos de impresión
-				if (imprimeComanda()) imprimirComanda(r.id_venta, comanda, venta.observacion);
+				// En una mesa la comanda ya salió al enviar el pedido
+				if (imprimeComanda() && !idMesa) imprimirComanda(r.id_venta, comanda, venta.observacion);
 				limpiarVenta();
 				cargarEstado();
 			}, terminar);
@@ -1023,6 +1058,246 @@
 				$a.html('<i class="fa fa-exclamation-triangle"></i> Pendiente de envío al SII: ' + esc(dte.mensaje)
 					+ '<br><small>Reenvíalo desde la pestaña Ventas.</small>').show();
 			}
+		}
+
+		// ---------------- mesas ----------------
+		function fmtTiempo(ms) {
+			var s = Math.max(0, Math.floor(ms / 1000)), d = Math.floor(s / 86400), h = Math.floor(s / 3600) % 24, m = Math.floor(s / 60) % 60;
+			var p = function (n) { return (n < 10 ? '0' : '') + n; };
+			return (d ? d + 'd ' : '') + p(h) + ':' + p(m) + ':' + p(s % 60);
+		}
+		var mesasLista = [], sectoresLista = [], sectorActual = null, editandoPlano = false, arrastre = null;
+		var MESA_W = 130, MESA_H = 112, MESA_GAP = 14, PLANO_PASO = 10;
+		try { var sectorGuardado = localStorage.getItem('cajaWeb.sectorMesas'); if (sectorGuardado !== null) sectorActual = Number(sectorGuardado); } catch (e) {}
+
+		// Sin aviso de carga (global: false): la grilla se refresca sola y no debe bloquear la pantalla
+		function cargarMesas() {
+			return $.ajax({ url: base + 'mesas', dataType: 'json', global: false }).done(function (r) {
+				$('#navMesas').toggle(!!r.habilitado);
+				var ocupadas = $.grep(r.mesas, function (m) { return m.estado === 'ocupada'; }).length;
+				$('#mesasOcupadas').text(ocupadas).toggle(ocupadas > 0);
+				if (editandoPlano) return;   // no pisar lo que se está moviendo
+				mesasLista = r.mesas;
+				sectoresLista = r.sectores || [];
+				renderMesas();
+			});
+		}
+		function mesasDelSector() {
+			return $.grep(mesasLista, function (m) { return m.id_recinto === sectorActual; });
+		}
+		function renderSectores() {
+			var sectores = [], vistos = {};
+			var agregar = function (id, nombre) { vistos[id] = { id: id, nombre: nombre, ocupadas: 0 }; sectores.push(vistos[id]); };
+			$.each(sectoresLista, function (i, x) { agregar(x.id, x.nombre); });
+			$.each(mesasLista, function (i, m) {
+				if (!vistos[m.id_recinto]) agregar(m.id_recinto, m.recinto);
+				if (m.estado === 'ocupada') vistos[m.id_recinto].ocupadas++;
+			});
+			if (!vistos[sectorActual] && sectores.length) sectorActual = sectores[0].id;
+			$('#mesasSectores').html($.map(sectores, function (s) {
+				return '<button type="button" data-id="' + s.id + '" class="' + (s.id === sectorActual ? 'activo' : '') + '"' + (editandoPlano ? ' disabled' : '') + '>' + esc(s.nombre)
+					+ (s.ocupadas ? '<span class="cuenta">' + s.ocupadas + '</span>' : '') + '</button>';
+			}).join(''));
+		}
+		// Sin posición guardada, las mesas se ordenan en filas según el ancho disponible
+		function posicionarPorDefecto(mesas) {
+			var ancho = $('#mesasGrilla').width() || 900, cols = Math.max(1, Math.floor((ancho - MESA_GAP) / (MESA_W + MESA_GAP)));
+			$.each(mesas, function (i, m) {
+				if (m.x !== null && m.y !== null) return;
+				m.x = MESA_GAP + (i % cols) * (MESA_W + MESA_GAP);
+				m.y = MESA_GAP + Math.floor(i / cols) * (MESA_H + MESA_GAP);
+			});
+		}
+		function ajustarAltoPlano(mesas) {
+			var alto = 340;
+			$.each(mesas, function (i, m) { alto = Math.max(alto, m.y + MESA_H + MESA_GAP); });
+			$('#mesasGrilla').css('height', alto + (editandoPlano ? 150 : 0));
+		}
+		function renderMesas() {
+			renderSectores();
+			var $g = $('#mesasGrilla').addClass('mesas-plano').empty(), ahora = Date.now(), lista = mesasDelSector();
+			posicionarPorDefecto(lista);
+			if (!lista.length) $g.append('<div class="mesas-vacio">Este sector aún no tiene mesas. Asígnalas en <a href="<?php echo base_url(); ?>index.php/MesasPorRecinto">Mesas por recinto</a>.</div>');
+			$.each(lista, function (i, m) {
+				var $c = $('<button type="button" class="mesa-card">').addClass(m.estado).toggleClass('actual', !!mesa && mesa.id_mesa === m.id_mesa)
+					.attr('data-id', m.id_mesa).attr('data-estado', m.estado).css({ left: m.x, top: m.y })
+					.append($('<div class="num">').text('Mesa ' + m.id_mesa));
+				if (m.con_pedido) {
+					$c.append($('<div class="total">').text(fmt(m.total)))
+						.append($('<div class="tiempo">').attr('data-inicio', ahora - m.segundos * 1000).text(fmtTiempo(m.segundos * 1000)))
+						.append($('<div class="atiende">').text(m.atiende));
+				} else {
+					$c.append($('<div class="estado">').text(m.estado === 'libre' ? 'Libre' : 'Bloqueada'));
+				}
+				$g.append($c);
+			});
+			ajustarAltoPlano(lista);
+		}
+		$('#mesasSectores').on('click', 'button', function () {
+			sectorActual = Number($(this).attr('data-id'));
+			try { localStorage.setItem('cajaWeb.sectorMesas', sectorActual); } catch (e) {}
+			renderMesas();
+		});
+
+		// Organizar: se arrastran las mesas del sector y se guardan todas juntas
+		function modoPlano(activo) {
+			editandoPlano = activo;
+			$('#btnOrganizarMesas').toggle(!activo);
+			$('#btnCancelarPlano, #btnGuardarPlano').toggle(activo);
+			$('#mesasGrilla').toggleClass('editando', activo);
+			$('#mesasAyuda').text(activo ? 'Arrastra cada mesa a su lugar y presiona Guardar plano.' : 'Toca una mesa libre para tomar el pedido, o una ocupada para agregar productos o cobrar.');
+		}
+		$('#btnOrganizarMesas').on('click', function () { modoPlano(true); renderMesas(); });
+		$('#btnCancelarPlano').on('click', function () { modoPlano(false); cargarMesas(); });
+		$('#lnkMesas').on('hidden.bs.tab', function () { if (editandoPlano) { modoPlano(false); cargarMesas(); } });
+		$('#btnGuardarPlano').on('click', function () {
+			var $b = $(this).prop('disabled', true);
+			var posiciones = $.map(mesasDelSector(), function (m) { return { id_mesa: m.id_mesa, x: m.x, y: m.y }; });
+			postJson('guardarPlanoMesas', { posiciones: posiciones }).done(function () {
+				toastr.success('Plano guardado');
+				modoPlano(false);
+				cargarMesas();
+			}).fail(error).always(function () { $b.prop('disabled', false); });
+		});
+		$('#mesasGrilla').on('pointerdown', '.mesa-card', function (e) {
+			if (!editandoPlano) return;
+			e.preventDefault();
+			var ev = e.originalEvent, c = this.getBoundingClientRect();
+			arrastre = { $c: $(this).addClass('arrastrando'), id: Number($(this).attr('data-id')), dx: ev.clientX - c.left, dy: ev.clientY - c.top };
+		});
+		$(document).on('pointermove', function (e) {
+			if (!arrastre) return;
+			var ev = e.originalEvent, g = $('#mesasGrilla')[0], r = g.getBoundingClientRect();
+			var paso = function (v) { return Math.max(0, Math.round(v / PLANO_PASO) * PLANO_PASO); };
+			var maxX = Math.max(0, g.clientWidth - MESA_W);
+			var x = Math.min(maxX, paso(ev.clientX - r.left + g.scrollLeft - arrastre.dx)), y = paso(ev.clientY - r.top + g.scrollTop - arrastre.dy);
+			arrastre.$c.css({ left: x, top: y });
+			var m = $.grep(mesasLista, function (o) { return o.id_mesa === arrastre.id; })[0];
+			if (m) { m.x = x; m.y = y; }
+		}).on('pointerup pointercancel', function () {
+			if (!arrastre) return;
+			arrastre.$c.removeClass('arrastrando');
+			arrastre = null;
+			ajustarAltoPlano(mesasDelSector());
+		});
+		$('#lnkMesas').on('shown.bs.tab', cargarMesas);
+		setInterval(function () { if ($('#mesasGrilla').is(':visible')) cargarMesas(); }, 20000);
+		setInterval(function () {
+			$('#mesasGrilla .tiempo').each(function () { $(this).text(fmtTiempo(Date.now() - Number($(this).attr('data-inicio')))); });
+			if (mesa && mesa.inicio) $('#bannerMesaTiempo').text(fmtTiempo(Date.now() - mesa.inicio));
+		}, 1000);
+
+		function actualizarModoMesa() {
+			$('#bannerMesa').toggle(!!mesa);
+			$('#btnEnviarMesa').toggle(!!mesa);
+			$('#cboLista').prop('disabled', !!(mesa && mesa.id_cotizacion));
+			if (!mesa) return;
+			$('#bannerMesaNum').text(mesa.id_mesa);
+			$('#btnAnularPedido').toggle(!!mesa.id_cotizacion);
+			if (!mesa.inicio) $('#bannerMesaTiempo').text('Sin enviar');
+			ajustarAltoVenta();
+		}
+		// Lo enviado viene del servidor; lo que aún no se envía queda en el carro
+		function aplicarDetalleMesa(d) {
+			mesa = { id_mesa: d.id_mesa, id_cotizacion: d.id_cotizacion, inicio: d.id_cotizacion ? Date.now() - d.segundos * 1000 : 0 };
+			carro = $.map(d.lineas, function (l) {
+				return { enviada: true, id_detalle: l.id_detalle, id_producto: l.id_producto, nombre: l.nombre, precio: l.unitario, bruto: l.bruto,
+					cantidad: l.cantidad, agregados: [], agregado: l.agregado, nota: l.nota, exento: l.exento, hora: l.hora };
+			}).concat(pendientesMesa());
+			actualizarModoMesa();
+			renderCarro();
+		}
+		function abrirMesa(id) {
+			get('detalleMesa', { id_mesa: id }).done(function (d) {
+				aplicarDetalleMesa(d);
+				$('#lnkVenta').tab('show');
+				if (d.id_lprecio && d.id_lprecio !== Number($('#cboLista').val())) cargarCatalogo(d.id_lprecio);
+				$('#buscarProducto').focus();
+			});
+		}
+		$('#mesasGrilla').on('click', '.mesa-card', function () {
+			if (editandoPlano) return;
+			var id = Number($(this).attr('data-id'));
+			if ($(this).attr('data-estado') === 'bloqueada') { ofrecerLiberar(id); return; }
+			if (mesa && mesa.id_mesa === id) { $('#lnkVenta').tab('show'); return; }
+			if (mesa && pendientesMesa().length) {
+				swal({ title: 'Hay productos sin enviar', text: 'Se perderán los que no enviaste a la mesa ' + mesa.id_mesa + '.', type: 'warning', showCancelButton: true, confirmButtonText: 'Continuar', cancelButtonText: 'Cancelar' },
+					function (ok) { if (ok) { carro = []; abrirMesa(id); } });
+				return;
+			}
+			// Una venta directa en curso se lleva a la mesa elegida (sus productos quedan sin enviar)
+			if (mesa) carro = [];
+			abrirMesa(id);
+		});
+		$('#btnSalirMesa').on('click', function () {
+			var salir = function () { limpiarVenta(); $('#lnkMesas').tab('show'); };
+			if (!pendientesMesa().length) { salir(); return; }
+			swal({ title: '¿Salir sin enviar?', text: 'Se perderán los productos que no enviaste a la mesa.', type: 'warning', showCancelButton: true, confirmButtonText: 'Salir', cancelButtonText: 'Quedarme' },
+				function (ok) { if (ok) salir(); });
+		});
+		function postJson(accion, datos) {
+			return $.ajax({ url: base + accion, type: 'POST', contentType: 'application/json', data: JSON.stringify(datos), dataType: 'json' });
+		}
+		$('#btnEnviarMesa').on('click', function () { enviarAMesa(false); });
+		function enviarAMesa(luegoCobrar) {
+			if (enviando || !mesa) return;
+			var comanda = lineasComanda(), idMesa = mesa.id_mesa;
+			var detalle = $.map(pendientesMesa(), function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota }; });
+			enviando = true;
+			$('#btnEnviarMesa, #btnCobrar').prop('disabled', true);
+			postJson('enviarMesa', { id_mesa: idMesa, id_lprecio: Number($('#cboLista').val()), detalle: detalle }).done(function (r) {
+				if (imprimeComanda()) imprimirComanda(0, comanda, '', idMesa);
+				carro = [];
+				aplicarDetalleMesa(r.detalle);
+				cargarMesas();
+				toastr.success('Pedido enviado a la mesa ' + idMesa);
+				enviando = false;
+				if (luegoCobrar) { renderCarro(); abrirPago(); return; }
+				limpiarVenta();
+				$('#lnkMesas').tab('show');
+			}).fail(function (x) {
+				error(x);
+				enviando = false;
+				renderCarro();
+			});
+		}
+		function anularLineaMesa(l) {
+			swal({ title: 'Anular ' + l.nombre, text: 'Ya fue enviado a la mesa. Indica el motivo:', type: 'input', showCancelButton: true, confirmButtonColor: '#C9372C', confirmButtonText: 'Anular', cancelButtonText: 'Volver', inputPlaceholder: 'Motivo' }, function (motivo) {
+				if (motivo === false) return;
+				if (!$.trim(motivo)) { toastr.warning('Indica el motivo de la anulación'); return; }
+				var idMesa = mesa.id_mesa;
+				enviarConAutorizacion(function (aut) {
+					return postJson('anularLineaMesa', { id_mesa: idMesa, id_detalle: l.id_detalle, motivo: motivo, autorizacion: aut });
+				}, function (r) {
+					cargarMesas();
+					imprimirComanda(0, r.anuladas, '', idMesa, $.trim(motivo));
+					if (r.liberada) { toastr.info('La mesa ' + idMesa + ' quedó libre'); limpiarVenta(); $('#lnkMesas').tab('show'); return; }
+					aplicarDetalleMesa(r.detalle);
+				});
+			});
+		}
+		$('#btnAnularPedido').on('click', function () {
+			var idMesa = mesa.id_mesa;
+			swal({ title: 'Anular pedido de la mesa ' + idMesa, text: 'Se anulan todos sus productos y la mesa queda libre. Indica el motivo:', type: 'input', showCancelButton: true, confirmButtonColor: '#C9372C', confirmButtonText: 'Anular y liberar', cancelButtonText: 'Volver', inputPlaceholder: 'Motivo' }, function (motivo) {
+				if (motivo === false) return;
+				if (!$.trim(motivo)) { toastr.warning('Indica el motivo de la anulación'); return; }
+				enviarConAutorizacion(function (aut) {
+					return postJson('anularPedidoMesa', { id_mesa: idMesa, motivo: motivo, autorizacion: aut });
+				}, function (r) {
+					imprimirComanda(0, r.anuladas, '', idMesa, $.trim(motivo));
+					toastr.success('Pedido anulado: la mesa ' + idMesa + ' quedó libre');
+					limpiarVenta();
+					cargarMesas();
+					$('#lnkMesas').tab('show');
+				});
+			});
+		});
+		function ofrecerLiberar(id) {
+			swal({ title: 'Mesa ' + id + ' bloqueada', text: 'Está marcada como ocupada o en uso, pero no tiene un pedido que se pueda abrir aquí. ¿Liberarla?', type: 'warning', showCancelButton: true, confirmButtonColor: '#C9372C', confirmButtonText: 'Liberar', cancelButtonText: 'Cancelar' }, function (ok) {
+				if (!ok) return;
+				enviarConAutorizacion(function (aut) { return postJson('liberarMesa', { id_mesa: id, autorizacion: aut }); },
+					function () { toastr.success('Mesa ' + id + ' liberada'); cargarMesas(); });
+			});
 		}
 
 		// ---------------- ventas de la caja ----------------

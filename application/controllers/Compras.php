@@ -11,7 +11,7 @@ class Compras extends CI_Controller
 
   public function index()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     $data = array(
@@ -27,7 +27,7 @@ class Compras extends CI_Controller
 
   public function grabarCompra()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) > 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
       $d = $this->input->post('el_json');
       
       // Validar datos recibidos
@@ -86,7 +86,7 @@ class Compras extends CI_Controller
 
   public function grabarDetalleCompra()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) > 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
       $d = $this->input->post('detalle');
       $idCompra = $this->input->post('id_compra');
       
@@ -142,7 +142,7 @@ class Compras extends CI_Controller
 
   public function ListadoTipoDeDocumento()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     echo json_encode($this->Mcompra->ListadoTipoDeDocumento());
@@ -150,7 +150,7 @@ class Compras extends CI_Controller
 
   public function verificarSiExisteLaCompra()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) > 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
       $d = $this->input->post('midata');
       
       if (empty($d)) {

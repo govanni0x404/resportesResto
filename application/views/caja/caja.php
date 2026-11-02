@@ -80,6 +80,47 @@
 
 	/* Líneas de la venta */
 	.caja-carro { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+	/* Mesas */
+	.caja-mesas { padding: 16px 18px; }
+	.mesas-leyenda { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 14px; font-size: 13px; }
+	.mesas-leyenda i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+	.mesas-leyenda i.libre { background: #E4EFE3; border: 1px solid #5E8C5A; }
+	.mesas-leyenda i.ocupada { background: var(--t-primario, #B4432E); }
+	.mesas-leyenda i.bloqueada { background: #D9D2C9; }
+	.mesas-barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+	.mesas-sectores { display: flex; flex-wrap: wrap; gap: 6px; }
+	.mesas-sectores button { padding: 8px 16px; border: 1px solid var(--t-borde, #EADFD2); border-radius: 20px; background: #fff; color: var(--t-texto, #3A2A22); font-weight: 600; font-size: 14px; }
+	.mesas-sectores button.activo { background: var(--t-primario, #B4432E); border-color: var(--t-primario, #B4432E); color: #fff; }
+	.mesas-sectores button:disabled { opacity: .55; }
+	.mesas-sectores .cuenta { margin-left: 6px; padding: 0 7px; border-radius: 10px; background: rgba(58, 42, 34, .12); font-size: 12px; }
+	.mesas-sectores button.activo .cuenta { background: rgba(255, 255, 255, .25); }
+	.mesas-herramientas { display: flex; gap: 6px; }
+	/* Fondo: hexágonos tenues en verde, distinto de los puntos del modo Organizar */
+	.mesas-plano { position: relative; min-height: 340px; overflow: auto; border: 1px solid var(--t-borde, #EADFD2); border-radius: 12px;
+		background-color: #F4F6EF;
+		background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='98' viewBox='0 0 56 98' fill='none' stroke='%232E5A3C' stroke-opacity='.10'><path d='M28 0L56 16V49L28 65L0 49V16ZM28 65V98M0 16V0M56 16V0'/></svg>"); }
+	.mesas-plano.editando { border: 2px dashed var(--t-primario, #B4432E); background: var(--t-fondo-alt, #FBF8F3) radial-gradient(rgba(58, 42, 34, .2) 1px, transparent 1px) 0 0 / 20px 20px; }
+	.mesas-plano.editando .mesa-card { cursor: move; touch-action: none; user-select: none; }
+	.mesas-plano .mesa-card.arrastrando { z-index: 5; opacity: .9; box-shadow: 0 10px 22px rgba(58, 42, 34, .3); }
+	.mesa-card { position: absolute; width: 130px; height: 112px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 8px; border-radius: 16px; border: 1px solid #5E8C5A; background: #E4EFE3; color: #2F4F2C; cursor: pointer; box-shadow: 0 2px 6px rgba(58, 42, 34, .12); }
+	.mesa-card:hover, .mesa-card:focus { box-shadow: 0 6px 14px rgba(58, 42, 34, .2); outline: none; }
+	.mesa-card .num { font-size: 20px; font-weight: 800; line-height: 1.1; }
+	.mesa-card .estado, .mesa-card .atiende { font-size: 12px; }
+	.mesa-card .atiende { opacity: .85; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.mesa-card .total { font-size: 15px; font-weight: 700; }
+	.mesa-card .tiempo { font-size: 12px; font-variant-numeric: tabular-nums; }
+	.mesa-card.ocupada { background: var(--t-primario, #B4432E); border-color: var(--t-primario, #B4432E); color: #fff; }
+	.mesa-card.bloqueada { background: #EDE8E1; border-color: #D9D2C9; color: #7A6A5E; }
+	.mesas-vacio { padding: 70px 20px; text-align: center; color: var(--t-texto-suave, #7A6A5E); }
+	html body #mesasOcupadas { background: var(--t-primario, #B4432E) !important; border-color: var(--t-primario, #B4432E) !important; color: #fff !important; }
+	.mesa-card.actual { box-shadow: 0 0 0 3px var(--t-acento, #D9A441); }
+	.caja-banner-mesa { display: flex; align-items: center; gap: 14px; padding: 10px 18px; background: var(--t-primario, #B4432E); color: #fff; }
+	.caja-banner-mesa .nombre { font-size: 17px; font-weight: 700; }
+	.caja-banner-mesa .tiempo { font-variant-numeric: tabular-nums; margin-right: auto; }
+	.caja-linea.enviada { background: var(--t-fondo-alt, #FBF8F3); }
+	.caja-linea.enviada .nombre .fa { font-size: 12px; margin-right: 4px; color: var(--t-texto-tenue, #A89A8C); }
+	.caja-linea.enviada .cantidad { font-size: 17px; font-weight: 700; color: var(--t-texto-fuerte, #2A1D17); }
+	.caja-linea.enviada .hora { font-size: 12px; color: var(--t-texto-tenue, #A89A8C); }
 	.caja-linea-cab { display: flex; align-items: center; gap: 10px; padding: 10px 18px; background: var(--t-fondo-alt, #FBF8F3); border-bottom: 1px solid var(--t-borde-suave, #F0E8DD);
 		font-size: 13px; font-weight: 700; color: var(--t-texto-suave, #7A6A5E); text-transform: uppercase; letter-spacing: .3px; }
 	.caja-lineas { flex: 1; min-height: 160px; max-height: 45vh; overflow-y: auto; }
@@ -134,6 +175,7 @@
 	.caja-acciones { display: flex; gap: 10px; }
 	.caja-acciones #btnLimpiar { flex: 0 0 54px; border-radius: 8px; color: var(--t-texto-tenue, #A89A8C); }
 	.caja-acciones #btnLimpiar { height: 56px; }
+	.caja-acciones #btnEnviarMesa { flex: 1; font-size: 18px; font-weight: 600; border-radius: 8px; height: 56px; }
 	.caja-acciones #btnCobrar { flex: 1; font-size: 20px; font-weight: 600; padding: 13px; border-radius: 8px; height: 56px; }
 	.caja-num { text-align: right; white-space: nowrap; }
 
@@ -493,6 +535,7 @@
 			<div class="caja-barra">
 				<ul class="nav nav-tabs caja-tabs">
 					<li class="active"><a href="#tabVenta" data-toggle="tab" id="lnkVenta"><i class="pe-7s-cart"></i> Venta</a></li>
+					<li id="navMesas" style="display:none"><a href="#tabMesas" data-toggle="tab" id="lnkMesas"><i class="fa fa-th"></i> Mesas <span class="badge" id="mesasOcupadas" style="display:none">0</span></a></li>
 					<li><a href="#tabVentas" data-toggle="tab" id="lnkVentas"><i class="pe-7s-note2"></i> Ventas</a></li>
 					<li><a href="#tabMovimientos" data-toggle="tab" id="lnkMovimientos"><i class="pe-7s-cash"></i> Ingresos / Retiros</a></li>
 					<li><a href="#tabCierre" data-toggle="tab" id="lnkCierre"><i class="pe-7s-lock"></i> Cierre</a></li>
@@ -521,6 +564,12 @@
 							</div>
 
 							<div class="caja-tarjeta caja-carro">
+								<div class="caja-banner-mesa" id="bannerMesa" style="display:none">
+									<span class="nombre"><i class="fa fa-th"></i> Mesa <b id="bannerMesaNum"></b></span>
+									<span class="tiempo"><i class="fa fa-clock-o"></i> <span id="bannerMesaTiempo">Sin enviar</span></span>
+									<button type="button" class="btn btn-danger btn-sm" id="btnAnularPedido" style="display:none"><i class="fa fa-ban"></i> Anular pedido y liberar</button>
+									<button type="button" class="btn btn-default btn-sm" id="btnSalirMesa"><i class="fa fa-arrow-left"></i> Volver a mesas</button>
+								</div>
 								<div class="caja-linea-cab">
 									<span class="info">Producto <span class="badge" id="cantItems">0</span></span>
 									<span class="precio">Precio</span>
@@ -572,10 +621,32 @@
 								<div class="fila" id="filaExento" style="display:none"><span>Exento</span><span id="lblExento">$0</span></div>
 								<div class="caja-acciones">
 									<button class="btn btn-default btn-lg" id="btnLimpiar" title="Vaciar venta"><i class="fa fa-trash"></i></button>
+									<button class="btn btn-primary btn-lg" id="btnEnviarMesa" style="display:none" disabled><i class="fa fa-paper-plane"></i> Enviar a mesa</button>
 									<button class="btn btn-success btn-lg" id="btnCobrar" disabled><i class="fa fa-money"></i> Cobrar <span id="lblCobrar"></span></button>
 								</div>
 							</div>
 						</div>
+					</div>
+				</div>
+
+				<!-- ===================== MESAS ===================== -->
+				<div class="tab-pane fade" id="tabMesas">
+					<div class="caja-tarjeta caja-mesas">
+						<div class="mesas-barra">
+							<div class="mesas-sectores" id="mesasSectores"></div>
+							<div class="mesas-herramientas">
+								<button type="button" class="btn btn-default btn-sm" id="btnOrganizarMesas"><i class="fa fa-arrows"></i> Organizar mesas</button>
+								<button type="button" class="btn btn-default btn-sm" id="btnCancelarPlano" style="display:none">Cancelar</button>
+								<button type="button" class="btn btn-success btn-sm" id="btnGuardarPlano" style="display:none"><i class="fa fa-check"></i> Guardar plano</button>
+							</div>
+						</div>
+						<div class="mesas-leyenda">
+							<span><i class="libre"></i> Libre</span>
+							<span><i class="ocupada"></i> Ocupada</span>
+							<span><i class="bloqueada"></i> Bloqueada</span>
+							<span class="text-muted" id="mesasAyuda">Toca una mesa libre para tomar el pedido, o una ocupada para agregar productos o cobrar.</span>
+						</div>
+						<div id="mesasGrilla"></div>
 					</div>
 				</div>
 

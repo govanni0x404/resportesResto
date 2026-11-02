@@ -12,7 +12,7 @@ class ListaDePrecios extends CI_Controller
     public function index()
     {
 
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $data = array(
@@ -27,7 +27,7 @@ class ListaDePrecios extends CI_Controller
 
     public function ListadoListasDePrecios()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         echo json_encode($this->MlistaDePrecios->ListadoListasDePrecios());
@@ -35,7 +35,7 @@ class ListaDePrecios extends CI_Controller
 
     public function ListadoDeFamilias()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         echo json_encode($this->MlistaDePrecios->ListadoDeFamilias());
@@ -43,7 +43,7 @@ class ListaDePrecios extends CI_Controller
 
     public function InformeListaDePrecios()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $id_lprecio = $this->input->post('id_lprecio');
@@ -53,7 +53,7 @@ class ListaDePrecios extends CI_Controller
 
     public function grabarNuevaListaDePrecios()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $d = $this->input->post('prod');
@@ -67,7 +67,7 @@ class ListaDePrecios extends CI_Controller
 
     public function obtenerListayPreciosDeVenta()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $idProducto = $this->input->post('id_producto');
@@ -76,7 +76,7 @@ class ListaDePrecios extends CI_Controller
 
     public function grabarPrecios()
     { // grabar precios de las distitntas listas
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $d = $this->input->post('detalle');

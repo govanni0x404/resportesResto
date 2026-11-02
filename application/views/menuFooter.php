@@ -76,6 +76,13 @@
 <script src="<?php echo base_url() ?>/assets/redirect/jquery.redirect.js"></script>
 <!-- Sweet Alert -->
 <script src="<?php echo base_url() ?>assets/plugins/sweetalert/sweetalert.min.js"></script>
+<script>
+  // Confirmar usa el color del tema (SweetAlert traía celeste); las acciones destructivas pasan su propio confirmButtonColor
+  (function () {
+    var color = getComputedStyle(document.documentElement).getPropertyValue('--t-primario').trim();
+    if (window.swal && swal.setDefaults && /^#[0-9a-f]{6}$/i.test(color)) swal.setDefaults({ confirmButtonColor: color });
+  })();
+</script>
 
 <!-- End Theme label Script
         =====================================================================-->
@@ -209,6 +216,10 @@
     var $sub = $nav.find('.dropdown-menu a[href*="/index.php/"]').filter(function(){ return destino(this) === actual; }).first();
     $sub.parents('li').addClass('t-actual');
   })();
+
+  // menuTop abre un div más de los que cierra este archivo, por lo que el pie quedaba dentro de .content-wrapper
+  // (con su margen lateral duplicado). Se deja al final de .wrapper, donde theme.css lo pega al borde inferior.
+  $(function(){ $('.main-footer').appendTo('.wrapper.animsition'); });
 
   // Algunas secciones (p. ej. Compras) cargan su vista después de menuFooter: su contenido quedaba fuera de
   // .content-wrapper, arriba del pie y debajo de la barra lateral. Se mueve al área de contenido antes de que

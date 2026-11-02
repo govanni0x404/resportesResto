@@ -11,7 +11,7 @@ class PrivilegiosUsuario extends CI_Controller
 
     public function index()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -28,7 +28,7 @@ class PrivilegiosUsuario extends CI_Controller
 
     public function ListadoDeRoles()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         echo json_encode($this->MprivilegiosUsuario->ListadoDeRoles());
@@ -36,7 +36,7 @@ class PrivilegiosUsuario extends CI_Controller
 
     public function ListarPrivilegiosPorRol()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         $id_rol = $this->input->post('id_rol');
@@ -45,7 +45,7 @@ class PrivilegiosUsuario extends CI_Controller
 
     public function actualizarPrivilegio()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -59,7 +59,7 @@ class PrivilegiosUsuario extends CI_Controller
 
     public function HabilitarTodosLosPrivilegios()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         $id_rol = $this->input->post('id_rol');
@@ -68,7 +68,7 @@ class PrivilegiosUsuario extends CI_Controller
 
     public function BloquearTodosLosPrivilegios()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         $id_rol = $this->input->post('id_rol');

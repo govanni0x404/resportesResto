@@ -10,7 +10,7 @@ class MdetalleOperaciones extends CI_Model
 
     public function resumenDeOperaciones($desde, $hasta, $idFpago, $idUsuario)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -72,7 +72,7 @@ class MdetalleOperaciones extends CI_Model
 
     public function ResumenDetalleOperaciones($id_venta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -108,7 +108,7 @@ class MdetalleOperaciones extends CI_Model
 
     public function ListarFormasDePago()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -120,7 +120,7 @@ class MdetalleOperaciones extends CI_Model
     }
     public function ListarUsuarios()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -133,7 +133,7 @@ class MdetalleOperaciones extends CI_Model
 
     public function DetalleFormaDePagoVenta($id_venta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -149,7 +149,7 @@ class MdetalleOperaciones extends CI_Model
 
     public function actualizarFormaDePagoVenta($id, $data)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);

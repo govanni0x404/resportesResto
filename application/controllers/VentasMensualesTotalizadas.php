@@ -11,7 +11,7 @@ class VentasMensualesTotalizadas extends CI_Controller
 
     public function index()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $data = array(
@@ -26,7 +26,7 @@ class VentasMensualesTotalizadas extends CI_Controller
 
     public function ventasMensualesTotalizadas()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $desde = $this->input->post('desde');
@@ -36,7 +36,7 @@ class VentasMensualesTotalizadas extends CI_Controller
 
     public function ventasMensualesTotalizadasPie()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $desde = $this->input->post('desde');
@@ -46,7 +46,7 @@ class VentasMensualesTotalizadas extends CI_Controller
 
     public function ventasMensualesTotalizadasTopDiezDiasMasVentas()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $desde = $this->input->post('desde');
@@ -56,7 +56,7 @@ class VentasMensualesTotalizadas extends CI_Controller
 
     public function ventasMensualesTotalizadasTopDiezDiasMenosVentas()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $desde = $this->input->post('desde');
@@ -66,7 +66,7 @@ class VentasMensualesTotalizadas extends CI_Controller
 
     public function ResumenVentasDelDia()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $ventas_del_dia = $this->input->post('ventas_del_dia');

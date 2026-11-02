@@ -11,7 +11,7 @@ class Produccion extends CI_Controller
 
     public function listadoProducciones()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -21,7 +21,7 @@ class Produccion extends CI_Controller
 
     public function grabarProduccion()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -163,7 +163,7 @@ class Produccion extends CI_Controller
 
     public function obtenerStockActual()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -177,7 +177,7 @@ class Produccion extends CI_Controller
 
     public function obtenerCostoPPP()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
@@ -190,7 +190,7 @@ class Produccion extends CI_Controller
 
     public function obtenerDatosInsumoCompleto()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         

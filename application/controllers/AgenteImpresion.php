@@ -121,7 +121,7 @@ class AgenteImpresion extends CI_Controller
 
 	private function sesion($soloPost = false)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			if ($soloPost) return $this->terminar(401, 'Sesión expirada, vuelve a ingresar');
 			redirect(base_url());
 		}

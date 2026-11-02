@@ -9,7 +9,7 @@ class MsalidaBodega extends CI_Model
   }
   public function obtenerStockActualPorBodega($idInsumo,$idBodega)
   {
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -24,7 +24,7 @@ class MsalidaBodega extends CI_Model
   
   public function grabarSalidaBodega($data)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -35,7 +35,7 @@ class MsalidaBodega extends CI_Model
 
   public function grabarDetalleSalidaBodega($data, $dataUpdateStock)
   {
-      if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+      if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
           redirect(base_url());
       }
       $this->load->helper('tenant'); $this->db = get_tenant_db($this);

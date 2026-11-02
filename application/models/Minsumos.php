@@ -10,7 +10,7 @@ class Minsumos extends CI_Model
 
 	public function listadoInsumos()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -61,7 +61,7 @@ class Minsumos extends CI_Model
 
 	public function llenarCboGrupoInsumo()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -73,7 +73,7 @@ class Minsumos extends CI_Model
 
 	public function llenarCboImpto()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -91,7 +91,7 @@ class Minsumos extends CI_Model
 
 	public function llenarCboUnMedida()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -103,7 +103,7 @@ class Minsumos extends CI_Model
 
 	public function getSiguienteInsumo()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -114,7 +114,7 @@ class Minsumos extends CI_Model
 
 	public function llenarCboRecetaProduccion($id)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -126,7 +126,7 @@ class Minsumos extends CI_Model
 
 	public function grabarInsumo($id, $data)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -144,7 +144,7 @@ class Minsumos extends CI_Model
 
 	public function buscarInsumo($cbarra)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -154,7 +154,7 @@ class Minsumos extends CI_Model
 
 	public function listadoStockInsumo($id)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -190,7 +190,7 @@ class Minsumos extends CI_Model
 
 	public function listadoHistoricoCompras($id)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -231,7 +231,7 @@ class Minsumos extends CI_Model
 
 	public function listadoInsumosReceta($id)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -267,7 +267,7 @@ class Minsumos extends CI_Model
 
 	public function listadoInsumoProduccion($id)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -305,7 +305,7 @@ class Minsumos extends CI_Model
 
 	public function listadoRecetas($id)
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -341,7 +341,7 @@ class Minsumos extends CI_Model
 
 	public function ListarInsumos()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
 
@@ -354,7 +354,7 @@ class Minsumos extends CI_Model
 
   public function ObtenerDatosInsumos($id)
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
 
@@ -367,7 +367,7 @@ class Minsumos extends CI_Model
 
     public function obtenerUnidadMedidaPorId($id)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); 
         }
         

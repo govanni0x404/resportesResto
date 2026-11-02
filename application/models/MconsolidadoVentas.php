@@ -10,7 +10,7 @@ class MconsolidadoVentas extends CI_Model
 
     public function ResumenConsolidadoVentas($desde, $hasta)
     {
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 
@@ -36,7 +36,7 @@ class MconsolidadoVentas extends CI_Model
 
     public function MontoTotalventas()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = " SELECT round(sum(v.total)) as monto_total_ventas from venta v";
@@ -47,7 +47,7 @@ class MconsolidadoVentas extends CI_Model
 
     public function ResumenVentasPorFamilia($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -79,7 +79,7 @@ class MconsolidadoVentas extends CI_Model
 
     public function ResumenVentasPorCanal($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -108,7 +108,7 @@ class MconsolidadoVentas extends CI_Model
 
     public function datosEmpresa()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT * from empresa";
@@ -118,7 +118,7 @@ class MconsolidadoVentas extends CI_Model
 
     public function datosVentasPorFamilia($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -149,7 +149,7 @@ class MconsolidadoVentas extends CI_Model
 
     public function datosCanalDeVentas($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -178,7 +178,7 @@ class MconsolidadoVentas extends CI_Model
 
     public function detalleConsolidado($desde, $hasta)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
 
@@ -203,7 +203,7 @@ class MconsolidadoVentas extends CI_Model
 
     public function totalSistema()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);

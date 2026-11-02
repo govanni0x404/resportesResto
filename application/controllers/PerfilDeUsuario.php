@@ -12,7 +12,7 @@ class PerfilDeUsuario extends CI_Controller
 	public function index()
 	{
 
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		$data = array(
@@ -27,7 +27,7 @@ class PerfilDeUsuario extends CI_Controller
 
 	public function obtenerDatosDelUsuario()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		//$id_usuario = $this->input->post('id_usuario');
@@ -37,7 +37,7 @@ class PerfilDeUsuario extends CI_Controller
 
 	public function ActualizarNombreYPasswordDeUsuarioLocal()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) > 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
 			$d = $this->input->post('prod');
 			$id_usuario = $this->session->userdata('id_usuario');
 			$miData = array(
@@ -51,7 +51,7 @@ class PerfilDeUsuario extends CI_Controller
 
 	public function obtenerCorreoAccesoWebIntranet()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
 		//$id_usuario = $this->input->post('id_usuario');
@@ -62,7 +62,7 @@ class PerfilDeUsuario extends CI_Controller
 
 	public function ActualizarNombreYPasswordDeUsuarioIntranet()
 	{
-		if (strlen($this->session->userdata('nombre_usuario')) > 0) {
+		if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
 			$d = $this->input->post('prodIntranet');
 			$id_usuario_cliente = $this->session->userdata('id_usuario');
 			$id_cliente = $this->session->userdata('id_cliente');

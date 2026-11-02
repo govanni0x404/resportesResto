@@ -10,7 +10,7 @@ class MlistaDePrecios extends CI_Model
 
     public function verificarColumnaExiste($tabla, $columna)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
 
@@ -31,7 +31,7 @@ class MlistaDePrecios extends CI_Model
 
     public function ListadoListasDePrecios()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -42,7 +42,7 @@ class MlistaDePrecios extends CI_Model
 
     public function ListadoDeFamilias()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -53,7 +53,7 @@ class MlistaDePrecios extends CI_Model
 
     public function InformeListaDePrecios($id_lprecio, $id_familia)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -115,7 +115,7 @@ class MlistaDePrecios extends CI_Model
 
     public function grabarNuevaListaDePrecios($id, $data)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -133,7 +133,7 @@ class MlistaDePrecios extends CI_Model
     public function obtenerListayPreciosDeVenta($idProducto)
     {
 
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -144,7 +144,7 @@ class MlistaDePrecios extends CI_Model
 
     public function grabarPrecios($idDetalleLprecio, $data)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);

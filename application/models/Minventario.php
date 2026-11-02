@@ -10,7 +10,7 @@ class Minventario extends CI_Model {
 
     public function get_inventarios($id_bodega = null)
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
 
@@ -40,7 +40,7 @@ class Minventario extends CI_Model {
 
     public function get_bodegas()
     {
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
 

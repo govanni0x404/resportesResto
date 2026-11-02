@@ -40,7 +40,7 @@ class Configuraciones extends CI_Controller {
      */
     public function obtenerFolios() {
         header('Content-Type: application/json');
-        if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             http_response_code(401);
             echo json_encode(array('ok' => false, 'mensaje' => 'Sesión expirada'));
             return;

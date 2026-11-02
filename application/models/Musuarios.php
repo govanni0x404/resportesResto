@@ -10,7 +10,7 @@ class Musuarios extends CI_Model
 
   public function ListadoDeUsuarios()
   {
-    if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -59,7 +59,7 @@ class Musuarios extends CI_Model
 
   public function grabarNuevoUsuario($id, $data)
   {
-      if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+      if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
           redirect(base_url());
       }
 
@@ -100,7 +100,7 @@ class Musuarios extends CI_Model
 
   public function editarUsuario($id, $data)
   {
-      if (strlen($this->session->userdata('nombre_usuario')) == 0) {
+      if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
           redirect(base_url());
       }
       
