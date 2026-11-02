@@ -50,7 +50,7 @@ class MmensajePorProducto extends CI_Model
         if ($id) {
             $this->db->where('id_mensaje_producto', $id);
             $this->db->update('mensaje_producto', $data);
-            $consulta = $this->db->query("select " . $id . " as id_mensaje_producto");
+            $consulta = $this->db->query("select " . (int)$id . " as id_mensaje_producto");
         } else {
             $this->db->insert('mensaje_producto', $data);
             $consulta = $this->db->query("SELECT CURRVAL('mensaje_producto_id_mensaje_producto_seq'::regclass) as id_mensaje_producto");

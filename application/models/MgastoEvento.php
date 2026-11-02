@@ -46,7 +46,7 @@ class MgastoEvento extends CI_Model
     if ($id) {
       $this->db->where('id_gasto_evento', $id);
       $this->db->update('gasto_evento', $data);
-      $consulta = $this->db->query("select " . $id . " as id_gasto_evento");
+      $consulta = $this->db->query("select " . (int)$id . " as id_gasto_evento");
     } else {
       $this->db->insert('gasto_evento', $data);
       $consulta = $this->db->query("SELECT CURRVAL('gasto_evento_id_gasto_evento_seq'::regclass) as id_gasto_evento");

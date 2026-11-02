@@ -59,7 +59,7 @@ class Magregados extends CI_Model
 			// Actualizar existente por id_agregado
 			$this->db->where('id_agregado', $id);
 			$this->db->update('agregados', $data);
-			$consulta = $this->db->query("SELECT " . $id . " as id_agregado");
+			$consulta = $this->db->query("SELECT " . (int)$id . " as id_agregado");
 		} else {
 			// Verificar si ya existe un agregado con la misma llave única
 			$this->db->where([

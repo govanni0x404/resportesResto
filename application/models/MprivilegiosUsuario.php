@@ -39,7 +39,7 @@ class MprivilegiosUsuario extends CI_Model
     $q = "SELECT ps.id_psistema, ps.nombre_psistema, ps.nombre_vb,
                  pu.id_pusuario, pu.autoriza, pu.id_rol
           FROM psistema ps
-          LEFT JOIN pusuario pu ON ps.id_psistema = pu.id_psistema AND pu.id_rol = " . $id_rol . "
+          LEFT JOIN pusuario pu ON ps.id_psistema = pu.id_psistema AND pu.id_rol = " . (int)$id_rol . "
           WHERE ps.vigente = true
           ORDER BY ps.nombre_vb ASC";
     
@@ -108,18 +108,18 @@ class MprivilegiosUsuario extends CI_Model
     try {
       // Primero crear los registros que no existen
       $q_insert = "INSERT INTO pusuario (id_rol, id_psistema, autoriza)
-                   SELECT " . $id_rol . ", ps.id_psistema, true
+                   SELECT " . (int)$id_rol . ", ps.id_psistema, true
                    FROM psistema ps
                    WHERE ps.vigente = true
                    AND NOT EXISTS (
                        SELECT 1 FROM pusuario pu 
-                       WHERE pu.id_rol = " . $id_rol . " 
+                       WHERE pu.id_rol = " . (int)$id_rol . " 
                        AND pu.id_psistema = ps.id_psistema
                    )";
       $this->db->query($q_insert);
       
       // Luego actualizar todos a true
-      $q_update = "UPDATE pusuario SET autoriza = true WHERE id_rol = " . $id_rol;
+      $q_update = "UPDATE pusuario SET autoriza = true WHERE id_rol = " . (int)$id_rol;
       $this->db->query($q_update);
       
       error_log('Todos los privilegios habilitados para rol: ' . $id_rol);
@@ -138,7 +138,7 @@ class MprivilegiosUsuario extends CI_Model
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     
     try {
-      $q = "UPDATE pusuario SET autoriza = false WHERE id_rol = " . $id_rol;
+      $q = "UPDATE pusuario SET autoriza = false WHERE id_rol = " . (int)$id_rol;
       $this->db->query($q);
       
       error_log('Todos los privilegios bloqueados para rol: ' . $id_rol);

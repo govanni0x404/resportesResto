@@ -55,7 +55,7 @@ class Mdte extends CI_Model
 				$enviaSii = $r && ($r->envia === 't' || $r->envia === true) ? 1 : 0;
 			}
 		}
-		$rut = number_format((float)$empresa->rut_empresa, 0, '', '') . '-' . strtoupper(trim($empresa->dv_empresa));
+		$rut = number_format((float)$empresa->rut_empresa, 0, '', '') . '-' . strtoupper(trim((string)$empresa->dv_empresa));
 		// El usuario de Cloud Apps es el RUT de la empresa: si no está cargado, se usa el de la empresa
 		if ($usuario === '' && (int)$empresa->rut_empresa > 0) $usuario = $rut;
 		if ($usuario === '' || $clave === '' || $terminal === '') return null;
@@ -155,6 +155,7 @@ class Mdte extends CI_Model
 	{
 		$v = $db->query("SELECT v.*, td.cod_sii, (v.fecha_transaccion AT TIME ZONE 'America/Santiago')::date AS dia,
 				(SELECT COALESCE(cf.por_iva, 19) FROM configuracion cf LIMIT 1) AS por_iva,
+				(SELECT COALESCE(cf.id_cliente_publico, 0) FROM configuracion cf LIMIT 1) AS id_cliente_publico,
 				c.rut, c.dv, c.nombre_cliente, c.giro, c.direccion, COALESCE(co.nombre_comuna, '') AS nombre_comuna,
 				EXISTS (SELECT 1 FROM pago_venta pv JOIN configuracion cf ON cf.id_fpago_creditodirecto = pv.id_fpago
 					WHERE pv.id_venta = v.id_venta) AS credito
@@ -253,7 +254,15 @@ class Mdte extends CI_Model
 			$det[] = $linea;
 		}
 
-		$conCliente = (int)$v->rut > 0 && (int)$v->rut !== 66666666;
+		// Cliente público (el de configuracion, 66.666.666-6 o el 6.666.666-6 de algunas bases): receptor genérico
+		$rutRecep = (int)$v->rut;
+		$publico = $rutRecep <= 0 || in_array($rutRecep, array(66666666, 6666666), true)
+			|| ((int)$v->id_cliente_publico > 0 && (int)$v->id_cliente === (int)$v->id_cliente_publico);
+		$conCliente = !$publico;
+		if ($conCliente && !$this->dvValido($rutRecep, (string)$v->dv)) {
+			if (!$esBoleta) throw new Exception('El RUT del cliente (' . $rutRecep . '-' . trim((string)$v->dv) . ') no es válido');
+			$conCliente = false;   // en boleta el receptor es opcional: se emite como público
+		}
 		$receptor = array('DirRecep' => '', 'RznSocRecep' => '', 'CmnaRecep' => '', 'RUTRecep' => '66666666-6', 'GiroRecep' => '');
 		if ($conCliente) {
 			$receptor = array(
@@ -349,9 +358,27 @@ class Mdte extends CI_Model
 
 	private function registrarEmision($db, $idVenta, $folio, $trackid, $ted)
 	{
-		$db->query('UPDATE venta SET folio = ?, folio_dte = ?, trackid_dte = ?, ted_dte = ? WHERE id_venta = ?',
+		$ok = $db->query('UPDATE venta SET folio = ?, folio_dte = ?, trackid_dte = ?, ted_dte = ? WHERE id_venta = ?',
 			array($folio, $folio, $trackid, $ted !== '' ? $ted : null, $idVenta));
+		if (!$ok) {
+			// El documento ya existe en Cloud Apps: queda en el log para conciliarlo a mano (no reenviar)
+			log_message('error', 'Caja web DTE venta ' . (int)$idVenta . ': EMITIDO folio ' . (int)$folio . ' trackid ' . (int)$trackid . ' pero no se pudo guardar en la venta');
+		}
 		$this->documentoElectronico($db, $idVenta, array('folio' => $folio, 'enviado' => true));
+	}
+
+	/** Dígito verificador de un RUT chileno (módulo 11). */
+	private function dvValido($rut, $dv)
+	{
+		$suma = 0;
+		$mult = 2;
+		for ($n = (int)$rut; $n > 0; $n = intdiv($n, 10)) {
+			$suma += ($n % 10) * $mult;
+			$mult = $mult === 7 ? 2 : $mult + 1;
+		}
+		$r = 11 - ($suma % 11);
+		$esperado = $r === 11 ? '0' : ($r === 10 ? 'K' : (string)$r);
+		return strtoupper(trim($dv)) === $esperado;
 	}
 
 	private function registrarFalla($db, $idVenta, $mensaje)

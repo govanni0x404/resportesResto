@@ -110,6 +110,42 @@
 	.mesa-card .total { font-size: 15px; font-weight: 700; }
 	.mesa-card .tiempo { font-size: 12px; font-variant-numeric: tabular-nums; }
 	.mesa-card.ocupada { background: var(--t-primario, #B4432E); border-color: var(--t-primario, #B4432E); color: #fff; }
+	/* Ocupadas según el tiempo: ámbar desde 1 hora, rojo desde 2 */
+	.mesa-card.ocupada.demora { background: #C98A12; border-color: #A87210; }
+	.mesa-card.ocupada.critica { background: #B83A2A; border-color: #96291C; }
+	.mesas-leyenda i.demora { background: #C98A12; }
+	.mesas-leyenda i.critica { background: #B83A2A; }
+	.caja-banner-mesa .btn-group .dropdown-menu > li > a { padding: 8px 16px; }
+	.caja-banner-mesa .dropdown-menu .text-danger { color: #C9372C !important; }
+	.caja-cobro-parcial { padding: 4px 10px; border-radius: 14px; background: rgba(255, 255, 255, .2); font-size: 13px; font-weight: 600; }
+	.caja-cobro-parcial a { color: #fff; text-decoration: underline; margin-left: 6px; }
+	.caja-linea.enviada.fuera-cobro { opacity: .4; }
+	#modalMesaProductos .mp-linea { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--t-borde-suave, #F0E8DD); }
+	#modalMesaProductos .mp-linea .mp-nombre { flex: 1; min-width: 0; font-weight: 600; }
+	#modalMesaProductos .mp-linea .mp-nombre small { display: block; font-weight: 400; color: var(--t-texto-tenue, #A89A8C); }
+	#modalMesaProductos .mp-linea .mp-de { width: 54px; font-size: 13px; color: var(--t-texto-suave, #7A6A5E); }
+	#modalMesaProductos .mp-linea .input-group { width: 130px; flex: 0 0 130px; }
+	#modalMesaProductos .mp-linea input { text-align: center; font-weight: 700; }
+	#modalMesaProductos .mp-linea .mp-monto { width: 90px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+	#modalMesaProductos .mp-resumen { display: flex; justify-content: space-between; padding: 12px 4px 0; font-size: 16px; font-weight: 700; }
+	#modalMesaProductos .mp-campo { margin-top: 14px; }
+	/* Pago: propina legible y pie ordenado */
+	#modalPago .modal-title small { margin-left: 6px; font-size: 13px; font-weight: 400; color: var(--t-texto-suave, #7A6A5E); }
+	.propina-pregunta { padding: 24px 22px 20px; text-align: center; }
+	.propina-pregunta h4 { margin: 0 0 6px; font-size: 21px; font-weight: 700; }
+	.propina-pregunta label { display: block; margin: 16px 0 6px; font-size: 13px; color: var(--t-texto-suave, #7A6A5E); }
+	.propina-pregunta input { text-align: right; font-size: 22px; font-weight: 700; }
+	.propina-pregunta .btn-block { margin-top: 12px; height: 48px; font-weight: 600; }
+	.propina-pregunta #btnPropinaSi { margin-top: 18px; }
+	#modalPago .pago-propina { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+	#modalPago .pago-propina .checkbox { margin: 0 !important; }
+	html body #modalPago .pago-propina input[type=number] { width: 170px; height: 42px; font-size: 20px; font-weight: 700; text-align: right; padding: 4px 12px; }
+	#modalPago .modal-footer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+	#modalPago .modal-footer::before, #modalPago .modal-footer::after { display: none; }
+	#modalPago .modal-footer .caja-chk-imprimir { float: none; display: flex; align-items: center; margin: 0 !important; min-height: 32px; }
+	#modalPago .modal-footer .caja-chk-imprimir label { margin: 0; }
+	#modalPago .modal-footer .caja-chk-comanda { margin-left: 8px !important; }
+	#modalPago .modal-footer .btn-default { margin-left: auto; }
 	.mesa-card.bloqueada { background: #EDE8E1; border-color: #D9D2C9; color: #7A6A5E; }
 	.mesas-vacio { padding: 70px 20px; text-align: center; color: var(--t-texto-suave, #7A6A5E); }
 	html body #mesasOcupadas { background: var(--t-primario, #B4432E) !important; border-color: var(--t-primario, #B4432E) !important; color: #fff !important; }
@@ -121,6 +157,9 @@
 	.caja-linea.enviada .nombre .fa { font-size: 12px; margin-right: 4px; color: var(--t-texto-tenue, #A89A8C); }
 	.caja-linea.enviada .cantidad { font-size: 17px; font-weight: 700; color: var(--t-texto-fuerte, #2A1D17); }
 	.caja-linea.enviada .hora { font-size: 12px; color: var(--t-texto-tenue, #A89A8C); }
+	.caja-linea.enviada .reenviar-linea { margin-left: 8px; font-size: 12px; color: var(--t-texto-suave, #7A6A5E); text-decoration: underline; }
+	.mesa-card .num { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.mesa-card .num.largo { font-size: 16px; }
 	.caja-linea-cab { display: flex; align-items: center; gap: 10px; padding: 10px 18px; background: var(--t-fondo-alt, #FBF8F3); border-bottom: 1px solid var(--t-borde-suave, #F0E8DD);
 		font-size: 13px; font-weight: 700; color: var(--t-texto-suave, #7A6A5E); text-transform: uppercase; letter-spacing: .3px; }
 	.caja-lineas { flex: 1; min-height: 160px; max-height: 45vh; overflow-y: auto; }
@@ -532,6 +571,9 @@
 				<span><i class="pe-7s-cart"></i> Ver venta (<span id="barraItems">0</span>)</span>
 				<span id="barraTotal">$0</span>
 			</div>
+			<div class="alert alert-warning" id="avisoDtePrueba" style="display:none; margin-bottom:10px">
+				<i class="fa fa-exclamation-triangle"></i> <b>MODO PRUEBAS:</b> las boletas y facturas se emiten con la cuenta de pruebas de Cloud Apps y no llegan al SII.
+			</div>
 			<div class="caja-barra">
 				<ul class="nav nav-tabs caja-tabs">
 					<li class="active"><a href="#tabVenta" data-toggle="tab" id="lnkVenta"><i class="pe-7s-cart"></i> Venta</a></li>
@@ -565,9 +607,20 @@
 
 							<div class="caja-tarjeta caja-carro">
 								<div class="caja-banner-mesa" id="bannerMesa" style="display:none">
-									<span class="nombre"><i class="fa fa-th"></i> Mesa <b id="bannerMesaNum"></b></span>
+									<span class="nombre"><i class="fa fa-th"></i> <b id="bannerMesaNum"></b></span>
 									<span class="tiempo"><i class="fa fa-clock-o"></i> <span id="bannerMesaTiempo">Sin enviar</span></span>
-									<button type="button" class="btn btn-danger btn-sm" id="btnAnularPedido" style="display:none"><i class="fa fa-ban"></i> Anular pedido y liberar</button>
+									<span class="caja-cobro-parcial" id="avisoCobroParcial" style="display:none"><i class="fa fa-scissors"></i> Cobrando una parte <a href="#" id="btnCancelarParcial">Cancelar</a></span>
+									<button type="button" class="btn btn-default btn-sm" id="btnPrecuenta" style="display:none" title="Imprime el detalle en la caja para que el cliente lo revise antes de pagar"><i class="fa fa-file-text-o"></i> Precuenta</button>
+									<div class="btn-group" id="grupoOpcionesMesa" style="display:none">
+										<button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown"><i class="fa fa-ellipsis-v"></i> Opciones <span class="caret"></span></button>
+										<ul class="dropdown-menu dropdown-menu-right">
+											<li><a href="#" id="btnMoverMesa"><i class="fa fa-exchange"></i> Cambiar o dividir mesa</a></li>
+											<li><a href="#" id="btnCobrarParte"><i class="fa fa-scissors"></i> Cobrar solo una parte</a></li>
+											<li><a href="#" id="btnReenviarTodo"><i class="fa fa-repeat"></i> Volver a enviar todo a cocina</a></li>
+											<li class="divider"></li>
+											<li><a href="#" id="btnAnularPedido" class="text-danger"><i class="fa fa-ban"></i> Anular pedido y liberar</a></li>
+										</ul>
+									</div>
 									<button type="button" class="btn btn-default btn-sm" id="btnSalirMesa"><i class="fa fa-arrow-left"></i> Volver a mesas</button>
 								</div>
 								<div class="caja-linea-cab">
@@ -643,6 +696,8 @@
 						<div class="mesas-leyenda">
 							<span><i class="libre"></i> Libre</span>
 							<span><i class="ocupada"></i> Ocupada</span>
+							<span><i class="demora"></i> Más de 1 hora</span>
+							<span><i class="critica"></i> Más de 2 horas</span>
 							<span><i class="bloqueada"></i> Bloqueada</span>
 							<span class="text-muted" id="mesasAyuda">Toca una mesa libre para tomar el pedido, o una ocupada para agregar productos o cobrar.</span>
 						</div>
@@ -807,7 +862,7 @@
 		<div class="modal-content">
 			<div class="modal-header btn-success">
 				<button type="button" class="close" data-dismiss="modal">&times;</button>
-				<h4 class="modal-title">Cobrar <span id="pagoTotal"></span></h4>
+				<h4 class="modal-title">Cobrar <span id="pagoTotal"></span> <small id="pagoTotalDetalle"></small></h4>
 			</div>
 			<div class="modal-body">
 				<div class="pago-montos">
@@ -823,6 +878,7 @@
 					<input type="number" min="0" step="1" class="form-control input-sm" id="txtPropina" value="0">
 				</div>
 				<div class="pago-agregados" id="filasPago"></div>
+				<div class="alert alert-warning" id="avisoReglaPago" style="display:none; margin:8px 0 0; padding:8px 12px"></div>
 
 				<div class="pago-cuerpo">
 					<div class="pago-formas" id="botonesFpago"></div>
@@ -850,6 +906,54 @@
 				</div>
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
 				<button type="button" class="btn btn-primary btn-lg" id="btnConfirmarPago" disabled><i class="fa fa-check"></i> Confirmar venta</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal productos de la mesa: cambiar o dividir mesa, cobrar una parte o anular parte de un producto -->
+<div class="modal fade" id="modalMesaProductos" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header btn-success">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title" id="mpTitulo"></h4>
+			</div>
+			<div class="modal-body">
+				<p class="text-muted" id="mpAyuda"></p>
+				<div id="mpLineas"></div>
+				<div class="mp-resumen"><span id="mpResumenTexto">Seleccionado</span><span id="mpResumenMonto">$0</span></div>
+				<div class="mp-campo" id="mpCampoDestino">
+					<label for="mpDestino">Pasar a la mesa</label>
+					<select class="form-control" id="mpDestino"></select>
+				</div>
+				<div class="mp-campo" id="mpCampoMotivo">
+					<label for="mpMotivo">Motivo</label>
+					<input type="text" class="form-control" id="mpMotivo" maxlength="100" placeholder="Ej: el cliente no lo quiso">
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+				<button type="button" class="btn btn-primary" id="mpConfirmar"></button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal propina: se pregunta al presionar Cobrar -->
+<div class="modal fade" id="modalPropina" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-sm" role="document">
+		<div class="modal-content">
+			<div class="modal-body propina-pregunta">
+				<h4>¿Agregar propina?</h4>
+				<p class="text-muted">Total de la venta <b id="propinaPregunta"></b></p>
+				<label for="txtPropinaPregunta" id="propinaPorcentaje"></label>
+				<div class="input-group input-group-lg">
+					<span class="input-group-addon">$</span>
+					<input type="number" min="0" step="1" class="form-control" id="txtPropinaPregunta">
+				</div>
+				<button type="button" class="btn btn-success btn-lg btn-block" id="btnPropinaSi"><i class="fa fa-check"></i> Sí, con propina</button>
+				<button type="button" class="btn btn-default btn-lg btn-block" id="btnPropinaNo">No, sin propina</button>
 			</div>
 		</div>
 	</div>

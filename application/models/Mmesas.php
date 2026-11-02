@@ -107,7 +107,7 @@ class Mmesas extends CI_Model
           error_log('Mesa no encontrada. ID: ' . $id);
       }
       
-      $consulta = $this->db->query("SELECT " . $id . " as id_mesa");
+      $consulta = $this->db->query("SELECT " . (int)$id . " as id_mesa");
       return $consulta->result();
   }
 }

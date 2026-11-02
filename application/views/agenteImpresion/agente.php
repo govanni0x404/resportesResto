@@ -48,7 +48,7 @@
         </form>
         <div id="resultadoAgente" style="display:none; margin-top:14px" class="alert alert-info">
           <p><b>Equipo creado.</b> Descarga el instalador y ejecútalo en ese equipo. La clave solo se muestra ahora; si la pierdes, quita el equipo y crea otro.</p>
-          <form method="post" action="<?php echo base_url() ?>index.php/AgenteImpresion/instalador">
+          <form method="post" action="<?php echo base_url() ?>index.php/AgenteImpresion/instalador" data-sin-carga>
             <input type="hidden" name="token" id="tokenAgente">
             <button type="submit" class="btn btn-primary"><i class="fa fa-download"></i> Descargar instalador (.bat)</button>
           </form>

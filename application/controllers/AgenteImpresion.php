@@ -113,9 +113,10 @@ class AgenteImpresion extends CI_Controller
 	{
 		if ($this->input->method() !== 'post') return $this->terminar(405, 'Método no permitido');
 		list($conexion, $secreto) = array_pad(explode('.', trim((string)$this->input->post('token')), 2), 2, '');
-		if ($conexion === '' || $secreto === '' || !$this->Mcola_impresion->conectar($conexion)) return $this->terminar(401, 'Clave no válida');
+		// Un solo mensaje para todo: no debe servir para averiguar qué conexiones existen
+		if ($conexion === '' || $secreto === '' || !$this->Mcola_impresion->conectar($conexion, false)) return $this->terminar(401, 'Clave no válida');
 		$agente = $this->Mcola_impresion->agenteDeSecreto($secreto);
-		if (!$agente) return $this->terminar(401, 'Clave no válida o equipo revocado');
+		if (!$agente) return $this->terminar(401, 'Clave no válida');
 		return $agente;
 	}
 
@@ -126,6 +127,11 @@ class AgenteImpresion extends CI_Controller
 			redirect(base_url());
 		}
 		if ($soloPost && $this->input->method() !== 'post') $this->terminar(405, 'Método no permitido');
+		// Crear o quitar equipos da acceso a las comandas: solo administradores
+		if ((int)$this->session->userdata('id_rol') !== 1) {
+			if ($soloPost) $this->terminar(403, 'Solo un administrador puede administrar los equipos de impresión');
+			show_error('Solo un administrador puede administrar los equipos de impresión.', 403, 'Sin acceso');
+		}
 	}
 
 	private function json($datos, $codigo = 200)

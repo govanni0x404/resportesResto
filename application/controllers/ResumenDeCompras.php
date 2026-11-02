@@ -72,20 +72,20 @@ class ResumenDeCompras extends CI_Controller
 		$pdf->SetFont('Arial', '', 11);
 
 		$pdf->SetXY(80, 15);
-		$pdf->Cell(0, 5, utf8_decode('RESUMEN DE COMPRAS'));
+		$pdf->Cell(0, 5, mb_convert_encoding((string)('RESUMEN DE COMPRAS'), 'ISO-8859-1', 'UTF-8'));
 
 		$pdf->Ln(15);
-		$pdf->Cell(0, 5, utf8_decode('PROVEEDOR:  ' . $resumenDeComprasPDF[0]->nombre_proveedor));
+		$pdf->Cell(0, 5, mb_convert_encoding((string)('PROVEEDOR:  ' . $resumenDeComprasPDF[0]->nombre_proveedor), 'ISO-8859-1', 'UTF-8'));
 		$pdf->Ln();
-		$pdf->Cell(0, 5, utf8_decode($resumenDeComprasPDF[0]->nombre_tdocumento . ' N°  ' . $resumenDeComprasPDF[0]->numero_documento));
+		$pdf->Cell(0, 5, mb_convert_encoding((string)($resumenDeComprasPDF[0]->nombre_tdocumento . ' N°  ' . $resumenDeComprasPDF[0]->numero_documento), 'ISO-8859-1', 'UTF-8'));
 		$pdf->Ln();
-		$pdf->Cell(0, 5, utf8_decode('FECHA DE COMPRA:  ' . $resumenDeComprasPDF[0]->fecha));
+		$pdf->Cell(0, 5, mb_convert_encoding((string)('FECHA DE COMPRA:  ' . $resumenDeComprasPDF[0]->fecha), 'ISO-8859-1', 'UTF-8'));
 		$pdf->Ln();
-		$pdf->Cell(0, 5, utf8_decode('TOTAL COMPRA'));
+		$pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL COMPRA'), 'ISO-8859-1', 'UTF-8'));
 		$pdf->SetX(42);
-		$pdf->Cell(0, 5, utf8_decode('='));
+		$pdf->Cell(0, 5, mb_convert_encoding((string)('='), 'ISO-8859-1', 'UTF-8'));
 		$pdf->SetX(80);
-		$pdf->Cell(0, 5, utf8_decode('$   '));
+		$pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
 		$pdf->SetX(68);
 		$pdf->Cell(40, 5, number_format($resumenDeComprasPDF[0]->total), 0, 0, 'R');
 

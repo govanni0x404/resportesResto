@@ -31,9 +31,9 @@ class MresumenAnulaciones extends CI_Model
         join detalle_cotizacion dc on dc.id_cotizacion=c.id_cotizacion
         join producto p on dc.id_producto=p.id_producto
         join usuario u on dc.id_garzon=u.id_usuario
-        where c.fecha between '" . $de . "' and '" . $a . "'";
+        where c.fecha between ? and ?";
         if ($id_usuario > 0) {
-            $q = $q . " and u.id_usuario=$id_usuario";
+            $q = $q . " and u.id_usuario=" . (int)$id_usuario;
         }
         if ($todasLasAnulacionesYeliminaciones > 0) {
             $q = $q . " AND (dc.esanulado = true OR dc.eseliminado = true)";
@@ -46,7 +46,7 @@ class MresumenAnulaciones extends CI_Model
         }
 
 
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a));
         $sampleData = $consulta->result();
         $data = array();
 

@@ -32,17 +32,17 @@ class MdetalleOperaciones extends CI_Model
 			join usuario u on co.id_usuario = u.id_usuario
 			join pago_venta pv on v.id_venta = pv.id_venta
 			join fpago fp on pv.id_fpago = fp.id_fpago
-			where v.fecha between '" . $de . "' and '" . $a . "'";
+			where v.fecha between ? and ?";
         if ($idFpago > 0) {
-            $q = $q . " and pv.id_fpago=$idFpago";
+            $q = $q . " and pv.id_fpago=" . (int)$idFpago;
         }
         if ($idUsuario > 0) {
-            $q = $q . " and u.id_usuario=$idUsuario";
+            $q = $q . " and u.id_usuario=" . (int)$idUsuario;
         }
         $q = $q . " group by v.id_venta, u.nombre_usuario, co.id_cotizacion, fp.id_fpago";
 
 
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a));
         $sampleData = $consulta->result();
         $data = array();
 
@@ -80,7 +80,7 @@ class MdetalleOperaciones extends CI_Model
         $q = "SELECT dv.id_detalle_venta, p.nombre_producto, dv.cantidad, dv.bruto_un, round(dv.subtotal_neto_con_descuento) as neto, round(dv.monto_iva) as iva, round(dv.total_bruto_con_descuento) as total_bruto 
 		from detalle_venta dv 
 		join producto p on dv.id_producto=p.id_producto
-		where dv.id_venta =$id_venta";
+		where dv.id_venta =" . (int)$id_venta;
 
         $consulta = $this->db->query($q);
         $sampleData = $consulta->result();
@@ -141,7 +141,7 @@ class MdetalleOperaciones extends CI_Model
         join pago_venta pv on pv.id_venta=v.id_venta
         join fpago fp on fp.id_fpago=pv.id_fpago
         join tdocumento td on td.id_tdocumento=v.id_tdocumento
-        where v.id_venta=' . $id_venta . '';
+        where v.id_venta=' . (int)$id_venta;
 
         $query = $this->db->query($q)->result();
         return $query;
@@ -155,7 +155,7 @@ class MdetalleOperaciones extends CI_Model
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->db->where('id_venta', $id);
         $this->db->update('pago_venta', $data);
-        $consulta = $this->db->query("select " . $id . " as id_venta");
+        $consulta = $this->db->query("select " . (int)$id . " as id_venta");
         return $consulta->result();
     }
 }

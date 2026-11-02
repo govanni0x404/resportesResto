@@ -30,9 +30,6 @@ class Inventario extends CI_Controller {
     // AJAX: Obtener detalle de inventario
     public function detalle()
     {
-        log_message('error', 'ENTRÓ A DETALLE');
-        log_message('error', print_r($_POST, true));
-
         $id_inventario = $this->input->post('id_inventario');
 
         if (!$id_inventario) {

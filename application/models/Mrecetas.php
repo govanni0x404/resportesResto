@@ -112,7 +112,7 @@ class Mrecetas extends CI_Model
 		join receta r on dr.id_receta = r.id_receta
 		join insumo i on dr.id_insumo = i.id_insumo
 		join umedida um on i.id_umedida_receta = um.id_umedida
-		where dr.vigente = true and dr.id_receta =" . $id;
+		where dr.vigente = true and dr.id_receta =" . (int)$id;
 		$query = $this->db->query($q)->result();
 		return $query;
 	}
@@ -157,7 +157,8 @@ class Mrecetas extends CI_Model
 			redirect(base_url());
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$this->db->simple_query("UPDATE detalle_receta SET vigente = false where id_receta = " . $idReceta . " and id_detalle_receta not in (" . $idDetalle . ") and id_insumo not in (" . $idInsumo . ")");
+		$sql = "UPDATE detalle_receta SET vigente = false where id_receta = ? and id_detalle_receta not in ? and id_insumo not in ?";
+		$this->db->simple_query($this->db->compile_binds($sql, array((int)$idReceta, $this->listaIds($idDetalle), $this->listaIds($idInsumo))));
 		return 1;
 	}
 
@@ -171,7 +172,7 @@ class Mrecetas extends CI_Model
 		if ($id) {
 			$this->db->where('id_familia_receta', $id);
 			$this->db->update('familia_receta', $data);
-			$consulta = $this->db->query("select " . $id . " as id_familia_receta");
+			$consulta = $this->db->query("select " . (int)$id . " as id_familia_receta");
 		} else {
 			$this->db->insert('familia_receta', $data);
 			$consulta = $this->db->query("SELECT CURRVAL('familia_receta_id_familia_receta_seq'::regclass) as id_familia_receta");
@@ -189,11 +190,17 @@ class Mrecetas extends CI_Model
 		if ($id) {
 			$this->db->where('id_seccion', $id);
 			$this->db->update('seccion', $data);
-			$consulta = $this->db->query("select " . $id . " as id_seccion");
+			$consulta = $this->db->query("select " . (int)$id . " as id_seccion");
 		} else {
 			$this->db->insert('seccion', $data);
 			$consulta = $this->db->query("SELECT CURRVAL('seccion_id_seccion_seq'::regclass) as id_seccion");
 		}
 		return $consulta->result();
+	}
+
+	// Convierte la lista '1,2,3' en un array de enteros para usar con IN ?
+	private function listaIds($lista)
+	{
+		return array_map('intval', array_filter(is_array($lista) ? $lista : explode(',', (string)$lista), 'strlen'));
 	}
 }

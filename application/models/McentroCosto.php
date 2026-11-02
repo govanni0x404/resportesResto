@@ -46,7 +46,7 @@ class McentroCosto extends CI_Model
 		if ($id) {
 			$this->db->where('id_ccosto', $id);
 			$this->db->update('ccosto', $data);
-			$consulta = $this->db->query("select " . $id . " as id_ccosto");
+			$consulta = $this->db->query("select " . (int)$id . " as id_ccosto");
 		} else {
 			$this->db->insert('ccosto', $data);
 			$consulta = $this->db->query("SELECT CURRVAL('ccosto_id_ccosto_seq'::regclass) as id_ccosto");

@@ -46,7 +46,7 @@ class MuMedida extends CI_Model
     if ($id) {
       $this->db->where('id_umedida', $id);
       $this->db->update('umedida', $data);
-      $consulta = $this->db->query("select " . $id . " as id_umedida");
+      $consulta = $this->db->query("select " . (int)$id . " as id_umedida");
     } else {
       $this->db->insert('umedida', $data);
       $consulta = $this->db->query("SELECT CURRVAL('umedida_id_umedida_seq'::regclass) as id_umedida");

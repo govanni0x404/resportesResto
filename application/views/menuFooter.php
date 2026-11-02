@@ -66,7 +66,7 @@
 <!-- <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.7/js/dataTables.responsive.min.js"></script> -->
 
 <!-- <script src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script> -->
-<script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/min/moment.min.js"></script>
 <script src="<?php echo base_url() ?>assets/plugins/date-range-picker/daterangepicker.js"></script>
 <!-- Start Theme label Script
         =====================================================================-->
@@ -322,6 +322,8 @@
       setTimeout(function(){
         if (e.defaultPrevented) return;
         if (f.target && f.target !== '_self') return;
+        // Formularios que descargan un archivo: la página no cambia, no se muestra el aviso de carga
+        if (f.hasAttribute && f.hasAttribute('data-sin-carga')) return;
         inicioNavegacion();
       }, 0);
     });

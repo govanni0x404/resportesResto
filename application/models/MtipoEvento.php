@@ -46,7 +46,7 @@ class MtipoEvento extends CI_Model
     if ($id) {
       $this->db->where('id_tipo_evento', $id);
       $this->db->update('tipo_evento', $data);
-      $consulta = $this->db->query("select " . $id . " as id_tipo_evento");
+      $consulta = $this->db->query("select " . (int)$id . " as id_tipo_evento");
     } else {
       $this->db->insert('tipo_evento', $data);
       $consulta = $this->db->query("SELECT CURRVAL('tipo_evento_id_tipo_evento_seq'::regclass) as id_tipo_evento");

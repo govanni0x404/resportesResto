@@ -31,11 +31,11 @@ class MventasPorProducto extends CI_Model
         join detalle_venta dv on p.id_producto = dv.id_producto
         join detalle_lprecio lp on p.id_producto = lp.id_producto
         join venta v on dv.id_venta = v.id_venta
-        where dv.total_bruto_con_descuento>0 and  v.fecha between '" . $de . "' and '" . $a . "'
+        where dv.total_bruto_con_descuento>0 and  v.fecha between ? and ?
         group by p.nombre_producto
         order by p.nombre_producto";
 
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a));
         $sampleData = $consulta->result();
         $data = array();
 
@@ -81,16 +81,16 @@ class MventasPorProducto extends CI_Model
             (select sum(dve.cantidad) 
             from detalle_venta dve 
             join venta ve on dve.id_venta = ve.id_venta 
-            where ve.fecha between '" . $de . "' and '" . $a . "'))*100),3) as porcentaje
+            where ve.fecha between ? and ?))*100),3) as porcentaje
         from producto p
         join detalle_venta dv on p.id_producto = dv.id_producto
         join venta v on dv.id_venta = v.id_venta
-		where v.fecha between '" . $de . "' and '" . $a . "'
+		where v.fecha between ? and ?
         group by p.nombre_producto";
 
 
 
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a, $de, $a))->result();
         return $query;
     }
 }

@@ -12,6 +12,10 @@
 		var propina = 0;
 		var opcionEdicion = null; // {id_producto, indice} mientras el modal de opciones está abierto
 		var mesa = null;         // Venta por mesa: {id_mesa, id_cotizacion, inicio (ms)}; null en venta directa
+		var cobroParcial = null; // Cobro de una parte de la mesa: {id_detalle: cantidad}; null = toda la mesa
+		var cerrandoCaja = false;
+		// Los avisos llevan nombres de mesas, productos y destinos escritos por usuarios: siempre como texto
+		if (window.toastr) toastr.options.escapeHtml = true;
 
 		// ---------------- utilidades ----------------
 		function fmt(n) {
@@ -44,6 +48,11 @@
 		function documentoActual() {
 			var id = Number($('#cboDocumento').val());
 			return $.grep(catalogo.documentos, function (d) { return d.id_tdocumento === id; })[0];
+		}
+		// Boleta exenta (41) y factura exenta (34): todo es exento (igual que Mcaja::registrarVenta)
+		function documentoExento() {
+			var d = catalogo ? documentoActual() : null;
+			return !!(d && (d.cod_sii === 34 || d.cod_sii === 41));
 		}
 
 		// ---------------- impresión ----------------
@@ -100,16 +109,19 @@
 		function pendientesMesa() {
 			return $.grep(carro, function (l) { return !l.enviada; });
 		}
-		function imprimirComanda(idVenta, lineas, observacion, idMesa, motivoAnulacion) {
+		// aviso: {anulacion: true, motivo} | {traslado_desde: idMesa} | {reenvio: true}; sin aviso es la comanda normal
+		function imprimirComanda(idVenta, lineas, observacion, idMesa, aviso) {
 			if (!lineas.length) return;
-			var anulacion = motivoAnulacion !== undefined;
+			aviso = aviso || {};
+			var anulacion = !!aviso.anulacion;
+			var que = anulacion ? 'Anulación' : (aviso.traslado_desde ? 'Cambio de mesa' : (aviso.reenvio ? 'Reenvío' : 'Comanda'));
 			$.ajax({
 				url: base + 'imprimirComanda', type: 'POST', dataType: 'json',
-				data: { datos: JSON.stringify({ id_venta: idVenta, id_mesa: idMesa || 0, lineas: lineas, observacion: observacion || '', anulacion: anulacion, motivo: motivoAnulacion || '' }) }
+				data: { datos: JSON.stringify({ id_venta: idVenta, id_mesa: idMesa || 0, lineas: lineas, observacion: observacion || '', anulacion: anulacion, motivo: aviso.motivo || '', traslado_desde: aviso.traslado_desde || 0, reenvio: !!aviso.reenvio }) }
 			}).done(function (r) {
 				var com = r.comandas || [];
 				$.each(com, function (i, c) {
-					if (c.ok) toastr.success((anulacion ? 'Anulación enviada a ' : 'Comanda enviada a ') + c.destino, '', { timeOut: 2500 });
+					if (c.ok) toastr.success(que + ' enviada a ' + c.destino, '', { timeOut: 2500 });
 					else toastr.error('Comanda de ' + c.destino + ': ' + c.detalle, '', { timeOut: 9000 });
 				});
 			}).fail(function (x) {
@@ -156,6 +168,7 @@
 		// ---------------- catálogo ----------------
 		function cargarCatalogo(idLista) {
 			return get('catalogo', { id_lprecio: idLista }).done(function (r) {
+				$('#avisoDtePrueba').toggle(!!r.dte_prueba);
 				var primeraVez = !catalogo;
 				catalogo = r;
 				if (primeraVez) {
@@ -468,6 +481,12 @@
 		function agregar(id, agregados, nota) {
 			var p = producto(id);
 			if (!p) return;
+			// Con un cobro parcial a medias, lo nuevo no entraría en ese cobro: se cancela y se avisa
+			if (cobroParcial) {
+				cobroParcial = null;
+				actualizarModoMesa();
+				toastr.info('Se canceló el cobro de una parte: al cobrar se incluirá toda la mesa');
+			}
 			agregados = agregados.slice().sort(function (a, b) { return a - b; });
 			// Solo se suma a una línea existente si tiene exactamente las mismas opciones
 			var l = $.grep(carro, function (x) {
@@ -492,8 +511,15 @@
 		function lineasBrutas() {
 			var res = [];
 			$.each(carro, function (i, l) {
-				if (l.enviada) { res.push({ bruto: l.bruto, exento: l.exento }); return; }
-				var p = producto(l.id_producto), exento = !!(p && p.exento);
+				if (l.enviada) {
+					if (!cobroParcial) { res.push({ bruto: l.bruto, exento: l.exento || documentoExento() }); return; }
+					var q = cobroParcial[l.id_detalle] || 0;
+					// Misma proporción que Mcaja::seleccionDeLineas()
+					if (q > 0) res.push({ bruto: q >= l.cantidad ? l.bruto : Math.round(l.bruto_exacto * q / l.cantidad), exento: l.exento || documentoExento() });
+					return;
+				}
+				if (cobroParcial) return;
+				var p = producto(l.id_producto), exento = !!(p && p.exento) || documentoExento();
 				var primero = l.agregados.length ? agregado(l.agregados[0]) : null;
 				res.push({ bruto: Math.round((l.precio + (primero ? primero.valor : 0)) * l.cantidad), exento: exento });
 				$.each(l.agregados.slice(1), function (j, id) {
@@ -540,11 +566,13 @@
 			$.each(carro, function (i, l) {
 				if (l.enviada) {
 					unidades += l.cantidad === Math.round(l.cantidad) ? l.cantidad : 1;
-					$t.append('<div class="caja-linea enviada" data-i="' + i + '"><div class="info">'
+					var fuera = cobroParcial && !cobroParcial[l.id_detalle];
+					var parte = cobroParcial && cobroParcial[l.id_detalle] && cobroParcial[l.id_detalle] < l.cantidad ? ' · se cobran ' + fmtCant(cobroParcial[l.id_detalle]) : '';
+					$t.append('<div class="caja-linea enviada' + (fuera ? ' fuera-cobro' : '') + '" data-i="' + i + '"><div class="info">'
 						+ '<div class="nombre"><i class="fa fa-lock" title="Ya enviado a la mesa"></i>' + esc(l.nombre) + '</div>'
 						+ (l.agregado ? '<div class="detalle-linea">+ ' + esc(l.agregado) + '</div>' : '')
 						+ (l.nota ? '<div class="detalle-linea"><i>' + esc(l.nota) + '</i></div>' : '')
-						+ '<div class="hora">Enviado ' + esc(l.hora) + '</div></div>'
+						+ '<div class="hora">Enviado ' + esc(l.hora) + parte + '<a href="#" class="reenviar-linea" title="Vuelve a imprimir este producto en su destino (cocina, barra…)"><i class="fa fa-repeat"></i> Volver a enviar</a></div></div>'
 						+ '<div class="precio">' + fmt(l.precio) + '</div>'
 						+ '<div class="cantidad">' + fmtCant(l.cantidad) + '</div>'
 						+ '<div class="subtotal">' + fmt(l.bruto) + '</div>'
@@ -595,11 +623,39 @@
 		}
 
 		// Enter en la cantidad: la confirma y vuelve al buscador (flujo rápido con balanza / teclado)
+		// Tras agregar un producto que pide cantidad el cursor queda aquí: si se sigue escribiendo el nombre de otro
+		// producto o se escanea un código, eso va al buscador y no a la cantidad (antes vaciaba y borraba la línea)
 		$('#lineas').on('keydown', '.cant', function (e) {
-			if (e.which === 13) { e.preventDefault(); $(this).trigger('change'); $('#buscarProducto').focus(); }
+			var i = $(this).closest('[data-i]').data('i');
+			if (e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !/[0-9.,]/.test(e.key)) {
+				e.preventDefault();
+				$(this).val(carro[i].cantidad);
+				$('#buscarProducto').focus().val($('#buscarProducto').val() + e.key).trigger('input');
+				return;
+			}
+			if (e.which === 13) {
+				e.preventDefault();
+				var texto = $.trim($(this).val()).toLowerCase();
+				var escaneado = texto.length >= 4 && $.grep(catalogo.productos, function (p) { return p.cbarra && p.cbarra.toLowerCase() === texto; })[0];
+				if (escaneado) {
+					$(this).val(carro[i].cantidad);
+					$('#buscarProducto').val('').focus();
+					elegir(escaneado.id_producto);
+					return;
+				}
+				$(this).trigger('change');
+				$('#buscarProducto').focus();
+			}
 		});
 		$('#lineas').on('change', '.cant', function () {
 			var i = $(this).closest('[data-i]').data('i');
+			// Vacía o inválida: se deja la cantidad que tenía (solo un 0 escrito o el basurero quitan la línea)
+			if ($.trim($(this).val()) === '' || !isFinite(Number(String($(this).val()).replace(',', '.')))) { renderCarro(); return; }
+			if (Number(String($(this).val()).replace(',', '.')) > 9999) {
+				toastr.warning('La cantidad ' + $(this).val() + ' es demasiado alta: si escaneaste un código, ese producto no está en la Carta');
+				renderCarro();
+				return;
+			}
 			var c = ajustarCantidad(carro[i].id_producto, $(this).val());
 			if (c > 0) carro[i].cantidad = c; else carro.splice(i, 1);
 			renderCarro();
@@ -648,6 +704,7 @@
 		function limpiarVenta() {
 			carro = [];
 			mesa = null;
+			cobroParcial = null;
 			actualizarModoMesa();
 			cliente = null;
 			$('#txtCliente').val('');
@@ -800,9 +857,11 @@
 			var clave = $('#txtClaveAdmin').val();
 			if (!clave) { $('#txtClaveAdmin').focus(); return; }
 			var pendiente = autorizacionPendiente;
+			if (!pendiente) return;
 			autorizacionPendiente = null; // no cancelar al cerrar: se reintenta
-			$('#modalAutorizacion').modal('hide');
-			pendiente.continuar({ id_usuario: Number($('#cboAutorizador').val()), clave: clave });
+			var aut = { id_usuario: Number($('#cboAutorizador').val()), clave: clave };
+			// Se reintenta con el modal ya cerrado: si la clave es incorrecta debe poder abrirse de nuevo
+			$('#modalAutorizacion').one('hidden.bs.modal', function () { pendiente.continuar(aut); }).modal('hide');
 		});
 
 		// ---------------- pago ----------------
@@ -820,26 +879,48 @@
 			// En una mesa se cobra lo enviado: lo que falte se envía primero
 			if (mesa && pendientesMesa().length) enviarAMesa(true); else abrirPago();
 		});
+		// Antes del pago se pregunta por la propina (si corresponde): Sí = monto sugerido o el que se escriba, No = 0
 		function abrirPago() {
+			var cfg = catalogo.config;
+			if (!validarCobro()) return;
+			if (!(cfg.propina || mesa)) { mostrarPago(null); return; }
+			var sugerida = propinaSugerida();
+			$('#propinaPregunta').text(fmt(totales().total));
+			$('#propinaPorcentaje').text(cfg.por_propina > 0 ? 'Sugerida: ' + cfg.por_propina + '% (' + fmt(sugerida) + ')' : 'Escribe el monto de la propina');
+			$('#txtPropinaPregunta').val(sugerida || '');
+			$('#modalPropina').modal('show');
+		}
+		$('#modalPropina').on('shown.bs.modal', function () { $('#btnPropinaSi').focus(); });
+		$('#txtPropinaPregunta').on('keydown', function (e) { if (e.which === 13) { e.preventDefault(); $('#btnPropinaSi').click(); } });
+		$('#btnPropinaSi, #btnPropinaNo').on('click', function () {
+			var monto = this.id === 'btnPropinaSi' ? Math.max(0, Math.round(Number($('#txtPropinaPregunta').val()) || 0)) : 0;
+			// El pago se abre cuando este modal terminó de cerrarse (Bootstrap 3 no apila bien dos modales)
+			$('#modalPropina').one('hidden.bs.modal', function () { mostrarPago(monto); }).modal('hide');
+		});
+		function validarCobro() {
 			var d = documentoActual();
-			if (!d || !d.habilitado) { swal('Atención', 'No hay documentos de venta disponibles (tdocumento.para_venta)', 'warning'); return; }
+			if (!d || !d.habilitado) { swal('Atención', 'No hay documentos de venta disponibles (tdocumento.para_venta)', 'warning'); return false; }
 			if (d.requiere_cliente && !cliente) {
 				swal('Falta el cliente', d.nombre + ' requiere seleccionar un cliente', 'warning');
-				return;
+				return false;
 			}
 			var t = totales();
 			if (catalogo.config.por_maximo_descuento > 0 && t.subtotal > 0 && t.descuento * 100 / t.subtotal > catalogo.config.por_maximo_descuento) {
 				swal('Descuento', 'El descuento máximo permitido es ' + catalogo.config.por_maximo_descuento + '%', 'warning');
-				return;
+				return false;
 			}
+			return true;
+		}
+		// propinaElegida: monto respondido en el modal de propina; null si no se preguntó
+		function mostrarPago(propinaElegida) {
+			var t = totales();
 			pagos = [];
-			$('#pagoTotal').text(fmt(t.total));
 			// Propina sugerida (Configuraciones: propina en venta directa / calcular valor de propina)
 			var cfg = catalogo.config;
 			var conPropina = cfg.propina || !!mesa;   // "propina en venta directa" no aplica a las mesas
 			$('#bloquePropina').toggle(conPropina);
 			$('#lblPorPropina').text(cfg.por_propina > 0 ? '(sugerida ' + cfg.por_propina + '%)' : '');
-			propina = conPropina && (cfg.calcular_propina || mesa) ? propinaSugerida() : 0;
+			propina = propinaElegida !== null ? propinaElegida : (conPropina && (cfg.calcular_propina || mesa) ? propinaSugerida() : 0);
 			$('#chkPropina').prop('checked', propina > 0).prop('disabled', false);
 			$('#txtPropina').val(propina).prop('disabled', propina === 0);
 			// Efectivo primero, cortesías al final; el resto en el orden de la base
@@ -977,6 +1058,10 @@
 
 		function actualizarResumenPago() {
 			var total = totalAPagar();
+			// Título = lo que se cobra en total; con propina se detalla la venta y la propina
+			var prop = esCortesia() ? 0 : propina;
+			$('#pagoTotal').text(fmt(total));
+			$('#pagoTotalDetalle').text(prop > 0 ? 'Venta ' + fmt(totales().total) + ' + propina ' + fmt(prop) : '');
 			var pagado = 0, efectivo = 0;
 			$.each(pagos, function (i, p) {
 				pagado += p.monto;
@@ -988,10 +1073,18 @@
 			$('#pagoPagado').text(fmt(pagado));
 			$('#pagoFalta').text(fmt(falta));
 			$('#pagoVuelto').text(fmt(vuelto));
-			var vueltoValido = vuelto === 0 || efectivo > vuelto;
+			// Mismas reglas que Mcaja::registrarVenta: el vuelto sale del último pago en efectivo y la propina
+			// debe caber en un solo pago (ese mismo o, sin efectivo, el último)
+			var validos = $.grep(pagos, function (p) { return p.monto > 0; }), idxEf = -1;
+			$.each(validos, function (i, p) { if (fpago(p.id_fpago).efectivo) idxEf = i; });
+			var vueltoValido = vuelto === 0 || (idxEf >= 0 && validos[idxEf].monto > vuelto);
+			var idxProp = idxEf >= 0 ? idxEf : validos.length - 1;
+			var propinaCabe = prop === 0 || falta > 0 || (idxProp >= 0 && validos[idxProp].monto - (idxProp === idxEf ? vuelto : 0) >= prop);
 			$('#pagoVuelto').toggleClass('text-danger', !vueltoValido);
 			$('#cajaFalta').toggleClass('cubierto', falta === 0);
-			$('#btnConfirmarPago').prop('disabled', !pagos.length || falta > 0 || !vueltoValido || enviando);
+			$('#avisoReglaPago').text(!vueltoValido ? 'El vuelto debe salir de un solo pago en efectivo mayor que el vuelto.'
+				: (!propinaCabe ? 'La propina debe quedar dentro de un solo pago: agrega el efectivo como un solo monto o paga la propina en un pago aparte.' : '')).toggle(!vueltoValido || !propinaCabe);
+			$('#btnConfirmarPago').prop('disabled', !pagos.length || falta > 0 || !vueltoValido || !propinaCabe || enviando);
 		}
 
 		$('#filasPago').on('input', '.monto', function () {
@@ -1011,6 +1104,7 @@
 			var idMesa = mesa ? mesa.id_mesa : 0;
 			var venta = {
 				id_mesa: idMesa,
+				parcial: idMesa && cobroParcial ? $.map(cobroParcial, function (q, id) { return { id_detalle: Number(id), cantidad: q }; }) : null,
 				id_tdocumento: Number($('#cboDocumento').val()),
 				id_lprecio: Number($('#cboLista').val()),
 				id_cliente: cliente ? cliente.id_cliente : 0,
@@ -1045,6 +1139,9 @@
 				if (imprimeComanda() && !idMesa) imprimirComanda(r.id_venta, comanda, venta.observacion);
 				limpiarVenta();
 				cargarEstado();
+				// Se cobró una parte: la mesa sigue abierta con el resto
+				if (idMesa && r.mesa_liberada === false) { cargarMesas(); abrirMesa(idMesa); }
+				else if (idMesa) cargarMesas();
 			}, terminar);
 		});
 
@@ -1081,6 +1178,10 @@
 				sectoresLista = r.sectores || [];
 				renderMesas();
 			});
+		}
+		function nombreMesa(id) {
+			var m = $.grep(mesasLista, function (x) { return x.id_mesa === id; })[0];
+			return m && m.nombre ? m.nombre : 'Mesa ' + id;
 		}
 		function mesasDelSector() {
 			return $.grep(mesasLista, function (m) { return m.id_recinto === sectorActual; });
@@ -1121,10 +1222,11 @@
 			$.each(lista, function (i, m) {
 				var $c = $('<button type="button" class="mesa-card">').addClass(m.estado).toggleClass('actual', !!mesa && mesa.id_mesa === m.id_mesa)
 					.attr('data-id', m.id_mesa).attr('data-estado', m.estado).css({ left: m.x, top: m.y })
-					.append($('<div class="num">').text('Mesa ' + m.id_mesa));
+					.append($('<div class="num">').toggleClass('largo', !!m.nombre && m.nombre.length > 9).text(nombreMesa(m.id_mesa)).attr('title', nombreMesa(m.id_mesa)));
 				if (m.con_pedido) {
 					$c.append($('<div class="total">').text(fmt(m.total)))
 						.append($('<div class="tiempo">').attr('data-inicio', ahora - m.segundos * 1000).text(fmtTiempo(m.segundos * 1000)))
+						.toggleClass('demora', m.estado === 'ocupada' && m.segundos >= 3600 && m.segundos < 7200).toggleClass('critica', m.estado === 'ocupada' && m.segundos >= 7200)
 						.append($('<div class="atiende">').text(m.atiende));
 				} else {
 					$c.append($('<div class="estado">').text(m.estado === 'libre' ? 'Libre' : 'Bloqueada'));
@@ -1132,6 +1234,16 @@
 				$g.append($c);
 			});
 			ajustarAltoPlano(lista);
+		}
+		function renombrarMesa(id) {
+			var m = $.grep(mesasLista, function (x) { return x.id_mesa === id; })[0];
+			if (!m) return;
+			swal({ title: 'Nombre de la mesa ' + id, text: 'Ej: Terraza 2, Barra 1. Déjalo vacío para usar "Mesa ' + id + '".', type: 'input', inputValue: m.nombre || '', inputPlaceholder: 'Mesa ' + id, showCancelButton: true, confirmButtonText: 'Usar este nombre', cancelButtonText: 'Cancelar' }, function (v) {
+				if (v === false) return;
+				m.nombre = $.trim(v).substring(0, 40);
+				renderMesas();
+				toastr.info('Presiona Guardar plano para guardar el nombre');
+			});
 		}
 		$('#mesasSectores').on('click', 'button', function () {
 			sectorActual = Number($(this).attr('data-id'));
@@ -1145,14 +1257,14 @@
 			$('#btnOrganizarMesas').toggle(!activo);
 			$('#btnCancelarPlano, #btnGuardarPlano').toggle(activo);
 			$('#mesasGrilla').toggleClass('editando', activo);
-			$('#mesasAyuda').text(activo ? 'Arrastra cada mesa a su lugar y presiona Guardar plano.' : 'Toca una mesa libre para tomar el pedido, o una ocupada para agregar productos o cobrar.');
+			$('#mesasAyuda').text(activo ? 'Arrastra cada mesa a su lugar o tócala para cambiarle el nombre, y presiona Guardar plano.' : 'Toca una mesa libre para tomar el pedido, o una ocupada para agregar productos o cobrar.');
 		}
 		$('#btnOrganizarMesas').on('click', function () { modoPlano(true); renderMesas(); });
 		$('#btnCancelarPlano').on('click', function () { modoPlano(false); cargarMesas(); });
 		$('#lnkMesas').on('hidden.bs.tab', function () { if (editandoPlano) { modoPlano(false); cargarMesas(); } });
 		$('#btnGuardarPlano').on('click', function () {
 			var $b = $(this).prop('disabled', true);
-			var posiciones = $.map(mesasDelSector(), function (m) { return { id_mesa: m.id_mesa, x: m.x, y: m.y }; });
+			var posiciones = $.map(mesasDelSector(), function (m) { return { id_mesa: m.id_mesa, x: m.x, y: m.y, nombre: m.nombre || '' }; });
 			postJson('guardarPlanoMesas', { posiciones: posiciones }).done(function () {
 				toastr.success('Plano guardado');
 				modoPlano(false);
@@ -1163,11 +1275,13 @@
 			if (!editandoPlano) return;
 			e.preventDefault();
 			var ev = e.originalEvent, c = this.getBoundingClientRect();
-			arrastre = { $c: $(this).addClass('arrastrando'), id: Number($(this).attr('data-id')), dx: ev.clientX - c.left, dy: ev.clientY - c.top };
+			arrastre = { $c: $(this).addClass('arrastrando'), id: Number($(this).attr('data-id')), dx: ev.clientX - c.left, dy: ev.clientY - c.top, x0: ev.clientX, y0: ev.clientY, movio: false };
 		});
 		$(document).on('pointermove', function (e) {
 			if (!arrastre) return;
 			var ev = e.originalEvent, g = $('#mesasGrilla')[0], r = g.getBoundingClientRect();
+			if (Math.abs(ev.clientX - arrastre.x0) + Math.abs(ev.clientY - arrastre.y0) > 4) arrastre.movio = true;
+			if (!arrastre.movio) return;
 			var paso = function (v) { return Math.max(0, Math.round(v / PLANO_PASO) * PLANO_PASO); };
 			var maxX = Math.max(0, g.clientWidth - MESA_W);
 			var x = Math.min(maxX, paso(ev.clientX - r.left + g.scrollLeft - arrastre.dx)), y = paso(ev.clientY - r.top + g.scrollTop - arrastre.dy);
@@ -1177,13 +1291,24 @@
 		}).on('pointerup pointercancel', function () {
 			if (!arrastre) return;
 			arrastre.$c.removeClass('arrastrando');
+			var tocada = !arrastre.movio ? arrastre.id : 0;
 			arrastre = null;
+			// Tocar sin arrastrar: cambiar el nombre visible de la mesa (se guarda con el plano)
+			if (tocada) renombrarMesa(tocada);
 			ajustarAltoPlano(mesasDelSector());
 		});
 		$('#lnkMesas').on('shown.bs.tab', cargarMesas);
 		setInterval(function () { if ($('#mesasGrilla').is(':visible')) cargarMesas(); }, 20000);
+		// Ocupadas: ámbar desde 1 hora y rojo desde 2
+		function colorPorTiempo($tiempo, ms) {
+			$tiempo.closest('.mesa-card').toggleClass('demora', ms >= 3600000 && ms < 7200000).toggleClass('critica', ms >= 7200000);
+		}
 		setInterval(function () {
-			$('#mesasGrilla .tiempo').each(function () { $(this).text(fmtTiempo(Date.now() - Number($(this).attr('data-inicio')))); });
+			$('#mesasGrilla .tiempo').each(function () {
+				var ms = Date.now() - Number($(this).attr('data-inicio'));
+				$(this).text(fmtTiempo(ms));
+				colorPorTiempo($(this), ms);
+			});
 			if (mesa && mesa.inicio) $('#bannerMesaTiempo').text(fmtTiempo(Date.now() - mesa.inicio));
 		}, 1000);
 
@@ -1192,23 +1317,27 @@
 			$('#btnEnviarMesa').toggle(!!mesa);
 			$('#cboLista').prop('disabled', !!(mesa && mesa.id_cotizacion));
 			if (!mesa) return;
-			$('#bannerMesaNum').text(mesa.id_mesa);
-			$('#btnAnularPedido').toggle(!!mesa.id_cotizacion);
+			$('#bannerMesaNum').text(nombreMesa(mesa.id_mesa));
+			$('#btnPrecuenta, #grupoOpcionesMesa').toggle(!!mesa.id_cotizacion);
+			$('#avisoCobroParcial').toggle(!!cobroParcial);
 			if (!mesa.inicio) $('#bannerMesaTiempo').text('Sin enviar');
 			ajustarAltoVenta();
 		}
 		// Lo enviado viene del servidor; lo que aún no se envía queda en el carro
 		function aplicarDetalleMesa(d) {
+			cobroParcial = null;
 			mesa = { id_mesa: d.id_mesa, id_cotizacion: d.id_cotizacion, inicio: d.id_cotizacion ? Date.now() - d.segundos * 1000 : 0 };
 			carro = $.map(d.lineas, function (l) {
-				return { enviada: true, id_detalle: l.id_detalle, id_producto: l.id_producto, nombre: l.nombre, precio: l.unitario, bruto: l.bruto,
+				return { enviada: true, id_detalle: l.id_detalle, id_producto: l.id_producto, nombre: l.nombre, precio: l.unitario, bruto: l.bruto, bruto_exacto: l.bruto_exacto,
 					cantidad: l.cantidad, agregados: [], agregado: l.agregado, nota: l.nota, exento: l.exento, hora: l.hora };
 			}).concat(pendientesMesa());
 			actualizarModoMesa();
 			renderCarro();
 		}
-		function abrirMesa(id) {
+		// descartar: la mesa anterior tenía productos sin enviar que se pierden (solo si la nueva se abre bien)
+		function abrirMesa(id, descartar) {
 			get('detalleMesa', { id_mesa: id }).done(function (d) {
+				if (descartar) carro = [];
 				aplicarDetalleMesa(d);
 				$('#lnkVenta').tab('show');
 				if (d.id_lprecio && d.id_lprecio !== Number($('#cboLista').val())) cargarCatalogo(d.id_lprecio);
@@ -1221,13 +1350,12 @@
 			if ($(this).attr('data-estado') === 'bloqueada') { ofrecerLiberar(id); return; }
 			if (mesa && mesa.id_mesa === id) { $('#lnkVenta').tab('show'); return; }
 			if (mesa && pendientesMesa().length) {
-				swal({ title: 'Hay productos sin enviar', text: 'Se perderán los que no enviaste a la mesa ' + mesa.id_mesa + '.', type: 'warning', showCancelButton: true, confirmButtonText: 'Continuar', cancelButtonText: 'Cancelar' },
-					function (ok) { if (ok) { carro = []; abrirMesa(id); } });
+				swal({ title: 'Hay productos sin enviar', text: 'Se perderán los que no enviaste a ' + nombreMesa(mesa.id_mesa) + '.', type: 'warning', showCancelButton: true, confirmButtonText: 'Continuar', cancelButtonText: 'Cancelar' },
+					function (ok) { if (ok) abrirMesa(id, true); });
 				return;
 			}
 			// Una venta directa en curso se lleva a la mesa elegida (sus productos quedan sin enviar)
-			if (mesa) carro = [];
-			abrirMesa(id);
+			abrirMesa(id, !!mesa);
 		});
 		$('#btnSalirMesa').on('click', function () {
 			var salir = function () { limpiarVenta(); $('#lnkMesas').tab('show'); };
@@ -1241,18 +1369,20 @@
 		$('#btnEnviarMesa').on('click', function () { enviarAMesa(false); });
 		function enviarAMesa(luegoCobrar) {
 			if (enviando || !mesa) return;
-			var comanda = lineasComanda(), idMesa = mesa.id_mesa;
-			var detalle = $.map(pendientesMesa(), function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota }; });
+			var comanda = lineasComanda(), idMesa = mesa.id_mesa, enviadas = pendientesMesa();
+			var detalle = $.map(enviadas, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota }; });
 			enviando = true;
 			$('#btnEnviarMesa, #btnCobrar').prop('disabled', true);
 			postJson('enviarMesa', { id_mesa: idMesa, id_lprecio: Number($('#cboLista').val()), detalle: detalle }).done(function (r) {
 				if (imprimeComanda()) imprimirComanda(0, comanda, '', idMesa);
-				carro = [];
+				// Se conserva lo que se agregó mientras se enviaba
+				carro = $.grep(carro, function (l) { return !l.enviada && $.inArray(l, enviadas) < 0; });
 				aplicarDetalleMesa(r.detalle);
 				cargarMesas();
-				toastr.success('Pedido enviado a la mesa ' + idMesa);
+				toastr.success('Pedido enviado a ' + nombreMesa(idMesa));
 				enviando = false;
 				if (luegoCobrar) { renderCarro(); abrirPago(); return; }
+				if (pendientesMesa().length) { toastr.info('Quedan productos agregados sin enviar'); return; }
 				limpiarVenta();
 				$('#lnkMesas').tab('show');
 			}).fail(function (x) {
@@ -1261,31 +1391,162 @@
 				renderCarro();
 			});
 		}
-		function anularLineaMesa(l) {
-			swal({ title: 'Anular ' + l.nombre, text: 'Ya fue enviado a la mesa. Indica el motivo:', type: 'input', showCancelButton: true, confirmButtonColor: '#C9372C', confirmButtonText: 'Anular', cancelButtonText: 'Volver', inputPlaceholder: 'Motivo' }, function (motivo) {
-				if (motivo === false) return;
-				if (!$.trim(motivo)) { toastr.warning('Indica el motivo de la anulación'); return; }
-				var idMesa = mesa.id_mesa;
-				enviarConAutorizacion(function (aut) {
-					return postJson('anularLineaMesa', { id_mesa: idMesa, id_detalle: l.id_detalle, motivo: motivo, autorizacion: aut });
-				}, function (r) {
-					cargarMesas();
-					imprimirComanda(0, r.anuladas, '', idMesa, $.trim(motivo));
-					if (r.liberada) { toastr.info('La mesa ' + idMesa + ' quedó libre'); limpiarVenta(); $('#lnkMesas').tab('show'); return; }
-					aplicarDetalleMesa(r.detalle);
+		function anularLineaMesa(l) { abrirMesaProductos('anular', [l]); }
+
+		// ---- ventana de productos de la mesa: mover/dividir, cobrar una parte, anular parte de un producto ----
+		var mp = null;   // {modo, lineas}
+		var MP_TEXTOS = {
+			mover: { titulo: 'Cambiar o dividir', boton: 'Pasar a la mesa', ayuda: 'Elige qué productos pasan a la otra mesa. Si pasas todo a una mesa libre, el pedido completo cambia de mesa y conserva su hora.' },
+			parcial: { titulo: 'Cobrar solo una parte', boton: 'Cobrar lo elegido', ayuda: 'Elige lo que se paga ahora. Lo demás sigue en la mesa para cobrarlo después.' },
+			anular: { titulo: 'Anular producto', boton: 'Anular', ayuda: 'Ya fue enviado a la mesa. Elige cuántos se anulan; se avisa a su destino de impresión.' }
+		};
+		function abrirMesaProductos(modo, lineas) {
+			if (!mesa || !mesa.id_cotizacion) return;
+			if (modo !== 'anular' && pendientesMesa().length) { toastr.warning('Primero envía a la mesa los productos nuevos'); return; }
+			mp = { modo: modo, lineas: lineas || $.grep(carro, function (l) { return l.enviada; }), enviando: false };
+			var t = MP_TEXTOS[modo];
+			$('#mpTitulo').text(t.titulo + (modo === 'anular' ? '' : ' · ' + nombreMesa(mesa.id_mesa)));
+			$('#mpAyuda').text(t.ayuda);
+			$('#mpConfirmar').text(t.boton).toggleClass('btn-danger', modo === 'anular').toggleClass('btn-primary', modo !== 'anular');
+			$('#mpCampoDestino').toggle(modo === 'mover');
+			$('#mpCampoMotivo').toggle(modo === 'anular');
+			$('#mpMotivo').val('');
+			$('#mpResumenTexto').text(modo === 'anular' ? 'Se anula' : (modo === 'mover' ? 'Pasa a la otra mesa' : 'A cobrar ahora'));
+			$('#mpLineas').html($.map(mp.lineas, function (l, i) {
+				var fraccion = l.cantidad !== Math.round(l.cantidad);
+				var inicial = modo === 'parcial' ? (cobroParcial && cobroParcial[l.id_detalle] ? cobroParcial[l.id_detalle] : 0) : l.cantidad;
+				return '<div class="mp-linea" data-i="' + i + '"><div class="mp-nombre">' + esc(l.nombre) + (l.agregado ? '<small>+ ' + esc(l.agregado) + '</small>' : '') + (l.nota ? '<small>' + esc(l.nota) + '</small>' : '') + '</div>'
+					+ '<div class="input-group input-group-sm"><span class="input-group-btn"><button class="btn btn-default mp-menos" type="button"><i class="fa fa-minus"></i></button></span>'
+					+ '<input type="number" class="form-control mp-cant" min="0" max="' + l.cantidad + '" step="' + (fraccion ? '0.001' : '1') + '" value="' + inicial + '">'
+					+ '<span class="input-group-btn"><button class="btn btn-default mp-mas" type="button"><i class="fa fa-plus"></i></button></span></div>'
+					+ '<div class="mp-de">de ' + fmtCant(l.cantidad) + '</div><div class="mp-monto"></div></div>';
+			}).join(''));
+			actualizarMp();
+			if (modo === 'mover') {
+				var $d = $('#mpDestino').html('<option value="">Cargando mesas…</option>');
+				cargarMesas().always(function () {
+					$d.empty().append('<option value="">Elige una mesa</option>');
+					var grupos = {};
+					$.each(mesasLista, function (i, m) {
+						if (m.id_mesa === mesa.id_mesa || m.estado === 'bloqueada') return;
+						if (!grupos[m.recinto]) grupos[m.recinto] = $('<optgroup>').attr('label', m.recinto).appendTo($d);
+						grupos[m.recinto].append($('<option>').val(m.id_mesa).text(nombreMesa(m.id_mesa) + (m.con_pedido ? ' · ocupada (' + fmt(m.total) + ')' : ' · libre')));
+					});
 				});
-			});
+			}
+			$('#modalMesaProductos').modal('show');
 		}
+		function cantidadesMp() {
+			var res = [];
+			$('#mpLineas .mp-linea').each(function () {
+				var l = mp.lineas[$(this).data('i')];
+				var q = Math.max(0, Math.min(l.cantidad, Number(String($(this).find('.mp-cant').val()).replace(',', '.')) || 0));
+				res.push({ linea: l, cantidad: Math.round(q * 1000) / 1000 });
+			});
+			return res;
+		}
+		function actualizarMp() {
+			var total = 0, hay = false;
+			$.each(cantidadesMp(), function (i, c) {
+				var monto = c.cantidad >= c.linea.cantidad ? c.linea.bruto : Math.round(c.linea.bruto_exacto * c.cantidad / c.linea.cantidad);
+				if (c.cantidad > 0) { total += monto; hay = true; }
+				$('#mpLineas .mp-linea').eq(i).find('.mp-monto').text(c.cantidad > 0 ? fmt(monto) : '');
+			});
+			$('#mpResumenMonto').text(fmt(total));
+			$('#mpConfirmar').prop('disabled', !hay);
+		}
+		$('#mpLineas').on('input change', '.mp-cant', actualizarMp).on('click', '.mp-mas, .mp-menos', function () {
+			var $c = $(this).closest('.mp-linea').find('.mp-cant'), l = mp.lineas[$(this).closest('.mp-linea').data('i')];
+			var paso = l.cantidad !== Math.round(l.cantidad) ? 0.1 : 1;
+			var v = (Number($c.val()) || 0) + ($(this).hasClass('mp-mas') ? paso : -paso);
+			$c.val(Math.round(Math.max(0, Math.min(l.cantidad, v)) * 1000) / 1000);
+			actualizarMp();
+		});
+		$('#mpConfirmar').on('click', function () {
+			if (!mp || mp.enviando) return;
+			var idMesa = mesa.id_mesa;
+			var sel = $.grep(cantidadesMp(), function (c) { return c.cantidad > 0; });
+			if (!sel.length) return;
+			var lineas = $.map(sel, function (c) { return { id_detalle: c.linea.id_detalle, cantidad: c.cantidad }; });
+			if (mp.modo === 'parcial') {
+				var todo = sel.length === mp.lineas.length && !$.grep(sel, function (c) { return c.cantidad < c.linea.cantidad; }).length;
+				cobroParcial = null;
+				if (!todo) { cobroParcial = {}; $.each(lineas, function (i, l) { cobroParcial[l.id_detalle] = l.cantidad; }); }
+				actualizarModoMesa();
+				renderCarro();
+				$('#modalMesaProductos').one('hidden.bs.modal', abrirPago).modal('hide');
+				return;
+			}
+			if (mp.modo === 'mover') {
+				var destino = Number($('#mpDestino').val());
+				if (!destino) { toastr.warning('Elige la mesa a la que pasan los productos'); return; }
+				$(this).prop('disabled', true);
+				postJson('moverMesa', { id_mesa: idMesa, id_mesa_destino: destino, lineas: lineas }).done(function (r) {
+					$('#modalMesaProductos').modal('hide');
+					toastr.success('Productos pasados a ' + nombreMesa(destino));
+					imprimirComanda(0, r.movidas || [], '', destino, { traslado_desde: idMesa });
+					cargarMesas();
+					if (r.liberada) { limpiarVenta(); $('#lnkMesas').tab('show'); } else aplicarDetalleMesa(r.detalle);
+				}).fail(error).always(function () { $('#mpConfirmar').prop('disabled', false); });
+				return;
+			}
+			var motivo = $.trim($('#mpMotivo').val());
+			if (!motivo) { toastr.warning('Indica el motivo de la anulación'); $('#mpMotivo').focus(); return; }
+			if (mp.enviando) return;   // doble clic: una sola anulación
+			mp.enviando = true;
+			$('#modalMesaProductos').modal('hide');
+			enviarConAutorizacion(function (aut) {
+				return postJson('anularLineaMesa', { id_mesa: idMesa, id_detalle: lineas[0].id_detalle, cantidad: lineas[0].cantidad, motivo: motivo, autorizacion: aut });
+			}, function (r) {
+				cargarMesas();
+				imprimirComanda(0, r.anuladas, '', idMesa, { anulacion: true, motivo: motivo });
+				if (r.liberada) { toastr.info(nombreMesa(idMesa) + ' quedó libre'); limpiarVenta(); $('#lnkMesas').tab('show'); return; }
+				aplicarDetalleMesa(r.detalle);
+			});
+		});
+		$('#grupoOpcionesMesa').on('click', 'a', function (e) { e.preventDefault(); });
+		$('#btnMoverMesa').on('click', function () { abrirMesaProductos('mover'); });
+		// Volver a enviar a cocina/barra algo ya pedido (papel cortado, se perdió la comanda...). No cambia el pedido.
+		function lineaComanda(l) {
+			return { id_producto: l.id_producto, nombre: l.nombre, cantidad: l.cantidad, nota: l.nota || '', agregados: l.agregado ? [l.agregado] : [] };
+		}
+		$('#lineas').on('click', '.reenviar-linea', function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var l = carro[$(this).closest('[data-i]').data('i')];
+			imprimirComanda(0, [lineaComanda(l)], '', mesa.id_mesa, { reenvio: true });
+		});
+		$('#btnReenviarTodo').on('click', function () {
+			var enviadas = $.grep(carro, function (l) { return l.enviada; });
+			if (enviadas.length) imprimirComanda(0, $.map(enviadas, lineaComanda), '', mesa.id_mesa, { reenvio: true });
+		});
+		$('#btnCobrarParte').on('click', function () { abrirMesaProductos('parcial'); });
+		$('#btnCancelarParcial').on('click', function (e) {
+			e.preventDefault();
+			cobroParcial = null;
+			actualizarModoMesa();
+			renderCarro();
+		});
+		$('#btnPrecuenta').on('click', function () {
+			if (pendientesMesa().length) { toastr.warning('Primero envía a la mesa los productos nuevos'); return; }
+			var parcial = cobroParcial;
+			cobroParcial = null;   // la precuenta es de toda la mesa
+			var descuento = totales().descuento;
+			cobroParcial = parcial;
+			imprimir(base + 'precuenta?id_mesa=' + mesa.id_mesa + '&descuento=' + descuento);
+			toastr.info('Imprimiendo precuenta de ' + nombreMesa(mesa.id_mesa));
+		});
+
 		$('#btnAnularPedido').on('click', function () {
 			var idMesa = mesa.id_mesa;
-			swal({ title: 'Anular pedido de la mesa ' + idMesa, text: 'Se anulan todos sus productos y la mesa queda libre. Indica el motivo:', type: 'input', showCancelButton: true, confirmButtonColor: '#C9372C', confirmButtonText: 'Anular y liberar', cancelButtonText: 'Volver', inputPlaceholder: 'Motivo' }, function (motivo) {
+			swal({ title: 'Anular pedido de ' + nombreMesa(idMesa), text: 'Se anulan todos sus productos y la mesa queda libre. Indica el motivo:', type: 'input', showCancelButton: true, confirmButtonColor: '#C9372C', confirmButtonText: 'Anular y liberar', cancelButtonText: 'Volver', inputPlaceholder: 'Motivo' }, function (motivo) {
 				if (motivo === false) return;
 				if (!$.trim(motivo)) { toastr.warning('Indica el motivo de la anulación'); return; }
 				enviarConAutorizacion(function (aut) {
 					return postJson('anularPedidoMesa', { id_mesa: idMesa, motivo: motivo, autorizacion: aut });
 				}, function (r) {
-					imprimirComanda(0, r.anuladas, '', idMesa, $.trim(motivo));
-					toastr.success('Pedido anulado: la mesa ' + idMesa + ' quedó libre');
+					imprimirComanda(0, r.anuladas, '', idMesa, { anulacion: true, motivo: $.trim(motivo) });
+					toastr.success('Pedido anulado: ' + nombreMesa(idMesa) + ' quedó libre');
 					limpiarVenta();
 					cargarMesas();
 					$('#lnkMesas').tab('show');
@@ -1293,10 +1554,10 @@
 			});
 		});
 		function ofrecerLiberar(id) {
-			swal({ title: 'Mesa ' + id + ' bloqueada', text: 'Está marcada como ocupada o en uso, pero no tiene un pedido que se pueda abrir aquí. ¿Liberarla?', type: 'warning', showCancelButton: true, confirmButtonColor: '#C9372C', confirmButtonText: 'Liberar', cancelButtonText: 'Cancelar' }, function (ok) {
+			swal({ title: nombreMesa(id) + ' bloqueada', text: 'Está marcada como ocupada o en uso, pero no tiene un pedido que se pueda abrir aquí. ¿Liberarla?', type: 'warning', showCancelButton: true, confirmButtonColor: '#C9372C', confirmButtonText: 'Liberar', cancelButtonText: 'Cancelar' }, function (ok) {
 				if (!ok) return;
 				enviarConAutorizacion(function (aut) { return postJson('liberarMesa', { id_mesa: id, autorizacion: aut }); },
-					function () { toastr.success('Mesa ' + id + ' liberada'); cargarMesas(); });
+					function () { toastr.success(nombreMesa(id) + ' liberada'); cargarMesas(); });
 			});
 		}
 
@@ -1603,7 +1864,18 @@
 
 		// Pide el inventario (si hay insumos marcados) y llama a continuar(inventario) con {clave: cantidad};
 		// sin insumos marcados continúa directo con {}. Cancelar el cuadro no cierra nada.
+		// No se cierra la caja con mesas abiertas (el servidor también lo impide)
 		function pedirInventarioCierre(continuar) {
+			cargarMesas().always(function () {
+				var abiertas = $.grep(mesasLista, function (m) { return m.con_pedido; });
+				if (abiertas.length) {
+					swal('Hay mesas abiertas', 'Cobra o anula el pedido de: ' + $.map(abiertas, function (m) { return nombreMesa(m.id_mesa); }).join(', ') + ', antes de cerrar la caja.', 'warning');
+					return;
+				}
+				pedirInventarioCierreTras(continuar);
+			});
+		}
+		function pedirInventarioCierreTras(continuar) {
 			get('inventarioCierre').done(function (r) {
 				invFilas = r.insumos || [];
 				if (!invFilas.length) { continuar({}); return; }
@@ -1658,10 +1930,11 @@
 				confirmButtonText: 'Cerrar caja',
 				cancelButtonText: 'Cancelar'
 			}, function (ok) {
-				if (!ok) return;
+				if (!ok || cerrandoCaja) return;
+				cerrandoCaja = true;
 				var idCaja = resumen.id_caja;
 				var cierreTermica = catalogo && catalogo.config.imprimir_cierre_termica;
-				post('cerrar', datos).done(function (r) {
+				post('cerrar', datos).always(function () { cerrandoCaja = false; }).done(function (r) {
 					// Como el POS: si Configuraciones lo indica, el cierre sale también en la térmica
 					if (cierreTermica) imprimir(base + 'cierreTicket/' + idCaja);
 					var inv = r.inventario && r.inventario.insumos

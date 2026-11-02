@@ -51,7 +51,7 @@ class McanalDeVenta extends CI_Model
 		if ($id) {
 			$this->db->where('id_canal_venta', $id);
 			$this->db->update('canal_venta', $data);
-			$consulta = $this->db->query("select " . $id . " as id_canal_venta");
+			$consulta = $this->db->query("select " . (int)$id . " as id_canal_venta");
 		} else {
 			$this->db->insert('canal_venta', $data);
 			$consulta = $this->db->query("SELECT CURRVAL('canal_venta_id_canal_venta_seq'::regclass) as id_canal_venta");

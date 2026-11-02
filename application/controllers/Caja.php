@@ -127,6 +127,25 @@ class Caja extends CI_Controller
 		}, true);
 	}
 
+	public function moverMesa()
+	{
+		$this->ejecutar(function () {
+			return $this->Mcaja->moverMesa($this->cajaRequerida(), $this->idUsuario(), $this->cuerpoJson());
+		}, true);
+	}
+
+	/** Precuenta de la mesa en ticket (impresora de la caja); ?descuento= muestra el descuento que se aplicará. */
+	public function precuenta()
+	{
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) redirect(base_url());
+		if (!$this->Mcaja->tienePermiso($this->idRol())) show_error('Tu rol no tiene acceso a la Caja', 403, 'Sin acceso');
+		$d = $this->Mcaja->precuentaMesa((int)$this->input->get('id_mesa'));
+		if (!$d) show_error('La mesa no tiene un pedido abierto', 404);
+		$d['descuento'] = max(0, (int)$this->input->get('descuento'));
+		$d['papel'] = $this->papelTicket();
+		$this->load->view('caja/precuenta.php', $d);
+	}
+
 	public function liberarMesa()
 	{
 		$this->ejecutar(function () {
@@ -284,10 +303,20 @@ class Caja extends CI_Controller
 			'grupos' => $grupos,
 			'venta' => $doc ? $doc['venta'] : null,
 			'observacion' => mb_substr(trim((string)(isset($datos['observacion']) ? $datos['observacion'] : '')), 0, 200),
-			'mesa' => isset($datos['id_mesa']) ? (int)$datos['id_mesa'] : 0,
-			'anulacion' => !empty($datos['anulacion']),
-			'motivo' => mb_substr(trim((string)(isset($datos['motivo']) ? $datos['motivo'] : '')), 0, 100),
+			'mesa' => !empty($datos['id_mesa']) ? $this->Mcaja->etiquetaMesa((int)$datos['id_mesa']) : '',
+			'aviso' => $this->avisoComanda($datos),
 		);
+	}
+
+	/** Comanda especial: anulación, cambio de mesa o reenvío de algo ya enviado. null = comanda normal. */
+	private function avisoComanda($datos)
+	{
+		if (!empty($datos['anulacion'])) {
+			return array('tipo' => 'anulacion', 'motivo' => mb_substr(trim((string)(isset($datos['motivo']) ? $datos['motivo'] : '')), 0, 100));
+		}
+		if (!empty($datos['traslado_desde'])) return array('tipo' => 'traslado', 'desde' => $this->Mcaja->etiquetaMesa((int)$datos['traslado_desde']));
+		if (!empty($datos['reenvio'])) return array('tipo' => 'reenvio');
+		return null;
 	}
 
 	/**
@@ -317,16 +346,17 @@ class Caja extends CI_Controller
 			if (!$c) throw new Exception('No hay productos para la comanda', 400);
 			$this->load->library('Comanda_impresion');
 			$this->load->model('Mcola_impresion');
-			$this->Mcola_impresion->conectar();
+			$this->Mcola_impresion->conectar(null, false);
 			// Con un agente de Windows conectado, la comanda va a la cola y la imprime el equipo que tiene la impresora;
 			// si no, el servidor intenta enviarla directo (ruta de Windows o IP y puerto)
 			$conAgente = $this->Mcola_impresion->hayAgenteActivo();
 			$res = array();
 			foreach ($c['grupos'] as $g) {
-				$bytes = $this->comanda_impresion->armar($g, $c['venta'], $c['observacion'], $c['mesa'], $c['anulacion'] ? $c['motivo'] : null);
+				$bytes = $this->comanda_impresion->armar($g, $c['venta'], $c['observacion'], $c['mesa'], $c['aviso']);
 				if ($conAgente) {
 					$d = $g['destino'];
-					$this->Mcola_impresion->encolar($g['nombre'], Mcola_impresion::nombreImpresora($d['ruta_windows']), $d['ip'], $d['puerto'], $bytes);
+					$ipOk = Comanda_impresion::ipPermitida(trim((string)$d['ip']), $d['puerto']);
+					$this->Mcola_impresion->encolar($g['nombre'], Mcola_impresion::nombreImpresora($d['ruta_windows']), $ipOk ? trim((string)$d['ip']) : '', $ipOk ? (int)$d['puerto'] : 0, $bytes);
 					$ok = true;
 					$detalle = 'en cola para el agente';
 				} else {
@@ -361,7 +391,7 @@ class Caja extends CI_Controller
 		$v = $doc['venta'];
 		$e = $doc['empresa'];
 		$t = function ($s) {
-			return utf8_decode((string)$s);
+			return mb_convert_encoding((string)((string)$s), 'ISO-8859-1', 'UTF-8');
 		};
 		$m = function ($n) {
 			return '$' . number_format((float)$n, 0, ',', '.');
@@ -595,6 +625,11 @@ class Caja extends CI_Controller
 		} catch (Exception $e) {
 			$code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
 			$this->output->set_status_header($code)->set_output(json_encode(array('error' => $e->getMessage())));
+		}
+		catch (Throwable $e) {
+			// Errores de PHP (tipos, métodos): JSON igual, para que la Caja muestre el mensaje y no una página HTML
+			log_message('error', 'Caja web: ' . $e->getMessage() . ' en ' . basename($e->getFile()) . ':' . $e->getLine());
+			$this->output->set_status_header(500)->set_output(json_encode(array('error' => 'Error interno del servidor. Revisa el registro (log).')));
 		}
 	}
 }

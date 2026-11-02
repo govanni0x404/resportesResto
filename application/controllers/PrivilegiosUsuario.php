@@ -57,6 +57,17 @@ class PrivilegiosUsuario extends CI_Controller
         echo json_encode($r);
     }
 
+    /** Crea el privilegio de un módulo que el rol todavía no tiene (lo llama la pantalla al marcarlo). */
+    public function crearPrivilegio()
+    {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+            redirect(base_url());
+        }
+        $d = $this->input->post('prod');
+        $r = $this->MprivilegiosUsuario->crearPrivilegio((int)(isset($d['id_rol']) ? $d['id_rol'] : 0), (int)(isset($d['id_psistema']) ? $d['id_psistema'] : 0));
+        echo json_encode($r);
+    }
+
     public function HabilitarTodosLosPrivilegios()
     {
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {

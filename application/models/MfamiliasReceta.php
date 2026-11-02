@@ -45,7 +45,7 @@ class MfamiliasReceta extends CI_Model
     if ($id) {
       $this->db->where('id_familia_receta', $id);
       $this->db->update('familia_receta', $data);
-      $consulta = $this->db->query("select " . $id . " as id_familia_receta");
+      $consulta = $this->db->query("select " . (int)$id . " as id_familia_receta");
     } else {
       $this->db->insert('familia_receta', $data);
       $consulta = $this->db->query("SELECT CURRVAL('familia_receta_id_familia_receta_seq'::regclass) as id_familia_receta");

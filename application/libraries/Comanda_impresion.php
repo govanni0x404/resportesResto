@@ -13,9 +13,11 @@ class Comanda_impresion
 
 	/**
 	 * Texto ESC/POS de la comanda de un destino. $grupo = ['nombre' =>, 'lineas' => [...]].
-	 * Con $motivoAnulacion (no null) es un aviso de anulación: mismos productos, para que no se preparen.
+	 * $mesa: nombre visible de la mesa ("Mesa 4", "Terraza 2") o '' en venta directa.
+	 * $aviso: null = comanda normal; ['tipo' => 'anulacion', 'motivo'] (no preparar), ['tipo' => 'traslado', 'desde'] (cambio de
+	 * mesa) o ['tipo' => 'reenvio'] (se vuelve a enviar algo ya pedido).
 	 */
-	public function armar($grupo, $venta, $observacion, $mesa = 0, $motivoAnulacion = null)
+	public function armar($grupo, $venta, $observacion, $mesa = '', $aviso = null)
 	{
 		$W = self::ANCHO;
 		$centro = "\x1ba\x01";
@@ -29,15 +31,23 @@ class Comanda_impresion
 		$b = "\x1b@\x1bt\x13" . $normal;                       // iniciar + CP858 (acentos)
 		// Cabecera: destino en recuadro negro
 		$b .= $centro . $inv . $doble . $this->t(str_pad('', 0)) . $this->centrar(mb_strtoupper($grupo['nombre']), $W / 2) . $normal . "\n";
-		$anula = $motivoAnulacion !== null;
+		$tipo = $aviso ? $aviso['tipo'] : '';
+		$anula = $tipo === 'anulacion';
 		if ($anula) {
 			$b .= $centro . $inv . $doble . $this->centrar('ANULACION', $W / 2) . $normal . "\n";
 			$b .= $centro . $neg . "NO PREPARAR" . $normal . "\n";
+		} elseif ($tipo === 'traslado') {
+			$b .= $centro . $inv . $doble . $this->centrar('CAMBIO DE MESA', $W / 2) . $normal . "\n";
+			$b .= $centro . $neg . "ENTREGAR EN LA MESA NUEVA" . $normal . "\n";
+		} elseif ($tipo === 'reenvio') {
+			$b .= $centro . $inv . $doble . $this->centrar('REENVIO', $W / 2) . $normal . "\n";
+			$b .= $centro . $neg . "YA SE HABIA PEDIDO" . $normal . "\n";
 		} else {
 			$b .= $centro . $neg . "C O M A N D A" . $normal . "\n";
 		}
-		if ($mesa) {
-			$b .= $centro . $doble . $this->t('MESA ' . $mesa) . $normal . "\n";
+		if ($mesa !== '' && $mesa !== 0) {
+			$b .= $centro . $doble . $this->t(mb_strtoupper($mesa)) . $normal . "\n";
+			if ($tipo === 'traslado') $b .= $centro . $neg . $this->t('Antes: ' . mb_strtoupper($aviso['desde'])) . $normal . "\n";
 		} elseif ($venta) {
 			$b .= $centro . $doble . $this->t('N ' . $venta->folio) . $normal . "\n";
 			$b .= $centro . $this->t((string)$venta->nombre_tdocumento) . "\n";
@@ -62,8 +72,8 @@ class Comanda_impresion
 		}
 		$b .= str_repeat('=', $W) . "\n";
 		$cantTxt = rtrim(rtrim(number_format($total, 3, ',', ''), '0'), ',');
-		$b .= $neg . $this->t(($anula ? 'ANULADO: ' : 'TOTAL: ') . $cantTxt . ($total == 1 ? ' producto' : ' productos')) . $normal . "\n";
-		if ($anula && $motivoAnulacion !== '') $b .= "\n" . $neg . $this->envolver('Motivo: ' . $motivoAnulacion, $W) . $normal;
+		$b .= $neg . $this->t(($anula ? 'ANULADO: ' : ($tipo === 'traslado' ? 'CAMBIAN DE MESA: ' : 'TOTAL: ')) . $cantTxt . ($total == 1 ? ' producto' : ' productos')) . $normal . "\n";
+		if ($anula && $aviso['motivo'] !== '') $b .= "\n" . $neg . $this->envolver('Motivo: ' . $aviso['motivo'], $W) . $normal;
 		if ($observacion !== '') {
 			$b .= "\n" . $inv . $neg . $this->t(str_pad(' OBSERVACION', $W)) . $normal . "\n" . $neg . $alto . $this->envolver($observacion, $W) . $normal;
 		}
@@ -84,11 +94,11 @@ class Comanda_impresion
 	public function enviar($destino, $bytes)
 	{
 		$ruta = trim((string)$destino['ruta_windows']);
-		$esUnc = (bool)preg_match('#^(\\\\\\\\|//)[^/\\\\]+[/\\\\].+#', $ruta);
+		$esUnc = self::rutaPermitida($ruta);
 		$windows = stripos(PHP_OS_FAMILY, 'Windows') === 0;
 		$ip = trim((string)$destino['ip']);
 		$puerto = (int)$destino['puerto'];
-		$ipValida = $ip !== '' && $puerto > 1 && (filter_var($ip, FILTER_VALIDATE_IP) || preg_match('/^[a-z0-9.-]+\.[a-z]{2,}$/i', $ip));
+		$ipValida = self::ipPermitida($ip, $puerto);
 
 		if ($esUnc && $windows) {
 			$ok = @file_put_contents(str_replace('/', '\\', $ruta), $bytes);
@@ -97,7 +107,7 @@ class Comanda_impresion
 		}
 		if ($ipValida) {
 			$s = @stream_socket_client('tcp://' . $ip . ':' . $puerto, $errno, $errstr, 3);
-			if (!$s) return array(false, 'No se pudo conectar a ' . $ip . ':' . $puerto . ' (' . $errstr . ')');
+			if (!$s) return array(false, 'No se pudo conectar a la impresora ' . $ip . ':' . $puerto . ' (revisa que esté encendida y en la red)');
 			stream_set_timeout($s, 5);
 			$total = strlen($bytes);
 			$escrito = 0;
@@ -111,6 +121,24 @@ class Comanda_impresion
 		}
 		if ($esUnc) return array(false, 'El servidor no es Windows: configura IP y puerto de la impresora en Destino de impresión');
 		return array(false, 'El destino no tiene una ruta ni una IP y puerto válidos');
+	}
+
+	/**
+	 * Solo impresoras compartidas de la forma \\equipo\impresora o //equipo/impresora: sin unidades (C:), recursos
+	 * administrativos ($), rutas \\?\ ni subcarpetas, para que no se pueda escribir un archivo cualquiera en el servidor.
+	 */
+	public static function rutaPermitida($ruta)
+	{
+		return (bool)preg_match('#^(\\\\\\\\|//)[A-Za-z0-9._-]+[\\\\/][A-Za-z0-9 _-]+$#', (string)$ruta);
+	}
+
+	/** Solo impresoras de la red local (10.x, 172.16-31.x, 192.168.x) en los puertos de impresión directa 9100-9109. */
+	public static function ipPermitida($ip, $puerto)
+	{
+		$puerto = (int)$puerto;
+		if ($puerto < 9100 || $puerto > 9109) return false;
+		if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) return false;
+		return !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE);
 	}
 
 	private function t($s)

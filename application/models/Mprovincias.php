@@ -57,7 +57,7 @@ class Mprovincias extends CI_Model
     if ($id) {
       $this->db->where('id_provincia', $id);
       $this->db->update('provincia', $data);
-      $consulta = $this->db->query("select " . $id . " as id_provincia");
+      $consulta = $this->db->query("select " . (int)$id . " as id_provincia");
     } else {
       $this->db->insert('provincia', $data);
       $consulta = $this->db->query("SELECT CURRVAL('provincia_id_provincia_seq'::regclass) as id_provincia");

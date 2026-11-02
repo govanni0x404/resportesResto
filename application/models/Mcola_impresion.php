@@ -14,7 +14,7 @@ class Mcola_impresion extends CI_Model
 	private $db = null;
 
 	/** Con sesión (administración y Caja) o por nombre de conexión (agente, que no tiene sesión). */
-	public function conectar($nombreConexion = null)
+	public function conectar($nombreConexion = null, $crearTablas = true)
 	{
 		$this->load->helper('tenant');
 		if ($nombreConexion === null) {
@@ -26,7 +26,8 @@ class Mcola_impresion extends CI_Model
 		}
 		$db->db_debug = false;
 		$this->db = $db;
-		$this->asegurarTablas();
+		// La API del agente (sin sesión) y la Caja no crean tablas: solo la pantalla de administración
+		if ($crearTablas) $this->asegurarTablas();
 		return $db;
 	}
 
@@ -77,7 +78,8 @@ class Mcola_impresion extends CI_Model
 
 	public function agenteDeSecreto($secreto)
 	{
-		return $this->db->query('SELECT * FROM agente_impresion WHERE activo AND token_hash = ?', array(hash('sha256', (string)$secreto)))->row();
+		$r = $this->db->query('SELECT * FROM agente_impresion WHERE activo AND token_hash = ?', array(hash('sha256', (string)$secreto)));
+		return $r ? $r->row() : null;
 	}
 
 	public function revocarAgente($id)
@@ -111,7 +113,8 @@ class Mcola_impresion extends CI_Model
 	public function pendientes($agente, $impresoras)
 	{
 		$lista = array();
-		foreach ((array)$impresoras as $n) { $n = trim((string)$n); if ($n !== '') $lista[] = mb_strtolower($n); }
+		$impresoras = array_values(array_filter((array)$impresoras, 'is_scalar'));
+		foreach ($impresoras as $n) { $n = trim((string)$n); if ($n !== '') $lista[] = mb_strtolower($n); }
 		$this->db->query('UPDATE agente_impresion SET ultimo_contacto = now(), impresoras = ? WHERE id_agente = ?',
 			array(json_encode(array_values($impresoras)), (int)$agente->id_agente));
 		// Mantenimiento: lo que se quedó "imprimiendo" sin respuesta vuelve a la cola (hasta 3 intentos); lo viejo vence

@@ -20,10 +20,10 @@ class MlistaDePrecios extends CI_Model
 			SELECT EXISTS (
 				SELECT 1 
 				FROM information_schema.columns 
-				WHERE table_name = '$tabla' 
-				AND column_name = '$columna'
+				WHERE table_name = ? 
+				AND column_name = ?
 			) as existe
-		");
+		", array($tabla, $columna));
 
         $result = $query->row();
         return $result->existe === 't' || $result->existe === true;
@@ -122,7 +122,7 @@ class MlistaDePrecios extends CI_Model
         if ($id) {
             $this->db->where('id_lprecio', $id);
             $this->db->update('lprecio', $data);
-            $consulta = $this->db->query("select " . $id . " as id_lprecio");
+            $consulta = $this->db->query("select " . (int)$id . " as id_lprecio");
         } else {
             $this->db->insert('lprecio', $data);
             $consulta = $this->db->query("SELECT CURRVAL('lprecio_id_lprecio_seq'::regclass) as id_lprecio");
@@ -138,7 +138,7 @@ class MlistaDePrecios extends CI_Model
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $query = $this->db->query('SELECT * from detalle_lprecio  d join lprecio l on d.id_lprecio=l.id_lprecio
-                                  where d.id_producto=' . $idProducto . ' order by l.nombre_lprecio');
+                                  where d.id_producto=' . (int)$idProducto . ' order by l.nombre_lprecio');
         return $query->result();
     }
 

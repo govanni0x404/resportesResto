@@ -37,8 +37,8 @@ class MresumenVentasProductosMes extends CI_Model
             JOIN producto p ON p.id_producto = d.id_producto
             JOIN familia f ON f.id_familia = p.id_familia
             JOIN venta v ON d.id_venta = v.id_venta
-            WHERE v.fecha >= '" . $de . "'
-              AND v.fecha <= '" . $a . "'
+            WHERE v.fecha >= ?
+              AND v.fecha <= ?
             GROUP BY
                 date_trunc('month', v.fecha),
                 p.id_producto,
@@ -48,7 +48,7 @@ class MresumenVentasProductosMes extends CI_Model
                 date_trunc('month', v.fecha) DESC,
                 total DESC";
 
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a));
         $sampleData = $consulta->result();
         $data = array();
 
@@ -152,8 +152,8 @@ class MresumenVentasProductosMes extends CI_Model
             JOIN producto p ON p.id_producto = d.id_producto
             JOIN familia f ON f.id_familia = p.id_familia
             JOIN venta v ON d.id_venta = v.id_venta
-            WHERE v.fecha >= '" . $de . "'
-              AND v.fecha <= '" . $a . "'
+            WHERE v.fecha >= ?
+              AND v.fecha <= ?
             GROUP BY
                 date_trunc('month', v.fecha),
                 p.nombre_producto,
@@ -162,7 +162,7 @@ class MresumenVentasProductosMes extends CI_Model
                 date_trunc('month', v.fecha) DESC,
                 total DESC";
 
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a));
         return $consulta->result();
     }
 }

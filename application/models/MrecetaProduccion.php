@@ -92,10 +92,10 @@ class MrecetaProduccion extends CI_Model
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         
         $q = "SELECT * FROM receta_produccion 
-              WHERE UPPER(nombre_receta_produccion) = UPPER('" . $nombre . "')
+              WHERE UPPER(nombre_receta_produccion) = UPPER(?)
               AND vigente = true";
         
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($nombre));
         return $consulta->result();
     }
 

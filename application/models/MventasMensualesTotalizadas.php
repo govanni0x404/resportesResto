@@ -26,14 +26,14 @@ class MventasMensualesTotalizadas extends CI_Model
         FROM 
             venta v
         WHERE 
-            v.fecha BETWEEN '$de' AND '$a'
+            v.fecha BETWEEN ? AND ?
         GROUP BY 
             DATE(v.fecha)
         ORDER BY 
             DATE(v.fecha)
     ";
 
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a));
         $sampleData = $consulta->result();
         $data = array();
 
@@ -84,12 +84,12 @@ class MventasMensualesTotalizadas extends CI_Model
         FROM 
             venta v
         WHERE 
-            v.fecha BETWEEN '$de' AND '$a'
+            v.fecha BETWEEN ? AND ?
         GROUP BY 
             DATE(v.fecha)
         ORDER BY 
             DATE(v.fecha)";
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -120,13 +120,13 @@ class MventasMensualesTotalizadas extends CI_Model
             FROM 
                 venta v
             WHERE 
-                v.fecha BETWEEN '$de' AND '$a'
+                v.fecha BETWEEN ? AND ?
             GROUP BY 
                 DATE(v.fecha)
             ORDER BY 
                 total_documentos DESC
             LIMIT 10;";
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -157,14 +157,14 @@ class MventasMensualesTotalizadas extends CI_Model
         FROM 
             venta v
         WHERE 
-            v.fecha BETWEEN '$de' AND '$a'
+            v.fecha BETWEEN ? AND ?
         GROUP BY 
             DATE(v.fecha)
         ORDER BY 
             total_documentos ASC
         LIMIT 10;
         ";
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -179,10 +179,10 @@ class MventasMensualesTotalizadas extends CI_Model
         FROM venta v
         JOIN cliente c ON v.id_cliente = c.id_cliente
         JOIN tdocumento t ON v.id_tdocumento = t.id_tdocumento
-        WHERE v.fecha = .'$ventas_del_dia'.";
+        WHERE v.fecha = .?.";
         ;
 
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($ventas_del_dia));
         $sampleData = $consulta->result();
         $data = array();
 

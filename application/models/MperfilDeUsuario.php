@@ -17,8 +17,8 @@ class MperfilDeUsuario extends CI_Model
     $q = " SELECT u.nombre_usuario, u.clave, r.nombre_rol, u.esadmin, u.id_usuario
         from usuario u
         join rol r on u.id_rol=r.id_rol
-        where id_usuario=$id_usuario";
-    $query = $this->db->query($q)->result();
+        where id_usuario=?";
+    $query = $this->db->query($q, array((int)$id_usuario))->result();
     return $query;
   }
 
@@ -30,7 +30,7 @@ class MperfilDeUsuario extends CI_Model
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $this->db->where('id_usuario', $id_usuario);
     $this->db->update('usuario', $data);
-    $consulta = $this->db->query("select id_usuario from usuario where id_usuario=$id_usuario");
+    $consulta = $this->db->query("select id_usuario from usuario where id_usuario=?", array((int)$id_usuario));
     return $consulta->result();
   }
 
@@ -42,8 +42,8 @@ class MperfilDeUsuario extends CI_Model
     $this->db = $this->load->database('intranet', TRUE);
     $q = " SELECT u.correo_acceso
         from usuario_appweb u
-        where id_usuario_cliente=$id_usuario";
-    $query = $this->db->query($q)->result();
+        where id_usuario_cliente=?";
+    $query = $this->db->query($q, array((int)$id_usuario))->result();
     return $query;
   }
 
@@ -56,7 +56,7 @@ class MperfilDeUsuario extends CI_Model
     $this->db->where('id_cliente', $id_cliente);
     $this->db->where('id_usuario_cliente', $id_usuario_cliente);
     $this->db->update('usuario_appweb', $data);
-    $consulta = $this->db->query("select id_usuario_cliente, id_cliente from usuario_appweb where id_usuario_cliente=$id_usuario_cliente and id_cliente=id_cliente");
+    $consulta = $this->db->query("select id_usuario_cliente, id_cliente from usuario_appweb where id_usuario_cliente=? and id_cliente=id_cliente", array((int)$id_usuario_cliente));
     return $consulta->result();
   }
 }

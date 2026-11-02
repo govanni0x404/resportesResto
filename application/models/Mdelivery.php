@@ -45,7 +45,7 @@ class Mdelivery extends CI_Model
     if ($id) {
       $this->db->where('id_sector', $id);
       $this->db->update('sector', $data);
-      $consulta = $this->db->query("select " . $id . " as id_sector");
+      $consulta = $this->db->query("select " . (int)$id . " as id_sector");
     } else {
       $this->db->insert('sector', $data);
       $consulta = $this->db->query("SELECT CURRVAL('sector_id_sector_seq'::regclass) as id_sector");

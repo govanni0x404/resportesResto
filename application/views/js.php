@@ -369,21 +369,13 @@
             swal({
                 title: "Datos de Empresa Requeridos",
                 text: mensaje,
-                icon: "warning",
-                buttons: {
-                    configurar: {
-                        text: "Ir a Configurar",
-                        value: "configurar",
-                    },
-                    cerrar: {
-                        text: "Cerrar",
-                        value: "cerrar",
-                    }
-                }
-            }).then((value) => {
-                if (value === "configurar") {
-                    window.location.href = base_url + "index.php/ConfiguracionesGenerales";
-                }
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Ir a Configurar",
+                cancelButtonText: "Cerrar"
+            }, function (configurar) {
+                // SweetAlert 1 (el que carga el sistema): callback, no promesa
+                if (configurar) window.location.href = base_url + "index.php/Configuraciones";
             });
         } else {
             alert(mensaje);
@@ -427,24 +419,16 @@
             // Usar swal si está disponible, sino usar alert
             if (typeof swal !== 'undefined') {
                 swal({
-                    title: "Datos de Empresa Incompletos",
-                    text: mensaje,
-                    icon: "warning",
-                    buttons: {
-                        configurar: {
-                            text: "Ir a Configurar",
-                            value: "configurar",
-                        },
-                        cerrar: {
-                            text: "Cerrar",
-                            value: "cerrar",
-                        }
-                    }
-                }).then((value) => {
-                    if (value === "configurar") {
-                        window.location.href = base_url + "index.php/ConfiguracionesGenerales";
-                    }
-                });
+                title: "Datos de Empresa Incompletos",
+                text: mensaje,
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Ir a Configurar",
+                cancelButtonText: "Cerrar"
+            }, function (configurar) {
+                // SweetAlert 1 (el que carga el sistema): callback, no promesa
+                if (configurar) window.location.href = base_url + "index.php/Configuraciones";
+            });
             } else {
                 alert(mensaje);
             }

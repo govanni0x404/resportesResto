@@ -231,84 +231,84 @@ class Dashboard extends CI_Controller
 		$pdf->SetFont('Arial', 'B', 12);
 		$pdf->SetXY(78, 15);
 		$pdf->SetTextColor(0, 0, 0);
-		$pdf->MultiCell(0, 10, utf8_decode($datosEmpresa[0]->razon_social));
+		$pdf->MultiCell(0, 10, mb_convert_encoding((string)($datosEmpresa[0]->razon_social), 'ISO-8859-1', 'UTF-8'));
 		$pdf->Ln(5);
 
 		$pdf->SetX(95);
-		$pdf->Cell(0, 5, utf8_decode('DETALLE DE CAJA '));
+		$pdf->Cell(0, 5, mb_convert_encoding((string)('DETALLE DE CAJA '), 'ISO-8859-1', 'UTF-8'));
 		$pdf->Ln();
 		$pdf->SetX(85);
 		$pdf->Ln(15);
 		$pdf->SetX(15);
 		$pdf->SetFont('Arial', 'B', 11);
-		$pdf->Cell(40, 5, utf8_decode('DESDE: ' . $desde), 1);
+		$pdf->Cell(40, 5, mb_convert_encoding((string)('DESDE: ' . $desde), 'ISO-8859-1', 'UTF-8'), 1);
 		$pdf->Ln();
 		$pdf->SetX(15);
-		$pdf->Cell(40, 5, utf8_decode('HASTA : ' . $hasta), 1);
+		$pdf->Cell(40, 5, mb_convert_encoding((string)('HASTA : ' . $hasta), 'ISO-8859-1', 'UTF-8'), 1);
 		$pdf->SetFont('Arial', '', 11);
 		$pdf->Ln(10);
 
 		$pdf->SetX(15);
 		$pdf->SetFont('Arial', 'B', 11);
-		$pdf->Cell(60, 5, utf8_decode('TOTAL VENTAS'),1);
+		$pdf->Cell(60, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'),1);
 		$pdf->SetFont('Arial', '', 11);
-		$pdf->Cell(20, 5, utf8_decode('$   '),1,0,'C');
+		$pdf->Cell(20, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 		$pdf->Cell(40, 5, number_format($totalSistema[0]->monto_total_ventas), 1, 0, 'R');
 		$pdf->Ln();
 		$pdf->SetX(15);
 		$pdf->SetFont('Arial', 'B', 11);
-		$pdf->Cell(60, 5, utf8_decode('FONDO FIJO'),1);
+		$pdf->Cell(60, 5, mb_convert_encoding((string)('FONDO FIJO'), 'ISO-8859-1', 'UTF-8'),1);
 		$pdf->SetFont('Arial', '', 11);
-		$pdf->Cell(20, 5, utf8_decode('$   '),1,0,'C');
+		$pdf->Cell(20, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 		$pdf->Cell(40, 5, number_format($datosCaja[0]->fondo_fijo), 1, 0, 'R');
 		$pdf->Ln();
 		$pdf->SetX(15);
 		$pdf->SetFont('Arial', 'B', 11);
-		$pdf->Cell(60, 5, utf8_decode('DESCUENTOS'),1);
+		$pdf->Cell(60, 5, mb_convert_encoding((string)('DESCUENTOS'), 'ISO-8859-1', 'UTF-8'),1);
 		$pdf->SetFont('Arial', '', 11);
-		$pdf->Cell(20, 5, utf8_decode('$   '),1,0,'C');
+		$pdf->Cell(20, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 		$pdf->Cell(40, 5, number_format($datosCaja[0]->descuento), 1, 0, 'R');
 		$pdf->Ln();
 		$pdf->SetX(15);
 		$pdf->SetFont('Arial', 'B', 11);
-		$pdf->Cell(60, 5, utf8_decode('PROPINAS'),1);
+		$pdf->Cell(60, 5, mb_convert_encoding((string)('PROPINAS'), 'ISO-8859-1', 'UTF-8'),1);
 		$pdf->SetFont('Arial', '', 11);
-		$pdf->Cell(20, 5, utf8_decode('$   '),1,0,'C');
+		$pdf->Cell(20, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 		$pdf->Cell(40, 5, number_format($datosCaja[0]->propina), 1, 0, 'R');
 		$pdf->Ln();
 		$pdf->SetX(15);
 		$pdf->SetFont('Arial', 'B', 11);
-		$pdf->Cell(60, 5, utf8_decode('INGRESOS'),1);
+		$pdf->Cell(60, 5, mb_convert_encoding((string)('INGRESOS'), 'ISO-8859-1', 'UTF-8'),1);
 		$pdf->SetFont('Arial', '', 11);
-		$pdf->Cell(20, 5, utf8_decode('$   '),1,0,'C');
+		$pdf->Cell(20, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 		$pdf->Cell(40, 5, number_format($datosCaja[0]->ingresos), 1, 0, 'R');
 		$pdf->Ln();
 		$pdf->SetX(15);
 		$pdf->SetFont('Arial', 'B', 11);
-		$pdf->Cell(60, 5, utf8_decode('RETIROS'),1);
+		$pdf->Cell(60, 5, mb_convert_encoding((string)('RETIROS'), 'ISO-8859-1', 'UTF-8'),1);
 		$pdf->SetFont('Arial', '', 11);
-		$pdf->Cell(20, 5, utf8_decode('$   '),1,0,'C');
+		$pdf->Cell(20, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 		$pdf->Cell(40, 5, number_format($datosCaja[0]->egresos), 1, 0, 'R');
 		$pdf->Ln(10);
 
 		$pdf->SetFont('Arial', 'B', 11);
 		$pdf->Ln();
 		$pdf->SetX(80);
-		$pdf->Cell(0, 5, utf8_decode('RESUMEN POR TIPO DE DOCUMENTO'));
+		$pdf->Cell(0, 5, mb_convert_encoding((string)('RESUMEN POR TIPO DE DOCUMENTO'), 'ISO-8859-1', 'UTF-8'));
 		$pdf->Ln();
 		foreach ($obtenerConfiguracionesRestoWeb as $validacion) {
 			if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
 				$pdf->SetX(10);
-				$pdf->Cell(55, 5, utf8_decode('TIPO DE DOCUMENTO'),1);
-				$pdf->Cell(30, 5, utf8_decode('CANTIDAD'),1,0,'C');
-				$pdf->Cell(40, 5, utf8_decode('TOTAL NETO'),1,0,'C');
-				$pdf->Cell(35, 5, utf8_decode('TOTAL IVA'),1,0,'C');
-				$pdf->Cell(40, 5, utf8_decode('TOTAL VENTAS'),1,0,'C');
+				$pdf->Cell(55, 5, mb_convert_encoding((string)('TIPO DE DOCUMENTO'), 'ISO-8859-1', 'UTF-8'),1);
+				$pdf->Cell(30, 5, mb_convert_encoding((string)('CANTIDAD'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(40, 5, mb_convert_encoding((string)('TOTAL NETO'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(35, 5, mb_convert_encoding((string)('TOTAL IVA'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(40, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 			} else {
 				$pdf->SetX(15);
-				$pdf->Cell(80, 5, utf8_decode('TIPO DE DOCUMENTO'),1,0,'C');
-				$pdf->Cell(40, 5, utf8_decode('CANTIDAD'),1,0,'C');
-				$pdf->Cell(80, 5, utf8_decode('TOTAL VENTAS'),1,0,'C');
+				$pdf->Cell(80, 5, mb_convert_encoding((string)('TIPO DE DOCUMENTO'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(40, 5, mb_convert_encoding((string)('CANTIDAD'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(80, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 			}
 		}
 		$pdf->SetFont('Arial', '', 11);
@@ -318,7 +318,7 @@ class Dashboard extends CI_Controller
 					if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
 						$pdf->Ln(5);
 						$pdf->SetX(10);
-						$pdf->Cell(55, 5, utf8_decode($row->nombre_tdocumento),1,0,'C');
+						$pdf->Cell(55, 5, mb_convert_encoding((string)($row->nombre_tdocumento), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 						$pdf->Cell(30, 5, number_format($row->cantidad),1,0,'C');
 						$pdf->Cell(40, 5, number_format($row->total),1,0,'C');
 						$totalVentasPorTipoDte += $row->cantidad;
@@ -336,7 +336,7 @@ class Dashboard extends CI_Controller
 						}
 					} else {
 						$pdf->SetX(15);
-						$pdf->Cell(0, 5, utf8_decode($row->nombre_tdocumento));
+						$pdf->Cell(0, 5, mb_convert_encoding((string)($row->nombre_tdocumento), 'ISO-8859-1', 'UTF-8'));
 						$pdf->SetX(110);
 						$pdf->Cell(0, 5, number_format($row->cantidad));
 						$pdf->SetX(185);
@@ -354,7 +354,7 @@ class Dashboard extends CI_Controller
 
 				$pdf->Ln(10);
 				$pdf->SetX(10);
-				$pdf->Cell(55, 5, utf8_decode('TOTALES'),1,0,'C');
+				$pdf->Cell(55, 5, mb_convert_encoding((string)('TOTALES'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 				$pdf->Cell(30, 5, number_format($totalVentasPorTipoDte),1,0,'C');
 				$pdf->Cell(40, 5, number_format($totalNetoPorTipoDte),1,0,'C');
 				$pdf->Cell(35, 5, number_format($totaliVAPorTipoDte),1,0,'C');
@@ -362,7 +362,7 @@ class Dashboard extends CI_Controller
 			} else {
 				$pdf->Ln(10);
 				$pdf->SetX(10);
-				$pdf->Cell(80, 5, utf8_decode('TOTALES'),1,0,'C');
+				$pdf->Cell(80, 5, mb_convert_encoding((string)('TOTALES'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 				$pdf->Cell(40, 5, number_format($totalVentasPorTipoDte),1,0,'C');
 				$pdf->Cell(80, 5, number_format($totalPorTipoDte),1,0,'C');
 			}
@@ -370,27 +370,27 @@ class Dashboard extends CI_Controller
 
 		$pdf->Ln(15);
 		$pdf->SetX(80);
-		$pdf->Cell(0, 5, utf8_decode('RESUMEN POR FORMA DE PAGO'));
+		$pdf->Cell(0, 5, mb_convert_encoding((string)('RESUMEN POR FORMA DE PAGO'), 'ISO-8859-1', 'UTF-8'));
 		$pdf->Ln();
 		$pdf->SetFont('Arial', 'B', 11);
 		foreach ($obtenerConfiguracionesRestoWeb as $validacion) {
 			if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
 				$pdf->SetX(10);
-				$pdf->Cell(55, 5, utf8_decode('FORMA DE PAGO'),1,0,'C');
-				$pdf->Cell(30, 5, utf8_decode('CANTIDAD'),1,0,'C');
-				$pdf->Cell(40, 5, utf8_decode('TOTAL NETO'),1,0,'C');
-				$pdf->Cell(40, 5, utf8_decode('TOTAL IVA'),1,0,'C');
-				$pdf->Cell(40, 5, utf8_decode('TOTAL VENTAS'),1,0,'C');
-				$pdf->Cell(40, 5, utf8_decode('PROPINAS'),1,0,'C');
+				$pdf->Cell(55, 5, mb_convert_encoding((string)('FORMA DE PAGO'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(30, 5, mb_convert_encoding((string)('CANTIDAD'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(40, 5, mb_convert_encoding((string)('TOTAL NETO'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(40, 5, mb_convert_encoding((string)('TOTAL IVA'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(40, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(40, 5, mb_convert_encoding((string)('PROPINAS'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 			} else {
 				$pdf->SetX(15);
-				$pdf->Cell(0, 5, utf8_decode('FORMA DE PAGO'));
+				$pdf->Cell(0, 5, mb_convert_encoding((string)('FORMA DE PAGO'), 'ISO-8859-1', 'UTF-8'));
 				$pdf->SetX(80);
-				$pdf->Cell(0, 5, utf8_decode('CANTIDAD'));
+				$pdf->Cell(0, 5, mb_convert_encoding((string)('CANTIDAD'), 'ISO-8859-1', 'UTF-8'));
 				$pdf->SetX(125);
-				$pdf->Cell(0, 5, utf8_decode('TOTAL VENTAS'));
+				$pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'));
 				$pdf->SetX(180);
-				$pdf->Cell(0, 5, utf8_decode('PROPINAS'));
+				$pdf->Cell(0, 5, mb_convert_encoding((string)('PROPINAS'), 'ISO-8859-1', 'UTF-8'));
 				$pdf->Ln();
 			}
 		}
@@ -401,7 +401,7 @@ class Dashboard extends CI_Controller
 					if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
 						$pdf->Ln(5);
 						$pdf->SetX(10);
-						$pdf->Cell(55, 5, utf8_decode($row->nombre_fpago),1,0,'C');
+						$pdf->Cell(55, 5, mb_convert_encoding((string)($row->nombre_fpago), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 						$pdf->Cell(30, 5, number_format($row->cantidad),1,0,'C');
 						$pdf->Cell(40, 5, number_format($row->neto),1,0,'C');
 						$pdf->Cell(40, 5, number_format($row->iva),1,0,'C');
@@ -415,7 +415,7 @@ class Dashboard extends CI_Controller
 					} else {
 						$pdf->Ln(5);
 						$pdf->SetX(20);
-						$pdf->Cell(0, 5, utf8_decode($row->nombre_fpago));
+						$pdf->Cell(0, 5, mb_convert_encoding((string)($row->nombre_fpago), 'ISO-8859-1', 'UTF-8'));
 						$pdf->SetX(90);
 						$pdf->Cell(0, 5, number_format($row->cantidad));
 						$pdf->SetX(133);
@@ -423,7 +423,7 @@ class Dashboard extends CI_Controller
 						$pdf->SetX(190);
 						$pdf->Cell(0, 5, number_format($row->propina));
 						$pdf->Ln();
-						$pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+						$pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
 						$totalCantidadPorFpago += $row->cantidad;
 						$totalPorFpago += $row->total;
 						$totalPropinaPorFpago += $row->propina;
@@ -436,7 +436,7 @@ class Dashboard extends CI_Controller
 			if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
 				$pdf->Ln(10);
 				$pdf->SetX(10);
-				$pdf->Cell(55, 5, utf8_decode('TOTALES'),1,0,'C');
+				$pdf->Cell(55, 5, mb_convert_encoding((string)('TOTALES'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 				$pdf->Cell(30, 5, number_format($totalCantidadPorFpago),1,0,'C');
 				$pdf->Cell(30, 5, number_format($totalNetoPorFpago),1,0,'C');
 				$pdf->Cell(30, 5, number_format($totaliVAPorFpago),1,0,'C');
@@ -445,7 +445,7 @@ class Dashboard extends CI_Controller
 			} else {
 				$pdf->Ln(10);
 				$pdf->SetX(20);
-				$pdf->Cell(0, 5, utf8_decode('TOTALES'));
+				$pdf->Cell(0, 5, mb_convert_encoding((string)('TOTALES'), 'ISO-8859-1', 'UTF-8'));
 				$pdf->SetX(90);
 				$pdf->Cell(40, 5, number_format($totalCantidadPorFpago));
 				$pdf->SetX(133);
@@ -458,26 +458,26 @@ class Dashboard extends CI_Controller
 
 		$pdf->Ln(15);
 		$pdf->SetX(85);
-		$pdf->Cell(0, 5, utf8_decode('RESUMEN CORTESIAS'));
+		$pdf->Cell(0, 5, mb_convert_encoding((string)('RESUMEN CORTESIAS'), 'ISO-8859-1', 'UTF-8'));
 		$pdf->Ln();
 		foreach ($obtenerConfiguracionesRestoWeb as $validacion) {
 			if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
 				$pdf->SetX(10);
-				$pdf->Cell(55, 5, utf8_decode('TIPO DE CORTESIA'),1,0,'C');
-				$pdf->Cell(30, 5, utf8_decode('CANTIDAD'),1,0,'C');
-				$pdf->Cell(40, 5, utf8_decode('TOTAL NETO'),1,0,'C');
-				$pdf->Cell(40, 5, utf8_decode('TOTAL IVA'),1,0,'C');
-				$pdf->Cell(40, 5, utf8_decode('TOTAL VENTAS'),1,0,'C');
+				$pdf->Cell(55, 5, mb_convert_encoding((string)('TIPO DE CORTESIA'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(30, 5, mb_convert_encoding((string)('CANTIDAD'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(40, 5, mb_convert_encoding((string)('TOTAL NETO'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(40, 5, mb_convert_encoding((string)('TOTAL IVA'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(40, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 				$pdf->Ln();
 			} else {
 				$pdf->SetX(15);
-				$pdf->Cell(0, 5, utf8_decode('TIPO DE CORTESIA'));
+				$pdf->Cell(0, 5, mb_convert_encoding((string)('TIPO DE CORTESIA'), 'ISO-8859-1', 'UTF-8'));
 				$pdf->SetX(100);
-				$pdf->Cell(0, 5, utf8_decode('CANTIDAD'));
+				$pdf->Cell(0, 5, mb_convert_encoding((string)('CANTIDAD'), 'ISO-8859-1', 'UTF-8'));
 				$pdf->SetX(175);
-				$pdf->Cell(0, 5, utf8_decode('TOTAL VENTAS'));
+				$pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'));
 				$pdf->Ln();
-				$pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+				$pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
 			}
 		}
 		foreach ($datosCortesias as $row) {
@@ -486,7 +486,7 @@ class Dashboard extends CI_Controller
 					if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
 						$pdf->Ln(5);
 						$pdf->SetX(10);
-						$pdf->Cell(55, 5, utf8_decode($row->nombre_fpago),1,0,'C');
+						$pdf->Cell(55, 5, mb_convert_encoding((string)($row->nombre_fpago), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 						$pdf->Cell(30, 5, number_format($row->cantidad),1,0,'C');
 						$pdf->Cell(40, 5, number_format($row->neto),1,0,'C');
 						$pdf->Cell(40, 5, number_format($row->iva),1,0,'C');
@@ -499,13 +499,13 @@ class Dashboard extends CI_Controller
 					} else {
 						$pdf->Ln(5);
 						$pdf->SetX(15);
-						$pdf->Cell(0, 5, utf8_decode($row->nombre_fpago));
+						$pdf->Cell(0, 5, mb_convert_encoding((string)($row->nombre_fpago), 'ISO-8859-1', 'UTF-8'));
 						$pdf->SetX(100);
 						$pdf->Cell(0, 5, number_format($row->cantidad));
 						$pdf->SetX(180);
 						$pdf->Cell(0, 5, number_format($row->total));
 						$pdf->Ln();
-						$pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+						$pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
 						$totalCantidadCortesias += $row->cantidad;
 						$totalCortesias += $row->total;
 					}
@@ -516,7 +516,7 @@ class Dashboard extends CI_Controller
 			if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
 				$pdf->Ln(10);
 				$pdf->SetX(10);
-				$pdf->Cell(55, 5, utf8_decode('TOTALES'),1,0,'C');
+				$pdf->Cell(55, 5, mb_convert_encoding((string)('TOTALES'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 				$pdf->Cell(30, 5, number_format($totalCantidadCortesias),1,0,'C');
 				$pdf->Cell(40, 5, number_format($totalNetoPorCortesias),1,0,'C');
 				$pdf->Cell(40, 5, number_format($totaliVAPorCortesias),1,0,'C');
@@ -524,7 +524,7 @@ class Dashboard extends CI_Controller
 			}else{
 				$pdf->Ln(10);
 				$pdf->SetX(15);
-				$pdf->Cell(0, 5, utf8_decode('TOTALES'));
+				$pdf->Cell(0, 5, mb_convert_encoding((string)('TOTALES'), 'ISO-8859-1', 'UTF-8'));
 				$pdf->SetX(105);
 				$pdf->Cell(40, 5, number_format($totalCantidadCortesias));
 				$pdf->SetX(185);

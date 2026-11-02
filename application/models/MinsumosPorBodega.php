@@ -44,10 +44,10 @@ class MinsumosPorBodega extends CI_Model
 
 ";
 		if ($id_bodega > 0) {
-			$q = $q . " and b.id_bodega=$id_bodega";
+			$q = $q . " and b.id_bodega=" . (int)$id_bodega;
 		}
 		if ($id_grupo_insumo > 0) {
-			$q = $q . " and i.id_grupo_insumo=$id_grupo_insumo";
+			$q = $q . " and i.id_grupo_insumo=" . (int)$id_grupo_insumo;
 		}
 		
 		$q = $q . " group by i.id_insumo, gi.id_grupo_insumo, b.nombre_bodega, u.nombre_umedida";
@@ -89,7 +89,7 @@ class MinsumosPorBodega extends CI_Model
 			from stock_insumo si
 			join insumo i on si.id_insumo = i.id_insumo
 			join bodega b on si.id_bodega = b.id_bodega
-			where si.id_insumo = $id_insumo";
+			where si.id_insumo = " . (int)$id_insumo;
 
 		$query = $this->db->query($q)->result();
 		return $query;

@@ -46,7 +46,7 @@ class MingresoEventos extends CI_Model
     if ($id) {
       $this->db->where('id_ingreso_evento', $id);
       $this->db->update('ingreso_evento', $data);
-      $consulta = $this->db->query("select " . $id . " as id_ingreso_evento");
+      $consulta = $this->db->query("select " . (int)$id . " as id_ingreso_evento");
     } else {
       $this->db->insert('ingreso_evento', $data);
       $consulta = $this->db->query("SELECT CURRVAL('ingreso_evento_id_ingreso_evento_seq'::regclass) as id_ingreso_evento");

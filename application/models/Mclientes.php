@@ -60,8 +60,8 @@ class Mclientes extends CI_Model
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = "SELECT c.id_cliente, c.rut, c.dv, c.nombre_cliente, c.giro, c.direccion, /*co.nombre_comuna, */c.telefono  from cliente c 
     /*join comuna co on c.id_comuna=co.id_comuna*/
-    where c.rut='" . $rut . "' order by c.id_cliente";
-    $consulta = $this->db->query($q);
+    where c.rut=? order by c.id_cliente";
+    $consulta = $this->db->query($q, array($rut));
     return $consulta->result();
   }
 
@@ -74,7 +74,7 @@ class Mclientes extends CI_Model
     if ($id) {
       $this->db->where('id_cliente', $id);
       $this->db->update('cliente', $data);
-      $consulta = $this->db->query("select " . $id . " as id_cliente");
+      $consulta = $this->db->query("select " . (int)$id . " as id_cliente");
     } else {
       $this->db->insert('cliente', $data);
       $consulta = $this->db->query("SELECT CURRVAL('cliente_id_cliente_seq'::regclass) as id_cliente");

@@ -46,7 +46,7 @@ class Mmoneda extends CI_Model
     if ($id) {
       $this->db->where('id_moneda', $id);
       $this->db->update('moneda', $data);
-      $consulta = $this->db->query("select " . $id . " as id_moneda");
+      $consulta = $this->db->query("select " . (int)$id . " as id_moneda");
     } else {
       $this->db->insert('moneda', $data);
       $consulta = $this->db->query("SELECT CURRVAL('moneda_id_moneda_seq'::regclass) as id_moneda");

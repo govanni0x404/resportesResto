@@ -50,7 +50,7 @@ class Mimpuestos extends CI_Model
         if ($id) {
             $this->db->where('id_impuesto', $id);
             $this->db->update('impuesto', $data);
-            $consulta = $this->db->query("select " . $id . " as id_impuesto");
+            $consulta = $this->db->query("select " . (int)$id . " as id_impuesto");
         } else {
             $this->db->insert('impuesto', $data);
             $consulta = $this->db->query("SELECT CURRVAL('impuesto_id_impuesto_seq'::regclass) as id_impuesto");

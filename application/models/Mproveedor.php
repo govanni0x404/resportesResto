@@ -55,7 +55,7 @@ class Mproveedor extends CI_Model
 		if ($id) {
 			$this->db->where('id_proveedor', $id);
 			$this->db->update('proveedor', $data);
-			$consulta = $this->db->query("select " . $id . " as id_proveedor");
+			$consulta = $this->db->query("select " . (int)$id . " as id_proveedor");
 		} else {
 			$this->db->insert('proveedor', $data);
 			$consulta = $this->db->query("SELECT CURRVAL('proveedor_id_proveedor_seq'::regclass) as id_proveedor");
@@ -70,8 +70,8 @@ class Mproveedor extends CI_Model
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT p.id_proveedor, p.nombre_proveedor, p.rut, p.dv, p.direccion, p.telefono, p.mail, p.giro from proveedor p 
-			where p.rut='" . $rut . "' order by p.id_proveedor";
-		$consulta = $this->db->query($q);
+			where p.rut=? order by p.id_proveedor";
+		$consulta = $this->db->query($q, array($rut));
 		return $consulta->result();
 	}
 

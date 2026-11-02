@@ -45,7 +45,7 @@ class Compras extends CI_Controller
       );
       
       if (!empty($existente) && $existente[0]['id_compra'] > 0) {
-        log_message('warning', 'Intento de grabar compra duplicada: Proveedor ' . $d['id_proveedor'] . 
+        log_message('info', 'Intento de grabar compra duplicada: Proveedor ' . $d['id_proveedor'] . 
                     ', Doc ' . $d['id_tdocumento'] . ', Folio ' . $d['numero_documento']);
         echo json_encode([
           'code' => 'DUPLICATE',

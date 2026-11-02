@@ -184,77 +184,30 @@
 					}
 				});
 			});
-			var id_receta = 0;
+			// grabarReceta guarda la cabecera y los insumos en una sola llamada
+			// (antes los insumos iban a Recetas/grabarDetalleReceta, que no existe, y se perdían)
 			$.post(base_url + "index.php/Recetas/grabarReceta", {
-					'prod': miJson
-				}, function() {}).done(function(datos) {
-					var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
-					$.each(obj, function(index, v) { // recorro el array
-						id_receta = v.id_receta;
-					});
-					listaInsumos = "";
-					listaDetalles = "";
-					if (id_receta > 0) {
-						try {
-							$.post(base_url + "index.php/Recetas/grabarDetalleReceta", {
-									'detalleReceta': detalleReceta,
-								}, function() {}).done(function(datos) {
-									var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
-									$.each(obj, function(index, v) { // recorro el array
-										id_insumos = v.id_insumo;
-										id_detalle_recetas = v.id_detalle_receta
-
-										if (listaDetalles.length > 0) {
-											listaDetalles += ",";
-										}
-										listaDetalles += id_detalle_recetas;
-
-										if (listaInsumos.length > 0) {
-											listaInsumos += ",";
-										}
-										listaInsumos += id_insumos;
-									});
-									$.post(base_url + "index.php/Recetas/updateInsumoDelete", {
-											'id_receta': id_receta,
-											'detalleReceta': listaDetalles,
-											'id_insumo': listaInsumos
-										}, function() {}).done(function(datos) {
-											$('#modalReceta').modal('hide');
-											
-											if (typeof ListadoDeReceta === 'function') {
-												ListadoDeReceta(nombre_receta);
-											}
-											
-											if (typeof tableRecetas !== 'undefined') {
-												tableRecetas.ajax.reload();
-											}
-											
-											showAppAlert('success', "Se registro Exitosamente La Receta!", {
-                                    			duration: 4000,
-                                    			image: base_url + 'assets/img/success.gif'
-                                			});
-										})
-										.fail(function() {
-											showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
-                                    			duration: 5000,
-                                    			image: base_url+ 'assets/img/errorGif.gif'
-                                			});
-										})
-								})
-								.fail(function() {
-									showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
-                                    	duration: 5000,
-                                    	image: base_url+ 'assets/img/errorGif.gif'
-                                	});
-								})
-						} catch (e) {
-							let positionError = datos.search("ERROR:");
-							showAppAlert('error',"- Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(positionError, 150), {
-                                	duration: 5000,
-                                    image: base_url+ 'assets/img/errorGif.gif'
-                                });
-						} finally {}
+					'prod': miJson,
+					'detalleReceta': detalleReceta
+				}, function() {}, 'json').done(function(r) {
+					if (!r || r.status !== 'success') {
+						showAppAlert('error', "- No se pudo guardar la receta" + (r && r.message ? ": " + r.message : ""), {
+							duration: 5000,
+							image: base_url + 'assets/img/errorGif.gif'
+						});
+						return;
 					}
+					$('#modalReceta').modal('hide');
+					if (typeof ListadoDeReceta === 'function') {
+						ListadoDeReceta(nombre_receta);
+					}
+					if (typeof tableRecetas !== 'undefined') {
+						tableRecetas.ajax.reload();
+					}
+					showAppAlert('success', "Se registro Exitosamente La Receta!", {
+						duration: 4000,
+						image: base_url + 'assets/img/success.gif'
+					});
 				})
 				.fail(function() {
 					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {

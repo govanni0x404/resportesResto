@@ -33,6 +33,8 @@ $config['caja_ticket_publicidad'] = array('CONTRATE BOLETA ELECTRONICA CON NOSOT
 */
 $config['caja_dte_pruebas'] = null;
 
-if (is_file(__DIR__ . '/caja_local.php')) {
+// Solo fuera de producción: si caja_local.php llegara al servidor, no debe hacer que todos emitan con la cuenta demo.
+// En el equipo de desarrollo: CI_ENV=development php -S 0.0.0.0:8001
+if (is_file(__DIR__ . '/caja_local.php') && defined('ENVIRONMENT') && ENVIRONMENT !== 'production') {
 	include __DIR__ . '/caja_local.php';
 }

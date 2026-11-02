@@ -49,7 +49,7 @@ class Mturnos extends CI_Model
     if ($id) {
       $this->db->where('id_turno', $id);
       $this->db->update('turno', $data);
-      $consulta = $this->db->query("select " . $id . " as id_turno");
+      $consulta = $this->db->query("select " . (int)$id . " as id_turno");
     } else {
       $this->db->insert('turno', $data);
       $consulta = $this->db->query("SELECT CURRVAL('turno_id_turno_seq'::regclass) as id_turno");

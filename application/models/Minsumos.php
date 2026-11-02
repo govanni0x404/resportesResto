@@ -119,7 +119,7 @@ class Minsumos extends CI_Model
 		}
 
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$q = "SELECT * from receta_produccion where id_insumo =" . $id;
+		$q = "SELECT * from receta_produccion where id_insumo =" . (int)$id;
 		$query = $this->db->query($q)->result();
 		return $query;
 	}
@@ -134,7 +134,7 @@ class Minsumos extends CI_Model
 		if ($id) {
 			$this->db->where('id_insumo', $id);
 			$this->db->update('insumo', $data);
-			$consulta = $this->db->query("select " . $id . " as id_insumo");
+			$consulta = $this->db->query("select " . (int)$id . " as id_insumo");
 		} else {
 			$this->db->insert('insumo', $data);
 			$consulta = $this->db->query("SELECT CURRVAL('insumo_id_insumo_seq'::regclass) as id_insumo");
@@ -148,7 +148,7 @@ class Minsumos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$consulta = $this->db->query("SELECT * from insumo where cbarra = '" . $cbarra . "'");
+		$consulta = $this->db->query("SELECT * from insumo where cbarra = ?", array($cbarra));
 		return $consulta->result();
 	}
 
@@ -163,7 +163,7 @@ class Minsumos extends CI_Model
 			join bodega b on si.id_bodega = b.id_bodega
 			join insumo i on si.id_insumo = i.id_insumo
 			join umedida um on i.id_umedida_inventario = um.id_umedida
-			where si.id_insumo =" . $id;
+			where si.id_insumo =" . (int)$id;
 
 		$consulta = $this->db->query($q);
 		$sampleData = $consulta->result();
@@ -202,7 +202,7 @@ class Minsumos extends CI_Model
 			join umedida um on i.id_umedida_inventario = um.id_umedida
 			join proveedor p on c.id_proveedor = p.id_proveedor
 			join tdocumento td on c.id_tdocumento = td.id_tdocumento
-			where dc.id_insumo =" . $id;
+			where dc.id_insumo =" . (int)$id;
 
 		$consulta = $this->db->query($q);
 		$sampleData = $consulta->result();
@@ -241,7 +241,7 @@ class Minsumos extends CI_Model
 		join receta_produccion rp on drp.id_receta_produccion = rp.id_receta_produccion
 		join insumo i on drp.id_insumo = i.id_insumo
 		join umedida um on drp.id_umedida = um.id_umedida
-		where rp.id_insumo =" . $id;
+		where rp.id_insumo =" . (int)$id;
 
 		$consulta = $this->db->query($q);
 		$sampleData = $consulta->result();
@@ -276,7 +276,7 @@ class Minsumos extends CI_Model
 		from produccion p
 		join insumo i on p.id_insumo = i.id_insumo
 		join umedida um on i.id_umedida_inventario = um.id_umedida
-		where i.id_insumo =" . $id;
+		where i.id_insumo =" . (int)$id;
 
 		$consulta = $this->db->query($q);
 		$sampleData = $consulta->result();
@@ -315,7 +315,7 @@ class Minsumos extends CI_Model
 		join detalle_receta dr on r.id_receta = dr.id_receta
 		join insumo i on dr.id_insumo = i.id_insumo
 		join umedida um on i.id_umedida_receta = um.id_umedida
-		where dr.id_insumo =" . $id;
+		where dr.id_insumo =" . (int)$id;
 
 		$consulta = $this->db->query($q);
 		$sampleData = $consulta->result();
@@ -360,7 +360,7 @@ class Minsumos extends CI_Model
 
      $this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $q = " SELECT i.id_insumo, i.nombre_insumo from insumo i 
-    where i.id_insumo =" . $id;
+    where i.id_insumo =" . (int)$id;
     $query = $this->db->query($q)->result();
     return $query;
   }
@@ -375,7 +375,7 @@ class Minsumos extends CI_Model
         $q = "SELECT um.nombre_umedida AS unidad_medida 
               FROM insumo i 
               JOIN umedida um ON i.id_umedida_inventario = um.id_umedida 
-              WHERE i.id_insumo = " . $id;
+              WHERE i.id_insumo = " . (int)$id;
 
         $query = $this->db->query($q);
     

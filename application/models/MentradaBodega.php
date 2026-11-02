@@ -16,8 +16,8 @@ class MentradaBodega extends CI_Model
     $q = "SELECT s.saldo, u.nombre_umedida from stock_insumo s 
     join insumo i on s.id_insumo=i.id_insumo
     join umedida u on i.id_umedida_inventario=u.id_umedida
-    where s.id_insumo=$idInsumo and s.id_bodega=$idBodega" ;
-    $consulta = $this->db->query($q);
+    where s.id_insumo=? and s.id_bodega=?" ;
+    $consulta = $this->db->query($q, array((int)$idInsumo, (int)$idBodega));
     return $consulta->result();
   }
 

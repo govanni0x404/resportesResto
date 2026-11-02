@@ -103,112 +103,112 @@ class CierresDeCaja extends CI_Controller
         $pdf->SetFont('Arial', 'B', 12);
         $pdf->SetXY(75, 15);
         $pdf->SetTextColor(0, 128, 0);
-        $pdf->Cell(0, 5, utf8_decode($datosEmpresa[0]->razon_social));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)($datosEmpresa[0]->razon_social), 'ISO-8859-1', 'UTF-8'));
 
         $pdf->Ln(10);
         $pdf->SetTextColor(0, 0, 0);
 
         if ($idCaja > 0) {
             $pdf->SetX(80);
-            $pdf->Cell(0, 5, utf8_decode('CUADRATURA DE CAJA '));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('CUADRATURA DE CAJA '), 'ISO-8859-1', 'UTF-8'));
             $pdf->Ln();
             $pdf->SetX(85);
-            $pdf->Cell(0, 5, utf8_decode('CAJA N°  00000' . $datosCaja[0]->id_caja));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('CAJA N°  00000' . $datosCaja[0]->id_caja), 'ISO-8859-1', 'UTF-8'));
             $pdf->Ln();
             $pdf->SetX(80);
-            $pdf->Cell(0, 5, utf8_decode('TURNO  : ' . $datosCaja[0]->nombre_turno));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('TURNO  : ' . $datosCaja[0]->nombre_turno), 'ISO-8859-1', 'UTF-8'));
         } else if ($listadoCajas != null) {
             $pdf->SetX(82);
-            $pdf->Cell(0, 5, utf8_decode('CUADRATURA DE CAJAS '));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('CUADRATURA DE CAJAS '), 'ISO-8859-1', 'UTF-8'));
             $pdf->Ln();
             $pdf->SetX(92);
-            $pdf->Cell(0, 5, utf8_decode('CONSOLIDADA'));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('CONSOLIDADA'), 'ISO-8859-1', 'UTF-8'));
         }
         $pdf->SetFont('Arial', '', 11);
         if ($idCaja > 0) {
             $pdf->Ln(15);
             $pdf->SetFont('Arial', 'B', 11);
 
-            $pdf->Cell(0, 5, utf8_decode('NOMBRE CAJERO'));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('NOMBRE CAJERO'), 'ISO-8859-1', 'UTF-8'));
             $pdf->SetX(50);
             $pdf->SetFont('Arial', '', 11);
-            $pdf->Cell(0, 5, utf8_decode(':   ' . $datosCaja[0]->nombre_usuario));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)(':   ' . $datosCaja[0]->nombre_usuario), 'ISO-8859-1', 'UTF-8'));
             $pdf->Ln();
             $pdf->SetFont('Arial', 'B', 11);
-            $pdf->Cell(0, 5, utf8_decode('SUPERVISOR'));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('SUPERVISOR'), 'ISO-8859-1', 'UTF-8'));
             $pdf->SetX(50);
             $pdf->SetFont('Arial', '', 11);
-            $pdf->Cell(0, 5, utf8_decode(':   ' . $datosCaja[0]->nombre_usuario));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)(':   ' . $datosCaja[0]->nombre_usuario), 'ISO-8859-1', 'UTF-8'));
             $pdf->Ln();
             $pdf->SetFont('Arial', 'B', 11);
-            $pdf->Cell(0, 5, utf8_decode('FECHA CAJA'));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('FECHA CAJA'), 'ISO-8859-1', 'UTF-8'));
             $pdf->SetX(50);
             $pdf->SetFont('Arial', '', 11);
-            $pdf->Cell(0, 5, utf8_decode(':   ' . $datosCaja[0]->fecha_caja));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)(':   ' . $datosCaja[0]->fecha_caja), 'ISO-8859-1', 'UTF-8'));
             $pdf->Ln();
             $pdf->SetFont('Arial', 'B', 11);
-            $pdf->Cell(0, 5, utf8_decode('FECHA APERTURA'));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('FECHA APERTURA'), 'ISO-8859-1', 'UTF-8'));
             $pdf->SetX(50);
             $pdf->SetFont('Arial', '', 11);
-            $pdf->Cell(0, 5, utf8_decode(':   ' . $datosCaja[0]->fecha_apertura));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)(':   ' . $datosCaja[0]->fecha_apertura), 'ISO-8859-1', 'UTF-8'));
             $pdf->Ln();
             $pdf->SetFont('Arial', 'B', 11);
-            $pdf->Cell(0, 5, utf8_decode('FECHA RENDICION'));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('FECHA RENDICION'), 'ISO-8859-1', 'UTF-8'));
             $pdf->SetX(50);
             $pdf->SetFont('Arial', '', 11);
-            $pdf->Cell(0, 5, utf8_decode(':   ' . $datosCaja[0]->fecha_rendicion));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)(':   ' . $datosCaja[0]->fecha_rendicion), 'ISO-8859-1', 'UTF-8'));
         } else if ($listadoCajas != null) {
             $pdf->Ln(15);
             $pdf->SetX(10);
             $pdf->SetFont('Arial', 'B', 11);
-            $pdf->Cell(40, 5, utf8_decode('DESDE: ' . $desde), 1);
+            $pdf->Cell(40, 5, mb_convert_encoding((string)('DESDE: ' . $desde), 'ISO-8859-1', 'UTF-8'), 1);
             $pdf->Ln();
-            $pdf->Cell(40, 5, utf8_decode('HASTA : ' . $hasta), 1);
+            $pdf->Cell(40, 5, mb_convert_encoding((string)('HASTA : ' . $hasta), 'ISO-8859-1', 'UTF-8'), 1);
             $pdf->SetFont('Arial', '', 11);
         }
         $pdf->Ln(15);
         $pdf->SetFont('Arial', '', 11);
-        $pdf->Cell(60, 5, utf8_decode('VENTAS TURNO'), 1);
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('VENTAS TURNO'), 'ISO-8859-1', 'UTF-8'), 1);
         $pdf->SetFont('Arial', '', 11);
-        $pdf->Cell(10, 5, utf8_decode('$'), 1, 0, 'C');
+        $pdf->Cell(10, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->Cell(40, 5, number_format($datosCaja[0]->ventas), 1, 0, 'R');
         $pdf->Ln();
         $pdf->SetFont('Arial', '', 11);
-        $pdf->Cell(60, 5, utf8_decode('INGRESOS'), 1);
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('INGRESOS'), 'ISO-8859-1', 'UTF-8'), 1);
         $pdf->SetFont('Arial', '', 11);
-        $pdf->Cell(10, 5, utf8_decode('$'), 1, 0, 'C');
+        $pdf->Cell(10, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->Cell(40, 5, number_format($datosCaja[0]->ingresos), 1, 0, 'R');
         $pdf->Ln();
         $pdf->SetFont('Arial', '', 11);
-        $pdf->Cell(60, 5, utf8_decode('EGRESOS'), 1);
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('EGRESOS'), 'ISO-8859-1', 'UTF-8'), 1);
         $pdf->SetFont('Arial', '', 11);
-        $pdf->Cell(10, 5, utf8_decode('$'), 1, 0, 'C');
+        $pdf->Cell(10, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->Cell(40, 5, number_format($datosCaja[0]->egresos), 1, 0, 'R');
         $pdf->Ln(5);
         $pdf->Ln();
         $pdf->SetFont('Arial', 'B', 11);
-        $pdf->Cell(60, 5, utf8_decode('TOTAL RECAUDACION'), 1);
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('TOTAL RECAUDACION'), 'ISO-8859-1', 'UTF-8'), 1);
         $pdf->SetFont('Arial', 'B', 11);
-        $pdf->Cell(10, 5, utf8_decode('$'), 1, 0, 'C');
+        $pdf->Cell(10, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->Cell(40, 5, number_format($datosCaja[0]->total_recaudacion), 1, 0, 'R');
         $pdf->SetFont('Arial', '', 11);
         $pdf->Ln(15);
         $pdf->SetX(10);
         $pdf->SetFont('Arial', 'B', 11);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->Cell(0, 5, utf8_decode('DETALLE RENDICION CAJERO'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('DETALLE RENDICION CAJERO'), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln(8);
         $pdf->SetFont('Arial', '', 11);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->Cell(60, 5, utf8_decode('SENCILLO APERTURA '), 1);
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('SENCILLO APERTURA '), 'ISO-8859-1', 'UTF-8'), 1);
         $pdf->SetX(70);
-        $pdf->Cell(10, 5, utf8_decode('$'), 1, 0, 'C');
+        $pdf->Cell(10, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->SetX(70);
         $pdf->Cell(50, 5, number_format($datosCaja[0]->sencillo_apertura), 1, 0, 'R');
         $pdf->Ln();
-        $pdf->Cell(60, 5, utf8_decode('SENCILLO CIERRE '), 1);
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('SENCILLO CIERRE '), 'ISO-8859-1', 'UTF-8'), 1);
         $pdf->SetX(70);
-        $pdf->Cell(10, 5, utf8_decode('$'), 1, 0, 'C');
+        $pdf->Cell(10, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->SetX(70);
         $pdf->Cell(50, 5, number_format($datosCaja[0]->sencillo_cierre), 1, 0, 'R');
         $pdf->Ln();
@@ -216,12 +216,12 @@ class CierresDeCaja extends CI_Controller
         foreach ($datosFormaPago as $row) {
             if ($row->id_fpago == 1) {
                 $nfpago = "EFECTIVO A RENDIR";
-                $pdf->Cell(60, 5, utf8_decode($nfpago), 1);
+                $pdf->Cell(60, 5, mb_convert_encoding((string)($nfpago), 'ISO-8859-1', 'UTF-8'), 1);
                 $pdf->SetX(70);
             } else {
-                $pdf->Cell(60, 5, utf8_decode($row->nombre_fpago), 1);
+                $pdf->Cell(60, 5, mb_convert_encoding((string)($row->nombre_fpago), 'ISO-8859-1', 'UTF-8'), 1);
             }
-            $pdf->Cell(10, 5, utf8_decode('$'), 1, 0, 'C');
+            $pdf->Cell(10, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
             $pdf->Cell(40, 5, number_format($row->monto), 1, 0, 'R');
             $pdf->Ln();
         }
@@ -235,16 +235,16 @@ class CierresDeCaja extends CI_Controller
         $pdf->SetTextColor(0, 0, 0);
 
         // Crea las celdas con el fondo blanco y el texto rojo
-        $pdf->Cell(60, 5, utf8_decode('TOTAL'),1);
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('TOTAL'), 'ISO-8859-1', 'UTF-8'),1);
         $pdf->SetX(70);
-        $pdf->Cell(10, 5, utf8_decode('$'), 1, 0, 'C', 1);
+        $pdf->Cell(10, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', 1);
         $pdf->SetX(70);
         $pdf->Cell(50, 5, number_format($totalDetalleCajero), 1, 0, 'R');
 
         $pdf->Ln(8);
-        $pdf->Cell(60, 5, utf8_decode('DIFERENCIA'), 1);
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('DIFERENCIA'), 'ISO-8859-1', 'UTF-8'), 1);
         $pdf->SetX(70);
-        $pdf->Cell(10, 5, utf8_decode('$'), 1, 0, 'C');
+        $pdf->Cell(10, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->SetX(70);
         $pdf->Cell(50, 5, number_format($diferencia), 1, 0, 'R');
         $pdf->Ln(10);
@@ -252,16 +252,16 @@ class CierresDeCaja extends CI_Controller
         $pdf->Ln();
         $pdf->SetX(10);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->Cell(0, 5, utf8_decode('FORMAS DE PAGO'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('FORMAS DE PAGO'), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln(3);
         $pdf->SetFont('Arial', '', 11);
         $pdf->SetTextColor(0, 0, 0);
         foreach ($datosCortesias as $row) {
             if ($row->monto > 0 && $row->escortesia == 'f' and $row->vigente == 't') {
                 $pdf->Ln();
-                $pdf->Cell(60, 5, utf8_decode($row->nombre_fpago), 1);
+                $pdf->Cell(60, 5, mb_convert_encoding((string)($row->nombre_fpago), 'ISO-8859-1', 'UTF-8'), 1);
                 $pdf->SetX(70);
-                $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+                $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
                 $pdf->SetX(70);
                 $pdf->Cell(50, 5, number_format($row->monto), 1, 0, 'R');
             }
@@ -271,30 +271,30 @@ class CierresDeCaja extends CI_Controller
         $pdf->SetTextColor(0, 0, 0);
         $pdf->Ln();
         $pdf->SetX(10);
-        $pdf->Cell(0, 5, utf8_decode('CORTESIAS'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('CORTESIAS'), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln(3);
         $pdf->SetFont('Arial', '', 11);
         $pdf->SetTextColor(0, 0, 0);
         foreach ($datosCortesias as $row) {
             if ($row->monto > 0 && $row->escortesia == 't' and $row->vigente == 't') {
                 $pdf->Ln();
-                $pdf->Cell(60, 5, utf8_decode($row->nombre_fpago), 1);
-                $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+                $pdf->Cell(60, 5, mb_convert_encoding((string)($row->nombre_fpago), 'ISO-8859-1', 'UTF-8'), 1);
+                $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
                 $pdf->Cell(50, 5, number_format($row->monto), 1, 0, 'R');
                 //$pdf->Ln();
             }
         }
         $pdf->SetFont('Arial', 'B', 11);
         $pdf->Ln();
-        $pdf->Cell(60, 5, utf8_decode('TOTAL CORTESIAS'), 1);
-        $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('TOTAL CORTESIAS'), 'ISO-8859-1', 'UTF-8'), 1);
+        $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->Cell(30, 5, number_format($datosCaja[0]->cortesia), 1, 0, 'R');
 
         $pdf->Ln(10);
         $pdf->SetX(80);
         $pdf->SetFont('Arial', 'B', 11);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->Cell(0, 5, utf8_decode('VENTAS POR FAMILIA'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('VENTAS POR FAMILIA'), 'ISO-8859-1', 'UTF-8'));
         $pdf->SetFont('Arial', '', 11);
         $pdf->SetTextColor(0, 0, 0);
 
@@ -302,8 +302,8 @@ class CierresDeCaja extends CI_Controller
             $pdf->Ln();
             $pdf->SetX(30);
             $pdf->SetFont('Arial', 'B', 11);
-            $pdf->Cell(90, 5, substr(utf8_decode($row->nombre_familia), 0, 30), 1);
-            $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+            $pdf->Cell(90, 5, substr(mb_convert_encoding((string)($row->nombre_familia), 'ISO-8859-1', 'UTF-8'), 0, 30), 1);
+            $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
             $pdf->Cell(25, 5, number_format($row->total_familia), 1, 0, 'R');
             $pdf->SetFont('Arial', '', 11);
 
@@ -311,9 +311,9 @@ class CierresDeCaja extends CI_Controller
                 if ($row2->id_familia == $row->id_familia) {
                     $pdf->Ln();
                     $pdf->SetX(30);
-                    $pdf->Cell(90, 5, substr(utf8_decode($row2->nombre_producto), 0, 30), 1);
-                    $pdf->Cell(15, 5, utf8_decode('X' . $row2->cantidad), 1);
-                    $pdf->Cell(10, 5, utf8_decode('$'), 1, 0, 'C');
+                    $pdf->Cell(90, 5, substr(mb_convert_encoding((string)($row2->nombre_producto), 'ISO-8859-1', 'UTF-8'), 0, 30), 1);
+                    $pdf->Cell(15, 5, mb_convert_encoding((string)('X' . $row2->cantidad), 'ISO-8859-1', 'UTF-8'), 1);
+                    $pdf->Cell(10, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
                     $pdf->Cell(20, 5, number_format($row2->total_producto), 1, 0, 'R');
                 }
             }
@@ -323,23 +323,23 @@ class CierresDeCaja extends CI_Controller
         $pdf->Ln();
         $pdf->SetX(30);
         $pdf->SetFont('Arial', 'B', 11);
-        $pdf->Cell(60, 5, utf8_decode('VENTAS'), 1);
-        $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('VENTAS'), 'ISO-8859-1', 'UTF-8'), 1);
+        $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->Cell(55, 5, number_format($totalVentasProductos[0]->total_ventas), 1, 0, 'R');
         $pdf->Ln();
         $pdf->SetX(30);
-        $pdf->Cell(60, 5, utf8_decode('DESCUENTOS'), 1);
-        $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('DESCUENTOS'), 'ISO-8859-1', 'UTF-8'), 1);
+        $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->Cell(55, 5, number_format($totalVentasProductos[0]->descuentos), 1, 0, 'R');
         $pdf->Ln();
         $pdf->SetX(30);
-        $pdf->Cell(60, 5, utf8_decode('CORTESIAS'), 1);
-        $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('CORTESIAS'), 'ISO-8859-1', 'UTF-8'), 1);
+        $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->Cell(55, 5, number_format($datosCaja[0]->cortesia), 1, 0, 'R');
         $pdf->Ln();
         $pdf->SetX(30);
-        $pdf->Cell(60, 5, utf8_decode('TOTAL VENTAS'), 1);
-        $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'), 1);
+        $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->Cell(55, 5, number_format($totalVentasProductos[0]->total_ventas - $datosCaja[0]->cortesia - $totalVentasProductos[0]->descuentos), 1, 0, 'R');
         $pdf->Ln();
 
@@ -348,15 +348,15 @@ class CierresDeCaja extends CI_Controller
             $pdf->Ln();
             $pdf->SetX(80);
             $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(0, 5, utf8_decode('DETALLE DE INGRESOS'));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('DETALLE DE INGRESOS'), 'ISO-8859-1', 'UTF-8'));
             $pdf->SetFont('Arial', '', 11);
             $pdf->SetTextColor(0, 0, 0);
             foreach ($detalleCaja as $row) {
                 if ($row->ingreso > 0) {
                     $pdf->Ln();
                     $pdf->SetX(30);
-                    $pdf->Cell(60, 5, substr(utf8_decode($row->observacion), 0, 30), 1);
-                    $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+                    $pdf->Cell(60, 5, substr(mb_convert_encoding((string)($row->observacion), 'ISO-8859-1', 'UTF-8'), 0, 30), 1);
+                    $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
                     $pdf->Cell(55, 5, number_format($row->ingreso), 1, 0, 'R');
                 }
                 $totalIngresos += $row->ingreso;
@@ -364,22 +364,22 @@ class CierresDeCaja extends CI_Controller
             $pdf->Ln(10);
             $pdf->SetFont('Arial', 'B', 11);
             $pdf->SetX(30);
-            $pdf->Cell(60, 5, utf8_decode('TOTAL INGRESOS'), 1);
-            $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+            $pdf->Cell(60, 5, mb_convert_encoding((string)('TOTAL INGRESOS'), 'ISO-8859-1', 'UTF-8'), 1);
+            $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
             $pdf->Cell(55, 5, number_format($totalIngresos), 1, 0, 'R');
 
             $pdf->Ln(10);
             $pdf->SetX(80);
             $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(0, 5, utf8_decode('DETALLE DE RETIROS'));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('DETALLE DE RETIROS'), 'ISO-8859-1', 'UTF-8'));
             foreach ($detalleCaja as $row) {
                 if ($row->egreso > 0) {
                     $pdf->SetFont('Arial', '', 11);
                     $pdf->SetTextColor(0, 0, 0);
                     $pdf->Ln();
                     $pdf->SetX(30);
-                    $pdf->Cell(60, 5, substr(utf8_decode($row->observacion), 0, 30), 1);
-                    $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+                    $pdf->Cell(60, 5, substr(mb_convert_encoding((string)($row->observacion), 'ISO-8859-1', 'UTF-8'), 0, 30), 1);
+                    $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
                     $pdf->Cell(55, 5, number_format($row->egreso), 1, 0, 'R');
                 }
                 $totalEgresos += $row->egreso;
@@ -387,8 +387,8 @@ class CierresDeCaja extends CI_Controller
             $pdf->SetFont('Arial', 'B', 11);
             $pdf->Ln(10);
             $pdf->SetX(30);
-            $pdf->Cell(60, 5, utf8_decode('TOTAL RETIROS'), 1);
-            $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+            $pdf->Cell(60, 5, mb_convert_encoding((string)('TOTAL RETIROS'), 'ISO-8859-1', 'UTF-8'), 1);
+            $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
             $pdf->Cell(55, 5, number_format($totalEgresos), 1, 0, 'R');
         }
         $pdf->Ln(10);
@@ -396,23 +396,23 @@ class CierresDeCaja extends CI_Controller
             $pdf->Ln();
             $pdf->SetX(78);
             $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(0, 5, utf8_decode('DETALLE DE ANULACIONES'));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('DETALLE DE ANULACIONES'), 'ISO-8859-1', 'UTF-8'));
             $pdf->Ln();
             $pdf->SetFont('Arial', '', 11);
             $pdf->SetTextColor(0, 0, 0);
             $pdf->SetX(30);
-            $pdf->Cell(80, 5, utf8_decode('PRODUCTO'), 1);
-            $pdf->Cell(18, 5, utf8_decode('HORA'), 1);
-            $pdf->Cell(15, 5, utf8_decode('MESA'), 1);
-            $pdf->Cell(22, 5, utf8_decode('CANTIDAD'), 1);
+            $pdf->Cell(80, 5, mb_convert_encoding((string)('PRODUCTO'), 'ISO-8859-1', 'UTF-8'), 1);
+            $pdf->Cell(18, 5, mb_convert_encoding((string)('HORA'), 'ISO-8859-1', 'UTF-8'), 1);
+            $pdf->Cell(15, 5, mb_convert_encoding((string)('MESA'), 'ISO-8859-1', 'UTF-8'), 1);
+            $pdf->Cell(22, 5, mb_convert_encoding((string)('CANTIDAD'), 'ISO-8859-1', 'UTF-8'), 1);
             foreach ($detalleCotizacion as $row) {
                 if ($row->esanulado == 't') {
                     $pdf->Ln();
                     $pdf->SetX(30);
-                    $pdf->Cell(80, 5, substr(utf8_decode($row->nombre_producto), 0, 25), 1);
-                    $pdf->Cell(18, 5, substr(utf8_decode($row->hora), 0, 25), 1);
-                    $pdf->Cell(15, 5, substr(utf8_decode($row->id_mesa), 0, 25), 1, 0, 'C');
-                    $pdf->Cell(22, 5, substr(utf8_decode($row->cantidad), 0, 25), 1, 0, 'C');
+                    $pdf->Cell(80, 5, substr(mb_convert_encoding((string)($row->nombre_producto), 'ISO-8859-1', 'UTF-8'), 0, 25), 1);
+                    $pdf->Cell(18, 5, substr(mb_convert_encoding((string)($row->hora), 'ISO-8859-1', 'UTF-8'), 0, 25), 1);
+                    $pdf->Cell(15, 5, substr(mb_convert_encoding((string)($row->id_mesa), 'ISO-8859-1', 'UTF-8'), 0, 25), 1, 0, 'C');
+                    $pdf->Cell(22, 5, substr(mb_convert_encoding((string)($row->cantidad), 'ISO-8859-1', 'UTF-8'), 0, 25), 1, 0, 'C');
                 }
             }
             $pdf->Ln();
@@ -420,23 +420,23 @@ class CierresDeCaja extends CI_Controller
             $pdf->SetX(78);
             $pdf->SetFont('Arial', 'B', 11);
             $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(0, 5, utf8_decode('DETALLE DE ELIMINACIONES'));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('DETALLE DE ELIMINACIONES'), 'ISO-8859-1', 'UTF-8'));
             $pdf->Ln();
             $pdf->SetFont('Arial', '', 11);
             $pdf->SetTextColor(0, 0, 0);
             $pdf->SetX(30);
-            $pdf->Cell(80, 5, utf8_decode('PRODUCTO'), 1);
-            $pdf->Cell(18, 5, utf8_decode('HORA'), 1);
-            $pdf->Cell(15, 5, utf8_decode('MESA'), 1);
-            $pdf->Cell(22, 5, utf8_decode('CANTIDAD'), 1);
+            $pdf->Cell(80, 5, mb_convert_encoding((string)('PRODUCTO'), 'ISO-8859-1', 'UTF-8'), 1);
+            $pdf->Cell(18, 5, mb_convert_encoding((string)('HORA'), 'ISO-8859-1', 'UTF-8'), 1);
+            $pdf->Cell(15, 5, mb_convert_encoding((string)('MESA'), 'ISO-8859-1', 'UTF-8'), 1);
+            $pdf->Cell(22, 5, mb_convert_encoding((string)('CANTIDAD'), 'ISO-8859-1', 'UTF-8'), 1);
             foreach ($detalleCotizacion as $row) {
                 if ($row->eseliminado == 't') {
                     $pdf->Ln();
                     $pdf->SetX(30);
-                    $pdf->Cell(80, 5, substr(utf8_decode($row->nombre_producto), 0, 25), 1);
-                    $pdf->Cell(18, 5, utf8_decode($row->hora), 1);
-                    $pdf->Cell(15, 5, utf8_decode($row->id_mesa), 1, 0, 'C');
-                    $pdf->Cell(22, 5, utf8_decode($row->cantidad), 1, 0, 'C');
+                    $pdf->Cell(80, 5, substr(mb_convert_encoding((string)($row->nombre_producto), 'ISO-8859-1', 'UTF-8'), 0, 25), 1);
+                    $pdf->Cell(18, 5, mb_convert_encoding((string)($row->hora), 'ISO-8859-1', 'UTF-8'), 1);
+                    $pdf->Cell(15, 5, mb_convert_encoding((string)($row->id_mesa), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
+                    $pdf->Cell(22, 5, mb_convert_encoding((string)($row->cantidad), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
                 }
             }
             $pdf->Ln(10);
@@ -445,7 +445,7 @@ class CierresDeCaja extends CI_Controller
         $pdf->Ln();
         $pdf->SetX(80);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->Cell(0, 5, utf8_decode('DETALLE DE PROPINAS'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('DETALLE DE PROPINAS'), 'ISO-8859-1', 'UTF-8'));
         $pdf->SetFont('Arial', '', 11);
         $pdf->SetTextColor(0, 0, 0);
         $totalPropinas = 0;
@@ -453,8 +453,8 @@ class CierresDeCaja extends CI_Controller
             if ($row->propina > 0) {
                 $pdf->Ln();
                 $pdf->SetX(30);
-                $pdf->Cell(60, 5, utf8_decode($row->nombre_usuario), 1);
-                $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+                $pdf->Cell(60, 5, mb_convert_encoding((string)($row->nombre_usuario), 'ISO-8859-1', 'UTF-8'), 1);
+                $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
                 $pdf->Cell(55, 5, number_format($row->propina), 1, 0, 'R');
             }
             $totalPropinas += $row->propina;
@@ -463,8 +463,8 @@ class CierresDeCaja extends CI_Controller
         $pdf->Ln(10);
         $pdf->SetFont('Arial', 'B', 11);
         $pdf->SetX(30);
-        $pdf->Cell(60, 5, utf8_decode('TOTAL PROPINAS'), 1);
-        $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+        $pdf->Cell(60, 5, mb_convert_encoding((string)('TOTAL PROPINAS'), 'ISO-8859-1', 'UTF-8'), 1);
+        $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->Cell(55, 5, number_format($totalPropinas), 1, 0, 'R');
 
 
@@ -473,31 +473,31 @@ class CierresDeCaja extends CI_Controller
             $pdf->Ln();
             $pdf->SetX(80);
             $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(0, 5, utf8_decode('DETALLE DE ATENCION'));
+            $pdf->Cell(0, 5, mb_convert_encoding((string)('DETALLE DE ATENCION'), 'ISO-8859-1', 'UTF-8'));
             $pdf->Ln();
             $pdf->SetFont('Arial', '', 11);
             $pdf->SetTextColor(0, 0, 0);
             $pdf->SetX(30);
-            $pdf->Cell(65, 5, utf8_decode('GARZON'), 1);
-            $pdf->Cell(15, 5, utf8_decode('MESAS'), 1);
-            $pdf->Cell(26, 5, utf8_decode('VENTAS'), 1);
-            $pdf->Cell(30, 5, utf8_decode('T.PROM.ES'), 1);
+            $pdf->Cell(65, 5, mb_convert_encoding((string)('GARZON'), 'ISO-8859-1', 'UTF-8'), 1);
+            $pdf->Cell(15, 5, mb_convert_encoding((string)('MESAS'), 'ISO-8859-1', 'UTF-8'), 1);
+            $pdf->Cell(26, 5, mb_convert_encoding((string)('VENTAS'), 'ISO-8859-1', 'UTF-8'), 1);
+            $pdf->Cell(30, 5, mb_convert_encoding((string)('T.PROM.ES'), 'ISO-8859-1', 'UTF-8'), 1);
             foreach ($detalleAtencion as $row) {
                 if ($row->venta_directa == 'f') {
                     $pdf->Ln();
                     $pdf->SetX(30);
-                    $pdf->Cell(65, 5, utf8_decode($row->nombre_usuario), 1);
+                    $pdf->Cell(65, 5, mb_convert_encoding((string)($row->nombre_usuario), 'ISO-8859-1', 'UTF-8'), 1);
                     $pdf->Cell(15, 5, number_format($row->mesas_atendidas), 1);
                     $pdf->Cell(26, 5, number_format($row->ventas), 1);
-                    $pdf->Cell(30, 5, utf8_decode($row->promedio_atencion), 1);
+                    $pdf->Cell(30, 5, mb_convert_encoding((string)($row->promedio_atencion), 'ISO-8859-1', 'UTF-8'), 1);
                     $totalAtencion += $row->ventas;
                 }
             }
             $pdf->SetFont('Arial', 'B', 11);
             $pdf->Ln(10);
             $pdf->SetX(30);
-            $pdf->Cell(60, 5, utf8_decode('TOTAL VENTAS'), 1);
-            $pdf->Cell(20, 5, utf8_decode('$'), 1, 0, 'C');
+            $pdf->Cell(60, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'), 1);
+            $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
             $pdf->Cell(55, 5, number_format($totalAtencion), 1, 0, 'C');
         }
 
@@ -505,29 +505,29 @@ class CierresDeCaja extends CI_Controller
         $pdf->Ln(20);
         $pdf->SetX(45);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->Cell(0, 5, utf8_decode('*****************************************************************************'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('*****************************************************************************'), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
         $pdf->SetX(75);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->Cell(0, 5, utf8_decode('* Sr. cliente favor compare formas de'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('* Sr. cliente favor compare formas de'), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
         $pdf->SetX(83);
-        $pdf->Cell(0, 5, utf8_decode('pago respecto a lo recibido.'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('pago respecto a lo recibido.'), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
         $pdf->SetX(45);
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->Cell(0, 5, utf8_decode('*****************************************************************************'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('*****************************************************************************'), 'ISO-8859-1', 'UTF-8'));
         $pdf->SetTextColor(0, 0, 0);
         $pdf->Ln(20);
         $pdf->SetX(105);
-        $pdf->Cell(0, 5, utf8_decode('CAJA'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('CAJA'), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
         $pdf->SetX(95);
-        $pdf->Cell(0, 5, utf8_decode('FIRMA CAJERO'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('FIRMA CAJERO'), 'ISO-8859-1', 'UTF-8'));
 
         $pdf->Ln(20);
         $pdf->SetX(63);
-        $pdf->Cell(0, 5, utf8_decode('SOLUCIONES INFORMATICAS DATAMAULE SPA'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('SOLUCIONES INFORMATICAS DATAMAULE SPA'), 'ISO-8859-1', 'UTF-8'));
 
         //------------------------------------------------------//
         if ($idCaja > 0) {

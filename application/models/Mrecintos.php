@@ -49,7 +49,7 @@ class Mrecintos extends CI_Model
     if ($id) {
       $this->db->where('id_recinto', $id);
       $this->db->update('recinto', $data);
-      $consulta = $this->db->query("select " . $id . " as id_recinto");
+      $consulta = $this->db->query("select " . (int)$id . " as id_recinto");
     } else {
       $this->db->insert('recinto', $data);
       $consulta = $this->db->query("SELECT CURRVAL('recinto_id_recinto_seq'::regclass) as id_recinto");

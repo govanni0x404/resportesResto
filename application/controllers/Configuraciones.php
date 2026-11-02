@@ -55,6 +55,12 @@ class Configuraciones extends CI_Controller {
     }
 
     public function guardar() {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0 || (int)$this->session->userdata('id_rol') !== 1) {
+            header('Content-Type: application/json');
+            http_response_code(403);
+            echo json_encode(['status' => 'error', 'mensaje' => 'Solo un administrador puede cambiar las configuraciones']);
+            return;
+        }
         $post = $this->input->post();
         $update_config = [];
         $update_empresa = [];
@@ -219,6 +225,8 @@ class Configuraciones extends CI_Controller {
         $ok_empresa = $this->Mconfiguraciones->update_empresa($update_empresa);
 
         header('Content-Type: application/json');
-        echo json_encode(['status' => ($ok_config || $ok_empresa) ? 'success' : 'error']);
+        // La configuración debe quedar guardada; empresa puede venir sin cambios
+        $ok = $ok_config && ($ok_empresa || empty($update_empresa));
+        echo json_encode(['status' => $ok ? 'success' : 'error']);
     }
 }

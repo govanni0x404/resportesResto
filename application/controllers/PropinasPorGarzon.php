@@ -85,57 +85,57 @@ class PropinasPorGarzon extends CI_Controller
         $pdf->Image(FCPATH . 'assets/img/logo.png', 10, 5, 35, 35, 'PNG');
 
         $pdf->SetXY(78, 15);
-        $pdf->Cell(0, 10, utf8_decode($datosEmpresa[0]->razon_social));
+        $pdf->Cell(0, 10, mb_convert_encoding((string)($datosEmpresa[0]->razon_social), 'ISO-8859-1', 'UTF-8'));
 
         $pdf->Ln(10);
 
         /*if ($idCaja > 0) {*/
         $pdf->SetX(85);
 
-        $pdf->Cell(0, 5, utf8_decode('Detalle De Propinas Por Garzon '));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('Detalle De Propinas Por Garzon '), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
         $pdf->SetX(85);
         $pdf->Ln(15);
         $pdf->SetX(10);
-        $pdf->Cell(0, 5, utf8_decode('DESDE: ' . $desde));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('DESDE: ' . $desde), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
-        $pdf->Cell(0, 5, utf8_decode('HASTA : ' . $hasta));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('HASTA : ' . $hasta), 'ISO-8859-1', 'UTF-8'));
 
 		$pdf->Ln();
         $pdf->SetX(88);
-        $pdf->Cell(0, 5, utf8_decode('PROPINAS ENTRE FECHAS'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('PROPINAS ENTRE FECHAS'), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
-        $pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
        
                 $pdf->SetX(15);
-                $pdf->Cell(0, 5, utf8_decode('N° DE CAJA'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('N° DE CAJA'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(55);
-                $pdf->Cell(0, 5, utf8_decode('FECHA'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('FECHA'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(105);
-                $pdf->Cell(0, 5, utf8_decode('GARZON'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('GARZON'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(140);
-                $pdf->Cell(0, 5, utf8_decode('PROPINA'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('PROPINA'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(170);
-                $pdf->Cell(0, 5, utf8_decode('FORMA DE PAGO'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('FORMA DE PAGO'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
 
        /* foreach ($resumenDePropinasEntreFechas as $row) {
             if ($row->id_caja > 0) {
                         $pdf->Ln();
                         $pdf->SetX(15);
-                        $pdf->Cell(0, 5, utf8_decode($row->id_caja));
+                        $pdf->Cell(0, 5, mb_convert_encoding((string)($row->id_caja), 'ISO-8859-1', 'UTF-8'));
                         $pdf->SetX(70);
-                        /*$pdf->Cell(0, 5, utf8_decode($row->fecha));
+                        /*$pdf->Cell(0, 5, mb_convert_encoding((string)($row->fecha), 'ISO-8859-1', 'UTF-8'));
                         $pdf->SetX(100);
-                        $pdf->Cell(23, 5, utf8_decode($row->nombre_usuario), 0, 0, 'R');
+                        $pdf->Cell(23, 5, mb_convert_encoding((string)($row->nombre_usuario), 'ISO-8859-1', 'UTF-8'), 0, 0, 'R');
                         $pdf->SetX(130);
                         $pdf->Cell(28, 5, number_format($row->total_propina), 0, 0, 'R');
                         $pdf->SetX(155);
                         $pdf->Cell(35, 5, number_format($row->nombre_fpago), 0, 0, 'R');
                         $pdf->Ln();
-                        $pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+                        $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
                         
     
                 }

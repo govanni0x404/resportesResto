@@ -29,11 +29,11 @@ class McierresDeCaja extends CI_Model
 			c.efectivo_fpago as subtotal, c.efectivo_fpago as efectivo, c.efectivo_entregado, c.diferencia, c.propina, u.nombre_usuario as cajero, sum(fondo_fijo+c.ventas_local) as total_sistema
 			from caja c
 			join usuario u on c.id_usuario = u.id_usuario
-			where c.fecha between '" . $de . "' and '" . $a . "'
+			where c.fecha between ? and ?
             group by c.id_caja, u.nombre_usuario
 			order by c.id_caja desc";
 
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a));
         $sampleData = $consulta->result();
         $data = array();
 
@@ -97,16 +97,17 @@ class McierresDeCaja extends CI_Model
 			from caja c
 			join turno t on c.id_turno = t.id_turno
 			join usuario u on c.id_usuario = u.id_usuario
-			where c.id_caja = $id_caja
+			where c.id_caja = ?
 			group by c.id_caja, t.id_turno, u.id_usuario";
         } else {
             $q = "SELECT sum(c.ingresos) as ingresos, sum(c.egresos) as egresos, sum(c.ventas_local) as ventas, sum(c.suma_detalle_caja) as total_recaudacion, 
 			sum(c.fondo_fijo_anterior) as sencillo_apertura, sum(c.fondo_fijo) as sencillo_cierre, sum(c.cortesia) as cortesia
 			from caja c
-			where c.id_caja in ($listadoCajas)";
+			where c.id_caja in ?";
         }
 
-        $consulta = $this->db->query($q);
+        $b = array($id_caja ? (int)$id_caja : $this->idsCajas($listadoCajas));
+        $consulta = $this->db->query($q, $b);
         return $consulta->result();
     }
 
@@ -121,15 +122,16 @@ class McierresDeCaja extends CI_Model
 		from detalle_pagocaja dpc 
 		join fpago fp on dpc.id_fpago = fp.id_fpago";
         if ($id_caja) {
-            $q = $q . " where dpc.id_caja = $id_caja 
+            $q = $q . " where dpc.id_caja = ? 
 			group by fp.id_fpago 
 			order by fp.nombre_fpago asc";
         } else {
-            $q = $q . " where dpc.id_caja in ($listadoCajas) 
+            $q = $q . " where dpc.id_caja in ? 
 			group by fp.id_fpago 
 			order by fp.nombre_fpago asc";
         }
-        $consulta = $this->db->query($q);
+        $b = array($id_caja ? (int)$id_caja : $this->idsCajas($listadoCajas));
+        $consulta = $this->db->query($q, $b);
         return $consulta->result();
     }
 
@@ -145,15 +147,16 @@ class McierresDeCaja extends CI_Model
         join venta v on pv.id_venta = v.id_venta
         join fpago fp on pv.id_fpago = fp.id_fpago";
         if ($id_caja) {
-            $q = $q . " where v.id_caja = $id_caja 
+            $q = $q . " where v.id_caja = ? 
 			group by fp.id_fpago 
 			order by fp.nombre_fpago asc";
         } else {
-            $q = $q . " where v.id_caja in ($listadoCajas) 
+            $q = $q . " where v.id_caja in ? 
 			group by fp.id_fpago 
 			order by fp.nombre_fpago asc";
         }
-        $consulta = $this->db->query($q);
+        $b = array($id_caja ? (int)$id_caja : $this->idsCajas($listadoCajas));
+        $consulta = $this->db->query($q, $b);
         return $consulta->result();
     }
 
@@ -171,14 +174,15 @@ class McierresDeCaja extends CI_Model
 		join producto p on dv.id_producto = p.id_producto
 		join familia f on p.id_familia = f.id_familia";
         if ($id_caja) {
-            $q = $q . " where c.id_caja = $id_caja
+            $q = $q . " where c.id_caja = ?
 			group by f.id_familia";
         } else {
-            $q = $q . " where c.id_caja in ($listadoCajas)
+            $q = $q . " where c.id_caja in ?
 			group by f.id_familia";
         }
 
-        $consulta = $this->db->query($q);
+        $b = array($id_caja ? (int)$id_caja : $this->idsCajas($listadoCajas));
+        $consulta = $this->db->query($q, $b);
         return $consulta->result();
     }
 
@@ -196,13 +200,14 @@ class McierresDeCaja extends CI_Model
 		join producto p on dv.id_producto = p.id_producto
 		join familia f on p.id_familia = f.id_familia";
         if ($id_caja) {
-            $q = $q . " where c.id_caja = $id_caja
+            $q = $q . " where c.id_caja = ?
 			group by p.id_producto, f.id_familia";
         } else {
-            $q = $q . " where c.id_caja in ($listadoCajas)
+            $q = $q . " where c.id_caja in ?
 			group by p.id_producto, f.id_familia";
         }
-        $consulta = $this->db->query($q);
+        $b = array($id_caja ? (int)$id_caja : $this->idsCajas($listadoCajas));
+        $consulta = $this->db->query($q, $b);
         return $consulta->result();
     }
 
@@ -219,11 +224,12 @@ class McierresDeCaja extends CI_Model
 		join caja c on v.id_caja = c.id_caja";
 
         if ($id_caja) {
-            $q = $q . " where c.id_caja = $id_caja";
+            $q = $q . " where c.id_caja = ?";
         } else {
-            $q = $q . " where c.id_caja in ($listadoCajas)";
+            $q = $q . " where c.id_caja in ?";
         }
-        $consulta = $this->db->query($q);
+        $b = array($id_caja ? (int)$id_caja : $this->idsCajas($listadoCajas));
+        $consulta = $this->db->query($q, $b);
         return $consulta->result();
     }
 
@@ -236,11 +242,12 @@ class McierresDeCaja extends CI_Model
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT * from detalle_caja";
         if ($id_caja) {
-            $q = $q . " where id_caja = $id_caja";
+            $q = $q . " where id_caja = ?";
         } else {
-            $q = $q . " where id_caja in ($listadoCajas)";
+            $q = $q . " where id_caja in ?";
         }
-        $consulta = $this->db->query($q);
+        $b = array($id_caja ? (int)$id_caja : $this->idsCajas($listadoCajas));
+        $consulta = $this->db->query($q, $b);
         return $consulta->result();
     }
 
@@ -256,11 +263,12 @@ class McierresDeCaja extends CI_Model
 		join cotizacion co on dc.id_cotizacion = co.id_cotizacion
 		join producto p on dc.id_producto = p.id_producto";
         if ($id_caja) {
-            $q = $q . " where dc.id_caja = $id_caja";
+            $q = $q . " where dc.id_caja = ?";
         } else {
-            $q = $q . " where dc.id_caja in ($listadoCajas)";
+            $q = $q . " where dc.id_caja in ?";
         }
-        $consulta = $this->db->query($q);
+        $b = array($id_caja ? (int)$id_caja : $this->idsCajas($listadoCajas));
+        $consulta = $this->db->query($q, $b);
         return $consulta->result();
     }
 
@@ -275,13 +283,14 @@ class McierresDeCaja extends CI_Model
         from venta v
         join usuario u on v.id_usuario_garzon = u.id_usuario";
         if ($id_caja) {
-            $q = $q . " where v.id_caja = $id_caja 
+            $q = $q . " where v.id_caja = ? 
 			group by u.nombre_usuario";
         } else {
-            $q = $q . " where v.id_caja in ($listadoCajas )
+            $q = $q . " where v.id_caja in ?
 			group by u.nombre_usuario";
         }
-        $consulta = $this->db->query($q);
+        $b = array($id_caja ? (int)$id_caja : $this->idsCajas($listadoCajas));
+        $consulta = $this->db->query($q, $b);
         return $consulta->result();
     }
 
@@ -299,13 +308,20 @@ class McierresDeCaja extends CI_Model
 		join venta v on co.id_venta = v.id_venta
 		join caja ca on v.id_caja = ca.id_caja";
         if ($id_caja) {
-            $q = $q . " where co.vigente = true and v.id_caja = $id_caja  
+            $q = $q . " where co.vigente = true and v.id_caja = ?  
 			group by u.nombre_usuario, co.venta_directa";
         } else {
-            $q = $q . " where co.vigente = true and v.id_caja in ($listadoCajas)
+            $q = $q . " where co.vigente = true and v.id_caja in ?
 			group by u.nombre_usuario, co.venta_directa";
         }
-        $consulta = $this->db->query($q);
+        $b = array($id_caja ? (int)$id_caja : $this->idsCajas($listadoCajas));
+        $consulta = $this->db->query($q, $b);
         return $consulta->result();
+    }
+
+    // Convierte la lista '1,2,3' de cajas en un array de enteros para usar con IN ?
+    private function idsCajas($listadoCajas)
+    {
+        return array_map('intval', array_filter(explode(',', (string)$listadoCajas), 'strlen'));
     }
 }

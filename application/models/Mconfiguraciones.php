@@ -63,6 +63,12 @@ class Mconfiguraciones extends CI_Model {
             return false;
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        // Cada cliente tiene su versión de la tabla: se guardan solo las columnas que existen
+        // (antes una sola columna faltante hacía fallar todo el guardado, terminal y RUT incluidos)
+        $data = array_intersect_key($data, array_flip($this->db->list_fields('configuracion')));
+        if (empty($data)) {
+            return false;
+        }
         $existente = $this->db->select('id_configuracion')->get('configuracion')->row();
         if (!$existente) {
             return false;
@@ -99,11 +105,27 @@ class Mconfiguraciones extends CI_Model {
             ORDER BY cod_sii, id_tdocumento')->result();
     }
 
+    /** Cómo se desglosan los montos en los PDF de Dashboard y Consolidado (si la base no tiene las columnas: neto/IVA/total). */
+    public function obtenerConfiguracionesRestoWeb() {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $cols = $this->db->list_fields('configuracion');
+        $sel = array();
+        foreach (array('desglozar_monto_neto_iva_total_en_reportes' => 't', 'desglozar_solo_monto_total_en_reportes' => 'f') as $c => $defecto) {
+            $sel[] = in_array($c, $cols) ? "CASE WHEN $c IS NULL THEN '$defecto' WHEN $c THEN 't' ELSE 'f' END AS $c" : "'$defecto' AS $c";
+        }
+        $r = $this->db->query('SELECT ' . implode(', ', $sel) . ' FROM configuracion LIMIT 1')->result();
+        return $r ? $r : array((object)array('desglozar_monto_neto_iva_total_en_reportes' => 't', 'desglozar_solo_monto_total_en_reportes' => 'f'));
+    }
+
     public function update_empresa($data) {
         if (empty($data)) {
             return false;
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $data = array_intersect_key($data, array_flip($this->db->list_fields('empresa')));
+        if (empty($data)) {
+            return false;
+        }
         $existente = $this->db->select('id_empresa')->get('empresa')->row();
         if (!$existente) {
             return $this->db->insert('empresa', $data);

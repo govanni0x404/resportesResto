@@ -51,7 +51,7 @@ class MformasDePago extends CI_Model
         if ($id) {
             $this->db->where('id_fpago', $id);
             $this->db->update('fpago', $data);
-            $consulta = $this->db->query("select " . $id . " as id_fpago");
+            $consulta = $this->db->query("select " . (int)$id . " as id_fpago");
         } else {
             $this->db->insert('fpago', $data);
             $consulta = $this->db->query("SELECT CURRVAL('fpago_id_fpago_seq'::regclass) as id_fpago");

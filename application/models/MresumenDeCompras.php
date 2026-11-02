@@ -29,10 +29,10 @@ class MresumenDeCompras extends CI_Model
 			from compra c 
 			join proveedor p on c.id_proveedor = p.id_proveedor
 			join tdocumento td on c.id_tdocumento = td.id_tdocumento
-			where fecha between '" . $de . "' and '" . $a . "'
+			where fecha between ? and ?
 			order by c.id_compra desc";
 
-		$consulta = $this->db->query($q);
+		$consulta = $this->db->query($q, array($de, $a));
 		$sampleData = $consulta->result();
 		$data = array();
 
@@ -69,7 +69,7 @@ class MresumenDeCompras extends CI_Model
 		$q = "SELECT i.nombre_insumo, dc.cantidad, round(dc.bruto_unitario) as bruto_unitario, round(dc.bruto_total) as total
 			from detalle_compra dc 
 			join insumo i on dc.id_insumo = i.id_insumo
-			where dc.id_compra = $id_compra";
+			where dc.id_compra = " . (int)$id_compra;
 
 		$consulta = $this->db->query($q);
 		$sampleData = $consulta->result();
@@ -106,7 +106,7 @@ class MresumenDeCompras extends CI_Model
 			from compra c 
 			join proveedor p on c.id_proveedor = p.id_proveedor
 			join tdocumento td on c.id_tdocumento = td.id_tdocumento
-			where c.id_compra = $idCompra
+			where c.id_compra = " . (int)$idCompra . "
 			order by c.id_compra desc";
 
 		$consulta = $this->db->query($q);

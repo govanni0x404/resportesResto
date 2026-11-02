@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <title>RestoWebadmin</title>
+    <title>DATAMAULE RESTO WEB</title>
 
     <!-- Favicon and touch icons -->
     <link rel="shortcut icon" href="<?php echo base_url() ?>assets/dist/img/ico/datamaule36x36.png" type="image/x-icon">
@@ -610,11 +610,11 @@
                                             <h1 class="modal-title">Cambiar Empresa</h1>
                                         </div>
                                         <div class="modal-body">
-                                            <form action="<?php echo base_url() ?>Login/relogin" method="post">
+                                            <form action="<?php echo base_url() ?>index.php/Login/relogin" method="post">
                                                 <fieldset>
 
                                                     <label for="">Empresa</label><br>
-                                                    <input style="display:none" type="text" name="username" value="<?php echo $this->session->userdata('correo_acceso') ?>">
+                                                    <input style="display:none" type="text" name="username" value="<?php echo htmlspecialchars((string)$this->session->userdata('correo_acceso'), ENT_QUOTES, 'UTF-8') ?>">
                                                     <?php if (!empty($empresas)) { ?>
                                                         <select style="width:80%" onchange="this.form.submit()" name="empresa" class="color9-bg color4" name="">
                                                             <?php
@@ -643,7 +643,7 @@
 
                                                     <?php if (!empty($conexiones)) { ?>
                                                         <label for="">Conexión :</label><br>
-                                                        <input style="display:none" type="text" name="username" value="<?php echo $this->session->userdata('correo_acceso') ?>">
+                                                        <input style="display:none" type="text" name="username" value="<?php echo htmlspecialchars((string)$this->session->userdata('correo_acceso'), ENT_QUOTES, 'UTF-8') ?>">
 
                                                         <select style="width:80%" onchange="this.form.submit()" name="nConexion" class="color9-bg color4" name="">
                                                             <?php
@@ -868,7 +868,7 @@
                                                         <li class="active"><a href="<?php echo base_url() ?>index.php/Bodegas"><i class="ti-money"></i>Bodegas</a></li>
                                                     <?php endif; ?>
                                                     <?php if ($__showCanalDeventa) : ?>
-                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/CanalDeventa"><i class="ti-money"></i>Canal De venta</a></li>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/CanalDeVenta"><i class="ti-money"></i>Canal De venta</a></li>
                                                     <?php endif; ?>
                                                     <?php if ($__showCentroCosto) : ?>
                                                         <li class="active"><a href="<?php echo base_url() ?>index.php/CentroCosto"><i class="ti-money"></i>Centro Costo</a></li>
@@ -1004,7 +1004,7 @@
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/Bodegas"><i
                                                         class="ti-money"></i>Bodegas</a></li>
                                             <li class="active"><a
-                                                    href="<?php echo base_url() ?>index.php/CanalDeventa"><i
+                                                    href="<?php echo base_url() ?>index.php/CanalDeVenta"><i
                                                         class="ti-money"></i>Canal De venta</a></li>
                                             <li class="active"><a
                                                     href="<?php echo base_url() ?>index.php/CentroCosto"><i

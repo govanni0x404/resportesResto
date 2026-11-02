@@ -70,6 +70,7 @@ class EntradaBodega extends CI_Controller
 
         $respuesta=array();
 
+        $respueta = array();
         foreach ($d as $value) {
           $miData=array(
             'id_esbodega'=>$idEsBodega,

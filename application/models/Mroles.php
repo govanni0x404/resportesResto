@@ -45,9 +45,9 @@ class Mroles extends CI_Model
     $q = " SELECT pu.id_pusuario, r.nombre_rol, ps.nombre_psistema, ps.nombre_vb, pu.autoriza, pu.id_rol, pu.id_psistema from pusuario pu
         join rol r on pu.id_rol=r.id_rol
         join psistema ps on pu.id_psistema=ps.id_psistema
-        where ps.vigente=true AND ps.nombre_psistema='RESTO WEB' AND pu.id_rol=" . $id_rol . "
+        where ps.vigente=true AND ps.nombre_psistema='RESTO WEB' AND pu.id_rol=?
         order by ps.nombre_vb asc";
-    $query = $this->db->query($q);
+    $query = $this->db->query($q, array((int)$id_rol));
     return $query->result();
   }
 
@@ -68,8 +68,8 @@ class Mroles extends CI_Model
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    $q = "SELECT * from usuario u where u.id_rol=$id_rol";
-    $query = $this->db->query($q);
+    $q = "SELECT * from usuario u where u.id_rol=?";
+    $query = $this->db->query($q, array((int)$id_rol));
     return json_encode($query->result());
   }
 
@@ -79,8 +79,8 @@ class Mroles extends CI_Model
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    $q = "UPDATE pusuario set autoriza=false where id_pusuario=$id_pusuario";
-    $consulta = $this->db->query($q);
+    $q = "UPDATE pusuario set autoriza=false where id_pusuario=?";
+    $consulta = $this->db->query($q, array((int)$id_pusuario));
     return $consulta;
   }
 
@@ -90,8 +90,8 @@ class Mroles extends CI_Model
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    $q = "UPDATE pusuario set autoriza=true where id_pusuario=$id_pusuario";
-    $consulta = $this->db->query($q);
+    $q = "UPDATE pusuario set autoriza=true where id_pusuario=?";
+    $consulta = $this->db->query($q, array((int)$id_pusuario));
     return $consulta;
   }
 
@@ -101,8 +101,8 @@ class Mroles extends CI_Model
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    $q = "UPDATE pusuario set autoriza=true where id_rol=$id_rol";
-    $consulta = $this->db->query($q);
+    $q = "UPDATE pusuario set autoriza=true where id_rol=?";
+    $consulta = $this->db->query($q, array((int)$id_rol));
     return $consulta;
   }
 
@@ -112,8 +112,8 @@ class Mroles extends CI_Model
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    $q = "UPDATE pusuario set autoriza=false where id_rol=$id_rol";
-    $consulta = $this->db->query($q);
+    $q = "UPDATE pusuario set autoriza=false where id_rol=?";
+    $consulta = $this->db->query($q, array((int)$id_rol));
     return $consulta;
   }
 
@@ -127,7 +127,7 @@ class Mroles extends CI_Model
     if ($id) {
       $this->db->where('id_rol', $id);
       $this->db->update('rol', $data);
-      $consulta = $this->db->query("select " . $id . " as id_rol");
+      $consulta = $this->db->query("select " . (int)$id . " as id_rol");
     } else {
       $this->db->insert('rol', $data);
       $consulta = $this->db->query("SELECT CURRVAL('rol_id_rol_seq'::regclass) as id_rol");

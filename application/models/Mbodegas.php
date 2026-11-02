@@ -45,7 +45,7 @@ class Mbodegas extends CI_Model
 		if ($id) {
 			$this->db->where('id_bodega', $id);
 			$this->db->update('bodega', $data);
-			$consulta = $this->db->query("select " . $id . " as id_bodega");
+			$consulta = $this->db->query("select " . (int)$id . " as id_bodega");
 		} else {
 			$this->db->insert('bodega', $data);
 			$consulta = $this->db->query("SELECT CURRVAL('bodega_id_bodega_seq'::regclass) as id_bodega");

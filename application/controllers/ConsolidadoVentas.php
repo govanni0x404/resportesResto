@@ -100,98 +100,98 @@ class ConsolidadoVentas extends CI_Controller
         $pdf->Image(FCPATH . 'assets/img/logo.png', 10, 5, 35, 35, 'PNG');
 
         $pdf->SetXY(78, 15);
-        $pdf->Cell(0, 10, utf8_decode($datosEmpresa[0]->razon_social));
+        $pdf->Cell(0, 10, mb_convert_encoding((string)($datosEmpresa[0]->razon_social), 'ISO-8859-1', 'UTF-8'));
 
         $pdf->Ln(10);
 
         /*if ($idCaja > 0) {*/
         $pdf->SetX(85);
 
-        $pdf->Cell(0, 5, utf8_decode('DETALLE CONSOLIDADO DE VENTAS '));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('DETALLE CONSOLIDADO DE VENTAS '), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
         $pdf->SetX(85);
         $pdf->Ln(15);
         $pdf->SetX(10);
-        $pdf->Cell(0, 5, utf8_decode('DESDE: ' . $desde));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('DESDE: ' . $desde), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
-        $pdf->Cell(0, 5, utf8_decode('HASTA : ' . $hasta));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('HASTA : ' . $hasta), 'ISO-8859-1', 'UTF-8'));
 
         foreach ($obtenerConfiguracionesRestoWeb as $validacion) {
             if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
                 $pdf->Ln(10);
-                $pdf->Cell(0, 5, utf8_decode('CANTIDAD DE VENTAS'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('CANTIDAD DE VENTAS'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
-                $pdf->Cell(0, 5, utf8_decode('$   '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->cantidad_ventas), 0, 0, 'R');
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('TOTAL NETO'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL NETO'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
-                $pdf->Cell(0, 5, utf8_decode('$   '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->total_neto), 0, 0, 'R');
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('TOTAL IVA'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL IVA'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
-                $pdf->Cell(0, 5, utf8_decode('$   '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->total_iva), 0, 0, 'R');
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('TOTAL VENTAS '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL VENTAS '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
-                $pdf->Cell(0, 5, utf8_decode('$   '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->total_ventas), 0, 0, 'R');
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('TOTAL DESCUENTOS  (-) '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL DESCUENTOS  (-) '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
-                $pdf->Cell(0, 5, utf8_decode('$   '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->total_descuento), 0, 0, 'R');
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('TOTAL GENERAL '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL GENERAL '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
-                $pdf->Cell(0, 5, utf8_decode('$   '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->total_general), 0, 0, 'R');
                 $pdf->Ln(5);
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('MONTO TOTAL VENTAS '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('MONTO TOTAL VENTAS '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
-                $pdf->Cell(0, 5, utf8_decode('$   '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($totalSistema[0]->monto_total_ventas), 0, 0, 'R');
                 $pdf->Ln(10);
             } else {
                 $pdf->Ln(10);
-                $pdf->Cell(0, 5, utf8_decode('CANTIDAD DE VENTAS'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('CANTIDAD DE VENTAS'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
-                $pdf->Cell(0, 5, utf8_decode('$   '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->cantidad_ventas), 0, 0, 'R');
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('TOTAL VENTAS '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL VENTAS '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
-                $pdf->Cell(0, 5, utf8_decode('$   '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->total_ventas), 0, 0, 'R');
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('TOTAL DESCUENTOS  (-) '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL DESCUENTOS  (-) '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
-                $pdf->Cell(0, 5, utf8_decode('$   '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->total_descuento), 0, 0, 'R');
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('TOTAL GENERAL '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL GENERAL '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
-                $pdf->Cell(0, 5, utf8_decode('$   '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->total_general), 0, 0, 'R');
                 $pdf->Ln(5);
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('MONTO TOTAL VENTAS '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('MONTO TOTAL VENTAS '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
-                $pdf->Cell(0, 5, utf8_decode('$   '));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($totalSistema[0]->monto_total_ventas), 0, 0, 'R');
                 $pdf->Ln(10);
@@ -200,33 +200,33 @@ class ConsolidadoVentas extends CI_Controller
 
         $pdf->Ln();
         $pdf->SetX(88);
-        $pdf->Cell(0, 5, utf8_decode('VENTAS POR FAMILIA'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('VENTAS POR FAMILIA'), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
-        $pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
         foreach ($obtenerConfiguracionesRestoWeb as $validacion) {
             if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
                 $pdf->SetX(15);
-                $pdf->Cell(0, 5, utf8_decode('FAMILIA'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('FAMILIA'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(55);
-                $pdf->Cell(0, 5, utf8_decode('CANTIDAD DE VENTA'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('CANTIDAD DE VENTA'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(105);
-                $pdf->Cell(0, 5, utf8_decode('TOTAL NETO'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL NETO'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(140);
-                $pdf->Cell(0, 5, utf8_decode('TOTAL IVA'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL IVA'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(170);
-                $pdf->Cell(0, 5, utf8_decode('TOTAL VENTAS'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
             } else {
                 $pdf->SetX(15);
-                $pdf->Cell(0, 5, utf8_decode('FAMILIA'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('FAMILIA'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(90);
-                $pdf->Cell(0, 5, utf8_decode('CANTIDAD DE VENTA'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('CANTIDAD DE VENTA'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(175);
-                $pdf->Cell(0, 5, utf8_decode('TOTAL VENTAS'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
             }
         }
 
@@ -236,7 +236,7 @@ class ConsolidadoVentas extends CI_Controller
                     if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
                         $pdf->Ln();
                         $pdf->SetX(15);
-                        $pdf->Cell(0, 5, utf8_decode($row->nombre_familia));
+                        $pdf->Cell(0, 5, mb_convert_encoding((string)($row->nombre_familia), 'ISO-8859-1', 'UTF-8'));
                         $pdf->SetX(70);
                         $pdf->Cell(0, 5, number_format($row->cantidad));
                         $pdf->SetX(100);
@@ -246,7 +246,7 @@ class ConsolidadoVentas extends CI_Controller
                         $pdf->SetX(155);
                         $pdf->Cell(35, 5, number_format($row->monto_total), 0, 0, 'R');
                         $pdf->Ln();
-                        $pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+                        $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
                         $totalCantidadPorFamilia += $row->cantidad;
                         $totalNetoPorFamilia += $row->monto_neto;
                         $totaliVAPorFamilia += $row->monto_iva;
@@ -254,13 +254,13 @@ class ConsolidadoVentas extends CI_Controller
                     } else {
                         $pdf->Ln();
                         $pdf->SetX(15);
-                        $pdf->Cell(0, 5, utf8_decode($row->nombre_familia));
+                        $pdf->Cell(0, 5, mb_convert_encoding((string)($row->nombre_familia), 'ISO-8859-1', 'UTF-8'));
                         $pdf->SetX(107);
                         $pdf->Cell(0, 5, number_format($row->cantidad));
                         $pdf->SetX(162);
                         $pdf->Cell(35, 5, number_format($row->monto_total), 0, 0, 'R');
                         $pdf->Ln();
-                        $pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+                        $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
                         $totalCantidadPorFamilia += $row->cantidad;
                         $totalPorFamilia += $row->monto_total;
                     }
@@ -272,7 +272,7 @@ class ConsolidadoVentas extends CI_Controller
             if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
                 $pdf->Ln(10);
                 $pdf->SetX(15);
-                $pdf->Cell(0, 5, utf8_decode('TOTALES'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTALES'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($totalCantidadPorFamilia));
                 $pdf->SetX(110);
@@ -284,7 +284,7 @@ class ConsolidadoVentas extends CI_Controller
             } else {
                 $pdf->Ln(10);
                 $pdf->SetX(15);
-                $pdf->Cell(0, 5, utf8_decode('TOTALES'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTALES'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(107);
                 $pdf->Cell(40, 5, number_format($totalCantidadPorFamilia));
                 $pdf->SetX(185);
@@ -294,33 +294,33 @@ class ConsolidadoVentas extends CI_Controller
 
         $pdf->Ln(15);
         $pdf->SetX(88);
-        $pdf->Cell(0, 5, utf8_decode('VENTAS POR CANAL'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('VENTAS POR CANAL'), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
-        $pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
         $pdf->Ln();
         foreach ($obtenerConfiguracionesRestoWeb as $validacion) {
             if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
                 $pdf->SetX(15);
-                $pdf->Cell(0, 5, utf8_decode('CANAL DE VENTA'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('CANAL DE VENTA'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(55);
-                $pdf->Cell(0, 5, utf8_decode('CANTIDAD VENTAS'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('CANTIDAD VENTAS'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(105);
-                $pdf->Cell(0, 5, utf8_decode('TOTAL NETO'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL NETO'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(140);
-                $pdf->Cell(0, 5, utf8_decode('TOTAL IVA'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL IVA'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(170);
-                $pdf->Cell(0, 5, utf8_decode('TOTAL VENTAS'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
             } else {
                 $pdf->SetX(15);
-                $pdf->Cell(0, 5, utf8_decode('CANAL DE VENTA'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('CANAL DE VENTA'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(93);
-                $pdf->Cell(0, 5, utf8_decode('CANTIDAD VENTAS'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('CANTIDAD VENTAS'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(175);
-                $pdf->Cell(0, 5, utf8_decode('TOTAL VENTAS'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->Ln();
-                $pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
             }
         }
         foreach ($datosCanalDeVentas as $row) {
@@ -329,7 +329,7 @@ class ConsolidadoVentas extends CI_Controller
                     if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
                         $pdf->Ln();
                         $pdf->SetX(15);
-                        $pdf->Cell(0, 5, utf8_decode($row->nombre_canal_venta));
+                        $pdf->Cell(0, 5, mb_convert_encoding((string)($row->nombre_canal_venta), 'ISO-8859-1', 'UTF-8'));
                         $pdf->SetX(70);
                         $pdf->Cell(0, 5, number_format($row->cantidad_ventas));
                         $pdf->SetX(100);
@@ -339,7 +339,7 @@ class ConsolidadoVentas extends CI_Controller
                         $pdf->SetX(157);
                         $pdf->Cell(35, 5, number_format($row->total_ventas), 0, 0, 'R');
                         $pdf->Ln();
-                        $pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+                        $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
                         $totalCantidadPorCanalDeVentas += $row->cantidad_ventas;
                         $totalNetoPorCanalDeVentas += $row->total_neto;
                         $totaliVAPorCanalDeVentas += $row->total_iva;
@@ -347,13 +347,13 @@ class ConsolidadoVentas extends CI_Controller
                     } else {
                         $pdf->Ln();
                         $pdf->SetX(15);
-                        $pdf->Cell(0, 5, utf8_decode($row->nombre_canal_venta));
+                        $pdf->Cell(0, 5, mb_convert_encoding((string)($row->nombre_canal_venta), 'ISO-8859-1', 'UTF-8'));
                         $pdf->SetX(107);
                         $pdf->Cell(0, 5, number_format($row->cantidad_ventas));
                         $pdf->SetX(163);
                         $pdf->Cell(35, 5, number_format($row->total_ventas), 0, 0, 'R');
                         $pdf->Ln();
-                        $pdf->Cell(0, 5, utf8_decode('____________________________________________________________________________________________________'));
+                        $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
                         $totalCantidadPorCanalDeVentas += $row->cantidad_ventas;
                         $totalPorCanalDeVentas += $row->total_ventas;
                     }
@@ -364,7 +364,7 @@ class ConsolidadoVentas extends CI_Controller
             if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
                 $pdf->Ln(10);
                 $pdf->SetX(15);
-                $pdf->Cell(0, 5, utf8_decode('TOTALES'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTALES'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($totalCantidadPorCanalDeVentas));
                 $pdf->SetX(110);
@@ -376,7 +376,7 @@ class ConsolidadoVentas extends CI_Controller
             } else {
                 $pdf->Ln(10);
                 $pdf->SetX(15);
-                $pdf->Cell(0, 5, utf8_decode('TOTALES'));
+                $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTALES'), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(107);
                 $pdf->Cell(40, 5, number_format($totalCantidadPorCanalDeVentas));
                 $pdf->SetX(185);
@@ -386,7 +386,7 @@ class ConsolidadoVentas extends CI_Controller
 
         //$pdf->Ln(170);
         //$pdf->SetX(75);
-        //$pdf->Cell(0, 5, utf8_decode('SOLUCIONES INFORMATICAS  DATAMAULE.CL'));
+        //$pdf->Cell(0, 5, mb_convert_encoding((string)('SOLUCIONES INFORMATICAS  DATAMAULE.CL'), 'ISO-8859-1', 'UTF-8'));
 
 
         $pdf->Output('DetalleConsolidadoVentas Desde ' . $desde . ' Hasta ' . $hasta . '.pdf', 'I');

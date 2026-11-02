@@ -15,8 +15,8 @@ class Mlogin extends CI_Model
 			$q="select u.*,c.nombre_cliente,c.nombre_fantasia
 					from usuario_appweb u
 					join cliente c on u.id_cliente=c.id_cliente
-					where u.id_software=".$this->session->userdata('id_software')." and correo_acceso='".$this->session->userdata('correo_acceso')."'";
-			return json_encode($consulta=$this->db->query($q)->result());
+					where u.id_software = ? and correo_acceso = ?";
+			return json_encode($consulta=$this->db->query($q, array((int)$this->session->userdata('id_software'), (string)$this->session->userdata('correo_acceso')))->result());
 
 		}
 	}
@@ -24,8 +24,8 @@ class Mlogin extends CI_Model
 	public function obtenerListaConexionesUsuario($idUsuario){
 		if (strlen((string)$this->session->userdata('rut_cliente'))>0) {
 			$this->db=$this->load->database('default', TRUE);
-			$q="select  u.nombre_conexion from usuario_appweb u where u.id_cliente=$idUsuario group by u.nombre_conexion order by 1";
-			return json_encode($consulta=$this->db->query($q)->result());
+			$q="select  u.nombre_conexion from usuario_appweb u where u.id_cliente = ? group by u.nombre_conexion order by 1";
+			return json_encode($consulta=$this->db->query($q, array((int)$idUsuario))->result());
 		}
 	}
 
@@ -81,15 +81,15 @@ class Mlogin extends CI_Model
 
 	public function obtenerSucursal($idCliente){
 		$this->db=$this->load->database('default', TRUE);
-		$q="select * from sucursal s where s.id_cliente=$idCliente order by 1 limit 1";
-		$query = $this->db->query($q);
+		$q="select * from sucursal s where s.id_cliente = ? order by 1 limit 1";
+		$query = $this->db->query($q, array((int)$idCliente));
 		return $query->row();
 	}
 	public function getNombreUsuario($idUsuario){
 		if (strlen((string)$this->session->userdata('rut_cliente'))>0) {
 			$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 			//$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-			$query = $this->db->query("select * from usuario where id_usuario=$idUsuario");
+			$query = $this->db->query("select * from usuario where id_usuario = ?", array((int)$idUsuario));
 			return $query->row();
 
 		}

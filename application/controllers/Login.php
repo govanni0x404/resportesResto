@@ -64,11 +64,13 @@ class Login extends CI_Controller
 			curl_setopt($ch, CURLOPT_URL, "https://datamaule.cl/validarPagos/validarCliente.php");
 			curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 			$server_output = curl_exec($ch);
 			$resultado = json_decode($server_output, true);
 			curl_close($ch);
 
-			$idCliente = $resultado[0]['id'];
+			$idCliente = isset($resultado[0]['id']) ? (int)$resultado[0]['id'] : (int)$check_user->id_cliente;
 			if ($check_user->autoriza_cambio_conexion == 't') {
 				$listaConexiones = $this->Mlogin->obtenerListaConexionesUsuario($idCliente);
 			} else {
@@ -98,9 +100,17 @@ class Login extends CI_Controller
 	}
 
 		public function relogin(){
-			$username = $this->input->post('username');
-			$idEmpresa = $this->input->post('empresa');
-			$nombreConexion= $this->input->post('nConexion');
+			// Cambio de empresa desde el menú: solo con sesión iniciada y hacia una empresa del mismo correo
+			// (antes bastaba un POST con cualquier correo, sin clave, y se podía elegir cualquier conexión)
+			if (!$this->session->userdata('is_logued_in')) {
+				redirect(base_url());
+			}
+			$username = (string)$this->session->userdata('correo_acceso');
+			if ((string)$this->input->post('username') !== $username) {
+				redirect(base_url());
+			}
+			$idEmpresa = (int)$this->input->post('empresa');
+			$nombreConexion = trim((string)$this->input->post('nConexion'));
 			$idSoftware=5;
 			$check_user = $this->Mlogin->relogin_user($idEmpresa,$username,$idSoftware);
 
@@ -140,13 +150,15 @@ class Login extends CI_Controller
 				curl_setopt($ch, CURLOPT_URL, "https://datamaule.cl/validarPagos/validarCliente.php");
 				curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
 				curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 				$server_output = curl_exec($ch);
 				$resultado = json_decode($server_output,true);
 				curl_close($ch);
 
 
 
-				$idCliente= $resultado[0]['id'];
+				$idCliente = isset($resultado[0]['id']) ? (int)$resultado[0]['id'] : (int)$check_user->id_cliente;
 				if ($check_user->autoriza_cambio_conexion=='t') {
 					$listaConexiones =$this->Mlogin->obtenerListaConexionesUsuario($idCliente);
 				}else {
@@ -166,7 +178,7 @@ class Login extends CI_Controller
 					'id_usuario'          => $check_user->id_usuario_cliente,
 				  'rut_cliente'         => $check_user->rut . "-" . $check_user->dv,
 					'nombre_usuario'      => $check_user->nombre_usuario,
-					'nombre_conexion'=>(strlen($nombreConexion)>0 ? $nombreConexion :$check_user->nombre_conexion),
+					'nombre_conexion'=>($this->conexionPermitida($nombreConexion, $listaConexiones) ? $nombreConexion : $check_user->nombre_conexion),
 					'nombre_cliente'			=> $check_user->nombre_cliente,
 					'correo_acceso' =>$username,
 					'id_software'=>$idSoftware,
@@ -196,5 +208,18 @@ class Login extends CI_Controller
 		$this->session->unset_userdata('nombre_usuario');
 		$this->session->sess_destroy();
 		redirect(base_url());
+	}
+
+	/** La conexión pedida está en la lista de conexiones del usuario (JSON [{nombre_conexion}] o arreglo). */
+	private function conexionPermitida($nombre, $lista)
+	{
+		if ($nombre === '') return false;
+		$items = is_string($lista) ? json_decode($lista, true) : (array)$lista;
+		if (isset($items['nombre_conexion'])) $items = array($items);
+		foreach ((array)$items as $it) {
+			$it = (array)$it;
+			if (isset($it['nombre_conexion']) && $it['nombre_conexion'] === $nombre) return true;
+		}
+		return false;
 	}
 }

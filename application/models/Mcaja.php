@@ -173,6 +173,8 @@ class Mcaja extends CI_Model
 			'mensajes' => $mensajes,
 			'administradores' => $admins,
 			'config' => $config,
+			// Emisión con la cuenta de pruebas de Cloud Apps (config/caja_local.php): la Caja lo avisa en pantalla
+			'dte_prueba' => (bool)$this->dtePrueba($db),
 		);
 	}
 
@@ -786,12 +788,18 @@ class Mcaja extends CI_Model
 		// --- Detalle: precios del servidor; en una mesa, lo ya pedido (con el precio al que se pidió)
 		$idMesa = (int)(isset($p['id_mesa']) ? $p['id_mesa'] : 0);
 		$cotMesa = null;
+		$cotCobro = null;
+		$parcial = null;
 		if ($idMesa) {
 			$cotMesa = $this->cotizacionDeMesa($db, $idMesa);
 			if (!$cotMesa) throw new Exception('La mesa ya no tiene un pedido abierto', 409);
 			if ((int)$cotMesa->id_lprecio) $idLprecio = (int)$cotMesa->id_lprecio;
 			$lineas = $this->lineasDeCotizacion($db, (int)$cotMesa->id_cotizacion);
 			if (!$lineas) throw new Exception('La mesa no tiene productos', 400);
+			$huellaMesa = $this->huellaLineas($lineas);
+			// Cobro de una parte de la mesa: [{id_detalle, cantidad}]; lo demás sigue en la mesa
+			$parcial = isset($p['parcial']) && is_array($p['parcial']) && $p['parcial'] ? $this->seleccionDeLineas($lineas, $p['parcial']) : null;
+			if ($parcial) $lineas = $parcial;
 			$subtotal = (int)array_sum(array_column($lineas, 'bruto'));
 			$notas = array();
 		} else {
@@ -806,6 +814,10 @@ class Mcaja extends CI_Model
 		}
 		// El trigger f_adddescuentoproducto divide por el subtotal de la venta
 		if ($subtotal <= 0) throw new Exception('La venta debe tener un monto mayor a cero', 400);
+		// Boleta exenta (41) y factura exenta (34): todo el documento es exento, aunque los productos sean afectos
+		if (in_array($doc['cod_sii'], array(34, 41))) {
+			foreach ($lineas as $i => $l) $lineas[$i]['exento'] = true;
+		}
 		$m = $this->montos($lineas, $descuento, $doc['es_factura'], $config['por_iva']);
 		$total = $m['total'];
 		$neto = $m['neto'];
@@ -892,12 +904,18 @@ class Mcaja extends CI_Model
 
 			if ($idMesa) {
 				// Lo de la mesa ya se consumió: no se revisa stock, pero sí que el pedido siga igual al que se cobra
-				$this->bloquearMesa($db, $idMesa);
+				// Bloqueada por un garzón en el POS, o el pedido cambió de mesa mientras se cobraba: no se cobra
+				$this->validarMesaUsable($this->bloquearMesa($db, $idMesa), $db);
+				$actual = $this->cotizacionDeMesa($db, $idMesa);
+				if (!$actual || (int)$actual->id_cotizacion !== (int)$cotMesa->id_cotizacion) throw new Exception('El pedido de la mesa cambió. Vuelve a abrir la mesa antes de cobrar.', 409);
 				$co = $this->q($db, 'SELECT pagado FROM cotizacion WHERE id_cotizacion = ? FOR UPDATE', array((int)$cotMesa->id_cotizacion))->row();
 				if (!$co || $co->pagado === 't' || $co->pagado === true) throw new Exception('Esta mesa ya fue pagada', 409);
-				if ((int)array_sum(array_column($this->lineasDeCotizacion($db, (int)$cotMesa->id_cotizacion), 'bruto')) !== $subtotal) {
+				// Se compara línea por línea: cambiar un producto por otro del mismo precio también es un cambio
+				if ($this->huellaLineas($this->lineasDeCotizacion($db, (int)$cotMesa->id_cotizacion)) !== $huellaMesa) {
 					throw new Exception('El pedido de la mesa cambió. Vuelve a abrir la mesa antes de cobrar.', 409);
 				}
+				// Lo que se cobra pasa a un pedido hijo (id_divpedido = pedido de la mesa), como la cuenta dividida del POS
+				$cotCobro = $parcial ? $this->dividirPedido($db, $cotMesa, $idMesa, $parcial) : $cotMesa;
 			} else {
 				$this->validarStock($db, $lineas);
 			}
@@ -922,7 +940,7 @@ class Mcaja extends CI_Model
 				'folio' => $folio,
 				'id_usuario_garzon' => $cotMesa ? (int)$cotMesa->id_usuario : (int)$idUsuario,
 				'id_mesa' => $idMesa,
-				'folio_cotizacion' => $cotMesa ? (int)$cotMesa->id_cotizacion : 0,
+				'folio_cotizacion' => $cotMesa ? (int)$cotCobro->id_cotizacion : 0,
 				'id_fpagopropina' => $idxPropina >= 0 ? $pagos[$idxPropina]['id_fpago'] : 0,
 				'valor_propina' => $propina,
 				'propina_final' => $propina,
@@ -1037,8 +1055,14 @@ class Mcaja extends CI_Model
 				// total queda antes del descuento: los informes de garzones calculan total - descuento
 				$this->q($db, 'UPDATE cotizacion SET pagado = true, id_venta = ?, id_caja = ?, subtotal = ?, total = ?, descuento = ?,
 						neto = ?, iva = ?, por_descuento = ?, monto_descuento = ?, propina_sugerida = ? WHERE id_cotizacion = ?',
-					array($idVenta, (int)$caja->id_caja, $subtotal, $subtotal, $descuento, $neto, $iva, $porDescuento, $descuento, $propina, (int)$cotMesa->id_cotizacion));
-				$this->desocuparMesa($db, $idMesa);
+					array($idVenta, (int)$caja->id_caja, $subtotal, $subtotal, $descuento, $neto, $iva, $porDescuento, $descuento, $propina, (int)$cotCobro->id_cotizacion));
+				$mesaLiberada = true;
+				if ($parcial) {
+					// Quedan productos: la mesa sigue abierta; si no, el pedido original se cierra vacío
+					$mesaLiberada = !$this->recalcularCotizacion($db, (int)$cotMesa->id_cotizacion) && !$this->lineasDeCotizacion($db, (int)$cotMesa->id_cotizacion);
+					if ($mesaLiberada) $this->q($db, 'UPDATE cotizacion SET pagado = true, id_venta = ?, id_caja = ? WHERE id_cotizacion = ?', array($idVenta, (int)$caja->id_caja, (int)$cotMesa->id_cotizacion));
+				}
+				if ($mesaLiberada) $this->desocuparMesa($db, $idMesa);
 			}
 
 			$db->trans_commit();
@@ -1054,7 +1078,8 @@ class Mcaja extends CI_Model
 			if ($dte['ok']) $folio = $dte['folio'];
 		}
 		return array('id_venta' => $idVenta, 'folio' => $folio, 'total' => $total, 'propina' => $propina,
-			'vuelto' => $vuelto, 'documento' => $doc['nombre'], 'dte' => $dte);
+			'vuelto' => $vuelto, 'documento' => $doc['nombre'], 'dte' => $dte,
+			'mesa_liberada' => $idMesa ? !empty($mesaLiberada) : null);
 	}
 
 	/** Valida los productos pedidos y arma las líneas con los precios del servidor. Devuelve [lineas, subtotal, notas]. */
@@ -1148,7 +1173,17 @@ class Mcaja extends CI_Model
 		if (!in_array((int)$v->cod_sii, self::COD_SII_ELECTRONICOS)) throw new Exception('No es un documento electrónico', 400);
 		if ((int)$v->folio_dte > 0) throw new Exception('El documento ya fue emitido', 409);
 		if (strpos($v->mensaje_pedido, 'ANULADA') === 0) throw new Exception('La venta está anulada', 409);
-		$r = $this->dte()->emitir($db, (int)$idVenta);
+		// Dos reenvíos a la vez (dos pestañas o cajas) emitirían dos documentos: solo uno puede estar enviando
+		$lock = $this->q($db, 'SELECT pg_try_advisory_lock(?, ?) AS ok', array(77001, (int)$idVenta))->row();
+		if (!$lock || ($lock->ok !== 't' && $lock->ok !== true)) throw new Exception('Este documento ya se está enviando, espera unos segundos', 409);
+		try {
+			// Pudo emitirse mientras se esperaba
+			$f = $this->q($db, 'SELECT COALESCE(folio_dte, 0) AS f FROM venta WHERE id_venta = ?', array((int)$idVenta))->row();
+			if ($f && (int)$f->f > 0) throw new Exception('El documento ya fue emitido', 409);
+			$r = $this->dte()->emitir($db, (int)$idVenta);
+		} finally {
+			$this->q($db, 'SELECT pg_advisory_unlock(?, ?)', array(77001, (int)$idVenta));
+		}
 		if (!$r['ok']) throw new Exception('No se pudo emitir: ' . $r['mensaje'], 502);
 		return $r;
 	}
@@ -1249,6 +1284,10 @@ class Mcaja extends CI_Model
 	public function cerrarCaja($caja, $idUsuario, $efectivoContado, $fondoSiguiente, $declarado, $inventario = array())
 	{
 		$db = $this->conexion();
+		$abiertas = $this->mesasAbiertas($db);
+		if ($abiertas) {
+			throw new Exception('No se puede cerrar la caja con mesas abiertas (' . implode(', ', array_map(array($this, 'etiquetaMesa'), $abiertas)) . '). Cóbralas o anula sus pedidos primero.', 409);
+		}
 		$cols = $this->columnas($db, array('caja', 'detalle_pagocaja'));
 		// Inventario de insumos al cierre: se exige todo lo marcado en el insumo y se valida antes de tocar nada
 		$filasInventario = $this->insumosInventarioCierre();
@@ -1635,6 +1674,10 @@ class Mcaja extends CI_Model
 			// Con la venta bloqueada, dos devoluciones simultáneas no superan lo vendido
 			$v = $this->datosDevolucion($db, (int)(isset($p['id_venta']) ? $p['id_venta'] : 0), 0, 0, true);
 			$ncElectronica = $v['nc_electronica'];
+			// Un documento electrónico solo se devuelve con nota de crédito electrónica (si no, el SII no se entera)
+			if (in_array((int)$v['cod_sii'], self::COD_SII_ELECTRONICOS) && !$ncElectronica) {
+				throw new Exception('Para devolver ' . $v['documento'] . ' se necesita la emisión electrónica configurada (terminal de Cloud Apps en Configuraciones)', 409);
+			}
 			$idNc = $ncElectronica ? $this->idNotaCreditoElectronica($db) : $this->tipoNotaCredito($db, true);
 			$nombreNc = $ncElectronica ? $this->q($db, 'SELECT nombre_tdocumento FROM tdocumento WHERE id_tdocumento = ?', array($idNc))->row()->nombre_tdocumento : self::NC_NOMBRE;
 			if ($fpagos[$idFpago]['credito'] && (int)$v['id_cliente'] === (int)$config['id_cliente_publico']) {
@@ -1668,6 +1711,11 @@ class Mcaja extends CI_Model
 			$subExento = 0;
 			foreach ($lineas as $l) if ($l['exento']) $subExento += $l['bruto'];
 			$exento = $subExento >= $subtotal ? $total : (int)round($total * $subExento / $subtotal);
+			// La devolución de un documento exento es exenta completa
+			if (in_array((int)$v['cod_sii'], array(34, 41))) {
+				$exento = $total;
+				foreach ($lineas as $i => $l) $lineas[$i]['exento'] = true;
+			}
 			$neto = $this->netoDesdeAfecto($total - $exento, $config['por_iva'], $v['es_factura']);
 			$iva = $total - $exento - $neto;
 			$m = $this->montos($lineas, $descuento, false, $config['por_iva']);
@@ -1839,6 +1887,16 @@ class Mcaja extends CI_Model
 	}
 
 	/** La empresa emite por Cloud Apps (credenciales y terminal configurados). */
+	private function dtePrueba($db)
+	{
+		try {
+			$c = $this->dte()->configuracion($db);
+			return $c && !empty($c['prueba']);
+		} catch (Throwable $e) {
+			return false;
+		}
+	}
+
 	private function dteDisponible($db)
 	{
 		if ($this->dteConfig === null) $this->dteConfig = $this->dte()->configuracion($db) ? 1 : 0;
@@ -2035,6 +2093,8 @@ class Mcaja extends CI_Model
 			$lineas[] = array(
 				'id_detalle' => (int)$r->id_detalle_cotizacion, 'id_producto' => (int)$r->id_producto, 'nombre' => $r->nombre,
 				'agregado' => (string)$r->agregado, 'cantidad' => $cantidad, 'unitario' => (int)round((float)$r->bruto_un), 'bruto' => $bruto,
+				// Monto sin redondear (el POS guarda decimales): las partes se calculan sobre él, igual en todos lados
+				'bruto_exacto' => (float)$r->total_bruto > 0 ? (float)$r->total_bruto : (float)$r->bruto_un * $cantidad,
 				'id_agregado' => (int)$r->id_agregado, 'nota' => $r->nota, 'hora' => $r->hora, 'segun_stock' => false, 'recetas' => array(),
 				'exento' => $r->exento === 't' || $r->exento === true,
 			);
@@ -2055,8 +2115,9 @@ class Mcaja extends CI_Model
 			$directa = $c ? (int)$c->id : 0;
 		}
 		// La posición en el plano es opcional: la tabla se crea al guardar el primer plano
-		$conPlano = isset($this->columnas($db, array('mesa_plano'))['mesa_plano']);
-		$selPlano = $conPlano ? 'pl.x, pl.y' : 'NULL AS x, NULL AS y';
+		$plano = $this->columnas($db, array('mesa_plano'));
+		$conPlano = isset($plano['mesa_plano']);
+		$selPlano = $conPlano ? 'pl.x, pl.y, ' . (isset($plano['mesa_plano']['nombre']) ? 'pl.nombre' : 'NULL AS nombre') : 'NULL AS x, NULL AS y, NULL AS nombre';
 		$joinPlano = $conPlano ? 'LEFT JOIN mesa_plano pl ON pl.id_mesa = m.id_mesa' : '';
 		$rows = $this->q($db, "SELECT $selPlano, m.id_mesa, m.disponible, m.bloqueo_caja, m.bloqueo_pedido, COALESCE(m.id_cotizacion, 0) AS ref_cotizacion,
 				COALESCE(r.id_recinto, 0) AS id_recinto, COALESCE(r.nombre_recinto, 'Sin recinto') AS recinto,
@@ -2080,6 +2141,7 @@ class Mcaja extends CI_Model
 				'total' => (int)$m->total, 'segundos' => (int)$m->segundos, 'atiende' => (string)$m->atiende,
 				'con_pedido' => (bool)$m->id_cotizacion,
 				'x' => $m->x === null ? null : (int)$m->x, 'y' => $m->y === null ? null : (int)$m->y,
+				'nombre' => trim((string)$m->nombre),
 			);
 		}
 		// También los recintos que aún no tienen mesas
@@ -2090,20 +2152,31 @@ class Mcaja extends CI_Model
 		return array('habilitado' => true, 'mesas' => $res, 'sectores' => $sectores);
 	}
 
-	/** Guarda dónde va cada mesa en el plano de su sector: [{id_mesa, x, y}] en píxeles. */
+	/** Nombre visible de una mesa (ej: "Terraza 2"); sin nombre propio, "Mesa N". */
+	public function etiquetaMesa($idMesa)
+	{
+		$db = $this->conexion();
+		$c = $this->columnas($db, array('mesa_plano'));
+		$r = isset($c['mesa_plano']['nombre']) ? $this->q($db, 'SELECT nombre FROM mesa_plano WHERE id_mesa = ?', array((int)$idMesa))->row() : null;
+		return $r && trim((string)$r->nombre) !== '' ? trim($r->nombre) : 'Mesa ' . (int)$idMesa;
+	}
+
+	/** Guarda dónde va cada mesa en el plano de su sector y su nombre visible: [{id_mesa, x, y, nombre}] (x, y en píxeles). */
 	public function guardarPlanoMesas($p)
 	{
 		$db = $this->conexion();
 		if (!$this->tieneMesas($db)) throw new Exception('Este cliente no tiene mesas', 400);
 		$posiciones = isset($p['posiciones']) && is_array($p['posiciones']) ? $p['posiciones'] : array();
 		$this->q($db, 'CREATE TABLE IF NOT EXISTS mesa_plano (id_mesa integer PRIMARY KEY, x integer NOT NULL DEFAULT 0, y integer NOT NULL DEFAULT 0)');
+		$this->q($db, 'ALTER TABLE mesa_plano ADD COLUMN IF NOT EXISTS nombre text');
 		$db->trans_begin();
 		try {
 			foreach ($posiciones as $pos) {
-				$id = (int)$pos['id_mesa'];
+				$id = (int)($pos['id_mesa'] ?? 0);
 				$this->q($db, 'DELETE FROM mesa_plano WHERE id_mesa = ?', array($id));
-				$this->q($db, 'INSERT INTO mesa_plano (id_mesa, x, y) VALUES (?, ?, ?)',
-					array($id, max(0, min(5000, (int)$pos['x'])), max(0, min(5000, (int)$pos['y']))));
+				$nombre = mb_substr(trim((string)(isset($pos['nombre']) ? $pos['nombre'] : '')), 0, 40);
+				$this->q($db, 'INSERT INTO mesa_plano (id_mesa, x, y, nombre) VALUES (?, ?, ?, ?)',
+					array($id, max(0, min(5000, (int)($pos['x'] ?? 0))), max(0, min(5000, (int)($pos['y'] ?? 0))), $nombre === '' ? null : $nombre));
 			}
 			$db->trans_commit();
 		} catch (Exception $e) {
@@ -2113,12 +2186,15 @@ class Mcaja extends CI_Model
 		return array('ok' => true);
 	}
 
-	/** Pedido de una mesa para cargarlo en la Caja. */
-	public function detalleMesa($idMesa)
+	/**
+	 * Pedido de una mesa para cargarlo en la Caja. $validar = false después de guardar algo: la operación ya quedó hecha
+	 * y un bloqueo que aparezca justo ahí no debe mostrarse como error (el usuario reintentaría y la duplicaría).
+	 */
+	public function detalleMesa($idMesa, $validar = true)
 	{
 		$db = $this->conexion();
 		if (!$this->tieneMesas($db)) throw new Exception('Este cliente no tiene mesas', 400);
-		$this->validarMesaUsable($this->q($db, 'SELECT * FROM mesa WHERE id_mesa = ? AND vigente IS NOT FALSE', array((int)$idMesa))->row(), $db);
+		if ($validar) $this->validarMesaUsable($this->q($db, 'SELECT * FROM mesa WHERE id_mesa = ? AND vigente IS NOT FALSE', array((int)$idMesa))->row(), $db);
 		$c = $this->cotizacionDeMesa($db, $idMesa);
 		if (!$c) return array('id_mesa' => (int)$idMesa, 'id_cotizacion' => 0, 'id_lprecio' => 0, 'segundos' => 0, 'lineas' => array());
 		$t = $this->q($db, 'SELECT EXTRACT(EPOCH FROM (now() - fecha_transaccion))::bigint AS s FROM cotizacion WHERE id_cotizacion = ?', array((int)$c->id_cotizacion))->row();
@@ -2203,7 +2279,7 @@ class Mcaja extends CI_Model
 			$db->trans_rollback();
 			throw $e;
 		}
-		return array('id_cotizacion' => $idCot, 'detalle' => $this->detalleMesa($idMesa));
+		return array('id_cotizacion' => $idCot, 'detalle' => $this->detalleMesa($idMesa, false));
 	}
 
 	private function recalcularCotizacion($db, $idCot)
@@ -2213,12 +2289,180 @@ class Mcaja extends CI_Model
 		return $suma;
 	}
 
+	/**
+	 * Valida una selección [{id_detalle, cantidad}] sobre las líneas vigentes y devuelve esas líneas con la cantidad
+	 * elegida (cantidad null = la línea completa). El monto de una parte es proporcional: round(bruto x parte / cantidad).
+	 */
+	private function seleccionDeLineas($lineas, $seleccion)
+	{
+		$porId = array();
+		foreach ($lineas as $l) $porId[$l['id_detalle']] = $l;
+		$res = array();
+		foreach ($seleccion as $s) {
+			$id = (int)(isset($s['id_detalle']) ? $s['id_detalle'] : 0);
+			if (!isset($porId[$id])) throw new Exception('Un producto elegido ya no está en la mesa. Vuelve a abrirla.', 409);
+			$l = $porId[$id];
+			$q = isset($s['cantidad']) && $s['cantidad'] !== null && $s['cantidad'] !== '' ? round((float)$s['cantidad'], 3) : $l['cantidad'];
+			if ($q <= 0) continue;
+			if ($q > $l['cantidad'] + 0.0005) throw new Exception('La cantidad elegida de ' . $l['nombre'] . ' supera la del pedido', 400);
+			if ($q < $l['cantidad'] - 0.0005) {
+				// Misma cuenta que partirLinea(): la parte cobrada y la que se separa del pedido coinciden
+				$l['bruto'] = (int)round($l['bruto_exacto'] * $q / $l['cantidad']);
+				$l['bruto_exacto'] = (float)$l['bruto'];
+				$l['cantidad'] = $q;
+			}
+			$res[] = $l;
+			unset($porId[$id]);
+		}
+		if (!$res) throw new Exception('Elige al menos un producto', 400);
+		return $res;
+	}
+
+	/**
+	 * Pasa $cantidad de una línea al pedido $idCotDestino (puede ser el mismo pedido, para anular solo una parte).
+	 * Línea completa: se mueve tal cual. Parte: la original queda con el resto y se inserta una copia con lo elegido.
+	 * $cambios se aplica a lo que se mueve (ej: marcarlo anulado).
+	 */
+	private function partirLinea($db, $idDetalle, $cantidad, $idCotDestino, $cambios = array())
+	{
+		$cols = $this->columnas($db, array('detalle_cotizacion'));
+		$d = $this->q($db, 'SELECT * FROM detalle_cotizacion WHERE id_detalle_cotizacion = ? FOR UPDATE', array((int)$idDetalle))->row_array();
+		if (!$d) throw new Exception('Un producto elegido ya no está en la mesa. Vuelve a abrirla.', 409);
+		$total = (float)$d['cantidad'];
+		if ($cantidad >= $total - 0.0005) {
+			$this->actualizar($db, $cols, 'detalle_cotizacion', array_merge(array('id_cotizacion' => (int)$idCotDestino), $cambios), 'id_detalle_cotizacion', (int)$idDetalle);
+			return (int)$idDetalle;
+		}
+		$bruto = (float)$d['total_bruto'] > 0 ? (float)$d['total_bruto'] : (float)$d['bruto_un'] * $total;
+		$parte = (int)round($bruto * $cantidad / $total);
+		$this->actualizar($db, $cols, 'detalle_cotizacion', array('cantidad' => round($total - $cantidad, 3), 'total_bruto' => $bruto - $parte),
+			'id_detalle_cotizacion', (int)$idDetalle);
+		unset($d['id_detalle_cotizacion']);
+		// impreso = true: la copia no debe volver a imprimirse ni descontar stock por el trigger de detalle_cotizacion
+		$d = array_merge($d, array('id_cotizacion' => (int)$idCotDestino, 'cantidad' => $cantidad, 'total_bruto' => $parte, 'impreso' => true), $cambios);
+		return $this->insertar($db, $cols, 'detalle_cotizacion', $d, 'id_detalle_cotizacion');
+	}
+
+	/** Pedido nuevo con los datos de $cot (lista de precios, quien atiende, hora de llegada) para $idMesa. */
+	private function copiarPedido($db, $cot, $idMesa, $idDivpedido)
+	{
+		$cols = $this->columnas($db, array('cotizacion'));
+		$c = (array)$cot;
+		unset($c['id_cotizacion']);
+		$c = array_merge($c, array('id_mesa' => (int)$idMesa, 'id_divpedido' => (int)$idDivpedido, 'subtotal' => 0, 'total' => 0,
+			'descuento' => 0, 'neto' => 0, 'iva' => 0, 'pagado' => false, 'id_venta' => 0, 'vigente' => true, 'esanulado' => false,
+			'eseliminado' => false, 'precuenta_impresa' => false, 'nombre_computador' => self::COMPUTADOR));
+		return $this->insertar($db, $cols, 'cotizacion', $c, 'id_cotizacion');
+	}
+
+	/** Separa lo que se va a cobrar en un pedido hijo de la mesa. Devuelve ese pedido. */
+	private function dividirPedido($db, $cotMesa, $idMesa, $seleccion)
+	{
+		$idHijo = $this->copiarPedido($db, $cotMesa, $idMesa, (int)$cotMesa->id_cotizacion);
+		foreach ($seleccion as $l) $this->partirLinea($db, $l['id_detalle'], $l['cantidad'], $idHijo);
+		$this->recalcularCotizacion($db, $idHijo);
+		return $this->q($db, 'SELECT * FROM cotizacion WHERE id_cotizacion = ?', array($idHijo))->row();
+	}
+
+	/**
+	 * Cambiar o dividir mesa: pasa productos (o todo) a otra mesa. Si se pasa todo a una mesa libre, el pedido
+	 * completo cambia de mesa y conserva su hora. Si la mesa destino está ocupada, se agregan a su pedido.
+	 */
+	public function moverMesa($caja, $idUsuario, $p)
+	{
+		$db = $this->conexion();
+		$idMesa = (int)($p['id_mesa'] ?? 0);
+		$idDestino = (int)($p['id_mesa_destino'] ?? 0);
+		if (!$idDestino || $idDestino === $idMesa) throw new Exception('Elige la mesa a la que pasan los productos', 400);
+		$db->trans_begin();
+		try {
+			$this->q($db, 'SET LOCAL TIME ZONE ' . $db->escape(self::TZ));
+			// Siempre en el mismo orden, para que dos cajas no se bloqueen entre sí
+			$ids = array($idMesa, $idDestino);
+			sort($ids);
+			foreach ($ids as $id) $this->validarMesaUsable($this->bloquearMesa($db, $id), $db);
+			$cot = $this->cotizacionDeMesa($db, $idMesa);
+			if (!$cot) throw new Exception('La mesa ya no tiene un pedido abierto', 409);
+			$lineas = $this->lineasDeCotizacion($db, (int)$cot->id_cotizacion);
+			$sel = isset($p['lineas']) && is_array($p['lineas']) && $p['lineas'] ? $p['lineas'] : array_map(function ($l) { return array('id_detalle' => $l['id_detalle']); }, $lineas);
+			$sel = $this->seleccionDeLineas($lineas, $sel);
+			$todo = count($sel) === count($lineas) && !array_filter($sel, function ($l) use ($lineas) {
+				foreach ($lineas as $o) if ($o['id_detalle'] === $l['id_detalle']) return $l['cantidad'] < $o['cantidad'] - 0.0005;
+				return true;
+			});
+			$destino = $this->cotizacionDeMesa($db, $idDestino);
+			if ($todo && !$destino) {
+				$this->q($db, 'UPDATE cotizacion SET id_mesa = ? WHERE id_cotizacion = ?', array($idDestino, (int)$cot->id_cotizacion));
+				$this->q($db, 'UPDATE mesa SET disponible = false, id_cotizacion = ?, id_garzon = ? WHERE id_mesa = ?', array((int)$cot->id_cotizacion, (int)$idUsuario, $idDestino));
+				$this->desocuparMesa($db, $idMesa);
+			} else {
+				if ($destino) {
+					$idCotDestino = (int)$destino->id_cotizacion;
+				} else {
+					$idCotDestino = $this->copiarPedido($db, $cot, $idDestino, 0);
+					$this->q($db, 'UPDATE mesa SET disponible = false, id_cotizacion = ?, id_garzon = ? WHERE id_mesa = ?', array($idCotDestino, (int)$idUsuario, $idDestino));
+				}
+				foreach ($sel as $l) $this->partirLinea($db, $l['id_detalle'], $l['cantidad'], $idCotDestino);
+				$this->recalcularCotizacion($db, $idCotDestino);
+				$this->recalcularCotizacion($db, (int)$cot->id_cotizacion);
+				if (!$this->lineasDeCotizacion($db, (int)$cot->id_cotizacion)) {
+					$this->q($db, "UPDATE cotizacion SET vigente = false, eseliminado = true, motivo_anulacion = ? WHERE id_cotizacion = ?",
+						array('Pasado a la mesa ' . $idDestino, (int)$cot->id_cotizacion));
+					$this->desocuparMesa($db, $idMesa);
+				}
+			}
+			$db->trans_commit();
+		} catch (Exception $e) {
+			$db->trans_rollback();
+			throw $e;
+		}
+		$libre = !$this->cotizacionDeMesa($db, $idMesa);
+		return array('liberada' => $libre, 'detalle' => $libre ? null : $this->detalleMesa($idMesa, false), 'movidas' => $this->lineasAnulacion($sel));
+	}
+
+	/** Identifica el contenido exacto de un pedido (líneas, productos, cantidades y montos). */
+	private function huellaLineas($lineas)
+	{
+		return md5(json_encode(array_map(function ($l) {
+			return array($l['id_detalle'], $l['id_producto'], round($l['cantidad'], 3), round($l['bruto_exacto'], 2), $l['id_agregado']);
+		}, $lineas)));
+	}
+
+	/** Mesas con pedido abierto (para no cerrar la caja con mesas sin cobrar). */
+	private function mesasAbiertas($db)
+	{
+		if (!$this->tieneMesas($db)) return array();
+		return array_map('intval', array_column($this->q($db, "SELECT m.id_mesa FROM mesa m JOIN cotizacion c ON c.id_cotizacion = m.id_cotizacion
+			WHERE m.id_cotizacion > 0 AND m.vigente IS NOT FALSE AND c.pagado IS NOT TRUE AND c.vigente IS NOT FALSE
+				AND c.eseliminado IS NOT TRUE AND c.esanulado IS NOT TRUE ORDER BY m.id_mesa")->result_array(), 'id_mesa'));
+	}
+
+	/** Datos para imprimir la precuenta de una mesa (en la impresora de la caja, antes de pagar). */
+	public function precuentaMesa($idMesa)
+	{
+		$db = $this->conexion();
+		$cot = $this->cotizacionDeMesa($db, $idMesa);
+		if (!$cot) return null;
+		$c = $this->columnas($db, array('cotizacion'));
+		$marca = array();
+		if (isset($c['cotizacion']['precuenta_impresa'])) $marca[] = 'precuenta_impresa = true';
+		if (isset($c['cotizacion']['fecha_hora_precuenta'])) $marca[] = 'fecha_hora_precuenta = now()';
+		if ($marca) $this->q($db, 'UPDATE cotizacion SET ' . implode(', ', $marca) . ' WHERE id_cotizacion = ?', array((int)$cot->id_cotizacion));
+		$t = $this->q($db, "SELECT to_char(fecha_transaccion, 'DD/MM/YYYY HH24:MI') AS desde FROM cotizacion WHERE id_cotizacion = ?", array((int)$cot->id_cotizacion))->row();
+		$config = $this->configuracion($db);
+		return array(
+			'id_mesa' => (int)$idMesa, 'nombre_mesa' => $this->etiquetaMesa($idMesa), 'desde' => $t ? $t->desde : '', 'lineas' => $this->lineasDeCotizacion($db, (int)$cot->id_cotizacion),
+			'por_propina' => (float)$config['por_propina'],
+			'empresa' => $this->q($db, 'SELECT * FROM empresa ORDER BY id_empresa LIMIT 1')->row(),
+		);
+	}
+
 	/** Anula un producto ya enviado. Si era el último, el pedido se anula y la mesa queda libre. */
 	public function anularLineaMesa($caja, $idUsuario, $idRol, $p)
 	{
 		$db = $this->conexion();
-		$idMesa = (int)$p['id_mesa'];
-		$idDetalle = (int)$p['id_detalle'];
+		$idMesa = (int)($p['id_mesa'] ?? 0);
+		$idDetalle = (int)($p['id_detalle'] ?? 0);
 		$motivo = trim((string)(isset($p['motivo']) ? $p['motivo'] : ''));
 		if ($motivo === '') throw new Exception('Indica el motivo de la anulación', 400);
 		$this->exigirAutorizacion($db, 'anular un producto de la mesa', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
@@ -2228,12 +2472,14 @@ class Mcaja extends CI_Model
 			$this->validarMesaUsable($this->bloquearMesa($db, $idMesa), $db);
 			$cot = $this->cotizacionDeMesa($db, $idMesa);
 			if (!$cot) throw new Exception('La mesa ya no tiene un pedido abierto', 409);
-			$anuladas = array_values(array_filter($this->lineasDeCotizacion($db, (int)$cot->id_cotizacion), function ($l) use ($idDetalle) {
-				return $l['id_detalle'] === $idDetalle;
-			}));
-			$this->q($db, "UPDATE detalle_cotizacion SET vigente = false, esanulado = true, motivo_anulacion = ?, hora_anulacion = now(),
-					id_caja = ?, id_cajero = ? WHERE id_detalle_cotizacion = ? AND id_cotizacion = ?",
-				array(mb_substr($motivo, 0, 100), (int)$caja->id_caja, (int)$idUsuario, $idDetalle, (int)$cot->id_cotizacion));
+			// Con cantidad menor a la de la línea se anula solo esa parte (ej: 1 de 3 bebidas)
+			$cantidad = isset($p['cantidad']) ? (float)$p['cantidad'] : 0;
+			$anuladas = $this->seleccionDeLineas($this->lineasDeCotizacion($db, (int)$cot->id_cotizacion),
+				array(array('id_detalle' => $idDetalle, 'cantidad' => $cantidad > 0 ? $cantidad : null)));
+			$this->partirLinea($db, $idDetalle, $anuladas[0]['cantidad'], (int)$cot->id_cotizacion, array(
+				'vigente' => false, 'esanulado' => true, 'motivo_anulacion' => mb_substr($motivo, 0, 100), 'hora_anulacion' => date('Y-m-d H:i:s'),
+				'id_caja' => (int)$caja->id_caja, 'id_cajero' => (int)$idUsuario,
+			));
 			$quedan = count($this->lineasDeCotizacion($db, (int)$cot->id_cotizacion));
 			$this->recalcularCotizacion($db, (int)$cot->id_cotizacion);
 			if (!$quedan) {
@@ -2246,14 +2492,14 @@ class Mcaja extends CI_Model
 			$db->trans_rollback();
 			throw $e;
 		}
-		return array('liberada' => !$quedan, 'detalle' => $this->detalleMesa($idMesa), 'anuladas' => $this->lineasAnulacion($anuladas));
+		return array('liberada' => !$quedan, 'detalle' => $this->detalleMesa($idMesa, false), 'anuladas' => $this->lineasAnulacion($anuladas));
 	}
 
 	/** Anula el pedido completo de una mesa ocupada y la deja libre. El stock no se toca: se descuenta recién al cobrar. */
 	public function anularPedidoMesa($caja, $idUsuario, $idRol, $p)
 	{
 		$db = $this->conexion();
-		$idMesa = (int)$p['id_mesa'];
+		$idMesa = (int)($p['id_mesa'] ?? 0);
 		$motivo = mb_substr(trim((string)(isset($p['motivo']) ? $p['motivo'] : '')), 0, 100);
 		if ($motivo === '') throw new Exception('Indica el motivo de la anulación', 400);
 		$this->exigirAutorizacion($db, 'anular el pedido de la mesa', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
@@ -2290,7 +2536,7 @@ class Mcaja extends CI_Model
 	public function liberarMesa($idUsuario, $idRol, $p)
 	{
 		$db = $this->conexion();
-		$idMesa = (int)$p['id_mesa'];
+		$idMesa = (int)($p['id_mesa'] ?? 0);
 		$this->exigirAutorizacion($db, 'liberar una mesa', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
 		$db->trans_begin();
 		try {

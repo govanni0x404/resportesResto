@@ -29,8 +29,8 @@ class MconsolidadoVentas extends CI_Model
 		join pago_venta pv on v.id_venta = pv.id_venta
 		join fpago fp on pv.id_fpago = fp.id_fpago
 		join canal_venta cv on v.id_canal_venta = cv.id_canal_venta
-		where fp.escortesia = false and v.fecha between '" . $de . "' and '" . $a . "'";
-        $query = $this->db->query($q)->result();
+		where fp.escortesia = false and v.fecha between ? and ?";
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -71,9 +71,9 @@ class MconsolidadoVentas extends CI_Model
 		join caja ca on v.id_caja = ca.id_caja
 		join pago_venta pv on v.id_venta = pv.id_venta
 		join fpago fp on pv.id_fpago = fp.id_fpago
-		where fp.escortesia = false and fp.vigente = true and v.fecha between '" . $de . "' and '" . $a . "'
+		where fp.escortesia = false and fp.vigente = true and v.fecha between ? and ?
 		group by f.id_familia";
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -99,10 +99,10 @@ class MconsolidadoVentas extends CI_Model
 		join pago_venta pv on v.id_venta = pv.id_venta
 		join fpago fp on pv.id_fpago = fp.id_fpago
 		join canal_venta cv on v.id_canal_venta = cv.id_canal_venta
-		where fp.vigente = true and fp.escortesia = false and v.fecha between '" . $de . "' and '" . $a . "'
+		where fp.vigente = true and fp.escortesia = false and v.fecha between ? and ?
 		group by cv.nombre_canal_venta";
 
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -140,10 +140,10 @@ class MconsolidadoVentas extends CI_Model
 		join caja ca on v.id_caja = ca.id_caja
 		join pago_venta pv on v.id_venta = pv.id_venta
 		join fpago fp on pv.id_fpago = fp.id_fpago
-		where fp.escortesia = false and v.fecha between '" . $de . "' and '" . $a . "'
+		where fp.escortesia = false and v.fecha between ? and ?
 		group by f.nombre_familia
 		order by f.nombre_familia";
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -170,9 +170,9 @@ class MconsolidadoVentas extends CI_Model
 		join pago_venta pv on v.id_venta = pv.id_venta
 		join fpago fp on pv.id_fpago = fp.id_fpago
 		join canal_venta cv on v.id_canal_venta = cv.id_canal_venta
-		where fp.vigente = true and fp.escortesia = false and v.fecha between '" . $de . "' and '" . $a . "'
+		where fp.vigente = true and fp.escortesia = false and v.fecha between ? and ?
 		group by cv.nombre_canal_venta";
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -196,8 +196,8 @@ class MconsolidadoVentas extends CI_Model
 		join pago_venta pv on v.id_venta = pv.id_venta
 		join fpago fp on pv.id_fpago = fp.id_fpago
 		join canal_venta cv on v.id_canal_venta = cv.id_canal_venta
-		where fp.escortesia = false and v.fecha between '" . $de . "' and '" . $a . "'";
-        $query = $this->db->query($q)->result();
+		where fp.escortesia = false and v.fecha between ? and ?";
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 

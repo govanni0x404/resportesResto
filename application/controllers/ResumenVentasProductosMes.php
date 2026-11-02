@@ -67,9 +67,9 @@ class ResumenVentasProductosMes extends CI_Controller
         $pdf->AddPage();
         $pdf->SetFont('Arial', 'B', 14);
 
-        $pdf->Cell(0, 10, utf8_decode('RESUMEN DE VENTAS POR PRODUCTO Y MES'), 0, 1, 'C');
+        $pdf->Cell(0, 10, mb_convert_encoding((string)('RESUMEN DE VENTAS POR PRODUCTO Y MES'), 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
         $pdf->SetFont('Arial', '', 10);
-        $pdf->Cell(0, 5, utf8_decode('Período: ' . $desde . ' al ' . $hasta), 0, 1, 'C');
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('Período: ' . $desde . ' al ' . $hasta), 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
         $pdf->Ln(5);
 
         // Cabecera de tabla
@@ -85,9 +85,9 @@ class ResumenVentasProductosMes extends CI_Controller
         $totalGeneral = 0;
         
         foreach ($resumenVentas as $row) {
-            $pdf->Cell(80, 6, utf8_decode(substr($row->nombre_producto, 0, 40)), 1, 0, 'L');
-            $pdf->Cell(50, 6, utf8_decode($row->nombre_familia), 1, 0, 'L');
-            $pdf->Cell(60, 6, utf8_decode($row->mes), 1, 0, 'C');
+            $pdf->Cell(80, 6, mb_convert_encoding((string)(substr($row->nombre_producto, 0, 40)), 'ISO-8859-1', 'UTF-8'), 1, 0, 'L');
+            $pdf->Cell(50, 6, mb_convert_encoding((string)($row->nombre_familia), 'ISO-8859-1', 'UTF-8'), 1, 0, 'L');
+            $pdf->Cell(60, 6, mb_convert_encoding((string)($row->mes), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
             $pdf->Cell(30, 6, number_format($row->cantidad, 0), 1, 0, 'R');
             $pdf->Cell(35, 6, '$' . number_format($row->total, 0), 1, 1, 'R');
             

@@ -43,11 +43,11 @@ class Mdashboard extends CI_Model
 			join caja c on v.id_caja = c.id_caja
 			join pago_venta pv on v.id_venta = pv.id_venta
 			join fpago fp on pv.id_fpago = fp.id_fpago
-			where fp.escortesia = false and c.fecha between '" . $de . "' and '" . $a . "'";
+			where fp.escortesia = false and c.fecha between ? and ?";
         if ($id_caja > 0) {
-            $q = $q . " and c.id_caja = $id_caja";
+            $q = $q . " and c.id_caja = " . (int)$id_caja;
         }
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -72,22 +72,22 @@ class Mdashboard extends CI_Model
         $q = "SELECT coalesce(sum(dc.ingreso),0) as ingresos, coalesce(sum(dc.egreso),0) as egresos,";
         if ($id_caja > 0) {
             $q = $q . "
-				(SELECT coalesce(sum(ca.fondo_fijo), 0) as fondo_fijo from caja ca where ca.fecha between '" . $de . "' and '" . $a . "' and ca.id_caja =  $id_caja),
-				(SELECT coalesce(sum(vv.valor_propina), 0) as propina from venta vv join caja cc on vv.id_caja = cc.id_caja where cc.fecha between '" . $de . "' and '" . $a . "' and cc.id_caja =  $id_caja),
-				(SELECT coalesce(sum(vee.monto_descuento), 0) as descuento from venta vee join caja caa on vee.id_caja = caa.id_caja where caa.fecha between '" . $de . "' and '" . $a . "' and caa.id_caja =  $id_caja)
+				(SELECT coalesce(sum(ca.fondo_fijo), 0) as fondo_fijo from caja ca where ca.fecha between ? and ? and ca.id_caja =  " . (int)$id_caja . "),
+				(SELECT coalesce(sum(vv.valor_propina), 0) as propina from venta vv join caja cc on vv.id_caja = cc.id_caja where cc.fecha between ? and ? and cc.id_caja =  " . (int)$id_caja . "),
+				(SELECT coalesce(sum(vee.monto_descuento), 0) as descuento from venta vee join caja caa on vee.id_caja = caa.id_caja where caa.fecha between ? and ? and caa.id_caja =  " . (int)$id_caja . ")
 				from caja c
 				join detalle_caja dc on dc.id_caja = c.id_caja
-				where c.fecha between '" . $de . "' and '" . $a . "' and c.id_caja = $id_caja";
+				where c.fecha between ? and ? and c.id_caja = " . (int)$id_caja;
         } else {
             $q = $q . "
-				(SELECT coalesce(sum(ca.fondo_fijo), 0) as fondo_fijo from caja ca where ca.fecha between '" . $de . "' and '" . $a . "'),
-				(SELECT coalesce(sum(vv.valor_propina), 0) as propina from venta vv join caja cc on vv.id_caja = cc.id_caja where cc.fecha between '" . $de . "' and '" . $a . "'),
-				(SELECT coalesce(sum(vee.monto_descuento), 0) as descuento from venta vee join caja caa on vee.id_caja = caa.id_caja where caa.fecha between '" . $de . "' and '" . $a . "')
+				(SELECT coalesce(sum(ca.fondo_fijo), 0) as fondo_fijo from caja ca where ca.fecha between ? and ?),
+				(SELECT coalesce(sum(vv.valor_propina), 0) as propina from venta vv join caja cc on vv.id_caja = cc.id_caja where cc.fecha between ? and ?),
+				(SELECT coalesce(sum(vee.monto_descuento), 0) as descuento from venta vee join caja caa on vee.id_caja = caa.id_caja where caa.fecha between ? and ?)
 				from caja c
 				join detalle_caja dc on dc.id_caja = c.id_caja
-				where c.fecha between '" . $de . "' and '" . $a . "'";
+				where c.fecha between ? and ?";
         }
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a, $de, $a, $de, $a, $de, $a))->result();
         return $query;
     }
 
@@ -116,14 +116,14 @@ class Mdashboard extends CI_Model
         join caja c on v.id_caja = c.id_caja
         join pago_venta pv on v.id_venta = pv.id_venta
         join fpago fp on pv.id_fpago = fp.id_fpago
-        where fp.escortesia = false and c.fecha between '" . $de . "' and '" . $a . "'";
+        where fp.escortesia = false and c.fecha between ? and ?";
         if ($id_caja > 0) {
-            $q = $q . " and c.id_caja = $id_caja
+            $q = $q . " and c.id_caja = " . (int)$id_caja . "
             group by td.id_tdocumento";
         } else {
             $q = $q . " group by td.id_tdocumento";
         }
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -150,16 +150,16 @@ class Mdashboard extends CI_Model
 			join fpago fp on pv.id_fpago = fp.id_fpago
 			join venta v on pv.id_venta = v.id_venta
 			join caja c on v.id_caja = c.id_caja
-			where fp.escortesia = false and c.fecha between '" . $de . "' and '" . $a . "'";
+			where fp.escortesia = false and c.fecha between ? and ?";
         if ($id_caja > 0) {
-            $q = $q . " and c.id_caja = $id_caja
+            $q = $q . " and c.id_caja = " . (int)$id_caja . "
 			group by fp.id_fpago
 			order by total desc, fp.id_fpago asc";
         } else {
             $q = $q . " group by fp.id_fpago
 			order by  total desc, fp.id_fpago asc";
         }
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -186,16 +186,16 @@ class Mdashboard extends CI_Model
 			join fpago fp on pv.id_fpago = fp.id_fpago
 			join venta v on pv.id_venta = v.id_venta
 			join caja c on v.id_caja = c.id_caja
-			where fp.escortesia = true and c.fecha between '" . $de . "' and '" . $a . "'";
+			where fp.escortesia = true and c.fecha between ? and ?";
         if ($id_caja > 0) {
-            $q = $q . " and c.id_caja = $id_caja
+            $q = $q . " and c.id_caja = " . (int)$id_caja . "
 			group by fp.id_fpago
 			order by total desc, fp.id_fpago asc";
         } else {
             $q = $q . " group by fp.id_fpago
 			order by  total desc, fp.id_fpago asc";
         }
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -258,7 +258,7 @@ class Mdashboard extends CI_Model
         $q = "SELECT p.nombre_producto, sum(dc.cantidad) as cantidad, dc.bruto_un, round(sum(dc.total_bruto)) as total_bruto, to_char(dc.fecha_movimiento, 'HH24:MI') as hora_pedido, dc.mensaje, round(sum(dc.neto)) as neto, round(sum(dc.iva)) as iva
 			from detalle_cotizacion dc
 			join producto p on dc.id_producto = p.id_producto
-			where dc.id_cotizacion =$id_cotizacion" .
+			where dc.id_cotizacion =" . (int)$id_cotizacion .
             " group by p.nombre_producto, dc.bruto_un, hora_pedido, dc.mensaje
 			order by hora_pedido asc";
 
@@ -314,15 +314,15 @@ class Mdashboard extends CI_Model
         join caja ca on v.id_caja = ca.id_caja
         join pago_venta pv on v.id_venta = pv.id_venta
         join fpago fp on pv.id_fpago = fp.id_fpago
-        where fp.escortesia = false and ca.fecha  between '" . $de . "' and '" . $a . "'";
+        where fp.escortesia = false and ca.fecha  between ? and ?";
         if ($id_caja > 0) {
-            $q = $q . " and v.id_caja = $id_caja
+            $q = $q . " and v.id_caja = " . (int)$id_caja . "
             group by u.nombre_usuario, co.venta_directa";
         } else {
             $q = $q . " group by u.nombre_usuario, co.venta_directa";
         }
 
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a));
         $sampleData = $consulta->result();
         $data = array();
 
@@ -371,21 +371,21 @@ class Mdashboard extends CI_Model
 				from detalle_venta dve
 				join venta ve on dve.id_venta = ve.id_venta
 				join caja caj on ve.id_caja = caj.id_caja
-				where caj.fecha between '" . $de . "' and '" . $a . "'))*100),3) as porcentaje
+				where caj.fecha between ? and ?))*100),3) as porcentaje
 			from familia f
 			join producto p on f.id_familia = p.id_familia
 			join detalle_venta dv on p.id_producto = dv.id_producto
 			join venta v on dv.id_venta = v.id_venta
 			join caja ca on v.id_caja = ca.id_caja
-			where ca.fecha between '" . $de . "' and '" . $a . "'";
+			where ca.fecha between ? and ?";
         if ($id_caja > 0) {
-            $q = $q . " and ca.id_caja = $id_caja
+            $q = $q . " and ca.id_caja = " . (int)$id_caja . "
 				group by f.nombre_familia";
         } else {
             $q = $q . " group by f.nombre_familia";
         }
 
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a, $de, $a))->result();
         return $query;
     }
 
@@ -417,15 +417,15 @@ class Mdashboard extends CI_Model
 			join caja ca on v.id_caja = ca.id_caja
 			join pago_venta pv on v.id_venta = pv.id_venta
 			join fpago fp on pv.id_fpago = fp.id_fpago
-			where fp.escortesia = false and fp.vigente = true and ca.fecha between '" . $de . "' and '" . $a . "'";
+			where fp.escortesia = false and fp.vigente = true and ca.fecha between ? and ?";
         if ($id_caja > 0) {
-            $q = $q . " and ca.id_caja = $id_caja
+            $q = $q . " and ca.id_caja = " . (int)$id_caja . "
 			group by f.id_familia";
         } else {
             $q = $q . " group by f.id_familia";
         }
 
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a));
         $sampleData = $consulta->result();
         $data = array();
 
@@ -477,15 +477,15 @@ class Mdashboard extends CI_Model
         join caja ca on v.id_caja = ca.id_caja
         join pago_venta pv on v.id_venta = pv.id_venta
         join fpago fp on pv.id_fpago = fp.id_fpago
-        where fp.escortesia = false and fp.vigente = true and ca.fecha between '" . $de . "' and '" . $a . "' and f.id_familia = $id_familia";
+        where fp.escortesia = false and fp.vigente = true and ca.fecha between ? and ? and f.id_familia = " . (int)$id_familia;
         if ($id_caja > 0) {
-            $q = $q . " and ca.id_caja = $id_caja
+            $q = $q . " and ca.id_caja = " . (int)$id_caja . "
                 group by p.nombre_producto";
         } else {
             $q = $q . " group by p.nombre_producto";
         }
 
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a));
         $sampleData = $consulta->result();
         $data = array();
 
@@ -532,9 +532,9 @@ class Mdashboard extends CI_Model
 			join pago_venta pv on v.id_venta = pv.id_venta
 			join fpago fp on pv.id_fpago = fp.id_fpago
 			join caja c on v.id_caja = c.id_caja
-			where fp.escortesia = false and vigente = true and c.fecha between '" . $de . "' and '" . $a . "'";
+			where fp.escortesia = false and vigente = true and c.fecha between ? and ?";
         if ($id_caja > 0) {
-            $q = $q . " and c.id_caja = $id_caja
+            $q = $q . " and c.id_caja = " . (int)$id_caja . "
 				group by v.id_mesa
 				order by v.id_mesa";
         } else {
@@ -542,7 +542,7 @@ class Mdashboard extends CI_Model
 				order by v.id_mesa";
         }
 
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a));
         $sampleData = $consulta->result();
         $data = array();
 
@@ -587,9 +587,9 @@ class Mdashboard extends CI_Model
         $q = "SELECT c.id_caja, u.nombre_usuario, to_char(c.fecha, 'DD/MM/YYYY') as fecha
 			from caja c
 			join usuario u on u.id_usuario = c.id_usuario
-			where c.fecha between '" . $de . "' and '" . $a . "'";
+			where c.fecha between ? and ?";
 
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -630,22 +630,22 @@ class Mdashboard extends CI_Model
         $q = "SELECT coalesce(sum(dc.ingreso),0) as ingresos, coalesce(sum(dc.egreso),0) as egresos,";
         if ($idCaja > 0) {
             $q = $q . "
-				(SELECT coalesce(sum(ca.fondo_fijo), 0) as fondo_fijo from caja ca where ca.fecha between '" . $de . "' and '" . $a . "' and ca.id_caja =  $idCaja),
-				(SELECT coalesce(sum(vv.valor_propina), 0) as propina from venta vv join caja cc on vv.id_caja = cc.id_caja where cc.fecha between '" . $de . "' and '" . $a . "' and cc.id_caja =  $idCaja),
-				(SELECT coalesce(sum(vee.monto_descuento), 0) as descuento from venta vee join caja caa on vee.id_caja = caa.id_caja where caa.fecha between '" . $de . "' and '" . $a . "' and caa.id_caja =  $idCaja)
+				(SELECT coalesce(sum(ca.fondo_fijo), 0) as fondo_fijo from caja ca where ca.fecha between ? and ? and ca.id_caja =  " . (int)$idCaja . "),
+				(SELECT coalesce(sum(vv.valor_propina), 0) as propina from venta vv join caja cc on vv.id_caja = cc.id_caja where cc.fecha between ? and ? and cc.id_caja =  " . (int)$idCaja . "),
+				(SELECT coalesce(sum(vee.monto_descuento), 0) as descuento from venta vee join caja caa on vee.id_caja = caa.id_caja where caa.fecha between ? and ? and caa.id_caja =  " . (int)$idCaja . ")
 				from caja c
 				join detalle_caja dc on dc.id_caja = c.id_caja
-				where c.fecha between '" . $de . "' and '" . $a . "' and c.id_caja = $idCaja";
+				where c.fecha between ? and ? and c.id_caja = " . (int)$idCaja;
         } else {
             $q = $q . "
-				(SELECT coalesce(sum(ca.fondo_fijo), 0) as fondo_fijo from caja ca where ca.fecha between '" . $de . "' and '" . $a . "'),
-				(SELECT coalesce(sum(vv.valor_propina), 0) as propina from venta vv join caja cc on vv.id_caja = cc.id_caja where cc.fecha between '" . $de . "' and '" . $a . "'),
-				(SELECT coalesce(sum(vee.monto_descuento), 0) as descuento from venta vee join caja caa on vee.id_caja = caa.id_caja where caa.fecha between '" . $de . "' and '" . $a . "')
+				(SELECT coalesce(sum(ca.fondo_fijo), 0) as fondo_fijo from caja ca where ca.fecha between ? and ?),
+				(SELECT coalesce(sum(vv.valor_propina), 0) as propina from venta vv join caja cc on vv.id_caja = cc.id_caja where cc.fecha between ? and ?),
+				(SELECT coalesce(sum(vee.monto_descuento), 0) as descuento from venta vee join caja caa on vee.id_caja = caa.id_caja where caa.fecha between ? and ?)
 				from caja c
 				join detalle_caja dc on dc.id_caja = c.id_caja
-				where c.fecha between '" . $de . "' and '" . $a . "'";
+				where c.fecha between ? and ?";
         }
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a, $de, $a, $de, $a, $de, $a));
         return $consulta->result();
     }
 
@@ -673,15 +673,15 @@ class Mdashboard extends CI_Model
 			join caja c on v.id_caja = c.id_caja
 			join pago_venta pv on v.id_venta = pv.id_venta
 			join fpago fp on pv.id_fpago = fp.id_fpago
-		   where c.fecha between '" . $de . "' and '" . $a . "'";
+		   where c.fecha between ? and ?";
         if ($idCaja > 0) {
-            $q = $q . " and c.id_caja = $idCaja
+            $q = $q . " and c.id_caja = " . (int)$idCaja . "
 			group by td.id_tdocumento, nombre_tdocumento";
         } else {
             $q = $q . " group by td.id_tdocumento, nombre_tdocumento";
         }
 
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -707,15 +707,15 @@ class Mdashboard extends CI_Model
 			join fpago fp on pv.id_fpago = fp.id_fpago
 			join venta v on pv.id_venta = v.id_venta
 			join caja c on v.id_caja = c.id_caja
-			where  c.fecha between '" . $de . "' and '" . $a . "'";
+			where  c.fecha between ? and ?";
         if ($idCaja > 0) {
-            $q = $q . " and c.id_caja = $idCaja
+            $q = $q . " and c.id_caja = " . (int)$idCaja . "
 				group by fp.id_fpago";
         } else {
             $q = $q . " group by fp.id_fpago";
         }
 
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -741,14 +741,14 @@ class Mdashboard extends CI_Model
 			join fpago fp on pv.id_fpago = fp.id_fpago
 			join venta v on pv.id_venta = v.id_venta
 			join caja c on v.id_caja = c.id_caja
-			where fp.escortesia = true and c.fecha between '" . $de . "' and '" . $a . "'";
+			where fp.escortesia = true and c.fecha between ? and ?";
         if ($idCaja > 0) {
-            $q = $q . " and c.id_caja = $idCaja
+            $q = $q . " and c.id_caja = " . (int)$idCaja . "
 					group by fp.id_fpago";
         } else {
             $q = $q . " group by fp.id_fpago";
         }
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -775,11 +775,11 @@ class Mdashboard extends CI_Model
 			join caja c on v.id_caja = c.id_caja
 			join pago_venta pv on v.id_venta = pv.id_venta
 			join fpago fp on pv.id_fpago = fp.id_fpago
-			where fp.escortesia = false and c.fecha between '" . $de . "' and '" . $a . "'";
+			where fp.escortesia = false and c.fecha between ? and ?";
         if ($idCaja > 0) {
-            $q = $q . " and c.id_caja = $idCaja";
+            $q = $q . " and c.id_caja = " . (int)$idCaja;
         }
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -807,12 +807,12 @@ class Mdashboard extends CI_Model
 		from caja c
 		join detalle_caja dc on c.id_caja=dc.id_caja
 		join ccosto cc on cc.id_ccosto=dc.id_ccosto
-		where dc.ingreso>0 and c.fecha between '" . $de . "' and '" . $a . "'";
+		where dc.ingreso>0 and c.fecha between ? and ?";
         if ($id_caja > 0) {
-            $q = $q . " and c.id_caja = $id_caja";
+            $q = $q . " and c.id_caja = " . (int)$id_caja;
         }
         $q = $q . "order by dc.id_detalle_caja asc";
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
     public function obtenerDetalleDeRetiros($id_caja, $desde, $hasta)
@@ -837,14 +837,14 @@ class Mdashboard extends CI_Model
 		from caja c
 		join detalle_caja dc on c.id_caja=dc.id_caja
 		join ccosto cc on cc.id_ccosto=dc.id_ccosto
-		where dc.egreso>0 and c.fecha between '" . $de . "' and '" . $a . "'";
+		where dc.egreso>0 and c.fecha between ? and ?";
         if ($id_caja > 0) {
-            $q = $q . " and c.id_caja = $id_caja 
+            $q = $q . " and c.id_caja = " . (int)$id_caja . " 
 			order by dc.id_detalle_caja asc";
         } else {
             $q = $q . " order by dc.id_detalle_caja asc";
         }
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -869,14 +869,14 @@ class Mdashboard extends CI_Model
         from venta vee 
         join caja caa on vee.id_caja = caa.id_caja
         join cliente c on vee.id_cliente = c.id_cliente 
-        where vee.monto_descuento>0 and caa.fecha between '" . $de . "' and '" . $a . "'";
+        where vee.monto_descuento>0 and caa.fecha between ? and ?";
         if ($id_caja > 0) {
-            $q = $q . " and vee.id_caja = $id_caja 
+            $q = $q . " and vee.id_caja = " . (int)$id_caja . " 
 			order by vee.id_venta asc";
         } else {
             $q = $q . " order by vee.id_venta asc";
         }
-        $query = $this->db->query($q)->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -900,17 +900,17 @@ class Mdashboard extends CI_Model
         FROM venta v
         JOIN usuario u ON V.id_usuario_garzon=u.id_usuario
         JOIN fpago fp ON V.id_fpagopropina=fp.id_fpago
-        where v.fecha between '" . $de . "' and '" . $a . "'";
+        where v.fecha between ? and ?";
         if ($id_caja > 0) {
-            $q = $q . " and v.id_caja = $id_caja ";
+            $q = $q . " and v.id_caja = " . (int)$id_caja . " ";
         }
         if ($id_usuario > 0) {
-            $q = $q . " and v.id_usuario_garzon = $id_usuario ";
+            $q = $q . " and v.id_usuario_garzon = " . (int)$id_usuario . " ";
         }
         $q = $q . " group by v.id_usuario_garzon, u.nombre_usuario, fp.nombre_fpago";
 
 
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a));
         $sampleData = $consulta->result();
         $data = array();
 

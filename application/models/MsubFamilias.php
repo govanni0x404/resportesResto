@@ -48,7 +48,7 @@ class MsubFamilias extends CI_Model
         if ($id) {
             $this->db->where('id_subfamilia', $id);
             $this->db->update('subfamilia', $data);
-            $consulta = $this->db->query("select " . $id . " as id_subfamilia");
+            $consulta = $this->db->query("select " . (int)$id . " as id_subfamilia");
         } else {
             $this->db->insert('subfamilia', $data);
             $consulta = $this->db->query("SELECT CURRVAL('subfamilia_id_subfamilia_seq'::regclass) as id_subfamilia");
@@ -62,7 +62,7 @@ class MsubFamilias extends CI_Model
             redirect(base_url()); //redireccionar al login
           }
           $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $query = $this->db->query("SELECT id_subfamilia, nombre_subfamilia from subfamilia where id_familia= $id_familia order by id_familia");
+        $query = $this->db->query("SELECT id_subfamilia, nombre_subfamilia from subfamilia where id_familia= ? order by id_familia", array((int)$id_familia));
         return $query->result();
     }
 }

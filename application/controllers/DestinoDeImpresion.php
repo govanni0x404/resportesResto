@@ -41,6 +41,11 @@ class DestinoDeImpresion extends CI_Controller
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url()); //redireccionar al login
 		}
+		// La ruta y la IP se usan para imprimir desde el servidor: solo un administrador las cambia
+		if ((int)$this->session->userdata('id_rol') !== 1) {
+			echo json_encode(array('error' => 'Solo un administrador puede modificar los destinos de impresión'));
+			return;
+		}
 		$d = $this->input->post('prod');
 		$id = intval($d['id_dimpresion']);
 		$miData = array(

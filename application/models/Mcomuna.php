@@ -48,7 +48,7 @@ class Mcomuna extends CI_Model
     if ($id) {
       $this->db->where('id_comuna', $id);
       $this->db->update('comuna', $data);
-      $consulta = $this->db->query("select " . $id . " as id_comuna");
+      $consulta = $this->db->query("select " . (int)$id . " as id_comuna");
     } else {
       $this->db->insert('comuna', $data);
       $consulta = $this->db->query("SELECT CURRVAL('comuna_id_comuna_seq'::regclass) as id_comuna");

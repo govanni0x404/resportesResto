@@ -32,15 +32,15 @@ class MresumenEntradaBodega extends CI_Model
         from esbodega eb 
         join bodega b on eb.id_bodega=b.id_bodega
         join usuario u on eb.id_usuario=u.id_usuario
-        where eb.entrada_a_bodega=true and eb.fecha_transaccion between '" . $de . "' and '" . $a . "'";
+        where eb.entrada_a_bodega=true and eb.fecha_transaccion between ? and ?";
         
         if ($id_usuario > 0) {
-            $q = $q . " and u.id_usuario=$id_usuario";
+            $q = $q . " and u.id_usuario=" . (int)$id_usuario;
         }
 		if ($id_bodega > 0) {
-            $q = $q . " and b.id_bodega=$id_bodega";
+            $q = $q . " and b.id_bodega=" . (int)$id_bodega;
         }
-        $consulta = $this->db->query($q);
+        $consulta = $this->db->query($q, array($de, $a));
         $sampleData = $consulta->result();
         $data = array();
 
@@ -74,7 +74,7 @@ class MresumenEntradaBodega extends CI_Model
         $q = "SELECT deb.id_esbodega, i.nombre_insumo, u.nombre_umedida, deb.cantidad, deb.stock_anterior, deb.nuevo_stock from detalle_esbodega deb
 		join insumo i on deb.id_insumo=i.id_insumo
         join umedida u on i.id_umedida_inventario=u.id_umedida
-		where deb.id_esbodega=$id_esbodega";
+		where deb.id_esbodega=" . (int)$id_esbodega;
 
         $consulta = $this->db->query($q);
         $sampleData = $consulta->result();

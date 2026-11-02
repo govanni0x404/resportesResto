@@ -47,7 +47,7 @@ class MitemGastosMensuales extends CI_Model
     if ($id) {
       $this->db->where('id_item_gastos', $id);
       $this->db->update('item_gastos', $data);
-      $consulta = $this->db->query("select " . $id . " as id_item_gastos");
+      $consulta = $this->db->query("select " . (int)$id . " as id_item_gastos");
     } else {
       $this->db->insert('item_gastos', $data);
       $consulta = $this->db->query("SELECT CURRVAL('item_gastos_id_item_gastos_seq'::regclass) as id_item_gastos");
