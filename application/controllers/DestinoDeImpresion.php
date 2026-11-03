@@ -47,7 +47,11 @@ class DestinoDeImpresion extends CI_Controller
 			return;
 		}
 		$d = $this->input->post('prod');
-		$id = intval($d['id_dimpresion']);
+		if (!is_array($d) || trim((string)($d['nombre_dimpresion'] ?? '')) === '') {
+			echo json_encode(array('error' => 'Datos inválidos: falta el nombre del destino de impresión'));
+			return;
+		}
+		$id = intval($d['id_dimpresion'] ?? 0);
 		$miData = array(
 			'nombre_dimpresion' => $d['nombre_dimpresion'],
 			'ip' => $d['ip'],

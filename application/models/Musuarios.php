@@ -107,9 +107,8 @@ class Musuarios extends CI_Model
       $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
       try {
-          $data['esadmin'] = false;
-          $data['esgarzon'] = false;
-
+          // No se tocan esadmin/esgarzon: el formulario no los edita y antes se dejaban en false
+          // (le quitaba el perfil de administrador/garzón del POS a quien se editaba)
           $this->db->where('id_usuario', $id);
           $this->db->update('usuario', $data);
 

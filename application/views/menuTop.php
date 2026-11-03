@@ -473,7 +473,8 @@
             }
             $k = strtolower(trim((string)$nombreVb));
             if (!is_array($__menuAccesos) || !array_key_exists($k, $__menuAccesos)) {
-                return true;
+                // Usuarios, privilegios y configuraciones exigen permiso explícito (igual que el control del servidor)
+                return !in_array($k, array('usuario', 'privilegiosusuario', 'configuraciones'), true);
             }
             return $__menuAccesos[$k] === true;
         }

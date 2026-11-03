@@ -221,9 +221,9 @@
             console.log(obj);
             $.each(obj, function (index, v) {
                 tbl += "<tr>";
-                tbl += "<td class='text-center' style= 'height:10px'>" + v.nombre_insumo + "</td>";
+                tbl += "<td class='text-center' style= 'height:10px'>" + escHtml(v.nombre_insumo) + "</td>";
                 tbl += "<td class='text-center' style= 'height:10px'>" + v.saldo + "</td>";
-                tbl += "<td class='text-center' style= 'height:10px'>" + v.nombre_bodega + "</td>";
+                tbl += "<td class='text-center' style= 'height:10px'>" + escHtml(v.nombre_bodega) + "</td>";
                 tbl += "</tr>";
             });
             $('#tableDetalleInsumos').html(tbl);

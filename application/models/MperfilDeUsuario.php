@@ -39,7 +39,8 @@ class MperfilDeUsuario extends CI_Model
     if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    $this->db = $this->load->database('intranet', TRUE);
+    // La intranet es el grupo 'default' (igual que Mlogin); el grupo 'intranet' no existe en database.php
+    $this->db = $this->load->database('default', TRUE);
     $q = " SELECT u.correo_acceso
         from usuario_appweb u
         where id_usuario_cliente=?";

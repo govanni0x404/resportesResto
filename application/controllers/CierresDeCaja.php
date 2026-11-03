@@ -46,6 +46,11 @@ class CierresDeCaja extends CI_Controller
 
         $datosEmpresa = $this->McierresDeCaja->datosEmpresa();
         $datosCaja = $this->McierresDeCaja->datosCaja($idCaja, $listadoCajas);
+        // Caja inexistente o lista vacía: avisar en vez de armar un PDF con errores de PHP
+        if (empty($datosCaja) || (!$idCaja && $datosCaja[0]->sencillo_apertura === null && $datosCaja[0]->ventas === null)) {
+            echo 'No se encontraron datos de la caja para generar el reporte.';
+            return;
+        }
         $datosFormaPago = $this->McierresDeCaja->datosFormaPago($idCaja, $listadoCajas);
         $datosCortesias = $this->McierresDeCaja->datosCortesias($idCaja, $listadoCajas);
         $datosFamiliaProducto = $this->McierresDeCaja->datosFamiliaProducto($idCaja, $listadoCajas);

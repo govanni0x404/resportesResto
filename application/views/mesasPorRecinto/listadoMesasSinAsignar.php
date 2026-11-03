@@ -27,8 +27,9 @@ $(document).ready(function () {
             {
                 mData: "disponible",
                 className: "text-center",
+                // Postgres entrega 't'/'f' como texto: 'f' también es "verdadero" en JS
                 render: d =>
-                    d
+                    (d === true || d === 't' || d === 'true')
                         ? '<span class="label label-success">DISPONIBLE</span>'
                         : '<span class="label label-danger">OCUPADA</span>'
             },

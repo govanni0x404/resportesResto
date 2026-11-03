@@ -40,9 +40,9 @@ class SalidaBodega extends CI_Controller
     if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
       
       // Decodificar el JSON recibido
-      $d = json_decode($this->input->post('el_json'), true);
+      $d = json_decode((string)$this->input->post('el_json'), true);
 
-      if (!$d) {
+      if (!is_array($d) || (int)($d['id_bodega'] ?? 0) <= 0 || empty($d['fecha'])) {
         echo json_encode(array("error" => "JSON inválido o vacío"));
         return;
       }
@@ -53,7 +53,7 @@ class SalidaBodega extends CI_Controller
         'id_bodega' => $d['id_bodega'],
         'entrada_a_bodega' => false,
         'id_usuario' => $this->session->userdata('id_usuario'),
-        'observaciones' => $d['observaciones'],
+        'observaciones' => (string)($d['observaciones'] ?? ''),
       );
 
       $r = $this->MsalidaBodega->grabarSalidaBodega($miData);
@@ -65,20 +65,33 @@ class SalidaBodega extends CI_Controller
   public function grabarDetalleSalidaBodega(){
     if (strlen((string)$this->session->userdata('nombre_usuario'))>0) {
         $d = $this->input->post('detalle');
-        $idEsBodega = $this->input->post('id');
+        $idEsBodega = (int)$this->input->post('id');
+        $idBodegaStock = (int)$this->input->post('id_bodega_stock');
 
-        $idBodegaStock = $this->input->post('id_bodega_stock');
-
-        $respuesta=array();
+        // Validar antes de recorrer (sin detalle PHP avisaba "foreach() argument must be of type array")
+        if (!is_array($d) || $idEsBodega <= 0 || $idBodegaStock <= 0) {
+          echo json_encode(array("error" => "Datos incompletos"));
+          return;
+        }
 
         $respueta = array();
         foreach ($d as $value) {
+          $idInsumo = (int)($value['id_insumo'] ?? 0);
+          $cantidad = (float)str_replace(',', '', (string)($value['cantidad'] ?? 0));
+          if ($idInsumo <= 0 || $cantidad <= 0) {
+            continue;
+          }
+          // El stock anterior se lee de la BD y no del valor que mostraba la pantalla: si el mismo insumo
+          // venía dos veces en la grilla, o el stock cambió mientras tanto, se perdía una de las cantidades.
+          $stock = $this->MsalidaBodega->obtenerStockActualPorBodega($idInsumo, $idBodegaStock);
+          $stockAnterior = !empty($stock) ? (float)$stock[0]->saldo : (float)str_replace(',', '', (string)($value['stock_anterior'] ?? 0));
+
           $miData=array(
             'id_esbodega'=>$idEsBodega,
-            'id_insumo'=>$value['id_insumo'],
-            'cantidad'=>$value['cantidad'],
-            'stock_anterior'=>$value['stock_anterior'],
-            'nuevo_stock'=>$value['stock_anterior']-$value['cantidad'],
+            'id_insumo'=>$idInsumo,
+            'cantidad'=>$cantidad,
+            'stock_anterior'=>$stockAnterior,
+            'nuevo_stock'=>$stockAnterior - $cantidad,
           );
 
           $dataUpdateStock = $miData;

@@ -25,7 +25,7 @@ class MresumenAnulaciones extends CI_Model
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT dc.id_cotizacion, p.nombre_producto, dc.cantidad, dc.total_bruto,
-        to_char(dc.hora_anulacion, 'DD/MM/YYYY HH24:MM:SS') AS hora_anulacion,
+        to_char(dc.hora_anulacion, 'DD/MM/YYYY HH24:MI:SS') AS hora_anulacion,
         dc.motivo_anulacion, u.nombre_usuario, dc.eseliminado, dc.esanulado
         from cotizacion c 
         join detalle_cotizacion dc on dc.id_cotizacion=c.id_cotizacion

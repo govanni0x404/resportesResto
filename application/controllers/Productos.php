@@ -532,7 +532,8 @@ class Productos extends CI_Controller
 			return;
 		}
 		$d = $this->input->post('prod');
-		$id = intval($d['id_mensaje_producto']);
+		// La pantalla de Productos no envía id_mensaje_producto (siempre es un mensaje nuevo)
+		$id = intval($d['id_mensaje_producto'] ?? 0);
 		$miData = array(
 			'id_producto' => $d['id_producto'],
 			'mensaje' => $d['mensaje'],

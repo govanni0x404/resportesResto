@@ -39,6 +39,10 @@ class PerfilDeUsuario extends CI_Controller
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
 			$d = $this->input->post('prod');
+			if (!is_array($d)) { // sin datos del formulario: no se graba nada
+				echo json_encode(array('error' => 'Datos incompletos'));
+				return;
+			}
 			$id_usuario = $this->session->userdata('id_usuario');
 			$miData = array(
 				'nombre_usuario' => $d['nombre_usuario'],
@@ -64,6 +68,10 @@ class PerfilDeUsuario extends CI_Controller
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
 			$d = $this->input->post('prodIntranet');
+			if (!is_array($d)) { // sin datos del formulario: no se graba nada
+				echo json_encode(array('error' => 'Datos incompletos'));
+				return;
+			}
 			$id_usuario_cliente = $this->session->userdata('id_usuario');
 			$id_cliente = $this->session->userdata('id_cliente');
 			$miData = array(

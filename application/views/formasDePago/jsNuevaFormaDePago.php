@@ -94,7 +94,7 @@
         $('#ckEsCortesia').prop('checked', false);
         $('#ckBoletaElectronica').prop('checked', false);
         $('#ckVigente').prop('checked', true);
-        $('#ckPermiteCortesia').prop('checked', false);
+        $('#ckPermitePropina').prop('checked', false);
         $('#ModalNuevaFormaDePago').modal({
             backdrop: 'static',
             keyboard: false

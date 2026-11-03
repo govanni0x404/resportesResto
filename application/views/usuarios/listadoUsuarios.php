@@ -155,10 +155,11 @@ function ListadoDeUsuarios() {
         $("#nombreUsuario").val(rowData[0].nombre_usuario);
         $("#claveUsuario").val(rowData[0].clave_usuario);
         
-        cargarRoles();
-        setTimeout(function() {
+        // El rol se fija cuando el combo ya está cargado (antes un setTimeout de 200 ms; si la consulta
+        // tardaba más el combo quedaba vacío y al grabar se enviaba id_rol vacío)
+        cargarRoles(function() {
             $("#rolUsuario").val(rowData[0].id_rol);
-        }, 200);
+        });
 
         // Convertir el valor booleano a string para el select
         var vigenteValue = rowData[0].vigente === true || rowData[0].vigente === 't' || rowData[0].vigente === 'true' ? 'true' : 'false';

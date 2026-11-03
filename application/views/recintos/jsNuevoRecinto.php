@@ -120,7 +120,8 @@
 		}
 	}
 
-	function ListadoDestinoDeImpresion() {
+	// idSeleccionado: destino actual del recinto al editar; vacío (nuevo recinto) = el último destino, como antes
+	function ListadoDestinoDeImpresion(idSeleccionado) {
 		$.post(base_url + "index.php/Productos/ListadoDestinoDeImpresion", {
 			id: ""
 		}, function(datos) {
@@ -136,7 +137,9 @@
 
 			$("#cboIdDestinoDeImpresion").html(tbl).select2();
 
-			if (ultimoId !== null) {
+			if (idSeleccionado && $("#cboIdDestinoDeImpresion option[value='" + parseInt(idSeleccionado, 10) + "']").length) {
+				$("#cboIdDestinoDeImpresion").val(String(parseInt(idSeleccionado, 10))).trigger('change');
+			} else if (ultimoId !== null) {
 				$("#cboIdDestinoDeImpresion").val(ultimoId).trigger('change');
 			}
 	});

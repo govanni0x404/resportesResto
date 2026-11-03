@@ -456,15 +456,15 @@
     function cargarValidacionDetalleDeOperaciones() {
         $.post(base_url + "index.php/Configuraciones/obtenerConfiguracionesRestoWeb", {}, function (datos) {
             var obj = $.parseJSON(datos);
+            // Las columnas Neto e IVA solo existen si la tabla las tiene (hoy están comentadas en la vista: la
+            // tabla es Producto, Cantidad, Precio y Total). Sin ellas no se toca nada, para no ocultar el Total.
+            if (!$.fn.dataTable.isDataTable('#tablaModalVerDetalleDeOperaciones')) return;
+            var t = $('#tablaModalVerDetalleDeOperaciones').DataTable();
+            if (t.columns().count() < 6) return;
             $.each(obj, function (index, v) {
-                if (v.desglozar_monto_neto_iva_total_en_reportes == 't') {
-                    tableModalVerDetalleOperaciones.column(3).visible(true);
-                    tableModalVerDetalleOperaciones.column(4).visible(true);
-                } else {
-                    tableModalVerDetalleOperaciones.column(3).visible(false);
-                    tableModalVerDetalleOperaciones.column(4).visible(false);
-
-                }
+                var ver = v.desglozar_monto_neto_iva_total_en_reportes == 't';
+                t.column(3).visible(ver);
+                t.column(4).visible(ver);
             });
         }).done(function () { })
             .fail(function () {
@@ -546,7 +546,8 @@
                     if ($('#cboNuevaFormaDePago').val() == 0) {
                         msg = "La Nueva Forma De Pago De La venta\n";
                     }
-                    if ($('#cboNuevaFormaDePago').val() == $('#FormaDePagoActual').val()) {
+                    // FormaDePagoActual guarda el nombre: se compara con el texto de la opción elegida (no con su id)
+                    if ($.trim($('#cboNuevaFormaDePago option:selected').text()) == $.trim($('#FormaDePagoActual').val())) {
                         msg = "Otra Forma De Pago (No Se Puede Actualizar A la Misma F. De Pago Actual)\n";
                     }
                     if (msg.length) {
@@ -559,24 +560,26 @@
                             'id_venta': IdVenta,
                             'id_fpago': IdNuevaFormaDePago,
                         };
-                    };
-                    $.post(base_url + "index.php/DetalleOperaciones/actualizarFormaDePagoVenta", {
-                        'prod': miJson
-                    }, function () { }).done(function (datos) {
-                        let positionError = datos.search("ERROR:");
-                        if (parseFloat(positionError) > 0) {
-                            swal("Error", "Se produjo un error, favor reintente \n(" + e + ")\n" + datos.substr(positionError, 150), "error");
-                        } else {
-                            swal("Forma De Pago Actualizada!", "Se Actualizo Correctamente!", "success");
-                            $('#ModalCambioFormaDePago').modal('hide');
-                            $('#modalVerDetalleDeOperaciones').modal('hide');
-                            tablaDetalleOperaciones.ajax.reload();
+                        // El envío va dentro del else: antes se mandaba aunque la validación fallara (prod vacío)
+                        $.post(base_url + "index.php/DetalleOperaciones/actualizarFormaDePagoVenta", {
+                            'prod': miJson
+                        }, function () { }).done(function (datos) {
+                            datos = String(datos);
+                            let positionError = datos.search("ERROR:");
+                            if (parseFloat(positionError) > 0) {
+                                swal("Error", "Se produjo un error, favor reintente \n" + datos.substr(positionError, 150), "error");
+                            } else {
+                                swal("Forma De Pago Actualizada!", "Se Actualizo Correctamente!", "success");
+                                $('#ModalCambioFormaDePago').modal('hide');
+                                $('#modalVerDetalleDeOperaciones').modal('hide');
+                                tablaDetalleOperaciones.ajax.reload();
 
-                        }
-                    }).fail(function () {
-                        swal("Se produjo un error al realizar La Actualizacion, favor vuelva a intentarlo");
-                    });
-                    swal.close();
+                            }
+                        }).fail(function () {
+                            swal("Se produjo un error al realizar La Actualizacion, favor vuelva a intentarlo");
+                        });
+                        swal.close();
+                    }
                 } else {
                     swal.close();
                 }

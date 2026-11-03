@@ -41,6 +41,10 @@ class CanalDeVenta extends CI_Controller
       redirect(base_url()); //redireccionar al login
     }
     $d = $this->input->post('prod');
+    if (!is_array($d)) { // sin datos del formulario: no se graba nada
+    	echo json_encode(array('error' => 'Datos incompletos'));
+    	return;
+    }
     $id = intval($d['id_canal_venta']);
     $miData = array(
       'nombre_canal_venta' => $d['nombre_canal_venta'],

@@ -42,16 +42,21 @@ class MentradaBodega extends CI_Model
       $this->db->insert('detalle_esbodega', $data);
       $consulta = $this->db->query("SELECT CURRVAL('detalle_esbodega_id_detalle_esbodega_seq'::regclass) as id_detalle_esbodega");
 
-      $datos_update = array(
-          'saldo' => $dataUpdateStock['nuevo_stock'], 
-      );
+      // Se actualiza igual que los triggers de la BD (compras, ventas, producción): cantidad_entrada y saldo = entrada - salida.
+      // Antes solo se fijaba 'saldo' y el siguiente trigger lo recalculaba desde entrada/salida, perdiendo este movimiento.
+      $cant = (float)$dataUpdateStock['cantidad'];
+      $this->db->query("UPDATE stock_insumo SET cantidad_entrada = cantidad_entrada + ?, saldo = cantidad_entrada + ? - cantidad_salida WHERE id_insumo = ? AND id_bodega = ?",
+        array($cant, $cant, (int)$dataUpdateStock['id_insumo'], (int)$dataUpdateStock['id_bodega_stock']));
 
-      $this->db->where('id_insumo', $dataUpdateStock['id_insumo']);
-      $this->db->where('id_bodega', $dataUpdateStock['id_bodega_stock']);
-      
-      // Ejecutar el UPDATE
-      $this->db->update('stock_insumo', $datos_update);
-      
+      // Si el insumo aún no tiene fila de stock en esa bodega se crea (antes el movimiento no quedaba en el stock)
+      if ($this->db->affected_rows() == 0) {
+        $this->db->insert('stock_insumo', array(
+          'id_insumo' => (int)$dataUpdateStock['id_insumo'],
+          'id_bodega' => (int)$dataUpdateStock['id_bodega_stock'],
+          'cantidad_entrada' => $cant, 'cantidad_salida' => 0, 'saldo' => $cant,
+        ));
+      }
+
       return $consulta->result();
   }
 }

@@ -46,6 +46,12 @@ class ResumenVentasProductosMes extends CI_Controller
         $id_producto = $this->input->post('id_producto');
         $mes = $this->input->post('mes');
         
+        // El detalle por producto/mes está desactivado en el modelo (método comentado y botón oculto en la vista);
+        // antes esta URL daba un error fatal "Call to undefined method". Se responde la tabla vacía.
+        if (!method_exists($this->MresumenVentasProductosMes, 'detalleProductoMes')) {
+            echo json_encode(array('sEcho' => 1, 'iTotalRecords' => 0, 'iTotalDisplayRecords' => 0, 'aaData' => array()));
+            return;
+        }
         echo json_encode($this->MresumenVentasProductosMes->detalleProductoMes($id_producto, $mes));
     }
 

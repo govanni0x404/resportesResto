@@ -8,21 +8,24 @@ class MresumenVentasProductosMes extends CI_Model
         parent::__construct();
     }
 
+    /**
+     * Fecha recibida (DD-MM-YYYY o YYYY-MM-DD) a Y-m-d. Si viene vacía o inválida usa hoy: antes PHP 8 avisaba
+     * "Undefined variable $de/$a" y la consulta iba con NULL.
+     */
+    private function fechaSql($fecha)
+    {
+        $ts = strtotime((string)$fecha);
+        return date('Y-m-d', $ts !== false ? $ts : time());
+    }
+
     public function resumenVentasProductos($desde, $hasta)
     {
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
         }
         
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $de = $this->fechaSql($desde);
+        $a = $this->fechaSql($hasta);
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         
@@ -130,15 +133,8 @@ class MresumenVentasProductosMes extends CI_Model
             redirect(base_url());
         }
         
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $de = $this->fechaSql($desde);
+        $a = $this->fechaSql($hasta);
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         

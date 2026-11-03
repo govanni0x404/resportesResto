@@ -14,7 +14,7 @@ class Mrecintos extends CI_Model
       redirect(base_url()); //redireccionar al login
     }
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    $q = "SELECT r.id_recinto, r.nombre_recinto, r.vigente, d.nombre_dimpresion from recinto r 
+    $q = "SELECT r.id_recinto, r.nombre_recinto, r.vigente, r.id_dimpresion, d.nombre_dimpresion from recinto r 
     left join dimpresion d on r.id_dimpresion=d.id_dimpresion
     order by r.id_recinto asc";
 
@@ -28,6 +28,8 @@ class Mrecintos extends CI_Model
         "nombre_recinto" => $key->nombre_recinto,
         "vigente" => ($key->vigente == 't' ? 'SI' : 'NO'),
         "nombre_dimpresion" => $key->nombre_dimpresion,
+        // Para marcar el destino actual al editar el recinto
+        "id_dimpresion" => $key->id_dimpresion,
       ));
     }
     $results = array(

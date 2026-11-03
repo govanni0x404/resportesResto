@@ -28,7 +28,7 @@ class Produccion extends CI_Controller
         try {
             // Obtener datos JSON
             $jsonData = $this->input->post('produccion');
-            $d = json_decode($jsonData, true);
+            $d = json_decode((string)$jsonData, true);
             
             if (!$d || !isset($d['insumos']) || count($d['insumos']) == 0) {
                 echo json_encode(array(
@@ -38,8 +38,12 @@ class Produccion extends CI_Controller
                 return;
             }
             
-            // Iniciar transacción
-            $this->db->trans_start();
+            // Iniciar transacción sobre la BD del cliente (la misma conexión cacheada que usa Mproduccion).
+            // Antes se usaba $this->db del controlador, que es la conexión por defecto y no la del tenant,
+            // así que el rollback por stock insuficiente no deshacía los movimientos ya grabados.
+            $this->load->helper('tenant');
+            $dbTenant = get_tenant_db($this);
+            $dbTenant->trans_start();
             
             // Procesar cada insumo de la receta
             $costoTotalProduccion = 0;
@@ -52,7 +56,7 @@ class Produccion extends CI_Controller
                 
                 // Validar que hay suficiente stock
                 if ($stock_actual < $insumo['cantidad']) {
-                    $this->db->trans_rollback();
+                    $dbTenant->trans_rollback();
                     echo json_encode(array(
                         'success' => false,
                         'message' => 'Stock insuficiente para ' . $insumo['nombre_insumo'] . 
@@ -136,9 +140,9 @@ class Produccion extends CI_Controller
             */
             
             // Finalizar transacción
-            $this->db->trans_complete();
+            $dbTenant->trans_complete();
             
-            if ($this->db->trans_status() === FALSE) {
+            if ($dbTenant->trans_status() === FALSE) {
                 echo json_encode(array(
                     'success' => false,
                     'message' => 'Error al procesar la transacción'
@@ -152,7 +156,7 @@ class Produccion extends CI_Controller
             }
             
         } catch (Exception $e) {
-            $this->db->trans_rollback();
+            if (isset($dbTenant)) $dbTenant->trans_rollback();
             log_message('error', 'Error en grabarProduccion: ' . $e->getMessage());
             echo json_encode(array(
                 'success' => false,

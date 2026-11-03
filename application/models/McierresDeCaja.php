@@ -258,7 +258,7 @@ class McierresDeCaja extends CI_Model
         }
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $q = "SELECT p.nombre_producto, co.id_mesa, to_char(fecha_movimiento, 'HH24:MM') as hora, dc.cantidad, dc.* 
+        $q = "SELECT p.nombre_producto, co.id_mesa, to_char(fecha_movimiento, 'HH24:MI') as hora, dc.cantidad, dc.* 
 		from detalle_cotizacion dc
 		join cotizacion co on dc.id_cotizacion = co.id_cotizacion
 		join producto p on dc.id_producto = p.id_producto";
@@ -322,6 +322,10 @@ class McierresDeCaja extends CI_Model
     // Convierte la lista '1,2,3' de cajas en un array de enteros para usar con IN ?
     private function idsCajas($listadoCajas)
     {
-        return array_map('intval', array_filter(explode(',', (string)$listadoCajas), 'strlen'));
+        $ids = array_values(array_filter(array_map('intval', explode(',', (string)$listadoCajas)), function ($id) {
+            return $id > 0;
+        }));
+        // Sin cajas válidas: -1 no existe; evita "IN ()" (error de SQL) e "IN (0)" (recorre filas sin caja y tarda)
+        return $ids ? $ids : array(-1);
     }
 }

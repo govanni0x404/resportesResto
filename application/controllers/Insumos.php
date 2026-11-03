@@ -112,20 +112,19 @@ class Insumos extends CI_Controller
 			'inventario_cierre_turno' => $d['inv_cierre']
 		);
 		$r = $this->Minsumos->grabarInsumo($id, $miData);
-		if ($r && isset($r['id_insumo'])) {
+		// Una sola respuesta JSON: antes se imprimían dos objetos seguidos (JSON inválido). El modelo devuelve
+		// un arreglo de filas ([{id_insumo}]), por eso el id se lee de la primera fila.
+		$idGrabado = (is_array($r) && isset($r[0]->id_insumo)) ? $r[0]->id_insumo : null;
+		if ($idGrabado !== null) {
 			echo json_encode(array(
 				'success' => true,
-				'id_insumo' => $r['id_insumo'],
-				'message' => 'Insumo grabado exitosamente'
+				'status' => 'success',
+				'id_insumo' => $idGrabado,
+				'message' => 'Insumo grabado exitosamente',
+				'msg' => 'Insumo grabado correctamente'
 			));
 		} else {
-			echo json_encode($r);
-		}
-
-		if ($r) {
-    		echo json_encode(['status' => 'success', 'msg' => 'Insumo grabado correctamente']);
-		} else {
-    		echo json_encode(['status' => 'error', 'msg' => 'Error al grabar insumo']);
+			echo json_encode(array('success' => false, 'status' => 'error', 'msg' => 'Error al grabar insumo'));
 		}
 	}
 

@@ -41,6 +41,10 @@ class Moneda extends CI_Controller
       redirect(base_url()); //redireccionar al login
     }
     $d = $this->input->post('prod');
+    if (!is_array($d)) { // sin datos del formulario: no se graba nada
+    	echo json_encode(array('error' => 'Datos incompletos'));
+    	return;
+    }
     $id = intval($d['id_moneda']);
     $miData = array(
       'nombre_moneda' => $d['nombre_moneda'],

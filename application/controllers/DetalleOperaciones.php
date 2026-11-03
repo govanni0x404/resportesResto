@@ -77,9 +77,15 @@ class DetalleOperaciones extends CI_Controller
 			redirect(base_url()); //redireccionar al login
 		}
 		$d = $this->input->post('prod');
-		$id = intval($d['id_venta']);
+		$id = intval(is_array($d) && isset($d['id_venta']) ? $d['id_venta'] : 0);
+		$idFpago = intval(is_array($d) && isset($d['id_fpago']) ? $d['id_fpago'] : 0);
+		// Sin venta o forma de pago válida no se actualiza nada (antes: avisos de PHP y UPDATE con id_fpago NULL)
+		if ($id <= 0 || $idFpago <= 0) {
+			echo 'No se actualizó. ERROR: faltan la venta o la nueva forma de pago.'; // el JS busca "ERROR:" en posición > 0
+			return;
+		}
 		$miData = array(
-			'id_fpago' => $d['id_fpago'],
+			'id_fpago' => $idFpago,
 		);
 		$r = $this->MdetalleOperaciones->actualizarFormaDePagoVenta($id, $miData);
 		echo json_encode($r);

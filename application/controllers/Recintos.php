@@ -42,18 +42,22 @@ class Recintos extends CI_Controller
       }
 
       $d = $this->input->post('prod');
-      $id = intval($d['id_recinto']);
+      if (!is_array($d) || trim((string)($d['nombre_recinto'] ?? '')) === '') {
+          echo json_encode(array('error' => 'Datos inválidos: falta el nombre del recinto'));
+          return;
+      }
+      $id = intval($d['id_recinto'] ?? 0);
 
       if (empty($d['id_dimpresion']) || intval($d['id_dimpresion']) === 0) {
         $ultimoDestino = $this->Mrecintos->obtenerUltimoDestinoImpresion();
-        $idDestino = $ultimoDestino->id_dimpresion;
+        $idDestino = $ultimoDestino ? $ultimoDestino->id_dimpresion : 0;
       } else {
         $idDestino = intval($d['id_dimpresion']);
       }
 
       $miData = array(
           'nombre_recinto'  => $d['nombre_recinto'],
-          'vigente'         => $d['vigente'],
+          'vigente'         => $d['vigente'] ?? 1,
           'id_dimpresion'   => $idDestino, 
           'ruta'            => 0,
           'ultima_pos_mesa' => 0,

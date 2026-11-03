@@ -38,6 +38,9 @@ $('#btnValidarSalida').on('click', function() {
 
 
 function obtenerStockActualPorBodega() {
+    // Limpiar antes de consultar: si el insumo no tiene stock en la bodega quedaba el valor del insumo anterior
+    $('#txtStockActual').val("0");
+    $('#UmedidaInsumo').val("");
     $.post(base_url + "index.php/SalidaBodega/obtenerStockActualPorBodega", {
         'id_insumo': $('#cboInsumo').val(),
         'id_bodega': $('#cboBodega').val(),
@@ -173,6 +176,15 @@ function grabarSalidaBodega() {
         });
     });
 
+    // Sin insumos en la grilla no se graba (antes quedaba grabada la cabecera sin detalle)
+    if (detalleSalidaBodega.length === 0) {
+        showAppAlert('error', "Debe agregar al menos un insumo antes de grabar!", {
+            duration: 5000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+
     // --- datos de cabecera ---
     // var miJson = {
     //     'fecha': FechaSalida,
@@ -215,7 +227,7 @@ function grabarSalidaBodega() {
                         $("#txtObservaciones").val("");
                     },
                     error: function (xhr, status, error) {
-                        showAppAlert('error',"No se pudo grabar el detalle: " + error, "error", {
+                        showAppAlert('error',"No se pudo grabar el detalle: " + error, {
                             duration: 5000,
                             image: base_url+ 'assets/img/errorGif.gif'
                         });

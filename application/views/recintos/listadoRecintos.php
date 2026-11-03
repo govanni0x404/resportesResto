@@ -143,7 +143,8 @@ function ListadoDeRecinto() {
             } else {
                 $('#ckVigente').prop('checked', false);
             }
-            ListadoDestinoDeImpresion(rowData[0].nombre_dimpresion);
+            // Se marca el destino actual del recinto (antes quedaba siempre el último y se cambiaba al grabar)
+            ListadoDestinoDeImpresion(rowData[0].id_dimpresion);
             $('#ModalNuevoRecinto').modal('show');
         })
 }

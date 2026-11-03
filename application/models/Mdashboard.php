@@ -268,7 +268,10 @@ class Mdashboard extends CI_Model
 
         foreach ($sampleData as $key) {
             array_push($data, array(
-                "nombre_producto" => ($key->mensaje > 0 ? $key->nombre_producto . ' <br><sup>MENSAJE PEDIDO: ' . $key->mensaje . '</sup>' : $key->nombre_producto),
+                // Se muestra como HTML: el nombre y el mensaje (los escribe el garzón) van escapados
+                "nombre_producto" => (trim((string)$key->mensaje) !== '' && $key->mensaje !== '0'
+                    ? html_escape($key->nombre_producto) . ' <br><sup>MENSAJE PEDIDO: ' . html_escape($key->mensaje) . '</sup>'
+                    : html_escape($key->nombre_producto)),
                 "cantidad" => $key->cantidad,
                 "bruto_un" => $key->bruto_un,
                 /*"neto" => $key->neto,
@@ -803,15 +806,15 @@ class Mdashboard extends CI_Model
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT c.id_caja,dc.id_detalle_caja as numero_ingreso, dc.ingreso, dc.observacion, dc.descripcion_corta, cc.nombre_ccosto,
-        to_char(dc.fecha_movimiento, 'DD/MM/YYYY HH24:MM:SS') AS fecha_hora_ingreso
+        to_char(dc.fecha_movimiento, 'DD/MM/YYYY HH24:MI:SS') AS fecha_hora_ingreso
 		from caja c
 		join detalle_caja dc on c.id_caja=dc.id_caja
-		join ccosto cc on cc.id_ccosto=dc.id_ccosto
+		left join ccosto cc on cc.id_ccosto=dc.id_ccosto -- left: los movimientos sin centro de costo (id_ccosto 0) también se listan
 		where dc.ingreso>0 and c.fecha between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and c.id_caja = " . (int)$id_caja;
         }
-        $q = $q . "order by dc.id_detalle_caja asc";
+        $q = $q . " order by dc.id_detalle_caja asc"; // espacio inicial: sin él "id_caja = 2739order" falla en Postgres
         $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
@@ -833,10 +836,10 @@ class Mdashboard extends CI_Model
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT c.id_caja,dc.id_detalle_caja as numero_ingreso, dc.egreso, dc.observacion, dc.descripcion_corta, cc.nombre_ccosto,
-        to_char(dc.fecha_movimiento, 'DD/MM/YYYY HH24:MM:SS') AS fecha_hora_retiro
+        to_char(dc.fecha_movimiento, 'DD/MM/YYYY HH24:MI:SS') AS fecha_hora_retiro
 		from caja c
 		join detalle_caja dc on c.id_caja=dc.id_caja
-		join ccosto cc on cc.id_ccosto=dc.id_ccosto
+		left join ccosto cc on cc.id_ccosto=dc.id_ccosto -- left: los movimientos sin centro de costo (id_ccosto 0) también se listan
 		where dc.egreso>0 and c.fecha between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and c.id_caja = " . (int)$id_caja . " 

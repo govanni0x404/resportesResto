@@ -36,6 +36,12 @@ class Compras extends CI_Controller
         echo json_encode(['error' => 'No se recibieron datos']);
         return;
       }
+      // Validar la cabecera antes de usarla (evita avisos de PHP y errores SQL con datos incompletos)
+      if (!is_array($d) || (int)($d['id_proveedor'] ?? 0) <= 0 || (int)($d['id_tdocumento'] ?? 0) <= 0
+        || !is_numeric($d['numero_documento'] ?? null) || empty($d['fecha'])) {
+        echo json_encode(['error' => 'Faltan datos de la compra (proveedor, documento, folio o fecha)']);
+        return;
+      }
       
       // VALIDACIÓN ADICIONAL: Verificar si ya existe la compra
       $existente = $this->Mcompra->verificarSiExisteLaCompra(
@@ -100,18 +106,20 @@ class Compras extends CI_Controller
       $respuesta = array();
       $errores = array();
       
+      if (!is_array($d)) {
+        echo json_encode(['error' => 'Datos incompletos']);
+        return;
+      }
+
       foreach ($d as $key => $value) {
-        // Limpiar valores numéricos
-        $cantidad_str = str_replace(',', '.', str_replace('.', '', (string)$value['cantidad']));
-        $bruto_unitario_str = str_replace(',', '.', str_replace('.', '', (string)$value['bruto_unitario']));
-        $bruto_total_str = str_replace(',', '.', str_replace('.', '', (string)$value['bruto_total']));
-        
+        // Limpiar valores numéricos. La vista manda el número con punto decimal y sin separador de miles
+        // (ej. "1.5"); antes se borraban todos los puntos y 1.5 kg quedaba grabado como 15.
         $miData = array(
           'id_compra' => (int)$idCompra,
-          'cantidad' => (float)$cantidad_str,
-          'bruto_unitario' => (float)$bruto_unitario_str,
-          'bruto_total' => (float)$bruto_total_str,
-          'id_insumo' => (int)$value['id_insumo'],
+          'cantidad' => $this->numeroDesdeTexto($value['cantidad'] ?? 0),
+          'bruto_unitario' => $this->numeroDesdeTexto($value['bruto_unitario'] ?? 0),
+          'bruto_total' => $this->numeroDesdeTexto($value['bruto_total'] ?? 0),
+          'id_insumo' => (int)($value['id_insumo'] ?? 0),
         );
         
         $r = $this->Mcompra->grabarDetalleCompra($miData);
@@ -158,11 +166,29 @@ class Compras extends CI_Controller
         return;
       }
       
-      $idProveedor = $d['id_proveedor'];
-      $idTdocumento = $d['id_tdocumento'];
-      $numero_documento = $d['numero_documento'];
+      // Normalizar tipos: un id vacío o un folio no numérico hacían fallar la consulta en Postgres
+      $idProveedor = (int)($d['id_proveedor'] ?? 0);
+      $idTdocumento = (int)($d['id_tdocumento'] ?? 0);
+      $numero_documento = is_numeric($d['numero_documento'] ?? null) ? (float)$d['numero_documento'] : 0;
       
       echo json_encode($this->Mcompra->verificarSiExisteLaCompra($idProveedor, $idTdocumento, $numero_documento));
     }
+  }
+
+  /**
+   * Convierte a número lo que manda la vista. Acepta "1234.5" (formato de los input number, sin miles),
+   * "1,234.5" y también el formato chileno "1.234,5" o "1.234.567".
+   */
+  private function numeroDesdeTexto($valor)
+  {
+    $t = trim((string)$valor);
+    if (strpos($t, ',') !== false && strpos($t, '.') !== false && strrpos($t, ',') < strrpos($t, '.')) {
+      $t = str_replace(',', '', $t); // "1,234.5": la coma es separador de miles
+    } elseif (strpos($t, ',') !== false) {
+      $t = str_replace(',', '.', str_replace('.', '', $t)); // "1.234,5": formato chileno
+    } elseif (substr_count($t, '.') > 1) {
+      $t = str_replace('.', '', $t); // "1.234.567": solo separadores de miles
+    }
+    return (float)$t;
   }
 }

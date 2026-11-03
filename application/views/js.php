@@ -876,7 +876,7 @@
             var total = 0;
             $.each(obj, function (index, v) {
                 tbl += "<tr>";
-                tbl += "<td class='text-center' style= 'height:10px' >" + v.nombre_tdocumento + "</td>";
+                tbl += "<td class='text-center' style= 'height:10px' >" + escHtml(v.nombre_tdocumento) + "</td>";
                 tbl += "<td class='text-center' style= 'height:10px'>" + commaSeparateNumber(v.cantidad) + "</td>";
                 // tbl += "<td class='text-right' style= 'height:10px'>$" + commaSeparateNumber(v.neto) + "</td>";
                 if (v.id_tdocumento == 5) {
@@ -947,7 +947,7 @@
             var totalPropina = 0;
             $.each(obj, function (index, v) {
                 tbl += "<tr>";
-                tbl += "<td class='text-center' style= 'height:10px'><span class='dash-chip'>" + v.nombre_fpago + "</span></td>";
+                tbl += "<td class='text-center' style= 'height:10px'><span class='dash-chip'>" + escHtml(v.nombre_fpago) + "</span></td>";
                 tbl += "<td class='text-center' style= 'height:10px'>" + v.cantidad + "</td>";
 
                 //tbl += "<td class='text-right ocultarNetoFormaDePago' style= 'height:10px'>$" + commaSeparateNumber(v.neto) + "</td>";
@@ -1004,7 +1004,7 @@
             var totalPropina = 0;
             $.each(obj, function (index, v) {
                 tbl += "<tr>";
-                tbl += "<td class='text-center' style= 'height:10px'>" + v.nombre_fpago + "</td>";
+                tbl += "<td class='text-center' style= 'height:10px'>" + escHtml(v.nombre_fpago) + "</td>";
                 tbl += "<td class='text-center' style= 'height:10px'>" + v.cantidad + "</td>";
                 //tbl += "<td class='text-right ocultarNetoCortesias' style= 'height:10px'>$" + commaSeparateNumber(v.neto) + "</td>";
                 //tbl += "<td class='text-right ocultarIvaCortesias' style= 'height:10px'>$" + commaSeparateNumber(v.iva) + "</td>";
@@ -1127,7 +1127,8 @@
             {
                 mData: "id_divpedido",
                 "width": "1%",
-                className: "text-center"
+                className: "text-center",
+                html: true // el servidor manda <h5>SI/NO</h5>; sin esto se veía el texto con las etiquetas
             },
             {
                 mData: "btnVerMesas",
@@ -1722,7 +1723,7 @@
             tbl = "";
             tbl = '<option selected value="0">Todas Las Cajas Del Día</option>';
             $.each(obj, function (index, v) { // recorro el array
-                tbl = tbl + '<option value="' + v.id_caja + '">Caja N°: ' + v.id_caja + ' - Usuario: ' + v.nombre_usuario + ' - Fecha: ' + v.fecha + '</option>';
+                tbl = tbl + '<option value="' + v.id_caja + '">Caja N°: ' + v.id_caja + ' - Usuario: ' + escHtml(v.nombre_usuario) + ' - Fecha: ' + v.fecha + '</option>';
             }); //fin each
             $("#cboCajas").html(tbl);
             $("#cboCajas").select2();
@@ -1734,9 +1735,12 @@
         //window.open(base_url+"index.php/Dashboard/verPDFDetalleCaja/");
         var desde = $('#date-range-picker').data('daterangepicker').startDate.format('DD-MM-YYYY');
         var hasta = $('#date-range-picker').data('daterangepicker').endDate.format('DD-MM-YYYY');
+        // Se manda la caja elegida para que el PDF muestre lo mismo que el panel (vacío/0 = todas)
+        var id_caja = $('#cboCajas').find('option:selected').attr('value') || 0;
         $.redirect(base_url + 'index.php/Dashboard/PDFDetalleCaja', {
             'desde': desde,
             'hasta': hasta,
+            'id_caja': id_caja,
 
         }, 'POST', 'wDteD');
     }
@@ -1766,11 +1770,11 @@
                 $.each(obj, function (index, v) {
                     tbl += "<tr>";
                     tbl += "<td class='text-right' style= 'height:10px'>" + v.numero_ingreso + "</td>";
-                    tbl += "<td class='text-left' style= 'height:10px'>" + v.descripcion_corta + "</td>";
+                    tbl += "<td class='text-left' style= 'height:10px'>" + escHtml(v.descripcion_corta) + "</td>";
                     tbl += "<td class='text-right' style= 'height:10px'>$" + commaSeparateNumber(v.ingreso) + "</td>";
                     tbl += "<td class='text-center' style= 'height:10px'>" + v.fecha_hora_ingreso + "</td>";
-                    tbl += "<td class='text-left' style= 'height:10px'>" + v.observacion + "</td>";
-                    tbl += "<td class='text-left' style= 'height:10px'>" + v.nombre_ccosto + "</td>";
+                    tbl += "<td class='text-left' style= 'height:10px'>" + escHtml(v.observacion) + "</td>";
+                    tbl += "<td class='text-left' style= 'height:10px'>" + escHtml(v.nombre_ccosto) + "</td>";
                     tbl += "</tr>";
                     totalIngresos += parseInt(v.ingreso);
                 });
@@ -1805,11 +1809,11 @@
                 $.each(obj, function (index, v) {
                     tbl += "<tr>";
                     tbl += "<td class='text-right' style= 'height:10px'>" + v.numero_ingreso + "</td>";
-                    tbl += "<td class='text-left' style= 'height:10px'>" + v.descripcion_corta + "</td>";
+                    tbl += "<td class='text-left' style= 'height:10px'>" + escHtml(v.descripcion_corta) + "</td>";
                     tbl += "<td class='text-right' style= 'height:10px'>$" + commaSeparateNumber(v.egreso) + "</td>";
                     tbl += "<td class='text-center' style= 'height:10px'>" + v.fecha_hora_retiro + "</td>";
-                    tbl += "<td class='text-left' style= 'height:10px'>" + v.observacion + "</td>";
-                    tbl += "<td class='text-left' style= 'height:10px'>" + v.nombre_ccosto + "</td>";
+                    tbl += "<td class='text-left' style= 'height:10px'>" + escHtml(v.observacion) + "</td>";
+                    tbl += "<td class='text-left' style= 'height:10px'>" + escHtml(v.nombre_ccosto) + "</td>";
                     tbl += "</tr>";
                     totalRetiro += parseInt(v.egreso);
                 });
@@ -1847,7 +1851,7 @@
                 $.each(obj, function (index, v) {
                     tbl += "<tr>";
                     tbl += "<td class='text-right' style= 'height:10px'>" + v.id_venta + "</td>";
-                    tbl += "<td class='text-left' style= 'height:10px'>" + v.nombre_cliente + "</td>";
+                    tbl += "<td class='text-left' style= 'height:10px'>" + escHtml(v.nombre_cliente) + "</td>";
                     tbl += "<td class='text-right' style= 'height:5px'>" + 'N° ' + v.folio_cotizacion + '   ' + 'MESA' + v.id_mesa + "</td>";
                     tbl += "<td class='text-right' style= 'height:7px'>$" + commaSeparateNumber(v.subtotal) + "</td>";
                     tbl += "<td class='text-right' style= 'height:5px'>" + v.por_descuento + '%' + "</td>";
@@ -2155,7 +2159,7 @@
             var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
             tbl = "<option value='0' disabled>Seleccione El Usuario</option>";
             $.each(obj, function (index, v) { // recorro el array
-                tbl += '<option selected value="' + v.id_usuario + '">' + v.nombre_usuario + '</option>';
+                tbl += '<option selected value="' + v.id_usuario + '">' + escHtml(v.nombre_usuario) + '</option>';
             }); //fin each
             $("#cboUsuarios").html(tbl);
             $("#cboUsuarios").select2();

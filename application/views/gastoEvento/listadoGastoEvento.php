@@ -23,7 +23,7 @@ function showTableLoader(message) {
         '<div style="color: #3A2A22; font-size: 14px;">' + (message || 'Cargando...') + '</div>' +
         '</div>';
     
-    var $wrapper = $('#tablaGastpEvento').closest('.dataTables_wrapper');
+    var $wrapper = $('#tablaGastoEvento').closest('.dataTables_wrapper');
     if ($wrapper.length === 0) {
         $wrapper = $('#tablaGastoEvento').parent();
     }

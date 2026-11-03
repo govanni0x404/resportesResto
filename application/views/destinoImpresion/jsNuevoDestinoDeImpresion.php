@@ -180,7 +180,8 @@
 		} else {
 			IdDestinoDeImpresion = $('#idDestinoDeImpresion').val();
 			NombreDestinoDeImpresion = $('#nombreDestinoDeImpresion').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
-			rutaImpresora = $('#rutaImpresora').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
+			// La IP lleva puntos (192.168.1.50): antes se borraban y quedaba "1921681150", que no sirve para imprimir
+			rutaImpresora = $('#rutaImpresora').val().toUpperCase().replace(/[,'"$#%&]+/g, '');
 			RutaWindowsImpresora = $('#RutaWindowsImpresora').val();
 			PuertoImpresora = $('#PuertoImpresora').val();
 			size_font = $('#cboZiseFont').val();
@@ -231,7 +232,14 @@
 			};
 			$.post(base_url + "index.php/DestinoDeImpresion/grabarNuevoDestinoDeImpresion", {
 					'prod': miJson
-				}).done(function() {
+				}).done(function(resp) {
+					// El servidor responde {error} si el rol no puede modificar destinos
+					var r = null;
+					try { r = typeof resp === 'string' ? JSON.parse(resp) : resp; } catch (e) {}
+					if (r && r.error) {
+						showAppAlert('error', r.error, { duration: 5000, image: base_url + 'assets/img/errorGif.gif' });
+						return;
+					}
 					showAppAlert('success', "Se registro Exitosamente El Nuevo Destino De Impresion!", {
                         duration: 4000,
                         image: base_url + 'assets/img/success.gif'

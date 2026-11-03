@@ -320,20 +320,21 @@ class Dashboard extends CI_Controller
 						$pdf->SetX(10);
 						$pdf->Cell(55, 5, mb_convert_encoding((string)($row->nombre_tdocumento), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 						$pdf->Cell(30, 5, number_format($row->cantidad),1,0,'C');
-						$pdf->Cell(40, 5, number_format($row->total),1,0,'C');
 						$totalVentasPorTipoDte += $row->cantidad;
 						$totalPorTipoDte += $row->total;
+						// Mismo orden que el encabezado: NETO, IVA y al final TOTAL VENTAS
 						if ($row->id_tdocumento == 5) {
 							$pdf->Cell(40, 5, number_format($row->total),1,0,'C');
 							$pdf->Cell(35, 5, number_format('0'),1,0,'C');
 							$totalNetoPorTipoDte += $row->total;
 							$totaliVAPorTipoDte += 0;
 						} else {
-							$pdf->Cell(40, 5, number_format($row->neto));
-							$pdf->Cell(35, 5, number_format($row->iva));
+							$pdf->Cell(40, 5, number_format($row->neto),1,0,'C');
+							$pdf->Cell(35, 5, number_format($row->iva),1,0,'C');
 							$totalNetoPorTipoDte += $row->neto;
 							$totaliVAPorTipoDte += $row->iva;
 						}
+						$pdf->Cell(40, 5, number_format($row->total),1,0,'C');
 					} else {
 						$pdf->SetX(15);
 						$pdf->Cell(0, 5, mb_convert_encoding((string)($row->nombre_tdocumento), 'ISO-8859-1', 'UTF-8'));
@@ -376,12 +377,13 @@ class Dashboard extends CI_Controller
 		foreach ($obtenerConfiguracionesRestoWeb as $validacion) {
 			if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
 				$pdf->SetX(10);
-				$pdf->Cell(55, 5, mb_convert_encoding((string)('FORMA DE PAGO'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
-				$pdf->Cell(30, 5, mb_convert_encoding((string)('CANTIDAD'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
-				$pdf->Cell(40, 5, mb_convert_encoding((string)('TOTAL NETO'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
-				$pdf->Cell(40, 5, mb_convert_encoding((string)('TOTAL IVA'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
-				$pdf->Cell(40, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
-				$pdf->Cell(40, 5, mb_convert_encoding((string)('PROPINAS'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				// 6 columnas: anchos que caben en la hoja (antes PROPINAS quedaba fuera del margen)
+				$pdf->Cell(44, 5, mb_convert_encoding((string)('FORMA DE PAGO'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(22, 5, mb_convert_encoding((string)('CANTIDAD'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(34, 5, mb_convert_encoding((string)('TOTAL NETO'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(34, 5, mb_convert_encoding((string)('TOTAL IVA'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(34, 5, mb_convert_encoding((string)('TOTAL VENTAS'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(28, 5, mb_convert_encoding((string)('PROPINAS'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
 			} else {
 				$pdf->SetX(15);
 				$pdf->Cell(0, 5, mb_convert_encoding((string)('FORMA DE PAGO'), 'ISO-8859-1', 'UTF-8'));
@@ -401,12 +403,12 @@ class Dashboard extends CI_Controller
 					if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
 						$pdf->Ln(5);
 						$pdf->SetX(10);
-						$pdf->Cell(55, 5, mb_convert_encoding((string)($row->nombre_fpago), 'ISO-8859-1', 'UTF-8'),1,0,'C');
-						$pdf->Cell(30, 5, number_format($row->cantidad),1,0,'C');
-						$pdf->Cell(40, 5, number_format($row->neto),1,0,'C');
-						$pdf->Cell(40, 5, number_format($row->iva),1,0,'C');
-						$pdf->Cell(40, 5, number_format($row->total),1,0,'C');
-						$pdf->Cell(40, 5, number_format($row->propina),1,0,'C');
+						$pdf->Cell(44, 5, mb_convert_encoding((string)($row->nombre_fpago), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+						$pdf->Cell(22, 5, number_format($row->cantidad),1,0,'C');
+						$pdf->Cell(34, 5, number_format($row->neto),1,0,'C');
+						$pdf->Cell(34, 5, number_format($row->iva),1,0,'C');
+						$pdf->Cell(34, 5, number_format($row->total),1,0,'C');
+						$pdf->Cell(28, 5, number_format($row->propina),1,0,'C');
 						$totalCantidadPorFpago += $row->cantidad;
 						$totalNetoPorFpago += $row->neto;
 						$totaliVAPorFpago += $row->iva;
@@ -436,12 +438,12 @@ class Dashboard extends CI_Controller
 			if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
 				$pdf->Ln(10);
 				$pdf->SetX(10);
-				$pdf->Cell(55, 5, mb_convert_encoding((string)('TOTALES'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
-				$pdf->Cell(30, 5, number_format($totalCantidadPorFpago),1,0,'C');
-				$pdf->Cell(30, 5, number_format($totalNetoPorFpago),1,0,'C');
-				$pdf->Cell(30, 5, number_format($totaliVAPorFpago),1,0,'C');
-				$pdf->Cell(30, 5, number_format($totalPorFpago),1,0,'C');
-				$pdf->Cell(30, 5, number_format($totalPropinaPorFpago),1,0,'C');
+				$pdf->Cell(44, 5, mb_convert_encoding((string)('TOTALES'), 'ISO-8859-1', 'UTF-8'),1,0,'C');
+				$pdf->Cell(22, 5, number_format($totalCantidadPorFpago),1,0,'C');
+				$pdf->Cell(34, 5, number_format($totalNetoPorFpago),1,0,'C');
+				$pdf->Cell(34, 5, number_format($totaliVAPorFpago),1,0,'C');
+				$pdf->Cell(34, 5, number_format($totalPorFpago),1,0,'C');
+				$pdf->Cell(28, 5, number_format($totalPropinaPorFpago),1,0,'C');
 			} else {
 				$pdf->Ln(10);
 				$pdf->SetX(20);

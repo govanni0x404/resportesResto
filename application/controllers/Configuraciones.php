@@ -30,8 +30,8 @@ class Configuraciones extends CI_Controller {
     public function obtenerConfiguracionesRestoWeb() {
         $this->load->helper('tenant'); 
         $this->db = get_tenant_db($this);
-        $config = $this->Mconfiguraciones->get_configuracion();
-        echo json_encode([$config]);
+        // Solo lo que usan los reportes (cómo mostrar neto/IVA); nunca claves ni datos del SII
+        echo json_encode($this->Mconfiguraciones->obtenerConfiguracionesRestoWeb());
     }
 
     /**

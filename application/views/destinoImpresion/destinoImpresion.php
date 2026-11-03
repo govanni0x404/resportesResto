@@ -73,6 +73,7 @@
                 <th  style= 'display:none' class="text text-center">RUTA WINDOWS</th>
                 <th  style= 'display:none' class="text text-center">IMPRESION GRAFICA</th>
                 <th  style= 'display:none' class="text text-center">PERMITE IMPRIMIR LOGO</th>
+                <th  style= 'display:none' class="text text-center">IMPRESION LOCAL</th>
                 <th  style= 'display:none' class="text text-center">LOGO POS</th>
                 <th  style= 'display:none' class="text text-center">SIZE FONT</th>
                 <th  style= 'display:none' class="text text-center">SIN IMPRESION</th>

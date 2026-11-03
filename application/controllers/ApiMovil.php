@@ -39,8 +39,9 @@ class ApiMovil extends CI_Controller
 			return $this->error(405, 'Método no permitido');
 		}
 		$body = $this->leerBody();
-		$correo = isset($body['correo']) ? trim($body['correo']) : '';
-		$clave = isset($body['clave']) ? (string)$body['clave'] : '';
+		// Solo texto: un arreglo en correo/clave provocaba TypeError en trim() o "Array to string conversion"
+		$correo = isset($body['correo']) && is_scalar($body['correo']) ? trim((string)$body['correo']) : '';
+		$clave = isset($body['clave']) && is_scalar($body['clave']) ? (string)$body['clave'] : '';
 		if ($correo === '' || $clave === '') {
 			return $this->error(400, 'Correo y clave son obligatorios');
 		}

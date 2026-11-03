@@ -8,24 +8,24 @@ class MresumenEntradaBodega extends CI_Model
 		parent::__construct();
 	}
 
+    /**
+     * Fecha recibida (DD-MM-YYYY o YYYY-MM-DD) a Y-m-d. Si viene vacía o inválida usa hoy: antes PHP 8 avisaba
+     * "Undefined variable $de/$a" y la consulta iba con NULL.
+     */
+    private function fechaSql($fecha)
+    {
+        $ts = strtotime((string)$fecha);
+        return date('Y-m-d', $ts !== false ? $ts : time());
+    }
+
 	public function resumenEntradaBodega($desde, $hasta, $id_usuario, $id_bodega)
     {
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-
-        /*$jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }*/
         
-        $de = $desde; 
-        $a = $hasta . ' 23:59:59'; // Incluye hasta el final del día
+        $de = $this->fechaSql($desde);
+        $a = $this->fechaSql($hasta) . ' 23:59:59'; // Incluye hasta el final del día
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT eb.id_esbodega, b.nombre_bodega, eb.fecha, u.nombre_usuario, to_char(eb.fecha_transaccion, 'HH24:MI:SS') AS hora, eb.observaciones

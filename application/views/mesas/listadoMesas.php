@@ -81,6 +81,8 @@ function ListadoDeMesas() {
                 mData: "disponible",
                 className: "text-center",
                 render: function(data) {
+                    // Postgres entrega 't'/'f' como texto: 'f' también es "verdadero" en JS
+                    data = (data === true || data === 't' || data === 'true' || data === 1);
                     return data ? '<span class="label label-success">DISPONIBLE</span>' : '<span class="label label-danger">OCUPADA</span>';
                 }
             },

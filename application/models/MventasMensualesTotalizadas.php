@@ -8,14 +8,24 @@ class MventasMensualesTotalizadas extends CI_Model
         parent::__construct();
     }
 
+    /**
+     * Fecha recibida (DD-MM-YYYY o YYYY-MM-DD) a Y-m-d. Si viene vacía o inválida usa hoy: antes PHP 8 avisaba
+     * "Undefined variable $de/$a" y la consulta iba con NULL.
+     */
+    private function fechaSql($fecha)
+    {
+        $ts = strtotime((string)$fecha);
+        return date('Y-m-d', $ts !== false ? $ts : time());
+    }
+
     public function ventasMensualesTotalizadas($desde, $hasta)
     {
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); // redireccionar al login
         }
 
-        $de = date('Y-m-d', strtotime($desde));
-        $a = date('Y-m-d', strtotime($hasta));
+        $de = $this->fechaSql($desde);
+        $a = $this->fechaSql($hasta);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT 
             DATE(v.fecha) AS ventas_del_dia,
@@ -63,15 +73,8 @@ class MventasMensualesTotalizadas extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $de = $this->fechaSql($desde);
+        $a = $this->fechaSql($hasta);
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
@@ -99,15 +102,8 @@ class MventasMensualesTotalizadas extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $de = $this->fechaSql($desde);
+        $a = $this->fechaSql($hasta);
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
@@ -136,15 +132,8 @@ class MventasMensualesTotalizadas extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $de = $this->fechaSql($desde);
+        $a = $this->fechaSql($hasta);
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
@@ -179,8 +168,7 @@ class MventasMensualesTotalizadas extends CI_Model
         FROM venta v
         JOIN cliente c ON v.id_cliente = c.id_cliente
         JOIN tdocumento t ON v.id_tdocumento = t.id_tdocumento
-        WHERE v.fecha = .?.";
-        ;
+        WHERE DATE(v.fecha) = ?"; // antes '= .?.' era un error de sintaxis SQL
 
         $consulta = $this->db->query($q, array($ventas_del_dia));
         $sampleData = $consulta->result();

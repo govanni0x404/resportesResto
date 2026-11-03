@@ -91,6 +91,16 @@
                 'prod': miJson
             }).done(function(response) {
                 console.log('Respuesta del servidor:', response);
+                // El servidor responde {success:false, message} o {error} cuando no pudo asignar
+                var r = null;
+                try { r = typeof response === 'string' ? JSON.parse(response) : response; } catch (e) {}
+                if (r && (r.error || r.success === false)) {
+                    showAppAlert('error', r.error || r.message || "No se pudo asignar la mesa", {
+                        duration: 5000,
+                        image: base_url + 'assets/img/errorGif.gif'
+                    });
+                    return;
+                }
                 showAppAlert('success', "Mesa asignada exitosamente al recinto!", {
                     duration: 4000,
                     image: base_url + 'assets/img/success.gif'

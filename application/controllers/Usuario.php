@@ -53,6 +53,10 @@ class Usuario extends CI_Controller
         }
         
         $d = $this->input->post('prod');
+        if (!is_array($d)) { // sin datos del formulario: no se graba nada
+        	echo json_encode(array('error' => 'Datos incompletos'));
+        	return;
+        }
         $id = intval($d['id_usuario']);
         $vigente_bool = ($d['vigente'] === 'true');
         
@@ -76,6 +80,10 @@ class Usuario extends CI_Controller
         }
 
         $d = $this->input->post('prod');
+        if (!is_array($d) || intval($d['id_usuario'] ?? 0) <= 0) {
+            echo json_encode(array('error' => 'Datos incompletos'));
+            return;
+        }
         $id = intval($d['id_usuario']);
 
         // Convertir vigente a boolean
@@ -86,9 +94,12 @@ class Usuario extends CI_Controller
         $miData = array(
             'nombre_usuario' => $d['nombre_usuario'],
             'clave'          => $d['clave_usuario'],
-            'vigente'        => $vigente_bool,
-            'id_rol'         => intval($d['id_rol'])
+            'vigente'        => $vigente_bool
         );
+        // Sin rol elegido (combo aún sin cargar) se conserva el rol actual en vez de grabar id_rol = 0
+        if (intval($d['id_rol'] ?? 0) > 0) {
+            $miData['id_rol'] = intval($d['id_rol']);
+        }
 
         $r = $this->Musuarios->editarUsuario($id, $miData);
         echo json_encode($r);

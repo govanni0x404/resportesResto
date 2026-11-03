@@ -87,6 +87,36 @@
 <!-- End Theme label Script
         =====================================================================-->
 <script src="https://cdn.datatables.net/plug-ins/1.10.20/api/sum().js"></script>
+<script>
+  // Texto seguro para meter en HTML: lo que escriben los usuarios (nombres, observaciones, motivos) no se ejecuta
+  window.escHtml = function (s) {
+    return s === null || s === undefined ? '' : String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  };
+  // DataTables muestra cada celda como HTML: las columnas de datos sin render propio se muestran como texto.
+  // Quedan como HTML las columnas "btn..." (botones que arma el servidor), las que tienen render propio
+  // y las marcadas con html: true.
+  (function ($) {
+    if (!$ || !$.fn || !$.fn.dataTable) return;
+    var original = $.fn.dataTable;
+    var comoTexto = function (d, type) { return type === 'display' && typeof d === 'string' ? escHtml(d) : d; };
+    var proteger = function (cols) {
+      $.each(cols || [], function (i, c) {
+        if (!c || typeof c !== 'object' || c.render || c.mRender || c.fnRender || c.html) return;
+        var campo = c.data !== undefined ? c.data : c.mData;
+        if (typeof campo === 'string' && !/^btn/i.test(campo)) c.render = comoTexto;
+      });
+    };
+    var envoltura = function (opciones) {
+      if (opciones && typeof opciones === 'object') { proteger(opciones.columns); proteger(opciones.aoColumns); }
+      return original.apply(this, arguments);
+    };
+    $.extend(envoltura, original);
+    envoltura.prototype = original.prototype;
+    $.fn.dataTable = envoltura;
+  })(window.jQuery);
+</script>
 
 
   <script type="text/javascript">

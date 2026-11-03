@@ -32,7 +32,11 @@ class MesasPorRecinto extends CI_Controller
     if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
     }
-    echo json_encode($this->MmesasPorRecinto->ListadoDeMesasSinAsignar());
+    // El método del modelo quedó comentado (llamarlo era un Error fatal): se filtran las mesas sin recinto del listado
+    $r = $this->MmesasPorRecinto->ListadoDeMesas();
+    $r['aaData'] = array_values(array_filter($r['aaData'], function ($m) { return !(int)$m['id_recinto']; }));
+    $r['iTotalRecords'] = $r['iTotalDisplayRecords'] = count($r['aaData']);
+    echo json_encode($r);
   }
 
   public function ListadoDeMesas()
@@ -55,8 +59,12 @@ class MesasPorRecinto extends CI_Controller
     }
     
     $d = $this->input->post('prod');
-    $id_mesa = intval($d['id_mesa']);
-    $id_recinto = intval($d['id_recinto']);
+    if (!is_array($d)) {
+      echo json_encode(array('error' => 'Datos inválidos'));
+      return;
+    }
+    $id_mesa = intval($d['id_mesa'] ?? 0);
+    $id_recinto = intval($d['id_recinto'] ?? 0);
     
     if ($id_recinto == 0) {
       echo json_encode(array('error' => 'Debe seleccionar un recinto'));

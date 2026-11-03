@@ -1107,9 +1107,10 @@ class Mcaja extends CI_Model
 		$ids = array();
 		foreach ($items as $it) $ids[] = (int)$it['id_producto'];
 		$selVss = isset($cols['producto']['venta_segun_stock']) ? '(p.venta_segun_stock IS TRUE)' : 'false';
+		$selFraccion = isset($cols['producto']['permite_porcion']) ? '(p.permite_porcion IS TRUE)' : 'false';
 		$productos = array();
 		$q = "SELECT p.id_producto, p.nombre_producto, COALESCE(p.id_receta, 0) AS id_receta, COALESCE(p.id_bodega, 0) AS id_bodega,
-				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, $selVss AS segun_stock,
+				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, $selVss AS segun_stock, $selFraccion AS fraccion,
 				" . $this->sqlExento($db, 'p') . " AS exento
 			FROM producto p
 			LEFT JOIN detalle_lprecio dl ON dl.id_producto = p.id_producto AND dl.id_lprecio = ?
@@ -1131,6 +1132,13 @@ class Mcaja extends CI_Model
 			if (!isset($productos[$id])) throw new Exception('El producto ' . $id . ' no existe o no está vigente', 400);
 			$prod = $productos[$id];
 			if ($cantidad <= 0) throw new Exception('Cantidad inválida para ' . $prod->nombre_producto, 400);
+			// Solo los productos fraccionables (por kilo, porción) aceptan decimales: si no, una cantidad como 0,001
+			// dejaría el producto en $0 sin pasar por el descuento ni su autorización
+			$fraccion = $prod->fraccion === 't' || $prod->fraccion === true;
+			if (!$fraccion && abs($cantidad - round($cantidad)) > 0.0001) {
+				throw new Exception($prod->nombre_producto . ' se vende por unidad: la cantidad debe ser un número entero', 400);
+			}
+			if ($cantidad > 9999) throw new Exception('Cantidad demasiado alta para ' . $prod->nombre_producto, 400);
 			$segunStock = $prod->segun_stock === 't' || $prod->segun_stock === true;
 			// Los agregados siguen al producto: si el producto es exento, su línea completa lo es
 			$exento = $prod->exento === 't' || $prod->exento === true;

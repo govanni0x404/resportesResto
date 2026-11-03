@@ -5,8 +5,23 @@
   $(document).ready(function() {
     empresa();
     cargarDatosDelUsuario();
+    cargarCorreoDeAcceso();
 
   });
+
+  // El correo de acceso no se cargaba nunca: el campo quedaba vacío y la validación impedía grabar
+  function cargarCorreoDeAcceso() {
+    $.post(base_url + "index.php/PerfilDeUsuario/obtenerCorreoAccesoWebIntranet", {}).done(function(datos) {
+      try {
+        var obj = (typeof datos === 'string') ? $.parseJSON(datos) : datos;
+        if (obj && obj.length && obj[0].correo_acceso) {
+          $('#CorreoDeAcceso').val(obj[0].correo_acceso);
+        }
+      } catch (e) {
+        console.log(datos);
+      }
+    });
+  }
 
   function empresa() {
     $.post(base_url + "index.php/Dashboard/empresa", {}, function() {}).done(function(data) {

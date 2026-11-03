@@ -25,8 +25,8 @@ class MdetalleOperaciones extends CI_Model
         }
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $q = "SELECT v.id_venta, u.nombre_usuario, co.id_mesa, count(index_comensal) AS comensales, to_char(co.fecha_transaccion, 'DD/MM/YYYY HH24:MM:SS') AS fecha_inicio, 
-				to_char(date_trunc('second',sum(v.fecha_transaccion-co.fecha_transaccion)), 'HH24:MM:SS') as tiempo_atencion, co.mensaje as observacion, fp.nombre_fpago, round(v.total) as total
+        $q = "SELECT v.id_venta, u.nombre_usuario, co.id_mesa, count(index_comensal) AS comensales, to_char(co.fecha_transaccion, 'DD/MM/YYYY HH24:MI:SS') AS fecha_inicio, 
+				to_char(date_trunc('second',sum(v.fecha_transaccion-co.fecha_transaccion)), 'HH24:MI:SS') as tiempo_atencion, co.mensaje as observacion, fp.nombre_fpago, round(v.total) as total
 			from venta v
 			join cotizacion co on v.id_venta = co.id_venta
 			join usuario u on co.id_usuario = u.id_usuario
@@ -56,7 +56,7 @@ class MdetalleOperaciones extends CI_Model
                 'observacion' => $key->observacion == null ? '-' : $key->observacion,
                 'nombre_fpago' => $key->nombre_fpago,
                 'total' => $key->total,
-                'btn_ver_detalle' => ('<button onclick="cargarValidacionDetalleDeOperaciones() + VerModalDetalleDeOperaciones(' . $key->id_venta . ')" type="submit" class="btn btn-success btn-md"><i class="fa fa-file-text"></i>VER DETALLE</button>'),
+                'btn_ver_detalle' => ('<button onclick="VerModalDetalleDeOperaciones(' . $key->id_venta . ')" type="submit" class="btn btn-success btn-md"><i class="fa fa-file-text"></i>VER DETALLE</button>'),
 
             ));
         }

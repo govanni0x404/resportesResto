@@ -25,7 +25,7 @@ function showTableLoader(message) {
     
     var $wrapper = $('#tablaIngresosEvento').closest('.dataTables_wrapper');
     if ($wrapper.length === 0) {
-        $wrapper = $('#tablaIngresoEventos').parent();
+        $wrapper = $('#tablaIngresosEvento').parent();
     }
     
     $wrapper.css('position', 'relative');

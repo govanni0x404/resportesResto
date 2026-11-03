@@ -20,17 +20,17 @@
             $.each(obj, function(index, v) { // recorro el array
                 tbl = tbl + "<tr>";
                 tbl = tbl + "<td>" + v.id_mensaje_producto + "</td>";
-                tbl = tbl + "<td>" + v.nombre_producto + "</td>";
-                tbl = tbl + "<td>" + v.mensaje + "</td>";
+                tbl = tbl + "<td>" + escHtml(v.nombre_producto) + "</td>";
+                tbl = tbl + "<td>" + escHtml(v.mensaje) + "</td>";
                 if (v.vigente == 't') {
                     tbl = tbl + "<td  style='width:15%'' >" + 'SI' + "</td>";
                 } else {
                     tbl = tbl + "<td  style='width:15%'' >" + 'NO' + "</td>";
                 }
                 if (v.vigente == 't') {
-                    tbl += "<td <button onclick='DeshabilitarMensajeProducto(" + v.id_mensaje_producto + ")' type='button' class='btn-block btn-danger text-center'><i class='fa fa-times-circle'></i> DESHABILITAR MENSAJE</button></td>"
+                    tbl += "<td><button onclick='DeshabilitarMensajeProducto(" + v.id_mensaje_producto + ")' type='button' class='btn-block btn-danger text-center'><i class='fa fa-times-circle'></i> DESHABILITAR MENSAJE</button></td>"
                 } else {
-                    tbl += "<td <button onclick='HabilitarMensajeProducto(" + v.id_mensaje_producto + ")' id='BtnHabilitarMsg' type='button' class='btn-block btn-primary text-center'><i class='fa fa-check-circle'></i> HABILITAR MENSAJE</button></td>"
+                    tbl += "<td><button onclick='HabilitarMensajeProducto(" + v.id_mensaje_producto + ")' id='BtnHabilitarMsg' type='button' class='btn-block btn-primary text-center'><i class='fa fa-check-circle'></i> HABILITAR MENSAJE</button></td>"
                 }
                 tbl = tbl + "</tr>";
 

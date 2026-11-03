@@ -55,10 +55,14 @@ class Mesas extends CI_Controller
       }
       
       $d = $this->input->post('prod');
+      if (!is_array($d) || empty($d['id_mesa'])) {
+          echo json_encode(array('error' => 'Datos inválidos'));
+          return;
+      }
       $id = intval($d['id_mesa']);
       
       // Convertir string a booleano correctamente
-      $vigente_value = $d['vigente'];
+      $vigente_value = $d['vigente'] ?? '';
       if ($vigente_value === 'true' || $vigente_value === true || $vigente_value === 't') {
           $vigente_bool = true;
       } else {

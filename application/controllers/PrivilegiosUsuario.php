@@ -50,6 +50,10 @@ class PrivilegiosUsuario extends CI_Controller
         }
         
         $d = $this->input->post('prod');
+        if (!is_array($d)) { // sin datos del formulario: no se graba nada
+        	echo json_encode(array('error' => 'Datos incompletos'));
+        	return;
+        }
         $id_pusuario = intval($d['id_pusuario']);
         $autoriza = $d['autoriza'] === 'true' || $d['autoriza'] === true;
         
@@ -64,6 +68,10 @@ class PrivilegiosUsuario extends CI_Controller
             redirect(base_url());
         }
         $d = $this->input->post('prod');
+        if (!is_array($d)) { // sin datos del formulario: no se graba nada
+        	echo json_encode(array('error' => 'Datos incompletos'));
+        	return;
+        }
         $r = $this->MprivilegiosUsuario->crearPrivilegio((int)(isset($d['id_rol']) ? $d['id_rol'] : 0), (int)(isset($d['id_psistema']) ? $d['id_psistema'] : 0));
         echo json_encode($r);
     }

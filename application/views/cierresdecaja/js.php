@@ -292,6 +292,10 @@
                     }).data().sum()
                 )
                 */
+                // Total de la columna 3 (Ventas Local): faltaba, los bloques de abajo suman de la 4 a la 10
+                var colVentasLocal = this.api().column(3);
+                $(colVentasLocal.footer()).html('$' + this.api().column(3, { page: 'current' }).data().sum().toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+
                 var totalVentasEnLocal = this.api();
                 var TventasLocal = totalVentasEnLocal.column(4, { page: 'current' }).data().sum();
 
