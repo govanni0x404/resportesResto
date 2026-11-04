@@ -18,6 +18,10 @@ class Mcaja extends CI_Model
 	const TZ = 'America/Santiago';
 	// Códigos SII de documentos electrónicos (se imprimen como pendientes de emisión)
 	const COD_SII_ELECTRONICOS = array(33, 34, 39, 41, 46, 52, 56, 61);
+	/** Propina máxima, en % del total de la venta. */
+	const PROPINA_MAX_PCT = 15;
+	/** Clave de los bloqueos (pg_advisory_lock) de emisión de documentos electrónicos, junto al id de la venta. */
+	const LOCK_DTE = 77001;
 	// Electrónicos que emite la caja web (boleta, boleta exenta, factura, factura exenta) y la NC
 	const COD_SII_EMITIBLES = array(33, 34, 39, 41);
 	const COD_SII_NC = 61;
@@ -149,6 +153,7 @@ class Mcaja extends CI_Model
 
 		$config['es_admin'] = $this->esAdmin($db, $idUsuario, $idRol);
 		$config['tiene_clave_admin'] = $this->claveAdminGeneral($db) !== '';
+		$config['propina_max_pct'] = self::PROPINA_MAX_PCT;
 		// Nunca se envía la clave; solo quién puede autorizar
 		$admins = array();
 		foreach ($this->q($db, 'SELECT u.id_usuario, u.nombre_usuario FROM usuario u LEFT JOIN rol r ON r.id_rol = u.id_rol
@@ -284,6 +289,46 @@ class Mcaja extends CI_Model
 			}
 		}
 		throw new AutorizacionRequerida($motivo, 'Clave de administrador incorrecta');
+	}
+
+	// ---------------- lista de precios ----------------
+	// Usar una lista distinta de la pública pide la clave de administración. Al autorizarla queda permitida en la
+	// sesión del cajero hasta que vuelva a la pública (al cambiar de nuevo se vuelve a pedir).
+
+	const SESION_LISTA = 'caja_lista_autorizada';
+
+	/** El cajero cambió la lista en la Caja: la pública no pide nada; otra pide la clave (403 autorizacion). */
+	public function autorizarLista($idUsuario, $idRol, $idLprecio, $aut)
+	{
+		$db = $this->conexion();
+		$config = $this->configuracion($db);
+		$idLprecio = (int)$idLprecio;
+		$l = $this->q($db, 'SELECT id_lprecio, nombre_lprecio FROM lprecio WHERE id_lprecio = ?', array($idLprecio))->row();
+		if (!$l) throw new Exception('La lista de precios no existe', 400);
+		if ($idLprecio === (int)$config['id_lprecio_publico']) {
+			$this->session->unset_userdata(self::SESION_LISTA);
+			return array('ok' => true, 'autorizada' => false);
+		}
+		$this->exigirAutorizacion($db, 'usar la lista de precios ' . $l->nombre_lprecio, $idUsuario, $idRol, $aut);
+		$this->session->set_userdata(self::SESION_LISTA, $idLprecio);
+		return array('ok' => true, 'autorizada' => true);
+	}
+
+	/** Se permite la lista pública, la asignada al cliente de la venta o la que se autorizó en la sesión. */
+	private function exigirLista($db, $config, $idUsuario, $idRol, $idLprecio, $idCliente)
+	{
+		$idLprecio = (int)$idLprecio;
+		if ($idLprecio === (int)$config['id_lprecio_publico']) return;
+		if ((int)$this->session->userdata(self::SESION_LISTA) === $idLprecio) return;
+		if ($this->esAdmin($db, $idUsuario, $idRol)) return;
+		if ($idCliente) {
+			$t = $this->columnas($db, array('cliente'));
+			if (isset($t['cliente']['id_lprecio'])) {
+				$c = $this->q($db, 'SELECT COALESCE(id_lprecio, 0) AS l FROM cliente WHERE id_cliente = ?', array((int)$idCliente))->row();
+				if ($c && (int)$c->l === $idLprecio) return;
+			}
+		}
+		throw new Exception('Para usar esta lista de precios cámbiala de nuevo en la Caja e ingresa la clave de administración', 403);
 	}
 
 	public function buscarClientes($texto)
@@ -731,6 +776,17 @@ class Mcaja extends CI_Model
 		$cols = $this->columnas($db, array('detalle_caja', 'caja'));
 		$db->trans_begin();
 		try {
+			if (!$esIngreso) {
+				// Un retiro no puede sacar más efectivo del que hay en la caja (fondo + ventas en efectivo + ingresos
+				// - retiros - propinas pagadas). La caja queda bloqueada para que dos retiros a la vez no lo pasen.
+				$this->q($db, 'SELECT id_caja FROM caja WHERE id_caja = ? FOR UPDATE', array((int)$caja->id_caja));
+				$disponible = (int)$this->resumenCaja($caja)['efectivo_esperado'];
+				if ($monto > $disponible) {
+					throw new Exception($disponible > 0
+						? 'Solo hay $' . number_format($disponible, 0, ',', '.') . ' en efectivo en la caja: el retiro no puede ser mayor'
+						: 'No hay efectivo en la caja para hacer un retiro', 400);
+				}
+			}
 			$this->insertar($db, $cols, 'detalle_caja', array(
 				'id_caja' => (int)$caja->id_caja,
 				'ingreso' => $esIngreso ? $monto : 0,
@@ -825,7 +881,7 @@ class Mcaja extends CI_Model
 			$subtotal = (int)array_sum(array_column($lineas, 'bruto'));
 			$notas = array();
 		} else {
-			list($lineas, $subtotal, $notas) = $this->armarLineas($db, $config, $cols, isset($p['detalle']) ? $p['detalle'] : null, $idLprecio);
+			list($lineas, $subtotal, $notas, $comandaVenta) = $this->armarLineas($db, $config, $cols, isset($p['detalle']) ? $p['detalle'] : null, $idLprecio);
 		}
 
 		$descuento = max(0, (int)(isset($p['descuento']) ? $p['descuento'] : 0));
@@ -880,6 +936,10 @@ class Mcaja extends CI_Model
 		$propina = max(0, (int)(isset($p['propina']) ? $p['propina'] : 0));
 		if ($propina > 0 && !$config['propina'] && !$idMesa) throw new Exception('La propina en venta directa no está habilitada en Configuraciones', 400);
 		if ($propina > 0 && $esCortesia) throw new Exception('Una cortesía no lleva propina', 400);
+		$propinaMax = (int)floor($total * self::PROPINA_MAX_PCT / 100);
+		if ($propina > $propinaMax) {
+			throw new Exception('La propina no puede superar el ' . self::PROPINA_MAX_PCT . '% del total ($' . number_format($propinaMax, 0, ',', '.') . ')', 400);
+		}
 
 		$requerido = $total + $propina;
 		if ($suma < $requerido) throw new Exception('Falta pagar $' . number_format($requerido - $suma, 0, ',', '.'), 400);
@@ -899,6 +959,9 @@ class Mcaja extends CI_Model
 			}
 			$pagos[$idxPropina]['propina'] = $propina;
 		}
+
+		// Lista de precios distinta de la pública: autorizada con la clave al cambiarla (en una mesa vale la del pedido)
+		if (!$idMesa) $this->exigirLista($db, $config, $idUsuario, $idRol, $idLprecio, $idCliente);
 
 		// --- Autorizaciones de administrador (Configuraciones)
 		$requiere = array();
@@ -1096,12 +1159,14 @@ class Mcaja extends CI_Model
 		// La emisión va fuera de la transacción: si Cloud Apps falla, la venta queda pendiente de envío
 		$dte = null;
 		if ($doc['electronico']) {
-			$dte = $this->dte()->emitir($db, $idVenta);
+			$dte = $this->emitirDte($db, $idVenta);
 			if ($dte['ok']) $folio = $dte['folio'];
 		}
 		return array('id_venta' => $idVenta, 'folio' => $folio, 'total' => $total, 'propina' => $propina,
 			'vuelto' => $vuelto, 'documento' => $doc['nombre'], 'dte' => $dte,
-			'mesa_liberada' => $idMesa ? !empty($mesaLiberada) : null);
+			'mesa_liberada' => $idMesa ? !empty($mesaLiberada) : null,
+			'comanda' => $idMesa ? array() : (isset($comandaVenta) ? $comandaVenta : array()),
+			'observacion' => mb_substr(trim(isset($p['observacion']) ? (string)$p['observacion'] : ''), 0, 200));
 	}
 
 	/** Valida los productos pedidos y arma las líneas con los precios del servidor. Devuelve [lineas, subtotal, notas]. */
@@ -1130,6 +1195,7 @@ class Mcaja extends CI_Model
 
 		$lineas = array();
 		$notas = array();
+		$comanda = array();   // lo que sale en cocina/barra: armado aquí con los nombres de la base, no los del navegador
 		$subtotal = 0;
 		foreach ($items as $it) {
 			$id = (int)$it['id_producto'];
@@ -1167,6 +1233,8 @@ class Mcaja extends CI_Model
 				$notas[] = $prod->nombre_producto . ($nombres ? ' ' . implode(' ', $nombres) : '') . ($nota !== '' ? ': ' . $nota : '');
 			}
 
+			$comanda[] = array('id_producto' => $id, 'nombre' => $prod->nombre_producto, 'cantidad' => $cantidad, 'nota' => $nota,
+				'agregados' => array_map(function ($a) { return $a->nombre_producto; }, $elegidos));
 			$primero = $elegidos ? array_shift($elegidos) : null;
 			$unitario = (int)round((float)$prod->precio) + ($primero ? (int)$primero->valor : 0);
 			$bruto = (int)round($unitario * $cantidad);
@@ -1189,7 +1257,7 @@ class Mcaja extends CI_Model
 				);
 			}
 		}
-		return array($lineas, $subtotal, $notas);
+		return array($lineas, $subtotal, $notas, $comanda);
 	}
 
 	/** Reintenta la emisión de un documento electrónico pendiente. */
@@ -1204,7 +1272,7 @@ class Mcaja extends CI_Model
 		if ((int)$v->folio_dte > 0) throw new Exception('El documento ya fue emitido', 409);
 		if (strpos($v->mensaje_pedido, 'ANULADA') === 0) throw new Exception('La venta está anulada', 409);
 		// Dos reenvíos a la vez (dos pestañas o cajas) emitirían dos documentos: solo uno puede estar enviando
-		$lock = $this->q($db, 'SELECT pg_try_advisory_lock(?, ?) AS ok', array(77001, (int)$idVenta))->row();
+		$lock = $this->q($db, 'SELECT pg_try_advisory_lock(?, ?) AS ok', array(self::LOCK_DTE, (int)$idVenta))->row();
 		if (!$lock || ($lock->ok !== 't' && $lock->ok !== true)) throw new Exception('Este documento ya se está enviando, espera unos segundos', 409);
 		try {
 			// Pudo emitirse mientras se esperaba
@@ -1212,10 +1280,26 @@ class Mcaja extends CI_Model
 			if ($f && (int)$f->f > 0) throw new Exception('El documento ya fue emitido', 409);
 			$r = $this->dte()->emitir($db, (int)$idVenta);
 		} finally {
-			$this->q($db, 'SELECT pg_advisory_unlock(?, ?)', array(77001, (int)$idVenta));
+			$this->q($db, 'SELECT pg_advisory_unlock(?, ?)', array(self::LOCK_DTE, (int)$idVenta));
 		}
 		if (!$r['ok']) throw new Exception('No se pudo emitir: ' . $r['mensaje'], 502);
 		return $r;
+	}
+
+	/**
+	 * Primera emisión de una venta o NC con el mismo bloqueo que el reenvío: si alguien aprieta "Reenviar" mientras
+	 * Cloud Apps todavía responde, espera y no se emite el documento dos veces.
+	 */
+	private function emitirDte($db, $idVenta)
+	{
+		$this->q($db, 'SELECT pg_advisory_lock(?, ?)', array(self::LOCK_DTE, (int)$idVenta));
+		try {
+			$f = $this->q($db, 'SELECT COALESCE(folio_dte, 0) AS f FROM venta WHERE id_venta = ?', array((int)$idVenta))->row();
+			if ($f && (int)$f->f > 0) return array('ok' => true, 'folio' => (int)$f->f, 'mensaje' => 'Ya emitido');
+			return $this->dte()->emitir($db, (int)$idVenta);
+		} finally {
+			$this->q($db, 'SELECT pg_advisory_unlock(?, ?)', array(self::LOCK_DTE, (int)$idVenta));
+		}
 	}
 
 	private function dte()
@@ -1238,6 +1322,21 @@ class Mcaja extends CI_Model
 		if ($config['admin_anulacion']) $this->exigirAutorizacion($db, 'anular venta', $idUsuario, $idRol, $autorizacion);
 		$cols = $this->columnas($db, array('venta', 'ctacte_cliente', 'consolidado_ventas', 'anulacion_ticket'));
 
+		// Si el documento electrónico se está enviando al SII (venta recién hecha o reenvío), no se anula: podría
+		// quedar emitido en el SII y borrado aquí. El bloqueo se mantiene hasta terminar la anulación.
+		$lock = $this->q($db, 'SELECT pg_try_advisory_lock(?, ?) AS ok', array(self::LOCK_DTE, (int)$idVenta))->row();
+		if (!$lock || ($lock->ok !== 't' && $lock->ok !== true)) {
+			throw new Exception('El documento se está enviando al SII en este momento. Espera unos segundos y vuelve a intentar.', 409);
+		}
+		try {
+			return $this->anularVentaBloqueada($db, $config, $cols, $caja, $idUsuario, $idVenta, $motivo);
+		} finally {
+			$this->q($db, 'SELECT pg_advisory_unlock(?, ?)', array(self::LOCK_DTE, (int)$idVenta));
+		}
+	}
+
+	private function anularVentaBloqueada($db, $config, $cols, $caja, $idUsuario, $idVenta, $motivo)
+	{
 		$db->trans_begin();
 		try {
 			$v = $this->q($db, 'SELECT v.id_venta, v.id_caja, v.id_tdocumento, v.folio, v.total, COALESCE(v.mensaje_pedido, \'\') AS mensaje_pedido,
@@ -1891,7 +1990,7 @@ class Mcaja extends CI_Model
 
 		$dte = null;
 		if ($ncElectronica) {
-			$dte = $this->dte()->emitir($db, $idVenta);
+			$dte = $this->emitirDte($db, $idVenta);
 			if ($dte['ok']) $folio = $dte['folio'];
 		}
 		return array('id_venta' => $idVenta, 'folio' => $folio, 'total' => $total, 'documento' => $nombreNc,
@@ -2270,7 +2369,7 @@ class Mcaja extends CI_Model
 	 * impreso = true: la comanda la imprime la Caja web. Con false, f_manejo_stock_menu descontaría `stock` por su
 	 * cuenta y el POS de escritorio volvería a imprimirla. El stock de insumos se descuenta al cobrar.
 	 */
-	public function enviarMesa($caja, $idUsuario, $p)
+	public function enviarMesa($caja, $idUsuario, $p, $idRol = 0)
 	{
 		$db = $this->conexion();
 		if (!$this->tieneMesas($db)) throw new Exception('Este cliente no tiene mesas', 400);
@@ -2281,7 +2380,9 @@ class Mcaja extends CI_Model
 		$idLprecio = !empty($p['id_lprecio']) ? (int)$p['id_lprecio'] : $config['id_lprecio_publico'];
 		$actual = $this->cotizacionDeMesa($db, $idMesa);
 		if ($actual && (int)$actual->id_lprecio) $idLprecio = (int)$actual->id_lprecio;
-		list($lineas, $subtotal) = $this->armarLineas($db, $config, $cols, isset($p['detalle']) ? $p['detalle'] : null, $idLprecio);
+		// La lista se fija al abrir el pedido: en ese momento se exige la autorización si no es la pública
+		else $this->exigirLista($db, $config, $idUsuario, $idRol, $idLprecio, 0);
+		list($lineas, $subtotal, , $comandaMesa) = $this->armarLineas($db, $config, $cols, isset($p['detalle']) ? $p['detalle'] : null, $idLprecio);
 		$destinos = $this->destinosComanda(array_column($lineas, 'id_producto'));
 		$ahora = date('Y-m-d H:i:s');
 
@@ -2330,7 +2431,7 @@ class Mcaja extends CI_Model
 			$db->trans_rollback();
 			throw $e;
 		}
-		return array('id_cotizacion' => $idCot, 'detalle' => $this->detalleMesa($idMesa, false));
+		return array('id_cotizacion' => $idCot, 'detalle' => $this->detalleMesa($idMesa, false), 'comanda' => $comandaMesa);
 	}
 
 	private function recalcularCotizacion($db, $idCot)
@@ -2575,6 +2676,20 @@ class Mcaja extends CI_Model
 	}
 
 	/** Líneas anuladas con la forma que espera la comanda. */
+	/** Reenvío a cocina: lo ya guardado en el pedido de la mesa (todo, o solo las líneas pedidas). */
+	public function comandaReenvio($idMesa, $idsDetalle)
+	{
+		$db = $this->conexion();
+		$cot = $this->cotizacionDeMesa($db, (int)$idMesa);
+		if (!$cot) throw new Exception('La mesa no tiene un pedido abierto', 409);
+		$lineas = $this->lineasDeCotizacion($db, (int)$cot->id_cotizacion);
+		if ($idsDetalle) {
+			$ids = array_map('intval', (array)$idsDetalle);
+			$lineas = array_values(array_filter($lineas, function ($l) use ($ids) { return in_array((int)$l['id_detalle'], $ids, true); }));
+		}
+		return $this->lineasAnulacion($lineas);
+	}
+
 	private function lineasAnulacion($lineas)
 	{
 		return array_map(function ($l) {

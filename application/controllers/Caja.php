@@ -71,12 +71,28 @@ class Caja extends CI_Controller
 		}, true);
 	}
 
+	/** El cajero cambió la lista de precios: si no es la pública, se pide la clave de administración. */
+	public function autorizarLista()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			$b = $this->cuerpoJson();
+			return $this->Mcaja->autorizarLista($this->idUsuario(), $this->idRol(),
+				isset($b['id_lprecio']) ? (int)$b['id_lprecio'] : 0, isset($b['autorizacion']) ? $b['autorizacion'] : null);
+		}, true);
+	}
+
 	public function vender()
 	{
 		$this->ejecutar(function () {
 			$body = json_decode($this->input->raw_input_stream, true);
 			if (!is_array($body)) throw new Exception('Datos de venta inválidos', 400);
-			return $this->Mcaja->registrarVenta($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $body);
+			$r = $this->Mcaja->registrarVenta($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $body);
+			// Venta directa: la comanda la arma el servidor con lo vendido; la pantalla solo recibe su número
+			$r['comanda_id'] = $this->guardarComanda($r['comanda'], array('id_venta' => (int)$r['id_venta'], 'directa' => true,
+				'observacion' => $r['observacion']));
+			unset($r['comanda'], $r['observacion']);
+			return $r;
 		}, true);
 	}
 
@@ -109,29 +125,94 @@ class Caja extends CI_Controller
 	public function enviarMesa()
 	{
 		$this->ejecutar(function () {
-			return $this->Mcaja->enviarMesa($this->cajaRequerida(), $this->idUsuario(), $this->cuerpoJson());
+			$b = $this->cuerpoJson();
+			$r = $this->Mcaja->enviarMesa($this->cajaRequerida(), $this->idUsuario(), $b, $this->idRol());
+			$r['comanda_id'] = $this->guardarComanda($r['comanda'], array('id_mesa' => (int)($b['id_mesa'] ?? 0)));
+			unset($r['comanda']);
+			return $r;
 		}, true);
 	}
 
 	public function anularLineaMesa()
 	{
 		$this->ejecutar(function () {
-			return $this->Mcaja->anularLineaMesa($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $this->cuerpoJson());
+			$b = $this->cuerpoJson();
+			$r = $this->Mcaja->anularLineaMesa($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $b);
+			$r['comanda_id'] = $this->guardarComanda($r['anuladas'] ?? array(), array('id_mesa' => (int)($b['id_mesa'] ?? 0),
+				'anulacion' => true, 'motivo' => (string)($b['motivo'] ?? '')));
+			return $r;
 		}, true);
 	}
 
 	public function anularPedidoMesa()
 	{
 		$this->ejecutar(function () {
-			return $this->Mcaja->anularPedidoMesa($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $this->cuerpoJson());
+			$b = $this->cuerpoJson();
+			$r = $this->Mcaja->anularPedidoMesa($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $b);
+			$r['comanda_id'] = $this->guardarComanda($r['anuladas'] ?? array(), array('id_mesa' => (int)($b['id_mesa'] ?? 0),
+				'anulacion' => true, 'motivo' => (string)($b['motivo'] ?? '')));
+			return $r;
 		}, true);
 	}
 
 	public function moverMesa()
 	{
 		$this->ejecutar(function () {
-			return $this->Mcaja->moverMesa($this->cajaRequerida(), $this->idUsuario(), $this->cuerpoJson());
+			$b = $this->cuerpoJson();
+			$r = $this->Mcaja->moverMesa($this->cajaRequerida(), $this->idUsuario(), $b);
+			$r['comanda_id'] = $this->guardarComanda($r['movidas'] ?? array(), array('id_mesa' => (int)($b['id_mesa_destino'] ?? 0),
+				'traslado_desde' => (int)($b['id_mesa'] ?? 0)));
+			return $r;
 		}, true);
+	}
+
+	/** Volver a enviar a cocina lo ya pedido en la mesa (todo, o las líneas indicadas). */
+	public function reenviarComanda()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			$b = $this->cuerpoJson();
+			$idMesa = (int)($b['id_mesa'] ?? 0);
+			$ids = isset($b['ids_detalle']) && is_array($b['ids_detalle']) ? $b['ids_detalle'] : array();
+			$lineas = $this->Mcaja->comandaReenvio($idMesa, $ids);
+			if (!$lineas) throw new Exception('No hay productos enviados para volver a mandar', 400);
+			return array('comanda_id' => $this->guardarComanda($lineas, array('id_mesa' => $idMesa, 'reenvio' => true)));
+		}, true);
+	}
+
+	// ---------------- comandas ----------------
+	// La comanda la arma el servidor en la misma acción que graba el pedido (venta, envío a mesa, anulación, cambio de
+	// mesa, reenvío) y queda en la sesión; la pantalla solo recibe su número. Así no se puede mandar a cocina un pedido
+	// que no está registrado, ni cambiar productos o cantidades desde el navegador.
+
+	const SESION_COMANDAS = 'caja_comandas';
+
+	/** Guarda la comanda y devuelve su número (null si no hay productos). */
+	private function guardarComanda($lineas, $meta)
+	{
+		if (!is_array($lineas) || !$lineas) return null;
+		$todas = $this->session->userdata(self::SESION_COMANDAS);
+		$todas = is_array($todas) ? $todas : array();
+		// Solo las recientes: las de más de 15 minutos o más allá de las últimas 30 se descartan
+		$todas = array_filter($todas, function ($c) { return isset($c['t']) && $c['t'] > time() - 900; });
+		$todas = array_slice($todas, -29, null, true);
+		$id = bin2hex(random_bytes(8));
+		$todas[$id] = array('t' => time(), 'lineas' => array_values($lineas)) + $meta;
+		$this->session->set_userdata(self::SESION_COMANDAS, $todas);
+		return $id;
+	}
+
+	/** La comanda guardada; $usar = true la quita (se imprime una sola vez). */
+	private function comandaGuardada($id, $usar)
+	{
+		$todas = $this->session->userdata(self::SESION_COMANDAS);
+		if (!is_array($todas) || !is_string($id) || !isset($todas[$id])) return null;
+		$c = $todas[$id];
+		if ($usar) {
+			unset($todas[$id]);
+			$this->session->set_userdata(self::SESION_COMANDAS, $todas);
+		}
+		return $c;
 	}
 
 	/** Precuenta de la mesa en ticket (impresora de la caja); ?descuento= muestra el descuento que se aplicará. */
@@ -268,24 +349,28 @@ class Caja extends CI_Controller
 	}
 
 	/** Líneas de la comanda enviadas por la Caja (campo "datos", JSON), ya saneadas. */
-	private function datosComanda()
+	private function datosComanda($usar)
 	{
-		$datos = json_decode((string)$this->input->post('datos'), true);
+		$id = $this->input->post('comanda_id');
+		if ($id === null) $id = $this->input->get('comanda_id');
+		$datos = $this->comandaGuardada((string)$id, $usar);
 		if (!is_array($datos) || empty($datos['lineas']) || !is_array($datos['lineas'])) return null;
+		// Sin caracteres de control: la nota la escribe el garzón y un ESC podría mandar comandos a la impresora (abrir cajón, cortar)
+		$texto = function ($v, $max) { return mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)$v)), 0, $max); };
 		$lineas = array();
 		foreach ($datos['lineas'] as $l) {
 			if (!is_array($l) || empty($l['id_producto'])) continue;
 			$agregados = array();
 			foreach ((isset($l['agregados']) && is_array($l['agregados'])) ? $l['agregados'] : array() as $a) {
-				$a = trim((string)$a);
-				if ($a !== '') $agregados[] = mb_substr($a, 0, 80);
+				$a = $texto($a, 80);
+				if ($a !== '') $agregados[] = $a;
 			}
 			$lineas[] = array(
 				'id_producto' => (int)$l['id_producto'],
-				'nombre' => mb_substr(trim((string)(isset($l['nombre']) ? $l['nombre'] : '')), 0, 120),
+				'nombre' => $texto(isset($l['nombre']) ? $l['nombre'] : '', 120),
 				'cantidad' => max(0, (float)(isset($l['cantidad']) ? $l['cantidad'] : 0)),
 				'agregados' => $agregados,
-				'nota' => mb_substr(trim((string)(isset($l['nota']) ? $l['nota'] : '')), 0, 200),
+				'nota' => $texto(isset($l['nota']) ? $l['nota'] : '', 200),
 			);
 		}
 		// Agrupa por destino de impresión; los productos sin destino (o "sin impresión") no salen en ninguna comanda
@@ -304,7 +389,7 @@ class Caja extends CI_Controller
 		return array(
 			'grupos' => $grupos,
 			'venta' => $doc ? $doc['venta'] : null,
-			'observacion' => mb_substr(trim((string)(isset($datos['observacion']) ? $datos['observacion'] : '')), 0, 200),
+			'observacion' => $texto(isset($datos['observacion']) ? $datos['observacion'] : '', 200),
 			'mesa' => !empty($datos['id_mesa']) ? $this->Mcaja->etiquetaMesa((int)$datos['id_mesa']) : '',
 			'aviso' => $this->avisoComanda($datos),
 		);
@@ -314,7 +399,7 @@ class Caja extends CI_Controller
 	private function avisoComanda($datos)
 	{
 		if (!empty($datos['anulacion'])) {
-			return array('tipo' => 'anulacion', 'motivo' => mb_substr(trim((string)(isset($datos['motivo']) ? $datos['motivo'] : '')), 0, 100));
+			return array('tipo' => 'anulacion', 'motivo' => mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)(isset($datos['motivo']) ? $datos['motivo'] : ''))), 0, 100));
 		}
 		if (!empty($datos['traslado_desde'])) return array('tipo' => 'traslado', 'desde' => $this->Mcaja->etiquetaMesa((int)$datos['traslado_desde']));
 		if (!empty($datos['reenvio'])) return array('tipo' => 'reenvio');
@@ -330,7 +415,7 @@ class Caja extends CI_Controller
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
-		$c = $this->datosComanda();
+		$c = $this->datosComanda(false);
 		if (!$c) show_404();
 		$c['papel'] = $this->papelTicket();
 		$this->load->view('caja/comanda.php', $c);
@@ -344,8 +429,8 @@ class Caja extends CI_Controller
 	public function imprimirComanda()
 	{
 		$this->ejecutar(function () {
-			$c = $this->datosComanda();
-			if (!$c) throw new Exception('No hay productos para la comanda', 400);
+			$c = $this->datosComanda(false);
+			if (!$c) throw new Exception('La comanda ya se imprimió o venció: vuelve a enviarla desde la mesa', 400);
 			$this->load->library('Comanda_impresion');
 			$this->load->model('Mcola_impresion');
 			$this->Mcola_impresion->conectar(null, false);
@@ -365,6 +450,11 @@ class Caja extends CI_Controller
 					list($ok, $detalle) = $this->comanda_impresion->enviar($g['destino'], $bytes);
 				}
 				$res[] = array('destino' => $g['nombre'], 'ok' => $ok, 'detalle' => $detalle);
+			}
+			// Impresa en todos sus destinos: se descarta (no se puede volver a mandar la misma). Si alguno falló
+			// queda guardada para reintentar.
+			if (!in_array(false, array_column($res, 'ok'), true)) {
+				$this->comandaGuardada((string)$this->input->post('comanda_id'), true);
 			}
 			return array('comandas' => $res);
 		}, true);

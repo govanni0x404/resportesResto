@@ -745,6 +745,7 @@
 											<span class="input-group-addon">$</span>
 											<input type="number" min="1" step="1" class="form-control" id="montoMov">
 										</div>
+										<small class="text-muted" id="movDisponible"></small>
 									</div>
 									<div class="form-group">
 										<label for="obsMov">Motivo</label>

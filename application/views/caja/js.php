@@ -98,36 +98,31 @@
 			$('.chk-comanda').prop('checked', on);
 			try { localStorage.setItem(CLAVE_COMANDA, on ? '1' : '0'); } catch (e) {}
 		});
-		function lineasComanda() {
-			return $.map(pendientesMesa(), function (l) {
-				return {
-					id_producto: l.id_producto, nombre: l.nombre, cantidad: l.cantidad, nota: l.nota || '',
-					agregados: $.map(l.agregados, function (id) { var a = agregado(id); return a ? a.nombre : null; })
-				};
-			});
-		}
 		// Cada destino de impresión (cocina, barra...) imprime en su propia impresora; lo envía el servidor
 		function pendientesMesa() {
 			return $.grep(carro, function (l) { return !l.enviada; });
 		}
-		// aviso: {anulacion: true, motivo} | {traslado_desde: idMesa} | {reenvio: true}; sin aviso es la comanda normal
-		function imprimirComanda(idVenta, lineas, observacion, idMesa, aviso) {
-			if (!lineas.length) return;
-			aviso = aviso || {};
-			var anulacion = !!aviso.anulacion;
-			var que = anulacion ? 'Anulación' : (aviso.traslado_desde ? 'Cambio de mesa' : (aviso.reenvio ? 'Reenvío' : 'Comanda'));
+		// La comanda la arma y guarda el servidor al grabar el pedido (venta, envío a mesa, anulación, cambio de mesa,
+		// reenvío) y devuelve su número: aquí solo se pide imprimirla. que = texto del aviso (Comanda, Anulación...).
+		function imprimirComanda(comandaId, que) {
+			if (!comandaId) return;
 			$.ajax({
-				url: base + 'imprimirComanda', type: 'POST', dataType: 'json',
-				data: { datos: JSON.stringify({ id_venta: idVenta, id_mesa: idMesa || 0, lineas: lineas, observacion: observacion || '', anulacion: anulacion, motivo: aviso.motivo || '', traslado_desde: aviso.traslado_desde || 0, reenvio: !!aviso.reenvio, directa: !!aviso.directa }) }
+				url: base + 'imprimirComanda', type: 'POST', dataType: 'json', data: { comanda_id: comandaId }
 			}).done(function (r) {
 				var com = r.comandas || [];
 				$.each(com, function (i, c) {
-					if (c.ok) toastr.success(que + ' enviada a ' + c.destino, '', { timeOut: 2500 });
+					if (c.ok) toastr.success((que || 'Comanda') + ' enviada a ' + c.destino, '', { timeOut: 2500 });
 					else toastr.error('Comanda de ' + c.destino + ': ' + c.detalle, '', { timeOut: 9000 });
 				});
 			}).fail(function (x) {
 				toastr.error('No se pudo enviar la comanda: ' + ((x.responseJSON && x.responseJSON.error) || 'error de conexión'), '', { timeOut: 9000 });
 			});
+		}
+		// Reenviar a cocina lo ya guardado en la mesa: idsDetalle = líneas (vacío = todo el pedido)
+		function reenviarComanda(idMesa, idsDetalle) {
+			postJson('reenviarComanda', { id_mesa: idMesa, ids_detalle: idsDetalle || [] }).done(function (r) {
+				imprimirComanda(r.comanda_id, 'Reenvío');
+			}).fail(error);
 		}
 
 		// ---------------- estado de caja ----------------
@@ -190,6 +185,7 @@
 					$.each(r.listas_precio, function (i, l) { $l.append($('<option>').val(l.id_lprecio).text(l.nombre_lprecio)); });
 				}
 				$('#cboLista').val(r.id_lprecio);
+				listaActual = r.id_lprecio;
 				// Re-precio del carro con la lista nueva
 				var quitados = [];
 				carro = $.grep(carro, function (l) {
@@ -476,7 +472,21 @@
 			.on('keydown', '#txtNotaProducto', function (e) { if (e.which === 13) $('#btnConfirmarOpciones').click(); })
 			.on('hidden.bs.modal', function () { $('#buscarProducto').focus(); });
 
-		$('#cboLista').on('change', function () { cargarCatalogo(Number($(this).val())); });
+		// Cambiar la lista de precios: la pública se usa directo; otra pide la clave de administración (Configuraciones).
+		// Si se cancela o la clave no es válida, vuelve a la lista que estaba.
+		var listaActual = null;
+		$('#cboLista').on('change', function () {
+			var $s = $(this), nueva = Number($s.val()), anterior = listaActual;
+			$s.prop('disabled', true);
+			enviarConAutorizacion(function (aut) {
+				return postJson('autorizarLista', { id_lprecio: nueva, autorizacion: aut });
+			}, function () {
+				$s.prop('disabled', false);
+				cargarCatalogo(nueva);
+			}, function () {
+				$s.val(anterior).prop('disabled', false);
+			});
+		});
 		$('#cboDocumento').on('change', function () {
 			var d = documentoActual();
 			if (d && d.requiere_cliente && !cliente) toastr.info(d.nombre + ' requiere seleccionar un cliente');
@@ -728,6 +738,7 @@
 		});
 
 		function limpiarVenta() {
+			var eraMesa = !!mesa;
 			carro = [];
 			mesa = null;
 			cobroParcial = null;
@@ -739,6 +750,9 @@
 			$('#buscarProducto').val('');
 			cerrarResultados();
 			renderCarro();
+			// La lista de una mesa no pasa a la venta directa: se vuelve a la pública
+			var publica = catalogo && catalogo.config ? Number(catalogo.config.id_lprecio_publico) : 0;
+			if (eraMesa && publica && listaActual && listaActual !== publica) cargarCatalogo(publica);
 			$('#buscarProducto').focus();
 		}
 
@@ -856,8 +870,9 @@
 
 		function pedirAutorizacion(r, mensajeError, continuar, cancelar) {
 			var $c = $('#cboAutorizador').empty();
+			var soloClaveGeneral = /^usar la lista de precios/.test(r.motivo || '') && catalogo.config.tiene_clave_admin;
 			if (catalogo.config.tiene_clave_admin) $c.append($('<option>').val(0).text('Clave de administración'));
-			$.each(catalogo.administradores, function (i, a) { $c.append($('<option>').val(a.id_usuario).text(a.nombre)); });
+			if (!soloClaveGeneral) $.each(catalogo.administradores, function (i, a) { $c.append($('<option>').val(a.id_usuario).text(a.nombre)); });
 			if (!$c.children().length) {
 				swal('Sin administradores', 'Se requiere autorización para ' + r.motivo + ', pero no hay usuarios administradores ni clave de administración configurada.', 'error');
 				if (cancelar) cancelar();
@@ -897,8 +912,11 @@
 		function totalAPagar() {
 			return totales().total + (esCortesia() ? 0 : propina);
 		}
+		function propinaMaxima() {
+			return Math.floor(totales().total * (catalogo.config.propina_max_pct || 15) / 100);
+		}
 		function propinaSugerida() {
-			return Math.round(totales().total * catalogo.config.por_propina / 100);
+			return Math.min(Math.round(totales().total * catalogo.config.por_propina / 100), propinaMaxima());
 		}
 
 		$('#btnCobrar').on('click', function () {
@@ -913,7 +931,8 @@
 			if (!mesa) { mostrarPago(0); return; }   // la propina es solo para las mesas
 			var sugerida = propinaSugerida();
 			$('#propinaPregunta').text(fmt(totales().total));
-			$('#propinaPorcentaje').text(cfg.por_propina > 0 ? 'Sugerida: ' + cfg.por_propina + '% (' + fmt(sugerida) + ')' : 'Escribe el monto de la propina');
+			$('#propinaPorcentaje').text((cfg.por_propina > 0 ? 'Sugerida: ' + cfg.por_propina + '% (' + fmt(sugerida) + ')' : 'Escribe el monto de la propina')
+				+ ' · Máximo ' + (cfg.propina_max_pct || 15) + '% (' + fmt(propinaMaxima()) + ')');
 			$('#txtPropinaPregunta').val(sugerida || '');
 			$('#modalPropina').modal('show');
 		}
@@ -921,6 +940,11 @@
 		$('#txtPropinaPregunta').on('keydown', function (e) { if (e.which === 13) { e.preventDefault(); $('#btnPropinaSi').click(); } });
 		$('#btnPropinaSi, #btnPropinaNo').on('click', function () {
 			var monto = this.id === 'btnPropinaSi' ? Math.max(0, Math.round(Number($('#txtPropinaPregunta').val()) || 0)) : 0;
+			if (monto > propinaMaxima()) {
+				toastr.warning('La propina no puede superar el ' + (catalogo.config.propina_max_pct || 15) + '% del total (' + fmt(propinaMaxima()) + ')');
+				$('#txtPropinaPregunta').val(propinaMaxima()).focus().select();
+				return;
+			}
 			// El pago se abre cuando este modal terminó de cerrarse (Bootstrap 3 no apila bien dos modales)
 			$('#modalPropina').one('hidden.bs.modal', function () { mostrarPago(monto); }).modal('hide');
 		});
@@ -975,6 +999,11 @@
 		});
 		$('#txtPropina').on('input', function () {
 			propina = Math.max(0, Math.round(Number($(this).val()) || 0));
+			if (propina > propinaMaxima()) {
+				propina = propinaMaxima();
+				$(this).val(propina);
+				toastr.warning('La propina no puede superar el ' + (catalogo.config.propina_max_pct || 15) + '% del total (' + fmt(propina) + ')');
+			}
 			ajustarPagoUnico();
 		});
 
@@ -1141,7 +1170,6 @@
 				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota }; }),
 				pagos: $.map(pagos, function (p) { return p.monto > 0 ? { id_fpago: p.id_fpago, monto: p.monto } : null; })
 			};
-			var comanda = lineasComanda();
 			enviando = true;
 			actualizarResumenPago();
 			var terminar = function () { enviando = false; actualizarResumenPago(); };
@@ -1165,7 +1193,7 @@
 				if (imprimeTicket()) imprimir(base + 'ticket/' + r.id_venta);
 				// La comanda sale después del ticket para no cruzar los dos diálogos de impresión
 				// En una mesa la comanda ya salió al enviar el pedido
-				if (imprimeComanda() && !idMesa) imprimirComanda(r.id_venta, comanda, venta.observacion, 0, { directa: true });
+				if (imprimeComanda() && !idMesa) imprimirComanda(r.comanda_id, 'Comanda');
 				limpiarVenta();
 				cargarEstado();
 				// Se cobró una parte: la mesa sigue abierta con el resto
@@ -1405,12 +1433,12 @@
 		$('#btnEnviarMesa').on('click', function () { enviarAMesa(false); });
 		function enviarAMesa(luegoCobrar) {
 			if (enviando || !mesa) return;
-			var comanda = lineasComanda(), idMesa = mesa.id_mesa, enviadas = pendientesMesa();
+			var idMesa = mesa.id_mesa, enviadas = pendientesMesa();
 			var detalle = $.map(enviadas, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota }; });
 			enviando = true;
 			$('#btnEnviarMesa, #btnCobrar').prop('disabled', true);
 			postJson('enviarMesa', { id_mesa: idMesa, id_lprecio: Number($('#cboLista').val()), detalle: detalle }).done(function (r) {
-				if (imprimeComanda()) imprimirComanda(0, comanda, '', idMesa);
+				if (imprimeComanda()) imprimirComanda(r.comanda_id, 'Comanda');
 				// Se conserva lo que se agregó mientras se enviaba
 				carro = $.grep(carro, function (l) { return !l.enviada && $.inArray(l, enviadas) < 0; });
 				aplicarDetalleMesa(r.detalle);
@@ -1520,7 +1548,7 @@
 				postJson('moverMesa', { id_mesa: idMesa, id_mesa_destino: destino, lineas: lineas }).done(function (r) {
 					$('#modalMesaProductos').modal('hide');
 					toastr.success('Productos pasados a ' + nombreMesa(destino));
-					imprimirComanda(0, r.movidas || [], '', destino, { traslado_desde: idMesa });
+					imprimirComanda(r.comanda_id, 'Cambio de mesa');
 					cargarMesas();
 					if (r.liberada) { limpiarVenta(); $('#lnkMesas').tab('show'); } else aplicarDetalleMesa(r.detalle);
 				}).fail(error).always(function () { $('#mpConfirmar').prop('disabled', false); });
@@ -1535,7 +1563,7 @@
 				return postJson('anularLineaMesa', { id_mesa: idMesa, id_detalle: lineas[0].id_detalle, cantidad: lineas[0].cantidad, motivo: motivo, autorizacion: aut });
 			}, function (r) {
 				cargarMesas();
-				imprimirComanda(0, r.anuladas, '', idMesa, { anulacion: true, motivo: motivo });
+				imprimirComanda(r.comanda_id, 'Anulación');
 				if (r.liberada) { toastr.info(nombreMesa(idMesa) + ' quedó libre'); limpiarVenta(); $('#lnkMesas').tab('show'); return; }
 				aplicarDetalleMesa(r.detalle);
 			});
@@ -1543,18 +1571,15 @@
 		$('#grupoOpcionesMesa').on('click', 'a', function (e) { e.preventDefault(); });
 		$('#btnMoverMesa').on('click', function () { abrirMesaProductos('mover'); });
 		// Volver a enviar a cocina/barra algo ya pedido (papel cortado, se perdió la comanda...). No cambia el pedido.
-		function lineaComanda(l) {
-			return { id_producto: l.id_producto, nombre: l.nombre, cantidad: l.cantidad, nota: l.nota || '', agregados: l.agregado ? [l.agregado] : [] };
-		}
 		$('#lineas').on('click', '.reenviar-linea', function (e) {
 			e.preventDefault();
 			e.stopPropagation();
 			var l = carro[$(this).closest('[data-i]').data('i')];
-			imprimirComanda(0, [lineaComanda(l)], '', mesa.id_mesa, { reenvio: true });
+			if (l && l.id_detalle) reenviarComanda(mesa.id_mesa, [l.id_detalle]);
 		});
 		$('#btnReenviarTodo').on('click', function () {
 			var enviadas = $.grep(carro, function (l) { return l.enviada; });
-			if (enviadas.length) imprimirComanda(0, $.map(enviadas, lineaComanda), '', mesa.id_mesa, { reenvio: true });
+			if (enviadas.length) reenviarComanda(mesa.id_mesa, []);
 		});
 		$('#btnCobrarParte').on('click', function () { abrirMesaProductos('parcial'); });
 		$('#btnCancelarParcial').on('click', function (e) {
@@ -1581,7 +1606,7 @@
 				enviarConAutorizacion(function (aut) {
 					return postJson('anularPedidoMesa', { id_mesa: idMesa, motivo: motivo, autorizacion: aut });
 				}, function (r) {
-					imprimirComanda(0, r.anuladas, '', idMesa, { anulacion: true, motivo: $.trim(motivo) });
+					imprimirComanda(r.comanda_id, 'Anulación');
 					toastr.success('Pedido anulado: ' + nombreMesa(idMesa) + ' quedó libre');
 					limpiarVenta();
 					cargarMesas();
@@ -1661,7 +1686,15 @@
 		});
 
 		// ---------------- movimientos ----------------
+		var efectivoDisponible = null;
+		function cargarDisponible() {
+			get('estado').done(function (r) {
+				efectivoDisponible = r && r.caja ? Number(r.caja.efectivo_esperado) : null;
+				$('#movDisponible').text(efectivoDisponible === null ? '' : 'Efectivo disponible en la caja: ' + fmt(Math.max(0, efectivoDisponible)));
+			});
+		}
 		function cargarMovimientos() {
+			cargarDisponible();
 			get('movimientos').done(function (r) {
 				var $t = $('#tablaMovimientos tbody').empty();
 				if (!r.movimientos.length) $t.append('<tr><td colspan="4" class="text-center text-muted">Sin movimientos</td></tr>');
@@ -1679,6 +1712,10 @@
 			var datos = { tipo: $('input[name=tipoMov]:checked').val(), monto: Math.round(Number($('#montoMov').val())), observacion: $.trim($('#obsMov').val()) };
 			if (!(datos.monto > 0)) { swal('Atención', 'Ingresa un monto mayor a cero', 'warning'); return; }
 			if (!datos.observacion) { swal('Atención', 'Indica el motivo', 'warning'); return; }
+			if (datos.tipo !== 'ingreso' && efectivoDisponible !== null && datos.monto > efectivoDisponible) {
+				swal('Retiro', 'Solo hay ' + fmt(Math.max(0, efectivoDisponible)) + ' en efectivo en la caja: el retiro no puede ser mayor', 'warning');
+				return;
+			}
 			var $b = $(this).prop('disabled', true);
 			post('movimiento', datos).done(function () {
 				toastr.success('Movimiento registrado');
