@@ -7,9 +7,17 @@ $(document).ready(function(){
     let inventarioActual = null;
     let detalleCompleto = [];
 
-    if ($('#selectBodega option').length > 0) {
+    // La bodega puede venir en la URL (al volver de un inventario nuevo); si no, la primera
+    const bodegaUrl = '<?= isset($bodega) ? (int)$bodega : 0 ?>';
+    if (bodegaUrl !== '0' && $('#selectBodega option[value="' + bodegaUrl + '"]').length) {
+        $('#selectBodega').val(bodegaUrl);
+    } else if ($('#selectBodega option').length > 0) {
         $('#selectBodega').val($('#selectBodega option:first').val());
     }
+    // "Nuevo inventario" abre la página del inventario con la bodega elegida
+    const linkNuevo = () => $('#btnNuevoInventario').attr('href', BASE_URL + 'index.php/Inventario/nuevo?bodega=' + encodeURIComponent($('#selectBodega').val() || ''));
+    $('#selectBodega').on('change', linkNuevo);
+    linkNuevo();
 
     $('#selectBodega').change(function(){
         let idBodega = $(this).val();
@@ -33,7 +41,7 @@ $(document).ready(function(){
                             <tr class="inventario-row" data-id="${inv.id_inventario}" style="cursor: pointer;">
                                 <td class="text-center">${inv.id_inventario}</td>
                                 <td style="font-size: 11px;">${formatFecha(inv.fecha_movimiento)}</td>
-                                <td style="font-size: 11px;">${(inv.usuario || 'SIN USUARIO').toUpperCase()}</td>
+                                <td style="font-size: 11px;">${escHtml((inv.usuario || 'SIN USUARIO').toUpperCase())}</td>
                             </tr>
                         `;
                     });
@@ -117,7 +125,7 @@ $(document).ready(function(){
 
             html += `
                 <tr class="${rowClass}">
-                    <td>${d.nombre_insumo}</td>
+                    <td>${escHtml(d.nombre_insumo)}</td>
                     <td class="text-right">${formatNumber(d.actual)}</td>
                     <td class="text-right">${formatNumber(d.nuevo)}</td>
                     <td class="text-right">${formatNumber(d.diferencia)}</td>
@@ -153,10 +161,6 @@ $(document).ready(function(){
         }
     });
 
-    $('#chkSelectAll').change(function(){
-        $('.chk-detalle').prop('checked', $(this).is(':checked'));
-    });
-
     function formatNumber(num) {
         if (!num) return '0.00';
         return parseFloat(num).toLocaleString('es-CL', {
@@ -166,7 +170,8 @@ $(document).ready(function(){
     }
 
     function formatFecha(fecha) {
-        let d = new Date(fecha);
+        // "2026-01-28 09:54:32.140515" no es un formato que todos los navegadores entiendan (Safari da NaN)
+        let d = new Date(String(fecha || '').replace(' ', 'T').replace(/(\.\d{3})\d+/, '$1'));
         let dia = String(d.getDate()).padStart(2, '0');
         let mes = String(d.getMonth() + 1).padStart(2, '0');
         let año = d.getFullYear();
@@ -177,50 +182,23 @@ $(document).ready(function(){
         return `${dia}/${mes}/${año} ${hora}:${min}:${seg}`;
     }
 
-    $('#btnSalir').click(function(){
-        window.location.href = '<?= base_url("dashboard") ?>';
-    });
+    function mensajeError(x, defecto) {
+        try { return (x.responseJSON && x.responseJSON.error) || JSON.parse(x.responseText).error || defecto; } catch (e) { return defecto; }
+    }
 
-    $(document).keyup(function(e) {
-        if (e.key === "Escape") {
-            $('#btnSalir').click();
-        }
-    });
-
-    $('#btnNuevoInventario').click(function(){
-        window.location.href = '<?= base_url("inventario/nuevo") ?>';
-    });
-
-    $('#btnEliminar').click(function(){
-        let seleccionados = $('.chk-detalle:checked');
-        
-        if (seleccionados.length === 0) {
-            alert('Debe seleccionar al menos un item');
-            return;
-        }
-        
-        if (!confirm('¿Está seguro de eliminar los items seleccionados?')) {
-            return;
-        }
-
-        let ids = [];
-        seleccionados.each(function(){
-            ids.push($(this).val());
-        });
-
-        $.ajax({
-            url: BASE_URL + "index.php/inventario/eliminar_items",
-            type: 'POST',
-            data: { ids: ids },
-            dataType: 'json',
-            success: function(response){
-                if (response.success) {
-                    alert('Items eliminados correctamente');
-                    cargarDetalle(inventarioActual);
-                } else {
-                    alert('Error al eliminar: ' + response.message);
-                }
-            }
+    // Stock en 0: se pide escribir CERO para que no se haga por error
+    $('#invStockCero').on('click', function () {
+        const bodega = $('#selectBodega option:selected').text();
+        swal({ title: '¿Poner en 0 el stock de ' + bodega + '?', text: 'Todos los insumos de esta bodega quedan con stock 0. Para confirmar escribe CERO.',
+            type: 'input', showCancelButton: true, closeOnConfirm: false, showLoaderOnConfirm: true, confirmButtonText: 'Poner en 0',
+            confirmButtonColor: '#c0392b', cancelButtonText: 'Cancelar', inputPlaceholder: 'Escribe CERO' }, function (valor) {
+            if (valor === false) return;
+            if ($.trim(valor).toUpperCase() !== 'CERO') { swal.showInputError('Escribe CERO para confirmar'); return false; }
+            $.ajax({ url: BASE_URL + 'index.php/Inventario/stockCero', type: 'POST', dataType: 'json',
+                data: { id_bodega: $('#selectBodega').val(), confirmacion: 'CERO' } }).done(function (r) {
+                swal('Stock en 0', r.mensaje, 'success');
+                cargarInventariosPorBodega($('#selectBodega').val());
+            }).fail(function (x) { swal('Atención', mensajeError(x, 'No se pudo poner el stock en 0'), 'warning'); });
         });
     });
 

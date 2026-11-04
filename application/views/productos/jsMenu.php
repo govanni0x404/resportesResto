@@ -260,10 +260,16 @@
         else {
             IdMenu = $('#txtIdMenu').val();
             NombreMenu = $('#txtNombreMenu').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
-            if ($('#ckVigenciaMenu').is(":checked")) {
-                var vigenciaMenu = 1
+            // El modal no tiene el checkbox #ckVigenciaMenu: antes todo menú se grababa como NO vigente.
+            // Sin checkbox, un menú nuevo queda vigente y uno editado conserva su vigencia actual.
+            var $ckVigenciaMenu = $('#ckVigenciaMenu');
+            var vigenciaMenu;
+            if ($ckVigenciaMenu.length) {
+                vigenciaMenu = $ckVigenciaMenu.is(":checked") ? 1 : 0;
+            } else if (IdMenu && menusCargados[IdMenu]) {
+                vigenciaMenu = menusCargados[IdMenu].vigente == 'SI' ? 1 : 0;
             } else {
-                var vigenciaMenu = 0
+                vigenciaMenu = 1;
             }
             var miJson = {
                 'id_menu': IdMenu,

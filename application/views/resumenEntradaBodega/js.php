@@ -144,7 +144,7 @@
     $('#ckTodasLasBodegas').click(function () {
         if ($('#ckTodasLasBodegas').prop('checked') == false) {
             $("#cboBodegas").attr("disabled", false);
-            llenarCboBodega();
+            ListadoDeBodega(""); // antes llamaba a llenarCboBodega(), que no existe (ReferenceError)
 
         } else {
             $("#cboBodegas").attr("disabled", true);
@@ -184,7 +184,7 @@
     }
 
     function resumenEntradaBodega(desde, hasta, id_usuario, id_bodega) {
-        let tituloExport = "Ventas Por Producto";
+        let tituloExport = "Resumen Entradas a Bodega";
         if ($.fn.dataTable.isDataTable('#tableResumenEntradasBodega')) {
             tablaDetalleEntradasBodega = $('#tableResumenEntradasBodega').DataTable();
             tablaDetalleEntradasBodega.destroy();

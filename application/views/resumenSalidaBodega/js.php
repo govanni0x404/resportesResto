@@ -182,7 +182,7 @@
     }
 
     function resumenSalidaBodega(desde, hasta, id_usuario, id_bodega) {
-        let tituloExport = "Ventas Por Producto";
+        let tituloExport = "Resumen Salidas de Bodega";
         if ($.fn.dataTable.isDataTable('#tableResumenSalidasBodega')) {
             tablaDetalleSalidasBodega = $('#tableResumenSalidasBodega').DataTable();
             tablaDetalleSalidasBodega.destroy();

@@ -158,7 +158,10 @@ class Mrecetas extends CI_Model
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$sql = "UPDATE detalle_receta SET vigente = false where id_receta = ? and id_detalle_receta not in ? and id_insumo not in ?";
-		$this->db->simple_query($this->db->compile_binds($sql, array((int)$idReceta, $this->listaIds($idDetalle), $this->listaIds($idInsumo))));
+		// Lista vacía: "not in ()" es SQL inválido, se usa (0) que no coincide con ningún id
+		$detalles = $this->listaIds($idDetalle) ?: array(0);
+		$insumos = $this->listaIds($idInsumo) ?: array(0);
+		$this->db->simple_query($this->db->compile_binds($sql, array((int)$idReceta, $detalles, $insumos)));
 		return 1;
 	}
 

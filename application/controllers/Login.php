@@ -95,8 +95,6 @@ class Login extends CI_Controller
 			$this->index();
 
 		} else {
-			// La vista de login muestra este mensaje, pero nunca se fijaba (con datos malos no se veía ningún aviso)
-			$this->session->set_flashdata('usuario_incorrecto', 'Usuario o contraseña incorrectos');
 			redirect(base_url());
 		}
 	}

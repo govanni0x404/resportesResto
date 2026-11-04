@@ -361,14 +361,19 @@ class Mcaja extends CI_Model
 				(COALESCE(td.cod_sii, 0) $enElec) AS electronico,
 				(COALESCE(td.cod_sii, 0) $enElec AND COALESCE(v.folio_dte, 0) = 0) AS pendiente_dte,
 				COALESCE(tr.nombre_tdocumento || ' N° ' || v.folio_referencia, '') AS referencia,
-				COALESCE((SELECT string_agg(f.nombre_fpago, ', ') FROM pago_venta pv JOIN fpago f ON f.id_fpago = pv.id_fpago
-					WHERE pv.id_venta = v.id_venta), '') AS pagos
+				COALESCE(pg.pagos, '') AS pagos
 			FROM venta v
 			LEFT JOIN tdocumento td ON td.id_tdocumento = v.id_tdocumento
+			-- Formas de pago agregadas una sola vez para toda la caja: la subconsulta por venta recorría pago_venta
+			-- completa en cada fila (no hay índice por id_venta) y el listado tardaba ~2 s con 30 ventas
+			LEFT JOIN (SELECT pv.id_venta, string_agg(f.nombre_fpago, ', ') AS pagos
+				FROM pago_venta pv JOIN fpago f ON f.id_fpago = pv.id_fpago
+				WHERE pv.id_venta IN (SELECT id_venta FROM venta WHERE id_caja = ?)
+				GROUP BY pv.id_venta) pg ON pg.id_venta = v.id_venta
 			LEFT JOIN tdocumento tr ON tr.id_tdocumento = v.id_tdocumento_referencia AND v.id_tdocumento $enNc
 			LEFT JOIN cliente c ON c.id_cliente = v.id_cliente
 			WHERE v.id_caja = ?
-			ORDER BY v.id_venta DESC", array((int)$idCaja))->result_array();
+			ORDER BY v.id_venta DESC", array((int)$idCaja, (int)$idCaja))->result_array();
 		foreach ($ventas as &$v) {
 			foreach (array('anulada', 'cortesia', 'es_nc', 'electronico', 'pendiente_dte') as $k) {
 				$v[$k] = $v[$k] === 't' || $v[$k] === true;

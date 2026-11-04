@@ -129,10 +129,12 @@ function ListadoDeFamilias() {
                 $('#ckVentaDirectaFamilia').prop('checked', false);
             }
 
+            // El checkbox del modal es #ckPiePedido (el que se lee al grabar); antes se marcaba uno inexistente
+            // y al editar una familia se perdía "imprimir en detalle del pedido"
             if (rowData[0].imprimir_en_detalle_pedido == 't') {
-                $('#ckImprimirEnDetallePedido').prop('checked', true);
+                $('#ckPiePedido').prop('checked', true);
             } else {
-                $('#ckImprimirEnDetallePedido').prop('checked', false);
+                $('#ckPiePedido').prop('checked', false);
             }
             $('#ModalNuevaFamilia').modal('show');
         })

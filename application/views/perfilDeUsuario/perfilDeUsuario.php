@@ -24,7 +24,8 @@ $fechaActual = date('Y-m-d');
     /* Botón "Mostrar" alineado con el campo de la clave */
     .t-perfil .t-perfil-clave .checkbox { margin-top: 22px; }
     @media (max-width: 991px) { .t-perfil .t-perfil-clave .checkbox { margin-top: 0; } }
-    @media (max-width: 480px) { .t-perfil #btnGrabarConfiguraciones { width: 100%; } }
+    .t-perfil input[readonly] { background: var(--t-fondo-alt); cursor: default; }
+    .t-perfil-aviso { margin: 4px 0 8px; font-size: 13px; color: var(--t-texto-suave); line-height: 1.5; }
 </style>
 
 <!--
@@ -83,36 +84,18 @@ $fechaActual = date('Y-m-d');
                                                 <fieldset>
                                                     <div class="col-md-12 text-success">
                                                         <label for="nombreDeUsuario">Nombre De Usuario</label>
-                                                        <input type="text" class="form-control input-sm input-sm" maxlength='28' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreDeUsuario" id="nombreDeUsuario" requerido="si" value="" placeholder="Nombre De Usuario" />
+                                                        <input type="text" class="form-control input-sm input-sm" maxlength='28' readonly autocomplete="off" name="nombreDeUsuario" id="nombreDeUsuario" requerido="si" value="" placeholder="Nombre De Usuario" />
                                                     </div>
                                                 </fieldset>
                                                 <fieldset>
                                                     <div class="col-md-12 text-success">
                                                         <label for="CorreoDeAcceso">Correo De Acceso</label>
-                                                        <input type="text" class="form-control input-sm input-sm" maxlength='28' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="CorreoDeAcceso" id="CorreoDeAcceso" requerido="si" value="" placeholder="CorreoDeAcceso" />
+                                                        <input type="text" class="form-control input-sm input-sm" maxlength='28' readonly autocomplete="off" name="CorreoDeAcceso" id="CorreoDeAcceso" requerido="si" value="" placeholder="Correo de acceso" />
                                                     </div>
                                                 </fieldset>
                                                 <fieldset>
-                                                    <div class="col-md-8 text-success">
-                                                        <label for="ClaveDeUsuario">Clave De Acceso</label>
-                                                        <input type="password" class="form-control input-sm input-sm" maxlength='28' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="ClaveDeUsuario" id="ClaveDeUsuario" requerido="si" value="" placeholder="Clave De Usuario" />
-                                                    </div>
-                                                    <div class="col-md-4 text-success t-perfil-clave">
-                                                        <div class="btn-group" role="group" aria-label="...">
-                                                            <div class="checkbox checkbox-success">
-                                                                <br>
-                                                                <input id="ckMostrarClaveUsuario" type="checkbox">
-                                                                <label for="ckMostrarClaveUsuario">
-                                                                    Mostrar
-                                                                </label>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </fieldset>
-                                                <br>
-                                                <fieldset>
-                                                    <div class="col-md-12 ">
-                                                        <button onclick="GrabarActualizacionNombreYcontraseña()" type="button" class="btn btn-success" id="btnGrabarConfiguraciones"><i class="fa fa-check"></i> Actualizar información</button>
+                                                    <div class="col-md-12">
+                                                        <p class="t-perfil-aviso"><i class="fa fa-info-circle"></i> Tus datos de acceso a la web los administra DataMaule y no se pueden modificar desde aquí. Si necesitas cambiar tu clave o correo, contacta a soporte.</p>
                                                     </div>
                                                 </fieldset>
                                             </div>
@@ -127,7 +110,7 @@ $fechaActual = date('Y-m-d');
                                                 <fieldset>
                                                     <div class="col-md-12 text-success">
                                                         <label for="RolUsuario">Rol De Acceso</label>
-                                                        <input type="text" class="form-control input-sm input-sm" maxlength='28' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="RolUsuario" id="RolUsuario" requerido="si" value="" placeholder="CorreoDeAcceso" />
+                                                        <input type="text" class="form-control input-sm input-sm" maxlength='28' readonly autocomplete="off" name="RolUsuario" id="RolUsuario" requerido="si" value="" placeholder="CorreoDeAcceso" />
                                                     </div>
                                                 </fieldset>
 
@@ -147,7 +130,7 @@ $fechaActual = date('Y-m-d');
                                                 <fieldset>
                                                     <div class="col-md-12 ">
                                                         <label for="IdDeUsuario">N° Usuario</label>
-                                                        <input type="text" class="form-control input-sm input-sm" maxlength='28' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="IdDeUsuario" id="IdDeUsuario" requerido="si" value="" placeholder="Nombre De Usuario" />
+                                                        <input type="text" class="form-control input-sm input-sm" maxlength='28' readonly autocomplete="off" name="IdDeUsuario" id="IdDeUsuario" requerido="si" value="" placeholder="Nombre De Usuario" />
                                                     </div>
                                                 </fieldset>
                                             </div>

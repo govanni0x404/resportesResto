@@ -13,36 +13,30 @@
 
 <div class="container-padding inv-vista">
     <div class="panel panel-success">
-        <div class="panel-heading">
+        <div class="panel-heading inv-cabecera">
             <div class="panel-title">
                 <i class="pe-7s-box2"></i>
                 <h4>Gestión de Inventarios</h4>
             </div>
+            <div class="inv-botones">
+                <a class="btn btn-primary" id="btnNuevoInventario" href="<?php echo base_url() ?>index.php/Inventario/nuevo"><i class="fa fa-plus"></i> Nuevo inventario</a>
+                <button type="button" class="btn btn-danger" id="invStockCero"><i class="fa fa-ban"></i> Poner stock en 0</button>
+            </div>
         </div>
 
         <div class="panel-body">
-            <!-- Selector de Bodega y Botones -->
             <div class="row m-b-20">
-                <div class="col-md-3">
-                    <label class="inv-etiqueta">Bodega</label>
+                <div class="col-xs-12 col-sm-4 col-md-3">
+                    <label class="inv-etiqueta" for="selectBodega">Bodega</label>
                     <select class="form-control" id="selectBodega">
-                        <?php if(isset($bodegas)): ?>
-                            <?php foreach($bodegas as $b): ?>
-                                <option value="<?= $b->id_bodega ?>"><?= $b->nombre_bodega ?></option>
+                        <?php if (isset($bodegas)) : ?>
+                            <?php foreach ($bodegas as $b) : ?>
+                                <option value="<?= (int)$b->id_bodega ?>"><?= html_escape($b->nombre_bodega) ?></option>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </select>
                 </div>
-                <!-- <div class="col-md-9 text-right">
-                    <button class="btn btn-success" id="btnNuevoInventario">
-                        <i class="fa fa-plus"></i> Nuevo Inventario
-                    </button>
-                    <button class="btn btn-primary" id="btnSalir">
-                        <i class="fa fa-sign-out"></i> Salir (Esc)
-                    </button>
-                </div> -->
             </div>
-
             <div class="row">
                 <!-- TABLA IZQUIERDA - INVENTARIOS REALIZADOS -->
                 <div class="col-xs-12 col-sm-4 col-md-3">
@@ -106,10 +100,7 @@
                                id="tablaDetalle" 
                                style="margin-bottom: 0; font-size: 11px;">
                             <thead style="background: #B4432E; color: white;">
-                                <!-- <tr>
-                                    <th class="text-center" style="width: 30px; vertical-align: middle;">
-                                        <input type="checkbox" id="chkSelectAll">
-                                    </th> -->
+                                <tr>
                                     <th style="vertical-align: middle;">Producto</th>
                                     <!-- <th class="text-center" style="width: 80px; vertical-align: middle;">Un. Med.</th> -->
                                     <th class="text-right" style="width: 80px; vertical-align: middle;">Actual</th>
@@ -171,6 +162,16 @@
 </div>
 
 <style>
+
+
+    /* Botones en la esquina de la cabecera */
+    .inv-vista .inv-cabecera { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    .inv-vista .inv-cabecera .panel-title { display: flex; align-items: center; margin: 0; }
+    .inv-vista .inv-botones { display: flex; gap: 8px; flex-wrap: wrap; }
+    .inv-vista .inv-botones .btn { font-weight: 600; }
+    .inv-vista .inv-botones .btn i { color: inherit; margin-right: 4px; }
+    @media (max-width: 480px) { .inv-vista .inv-botones, .inv-vista .inv-botones .btn { width: 100%; } }
+
     /* Inventario: dos tarjetas (historial y detalle) con cabecera suave y pie con búsqueda + total */
     .inv-vista .inv-caja { border: 1px solid var(--t-borde); border-radius: var(--t-radio); background: #fff; overflow: hidden; margin-bottom: 14px; }
     .inv-vista .inv-caja-titulo { background: var(--t-fondo-alt); border-bottom: 1px solid var(--t-borde-suave); padding: 10px 14px;

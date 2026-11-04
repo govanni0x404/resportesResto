@@ -759,6 +759,7 @@
                         $__showFamiliasInsumos = menu_visible('FamiliasInsumos');
                         $__showFamiliasReceta = menu_visible('FamiliasReceta');
                         $__showFormasDePago = menu_visible('FormasDePago');
+                        $__showDocumentosTributarios = menu_visible('DocumentosTributarios');
                         $__showImpuestos = menu_visible('Impuestos');
                         $__showMensajesPorProductos = menu_visible('MensajesPorProductos');
                         $__showMoneda = menu_visible('Moneda');
@@ -772,7 +773,7 @@
                         $__showTablasDelivery = $__showDelivery;
                         $__showTablasEventos = $__showGastoEventos || $__showIngresoEventos || $__showTipoEvento;
                         $__showTablasGruposFamilias = $__showFamilias || $__showFamiliasInsumos || $__showFamiliasReceta;
-                        $__showTablas = $__showAgregados || $__showBodegas || $__showCanalDeventa || $__showCentroCosto || $__showComuna || $__showTablasDelivery || $__showDestinoDeImpresion || $__showTablasEventos || $__showTablasGruposFamilias || $__showFormasDePago || $__showImpuestos || $__showMensajesPorProductos || $__showMoneda || $__showProvincias || $__showSubFamilias || $__showTurnos || $__showUmedida || $__showItemGastosMensuales || $__showUsuario;
+                        $__showTablas = $__showAgregados || $__showBodegas || $__showCanalDeventa || $__showCentroCosto || $__showComuna || $__showTablasDelivery || $__showDestinoDeImpresion || $__showTablasEventos || $__showTablasGruposFamilias || $__showFormasDePago || $__showDocumentosTributarios || $__showImpuestos || $__showMensajesPorProductos || $__showMoneda || $__showProvincias || $__showSubFamilias || $__showTurnos || $__showUmedida || $__showItemGastosMensuales || $__showUsuario;
 
                         $__showInsumos = menu_visible('Insumos');
                         $__showRecetas = menu_visible('Recetas');
@@ -924,6 +925,9 @@
                                                     <?php endif; ?>
                                                     <?php if ($__showFormasDePago) : ?>
                                                         <li class="active"><a href="<?php echo base_url() ?>index.php/FormasDePago"><i class="ti-money"></i>Formas De Pago</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showDocumentosTributarios) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/DocumentosTributarios"><i class="ti-money"></i>Documentos Tributarios</a></li>
                                                     <?php endif; ?>
                                                     <?php if ($__showImpuestos) : ?>
                                                         <li class="active"><a href="<?php echo base_url() ?>index.php/Impuestos"><i class="ti-money"></i>Impuestos</a></li>

@@ -14,7 +14,7 @@ class MperfilDeUsuario extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    $q = " SELECT u.nombre_usuario, u.clave, r.nombre_rol, u.esadmin, u.id_usuario
+    $q = " SELECT u.nombre_usuario, r.nombre_rol, u.esadmin, u.id_usuario
         from usuario u
         join rol r on u.id_rol=r.id_rol
         where id_usuario=?";

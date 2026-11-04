@@ -35,22 +35,12 @@ class PerfilDeUsuario extends CI_Controller
 		echo json_encode($this->MperfilDeUsuario->obtenerDatosDelUsuario($id_usuario));
 	}
 
+	/** El perfil es solo de lectura: los accesos a la web los administra DataMaule aparte. */
 	public function ActualizarNombreYPasswordDeUsuarioLocal()
 	{
-		if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
-			$d = $this->input->post('prod');
-			if (!is_array($d)) { // sin datos del formulario: no se graba nada
-				echo json_encode(array('error' => 'Datos incompletos'));
-				return;
-			}
-			$id_usuario = $this->session->userdata('id_usuario');
-			$miData = array(
-				'nombre_usuario' => $d['nombre_usuario'],
-				'clave' => $d['clave'],
-			);
-			$r = $this->MperfilDeUsuario->ActualizarNombreYPasswordDeUsuarioLocal($id_usuario, $miData);
-			echo json_encode($r);
-		}
+		header('Content-Type: application/json; charset=utf-8');
+		http_response_code(403);
+		echo json_encode(array('error' => 'El perfil no se puede modificar desde la web'));
 	}
 
 	public function obtenerCorreoAccesoWebIntranet()
@@ -64,22 +54,11 @@ class PerfilDeUsuario extends CI_Controller
 	}
 
 
+	/** El perfil es solo de lectura: los accesos a la web los administra DataMaule aparte. */
 	public function ActualizarNombreYPasswordDeUsuarioIntranet()
 	{
-		if (strlen((string)$this->session->userdata('nombre_usuario')) > 0) {
-			$d = $this->input->post('prodIntranet');
-			if (!is_array($d)) { // sin datos del formulario: no se graba nada
-				echo json_encode(array('error' => 'Datos incompletos'));
-				return;
-			}
-			$id_usuario_cliente = $this->session->userdata('id_usuario');
-			$id_cliente = $this->session->userdata('id_cliente');
-			$miData = array(
-				'correo_acceso' => $d['correo_acceso'],
-				'clave_acceso' => $d['clave_acceso'],
-			);
-			$r = $this->MperfilDeUsuario->ActualizarNombreYPasswordDeUsuarioIntranet($id_usuario_cliente, $id_cliente, $miData);
-			echo json_encode($r);
-		}
+		header('Content-Type: application/json; charset=utf-8');
+		http_response_code(403);
+		echo json_encode(array('error' => 'El perfil no se puede modificar desde la web'));
 	}
 }

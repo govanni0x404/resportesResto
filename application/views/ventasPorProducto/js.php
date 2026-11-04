@@ -327,6 +327,9 @@
             try {
                 var obj = $.parseJSON(datos);
                 var sum = 0;
+                // Vaciar antes de llenar: con un rango con menos productos quedaban los del filtro anterior en el gráfico
+                Productos.length = 0;
+                totalesProductos.length = 0;
                 $.each(obj, function (index, v) {
                     Productos[index] = v.nombre_producto + ' / ' + v.porcentaje + '%';
                     totalesProductos[index] = v.monto_total;

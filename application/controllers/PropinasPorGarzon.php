@@ -121,26 +121,30 @@ class PropinasPorGarzon extends CI_Controller
                 $pdf->Ln();
                 $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
 
-       /* foreach ($resumenDePropinasEntreFechas as $row) {
-            if ($row->id_caja > 0) {
-                        $pdf->Ln();
-                        $pdf->SetX(15);
-                        $pdf->Cell(0, 5, mb_convert_encoding((string)($row->id_caja), 'ISO-8859-1', 'UTF-8'));
-                        $pdf->SetX(70);
-                        /*$pdf->Cell(0, 5, mb_convert_encoding((string)($row->fecha), 'ISO-8859-1', 'UTF-8'));
-                        $pdf->SetX(100);
-                        $pdf->Cell(23, 5, mb_convert_encoding((string)($row->nombre_usuario), 'ISO-8859-1', 'UTF-8'), 0, 0, 'R');
-                        $pdf->SetX(130);
-                        $pdf->Cell(28, 5, number_format($row->total_propina), 0, 0, 'R');
-                        $pdf->SetX(155);
-                        $pdf->Cell(35, 5, number_format($row->nombre_fpago), 0, 0, 'R');
-                        $pdf->Ln();
-                        $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
-                        
-    
-                }
-			}
-            */
+        // Filas del detalle: antes el ciclo estaba comentado y el PDF salía solo con encabezados.
+        // El modelo devuelve el formato de DataTables (filas en 'aaData', cada una como array).
+        $filasPropinas = isset($resumenDePropinasEntreFechas['aaData']) ? $resumenDePropinasEntreFechas['aaData'] : array();
+        foreach ($filasPropinas as $row) {
+            $pdf->Ln();
+            $pdf->SetX(15);
+            $pdf->Cell(0, 5, mb_convert_encoding((string)($row['id_caja']), 'ISO-8859-1', 'UTF-8'));
+            $pdf->SetX(55);
+            $pdf->Cell(0, 5, mb_convert_encoding((string)($row['fecha']), 'ISO-8859-1', 'UTF-8'));
+            $pdf->SetX(105);
+            $pdf->Cell(0, 5, mb_convert_encoding(substr((string)($row['nombre_usuario']), 0, 20), 'ISO-8859-1', 'UTF-8'));
+            $pdf->SetX(140);
+            $pdf->Cell(0, 5, number_format((float)$row['total_propina']));
+            $pdf->SetX(170);
+            $pdf->Cell(0, 5, mb_convert_encoding((string)($row['nombre_fpago']), 'ISO-8859-1', 'UTF-8'));
+            $totalPropinasEntreFechas += (float)$row['total_propina'];
+        }
+        $pdf->Ln();
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('____________________________________________________________________________________________________'), 'ISO-8859-1', 'UTF-8'));
+        $pdf->Ln();
+        $pdf->SetX(105);
+        $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL'), 'ISO-8859-1', 'UTF-8'));
+        $pdf->SetX(140);
+        $pdf->Cell(0, 5, number_format($totalPropinasEntreFechas));
         
 
         

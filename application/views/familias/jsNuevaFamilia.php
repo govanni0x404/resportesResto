@@ -85,7 +85,7 @@
 		$('#AliasFamilia').val("");
 		$('#ckVentaDirectaFamilia').prop('checked', true);
 		$('#ordenFamilia').val("0");
-		$('#ckImprimirEnDetallePedido').prop('checked', false);
+		$('#ckPiePedido').prop('checked', false);
 		$('#ModalNuevaFamilia').modal({
 			backdrop: 'static',
 			keyboard: false
