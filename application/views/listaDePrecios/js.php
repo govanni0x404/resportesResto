@@ -216,17 +216,25 @@
     });
 
 
-    function ListadoListasDePrecios() {
+    // elegir = id de la lista que debe quedar seleccionada (ej. la recién creada); sin él, la que estaba elegida
+    function ListadoListasDePrecios(elegir) {
+        var actual = elegir || $("#cboListaDePrecios").val();
         $.post(base_url + "index.php/ListaDePrecios/ListadoListasDePrecios", {
             id: ""
         }, function(datos) {
-            var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
-            tbl = "<option value='0' disabled>Seleccione La Lista De Precios</option>";
-            $.each(obj, function(index, v) { // recorro el array
-                tbl += '<option selected value="' + v.id_lprecio + '">' + v.nombre_lprecio + '</option>';
-            }); //fin each
-            $("#cboListaDePrecios").html(tbl);
-            $("#cboListaDePrecios").select2();
+            var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
+            var tbl = "<option value='0' disabled>Seleccione La Lista De Precios</option>";
+            var hay = false;
+            $.each(obj, function(index, v) {
+                if (String(v.id_lprecio) === String(actual)) hay = true;
+                tbl += '<option value="' + escHtml(v.id_lprecio) + '">' + escHtml(v.nombre_lprecio) + '</option>';
+            });
+            var $c = $("#cboListaDePrecios");
+            if ($c.hasClass('select2-hidden-accessible')) $c.select2('destroy');
+            $c.html(tbl);
+            // Sin una elegida antes, queda la última de la lista (como antes)
+            $c.val(hay ? String(actual) : $c.find('option:last').val());
+            $c.select2();
         });
     }
 
@@ -269,16 +277,15 @@
             };
             $.post(base_url + "index.php/ListaDePrecios/grabarNuevaListaDePrecios", {
                     'prod': miJson
-                }).done(function() {
+                }).done(function(resp) {
                     $('#ModalNuevaLprecios').modal('hide');
-                    
-                    // CAMBIO AQUÍ: Verificar si la tabla está inicializada antes de recargar
-                    if ($.fn.DataTable.isDataTable('#tableResumenListaPrecios') && 
-                        tableResumenListaPrecios.ajax.url()) {
+                    // La lista nueva aparece al tiro en el selector y queda elegida (antes había que recargar la página)
+                    var r = null;
+                    try { r = typeof resp === 'string' ? JSON.parse(resp) : resp; } catch (e) {}
+                    var idNueva = r && r[0] && r[0].id_lprecio ? r[0].id_lprecio : null;
+                    ListadoListasDePrecios(idNueva);
+                    if ($.fn.DataTable.isDataTable('#tableResumenListaPrecios') && tableResumenListaPrecios.ajax.url()) {
                         tableResumenListaPrecios.ajax.reload();
-                    } else {
-                        // Si no está inicializada, actualizar solo el combo
-                        ListadoListasDePrecios();
                     }
                     
                     showAppAlert('success', "Se registro Exitosamente La Nueva Lista De Precios!", {

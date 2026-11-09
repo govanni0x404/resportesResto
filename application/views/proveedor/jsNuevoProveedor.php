@@ -45,7 +45,7 @@
 					<div class="tab-pane fade active in" id="tabBodegas">
 						<!-- CAMPOS DE REGISTRO  -->
 						<fieldset>
-							<div class="col-md-4 ">
+							<div class="col-md-4 " style="display:none" data-id-auto="1">
 								<label for="idProveedor">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idProveedor" id="idProveedor" requerido="no" value="" />
 							</div>
@@ -85,13 +85,9 @@
 							</div>
 						</fieldset>
 						<fieldset>
-							<div class="col-md-8">
+							<div class="col-md-12">
 								<label for="GiroProveedor">GIRO *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="GiroProveedor" id="GiroProveedor" requerido="si" value="" placeholder="Giro Proveedor" />
-							</div>
-							<div class="col-md-4">
-								<label for="CreditoProveedor">CREDITO</label>
-								<input min="0" type="text" class="form-control input-sm input-sm" maxlength='8' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="CreditoProveedor" id="CreditoProveedor" requerido="si" value="" placeholder="Credito Maximo Proveedor" />
 							</div>
 						</fieldset>
 						<!-- FIN CAMPOS DE REGISTRO  -->
@@ -235,7 +231,6 @@ function AbrirModalNuevoProveedor() {
     $('#TelefonoProveedor').val("");
     $('#CorreoProveedor').val("");
     $('#GiroProveedor').val("");
-    $('#CreditoProveedor').val("0");
     
     // Abrir modal
     $('#ModalNuevoProveedor').modal({
@@ -425,8 +420,7 @@ function grabarNuevoProveedor() {
         'direccion': $('#DireccionProveedor').val().toUpperCase().replace(/[,.'"$#%&]+/g, ''),
         'telefono': $('#TelefonoProveedor').val(),
         'mail': $('#CorreoProveedor').val().toUpperCase().replace(/[,'"$#%&]+/g, ''),
-        'giro': $('#GiroProveedor').val().toUpperCase().replace(/[,.'"$#%&]+/g, ''),
-        'creditomaximo': $('#CreditoProveedor').val() === '' ? 0 : parseFloat($('#CreditoProveedor').val())
+        'giro': $('#GiroProveedor').val().toUpperCase().replace(/[,.'"$#%&]+/g, '')
     };
     
     console.log("Datos a enviar:", miJson);

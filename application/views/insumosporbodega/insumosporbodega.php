@@ -105,7 +105,7 @@ $fechaActual = date('Y-m-d');
                                 <div class="panel-heading">
                                     <div class="panel-title">
                                         <i class="pe-7s-news-paper"></i>
-                                        <h4>Productos</h4>
+                                        <h4>Stock por bodega</h4>
                                     </div>
                                 </div>
                                 <div class="table-responsive" style="margin-top:10px; padding:5px;">
@@ -114,8 +114,6 @@ $fechaActual = date('Y-m-d');
                                             <th class="text text-center">Nombre Insumo</th>
                                             <th class="text text-center">Saldo</th>
                                             <th class="text text-center">Nombre Bodega</th>
-
-                                            <th class="text text-center"></th>
                                         </tr>
                                         <tbody id="tableDetalleInsumos">
 

@@ -34,14 +34,6 @@ class ResumenDeCompras extends CI_Controller
 		echo json_encode($this->MresumenDeCompras->resumenDeCompras($desde, $hasta));
 	}
 
-	public function detallePorFamilia()
-	{
-		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
-			redirect(base_url()); //redireccionar al login
-		}
-		echo json_encode($this->MresumenDeCompras->detallePorFamilia());
-	}
-
 	public function detalleFacturas()
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
@@ -63,6 +55,9 @@ class ResumenDeCompras extends CI_Controller
 		$hasta = $this->input->post('hasta');
 
 		$resumenDeComprasPDF = $this->MresumenDeCompras->resumenDeComprasPDF($idCompra, $listadoCompras);
+		if (empty($resumenDeComprasPDF)) {
+			show_error('La compra no existe', 404, 'Resumen de compras');
+		}
 
 		require('fpdf/fpdf.php');
 		$pdf = new FPDF('P', 'mm', 'Legal', 'Cierre De Caja');

@@ -120,11 +120,6 @@
                 mData: "giro",
                 className: "text-left"
             },
-            {
-                mData: "creditomaximo",
-                className: "text-left",
-                visible: false
-            },
             ],
             'language': {
                 url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
@@ -152,7 +147,6 @@
                 $("#TelefonoProveedor").val(rowData[0].telefono);
                 $("#CorreoProveedor").val(rowData[0].mail);
                 $("#GiroProveedor").val(rowData[0].giro);
-                $("#CreditoProveedor").val(rowData[0].creditomaximo);
 
                 $('#ModalNuevoProveedor').modal('show');
             })

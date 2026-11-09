@@ -19,7 +19,7 @@
 						<!-- CAMPOS DE REGISTRO  -->
 						<div class="t-card-titulo">Producto</div>
 						<fieldset>
-							<div class="col-sm-4">
+							<div class="col-sm-4" style="display:none" data-id-auto="1">
 								<label for="idAgregado">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idAgregado" id="idAgregado" requerido="no" value="" />
 							</div>

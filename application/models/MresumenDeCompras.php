@@ -14,15 +14,11 @@ class MresumenDeCompras extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
         
-		$jsDateTS = strtotime($desde);
-		if ($jsDateTS !== false) {
-			$de = date('Y-m-d', $jsDateTS);
-		}
-
-		$jsDateTS = strtotime($hasta);
-		if ($jsDateTS !== false) {
-			$a = date('Y-m-d', $jsDateTS);
-		}
+		// Sin fechas (o con fechas inválidas) se muestra el mes actual
+		$jsDateTS = strtotime((string)$desde);
+		$de = $jsDateTS !== false && trim((string)$desde) !== '' ? date('Y-m-d', $jsDateTS) : date('Y-m-01');
+		$jsDateTS = strtotime((string)$hasta);
+		$a = $jsDateTS !== false && trim((string)$hasta) !== '' ? date('Y-m-d', $jsDateTS) : date('Y-m-t');
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT c.id_compra, p.nombre_proveedor, td.nombre_tdocumento, c.numero_documento, to_char(c.fecha, 'DD-MM-YYYY') as fecha, c.total

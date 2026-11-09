@@ -98,39 +98,30 @@ class Recetas extends CI_Controller
 				'preparacion' => $d['preparacion'],
 			);
 
-			// Guardamos la receta y obtenemos el ID
-			$id_receta_real = $this->Mrecetas->grabarReceta($id, $miData);
-
-			// Grabar detalles si existen
+			// Insumos: id_insumo entero > 0 y cantidad numérica > 0; lo demás se rechaza antes de tocar la base
+			$lineas = array();
 			$detalles = $this->input->post('detalleReceta');
-			$detalles_guardados = 0;
-			
-			if (is_array($detalles) && count($detalles) > 0) {
-				// Si es una edición, marcar todos los detalles anteriores como no vigentes
-				if ($id > 0) {
-					$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
-					$this->db->where('id_receta', $id_receta_real);
-					$this->db->update('detalle_receta', array('vigente' => false));
+			foreach (is_array($detalles) ? $detalles : array() as $value) {
+				$idInsumo = isset($value['id_insumo']) ? (int)$value['id_insumo'] : 0;
+				if ($idInsumo <= 0) continue;
+				$cantidad = $this->numero(isset($value['cantidad']) ? $value['cantidad'] : '');
+				if ($cantidad === null || $cantidad <= 0) {
+					throw new Exception('Hay un insumo sin cantidad (o con cantidad 0) en la receta');
 				}
-				
-				// Ahora guardar los detalles nuevos/actualizados
-				foreach ($detalles as $value) {
-					$miDataDetalle = array(
-						'id_receta' => $id_receta_real,
-						'id_insumo' => $value['id_insumo'],
-						'cantidad' => $value['cantidad'],
-						'costo_pp' => $value['costo_pp'],
-						'costo_total' => $value['costo_total'],
-						'es_receta' => $value['es_receta'] == 'SI' ? 'true' : 'false',
-						'vigente' => true,
-						'um_receta' => 0,
-					);
-					
-					// Siempre insertar como nuevo (ya marcamos los anteriores como no vigentes)
-					$this->Mrecetas->grabarDetalleReceta(0, $miDataDetalle);
-					$detalles_guardados++;
-				}
+				$lineas[] = array(
+					'id_insumo' => $idInsumo,
+					'cantidad' => $cantidad,
+					'costo_pp' => (float)$this->numero(isset($value['costo_pp']) ? $value['costo_pp'] : 0),
+					'costo_total' => (float)$this->numero(isset($value['costo_total']) ? $value['costo_total'] : 0),
+					'es_receta' => isset($value['es_receta']) && strtoupper(trim((string)$value['es_receta'])) === 'SI',
+				);
 			}
+
+			if (is_array($detalles) && !$lineas) throw new Exception('La receta no tiene insumos válidos');
+
+			// Cabecera e insumos en una sola transacción: si algo falla no se pierden los insumos que ya tenía
+			$id_receta_real = $this->Mrecetas->grabarRecetaCompleta($id, $miData, $lineas, is_array($detalles));
+			$detalles_guardados = count($lineas);
 
 			echo json_encode(array(
 				'status' => 'success',
@@ -198,5 +189,16 @@ class Recetas extends CI_Controller
 		} catch (Exception $e) {
 			echo json_encode(array('status' => 'error', 'message' => $e->getMessage()));
 		}
+	}
+
+	/** Número escrito en la pantalla ("1.5", "1,5" o "1.234,5") o null si no es un número. */
+	private function numero($v)
+	{
+		$v = trim((string)$v);
+		if ($v === '') return null;
+		if (is_numeric($v)) return (float)$v;
+		if (preg_match('/^-?[\d.]+,\d+$/', $v)) $v = str_replace(array('.', ','), array('', '.'), $v);   // 1.234,5
+		else $v = str_replace(',', '', $v);                                                          // 1,234.5
+		return is_numeric($v) ? (float)$v : null;
 	}
 }

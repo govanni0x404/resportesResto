@@ -21,55 +21,45 @@ class Mdte extends CI_Model
 		$this->config->load('caja', true);
 	}
 
+	/** Cuenta demo de Cloud Apps: con este usuario se emite en pruebas (Cloud Apps timbra, pero no va al SII). */
+	const RUT_DEMO = '66666666-6';
+	const RAZON_DEMO = 'EMPRESA DEMO';
+
 	/**
-	 * Credenciales, terminal y emisor. null si la empresa no tiene emisión configurada.
+	 * Credenciales, terminal y emisor. null si la empresa no tiene emisión configurada (ver motivoSinEmision()).
+	 * Todo sale de Configuraciones > Facturación electrónica > Acceso facturación (Cloud Apps): usuario (RUT válido),
+	 * contraseña y terminal son obligatorios. El usuario debe ser el RUT de la empresa, salvo la cuenta demo de
+	 * Cloud Apps (66666666-6), que emite como EMPRESA DEMO y no envía al SII.
 	 */
 	public function configuracion($db)
 	{
-		$prueba = $this->config->item('caja_dte_pruebas', 'caja');
 		$empresa = $db->query('SELECT e.*, COALESCE(c.nombre_comuna, \'\') AS nombre_comuna
 			FROM empresa e LEFT JOIN comuna c ON c.id_comuna = e.id_comuna ORDER BY e.id_empresa LIMIT 1')->row();
 		if (!$empresa) return null;
-
-		if (is_array($prueba) && !empty($prueba['usuario'])) {
-			$usuario = $prueba['usuario'];
-			$clave = $prueba['clave'];
-			$terminal = $prueba['terminal'];
-			$enviaSii = isset($prueba['envia_sii']) ? (int)$prueba['envia_sii'] : 0;
-		} else {
-			list($usuario, $clave) = $this->credenciales($db);
-			// Terminal de Cloud Apps: Configuraciones > Facturación (o config/caja.php por conexión)
-			$terminal = '';
-			if ($this->tieneColumna($db, 'configuracion', 'terminal_dte')) {
-				$r = $db->query("SELECT trim(COALESCE(terminal_dte, '')) AS t FROM configuracion LIMIT 1")->row();
-				$terminal = $r ? $r->t : '';
-			}
-			if ($terminal === '') {
-				$terminales = (array)$this->config->item('caja_dte_terminales', 'caja');
-				$conexion = (string)$this->session->userdata('nombre_conexion');
-				$terminal = isset($terminales[$conexion]) ? trim($terminales[$conexion]) : '';
-			}
+		list($usuario, $clave, $terminal) = $this->accesoFacturacion($db);
+		if ($this->motivoAcceso($usuario, $clave, $terminal) !== '') return null;
+		$rut = number_format((float)$empresa->rut_empresa, 0, '', '') . '-' . strtoupper(trim((string)$empresa->dv_empresa));
+		$demo = $this->normalizarRut($usuario) === $this->normalizarRut(self::RUT_DEMO);
+		// Cada empresa emite con su propio RUT: un usuario de otra empresa firmaría documentos ajenos
+		if (!$demo && $this->normalizarRut($usuario) !== $this->normalizarRut($rut)) {
+			log_message('error', 'Caja web DTE: usuario_dte (' . $usuario . ') no coincide con el RUT de la empresa (' . $rut . ')');
+			return null;
+		}
+		$enviaSii = 0;
+		if (!$demo) {
 			$enviaSii = 1;
 			if ($this->tieneColumna($db, 'configuracion', 'enviar_dte_sii')) {
 				$r = $db->query('SELECT (enviar_dte_sii IS NOT FALSE) AS envia FROM configuracion LIMIT 1')->row();
 				$enviaSii = $r && ($r->envia === 't' || $r->envia === true) ? 1 : 0;
 			}
 		}
-		$rut = number_format((float)$empresa->rut_empresa, 0, '', '') . '-' . strtoupper(trim((string)$empresa->dv_empresa));
-		// El usuario de Cloud Apps es el RUT de la empresa: si no está cargado, se usa el de la empresa
-		if ($usuario === '' && (int)$empresa->rut_empresa > 0) $usuario = $rut;
-		if ($usuario === '' || $clave === '' || $terminal === '') return null;
-		// Cada empresa emite con su propio RUT: un usuario de otra empresa firmaría documentos ajenos
-		if (!(is_array($prueba) && !empty($prueba['usuario'])) && $this->normalizarRut($usuario) !== $this->normalizarRut($rut)) {
-			log_message('error', 'Caja web DTE: usuario_dte (' . $usuario . ') no coincide con el RUT de la empresa (' . $rut . ')');
-			return null;
-		}
+		$prueba = $demo ? array('rut_emisor' => self::RUT_DEMO, 'razon_social' => self::RAZON_DEMO) : null;
 		return array(
 			'usuario' => $usuario,
 			'clave' => $clave,
 			'terminal' => $terminal,
 			'envia_sii' => $enviaSii,
-			'prueba' => is_array($prueba) && !empty($prueba['usuario']),
+			'prueba' => $demo,
 			'emisor' => array(
 				'RUTEmisor' => is_array($prueba) && !empty($prueba['rut_emisor']) ? $prueba['rut_emisor'] : $rut,
 				'RznSoc' => $this->texto(is_array($prueba) && !empty($prueba['razon_social']) ? $prueba['razon_social'] : $empresa->razon_social, 100),
@@ -96,6 +86,18 @@ class Mdte extends CI_Model
 		}
 	}
 
+	/**
+	 * Cuánto se espera la respuesta de Cloud Apps: Configuraciones > Impresión de documentos > Timeout (seg).
+	 * Vacío o 0 = 20 segundos; se acota entre 5 y 60 para no dejar la caja colgada.
+	 */
+	private function segundosEspera($db)
+	{
+		if (!$this->tieneColumna($db, 'configuracion', 'timeout')) return 20;
+		$r = $db->query('SELECT COALESCE(timeout, 0) AS t FROM configuracion LIMIT 1')->row();
+		$t = $r ? (int)$r->t : 0;
+		return $t > 0 ? max(5, min(60, $t)) : 20;
+	}
+
 	private function emitirVenta($db, $idVenta, $cfg)
 	{
 		$cfg = $cfg ?: $this->configuracion($db);
@@ -118,7 +120,7 @@ class Mdte extends CI_Model
 			),
 			CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 			CURLOPT_CONNECTTIMEOUT => 5,
-			CURLOPT_TIMEOUT => 20,
+			CURLOPT_TIMEOUT => $this->segundosEspera($db),
 		));
 		$raw = curl_exec($ch);
 		$errorCurl = curl_error($ch);
@@ -405,15 +407,65 @@ class Mdte extends CI_Model
 		}
 	}
 
-	private function credenciales($db)
+	/** [usuario, clave, terminal] de Configuraciones > Acceso facturación (Cloud Apps). */
+	private function accesoFacturacion($db)
 	{
-		foreach (array('configuracion', 'empresa') as $t) {
-			if ($this->tieneColumna($db, $t, 'usuario_dte') && $this->tieneColumna($db, $t, 'clave_usuario_dte')) {
-				$r = $db->query("SELECT trim(COALESCE(usuario_dte, '')) AS u, trim(COALESCE(clave_usuario_dte, '')) AS c FROM $t LIMIT 1")->row();
-				if ($r && $r->u !== '' && $r->c !== '') return array($r->u, $r->c);
-			}
+		$u = $c = $t = '';
+		if ($this->tieneColumna($db, 'configuracion', 'usuario_dte') && $this->tieneColumna($db, 'configuracion', 'clave_usuario_dte')) {
+			$r = $db->query("SELECT trim(COALESCE(usuario_dte, '')) AS u, trim(COALESCE(clave_usuario_dte, '')) AS c FROM configuracion LIMIT 1")->row();
+			if ($r) { $u = $r->u; $c = $r->c; }
 		}
-		return array('', '');
+		if ($this->tieneColumna($db, 'configuracion', 'terminal_dte')) {
+			$r = $db->query("SELECT trim(COALESCE(terminal_dte, '')) AS t FROM configuracion LIMIT 1")->row();
+			$t = $r ? $r->t : '';
+		}
+		return array(self::rutUsuario($u), $c, $t);
+	}
+
+	/** '' si usuario/clave/terminal sirven; si no, qué falta (para mostrarlo en pantalla). */
+	public function motivoAcceso($usuario, $clave, $terminal)
+	{
+		if (trim((string)$usuario) === '') return 'Falta el usuario (RUT) en Acceso facturación';
+		if (!self::rutValido($usuario)) return 'El usuario de Acceso facturación no es un RUT válido (' . $usuario . ')';
+		if ((string)$clave === '') return 'Falta la contraseña en Acceso facturación';
+		if (trim((string)$terminal) === '') return 'Falta el terminal en Acceso facturación';
+		return '';
+	}
+
+	/** Por qué la empresa no puede emitir ('' si puede): lo muestra la Caja. */
+	public function motivoSinEmision($db)
+	{
+		list($usuario, $clave, $terminal) = $this->accesoFacturacion($db);
+		$m = $this->motivoAcceso($usuario, $clave, $terminal);
+		if ($m !== '') return $m;
+		return $this->configuracion($db) ? '' : 'El usuario de Acceso facturación no es el RUT de esta empresa';
+	}
+
+	/** Usuario de Cloud Apps = RUT sin puntos y con guion: "66.666.666-6" o "666666666" => "66666666-6". */
+	public static function rutUsuario($u)
+	{
+		$u = strtoupper(preg_replace('/[^0-9kK-]/', '', (string)$u));
+		if ($u !== '' && strpos($u, '-') === false && strlen($u) > 1) $u = substr($u, 0, -1) . '-' . substr($u, -1);
+		return $u;
+	}
+
+	/** RUT chileno con dígito verificador correcto ("76193938-6", "66.666.666-6"). */
+	public static function rutValido($rut)
+	{
+		$r = strtoupper(preg_replace('/[^0-9kK]/', '', (string)$rut));
+		if (strlen($r) < 2) return false;
+		$cuerpo = substr($r, 0, -1);
+		$dv = substr($r, -1);
+		if (!ctype_digit($cuerpo)) return false;
+		$suma = 0;
+		$mul = 2;
+		for ($i = strlen($cuerpo) - 1; $i >= 0; $i--) {
+			$suma += (int)$cuerpo[$i] * $mul;
+			$mul = $mul === 7 ? 2 : $mul + 1;
+		}
+		$res = 11 - ($suma % 11);
+		$esperado = $res === 11 ? '0' : ($res === 10 ? 'K' : (string)$res);
+		return $dv === $esperado;
 	}
 
 	private function tieneColumna($db, $tabla, $columna)
@@ -452,8 +504,9 @@ class Mdte extends CI_Model
 	 */
 	public function consultarFolios($usuario, $clave, $terminal, $tipoDte)
 	{
-		if ($usuario === '' || $clave === '') return array('ok' => false, 'mensaje' => 'Falta el usuario o la clave de facturación');
-		if ($terminal === '') return array('ok' => false, 'mensaje' => 'Falta el terminal');
+		$usuario = self::rutUsuario($usuario);
+		$falta = $this->motivoAcceso($usuario, $clave, $terminal);
+		if ($falta !== '') return array('ok' => false, 'mensaje' => $falta);
 		if ($tipoDte <= 0) return array('ok' => false, 'mensaje' => 'Tipo de documento no válido');
 
 		$url = preg_replace('#/newDte/?$#', '/getFolios/', $this->config->item('caja_dte_url', 'caja'));
@@ -510,6 +563,24 @@ class Mdte extends CI_Model
 	// ====================== Timbre (TED → PDF417) ======================
 
 	/** Código de barras del TED: PNG (PDF) o data URI del PNG (ticket HTML). null si no hay TED. */
+	/**
+	 * Timbre como matriz de módulos PDF417 (para dibujarlo en la impresora térmica) o null. $maxPuntos = ancho del papel en
+	 * puntos: se elige un código más alto y angosto hasta que cada módulo mida 2 puntos (con medidas desparejas no se lee).
+	 */
+	public function timbreMatriz($ted, $maxPuntos = 512)
+	{
+		if (!$ted || stripos($ted, '<TED') === false) return null;
+		require_once APPPATH . 'third_party/tcpdf_barcodes/tcpdf_barcodes_2d.php';
+		$codigo = mb_convert_encoding($ted, 'ISO-8859-1', 'UTF-8');
+		$a = null;
+		foreach (array(2, 1.5, 1.2, 1, 0.8, 0.65, 0.5, 0.4) as $proporcion) {
+			$b = new TCPDF2DBarcode($codigo, 'PDF417,' . $proporcion . ',5');
+			$a = $b->getBarcodeArray();
+			if (!empty($a['num_cols']) && $a['num_cols'] * 2 <= $maxPuntos) break;
+		}
+		return !empty($a['num_cols']) ? $a : null;
+	}
+
 	public function timbre($ted, $formato = 'datauri')
 	{
 		if (!$ted || stripos($ted, '<TED') === false) return null;

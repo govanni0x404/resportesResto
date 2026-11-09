@@ -45,7 +45,7 @@
 					<div class="tab-pane fade active in" id="tabBodegas">
 						<!-- CAMPOS DE REGISTRO  -->
 						<fieldset>
-							<div class="col-md-4 ">
+							<div class="col-md-4 " style="display:none" data-id-auto="1">
 								<label for="idBodega">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idBodega" id="idBodega" requerido="no" value="" />
 							</div>

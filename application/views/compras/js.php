@@ -26,7 +26,8 @@ $(document).ready(function() {
             "firstDay": 1
         }
     });
-    ListadoTipoDeDocumento("FACTURA ELECTRONICA");
+    // Documento de compra por defecto de Configuraciones (si no hay, FACTURA ELECTRONICA como antes)
+    ListadoTipoDeDocumento("<?php echo !empty($idDocCompra) ? (int)$idDocCompra : 'FACTURA ELECTRONICA'; ?>");
     ListadoInsumos("");
     ListarProveedores("");
     
@@ -636,7 +637,7 @@ function GrabarIngresoDeCompra() {
 
 function nuevaCompra() {
     ListarProveedores("");
-    ListadoTipoDeDocumento("");
+    ListadoTipoDeDocumento("<?php echo !empty($idDocCompra) ? (int)$idDocCompra : ''; ?>");
     $('#FolioDocumento').val("0");
     
     // Obtener fecha actual en formato DD-MM-YYYY

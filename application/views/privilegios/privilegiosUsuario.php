@@ -31,6 +31,14 @@
         .t-priv-modulos { padding: 0 10px 10px; }
         .t-priv-modulos .t-acciones .btn { width: 100%; }
     }
+    .t-priv-grupo { margin-bottom: 16px; border: 1px solid var(--t-borde-suave); border-radius: var(--t-radio-sm); }
+    .t-priv-grupo h5 { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; padding: 10px 14px;
+        background: var(--t-fondo-alt); border-bottom: 1px solid var(--t-borde-suave); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
+    .t-priv-grupo h5 small { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--t-texto-suave); }
+    .t-priv-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+    .t-priv-lista label { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0; padding: 10px 14px;
+        border-bottom: 1px solid var(--t-borde-suave); font-weight: 600; cursor: pointer; }
+    .t-priv-aviso { margin: 0 18px 18px; }
 </style>
 <div class="content-header">
     <div class="header-icon">
@@ -47,65 +55,45 @@
 </div>
 
 <div class="container-padding t-priv">
-    <input type="hidden" name="id_rol_selected" id="id_rol_selected" value="0">
-
     <div class="row">
-        <div class="col-xs-12 col-sm-12 col-md-12 m-b-20">
+        <div class="col-xs-12 m-b-20">
             <div class="panel-body t-lista-contenedor">
-
                 <div class="panel panel-success lobidisable">
                     <div class="panel-heading">
                         <div class="panel-title">
                             <i class="pe-7s-lock"></i>
-                            <h4>Gestión de Privilegios por Rol</h4>
+                            <h4>Qué puede ver cada rol en la web</h4>
                         </div>
                     </div>
 
-                    <div class="panel-body">
-                        <div class="t-priv-selector">
-                            <div class="t-priv-campo">
-                                <label for="selectRol">Seleccione un rol *</label>
-                                <select class="form-control input-lg" name="selectRol" id="selectRol" style="font-size: 16px; height: 45px;">
-                                    <option value="0">-- Seleccione un Rol --</option>
-                                </select>
-                            </div>
-                            <p class="t-muted"><i class="fa fa-info-circle"></i> Los cambios se guardan al instante al activar o desactivar cada módulo.</p>
+                    <?php if (!$hayTabla) : ?>
+                        <div class="alert alert-warning t-priv-aviso" style="margin-top: 18px;">
+                            <b>Falta un paso:</b> todavía no existe la tabla de permisos en esta base de datos.
+                            Corre el script <code>sql/permiso_web.sql</code> y vuelve a abrir esta pantalla.
+                            Mientras tanto se usan los permisos antiguos.
                         </div>
-                    </div>
-
-                    <div class="clearfix"></div>
-
-                    <div id="divPrivilegios" class="t-priv-modulos" style="display: none;">
-                        <div class="panel panel-success">
-                            <div class="panel-heading panel-success">
-                                <h4 class="panel-title">
-                                    <i class="fa fa-list"></i> Módulos del Sistema
-                                </h4>
-                            </div>
-                            <div class="panel-body">
-                                <div class="t-acciones">
-                                    <button type='button' class='btn btn-primary' id='btnHabilitarTodos'><i class='fa fa-check-square-o'></i> Habilitar todos los privilegios</button>
-                                    <button type='button' class='btn btn-default' id='btnBloquearTodos'><i class='fa fa-square-o'></i> Quitar todos los privilegios</button>
+                    <?php else : ?>
+                        <div class="panel-body">
+                            <div class="t-priv-selector">
+                                <div class="t-priv-campo">
+                                    <label for="selectRol">Rol</label>
+                                    <select class="form-control" id="selectRol">
+                                        <option value="0">-- Seleccione un rol --</option>
+                                    </select>
                                 </div>
-
-                                <div class="table-responsive t-priv-tabla">
-                                    <table id="tablePrivilegios" class="table table-hover table-bordered">
-                                        <thead>
-                                            <tr>
-                                                <th class='text-center' style='display:none;'>ID PUSUARIO</th>
-                                                <th class='text-center' style='display:none;'>ID PSISTEMA</th>
-                                                <th class='text-center' style="width: 15%;">CÓDIGO</th>
-                                                <th class='text-left' style="width: 70%;">MÓDULO</th>
-                                                <th class='text-center' style="width: 15%;">AUTORIZADO</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="detallePrivilegios">
-                                        </tbody>
-                                    </table>
-                                </div>
+                                <p class="t-muted"><i class="fa fa-info-circle"></i> Gerencia siempre ve todo. Los cambios se guardan al instante;
+                                    el usuario los ve al cambiar de pantalla.</p>
                             </div>
                         </div>
-                    </div>
+
+                        <div id="divPrivilegios" class="t-priv-modulos" style="display: none;">
+                            <div class="t-acciones">
+                                <button type="button" class="btn btn-primary" id="btnHabilitarTodos"><i class="fa fa-check-square-o"></i> Habilitar todo</button>
+                                <button type="button" class="btn btn-default" id="btnBloquearTodos"><i class="fa fa-square-o"></i> Quitar todo</button>
+                            </div>
+                            <div id="gruposPrivilegios"></div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

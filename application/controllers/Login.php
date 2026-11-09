@@ -45,6 +45,8 @@ class Login extends CI_Controller
 			}
 
 			$rutCliente = $rut . "-" . $check_user->dv;
+			// Id de sesión nuevo al entrar: una sesión creada antes del login (ej. un enlace con un id puesto por otro) no sirve
+			$this->session->sess_regenerate(TRUE);
 			$data = array(
 				'nombre_conexion' => $check_user->nombre_conexion,
 				'rut_cliente' => $rutCliente
@@ -92,6 +94,7 @@ class Login extends CI_Controller
 				'id_rol' => $rolUsuario  // Usar la variable correcta
 			);
 			$this->session->set_userdata($data);
+			$this->aplicarDefectos();
 			$this->index();
 
 		} else {
@@ -195,6 +198,7 @@ class Login extends CI_Controller
 
 				);
 				$this->session->set_userdata($data);
+				$this->aplicarDefectos();
 				$this->index();
 			} else {
 				redirect(base_url());
@@ -221,5 +225,16 @@ class Login extends CI_Controller
 			if (isset($it['nombre_conexion']) && $it['nombre_conexion'] === $nombre) return true;
 		}
 		return false;
+	}
+
+	/** Deja los valores por defecto de Configuraciones en la base del cliente (ver Mconfiguraciones::aplicar_defectos). */
+	private function aplicarDefectos()
+	{
+		try {
+			$this->load->model('Mconfiguraciones');
+			$this->Mconfiguraciones->aplicar_defectos();
+		} catch (Throwable $e) {
+			log_message('error', 'Login: no se pudieron aplicar los valores por defecto: ' . $e->getMessage());
+		}
 	}
 }

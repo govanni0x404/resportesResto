@@ -60,6 +60,11 @@ class Cliente extends CI_Controller
             'id_sector' => 0,
             'referencia_direccion' => $d['referencia_direccion'],
         );
+        // Plazo máximo del crédito en días (0 = sin plazo); solo si la base ya tiene la columna (sql/credito_clientes.sql)
+        $this->load->helper('tenant');
+        if (isset($d['plazo_credito']) && get_tenant_db($this)->field_exists('plazo_credito', 'cliente')) {
+            $miData['plazo_credito'] = in_array((int)$d['plazo_credito'], array(0, 15, 30, 45, 60, 90), true) ? (int)$d['plazo_credito'] : 30;
+        }
         $r = $this->Mclientes->grabarNuevoCliente($id, $miData);
         echo json_encode($r);
     }

@@ -1,3 +1,18 @@
+<?php
+// Opciones de las listas: los datos reales de la base, con el valor guardado marcado.
+// Si el valor guardado ya no existe en la tabla se muestra igual, para no cambiarlo sin querer al grabar.
+if (!function_exists('cfg_opciones')) {
+    function cfg_opciones($lista, $valor, $vacio)
+    {
+        $valor = (int)$valor;
+        echo '<option value="0"' . ($valor === 0 ? ' selected' : '') . '>-- ' . html_escape($vacio) . ' --</option>';
+        if ($valor !== 0 && !isset($lista[$valor])) echo '<option value="' . $valor . '" selected>N° ' . $valor . ' (no encontrado)</option>';
+        foreach ($lista as $id => $nombre) {
+            echo '<option value="' . (int)$id . '"' . ((int)$id === $valor ? ' selected' : '') . '>' . html_escape($nombre) . '</option>';
+        }
+    }
+}
+?>
 <div class="content-header">
     <div class="header-icon">
         <i class="pe-7s-config"></i>
@@ -49,7 +64,7 @@
                         <form id="configForm" method="post" action="<?php echo site_url('Configuraciones/guardar'); ?>" novalidate>
                             <!-- Tab General -->
                             <div id="general" class="tab active">
-                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Opciones de la caja, precuentas, propinas y permisos. Los cambios se aplican al presionar Grabar.</p>
+                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Opciones de la caja, propinas y permisos. Los cambios se aplican al presionar Grabar.</p>
                                 <div class="config-grid">
                                         <div class="config-card">
                                             <div class="panel-heading">
@@ -68,38 +83,10 @@
 
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-desktop"></i>Ver en Caja</h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <label><input type="checkbox" name="ver_delivery_caja" value="1" <?php echo ($config['ver_delivery_caja'] ?? true) ? 'checked' : ''; ?>> DELIVERY</label>
-                                                <label><input type="checkbox" name="ver_barra_caja" value="1" <?php echo ($config['ver_barra_caja'] ?? true) ? 'checked' : ''; ?>> Venta Directa Caja</label>
-                                                <label><input type="checkbox" name="mostraridpedido" value="1" <?php echo ($config['mostraridpedido'] ?? true) ? 'checked' : ''; ?>> Numero Pedido</label>
-                                                <label><input type="checkbox" name="mostrar_nombre_cliente_venta" value="1" <?php echo ($config['mostrar_nombre_cliente_venta'] ?? true) ? 'checked' : ''; ?>> Nombre Cliente</label>
-                                                <label><input type="checkbox" name="mostrar_nombre_garzon_venta" value="1" <?php echo ($config['mostrar_nombre_garzon_venta'] ?? true) ? 'checked' : ''; ?>> Garzon</label>
-                                            </div>
-                                        </div>
-
-                                        <div class="config-card">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-file-text-o"></i>Precuentas</h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <label><input type="checkbox" name="garzon_emite_precuenta" value="1" <?php echo ($config['garzon_emite_precuenta'] ?? false) ? 'checked' : ''; ?>> Garzon Puede emitir Precuenta</label>
-                                                <label><input type="checkbox" name="usar_impresora_local_precuenta" value="1" <?php echo ($config['usar_impresora_local_precuenta'] ?? false) ? 'checked' : ''; ?>> Usar Impresora equipo local</label>
-                                                <label><input type="checkbox" name="ocultar_cuenta_garzon" value="1" <?php echo ($config['ocultar_cuenta_garzon'] ?? true) ? 'checked' : ''; ?>> Ocultar monto de venta a garzon</label>
-                                                <label><input type="checkbox" name="omitir_productos_sin_precio_precuenta" value="1" <?php echo ($config['omitir_productos_sin_precio_precuenta'] ?? false) ? 'checked' : ''; ?>> No imprimir productos sin valor</label>
-                                            </div>
-                                        </div>
-
-                                        <div class="config-card">
-                                            <div class="panel-heading">
                                                 <h3 class="panel-title"><i class="fa fa-money"></i>Propinas</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="calcular_valor_propina" value="1" <?php echo ($config['calcular_valor_propina'] ?? false) ? 'checked' : ''; ?>> Mostar valor de propína en precuenta</label>
-                                                <label><input type="checkbox" name="preguntar_calculo_propina_en_pago" value="1" <?php echo ($config['preguntar_calculo_propina_en_pago'] ?? false) ? 'checked' : ''; ?>> Preguntar por calculo de propina en pago</label>
-                                                <label><input type="checkbox" name="mostrar_boton_propina_garzon" value="1" <?php echo ($config['mostrar_boton_propina_garzon'] ?? true) ? 'checked' : ''; ?>> Mostrar boton ver propina</label>
-                                                <label><input type="checkbox" name="propina_en_delivery" value="1" <?php echo ($config['propina_en_delivery'] ?? false) ? 'checked' : ''; ?>> Calcular propina para delivery</label>
                                                 <label><input type="checkbox" name="propina_en_venta_directa" value="1" <?php echo ($config['propina_en_venta_directa'] ?? false) ? 'checked' : ''; ?>> Propina en venta directa</label>
                                             </div>
                                         </div>
@@ -109,18 +96,25 @@
                                                 <h3 class="panel-title"><i class="fa fa-cutlery"></i>Otros del restaurante</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <label><input type="checkbox" name="permitircambiarppp" value="1" <?php echo ($config['permitircambiarppp'] ?? true) ? 'checked' : ''; ?>> Permitir el cambio del costo de insumo</label>
-                                                <label><input type="checkbox" name="ordenar_carta" value="1" <?php echo ($config['ordenar_carta'] ?? false) ? 'checked' : ''; ?>> Ordenar Carta</label>
                                                 <div class="form-group">
                                                     <label>Mesa para venta directa</label>
                                                     <input type="text" class="form-control" name="id_mesa_venta_directa" value="<?php echo $config['id_mesa_venta_directa'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Impresora para cierre de caja</label>
-                                                    <input type="text" class="form-control" name="nombre_impresora_cierre" value="<?php echo $config['nombre_impresora_cierre'] ?? ''; ?>">
+                                                    <?php $impCierre = trim((string)($config['nombre_impresora_cierre'] ?? '')); ?>
+                                                    <select class="form-control" name="nombre_impresora_cierre">
+                                                        <option value="">LA DE LA CAJA</option>
+                                                        <?php foreach ($opciones['dimpresion'] as $nomImp) : ?>
+                                                            <option value="<?php echo htmlspecialchars($nomImp, ENT_QUOTES, 'UTF-8'); ?>" <?php echo strcasecmp($nomImp, $impCierre) === 0 ? 'selected' : ''; ?>><?php echo htmlspecialchars($nomImp, ENT_QUOTES, 'UTF-8'); ?></option>
+                                                        <?php endforeach; ?>
+                                                        <?php if ($impCierre !== '' && !in_array(strtoupper($impCierre), array_map('strtoupper', $opciones['dimpresion']), true)) : ?>
+                                                            <option value="<?php echo htmlspecialchars($impCierre, ENT_QUOTES, 'UTF-8'); ?>" selected><?php echo htmlspecialchars($impCierre, ENT_QUOTES, 'UTF-8'); ?> (no existe)</option>
+                                                        <?php endif; ?>
+                                                    </select>
+                                                    <p class="help-block">Destino de impresión donde sale el cierre y el informe X.</p>
                                                 </div>
                                                 <label><input type="checkbox" name="imprimir_comprobante_anulacion" value="1" <?php echo ($config['imprimir_comprobante_anulacion'] ?? false) ? 'checked' : ''; ?>> Imprimir comprobantes de anulacion</label>
-                                                <label><input type="checkbox" name="imprimir_valor_producto_cocina" value="1" <?php echo ($config['imprimir_valor_producto_cocina'] ?? false) ? 'checked' : ''; ?>> Imprimir Valor productos en destino de impresion</label>
                                             </div>
                                         </div>
 
@@ -145,10 +139,10 @@
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="usar_correo_electronico" value="1" <?php echo ($config['usar_correo_electronico'] ?? false) ? 'checked' : ''; ?>> Enviar Cierre de caja por correo</label>
                                                 <div class="form-group">
-                                                    <input type="email" multiple class="form-control" name="correo_electronico" placeholder="ejemplo@correo.com, otro@correo.com" title="Uno o varios correos separados por coma" value="<?php echo htmlspecialchars((string)($config['correo_electronico'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <input type="email" multiple class="form-control" name="correo_electronico" id="txtCorreosInforme" placeholder="ejemplo@correo.com, otro@correo.com" title="Uno o varios correos separados por coma" value="<?php echo htmlspecialchars((string)($config['correo_electronico'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                                                 </div>
                                                 <label><input type="checkbox" name="informar_anulaciones_mail" value="1" <?php echo ($config['informar_anulaciones_mail'] ?? false) ? 'checked' : ''; ?>> Informar anulaciones y comisiones</label>
-                                                <button type="button" class="btn btn-orange">Probar envío</button>
+                                                <button type="button" class="btn btn-orange" id="btnProbarCorreo">Probar envío</button>
                                                 <p class="p">Separar por coma para múltiples correos</p>
                                             </div>
                                         </div>
@@ -162,7 +156,6 @@
                                                 <label><input type="checkbox" name="ver_creditos_a_clientes_cierre_caja" value="1" <?php echo ($config['ver_creditos_a_clientes_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Creditos a clientes</label>
                                                 <label><input type="checkbox" name="ver_cortesias_cierre_caja" value="1" <?php echo ($config['ver_cortesias_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Cortesías</label>
                                                 <label><input type="checkbox" name="ver_anulaciones_eliminaciones_cierre_caja" value="1" <?php echo ($config['ver_anulaciones_eliminaciones_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Anulaciones y eliminaciones</label>
-                                                <label><input type="checkbox" name="ver_detalle_atencion_cierre_caja" value="1" <?php echo ($config['ver_detalle_atencion_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Detalle de atención</label>
                                                 <hr>
                                                 <label><input type="checkbox" name="mostrar_recaudacion_cierre_no_efectivo" value="1" <?php echo ($config['mostrar_recaudacion_cierre_no_efectivo'] ?? true) ? 'checked' : ''; ?>> Llenar forma de pago no efectivo</label>
                                                 <label><input type="checkbox" name="cierre_caja_manual" value="1" <?php echo ($config['cierre_caja_manual'] ?? true) ? 'checked' : ''; ?>> Cierre de caja detallado</label>
@@ -211,28 +204,16 @@
                                                     <div class="col-md-4 form-group">
                                                         <label>Documento de compra</label>
                                                         <select class="form-control" name="id_tdocumento_compra">
-                                                            <option value="0">DOCUMENTO COMPRA</option>
-                                                            <option value="1">FACTURA ELECTRONICA</option>
-                                                        </select>
+<?php cfg_opciones($opciones['tdocumento'], $config['id_tdocumento_compra'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                     </div>
                                                     <div class="col-md-4 form-group">
                                                         <label>Formas de pago</label>
                                                         <select class="form-control" name="id_fpago_compra">
-                                                            <option value="0">FORMA DE PAGO</option>
-                                                            <option value="1">EFECTIVO</option>
-                                                        </select>
+<?php cfg_opciones($opciones['fpago'], $config['id_fpago_compra'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                     </div>
-                                                    <div class="col-md-4 form-group">
-                                                        <label>Bodega por defecto</label>
-                                                        <select class="form-control" name="id_bodega_compra">
-                                                            <option value="0">SELECCIONE BODEGA</option>
-                                                            <?php foreach($bodegas as $b): ?>
-                                                            <option value="<?= $b->id ?>" <?= ($config['id_bodega_compra'] ?? 0)==$b->id?'selected':'' ?>>
-                                                                <?= $b->nombre ?>
-                                                            </option>
-                                                            <?php endforeach ?>
-                                                        </select>
-                                                    </div>
+                                                    <!-- La bodega de compras se elige abajo, en "Bodegas" (antes estaba repetida y una pisaba a la otra) -->
                                                 </div>
                                                 <hr>
                                                 <h4>Créditos</h4>
@@ -240,16 +221,14 @@
                                                     <div class="col-md-6 form-group">
                                                         <label>Formas de pago credito a clientes</label>
                                                         <select class="form-control" name="id_fpago_creditodirecto">
-                                                            <option value="0">FORMA DE PAGO crédito a clientes</option>
-                                                            <option value="1">CREDITO DE CONFIANZA</option>
-                                                        </select>
+<?php cfg_opciones($opciones['fpago'], $config['id_fpago_creditodirecto'] ?? 0, 'NINGUNA (sin venta a crédito)'); ?>
+</select>
                                                     </div>
                                                     <div class="col-md-6 form-group">
                                                         <label>Centro costo pago credito</label>
                                                         <select class="form-control" name="id_pagocreditodirecto">
-                                                            <option value="0">CENTRO DE COSTO pago</option>
-                                                            <option value="1">PAGO CREDITO CONFIANZA</option>
-                                                        </select>
+<?php cfg_opciones($opciones['ccosto'], $config['id_pagocreditodirecto'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                     </div>
                                                 </div>
                                                 <hr>
@@ -258,23 +237,20 @@
                                                     <div class="col-md-4 form-group">
                                                         <label>Compras</label>
                                                         <select class="form-control" name="id_bodega_compra">
-                                                            <option value="0">COMPRAS</option>
-                                                            <option value="1">BODEGA PRINCIPAL</option>
-                                                        </select>
+<?php cfg_opciones($opciones['bodega'], $config['id_bodega_compra'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                     </div>
                                                     <div class="col-md-4 form-group">
                                                         <label>Ventas</label>
                                                         <select class="form-control" name="id_bodega_venta">
-                                                            <option value="0">VENTAS</option>
-                                                            <option value="1">BODEGA PRINCIPAL</option>
-                                                        </select>
+<?php cfg_opciones($opciones['bodega'], $config['id_bodega_venta'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                     </div>
                                                     <div class="col-md-4 form-group">
                                                         <label>Merma</label>
                                                         <select class="form-control" name="id_bodega_merma_inventario">
-                                                            <option value="0">MERMA (insumo)</option>
-                                                            <option value="1">BODEGA PRINCIPAL</option>
-                                                        </select>
+<?php cfg_opciones($opciones['bodega'], $config['id_bodega_merma_inventario'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                     </div>
                                                 </div>
                                             </div>
@@ -289,64 +265,47 @@
                                                 <div class="form-group">
                                                     <label>cliente boleta</label>
                                                     <select class="form-control" name="id_cliente_publico">
-                                                        <option value="0">CLIENTE BOLETA</option>
-                                                        <option value="1">CLIENTE HABITUAL</option>
-                                                    </select>
+<?php cfg_opciones($opciones['cliente'], $config['id_cliente_publico'] ?? 0, 'EL PRIMER CLIENTE (N° más bajo)'); ?>
+</select>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Lista de precio publico</label>
                                                     <select class="form-control" name="id_lpreciopublico">
-                                                        <option value="0">LISTA DE PRECIO A PUBLICO</option>
-                                                        <option value="1">LISTA PUBLICA</option>
-                                                    </select>
+<?php cfg_opciones($opciones['lprecio'], $config['id_lpreciopublico'] ?? 0, 'LA PRIMERA LISTA (N° más bajo)'); ?>
+</select>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>documento de venta</label>
                                                     <select class="form-control" name="id_docventa_defecto">
-                                                        <option value="0">DOCUMENTO DE VENTA (Boleta)</option>
-                                                        <option value="1">BOLETA ELECTRONICA</option>
-                                                    </select>
+<?php cfg_opciones($opciones['tdocumento'], $config['id_docventa_defecto'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Forma de pago por defecto</label>
                                                     <select class="form-control" name="id_fpago_defecto">
-                                                        <option value="0">FORMA DE PAGO por defecto</option>
-                                                        <option value="1">EFECTIVO</option>
-                                                    </select>
+<?php cfg_opciones($opciones['fpago'], $config['id_fpago_defecto'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Solo otorgar vuelto por pago</label>
                                                     <select class="form-control" name="vueltofpago">
-                                                        <option value="0">SOLICITAR VUELTO por pago(efectivo)</option>
-                                                        <option value="1">EFECTIVO</option>
-                                                    </select>
+<?php cfg_opciones($opciones['fpago'], $config['vueltofpago'] ?? 0, 'LA QUE SE LLAME EFECTIVO'); ?>
+</select>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Documento pago cortesias</label>
-                                                    <select class="form-control" name="id_tdocumento_comprobante_interno">
-                                                        <option value="0">DOCUMENTO PAGO CORTESIA</option>
-                                                        <option value="1">COMPROBANTE INTERNO</option>
-                                                    </select>
+                                                    <select class="form-control" name="id_tdocumento_ticket">
+<?php cfg_opciones($opciones['tdocumento'], $config['id_tdocumento_ticket'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>impuestos iva</label>
                                                     <select class="form-control" name="id_impuesto_iva">
-                                                        <option value="0">IMPUESTOS IVA</option>
-                                                        <option value="1">IVA 19%</option>
-                                                    </select>
+<?php cfg_opciones($opciones['impuesto'], $config['id_impuesto_iva'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                 </div>
-                                                <div class="form-group">
-                                                    <label>Documento Comprobante interno</label>
-                                                    <select class="form-control" name="id_tdocumento_comprobante_interno">
-                                                        <option value="0">DOCUMENTO PAGO CORTESIA</option>
-                                                        <option value="1">COMPROBANTE INTERNO</option>
-                                                    </select>
-                                                </div>
-                                                <hr>
+                                                                                                <hr>
                                                 <label><input type="checkbox" name="permitir_retiro_fondo_fijo" value="1" <?php echo ($config['permitir_retiro_fondo_fijo'] ?? false) ? 'checked' : ''; ?>> Permitir retiro fondo fijo</label>
-                                                <label><input type="checkbox" name="lprecio_x_sector" value="1" <?php echo ($config['lprecio_x_sector'] ?? false) ? 'checked' : ''; ?>> Listar precios por sector</label>
-                                                <label><input type="checkbox" name="agregar_comision_a_venta" value="1" <?php echo ($config['agregar_comision_a_venta'] ?? false) ? 'checked' : ''; ?>> Agregar comision a venta</label>
-                                                <label><input type="checkbox" name="pedir_anfitriona" value="1" <?php echo ($config['pedir_anfitriona'] ?? false) ? 'checked' : ''; ?>> Pedir anfitriona</label>
                                             </div>
                                         </div>
                                     </div>
@@ -357,9 +316,6 @@
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="inventario_cierre_caja" value="1" <?php echo ($config['inventario_cierre_caja'] ?? false) ? 'checked' : ''; ?>> Inventario insumos cierre de caja</label>
-                                                <label><input type="checkbox" name="permitir_repetir_producto_menu" value="1" <?php echo ($config['permitir_repetir_producto_menu'] ?? false) ? 'checked' : ''; ?>> Permitir repetir el producto en el menu</label>
-                                                <label><input type="checkbox" name="pedir_comensales_en_mesa" value="1" <?php echo ($config['pedir_comensales_en_mesa'] ?? false) ? 'checked' : ''; ?>> Pedir comensales en mesa</label>
-                                                <label><input type="checkbox" name="imprimir_hora_detalle_productos_pedido" value="1" <?php echo ($config['imprimir_hora_detalle_productos_pedido'] ?? false) ? 'checked' : ''; ?>> Imprimir hora en productos del pedido</label>
                                             </div>
                                         </div>
                                     </div>
@@ -369,7 +325,7 @@
                             <!-- Tab Facturación Electrónica -->
                             <div id="facturacion" class="tab">
                                 <p class="t-config-intro"><i class="fa fa-info-circle"></i> Proveedor DTE, documentos electrónicos, acceso a Cloud Apps y folios autorizados por el SII.</p>
-                                <div class="row">
+                                <div class="row t-dos-columnas">
                                     <div class="col-md-6">
                                         <div class="config-card">
                                             <div class="panel-heading">
@@ -377,6 +333,7 @@
                                             </div>
                                             <div class="panel-body">
                                                 <label><input type="checkbox" name="habilitar_facturacion_electronica" value="1" <?php echo ($config['habilitar_facturacion_electronica'] ?? false) ? 'checked' : ''; ?>> Habilitar factura electronica</label>
+                                                <p class="help-block">En la Caja solo se pueden usar la boleta, la factura y la nota de crédito que estén asignadas abajo, y solo con esta opción activada. El comprobante interno se usa siempre.</p>
                                                 <hr>
                                                 <div class="form-group">
                                                     <label>EMPRESA PROVEEDORA DTE</label>
@@ -388,62 +345,34 @@
                                                 <div class="form-group">
                                                     <label>Factura Electrónica</label>
                                                     <select class="form-control" name="id_tdocumento_factura">
-                                                        <option value="0">FACTURA ELECTRONICA</option>
-                                                    </select>
+<?php cfg_opciones($opciones['tdoc_factura'], $config['id_tdocumento_factura'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Nota de Crédito Electrónica</label>
                                                     <select class="form-control" name="id_tdocumento_nota_credito">
-                                                        <option value="0">NOTA DE CREDITO ELECTRONICA</option>
-                                                        <option value="1">NOTA DE CREDITO FACTURA ELECTRONICA</option>
-                                                    </select>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Guía de Despacho Electrónica</label>
-                                                    <select class="form-control" name="id_tdocumento_guia_despacho">
-                                                        <option value="0">GUIA DE DESPACHO ELECTRONICA</option>
-                                                        <option value="1">OPERACION CONSTITUYE VENTA</option>
-                                                    </select>
+<?php cfg_opciones($opciones['tdoc_nc'], $config['id_tdocumento_nota_credito'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Ind traslado venta factura electronica</label>
                                                     <select class="form-control" name="id_indicador_traslado_venta">
-                                                        <option value="0">GUIA DE DESPACHO ELECTRONICA</option>
-                                                        <option value="1" <?= ($config['id_indicador_traslado_venta'] ?? 0) == 1 ? 'selected' : '' ?>>OPERACION CONSTITUYE VENTA</option>
-                                                    </select>
+<?php cfg_opciones($opciones['indicador_traslado'], $config['id_indicador_traslado_venta'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Boleta Electrónica</label>
                                                     <select class="form-control" name="id_tdocumento_boleta_electronica">
-                                                        <option value="0">BOLETA ELECTRONICA</option>
-                                                    </select>
+<?php cfg_opciones($opciones['tdoc_boleta'], $config['id_tdocumento_boleta_electronica'] ?? 0, 'SIN DEFINIR'); ?>
+</select>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-globe"></i>Parámetros web y DTE</h3>
+                                                <h3 class="panel-title"><i class="fa fa-print"></i>Impresión de documentos</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <div class="form-group">
-                                                    <label>Ruta API Get PDF</label>
-                                                    <input type="text" class="form-control" name="ruta_api_get_pdf" value="<?php echo $config['ruta_api_get_pdf'] ?? ''; ?>">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Ruta API Get QR</label>
-                                                    <input type="text" class="form-control" name="ruta_api_get_qr" value="<?php echo $config['ruta_api_get_qr'] ?? ''; ?>">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Ruta DTE Código QR</label>
-                                                    <input type="text" class="form-control" name="ruta_dte_qr" value="<?php echo $config['ruta_dte_qr'] ?? ''; ?>">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Ruta Consulta Folio DTE</label>
-                                                    <input type="text" class="form-control" name="url_consulta_folio_dte" value="<?php echo $config['url_consulta_folio_dte'] ?? ''; ?>">
-                                                </div>
-                                                <hr>
                                                 <label><input type="checkbox" name="imprimir_pdf_dte" value="1" <?php echo ($config['imprimir_pdf_dte'] ?? false) ? 'checked' : ''; ?>> Imprimir pdf</label>
                                                 <div class="form-group">
                                                     <label>Ruta Impresora/PDF</label>
@@ -488,8 +417,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
                                         <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title"><i class="fa fa-cloud"></i>Acceso facturación (Cloud Apps)</h3>
@@ -509,6 +436,29 @@
                                                     <label>Terminal</label>
                                                     <input type="text" class="form-control" name="terminal_dte" id="txtTerminalDte" maxlength="60" value="<?php echo htmlspecialchars($config['terminal_dte'] ?? '', ENT_QUOTES); ?>" placeholder="Ej: DATAPDV-CAJA1">
                                                     <p class="help-block">Terminal registrado en Cloud Apps para la caja web. Sin terminal no se emiten boletas ni facturas.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"><i class="fa fa-globe"></i>Parámetros web y DTE</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="form-group">
+                                                    <label>Ruta API Get PDF</label>
+                                                    <input type="text" class="form-control" name="ruta_api_get_pdf" value="<?php echo $config['ruta_api_get_pdf'] ?? ''; ?>">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Ruta API Get QR</label>
+                                                    <input type="text" class="form-control" name="ruta_api_get_qr" value="<?php echo $config['ruta_api_get_qr'] ?? ''; ?>">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Ruta DTE Código QR</label>
+                                                    <input type="text" class="form-control" name="ruta_dte_qr" value="<?php echo $config['ruta_dte_qr'] ?? ''; ?>">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Ruta Consulta Folio DTE</label>
+                                                    <input type="text" class="form-control" name="url_consulta_folio_dte" value="<?php echo $config['url_consulta_folio_dte'] ?? ''; ?>">
                                                 </div>
                                             </div>
                                         </div>
@@ -779,6 +729,15 @@
         }
         .t-config .tab > .row > .col-md-12 { -webkit-column-span: all; column-span: all; display: block; }
         .t-config .tab > .row > [class*="col-md-"] > .config-card { margin: 0 0 18px; }
+    }
+    /* Facturación: dos columnas fijas (izquierda y derecha) y Folios a todo el ancho, sin huecos */
+    @media (min-width: 992px) {
+        .t-config .tab > .row.t-dos-columnas { column-count: auto; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 18px; }
+        /* Bootstrap 3 pone ::before/::after (clearfix) en .row: con flex ocupan lugar y empujan la columna derecha abajo */
+        .t-config .tab > .row.t-dos-columnas::before,
+        .t-config .tab > .row.t-dos-columnas::after { display: none; content: none; }
+        .t-config .tab > .row.t-dos-columnas > .col-md-6 { flex: 1 1 0; min-width: 0; width: auto; display: block; }
+        .t-config .tab > .row.t-dos-columnas > .col-md-12 { flex: 0 0 100%; width: 100%; display: block; }
     }
     @media (max-width: 1199px) { .t-config .config-grid { column-count: 2; } }
     @media (max-width: 767px) {

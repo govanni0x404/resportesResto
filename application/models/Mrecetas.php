@@ -130,6 +130,56 @@ class Mrecetas extends CI_Model
 		}
 	}
 
+	/**
+	 * Guarda la receta y reemplaza sus insumos en una sola transacción. Antes se marcaban los insumos anteriores como no
+	 * vigentes y después se insertaban los nuevos, sin transacción: si un insumo fallaba la receta quedaba sin insumos.
+	 * $reemplazar = false (la pantalla no mandó la lista) deja los insumos como estaban.
+	 */
+	public function grabarRecetaCompleta($id, $cabecera, $lineas, $reemplazar)
+	{
+		$this->load->helper('tenant');
+		$db = get_tenant_db($this);
+		$debug = $db->db_debug;
+		$db->db_debug = false;
+		$db->trans_begin();
+		try {
+			$ok = function ($r) use ($db) {
+				if ($r === false) { $e = $db->error(); throw new Exception('Error de base de datos: ' . $e['message']); }
+				return $r;
+			};
+			if ($id > 0) {
+				$ok($db->where('id_receta', (int)$id)->update('receta', $cabecera));
+				$idReceta = (int)$id;
+			} else {
+				$ok($db->insert('receta', $cabecera));
+				$idReceta = (int)$ok($db->query("SELECT CURRVAL('receta_id_receta_seq'::regclass) AS id"))->row()->id;
+			}
+			if ($reemplazar) {
+				$ok($db->query('UPDATE detalle_receta SET vigente = false WHERE id_receta = ?', array($idReceta)));
+				foreach ($lineas as $l) {
+					$ok($db->insert('detalle_receta', array(
+						'id_receta' => $idReceta,
+						'id_insumo' => (int)$l['id_insumo'],
+						'cantidad' => $l['cantidad'],
+						'costo_pp' => $l['costo_pp'],
+						'costo_total' => $l['costo_total'],
+						'es_receta' => $l['es_receta'] ? 't' : 'f',
+						'vigente' => 't',
+						'um_receta' => 0,
+					)));
+				}
+			}
+			$db->trans_commit();
+			$db->db_debug = $debug;
+			return $idReceta;
+		} catch (Throwable $e) {
+			$db->trans_rollback();
+			$db->db_debug = $debug;
+			log_message('error', 'Recetas: ' . $e->getMessage());
+			throw new Exception(strpos($e->getMessage(), 'Error de base de datos') === 0 ? 'No se pudo guardar la receta. Intenta de nuevo.' : $e->getMessage());
+		}
+	}
+
 	public function grabarDetalleReceta($idDetalle, $data)
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {

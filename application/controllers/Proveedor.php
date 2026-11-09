@@ -47,12 +47,7 @@ class Proveedor extends CI_Controller
     }
     $id = intval($d['id_proveedor']);
 
-    // Validar el campo creditomaximo para evitar el error en PostgreSQL
-    $creditomaximo = trim($d['creditomaximo']);
-    if ($creditomaximo === '' || $creditomaximo === null) {
-        $creditomaximo = null; // o 0 si prefieres asignar valor por defecto
-    }
-
+    // El crédito es solo para clientes: el proveedor ya no tiene crédito máximo (no se envía ni se toca en la base)
     $miData = array(
       'nombre_proveedor' => $d['nombre_proveedor'],
       'rut' => $d['rut'],
@@ -61,7 +56,6 @@ class Proveedor extends CI_Controller
       'telefono' => $d['telefono'],
       'mail' => $d['mail'],
       'giro' => $d['giro'],
-      'creditomaximo' => $creditomaximo,
     );
     $r = $this->Mproveedor->grabarNuevoProveedor($id, $miData);
     if ($r && isset($r['id_proveedor'])) {

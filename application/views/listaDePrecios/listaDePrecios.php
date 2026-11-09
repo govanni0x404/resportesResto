@@ -156,11 +156,9 @@ $fechaActual = date('Y-m-d');
                                             <div class="tab-pane fade active in" id="tabDatosUsuarios">
                                                 <!-- CAMPOS DE REGISTRO  -->
                                                 <fieldset>
-                                                    <div class="col-sm-3">
-                                                        <label for="idlPrecio">ID</label>
-                                                        <input type="number" disabled class="form-control input-sm input-sm" name="idlPrecio" id="idlPrecio" requerido="no" value="">
-                                                    </div>
-                                                    <div class="col-sm-9">
+                                                    <!-- El ID lo pone la base al grabar: se deja oculto (solo sirve al editar) -->
+                                                    <input type="hidden" name="idlPrecio" id="idlPrecio" value="">
+                                                    <div class="col-sm-12">
                                                         <label for="nombreLprecio">NOMBRE LISTA DE PRECIOS *</label>
                                                         <input type="text" class="form-control input-sm input-sm" maxlength='28' onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreLprecio" id="nombreLprecio" requerido="si" value="" placeholder="Nombre Lista Precios" />
                                                     </div>

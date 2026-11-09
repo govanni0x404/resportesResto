@@ -34,23 +34,23 @@ class MinsumosPorBodega extends CI_Model
 																		 group by i.id_insumo, gi.id_grupo_insumo, b.nombre_bodega
 																		 order by nombre_insumo";*/
 
-		$q = "SELECT i.id_insumo, i.nombre_insumo, u.nombre_umedida, round(sum(si.saldo)) as saldo, gi.nombre_grupo_insumo, b.nombre_bodega
-		from stock_insumo si
-		join insumo i on si.id_insumo = i.id_insumo
-		join bodega b on b.id_bodega=si.id_bodega
-		join umedida u on i.id_umedida_inventario=u.id_umedida
-		join grupo_insumo gi on i.id_grupo_insumo = gi.id_grupo_insumo
-		where 1=1
-
-";
+		// Todas las bodegas: una fila por insumo con el stock total y cuántas bodegas lo tienen (el detalle por bodega
+		// se ve en el modal). Una bodega: solo sus filas.
+		$q = "SELECT i.id_insumo, i.nombre_insumo, u.nombre_umedida, round(sum(si.saldo)) as saldo, gi.nombre_grupo_insumo,
+				count(DISTINCT si.id_bodega) AS bodegas, min(b.nombre_bodega) AS nombre_bodega
+			from stock_insumo si
+			join insumo i on si.id_insumo = i.id_insumo
+			join bodega b on b.id_bodega = si.id_bodega
+			join umedida u on i.id_umedida_inventario = u.id_umedida
+			join grupo_insumo gi on i.id_grupo_insumo = gi.id_grupo_insumo
+			where 1=1";
 		if ($id_bodega > 0) {
 			$q = $q . " and b.id_bodega=" . (int)$id_bodega;
 		}
 		if ($id_grupo_insumo > 0) {
 			$q = $q . " and i.id_grupo_insumo=" . (int)$id_grupo_insumo;
 		}
-		
-		$q = $q . " group by i.id_insumo, gi.id_grupo_insumo, b.nombre_bodega, u.nombre_umedida";
+		$q = $q . " group by i.id_insumo, i.nombre_insumo, gi.nombre_grupo_insumo, u.nombre_umedida order by i.nombre_insumo";
 
 		$consulta = $this->db->query($q);
 		$sampleData = $consulta->result();
@@ -64,7 +64,8 @@ class MinsumosPorBodega extends CI_Model
 					"nombre_insumo" => $key->nombre_insumo,
 					"saldo" => $key->saldo,
 					"nombre_umedida" => $key->nombre_umedida,
-					"nombre_bodega" => $key->nombre_bodega,
+					"nombre_bodega" => (int)$key->bodegas > 1 ? (int)$key->bodegas . ' bodegas' : $key->nombre_bodega,
+					"bodegas" => (int)$key->bodegas,
 					"nombre_grupo_insumo" => $key->nombre_grupo_insumo,
 				)
 			);
@@ -85,11 +86,12 @@ class MinsumosPorBodega extends CI_Model
 			redirect(base_url());//redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$q = "SELECT i.nombre_insumo, cast(si.saldo as int) as saldo, b.nombre_bodega
+		$q = "SELECT i.nombre_insumo, round(si.saldo) as saldo, b.nombre_bodega
 			from stock_insumo si
 			join insumo i on si.id_insumo = i.id_insumo
 			join bodega b on si.id_bodega = b.id_bodega
-			where si.id_insumo = " . (int)$id_insumo;
+			where si.id_insumo = " . (int)$id_insumo . "
+			order by b.nombre_bodega";
 
 		$query = $this->db->query($q)->result();
 		return $query;

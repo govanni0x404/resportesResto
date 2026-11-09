@@ -17,7 +17,7 @@
 					</ul>
 					<div class="tab-pane fade active in" id="tabDatosUsuarios">
 						<fieldset>
-							<div class="col-sm-4">
+							<div class="col-sm-4" style="display:none" data-id-auto="1">
 								<label for="idMsg">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idMsg" id="idMsg" requerido="no" value="" />
 							</div>

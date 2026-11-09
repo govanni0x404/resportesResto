@@ -5,6 +5,54 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <?php $this->load->helper('permisos_web'); ?>
+    <meta name="csrf-web" content="<?php echo csrf_web_token($this) ?>">
+    <script>
+        // Anti-CSRF: agrega la clave de la sesión a todo envío POST hacia este mismo sitio (jQuery, fetch y formularios).
+        (function () {
+            var token = document.querySelector('meta[name="csrf-web"]').content;
+            var mismoSitio = function (url) {
+                try { return new URL(url, location.href).origin === location.origin; } catch (e) { return false; }
+            };
+            var abrir = XMLHttpRequest.prototype.open, enviar = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.open = function (metodo, url) {
+                this.__csrf = String(metodo).toUpperCase() !== 'GET' && mismoSitio(url);
+                return abrir.apply(this, arguments);
+            };
+            XMLHttpRequest.prototype.send = function () {
+                if (this.__csrf) this.setRequestHeader('X-CSRF-Token', token);
+                return enviar.apply(this, arguments);
+            };
+            if (window.fetch) {
+                var fetchOriginal = window.fetch;
+                window.fetch = function (recurso, opciones) {
+                    opciones = opciones || {};
+                    var url = typeof recurso === 'string' ? recurso : (recurso && recurso.url) || '';
+                    var metodo = (opciones.method || (recurso && recurso.method) || 'GET').toUpperCase();
+                    if (metodo !== 'GET' && mismoSitio(url)) {
+                        var h = new Headers(opciones.headers || (recurso && recurso.headers) || {});
+                        h.set('X-CSRF-Token', token);
+                        opciones.headers = h;
+                    }
+                    return fetchOriginal.call(this, recurso, opciones);
+                };
+            }
+            var marcar = function (form) {
+                if (!form || String(form.method).toLowerCase() !== 'post' || !mismoSitio(form.action)) return;
+                var campo = form.querySelector('input[name="csrf_web"]');
+                if (!campo) {
+                    campo = document.createElement('input');
+                    campo.type = 'hidden';
+                    campo.name = 'csrf_web';
+                    form.appendChild(campo);
+                }
+                campo.value = token;
+            };
+            document.addEventListener('submit', function (e) { marcar(e.target); }, true);
+            var submitOriginal = HTMLFormElement.prototype.submit;
+            HTMLFormElement.prototype.submit = function () { marcar(this); return submitOriginal.apply(this, arguments); };
+        })();
+    </script>
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <title>DATAMAULE RESTO WEB</title>
 
@@ -437,46 +485,14 @@
         </div>
     </div>
     <?php
-    $__menuAccesos = array();
-    $__rolId = (int)$this->session->userdata('id_rol');
-
-    try {
-        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-
-        $q = "SELECT ps.nombre_vb, COALESCE(pu.autoriza, false) as autoriza
-              FROM psistema ps
-              LEFT JOIN pusuario pu 
-                ON pu.id_psistema = ps.id_psistema 
-               AND pu.id_rol = $__rolId
-              WHERE ps.vigente = true
-                AND ps.nombre_psistema = 'RESTO WEB'";
-        $rows = $this->db->query($q)->result();
-        foreach ($rows as $r) {
-            $__menuAccesos[strtolower(trim($r->nombre_vb))] = ($r->autoriza === 't' || $r->autoriza === true);
-        }
-    } catch (Exception $e) {
-        $__menuAccesos = array();
-    }
-
-    // La vista se incluye dentro de un método de CI_Loader: sus variables no son globales,
-    // por eso se publican en $GLOBALS para que menu_visible() las lea.
-    $GLOBALS['__menuAccesos'] = $__menuAccesos;
-    $GLOBALS['__menuEsAdmin'] = ($__rolId === 1);
+    // Qué módulos ve este rol: misma regla que el control del servidor (helpers/permisos_web_helper.php)
+    $this->load->helper('permisos_web');
+    $GLOBALS['__menuCI'] = $this;
 
     if (!function_exists('menu_visible')) {
         function menu_visible($nombreVb)
         {
-            global $__menuAccesos, $__menuEsAdmin;
-            // Gerencia (rol 1) ve todo, para que nunca quede sin acceso a Privilegios de Usuario
-            if ($__menuEsAdmin) {
-                return true;
-            }
-            $k = strtolower(trim((string)$nombreVb));
-            if (!is_array($__menuAccesos) || !array_key_exists($k, $__menuAccesos)) {
-                // Usuarios, privilegios y configuraciones exigen permiso explícito (igual que el control del servidor)
-                return !in_array($k, array('usuario', 'privilegiosusuario', 'configuraciones'), true);
-            }
-            return $__menuAccesos[$k] === true;
+            return permiso_web($GLOBALS['__menuCI'], $nombreVb);
         }
     }
     ?>
@@ -802,7 +818,7 @@
                         $__showConsultas = $__showInsumosPorBodega || $__showDetalleOperaciones || $__showCierresDeCaja || $__showResumenDeCompras || $__showConsolidadoVentas || $__showVentasPorProducto || $__showPropinasPorGarzon || $__showResumenAnulaciones || $__showListadoDeClientes || $__showVentasMensualesTotalizadas || $__showResumenVentasProductosMes || $__showMovimientosBodega;
 
                         $__isAdmin = ((int)$this->session->userdata('id_rol') === 1);
-                        $__showPrivilegiosUsuario = $__isAdmin || menu_visible('PrivilegiosUsuario');
+                        $__showPrivilegiosUsuario = $__isAdmin;   // solo gerencia administra los permisos
                         $__showMesas = $__isAdmin || menu_visible('Mesas');
                         $__showHerramientas = $__showPrivilegiosUsuario || $__showMesas;
 

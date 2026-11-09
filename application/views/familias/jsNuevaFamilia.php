@@ -19,11 +19,11 @@
 						<!-- CAMPOS DE REGISTRO  -->
 						<div class="t-card-titulo">Datos de la familia</div>
 						<fieldset>
-							<div class="col-sm-3">
+							<div class="col-sm-3" style="display:none" data-id-auto="1">
 								<label for="idFamilia">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idFamilia" id="idFamilia" requerido="no" value="">
 							</div>
-							<div class="col-sm-9">
+							<div class="col-sm-12">
 								<label for="nombreFamilia">FAMILIA *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreFamilia" id="nombreFamilia" requerido="si" value="" placeholder="Nombre Familia" />
 							</div>

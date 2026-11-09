@@ -172,6 +172,7 @@
                 $("#CorreoCliente").val(rowData[0].mail);
                 $("#GiroCliente").val(rowData[0].giro);
                 $("#CreditoMaximoCliente").val(rowData[0].creditomaximo);
+                $("#PlazoCreditoCliente").val(String(rowData[0].plazo_credito != null ? rowData[0].plazo_credito : 30));
                 ListarComunas(rowData[0].nombre_comuna);
                 ListarListasDePrecios(rowData[0].nombre_lprecio);
                 $('#ModalNuevoCliente').modal('show');

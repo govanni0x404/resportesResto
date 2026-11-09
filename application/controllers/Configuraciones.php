@@ -17,10 +17,12 @@ class Configuraciones extends CI_Controller {
         $data['base_datos_actual'] = isset($tenantDb->database) ? $tenantDb->database : '';
 
         $this->Mconfiguraciones->asegurar_columnas_dte();
+        $this->Mconfiguraciones->aplicar_defectos();
         $data['config'] = $this->Mconfiguraciones->get_configuracion();
         $data['documentos_dte'] = $this->Mconfiguraciones->get_documentos_dte();
         $data['empresa'] = $this->Mconfiguraciones->get_empresa();
         $data['bodegas'] = $this->Mconfiguraciones->get_bodegas();
+        $data['opciones'] = $this->Mconfiguraciones->get_opciones($data['config']);
         $this->load->view('menuTop.php', $data);
         $this->load->view('configuraciones/configuraciones', $data);
         $this->load->view('menuFooter.php');
@@ -46,6 +48,7 @@ class Configuraciones extends CI_Controller {
             return;
         }
         $this->load->model('Mdte');
+        // Siempre con los datos de Acceso facturación de la pantalla (RUT válido, contraseña y terminal obligatorios)
         echo json_encode($this->Mdte->consultarFolios(
             trim((string)$this->input->post('usuario')),
             (string)$this->input->post('clave'),
@@ -66,33 +69,21 @@ class Configuraciones extends CI_Controller {
         $update_empresa = [];
 
         // ==================== CONFIGURACION ====================
-        // BOOLEANOS - Todos los checkboxes (nombres exactos según la BD)
+        // BOOLEANOS - Todos los checkboxes (nombres exactos según la BD).
+        // Las opciones que la web no usa (Ver en caja, Precuentas, botón ver propina, propina en delivery, valor en comandas,
+        // precios por sector, comisión, anfitriona, comensales, hora en productos, preguntar propina en pago,
+        // cambio del costo de insumo, ordenar carta)
+        // ya no están en la pantalla ni aquí, para que al grabar no se apaguen: quedan como estén en la base.
         $boolean_fields = [
-            'ver_delivery_caja',
-            'ver_barra_caja',
-            'mostraridpedido',
-            'mostrar_nombre_cliente_venta',
-            'mostrar_nombre_garzon_venta',
-            'garzon_emite_precuenta',
-            'usar_impresora_local_precuenta',
-            'ocultar_cuenta_garzon',
-            'omitir_productos_sin_precio_precuenta',
             'calcular_valor_propina',
-            'preguntar_calculo_propina_en_pago',
-            'mostrar_boton_propina_garzon',
-            'propina_en_delivery',
             'propina_en_venta_directa',
-            'permitircambiarppp',
-            'ordenar_carta',
             'imprimir_comprobante_anulacion',
-            'imprimir_valor_producto_cocina',
             'usar_correo_electronico',
             'informar_anulaciones_mail',
             'ver_ingresos_egresos_cierre_caja',
             'ver_creditos_a_clientes_cierre_caja',
             'ver_cortesias_cierre_caja',
             'ver_anulaciones_eliminaciones_cierre_caja',
-            'ver_detalle_atencion_cierre_caja',
             'mostrar_recaudacion_cierre_no_efectivo',
             'cierre_caja_manual',
             'imprimir_cierre_caja_impresora_termica',
@@ -103,13 +94,7 @@ class Configuraciones extends CI_Controller {
             'requerir_usuario_admin_descuento',
             'boton_apertura_caja_solo_admin',
             'permitir_retiro_fondo_fijo',
-            'lprecio_x_sector',
-            'agregar_comision_a_venta',
-            'pedir_anfitriona',
             'inventario_cierre_caja',
-            'permitir_repetir_producto_menu',
-            'pedir_comensales_en_mesa',
-            'imprimir_hora_detalle_productos_pedido',
             'habilitar_facturacion_electronica',
             'imprimir_pdf_dte',
             'imprimir_copia_cedible',
@@ -138,11 +123,10 @@ class Configuraciones extends CI_Controller {
             'id_docventa_defecto',
             'id_fpago_defecto',
             'vueltofpago',
-            'id_tdocumento_comprobante_interno',
+            'id_tdocumento_ticket',          // documento para cortesías / comprobante interno (lo usa la Caja)
             'id_impuesto_iva',
             'id_tdocumento_factura',
             'id_tdocumento_nota_credito',
-            'id_tdocumento_guia_despacho',
             'id_indicador_traslado_venta',
             'id_tdocumento_boleta_electronica',
             'id_comuna_sii',
@@ -177,6 +161,11 @@ class Configuraciones extends CI_Controller {
             if (isset($post[$f])) {
                 $update_config[$f] = $post[$f];
             }
+        }
+        // Usuario de Cloud Apps: RUT sin puntos (con puntos Cloud Apps responde "clave inválida")
+        if (isset($update_config['usuario_dte']) && trim($update_config['usuario_dte']) !== '') {
+            $this->load->model('Mdte');
+            $update_config['usuario_dte'] = Mdte::rutUsuario($update_config['usuario_dte']);
         }
         if (isset($post['modo_caja_web']) && in_array($post['modo_caja_web'], array('directa', 'mesas', 'ambos'), true)) {
             $update_config['modo_caja_web'] = $post['modo_caja_web'];
@@ -231,5 +220,25 @@ class Configuraciones extends CI_Controller {
         // La configuración debe quedar guardada; empresa puede venir sin cambios
         $ok = $ok_config && ($ok_empresa || empty($update_empresa));
         echo json_encode(['status' => $ok ? 'success' : 'error']);
+    }
+
+    /** Correo de prueba (botón "Probar envío") a los correos escritos, con el servidor de correo del sistema. */
+    public function probarCorreo() {
+        header('Content-Type: application/json; charset=utf-8');
+        if ((int)$this->session->userdata('id_rol') !== 1 || $this->input->method() !== 'post') {
+            http_response_code(403);
+            echo json_encode(array('ok' => false, 'detalle' => 'Solo un administrador puede probar el correo'));
+            return;
+        }
+        $this->load->helper('tenant');
+        $this->load->library('Correo_resto');
+        $correos = (string)$this->input->post('correos');
+        if (!Correo_resto::destinatarios($correos)) {
+            echo json_encode(array('ok' => false, 'detalle' => 'Ningún correo válido. Sepáralos por coma, ej: uno@correo.cl, otro@correo.cl'));
+            return;
+        }
+        list($ok, $detalle) = $this->correo_resto->enviar($this, get_tenant_db($this), 'Prueba de correo - Resto Web',
+            '<p>Este es un correo de prueba de <b>Resto Web</b>.</p><p>Si lo recibiste, los informes por correo (cierre de caja y anulaciones) llegarán a esta dirección.</p>', $correos);
+        echo json_encode(array('ok' => $ok, 'detalle' => $detalle), JSON_UNESCAPED_UNICODE);
     }
 }

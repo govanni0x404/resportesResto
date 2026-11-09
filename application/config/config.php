@@ -23,16 +23,17 @@ defined('BASEPATH') or exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-//$config['base_url'] = 'http://localhost/reportesResto/';
-$root  = "https://".$_SERVER['HTTP_HOST'];
-$root .= str_replace(basename($_SERVER['SCRIPT_NAME']),"",$_SERVER['SCRIPT_NAME']);
-/*$config['base_url']    = $root;*/
-// Toma el host de la petición (localhost o la IP de la red local) para probar desde otros equipos
+// Direcciones permitidas del sitio. La dirección se arma con el host de la petición SOLO si está en esta lista;
+// si llega otro host (falseado en la cabecera Host) se usa la primera. Al subir al VPS agrega aquí su dominio o IP,
+// ej. 'resto.datamaule.cl'. También se puede fijar con la variable de entorno RESTO_BASE_URL (gana sobre la lista).
+$hostsPermitidos = array('localhost:8001', '127.0.0.1:8001', '192.168.100.163:8001');
 $esHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
 	|| (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-$config['base_url'] = isset($_SERVER['HTTP_HOST'])
-	? ($esHttps ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . str_replace(basename($_SERVER['SCRIPT_NAME']), '', $_SERVER['SCRIPT_NAME'])
-	: 'http://localhost:8001/';
+$hostPedido = isset($_SERVER['HTTP_HOST']) ? strtolower($_SERVER['HTTP_HOST']) : '';
+$hostUsado = in_array($hostPedido, $hostsPermitidos, true) ? $hostPedido : $hostsPermitidos[0];
+$rutaSitio = isset($_SERVER['SCRIPT_NAME']) ? str_replace(basename($_SERVER['SCRIPT_NAME']), '', $_SERVER['SCRIPT_NAME']) : '/';
+$config['base_url'] = getenv('RESTO_BASE_URL') ?: (($esHttps ? 'https' : 'http') . '://' . $hostUsado . $rutaSitio);
+unset($hostsPermitidos, $hostPedido, $hostUsado, $rutaSitio);
 
 /*
 |--------------------------------------------------------------------------
@@ -395,12 +396,12 @@ $config['encryption_key'] = '';
 $config['sess_driver'] = 'files';
 $config['sess_cookie_name'] = 'RestoWeb_session';
 $config['sess_samesite'] = 'Lax';
-$config['sess_expiration'] = 7200;
+$config['sess_expiration'] = 28800;   // 8 horas (un turno); al cerrar el navegador igual se pide entrar de nuevo si pasa ese tiempo
 //$config['sess_save_path'] = APPPATH . 'cache';
 $config['sess_save_path'] = NULL;
-$config['sess_match_ip'] = FALSE;
+$config['sess_match_ip'] = FALSE;      // FALSE: en celulares la IP cambia entre wifi y datos
 $config['sess_time_to_update'] = 300;
-$config['sess_regenerate_destroy'] = FALSE;
+$config['sess_regenerate_destroy'] = FALSE;   // FALSE: la Caja hace varias peticiones a la vez y con TRUE alguna podía quedar sin sesión al renovar el id
 
 /*
 |--------------------------------------------------------------------------
@@ -421,8 +422,8 @@ $config['sess_regenerate_destroy'] = FALSE;
 $config['cookie_prefix']	= '';
 $config['cookie_domain']	= '';
 $config['cookie_path']		= '/';
-$config['cookie_secure']	= FALSE;
-$config['cookie_httponly'] 	= FALSE;
+$config['cookie_secure']	= $esHttps;   // con https la cookie solo viaja cifrada
+$config['cookie_httponly'] 	= TRUE;   // el JavaScript de la página no puede leer la cookie de sesión
 $config['cookie_samesite'] 	= 'Lax';
 
 /*

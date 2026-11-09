@@ -59,11 +59,11 @@
 							<div class="tab-pane fade active in" id="tabDatosInsumo">
 								<!-- CAMPOS DE REGISTRO  -->
 								<fieldset>
-									<div class="col-md-4">
+									<div class="col-md-4" style="display:none" data-id-auto="1">
 										<label for="idInsumo">ID</label>
 										<input type="number" disabled class="form-control input-sm input-sm" name="idInsumo" id="idInsumo" requerido="no" value="">
 									</div>
-									<div class="col-md-8">
+									<div class="col-md-12">
 										<label for="codBarra">CODIGO INTERNO</label>
 										<input type="text" class="form-control input-sm input-sm" name="codBarra" id="codBarra" maxlength='50' onkeypress="return sololetrasyNumeros(event)" requerido="no" value="">
 									</div>
@@ -397,7 +397,7 @@
                     <div class="row">
                         <div class="col-md-12">
                             <fieldset>
-                                <div class="col-md-4">
+                                <div class="col-md-4" style="display:none" data-id-auto="1">
                                     <label for="idRecetaProduccion">ID</label>
                                     <input type="number" disabled class="form-control input-sm" 
                                            name="idRecetaProduccion" id="idRecetaProduccion" value="" />

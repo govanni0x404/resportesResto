@@ -19,11 +19,11 @@
           <div class="tab-pane fade active in" id="tabBodegas">
             <!-- CAMPOS DE REGISTRO  -->
             <fieldset>
-              <div class="col-sm-3">
+              <div class="col-sm-3" style="display:none" data-id-auto="1">
                 <label for="idItemGastoMensual">ID</label>
                 <input type="number" disabled class="form-control input-sm input-sm" name="idItemGastoMensual" id="idItemGastoMensual" requerido="no" value="" />
               </div>
-              <div class="col-sm-9">
+              <div class="col-sm-12">
                 <label for="nombreItemGastoMensual">NOMBRE ITEM GASTO MENSUAL *</label>
                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreItemGastoMensual" id="nombreItemGastoMensual" requerido="si" value="" placeholder="Nombre Item Gasto Mensual" />
               </div>

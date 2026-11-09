@@ -31,6 +31,18 @@
         });
     }
 
+    // Probar envío: manda un correo de prueba a los correos escritos (aunque no se haya grabado) con el servidor de correo
+    // del sistema guardado en la base
+    $(document).on('click', '#btnProbarCorreo', function () {
+        var $b = $(this), correos = $.trim($('#txtCorreosInforme').val());
+        if (!correos) { swal('Atención', 'Escribe al menos un correo', 'warning'); return; }
+        $b.prop('disabled', true).text('Enviando…');
+        $.ajax({ url: base_url + 'index.php/Configuraciones/probarCorreo', type: 'POST', dataType: 'json', data: { correos: correos } })
+            .done(function (r) { swal(r.ok ? 'Correo enviado' : 'No se pudo enviar', r.detalle, r.ok ? 'success' : 'error'); })
+            .fail(function (x) { swal('No se pudo enviar', (x.responseJSON && x.responseJSON.detalle) || 'Error al enviar el correo', 'error'); })
+            .always(function () { $b.prop('disabled', false).text('Probar envío'); });
+    });
+
     function toggleMostrarClaveAdmin() {
         var input = document.getElementById('txtclaveAdmin');
         var chk = document.getElementById('chkMostrarClaveAdmin');
@@ -106,9 +118,14 @@
         function normalizarRut(r) { return String(r || '').replace(/[^0-9kK]/g, '').toUpperCase().replace(/^0+/, ''); }
         function revisarUsuarioDte() {
             var u = $('#txtUsuarioDte').val();
-            var distinto = rutEmpresaDte && u && normalizarRut(u) !== normalizarRut(rutEmpresaDte);
+            // La cuenta demo de Cloud Apps (66666666-6) sirve para pruebas en cualquier empresa
+            var demo = normalizarRut(u) === '666666666';
+            var distinto = rutEmpresaDte && u && !demo && normalizarRut(u) !== normalizarRut(rutEmpresaDte);
             $('#avisoUsuarioDte').remove();
-            if (distinto) {
+            if (demo) {
+                $('#txtUsuarioDte').after('<p class="help-block text-warning" id="avisoUsuarioDte"><i class="fa fa-flask"></i> '
+                    + 'Cuenta de pruebas de Cloud Apps: los documentos salen como EMPRESA DEMO y no se envían al SII.</p>');
+            } else if (distinto) {
                 $('#txtUsuarioDte').after('<p class="help-block text-danger" id="avisoUsuarioDte"><i class="fa fa-exclamation-triangle"></i> '
                     + 'No coincide con el RUT de esta empresa (' + rutEmpresaDte + '). La caja no emitirá documentos con un RUT distinto.</p>');
             }

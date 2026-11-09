@@ -60,6 +60,8 @@
 		// Preferencia por computador (la impresora es de cada caja). Por defecto se imprime, como el POS.
 		var CLAVE_IMPRIMIR = 'cajaWeb.imprimirTicket';
 		function imprimeTicket() {
+			// Configuraciones > Impresión de documentos > Imprimir: desmarcado, la caja no imprime boletas/facturas sola
+			if (catalogo && catalogo.config && catalogo.config.imprimir_documento === false) return false;
 			try { return localStorage.getItem(CLAVE_IMPRIMIR) !== '0'; } catch (e) { return true; }
 		}
 		$('.chk-imprimir').prop('checked', imprimeTicket()).on('change', function () {
@@ -85,6 +87,21 @@
 			$('#frameImpresion').remove();
 			$('<iframe id="frameImpresion" class="caja-frame-impresion" aria-hidden="true">')
 				.attr('src', url + (url.indexOf('?') < 0 ? '?' : '&') + 'imprimir=1').appendTo('body');
+		}
+
+		// Boleta/factura a la impresora de la caja por el agente de impresión (como las comandas). Si no hay impresora
+		// de caja configurada o no se pudo enviar, se imprime desde el navegador como antes. despues() = siguiente impresión.
+		function imprimirTicket(idVenta, despues) {
+			$.ajax({ url: base + 'imprimirTicket', type: 'POST', dataType: 'json', data: { id_venta: idVenta } })
+				.done(function (r) {
+					if (r.ok) toastr.success('Boleta enviada a la impresora', '', { timeOut: 2500 });
+					else {
+						if (r.detalle && !r.navegador) toastr.error('Boleta: ' + r.detalle, '', { timeOut: 9000 });
+						if (r.navegador) imprimir(base + 'ticket/' + idVenta);
+					}
+				})
+				.fail(function () { imprimir(base + 'ticket/' + idVenta); })
+				.always(function () { if (despues) despues(); });
 		}
 
 		// Comanda web (cocina, barra...): se imprime después del ticket, con el mensaje de cada producto.
@@ -174,7 +191,7 @@
 					// Los electrónicos se habilitan si la empresa emite por Cloud Apps (credenciales y terminal)
 					$.each(r.documentos, function (i, d) {
 						$d.append($('<option>').val(d.id_tdocumento).prop('disabled', !d.habilitado)
-							.text(d.nombre + (d.habilitado ? '' : ' (requiere emisión SII)')));
+							.text(d.nombre + (d.habilitado ? '' : ' (' + (d.motivo || 'requiere emisión SII') + ')')));
 					});
 					var disponibles = $.grep(r.documentos, function (d) { return d.habilitado; });
 					var $c = $('#cboComuna').empty().append('<option value="0">— Comuna —</option>');
@@ -960,6 +977,11 @@
 				swal('Descuento', 'El descuento máximo permitido es ' + catalogo.config.por_maximo_descuento + '%', 'warning');
 				return false;
 			}
+			// Configuraciones > Descuentos > Requerir cliente
+			if (catalogo.config.descuento_cliente && t.descuento > 0 && (!cliente || Number(cliente.id_cliente) === catalogo.config.id_cliente_publico)) {
+				swal('Falta el cliente', 'Para hacer un descuento debes elegir el cliente de la venta', 'warning');
+				return false;
+			}
 			return true;
 		}
 		// propinaElegida: monto respondido en el modal de propina; null si no se preguntó
@@ -1190,10 +1212,12 @@
 				$('#ventaOkTicket').attr('href', base + 'ticket/' + r.id_venta + '?imprimir=1');
 				$('#ventaOkPdf').attr('href', base + 'pdf/' + r.id_venta);
 				$('#modalVentaOk').modal('show');
-				if (imprimeTicket()) imprimir(base + 'ticket/' + r.id_venta);
-				// La comanda sale después del ticket para no cruzar los dos diálogos de impresión
-				// En una mesa la comanda ya salió al enviar el pedido
-				if (imprimeComanda() && !idMesa) imprimirComanda(r.comanda_id, 'Comanda');
+				// La comanda sale después de la boleta (en la cola del agente quedan en ese orden).
+				// En una mesa la comanda ya salió al enviar el pedido.
+				var comandaVenta = imprimeComanda() && !idMesa ? r.comanda_id : null;
+				var conComanda = function () { if (comandaVenta) imprimirComanda(comandaVenta, 'Comanda'); };
+				if (imprimeTicket()) imprimirTicket(r.id_venta, conComanda);
+				else conComanda();
 				limpiarVenta();
 				cargarEstado();
 				// Se cobró una parte: la mesa sigue abierta con el resto
@@ -1678,19 +1702,170 @@
 				swal.close();
 				enviarConAutorizacion(function (aut) {
 					return $.ajax({ url: base + 'anular', type: 'POST', dataType: 'json', data: { id_venta: id, motivo: motivo, autorizacion: aut } });
-				}, function () {
+				}, function (r) {
 					toastr.success('Venta folio ' + folio + ' anulada');
+					if (r && r.impresion) {
+						if (r.impresion.ok) toastr.success('Comprobante de anulación enviado a la impresora', '', { timeOut: 2500 });
+						else toastr.error('Comprobante de anulación: ' + r.impresion.detalle, '', { timeOut: 9000 });
+					}
+					if (r && r.correo && !r.correo.ok) toastr.error('Correo de la anulación: ' + r.correo.detalle, '', { timeOut: 9000 });
 					cargarVentas();
 				});
 			});
 		});
+
+		// ---------------- créditos de clientes ----------------
+		// Lista de clientes con deuda; al elegir uno se ven sus ventas a crédito pendientes (con su detalle), se marcan las
+		// que paga y se registra el pago (queda en la caja y sale el comprobante en la impresora de caja).
+		var cred = { clientes: [], cliente: null, pendientes: [] };
+		function cargarClientesCredito() {
+			return get('clientesConDeuda').done(function (r) {
+				cred.clientes = r.clientes || [];
+				pintarClientesCredito();
+			});
+		}
+		function pintarClientesCredito() {
+			var q = $.trim($('#credBuscar').val()).toUpperCase().replace(/\./g, '');
+			var lista = $.grep(cred.clientes, function (c) {
+				return !q || c.nombre.toUpperCase().indexOf(q) >= 0 || c.rut.replace(/\./g, '').indexOf(q) >= 0;
+			});
+			if (!lista.length) {
+				$('#credClientes').html('<div class="text-muted text-center" style="padding:20px">' + (cred.clientes.length ? 'Ningún cliente coincide' : 'Ningún cliente debe créditos') + '</div>');
+				return;
+			}
+			$('#credClientes').html($.map(lista, function (c) {
+				return '<a class="list-group-item' + (cred.cliente && cred.cliente.id_cliente === c.id_cliente ? ' active' : '') + '" data-id="' + c.id_cliente + '">'
+					+ '<span class="cred-monto">' + fmt(c.deuda) + '</span><b>' + esc(c.nombre) + '</b><br><small class="text-muted">'
+					+ esc(c.rut) + ' · ' + c.ventas + ' venta(s)</small>'
+					+ (c.vencido ? '<br><span class="cred-vencido"><i class="fa fa-exclamation-triangle"></i> Vencido ' + fmt(c.vencido) + '</span>' : '')
+					+ '</a>';
+			}).join(''));
+		}
+		$('#credBuscar').on('input', pintarClientesCredito);
+		$('#credClientes').on('click', '.list-group-item', function () { cargarCreditosCliente(Number($(this).data('id'))); });
+		$('#lnkCreditos').on('shown.bs.tab', function () { cargarClientesCredito(); if (cred.cliente) cargarCreditosCliente(cred.cliente.id_cliente); });
+
+		function cargarCreditosCliente(id) {
+			$('#credDetalle').html('<p class="text-muted text-center" style="margin:30px 0"><i class="fa fa-spinner fa-spin"></i> Cargando…</p>');
+			return get('creditosCliente', { id_cliente: id }).done(function (r) {
+				cred.cliente = r.cliente;
+				cred.pendientes = r.pendientes || [];
+				pintarClientesCredito();
+				pintarCreditosCliente(r);
+			});
+		}
+		function pintarCreditosCliente(r) {
+			var c = r.cliente;
+			$('#credTitulo').text(c.nombre);
+			$('#credSubtitulo').text((c.rut ? 'RUT ' + c.rut + ' · ' : '') + (c.plazo > 0 ? 'Plazo ' + c.plazo + ' días' : 'Sin plazo') + (c.cupo > 0 ? ' · Cupo ' + fmt(c.cupo) : ''));
+			var h = '<div class="cred-resumen"><div><small>Debe</small><b>' + fmt(c.deuda) + '</b></div>'
+				+ '<div><small>Vencido</small><b' + (c.vencido ? ' style="color:#C9372C"' : '') + '>' + fmt(c.vencido) + '</b></div>'
+				+ (c.cupo > 0 ? '<div><small>Cupo disponible</small><b>' + fmt(Math.max(0, c.cupo - c.deuda)) + '</b></div>' : '') + '</div>';
+			if (!r.listo) h += '<div class="alert alert-warning">Para registrar pagos falta preparar la base: corre el script <code>sql/credito_clientes.sql</code>.</div>';
+			if (!cred.pendientes.length) {
+				h += '<p class="text-muted text-center" style="margin:20px 0"><i class="fa fa-check-circle"></i> No tiene ventas a crédito pendientes.</p>';
+			} else {
+				h += '<table class="table table-condensed cred-tabla"><thead><tr><th style="width:30px"><input type="checkbox" id="credTodas" title="Todas"></th>'
+					+ '<th>Fecha</th><th>Documento</th><th>Vence</th><th class="caja-num">Total</th><th class="caja-num">Pagado</th><th class="caja-num">Saldo</th></tr></thead><tbody>';
+				$.each(cred.pendientes, function (i, v) {
+					var vencida = v.dias_vencido > 0;
+					h += '<tr class="' + (vencida ? 'cred-vence' : '') + '"><td><input type="checkbox" class="cred-chk" data-i="' + i + '"></td>'
+						+ '<td>' + esc(v.fecha) + '</td>'
+						+ '<td><span class="cred-ver" data-i="' + i + '" title="Ver productos"><i class="fa fa-caret-right"></i> ' + esc(v.documento) + ' N° ' + v.folio + '</span></td>'
+						+ '<td>' + (v.vence ? esc(v.vence) + (vencida ? ' <small style="color:#C9372C">(' + v.dias_vencido + ' días vencida)</small>' : '') : '—') + '</td>'
+						+ '<td class="caja-num">' + fmt(v.monto) + '</td><td class="caja-num">' + fmt(v.pagado) + '</td><td class="caja-num"><b>' + fmt(v.saldo) + '</b></td></tr>';
+					h += '<tr class="cred-lineas" data-i="' + i + '" style="display:none"><td colspan="7">' + ($.map(v.lineas, function (l) {
+						return esc(fmtCant(l.cantidad)) + ' x ' + esc(l.nombre) + ' — ' + fmt(l.subtotal);
+					}).join('<br>') || '<span class="text-muted">Sin detalle</span>') + '</td></tr>';
+				});
+				h += '</tbody></table>';
+				var formas = $.grep(catalogo ? catalogo.formas_pago : [], function (f) { return !f.credito && !f.cortesia; });
+				h += '<div class="cred-pago"><div class="row">'
+					+ '<div class="col-sm-4"><small class="text-muted">A pagar (<span id="credCant">0</span> venta/s)</small><div class="cred-total" id="credTotal">$0</div></div>'
+					+ '<div class="col-sm-4 form-group"><label>Forma de pago</label><select class="form-control" id="credFpago">' + $.map(formas, function (f) {
+						return '<option value="' + f.id_fpago + '" data-efectivo="' + (f.efectivo ? 1 : 0) + '">' + esc(f.nombre) + '</option>';
+					}).join('') + '</select></div>'
+					+ '<div class="col-sm-4 form-group" id="credPagaConGrupo"><label>Paga con</label><input type="number" min="0" step="1" class="form-control" id="credPagaCon" placeholder="Monto entregado"><small class="text-muted" id="credVuelto"></small></div>'
+					+ '</div><div class="form-group"><input type="text" class="form-control" id="credObs" maxlength="200" placeholder="Observación (opcional)"></div>'
+					+ '<button class="btn btn-success btn-lg btn-block" id="btnPagarCredito" disabled' + (r.listo ? '' : ' title="Falta correr sql/credito_clientes.sql"') + '><i class="fa fa-check"></i> Registrar pago</button></div>';
+			}
+			if (r.pagos && r.pagos.length) {
+				h += '<h5 style="margin-top:22px"><b>Últimos pagos</b></h5><table class="table table-condensed"><thead><tr><th>Fecha</th><th>Ventas</th><th>Forma de pago</th><th>Cajero</th><th class="caja-num">Monto</th><th></th></tr></thead><tbody>'
+					+ $.map(r.pagos, function (pg) {
+						return '<tr><td>' + esc(pg.fecha) + '</td><td><small>' + esc(pg.ventas) + '</small></td><td>' + esc(pg.fpago) + '</td><td>' + esc(pg.usuario) + '</td>'
+							+ '<td class="caja-num">' + fmt(pg.monto) + '</td><td><button class="btn btn-default btn-xs cred-reimprimir" data-id="' + pg.id + '" title="Reimprimir comprobante"><i class="fa fa-print"></i></button></td></tr>';
+					}).join('') + '</tbody></table>';
+			}
+			$('#credDetalle').html(h);
+			$('#credDetalle').data('listo', !!r.listo);
+			actualizarPagoCredito();
+		}
+		function creditosElegidos() {
+			return $.map($('#credDetalle .cred-chk:checked').toArray(), function (el) { return cred.pendientes[$(el).data('i')]; });
+		}
+		function actualizarPagoCredito() {
+			var elegidos = creditosElegidos(), total = 0;
+			$.each(elegidos, function (i, v) { total += v.saldo; });
+			$('#credTotal').text(fmt(total));
+			$('#credCant').text(elegidos.length);
+			$('#credTodas').prop('checked', elegidos.length > 0 && elegidos.length === cred.pendientes.length);
+			var efectivo = $('#credFpago option:selected').data('efectivo') === 1;
+			$('#credPagaConGrupo').toggle(efectivo);
+			var pagaCon = Number($('#credPagaCon').val()) || 0;
+			$('#credVuelto').text(efectivo && pagaCon > total && total > 0 ? 'Vuelto: ' + fmt(pagaCon - total) : (efectivo && pagaCon && pagaCon < total ? 'Falta ' + fmt(total - pagaCon) : ''));
+			$('#btnPagarCredito').prop('disabled', !total || !$('#credDetalle').data('listo') || (efectivo && pagaCon > 0 && pagaCon < total));
+		}
+		$('#credDetalle')
+			.on('change', '#credTodas', function () { $('#credDetalle .cred-chk').prop('checked', this.checked); actualizarPagoCredito(); })
+			.on('change', '.cred-chk, #credFpago', actualizarPagoCredito)
+			.on('input', '#credPagaCon', actualizarPagoCredito)
+			.on('click', '.cred-ver', function () {
+				var i = $(this).data('i');
+				$('#credDetalle .cred-lineas[data-i="' + i + '"]').toggle();
+				$(this).find('i').toggleClass('fa-caret-right fa-caret-down');
+			})
+			.on('click', '.cred-reimprimir', function () {
+				post('reimprimirPagoCredito', { id_pago: $(this).data('id') }).done(function (r) {
+					if (r.ok) toastr.success('Comprobante enviado a la impresora', '', { timeOut: 2500 });
+					else toastr.error('Comprobante: ' + r.detalle, '', { timeOut: 9000 });
+				});
+			})
+			.on('click', '#btnPagarCredito', function () {
+				var elegidos = creditosElegidos();
+				if (!elegidos.length || !cred.cliente) return;
+				var total = 0;
+				$.each(elegidos, function (i, v) { total += v.saldo; });
+				var $fp = $('#credFpago option:selected');
+				var datos = { id_cliente: cred.cliente.id_cliente, id_fpago: $fp.val(), paga_con: Number($('#credPagaCon').val()) || 0, observacion: $('#credObs').val() };
+				$.each(elegidos, function (i, v) { datos['ids[' + i + ']'] = v.id_ctacte; });
+				swal({
+					title: '¿Registrar el pago?',
+					text: cred.cliente.nombre + ' paga ' + fmt(total) + ' con ' + $fp.text() + ' (' + elegidos.length + ' venta/s).',
+					type: 'warning', showCancelButton: true, closeOnConfirm: true,
+					confirmButtonText: 'Registrar pago', cancelButtonText: 'Cancelar'
+				}, function (ok) {
+					if (!ok) return;
+					var $b = $('#btnPagarCredito').prop('disabled', true);
+					post('pagarCredito', datos).done(function (r) {
+						var p = r.pago;
+						toastr.success('Pago registrado: ' + fmt(p.monto) + (p.vuelto ? '. Vuelto ' + fmt(p.vuelto) : ''), '', { timeOut: 5000 });
+						if (r.impresion && !r.impresion.ok) toastr.error('Comprobante: ' + r.impresion.detalle, '', { timeOut: 9000 });
+						cargarClientesCredito();
+						cargarCreditosCliente(cred.cliente.id_cliente);
+						cargarEstado();
+					}).fail(function () { $b.prop('disabled', false); });
+				});
+			});
 
 		// ---------------- movimientos ----------------
 		var efectivoDisponible = null;
 		function cargarDisponible() {
 			get('estado').done(function (r) {
 				efectivoDisponible = r && r.caja ? Number(r.caja.efectivo_esperado) : null;
-				$('#movDisponible').text(efectivoDisponible === null ? '' : 'Efectivo disponible en la caja: ' + fmt(Math.max(0, efectivoDisponible)));
+				// Configuraciones > Permitir retiro fondo fijo: desmarcado, el fondo no se puede retirar
+				var sinFondo = catalogo && catalogo.config.retiro_fondo === false;
+				if (efectivoDisponible !== null && sinFondo) efectivoDisponible -= Number(r.caja.fondo) || 0;
+				$('#movDisponible').text(efectivoDisponible === null ? '' : (sinFondo ? 'Disponible para retirar (sin el fondo fijo): ' : 'Efectivo disponible en la caja: ') + fmt(Math.max(0, efectivoDisponible)));
 			});
 		}
 		function cargarMovimientos() {
@@ -1841,7 +2016,7 @@
 				$('#ventaOkTicket').attr('href', base + 'ticket/' + r.id_venta + '?imprimir=1');
 				$('#ventaOkPdf').attr('href', base + 'pdf/' + r.id_venta);
 				$('#modalVentaOk').modal('show');
-				if (imprimeTicket()) imprimir(base + 'ticket/' + r.id_venta);
+				if (imprimeTicket()) imprimirTicket(r.id_venta);
 				if ($('#tabVentas').hasClass('active')) cargarVentas();
 				cargarEstado();
 			}, function () { $b.prop('disabled', false); });
@@ -1860,7 +2035,8 @@
 					['Cortesías', r.cortesias],
 					['Propinas (se pagan a los garzones desde la caja)', r.propinas],
 					['Ventas anuladas', r.anuladas, true],
-					['Ingresos de caja', r.ingresos],
+					['Pagos de créditos recibidos', r.pagos_credito || 0],
+					['Ingresos de caja' + (r.pagos_credito ? ' (incluye los pagos de crédito en efectivo)' : ''), r.ingresos],
 					['Retiros de caja', -r.egresos]
 				];
 				var html = '';
@@ -1878,8 +2054,10 @@
 				var $d = $('#declaradoOtros').empty();
 				$.each(r.por_forma_pago, function (i, f) {
 					if (f.efectivo || f.cortesia) return;
+					// Configuraciones > Llenar forma de pago no efectivo: marcada, viene con lo del sistema; si no, el cajero lo escribe
+					var llenar = !catalogo || catalogo.config.llenar_no_efectivo !== false;
 					$d.append('<div class="form-group"><label>' + esc(f.nombre) + ' (vouchers / comprobantes' + (f.propina ? ', con propina' : '') + ')</label>'
-						+ '<input type="number" min="0" step="1" class="form-control declarado" data-id="' + f.id_fpago + '" value="' + (f.monto + f.propina) + '"></div>');
+						+ '<input type="number" min="0" step="1" class="form-control declarado" data-id="' + f.id_fpago + '" value="' + (llenar ? (f.monto + f.propina) : '') + '" placeholder="Escribe el total de los comprobantes"></div>');
 				});
 				$('#efectivoContado').val(r.efectivo_esperado);
 				$('#fondoSiguiente').val(Math.min(r.fondo, Math.max(0, r.efectivo_esperado)));
@@ -1901,8 +2079,29 @@
 		}
 
 		$('#lnkCierre').on('shown.bs.tab', cargarCierre);
+		// Cierre / informe X a la impresora del cierre (Configuraciones > Impresora para cierre de caja); si no se puede, en pantalla
+		function imprimirCierre(idCaja) {
+			$.ajax({ url: base + 'imprimirCierre', type: 'POST', dataType: 'json', data: { id_caja: idCaja } })
+				.done(function (r) {
+					if (r.ok) toastr.success('Cierre enviado a la impresora', '', { timeOut: 2500 });
+					else {
+						if (r.detalle && !r.navegador) toastr.error('Cierre: ' + r.detalle, '', { timeOut: 9000 });
+						if (r.navegador) imprimir(base + 'cierreTicket/' + idCaja);
+					}
+				})
+				.fail(function () { imprimir(base + 'cierreTicket/' + idCaja); });
+		}
+		$(document).on('click', '#btnAbrirGaveta', function () {
+			var $b = $(this).prop('disabled', true);
+			enviarConAutorizacion(function (aut) {
+				return $.ajax({ url: base + 'abrirGaveta', type: 'POST', dataType: 'json', data: { autorizacion: aut } });
+			}, function () {
+				toastr.success('Gaveta abierta', '', { timeOut: 2000 });
+				$b.prop('disabled', false);
+			}, function () { $b.prop('disabled', false); });
+		});
 		$('#btnInformeX').on('click', function () {
-			if (resumen) imprimir(base + 'cierreTicket/' + resumen.id_caja);
+			if (resumen) imprimirCierre(resumen.id_caja);
 		});
 		$('#tabCierre').on('input', 'input', calcularDiferencia);
 
@@ -2014,15 +2213,21 @@
 				cerrandoCaja = true;
 				var idCaja = resumen.id_caja;
 				var cierreTermica = catalogo && catalogo.config.imprimir_cierre_termica;
+				// Configuraciones > Cierre de caja detallado: abre el informe PDF al cerrar
+				var cierrePdf = !catalogo || catalogo.config.cierre_detallado !== false;
 				post('cerrar', datos).always(function () { cerrandoCaja = false; }).done(function (r) {
 					// Como el POS: si Configuraciones lo indica, el cierre sale también en la térmica
-					if (cierreTermica) imprimir(base + 'cierreTicket/' + idCaja);
+					if (cierreTermica) imprimirCierre(idCaja);
+					if (r.correo) {
+						if (r.correo.ok) toastr.success('Cierre enviado por correo', '', { timeOut: 4000 });
+						else toastr.error('Correo del cierre: ' + r.correo.detalle, '', { timeOut: 9000 });
+					}
 					var inv = r.inventario && r.inventario.insumos
 						? ' Inventario: ' + r.inventario.insumos + ' insumo(s) actualizado(s)' + (r.inventario.con_diferencia ? ', ' + r.inventario.con_diferencia + ' con diferencia.' : ', sin diferencias.') : '';
 					swal({ title: 'Caja cerrada', text: 'Entregar ' + fmt(r.entregado) + ' en efectivo. Quedan ' + fmt(r.fondo_siguiente)
 						+ ' de fondo para el próximo turno. Diferencia: ' + fmt(r.diferencia) + '.' + inv, type: 'success' }, function () {
-						// Informe de cierre con el reporte existente
-						$.redirect("<?php echo base_url(); ?>index.php/CierresDeCaja/cierreCajaPDF", { id_caja: idCaja }, 'POST', '_blank');
+						// Informe de cierre con el reporte existente (si Configuraciones lo pide: cierre de caja detallado)
+						if (cierrePdf) $.redirect("<?php echo base_url(); ?>index.php/CierresDeCaja/cierreCajaPDF", { id_caja: idCaja }, 'POST', '_blank');
 						limpiarVenta();
 						catalogo = null;
 						$('#panelCaja a[href="#tabVenta"]').tab('show');

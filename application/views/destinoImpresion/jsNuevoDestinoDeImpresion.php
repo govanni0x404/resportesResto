@@ -19,7 +19,7 @@
 						<!-- CAMPOS DE REGISTRO  -->
 						<div class="t-card-titulo">Identificación</div>
 						<fieldset>
-							<div class="col-md-4 ">
+							<div class="col-md-4 " style="display:none" data-id-auto="1">
 								<label for="idDestinoDeImpresion">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idDestinoDeImpresion" id="idDestinoDeImpresion" requerido="no" value="">
 							</div>
@@ -32,7 +32,9 @@
 
 							<div class="col-md-12">
 								<label for="rutaImpresora">RUTA DE LA IMPRESORA/IP *</label>
-								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return rutas(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="rutaImpresora" id="rutaImpresora" requerido="si" value="" placeholder="Ruta Destino De Impresion" />
+								<input type="text" class="form-control input-sm input-sm" maxlength='50' inputmode="decimal" autocomplete="off" name="rutaImpresora" id="rutaImpresora" requerido="si" value="" placeholder="Ej: 192.168.100.10"
+									oninput="var p = this.selectionStart; this.value = this.value.replace(/,/g, '.').replace(/[^A-Za-z0-9.\/\\_-]/g, ''); try { this.setSelectionRange(p, p); } catch (e) {}" />
+								<small class="text-muted">La IP va con puntos: 192.168.100.10 (la coma del teclado numérico se cambia sola por punto)</small>
 							</div>
 						</fieldset>
 						<fieldset>

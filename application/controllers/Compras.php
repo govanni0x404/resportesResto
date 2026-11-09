@@ -16,13 +16,14 @@ class Compras extends CI_Controller
     }
     $data = array(
       'nombreUsuario' => $this->session->userdata('nombre_usuario'),
+      'idDocCompra' => $this->documentoCompraDefecto(),
     );
     $this->load->view('menuTop.php', $data);
     // La vista va antes del pie (como en Mesas o Productos) para quedar dentro del área de contenido
     $this->load->view('compras/compras.php');
     $this->load->view('menuFooter.php');
     $this->load->view('compras/funciones.php');
-    $this->load->view('compras/js.php');
+    $this->load->view('compras/js.php', $data);
   }
 
   public function grabarCompra()
@@ -190,5 +191,19 @@ class Compras extends CI_Controller
       $t = str_replace('.', '', $t); // "1.234.567": solo separadores de miles
     }
     return (float)$t;
+  }
+
+  /** Documento de compra por defecto: Configuraciones > Valores por defecto > Documento de compra (0 = ninguno). */
+  private function documentoCompraDefecto()
+  {
+    try {
+      $this->load->helper('tenant');
+      $db = get_tenant_db($this);
+      if (!$db->field_exists('id_tdocumento_compra', 'configuracion')) return 0;
+      $r = $db->query('SELECT COALESCE(id_tdocumento_compra, 0) AS id FROM configuracion LIMIT 1')->row();
+      return $r ? (int)$r->id : 0;
+    } catch (Throwable $e) {
+      return 0;
+    }
   }
 }

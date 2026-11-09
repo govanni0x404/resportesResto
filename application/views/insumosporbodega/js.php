@@ -58,6 +58,9 @@
 
     });
 
+    // Bodega elegida en la última consulta (0 = todas): con una bodega no hace falta el detalle por bodega
+    var bodegaConsultada = 0;
+
         function showTableLoader(message) {
     if ($('#dynamic-table-loader').length) {
         $('#dynamic-table-loader').show();
@@ -91,6 +94,7 @@
     }
 
     function inventarioPorBodega(id_bodega, id_grupo_insumo) {
+        bodegaConsultada = Number(id_bodega) || 0;
         let tituloExport = "Stock Por Bodega";
         if ($.fn.dataTable.isDataTable('#tableInventarioPorBodega')) {
             tableInventarioPorBodega = $('#tableInventarioPorBodega').DataTable();
@@ -185,7 +189,7 @@
                     modifier: {
                         selected: null
                     },
-                    columns: [1, 2, 3]
+                    columns: [1, 2, 3, 4, 5]
                 }
             }, {
                 text: "Excel",
@@ -196,15 +200,17 @@
                     modifier: {
                         selected: null
                     },
-                    columns: [1, 2, 3]
+                    columns: [1, 2, 3, 4, 5]
                 }
             }]
         });
+        // Detalle por bodega solo con "Todas" y si el insumo está en más de una bodega
         tableInventarioPorBodega
             .on('select', function (e, dt, type, indexes) {
-                var rowData = tableInventarioPorBodega.rows(indexes).data().toArray();
-                var id_insumo = rowData[0].id_insumo;
-                stockInsumos(id_insumo);
+                var fila = tableInventarioPorBodega.rows(indexes).data().toArray()[0];
+                tableInventarioPorBodega.rows(indexes).deselect();
+                if (!fila || bodegaConsultada > 0 || Number(fila.bodegas) < 2) return;
+                stockInsumos(fila.id_insumo);
                 $("#modalDetalleInsumos").modal({
                     backdrop: 'static',
                     keyboard: false,
@@ -217,15 +223,16 @@
             'id_insumo': id_insumo
         }, function (data) {
             var obj = jQuery.parseJSON(data);
-            tbl = "";
-            console.log(obj);
+            var tbl = "", total = 0;
             $.each(obj, function (index, v) {
+                total += Number(v.saldo) || 0;
                 tbl += "<tr>";
                 tbl += "<td class='text-center' style= 'height:10px'>" + escHtml(v.nombre_insumo) + "</td>";
-                tbl += "<td class='text-center' style= 'height:10px'>" + v.saldo + "</td>";
+                tbl += "<td class='text-center' style= 'height:10px'>" + escHtml(v.saldo) + "</td>";
                 tbl += "<td class='text-center' style= 'height:10px'>" + escHtml(v.nombre_bodega) + "</td>";
                 tbl += "</tr>";
             });
+            tbl += "<tr><th class='text-center'>TOTAL</th><th class='text-center'>" + total + "</th><th></th></tr>";
             $('#tableDetalleInsumos').html(tbl);
         })
     }

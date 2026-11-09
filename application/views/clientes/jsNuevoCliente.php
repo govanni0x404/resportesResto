@@ -20,7 +20,7 @@
 						<!-- CAMPOS DE REGISTRO  -->
 						<div class="t-card-titulo">Identificación</div>
 						<fieldset>
-							<div class="col-sm-4">
+							<div class="col-sm-4" style="display:none" data-id-auto="1">
 								<label for="idCliente">ID</label>
 								<input type="number" readonly class="form-control input-sm input-sm" name="idCliente" id="idCliente" requerido="no" value="" />
 							</div>
@@ -93,9 +93,20 @@
 								<label for="cboIdLprecio">LISTA DE PRECIOS *</label>
 								<select id="cboIdLprecio" nombre="cboIdLprecio" class="form-control input-sm" style="width:100%" requerido="si"></select>
 							</div>
-							<div class="col-md-6 ">
-								<label for="CreditoMaximoCliente">CREDITO</label>
-								<input min="0" type="text" class="form-control input-sm input-sm" maxlength='8' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="CreditoMaximoCliente" id="CreditoMaximoCliente" requerido="si" value="" placeholder="Credito Maximo Cliente" />
+							<div class="col-md-3 ">
+								<label for="CreditoMaximoCliente">CRÉDITO MÁXIMO</label>
+								<input min="0" type="text" class="form-control input-sm input-sm" maxlength='8' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="CreditoMaximoCliente" id="CreditoMaximoCliente" requerido="si" value="" placeholder="0 = sin límite" title="Monto máximo que puede deber el cliente (0 = sin límite)" />
+							</div>
+							<div class="col-md-3 ">
+								<label for="PlazoCreditoCliente">PLAZO MÁXIMO</label>
+								<select id="PlazoCreditoCliente" class="form-control input-sm" title="Días que tiene el cliente para pagar cada venta a crédito. Con una deuda vencida no se le vende más a crédito.">
+									<option value="15">15 días</option>
+									<option value="30" selected>30 días</option>
+									<option value="45">45 días</option>
+									<option value="60">60 días</option>
+									<option value="90">90 días</option>
+									<option value="0">Sin plazo</option>
+								</select>
 							</div>
 						</fieldset>
 						<!-- FIN CAMPOS DE REGISTRO  -->
@@ -127,6 +138,7 @@
 		$('#CorreoCliente').val("");
 		$('#GiroCliente').val("");
 		$('#CreditoMaximoCliente').val("0");
+		$('#PlazoCreditoCliente').val("30");
 		ListarComunas("");
 		ListarListasDePrecios("");
 		$('#ModalNuevoCliente').modal({
@@ -287,6 +299,7 @@
 			GiroCliente = $('#GiroCliente').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
 			IdListaDePrecios = $('#cboIdLprecio').val();
 			MontoCredito = $('#CreditoMaximoCliente').val() === '' ? 0 : parseFloat($('#CreditoMaximoCliente').val());
+			PlazoCredito = parseInt($('#PlazoCreditoCliente').val(), 10) || 0;
 
 			var miJson = {
 				'id_cliente': idCliente,
@@ -300,6 +313,7 @@
 				'giro': GiroCliente,
 				'id_lprecio': IdListaDePrecios,
 				'creditomaximo': MontoCredito,
+				'plazo_credito': PlazoCredito,
 				'referencia_direccion': ReferenciaDireccion,
 			};
 			console.log(miJson);

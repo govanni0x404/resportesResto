@@ -9,6 +9,9 @@ $m = function ($n) {
 	return ($n < 0 ? '-' : '') . '$' . number_format(abs((float)$n), 0, ',', '.');
 };
 $titulo = $cerrada ? 'CIERRE DE CAJA' : 'INFORME X';
+// Configuraciones > Imprimir cierre de caja: qué secciones salen en el ticket
+$ver = function ($k) use ($config) { return !isset($config[$k]) || $config[$k]; };
+$correo = !empty($correo);
 $papel = isset($papel) ? (int)$papel : 80;
 ?>
 <!DOCTYPE html>
@@ -52,10 +55,12 @@ $papel = isset($papel) ? (int)$papel : 80;
 	<?php endif; ?>
 </head>
 <body>
+	<?php if (!$correo) : ?>
 	<div class="acciones">
 		<button onclick="window.print()">Imprimir</button>
 		<button onclick="window.close()">Cerrar</button>
 	</div>
+	<?php endif; ?>
 	<div class="ticket">
 		<?php if ($e) : ?>
 			<div class="c b"><?php echo $h($e->nombre_fantasia ?: $e->razon_social); ?></div>
@@ -74,11 +79,13 @@ $papel = isset($papel) ? (int)$papel : 80;
 			<?php endif; ?>
 			<tr class="b"><td>Venta neta</td><td class="r"><?php echo $m($r['ventas']); ?></td></tr>
 			<?php if ($r['descuentos']) : ?><tr><td>Descuentos otorgados</td><td class="r"><?php echo $m($r['descuentos']); ?></td></tr><?php endif; ?>
-			<?php if ($r['cortesias']) : ?><tr><td>Cortesías</td><td class="r"><?php echo $m($r['cortesias']); ?></td></tr><?php endif; ?>
-			<?php if ($r['anuladas']) : ?><tr><td>Ventas anuladas</td><td class="r"><?php echo (int)$r['anuladas']; ?></td></tr><?php endif; ?>
+			<?php if ($ver('cierre_creditos') && !empty($r['creditos'])) : ?><tr><td>Créditos a clientes</td><td class="r"><?php echo $m($r['creditos']); ?></td></tr><?php endif; ?>
+			<?php if ($ver('cierre_cortesias') && $r['cortesias']) : ?><tr><td>Cortesías</td><td class="r"><?php echo $m($r['cortesias']); ?></td></tr><?php endif; ?>
+			<?php if ($ver('cierre_anulaciones') && $r['anuladas']) : ?><tr><td>Ventas anuladas</td><td class="r"><?php echo (int)$r['anuladas']; ?></td></tr><?php endif; ?>
 			<?php if ($r['propinas']) : ?><tr><td>Propinas (a garzones)</td><td class="r"><?php echo $m($r['propinas']); ?></td></tr><?php endif; ?>
-			<?php if ($r['ingresos']) : ?><tr><td>Ingresos de caja</td><td class="r"><?php echo $m($r['ingresos']); ?></td></tr><?php endif; ?>
-			<?php if ($r['egresos']) : ?><tr><td>Retiros de caja</td><td class="r"><?php echo $m(-$r['egresos']); ?></td></tr><?php endif; ?>
+			<?php if (!empty($r['pagos_credito'])) : ?><tr><td>Pagos de créditos recibidos</td><td class="r"><?php echo $m($r['pagos_credito']); ?></td></tr><?php endif; ?>
+			<?php if ($ver('cierre_ingresos') && $r['ingresos']) : ?><tr><td>Ingresos de caja</td><td class="r"><?php echo $m($r['ingresos']); ?></td></tr><?php endif; ?>
+			<?php if ($ver('cierre_ingresos') && $r['egresos']) : ?><tr><td>Retiros de caja</td><td class="r"><?php echo $m(-$r['egresos']); ?></td></tr><?php endif; ?>
 		</table>
 		<hr>
 		<table>
@@ -135,10 +142,12 @@ $papel = isset($papel) ? (int)$papel : 80;
 			<div class="nota c">Informe parcial: no cierra la caja.</div>
 		<?php endif; ?>
 	</div>
+	<?php if (!$correo) : ?>
 	<script>
 		if (/[?&]imprimir=1/.test(location.search)) {
 			window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 300); });
 		}
 	</script>
+	<?php endif; ?>
 </body>
 </html>

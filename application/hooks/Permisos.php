@@ -7,9 +7,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
  * Antes los privilegios de "Privilegios de Usuario" solo ocultaban opciones del menú; entrando por la URL o por
  * AJAX cualquier usuario con sesión podía usar cualquier pantalla. Ahora se aplica la misma regla del menú en el
  * servidor:
- *  - Gerencia (id_rol 1) entra a todo.
- *  - Módulo registrado en psistema ('RESTO WEB'): entra solo si pusuario.autoriza = true para su rol.
- *  - Módulo no registrado: se permite (igual que el menú), salvo los SENSIBLES, que exigen permiso explícito.
+ *  - Gerencia (id_rol 1) entra a todo; solo ella entra a Privilegios.
+ *  - Los demás roles: lo que gerencia les habilitó en Privilegios (tabla permiso_web). La regla está en
+ *    helpers/permisos_web_helper.php y es la misma que usa el menú.
  *  - Las consultas de apoyo (listados para combos y buscadores) se permiten a cualquier usuario con sesión, porque
  *    otras pantallas las usan (ej. Compras lista proveedores). Excepto en reportes y módulos sensibles.
  *
@@ -22,6 +22,9 @@ class Permisos
 
 	/** Sin sesión: tienen su propia autenticación (login, token de la app o del agente). */
 	private static $publicos = array('login', 'welcome', 'apimovil', 'agenteimpresion');
+
+	/** Métodos públicos que actúan sobre la sesión del usuario (cambiar empresa, descargar el instalador del agente). */
+	private static $publicosConSesion = array('login/relogin' => true, 'agenteimpresion/instalador' => true);
 
 	/** Cualquier usuario con sesión (trabaja solo sobre el propio usuario). */
 	private static $libres = array('perfildeusuario');
@@ -54,8 +57,6 @@ class Permisos
 	/** Consultas de apoyo: listados y búsquedas de solo lectura. */
 	const CONSULTA = '/^(listado|listar|llenarcbo|obtener|busqueda|buscar|get)/i';
 
-	private $accesos = null;
-
 	public function verificar()
 	{
 		if (is_cli()) return;
@@ -66,11 +67,16 @@ class Permisos
 		$CI = &get_instance();
 		$clase = strtolower($CI->router->fetch_class());
 		$metodo = strtolower($CI->router->fetch_method());
-		if (in_array($clase, self::$publicos, true)) return;
+		if (in_array($clase, self::$publicos, true)) {
+			// Estas dos usan la sesión del usuario, así que también piden la clave anti-CSRF
+			if (isset(self::$publicosConSesion[$clase . '/' . $metodo])) $this->exigirCsrf($CI);
+			return;
+		}
 
 		if (strlen((string)$CI->session->userdata('nombre_usuario')) === 0 || !$CI->session->userdata('nombre_conexion')) {
 			$this->negar($CI, 401, 'Tu sesión expiró. Vuelve a ingresar.');
 		}
+		$this->exigirCsrf($CI);
 		if (in_array($clase, self::$libres, true)) return;
 
 		$idRol = (int)$CI->session->userdata('id_rol');
@@ -88,7 +94,14 @@ class Permisos
 		if (!$sensible && !in_array($clase, self::$reportes, true) && preg_match(self::CONSULTA, $metodo)) return;
 
 		$modulo = isset(self::$modulo[$clase]) ? self::$modulo[$clase] : $CI->router->fetch_class();
-		if (!$this->permitido($CI, $idRol, $modulo, $sensible)) $this->negar($CI, 403);
+		if (!$this->permitido($CI, $idRol, $modulo, $sensible)) {
+			// Al entrar, el login manda al inicio (Dashboard): si el rol no lo tiene pero sí la Caja, va directo a la Caja
+			if ($clase === 'dashboard' && $metodo === 'index' && $this->permitido($CI, $idRol, 'Caja', false)) {
+				while (ob_get_level()) ob_end_clean();
+				redirect(base_url() . 'index.php/Caja');
+			}
+			$this->negar($CI, 403);
+		}
 	}
 
 	/** Manda como JSON lo que el controlador imprimió con echo, si no fijó otro tipo (hook post_controller). */
@@ -110,29 +123,30 @@ class Permisos
 		ob_end_flush();
 	}
 
-	/** Misma regla que menu_visible() del menú; los módulos sensibles exigen permiso explícito. */
+	/** Misma regla que menu_visible() del menú (helpers/permisos_web_helper.php). */
 	private function permitido($CI, $idRol, $modulo, $sensible)
 	{
-		if ($this->accesos === null) {
-			$this->accesos = array();
-			try {
-				$CI->load->helper('tenant');
-				$db = get_tenant_db($CI);
-				$r = $db->query('SELECT ps.nombre_vb, COALESCE(pu.autoriza, false) AS autoriza
-					FROM psistema ps LEFT JOIN pusuario pu ON pu.id_psistema = ps.id_psistema AND pu.id_rol = ?
-					WHERE ps.vigente = true AND ps.nombre_psistema = ?', array($idRol, self::SISTEMA));
-				if ($r) foreach ($r->result() as $f) {
-					$k = strtolower(trim($f->nombre_vb));
-					// Si un módulo aparece repetido basta con que una fila lo autorice
-					$this->accesos[$k] = !empty($this->accesos[$k]) || $f->autoriza === 't' || $f->autoriza === true;
-				}
-			} catch (Throwable $e) {
-				log_message('error', 'Permisos: no se pudieron leer los privilegios: ' . $e->getMessage());
-			}
+		$CI->load->helper('permisos_web');
+		return permiso_web($CI, $modulo, $idRol);
+	}
+
+	/**
+	 * Todo POST (o PUT/DELETE) debe traer la clave anti-CSRF de la sesión: cabecera X-CSRF-Token o campo csrf_web.
+	 * La agrega sola el script de menuTop. Sin ella se rechaza: puede venir de una página de otro sitio.
+	 */
+	private function exigirCsrf($CI)
+	{
+		$metodo = strtoupper((string)$_SERVER['REQUEST_METHOD']);
+		if (in_array($metodo, array('GET', 'HEAD', 'OPTIONS'), true)) return;
+		$CI->load->helper('permisos_web');
+		$esperado = (string)$CI->session->userdata('csrf_web');
+		$recibido = (string)$CI->input->get_request_header('X-CSRF-Token');
+		if ($recibido === '' && isset($_POST['csrf_web'])) $recibido = (string)$_POST['csrf_web'];
+		if ($esperado !== '' && $recibido !== '' && hash_equals($esperado, $recibido)) {
+			unset($_POST['csrf_web']);
+			return;
 		}
-		$k = strtolower($modulo);
-		if (!array_key_exists($k, $this->accesos)) return !$sensible;
-		return $this->accesos[$k];
+		$this->negar($CI, 403, 'La página quedó desactualizada. Recárgala (F5) y vuelve a intentarlo.');
 	}
 
 	private function negar($CI, $codigo, $mensaje = null)

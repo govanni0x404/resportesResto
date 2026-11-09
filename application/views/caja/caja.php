@@ -315,6 +315,22 @@
 	#tablaMovimientos td[colspan]::before { content: "\f0d6"; }
 	#tablaVentas tbody tr:hover td[colspan], #tablaMovimientos tbody tr:hover td[colspan] { background: #fff; }
 
+	/* Pestaña Créditos */
+	.cred-clientes { margin-top: 10px; max-height: 520px; overflow-y: auto; }
+	.cred-clientes .list-group-item { cursor: pointer; }
+	.cred-clientes .list-group-item.active, .cred-clientes .list-group-item.active:hover { background: var(--t-primario-suave, #F3E7E3); color: inherit; border-color: #ddd; }
+	.cred-clientes .cred-monto { float: right; font-weight: 700; }
+	.cred-clientes .cred-vencido { color: #C9372C; font-size: 11px; }
+	.cred-resumen { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+	.cred-resumen div { background: #F7F4F1; border-radius: 6px; padding: 6px 12px; }
+	.cred-resumen small { display: block; color: #8A7B6E; }
+	.cred-tabla td, .cred-tabla th { vertical-align: middle !important; }
+	.cred-tabla tr.cred-vence td { background: #FDF0EE; }
+	.cred-tabla .cred-lineas td { background: #FAFAFA; font-size: 12px; padding: 4px 8px 4px 40px !important; }
+	.cred-tabla .cred-ver { cursor: pointer; color: var(--t-primario, #B4432E); }
+	.cred-pago { border-top: 1px solid #eee; margin-top: 10px; padding-top: 12px; }
+	.cred-pago .cred-total { font-size: 22px; font-weight: 700; }
+
 	/* Pestaña Ingresos / Retiros */
 	.caja-tipo-mov { display: flex; gap: 6px; background: var(--t-tinte-2, #F5EFE6); border-radius: 8px; padding: 4px; width: 100%; }
 	.caja-tipo-mov label { flex: 1; text-align: center; margin: 0; border: 0 !important; border-radius: 6px !important; background: transparent; color: var(--t-texto-suave, #7A6A5E);
@@ -580,6 +596,7 @@
 					<li id="navMesas" style="display:none"><a href="#tabMesas" data-toggle="tab" id="lnkMesas"><i class="fa fa-th"></i> Mesas <span class="badge" id="mesasOcupadas" style="display:none">0</span></a></li>
 					<li><a href="#tabVentas" data-toggle="tab" id="lnkVentas"><i class="pe-7s-note2"></i> Ventas</a></li>
 					<li><a href="#tabMovimientos" data-toggle="tab" id="lnkMovimientos"><i class="pe-7s-cash"></i> Ingresos / Retiros</a></li>
+					<li><a href="#tabCreditos" data-toggle="tab" id="lnkCreditos"><i class="pe-7s-credit"></i> Créditos</a></li>
 					<li><a href="#tabCierre" data-toggle="tab" id="lnkCierre"><i class="pe-7s-lock"></i> Cierre</a></li>
 				</ul>
 				<div class="caja-estado">
@@ -724,6 +741,33 @@
 					</div>
 				</div>
 
+				<!-- ===================== CRÉDITOS (pago de créditos de clientes) ===================== -->
+				<div class="tab-pane fade" id="tabCreditos">
+					<div class="row">
+						<div class="col-md-4">
+							<div class="panel panel-success lobidisable">
+								<div class="panel-heading">
+									<div class="panel-title"><h4><i class="pe-7s-users"></i>Clientes con deuda<small class="caja-tab-ayuda">Elige el cliente que viene a pagar</small></h4></div>
+								</div>
+								<div class="panel-body">
+									<input type="text" class="form-control" id="credBuscar" placeholder="Buscar cliente por nombre o RUT" autocomplete="off">
+									<div class="list-group cred-clientes" id="credClientes"></div>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-8">
+							<div class="panel panel-success lobidisable">
+								<div class="panel-heading">
+									<div class="panel-title"><h4><i class="pe-7s-wallet"></i><span id="credTitulo">Ventas a crédito</span><small class="caja-tab-ayuda" id="credSubtitulo">Elige un cliente de la lista</small></h4></div>
+								</div>
+								<div class="panel-body" id="credDetalle">
+									<p class="text-muted text-center" style="margin:30px 0">Elige un cliente para ver sus ventas a crédito pendientes.</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
 				<!-- ===================== MOVIMIENTOS ===================== -->
 				<div class="tab-pane fade" id="tabMovimientos">
 					<div class="row">
@@ -731,6 +775,9 @@
 							<div class="panel panel-success lobidisable">
 								<div class="panel-heading">
 									<div class="panel-title"><h4><i class="pe-7s-plus"></i>Nuevo movimiento<small class="caja-tab-ayuda">Dinero que entra o sale de la caja sin ser venta</small></h4></div>
+									<button type="button" class="btn btn-default btn-sm caja-btn-titulo" id="btnAbrirGaveta" title="Abre el cajón de dinero conectado a la impresora de la caja">
+										<i class="fa fa-inbox"></i> Abrir gaveta
+									</button>
 								</div>
 								<div class="panel-body caja-mov-form">
 									<div class="form-group">

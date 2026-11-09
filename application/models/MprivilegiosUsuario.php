@@ -1,151 +1,70 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
+/** Permisos de la web por rol (tabla permiso_web, ver sql/permiso_web.sql). */
 class MprivilegiosUsuario extends CI_Model
 {
-  function __construct()
-  {
-    parent::__construct();
-  }
+	private function db()
+	{
+		$this->load->helper(array('tenant', 'permisos_web'));
+		return get_tenant_db($this);
+	}
 
-  public function ListadoDeRoles()
-  {
-    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
-      redirect(base_url());
-    }
-    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    
-    $q = "SELECT r.id_rol, r.nombre_rol 
-          FROM rol r 
-          ORDER BY r.nombre_rol ASC";
+	public function hayTabla()
+	{
+		return permisos_web_tabla($this->db());
+	}
 
-    try {
-      $consulta = $this->db->query($q);
-      return $consulta->result();
-    } catch (Exception $e) {
-      error_log('Error en ListadoDeRoles: ' . $e->getMessage());
-      return array();
-    }
-  }
+	private function exigirTabla($db)
+	{
+		if (!permisos_web_tabla($db)) {
+			throw new Exception('Falta crear la tabla de permisos: corre el script sql/permiso_web.sql en la base de datos', 409);
+		}
+	}
 
-  public function ListarPrivilegiosPorRol($id_rol)
-  {
-    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
-      redirect(base_url());
-    }
-    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    
-    // Obtener todos los módulos del sistema y verificar si el rol tiene acceso
-    $q = "SELECT ps.id_psistema, ps.nombre_psistema, ps.nombre_vb,
-                 pu.id_pusuario, pu.autoriza, pu.id_rol
-          FROM psistema ps
-          LEFT JOIN pusuario pu ON ps.id_psistema = pu.id_psistema AND pu.id_rol = " . (int)$id_rol . "
-          WHERE ps.vigente = true
-          ORDER BY ps.nombre_vb ASC";
-    
-    try {
-      $consulta = $this->db->query($q);
-      return $consulta->result();
-    } catch (Exception $e) {
-      error_log('Error en ListarPrivilegiosPorRol: ' . $e->getMessage());
-      return array();
-    }
-  }
+	public function roles()
+	{
+		$filas = $this->db()->query('SELECT id_rol, nombre_rol FROM rol WHERE id_rol <> 1 ORDER BY id_rol')->result();
+		foreach ($filas as $f) $f->id_rol = (int)$f->id_rol;
+		return $filas;
+	}
 
-  public function actualizarPrivilegio($id_pusuario, $autoriza)
-  {
-    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
-      redirect(base_url());
-    }
-    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    
-    try {
-      $data = array('autoriza' => $autoriza);
-      $this->db->where('id_pusuario', $id_pusuario);
-      $this->db->update('pusuario', $data);
-      
-      error_log('Privilegio actualizado. ID: ' . $id_pusuario . ', Autoriza: ' . ($autoriza ? 'true' : 'false'));
-      return array('success' => true, 'message' => 'Privilegio actualizado correctamente');
-    } catch (Exception $e) {
-      error_log('Error en actualizarPrivilegio: ' . $e->getMessage());
-      return array('success' => false, 'message' => $e->getMessage());
-    }
-  }
+	public function existeRol($idRol)
+	{
+		return (bool)$this->db()->query('SELECT 1 FROM rol WHERE id_rol = ?', array((int)$idRol))->row();
+	}
 
-  public function crearPrivilegio($id_rol, $id_psistema)
-  {
-    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
-      redirect(base_url());
-    }
-    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    
-    try {
-      $data = array(
-        'id_rol' => $id_rol,
-        'id_psistema' => $id_psistema,
-        'autoriza' => true
-      );
-      $this->db->insert('pusuario', $data);
-      
-      $consulta = $this->db->query("SELECT CURRVAL('pusuario_id_pusuario_seq'::regclass) as id_pusuario");
-      $resultado = $consulta->result();
-      
-      error_log('Privilegio creado. Rol: ' . $id_rol . ', PSistema: ' . $id_psistema);
-      return array('success' => true, 'id_pusuario' => $resultado[0]->id_pusuario);
-    } catch (Exception $e) {
-      error_log('Error en crearPrivilegio: ' . $e->getMessage());
-      return array('success' => false, 'message' => $e->getMessage());
-    }
-  }
+	/** modulo en minúsculas => bool */
+	public function accesos($idRol)
+	{
+		$db = $this->db();
+		$this->exigirTabla($db);
+		$res = array();
+		foreach ($db->query('SELECT modulo, autoriza FROM permiso_web WHERE id_rol = ?', array((int)$idRol))->result() as $f) {
+			$res[strtolower($f->modulo)] = ($f->autoriza === 't' || $f->autoriza === true);
+		}
+		return $res;
+	}
 
-  public function HabilitarTodosLosPrivilegios($id_rol)
-  {
-    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
-      redirect(base_url());
-    }
-    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    
-    try {
-      // Primero crear los registros que no existen
-      $q_insert = "INSERT INTO pusuario (id_rol, id_psistema, autoriza)
-                   SELECT " . (int)$id_rol . ", ps.id_psistema, true
-                   FROM psistema ps
-                   WHERE ps.vigente = true
-                   AND NOT EXISTS (
-                       SELECT 1 FROM pusuario pu 
-                       WHERE pu.id_rol = " . (int)$id_rol . " 
-                       AND pu.id_psistema = ps.id_psistema
-                   )";
-      $this->db->query($q_insert);
-      
-      // Luego actualizar todos a true
-      $q_update = "UPDATE pusuario SET autoriza = true WHERE id_rol = " . (int)$id_rol;
-      $this->db->query($q_update);
-      
-      error_log('Todos los privilegios habilitados para rol: ' . $id_rol);
-      return array('success' => true, 'message' => 'Todos los privilegios habilitados');
-    } catch (Exception $e) {
-      error_log('Error en HabilitarTodosLosPrivilegios: ' . $e->getMessage());
-      return array('success' => false, 'message' => $e->getMessage());
-    }
-  }
-
-  public function BloquearTodosLosPrivilegios($id_rol)
-  {
-    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
-      redirect(base_url());
-    }
-    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    
-    try {
-      $q = "UPDATE pusuario SET autoriza = false WHERE id_rol = " . (int)$id_rol;
-      $this->db->query($q);
-      
-      error_log('Todos los privilegios bloqueados para rol: ' . $id_rol);
-      return array('success' => true, 'message' => 'Todos los privilegios bloqueados');
-    } catch (Exception $e) {
-      error_log('Error en BloquearTodosLosPrivilegios: ' . $e->getMessage());
-      return array('success' => false, 'message' => $e->getMessage());
-    }
-  }
+	public function guardar($idRol, $modulos, $autoriza)
+	{
+		$db = $this->db();
+		$this->exigirTabla($db);
+		$debug = $db->db_debug;
+		$db->db_debug = false;
+		$db->trans_begin();
+		foreach ($modulos as $m) {
+			$ok = $db->query('INSERT INTO permiso_web (id_rol, modulo, autoriza) VALUES (?, ?, ?)
+				ON CONFLICT (id_rol, modulo) DO UPDATE SET autoriza = EXCLUDED.autoriza',
+				array((int)$idRol, (string)$m, $autoriza ? 't' : 'f'));
+			if ($ok === false) {
+				$e = $db->error();
+				$db->trans_rollback();
+				$db->db_debug = $debug;
+				throw new Exception('permiso_web: ' . $e['message'], 500);
+			}
+		}
+		$db->trans_commit();
+		$db->db_debug = $debug;
+	}
 }

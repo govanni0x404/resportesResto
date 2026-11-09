@@ -59,12 +59,12 @@
 								<div>
 									<!-- CAMPOS DE REGISTRO  -->
 									<fieldset>
-										<div class="col-md-1">
+										<div class="col-md-1" style="display:none" data-id-auto="1">
 											<input disabled class="form-control input-sm input-sm" style="display: none;" name="contador" id="contador" requerido="no" value="0">
 											<label for="idReceta">ID</label>
 											<input type="number" disabled class="form-control input-sm input-sm" name="idReceta" id="idReceta" requerido="no" value="">
 										</div>
-										<div class="col-md-6">
+										<div class="col-md-7">
 											<label for="nombreReceta">NOMBRE RECETA</label>
 											<input type="text" class="form-control input-sm input-sm" name="nombreReceta" id="nombreReceta" maxlength='50' onkeypress="return sololetrasyNumeros(event)"  onpaste="return false;" ondrop="return false;" autocomplete="off" requerido="no" value="">
 										</div>

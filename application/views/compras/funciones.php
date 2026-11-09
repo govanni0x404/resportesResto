@@ -28,7 +28,8 @@ function ListadoTipoDeDocumento(objSelected) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected value="0">Seleccione El Documento De Compra</option>';
         $.each(obj, function(index, v) { // recorro el array
-            if (v.nombre_tdocumento == objSelected) {
+            // objSelected: id del documento (Configuraciones > Documento de compra) o su nombre
+            if (v.nombre_tdocumento == objSelected || (objSelected !== "" && String(v.id_tdocumento) === String(objSelected))) {
                 tbl = tbl + '<option selected value="' + v.id_tdocumento + '">' + v.nombre_tdocumento +
                     '</option>';
             } else {

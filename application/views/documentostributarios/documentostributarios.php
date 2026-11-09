@@ -93,11 +93,11 @@ $hayFormato = in_array('formato_dte', $columnas, true);
             </div>
             <div class="modal-body">
                 <fieldset>
-                    <div class="col-xs-4 col-sm-3">
+                    <div class="col-xs-4 col-sm-3" style="display:none" data-id-auto="1">
                         <label for="tdId">ID</label>
                         <input type="text" class="form-control input-sm" id="tdId" disabled placeholder="Nuevo">
                     </div>
-                    <div class="col-xs-8 col-sm-9">
+                    <div class="col-xs-12 col-sm-12">
                         <label for="tdNombre">Nombre del documento <span class="td-req">*</span></label>
                         <input type="text" class="form-control input-sm" id="tdNombre" maxlength="50" autocomplete="off" placeholder="Ej: BOLETA ELECTRONICA">
                     </div>

@@ -88,13 +88,9 @@ class Mcaja extends CI_Model
 		} else {
 			$q .= " AND COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) > 0";
 		}
-		// Imágenes de la Carta (controlador ImagenProducto): assets/uploads/productos/<cliente>/<id>.jpg
-		$carpetaImg = preg_replace('/[^a-z0-9_-]/', '', strtolower((string)$this->session->userdata('nombre_conexion')));
-		$carpetaImg = $carpetaImg !== '' ? $carpetaImg : 'general';
-		$imagenes = array();
-		foreach ((array)glob(FCPATH . 'assets/uploads/productos/' . $carpetaImg . '/*.jpg') as $f) {
-			$imagenes[(int)basename($f, '.jpg')] = base_url() . 'assets/uploads/productos/' . $carpetaImg . '/' . basename($f) . '?v=' . filemtime($f);
-		}
+		// Imágenes de la Carta (controlador ImagenProducto): uploads/<rut empresa>/productos/<id>.webp
+		if (!class_exists('ImagenProducto', false)) require_once APPPATH . 'controllers/ImagenProducto.php';
+		$imagenes = ImagenProducto::imagenesDe(ImagenProducto::carpetaDe($this->session->userdata('rut_cliente')));
 		$productos = array();
 		foreach ($this->q($db, $q . " ORDER BY p.nombre_producto", array($idLprecio))->result() as $p) {
 			$productos[] = array(
@@ -120,7 +116,7 @@ class Mcaja extends CI_Model
 				'nombre' => $f->nombre_fpago,
 				'cortesia' => $f->cortesia === 't' || $f->cortesia === true,
 				'efectivo' => $this->esEfectivo($config, $f->id_fpago, $f->nombre_fpago),
-				'credito' => (int)$f->id_fpago === $config['id_fpago_credito'],
+				'credito' => $this->esCredito($config, $f->id_fpago, $f->nombre_fpago),
 			);
 		}
 
@@ -461,6 +457,7 @@ class Mcaja extends CI_Model
 		$efectivoVentas = 0;
 		$efectivoPropinas = 0;
 		$propinas = 0;
+		$creditos = 0;
 		$rows = $this->q($db, "SELECT f.id_fpago, f.nombre_fpago, (f.escortesia IS TRUE) AS cortesia,
 				COALESCE(sum(pv.monto_pagado - COALESCE(pv.propina, 0)), 0) AS monto, COALESCE(sum(pv.propina), 0) AS propina
 			FROM pago_venta pv
@@ -477,6 +474,7 @@ class Mcaja extends CI_Model
 				$efectivoPropinas += (int)$r->propina;
 			}
 			$propinas += (int)$r->propina;
+			if ($this->esCredito($config, $r->id_fpago, $r->nombre_fpago)) $creditos += (int)$r->monto;
 			$porFpago[] = array(
 				'id_fpago' => (int)$r->id_fpago,
 				'nombre' => $r->nombre_fpago,
@@ -487,9 +485,24 @@ class Mcaja extends CI_Model
 			);
 		}
 
+		// Pagos de crédito con tarjeta/transferencia: se rinden en esa forma de pago (los en efectivo ya son ingresos de caja)
+		$creditoOtros = 0;
+		foreach ($this->pagosCreditoNoEfectivo($db, $idCaja, $config) as $idF => $pc) {
+			$creditoOtros += $pc['monto'];
+			$hay = false;
+			foreach ($porFpago as &$pf) {
+				if ($pf['id_fpago'] === $idF) { $pf['monto'] += $pc['monto']; $pf['pagos_credito'] = $pc['monto']; $hay = true; }
+			}
+			unset($pf);
+			if (!$hay) $porFpago[] = array('id_fpago' => $idF, 'nombre' => $pc['nombre'], 'monto' => $pc['monto'], 'propina' => 0,
+				'efectivo' => false, 'cortesia' => false, 'pagos_credito' => $pc['monto']);
+		}
+
 		$fondo = (int)$caja->fondo_fijo_anterior ?: (int)$caja->fondo_fijo;
 		return array(
 			'id_caja' => $idCaja,
+			'pagos_credito' => $this->totalPagosCredito($db, $idCaja),
+			'pagos_credito_otros' => $creditoOtros,
 			'apertura' => $caja->apertura,
 			'fondo' => $fondo,
 			'ventas' => (int)$t->ventas,
@@ -502,6 +515,7 @@ class Mcaja extends CI_Model
 			'ingresos' => (int)$m->ingresos,
 			'egresos' => (int)$m->egresos,
 			'propinas' => $propinas,
+			'creditos' => $creditos,
 			'propinas_efectivo' => $efectivoPropinas,
 			'efectivo_ventas' => $efectivoVentas,
 			// Las propinas (de cualquier forma de pago) se pagan a los garzones en efectivo desde la caja
@@ -580,6 +594,7 @@ class Mcaja extends CI_Model
 			'formas' => $formas,
 			'inventario' => $cerrada ? $this->inventarioCierreDeCaja($db, (int)$idCaja) : array(),
 			'empresa' => $this->q($db, 'SELECT * FROM empresa ORDER BY id_empresa LIMIT 1')->row(),
+			'config' => $config,
 		);
 	}
 
@@ -614,6 +629,71 @@ class Mcaja extends CI_Model
 	}
 
 	/** Impresora de la caja (configuracion.id_dimpresion_caja) con la forma de destinosComanda(); null si no está definida. */
+	/** Opciones de Configuraciones que usa la Caja (ver configuracion()). */
+	public function opciones()
+	{
+		return $this->configuracion($this->conexion());
+	}
+
+	/**
+	 * Impresora del cierre de caja: la elegida en Configuraciones > Impresora para cierre de caja (nombre del destino de
+	 * impresión); si no hay o no existe, la de la caja.
+	 */
+	public function destinoCierre()
+	{
+		$nombre = $this->opciones()['impresora_cierre'];
+		if ($nombre !== '') {
+			$db = $this->conexion();
+			$r = $this->q($db, 'SELECT id_dimpresion, nombre_dimpresion, ip, puerto, ruta_windows FROM dimpresion
+				WHERE upper(trim(nombre_dimpresion)) = upper(?) ORDER BY id_dimpresion LIMIT 1', array($nombre))->row();
+			if ($r) return array('id' => (int)$r->id_dimpresion, 'nombre' => (string)$r->nombre_dimpresion,
+				'ip' => (string)$r->ip, 'puerto' => (string)$r->puerto, 'ruta_windows' => (string)$r->ruta_windows);
+		}
+		return $this->destinoCaja();
+	}
+
+	/**
+	 * Impresora de boletas/facturas: la de la caja; si en Configuraciones > Impresión de documentos hay una
+	 * "Ruta impresora" (ej. //127.0.0.1/pos80), se imprime en esa impresora compartida de Windows.
+	 */
+	public function destinoDocumentos()
+	{
+		$d = $this->destinoCaja();
+		$ruta = $this->opciones()['ruta_documentos'];
+		// Solo si algún agente de impresión tiene esa impresora: si no (ej. //127.0.0.1/caja cuando la impresora se llama
+		// pos80), el trabajo quedaba pendiente para siempre y la boleta no salía. Entonces va a la impresora de la caja.
+		if ($ruta !== '' && (strpos($ruta, '//') === 0 || strpos($ruta, '\\') === 0) && $this->agenteTieneImpresora($ruta)) {
+			return array('id' => $d ? $d['id'] : 0, 'nombre' => $d ? $d['nombre'] : 'DOCUMENTOS', 'ip' => '', 'puerto' => '', 'ruta_windows' => $ruta);
+		}
+		return $d;
+	}
+
+	/** ¿Algún agente de impresión activo informó una impresora con el nombre de esa ruta (//equipo/nombre)? */
+	private function agenteTieneImpresora($ruta)
+	{
+		$partes = preg_split('#[\\\\/]+#', rtrim(trim((string)$ruta), '\\/'));
+		$nombre = mb_strtolower(trim((string)end($partes)));
+		if ($nombre === '') return false;
+		$db = $this->conexion();
+		$c = $this->columnas($db, array('agente_impresion'));
+		if (!isset($c['agente_impresion']['impresoras'])) return false;
+		foreach ($this->q($db, 'SELECT impresoras FROM agente_impresion WHERE activo')->result() as $a) {
+			$lista = json_decode((string)$a->impresoras, true);
+			if (!is_array($lista)) continue;
+			foreach ($lista as $imp) {
+				if (mb_strtolower(trim((string)$imp)) === $nombre) return true;
+			}
+		}
+		return false;
+	}
+
+	/** Abrir la gaveta: con "Requerir administrador para: Apertura de gaveta" pide la clave de un administrador. */
+	public function autorizarGaveta($idUsuario, $idRol, $aut)
+	{
+		$db = $this->conexion();
+		if ($this->configuracion($db)['admin_gaveta']) $this->exigirAutorizacion($db, 'abrir la gaveta', $idUsuario, $idRol, $aut);
+	}
+
 	public function destinoCaja()
 	{
 		$db = $this->conexion();
@@ -655,10 +735,10 @@ class Mcaja extends CI_Model
 
 		// Venta sin cliente elegido (cliente público / 66.666.666-6): no se imprimen sus datos
 		$config = $this->configuracion($db);
-		// Copia cedible: documento electrónico emitido y vendido con crédito de confianza
+		// Copia cedible: factura electrónica emitida y vendida con crédito de confianza
 		$conCredito = false;
 		foreach ($pagos as $pg) {
-			if ($config['id_fpago_credito'] && (int)$pg->id_fpago === $config['id_fpago_credito']) $conCredito = true;
+			if ($this->esCredito($config, $pg->id_fpago, $pg->nombre_fpago)) $conCredito = true;
 		}
 		if ((int)$v->id_cliente === (int)$config['id_cliente_publico'] || (int)$v->rut === 66666666) {
 			$v->nombre_cliente = $v->rut = $v->dv = $v->giro = $v->direccion = $v->comuna = '';
@@ -716,8 +796,9 @@ class Mcaja extends CI_Model
 			'emitido' => (int)$v->folio_dte > 0,
 			'ted' => isset($v->ted_dte) ? (string)$v->ted_dte : '',
 			'sii' => in_array((int)$v->cod_sii, self::COD_SII_ELECTRONICOS) ? $this->leyendaSii($db, (int)$v->cod_sii) : null,
+			// Copia cedible: solo FACTURAS electrónicas (33 afecta, 34 exenta) vendidas con crédito de confianza; boletas no
 			'cedible' => $config['copia_cedible'] && $conCredito && !$esNc && (int)$v->folio_dte > 0
-				&& in_array((int)$v->cod_sii, self::COD_SII_ELECTRONICOS),
+				&& in_array((int)$v->cod_sii, array(33, 34), true),
 		);
 	}
 
@@ -780,11 +861,16 @@ class Mcaja extends CI_Model
 				// Un retiro no puede sacar más efectivo del que hay en la caja (fondo + ventas en efectivo + ingresos
 				// - retiros - propinas pagadas). La caja queda bloqueada para que dos retiros a la vez no lo pasen.
 				$this->q($db, 'SELECT id_caja FROM caja WHERE id_caja = ? FOR UPDATE', array((int)$caja->id_caja));
-				$disponible = (int)$this->resumenCaja($caja)['efectivo_esperado'];
+				$res = $this->resumenCaja($caja);
+				$disponible = (int)$res['efectivo_esperado'];
+				// Configuraciones > Permitir retiro fondo fijo: si está desmarcado, el fondo inicial no se puede retirar
+				$sinFondo = !$this->configuracion($db)['retiro_fondo'];
+				if ($sinFondo) $disponible -= (int)$res['fondo'];
 				if ($monto > $disponible) {
+					$f = '$' . number_format(max(0, $disponible), 0, ',', '.');
 					throw new Exception($disponible > 0
-						? 'Solo hay $' . number_format($disponible, 0, ',', '.') . ' en efectivo en la caja: el retiro no puede ser mayor'
-						: 'No hay efectivo en la caja para hacer un retiro', 400);
+						? 'Solo hay ' . $f . ' en efectivo ' . ($sinFondo ? 'para retirar (el fondo fijo no se puede retirar)' : 'en la caja') . ': el retiro no puede ser mayor'
+						: ($sinFondo ? 'Solo queda el fondo fijo en la caja y no se puede retirar (Configuraciones > Permitir retiro fondo fijo)' : 'No hay efectivo en la caja para hacer un retiro'), 400);
 				}
 			}
 			$this->insertar($db, $cols, 'detalle_caja', array(
@@ -819,11 +905,309 @@ class Mcaja extends CI_Model
 	 * = producto agregado, precio = producto + valor del agregado) y el trigger descuenta
 	 * su receta; los siguientes van como línea propia del producto agregado a su valor.
 	 */
+	/**
+	 * Cupo de crédito del cliente (cliente.creditomaximo): lo que debe (ctacte_cliente: monto - pagado) más este crédito no
+	 * puede pasarse del cupo. Cupo 0 o vacío = sin límite, como estaba antes. La fila del cliente queda bloqueada hasta el
+	 * final de la venta, así dos cajas no pueden usar el mismo cupo a la vez.
+	 */
+	private function validarCupoCredito($db, $idCliente, $monto)
+	{
+		$c = $this->q($db, 'SELECT COALESCE(creditomaximo, 0) AS cupo FROM cliente WHERE id_cliente = ? FOR UPDATE', array((int)$idCliente))->row();
+		$cupo = $c ? (int)$c->cupo : 0;
+		// Plazo máximo (cliente.plazo_credito, días): con una venta a crédito vencida sin pagar no se le da más crédito
+		$vencido = $this->deudaVencida($db, $idCliente);
+		if ($vencido['monto'] > 0) {
+			throw new Exception('El cliente tiene $' . number_format($vencido['monto'], 0, ',', '.') . ' en créditos vencidos (plazo de '
+				. $vencido['plazo'] . ' días). Debe pagarlos en la pestaña Créditos antes de comprar a crédito otra vez.', 409);
+		}
+		if ($cupo <= 0) return;
+		$deuda = 0;
+		$hay = $this->q($db, "SELECT to_regclass('public.ctacte_cliente') IS NOT NULL AS hay")->row();
+		if ($hay && ($hay->hay === 't' || $hay->hay === true)) {
+			$deuda = (int)$this->q($db, 'SELECT COALESCE(sum(COALESCE(monto, 0) - COALESCE(pagado, 0)), 0) AS deuda FROM ctacte_cliente WHERE id_cliente = ?',
+				array((int)$idCliente))->row()->deuda;
+		}
+		$disponible = max(0, $cupo - $deuda);
+		if ($monto > $disponible && $cupo > 0) {
+			$f = function ($n) { return '$' . number_format($n, 0, ',', '.'); };
+			throw new Exception('El cliente no tiene cupo de crédito suficiente. Cupo ' . $f($cupo) . ', debe ' . $f($deuda)
+				. ', disponible ' . $f($disponible) . '. Paga la diferencia con otra forma de pago o pide que le suban el cupo.', 409);
+		}
+	}
+
+	// ====================== Créditos de clientes (pagos en la caja) ======================
+
+	/** ¿Están las tablas de pagos de crédito (sql/credito_clientes.sql)? */
+	private function hayPagosCredito($db)
+	{
+		$c = $this->columnas($db, array('pago_credito_cliente', 'detalle_pago_credito', 'ctacte_cliente'));
+		return isset($c['pago_credito_cliente'], $c['detalle_pago_credito'], $c['ctacte_cliente']);
+	}
+
+	private function exigirPagosCredito($db)
+	{
+		if (!$this->hayPagosCredito($db)) {
+			throw new Exception('Falta preparar la base para los pagos de crédito: corre el script sql/credito_clientes.sql', 409);
+		}
+	}
+
+	/** Plazo del crédito del cliente en días (0 = sin plazo); 30 si la base aún no tiene la columna. */
+	private function plazoCredito($db, $idCliente)
+	{
+		if (!isset($this->columnas($db, array('cliente'))['cliente']['plazo_credito'])) return 30;
+		$r = $this->q($db, 'SELECT COALESCE(plazo_credito, 30) AS p FROM cliente WHERE id_cliente = ?', array((int)$idCliente))->row();
+		return $r ? max(0, (int)$r->p) : 30;
+	}
+
+	/** Lo que el cliente debe con el plazo ya cumplido: {monto, plazo}. */
+	private function deudaVencida($db, $idCliente)
+	{
+		$plazo = $this->plazoCredito($db, $idCliente);
+		if ($plazo <= 0 || !isset($this->columnas($db, array('ctacte_cliente'))['ctacte_cliente'])) return array('monto' => 0, 'plazo' => $plazo);
+		$r = $this->q($db, "SELECT COALESCE(sum(cc.monto - COALESCE(cc.pagado, 0)), 0) AS m
+			FROM ctacte_cliente cc JOIN venta v ON v.id_venta = cc.id_venta
+			WHERE cc.id_cliente = ? AND cc.monto > COALESCE(cc.pagado, 0)
+				AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%'
+				AND v.fecha_transaccion::date + ? < current_date", array((int)$idCliente, $plazo))->row();
+		return array('monto' => $r ? (int)$r->m : 0, 'plazo' => $plazo);
+	}
+
+	/** Clientes que deben algo: id, nombre, rut, deuda, vencido, ventas pendientes. */
+	public function clientesConDeuda()
+	{
+		$db = $this->conexion();
+		if (!isset($this->columnas($db, array('ctacte_cliente'))['ctacte_cliente'])) return array();
+		$conPlazo = isset($this->columnas($db, array('cliente'))['cliente']['plazo_credito']);
+		$plazo = $conPlazo ? 'COALESCE(c.plazo_credito, 30)' : '30';
+		// Con la columna se agrupa también por el plazo (un número suelto en GROUP BY sería una posición de columna)
+		$grupoPlazo = $conPlazo ? ', ' . $plazo : '';
+		$filas = $this->q($db, "SELECT c.id_cliente, c.nombre_cliente, c.rut, c.dv, $plazo AS plazo,
+				sum(cc.monto - COALESCE(cc.pagado, 0)) AS deuda, count(*) AS ventas,
+				COALESCE(sum(cc.monto - COALESCE(cc.pagado, 0)) FILTER (WHERE $plazo > 0 AND v.fecha_transaccion::date + $plazo < current_date), 0) AS vencido
+			FROM ctacte_cliente cc
+			JOIN cliente c ON c.id_cliente = cc.id_cliente
+			JOIN venta v ON v.id_venta = cc.id_venta
+			WHERE cc.monto > COALESCE(cc.pagado, 0) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%'
+			GROUP BY c.id_cliente, c.nombre_cliente, c.rut, c.dv$grupoPlazo
+			ORDER BY vencido DESC, deuda DESC, c.nombre_cliente")->result();
+		$res = array();
+		foreach ($filas as $f) {
+			$res[] = array('id_cliente' => (int)$f->id_cliente, 'nombre' => $f->nombre_cliente,
+				'rut' => $f->rut ? number_format((float)$f->rut, 0, ',', '.') . '-' . $f->dv : '',
+				'plazo' => (int)$f->plazo, 'deuda' => (int)$f->deuda, 'vencido' => (int)$f->vencido, 'ventas' => (int)$f->ventas);
+		}
+		return $res;
+	}
+
+	/** Ventas a crédito pendientes del cliente (con su detalle) y sus últimos pagos. */
+	public function creditosCliente($idCliente)
+	{
+		$db = $this->conexion();
+		$idCliente = (int)$idCliente;
+		$cli = $this->q($db, 'SELECT id_cliente, nombre_cliente, rut, dv, COALESCE(creditomaximo, 0) AS cupo FROM cliente WHERE id_cliente = ?', array($idCliente))->row();
+		if (!$cli) throw new Exception('El cliente no existe', 404);
+		$plazo = $this->plazoCredito($db, $idCliente);
+		$pendientes = array();
+		if (isset($this->columnas($db, array('ctacte_cliente'))['ctacte_cliente'])) {
+			$filas = $this->q($db, "SELECT cc.id_ctacte_cliente, cc.id_venta, cc.monto, COALESCE(cc.pagado, 0) AS pagado,
+					to_char(v.fecha_transaccion, 'DD/MM/YYYY HH24:MI') AS fecha, v.fecha_transaccion::date AS dia,
+					COALESCE(td.nombre_tdocumento, 'Venta') AS documento, v.folio, v.total,
+					CASE WHEN ? > 0 THEN to_char(v.fecha_transaccion::date + ?, 'DD/MM/YYYY') ELSE '' END AS vence,
+					CASE WHEN ? > 0 THEN current_date - (v.fecha_transaccion::date + ?) ELSE -1 END AS dias_vencido
+				FROM ctacte_cliente cc
+				JOIN venta v ON v.id_venta = cc.id_venta
+				LEFT JOIN tdocumento td ON td.id_tdocumento = v.id_tdocumento
+				WHERE cc.id_cliente = ? AND cc.monto > COALESCE(cc.pagado, 0) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%'
+				ORDER BY v.fecha_transaccion, cc.id_ctacte_cliente", array($plazo, $plazo, $plazo, $plazo, $idCliente))->result();
+			$ids = array();
+			foreach ($filas as $f) $ids[] = (int)$f->id_venta;
+			$lineas = array();
+			if ($ids) {
+				foreach ($this->q($db, "SELECT dv.id_venta, COALESCE(p.nombre_producto, 'Producto ' || dv.id_producto)
+						|| COALESCE(' + ' || pa.nombre_producto, '') AS nombre, dv.cantidad, dv.subtotal
+					FROM detalle_venta dv
+					LEFT JOIN producto p ON p.id_producto = dv.id_producto
+					LEFT JOIN producto pa ON pa.id_producto = dv.id_agregado AND dv.id_agregado > 0
+					WHERE dv.id_venta " . $this->sqlEn($ids) . " AND dv.cantidad > 0 ORDER BY dv.id_detalle_venta")->result() as $l) {
+					$lineas[(int)$l->id_venta][] = array('nombre' => $l->nombre, 'cantidad' => (float)$l->cantidad, 'subtotal' => (int)round((float)$l->subtotal));
+				}
+			}
+			foreach ($filas as $f) {
+				$pendientes[] = array(
+					'id_ctacte' => (int)$f->id_ctacte_cliente, 'id_venta' => (int)$f->id_venta, 'fecha' => $f->fecha,
+					'documento' => $f->documento, 'folio' => (int)$f->folio, 'total' => (int)$f->total,
+					'monto' => (int)$f->monto, 'pagado' => (int)$f->pagado, 'saldo' => (int)$f->monto - (int)$f->pagado,
+					'vence' => $f->vence, 'dias_vencido' => (int)$f->dias_vencido,
+					'lineas' => isset($lineas[(int)$f->id_venta]) ? $lineas[(int)$f->id_venta] : array(),
+				);
+			}
+		}
+		$pagos = array();
+		if ($this->hayPagosCredito($db)) {
+			foreach ($this->q($db, "SELECT pc.id_pago_credito, to_char(pc.fecha, 'DD/MM/YYYY HH24:MI') AS fecha, pc.monto,
+					COALESCE(f.nombre_fpago, '') AS fpago, COALESCE(u.nombre_usuario, '') AS usuario,
+					(SELECT string_agg(COALESCE(td.nombre_tdocumento, 'Venta') || ' N° ' || v.folio, ', ' ORDER BY v.id_venta)
+						FROM detalle_pago_credito d JOIN venta v ON v.id_venta = d.id_venta
+						LEFT JOIN tdocumento td ON td.id_tdocumento = v.id_tdocumento WHERE d.id_pago_credito = pc.id_pago_credito) AS ventas
+				FROM pago_credito_cliente pc
+				LEFT JOIN fpago f ON f.id_fpago = pc.id_fpago
+				LEFT JOIN usuario u ON u.id_usuario = pc.id_usuario
+				WHERE pc.id_cliente = ? ORDER BY pc.id_pago_credito DESC LIMIT 20", array($idCliente))->result() as $pg) {
+				$pagos[] = array('id' => (int)$pg->id_pago_credito, 'fecha' => $pg->fecha, 'monto' => (int)$pg->monto,
+					'fpago' => $pg->fpago, 'usuario' => $pg->usuario, 'ventas' => (string)$pg->ventas);
+			}
+		}
+		$deuda = 0;
+		$vencido = 0;
+		foreach ($pendientes as $x) { $deuda += $x['saldo']; if ($x['dias_vencido'] > 0) $vencido += $x['saldo']; }
+		return array(
+			'cliente' => array('id_cliente' => (int)$cli->id_cliente, 'nombre' => $cli->nombre_cliente,
+				'rut' => $cli->rut ? number_format((float)$cli->rut, 0, ',', '.') . '-' . $cli->dv : '',
+				'cupo' => (int)$cli->cupo, 'plazo' => $plazo, 'deuda' => $deuda, 'vencido' => $vencido),
+			'pendientes' => $pendientes,
+			'pagos' => $pagos,
+			'listo' => $this->hayPagosCredito($db),
+		);
+	}
+
+	/**
+	 * Pago de créditos del cliente en la caja abierta. $p = {id_cliente, id_fpago, ids: [id_ctacte...], paga_con, observacion}.
+	 * Paga el saldo completo de cada venta elegida. En efectivo entra a la caja como ingreso (centro de costo de
+	 * Configuraciones > Centro costo pago crédito); con otra forma de pago se rinde en esa forma de pago al cerrar.
+	 */
+	public function registrarPagoCredito($caja, $idUsuario, $p)
+	{
+		$db = $this->conexion();
+		$this->exigirPagosCredito($db);
+		$config = $this->configuracion($db);
+		$idCliente = (int)(isset($p['id_cliente']) ? $p['id_cliente'] : 0);
+		$idFpago = (int)(isset($p['id_fpago']) ? $p['id_fpago'] : 0);
+		$ids = array_values(array_unique(array_filter(array_map('intval', isset($p['ids']) ? (array)$p['ids'] : array()))));
+		if ($idCliente <= 0) throw new Exception('Elige el cliente', 400);
+		if (!$ids) throw new Exception('Elige al menos una venta para pagar', 400);
+		$fp = null;
+		foreach ($this->catalogoFpago($db, $config) as $f) if ($f['id_fpago'] === $idFpago) $fp = $f;
+		if (!$fp) throw new Exception('Elige la forma de pago', 400);
+		if ($fp['credito'] || $fp['cortesia']) throw new Exception('Un crédito no se paga con ' . $fp['nombre'], 400);
+		$observacion = mb_substr(trim(isset($p['observacion']) ? (string)$p['observacion'] : ''), 0, 200);
+		$cols = $this->columnas($db, array('pago_credito_cliente', 'detalle_pago_credito', 'detalle_caja', 'caja'));
+
+		$db->trans_begin();
+		try {
+			$c = $this->q($db, 'SELECT cerrada FROM caja WHERE id_caja = ? FOR UPDATE', array((int)$caja->id_caja))->row();
+			if (!$c || $c->cerrada === 't' || $c->cerrada === true) throw new Exception('La caja ya está cerrada', 409);
+			// Las deudas quedan bloqueadas: dos cajas no pueden cobrar la misma venta a la vez
+			$filas = $this->q($db, 'SELECT cc.id_ctacte_cliente, cc.id_venta, cc.monto, COALESCE(cc.pagado, 0) AS pagado, v.folio
+				FROM ctacte_cliente cc JOIN venta v ON v.id_venta = cc.id_venta
+				WHERE cc.id_cliente = ? AND cc.id_ctacte_cliente ' . $this->sqlEn($ids) . ' ORDER BY cc.id_ctacte_cliente FOR UPDATE OF cc',
+				array($idCliente))->result();
+			if (count($filas) !== count($ids)) throw new Exception('Alguna venta elegida no es un crédito de este cliente', 409);
+			$total = 0;
+			foreach ($filas as $f) {
+				$saldo = (int)$f->monto - (int)$f->pagado;
+				if ($saldo <= 0) throw new Exception('La venta folio ' . (int)$f->folio . ' ya estaba pagada. Vuelve a cargar los créditos.', 409);
+				$total += $saldo;
+			}
+			$pagaCon = $fp['efectivo'] ? max($total, (int)(isset($p['paga_con']) ? $p['paga_con'] : 0)) : $total;
+			$vuelto = $pagaCon - $total;
+			$cli = $this->q($db, 'SELECT nombre_cliente FROM cliente WHERE id_cliente = ?', array($idCliente))->row();
+			$ahora = date('Y-m-d H:i:s');
+
+			// En efectivo: ingreso de caja (suma al efectivo esperado del cierre)
+			$idDetalleCaja = 0;
+			if ($fp['efectivo']) {
+				$texto = 'PAGO CREDITO ' . ($cli ? $cli->nombre_cliente : '');
+				$idDetalleCaja = $this->insertar($db, $cols, 'detalle_caja', array(
+					'id_caja' => (int)$caja->id_caja, 'ingreso' => $total, 'egreso' => 0,
+					'observacion' => mb_substr($texto, 0, 100), 'descripcion_corta' => mb_substr($texto, 0, 50),
+					'id_ccosto' => (int)$this->opcionNumero($db, 'id_pagocreditodirecto'),
+					'fecha_movimiento' => $ahora, 'vigente' => true,
+				), 'id_detalle_caja');
+				$this->q($db, 'UPDATE caja SET ingresos = (SELECT COALESCE(sum(ingreso), 0) FROM detalle_caja WHERE id_caja = ?) WHERE id_caja = ?',
+					array((int)$caja->id_caja, (int)$caja->id_caja));
+			}
+			$idPago = $this->insertar($db, $cols, 'pago_credito_cliente', array(
+				'id_cliente' => $idCliente, 'id_caja' => (int)$caja->id_caja, 'id_usuario' => (int)$idUsuario,
+				'id_fpago' => $idFpago, 'monto' => $total, 'paga_con' => $pagaCon, 'vuelto' => $vuelto,
+				'fecha' => $ahora, 'observacion' => $observacion, 'id_detalle_caja' => $idDetalleCaja ?: null,
+			), 'id_pago_credito');
+			foreach ($filas as $f) {
+				$saldo = (int)$f->monto - (int)$f->pagado;
+				$this->insertar($db, $cols, 'detalle_pago_credito', array('id_pago_credito' => $idPago,
+					'id_ctacte_cliente' => (int)$f->id_ctacte_cliente, 'id_venta' => (int)$f->id_venta, 'monto' => $saldo), null);
+				$this->q($db, 'UPDATE ctacte_cliente SET pagado = monto WHERE id_ctacte_cliente = ?', array((int)$f->id_ctacte_cliente));
+			}
+			$db->trans_commit();
+		} catch (Exception $e) {
+			$db->trans_rollback();
+			throw $e;
+		}
+		return $this->comprobantePagoCredito($idPago);
+	}
+
+	/** Datos del comprobante de un pago de crédito (para imprimirlo). */
+	public function comprobantePagoCredito($idPago)
+	{
+		$db = $this->conexion();
+		$this->exigirPagosCredito($db);
+		$pg = $this->q($db, "SELECT pc.*, to_char(pc.fecha, 'DD/MM/YYYY HH24:MI') AS fecha_texto, c.nombre_cliente, c.rut, c.dv,
+				COALESCE(f.nombre_fpago, '') AS fpago, COALESCE(u.nombre_usuario, '') AS usuario
+			FROM pago_credito_cliente pc
+			JOIN cliente c ON c.id_cliente = pc.id_cliente
+			LEFT JOIN fpago f ON f.id_fpago = pc.id_fpago
+			LEFT JOIN usuario u ON u.id_usuario = pc.id_usuario
+			WHERE pc.id_pago_credito = ?", array((int)$idPago))->row();
+		if (!$pg) throw new Exception('El pago no existe', 404);
+		$det = $this->q($db, "SELECT d.monto, v.folio, to_char(v.fecha_transaccion, 'DD/MM/YYYY') AS fecha, COALESCE(td.nombre_tdocumento, 'Venta') AS documento
+			FROM detalle_pago_credito d JOIN venta v ON v.id_venta = d.id_venta
+			LEFT JOIN tdocumento td ON td.id_tdocumento = v.id_tdocumento
+			WHERE d.id_pago_credito = ? ORDER BY d.id_detalle_pago_credito", array((int)$idPago))->result_array();
+		$deuda = (int)$this->q($db, "SELECT COALESCE(sum(cc.monto - COALESCE(cc.pagado, 0)), 0) AS d FROM ctacte_cliente cc
+			JOIN venta v ON v.id_venta = cc.id_venta WHERE cc.id_cliente = ? AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%'",
+			array((int)$pg->id_cliente))->row()->d;
+		return array(
+			'id_pago' => (int)$pg->id_pago_credito, 'fecha' => $pg->fecha_texto, 'cliente' => $pg->nombre_cliente,
+			'rut' => $pg->rut ? number_format((float)$pg->rut, 0, ',', '.') . '-' . $pg->dv : '',
+			'fpago' => $pg->fpago, 'usuario' => $pg->usuario, 'monto' => (int)$pg->monto, 'paga_con' => (int)$pg->paga_con,
+			'vuelto' => (int)$pg->vuelto, 'id_caja' => (int)$pg->id_caja, 'observacion' => (string)$pg->observacion,
+			'detalle' => $det, 'deuda_restante' => $deuda,
+			'empresa' => $this->q($db, 'SELECT * FROM empresa ORDER BY id_empresa LIMIT 1')->row(),
+		);
+	}
+
+	/** Una opción numérica de configuracion (0 si la columna no existe). */
+	private function opcionNumero($db, $columna)
+	{
+		if (!isset($this->columnas($db, array('configuracion'))['configuracion'][$columna])) return 0;
+		$r = $this->q($db, 'SELECT COALESCE(' . $columna . ', 0) AS v FROM configuracion LIMIT 1')->row();
+		return $r ? (int)$r->v : 0;
+	}
+
+	/** Pagos de crédito recibidos en la caja con formas de pago que no son efectivo: id_fpago => monto. */
+	private function pagosCreditoNoEfectivo($db, $idCaja, $config)
+	{
+		$res = array();
+		if (!$this->hayPagosCredito($db)) return $res;
+		foreach ($this->q($db, 'SELECT pc.id_fpago, f.nombre_fpago, sum(pc.monto) AS monto FROM pago_credito_cliente pc
+			JOIN fpago f ON f.id_fpago = pc.id_fpago WHERE pc.id_caja = ? GROUP BY 1, 2', array((int)$idCaja))->result() as $r) {
+			if ($this->esEfectivo($config, $r->id_fpago, $r->nombre_fpago)) continue;
+			$res[(int)$r->id_fpago] = array('nombre' => $r->nombre_fpago, 'monto' => (int)$r->monto);
+		}
+		return $res;
+	}
+
+	/** Total de pagos de crédito recibidos en la caja (todas las formas de pago). */
+	private function totalPagosCredito($db, $idCaja)
+	{
+		if (!$this->hayPagosCredito($db)) return 0;
+		return (int)$this->q($db, 'SELECT COALESCE(sum(monto), 0) AS m FROM pago_credito_cliente WHERE id_caja = ?', array((int)$idCaja))->row()->m;
+	}
+
 	public function registrarVenta($caja, $idUsuario, $idRol, $p)
 	{
 		$db = $this->conexion();
 		$config = $this->configuracion($db);
-		$cols = $this->columnas($db, array('venta', 'detalle_venta', 'pago_venta', 'consolidado_ventas', 'tdocumento', 'producto'));
+		$cols = $this->columnas($db, array('venta', 'detalle_venta', 'pago_venta', 'consolidado_ventas', 'tdocumento', 'producto', 'ctacte_cliente'));
 		$factor = 1 + $config['por_iva'] / 100;
 		$idLprecio = !empty($p['id_lprecio']) ? (int)$p['id_lprecio'] : $config['id_lprecio_publico'];
 
@@ -833,10 +1217,10 @@ class Mcaja extends CI_Model
 		foreach ($this->tiposDocumento($db) as $d) {
 			if ($d['id_tdocumento'] === $idTdoc) $doc = $d;
 		}
-		if (!$doc) throw new Exception('Tipo de documento no válido para venta', 400);
+		if (!$doc) throw new Exception('Ese documento no se puede usar en la caja: revisa que la facturación electrónica esté habilitada y el documento asignado en Configuraciones', 400);
 		// Electrónicos: el folio lo asigna Cloud Apps al emitir (tdocumento.folio no los refleja)
 		if (!$doc['habilitado']) {
-			throw new Exception($doc['nombre'] . ' requiere la emisión electrónica (Cloud Apps), que no está configurada para esta empresa. Usa un documento interno.', 409);
+			throw new Exception($doc['nombre'] . ' no se puede emitir: ' . $doc['motivo'] . ' (Configuraciones > Facturación electrónica). Usa el comprobante interno.', 409);
 		}
 
 		$idCliente = (int)(isset($p['id_cliente']) ? $p['id_cliente'] : 0);
@@ -914,6 +1298,7 @@ class Mcaja extends CI_Model
 		$suma = 0;
 		$cortesias = 0;
 		$conCredito = false;
+		$montoCredito = 0;
 		$idxEfectivo = -1;
 		foreach ((isset($p['pagos']) && is_array($p['pagos']) ? $p['pagos'] : array()) as $pg) {
 			$idF = (int)$pg['id_fpago'];
@@ -924,6 +1309,7 @@ class Mcaja extends CI_Model
 			if ($fpagos[$idF]['credito']) {
 				if ($esPublico) throw new Exception('El pago con ' . $fpagos[$idF]['nombre'] . ' requiere seleccionar un cliente', 400);
 				$conCredito = true;
+				$montoCredito += $monto;
 			}
 			if ($fpagos[$idF]['efectivo']) $idxEfectivo = count($pagos);
 			$pagos[] = array('id_fpago' => $idF, 'monto' => $monto, 'vuelto' => 0, 'propina' => 0);
@@ -963,6 +1349,11 @@ class Mcaja extends CI_Model
 		// Lista de precios distinta de la pública: autorizada con la clave al cambiarla (en una mesa vale la del pedido)
 		if (!$idMesa) $this->exigirLista($db, $config, $idUsuario, $idRol, $idLprecio, $idCliente);
 
+		// Configuraciones > Descuentos > Requerir cliente: un descuento solo a un cliente identificado
+		if ($descuento > 0 && $config['descuento_cliente'] && $esPublico) {
+			throw new Exception('Para hacer un descuento debes elegir el cliente de la venta (Configuraciones > Descuentos > Requerir cliente)', 400);
+		}
+
 		// --- Autorizaciones de administrador (Configuraciones)
 		$requiere = array();
 		if ($descuento > 0 && $config['admin_descuento']) $requiere[] = 'descuento';
@@ -986,6 +1377,7 @@ class Mcaja extends CI_Model
 			// La caja pudo cerrarse en otra pestaña
 			$c = $this->q($db, 'SELECT cerrada FROM caja WHERE id_caja = ? FOR UPDATE', array((int)$caja->id_caja))->row();
 			if (!$c || $c->cerrada === 't' || $c->cerrada === true) throw new Exception('La caja ya está cerrada', 409);
+			if ($montoCredito > 0) $this->validarCupoCredito($db, $idCliente, $montoCredito);
 
 			if ($idMesa) {
 				// Lo de la mesa ya se consumió: no se revisa stock, pero sí que el pedido siga igual al que se cobra
@@ -1134,6 +1526,12 @@ class Mcaja extends CI_Model
 					'fecha_movimiento' => $ahora,
 					'fecha_pago' => $dia,
 				), null);
+				// La deuda del fiado la anota el trigger f_creditodirecto, pero solo para la forma de pago configurada.
+				// Sin configurar (crédito reconocido por su nombre) se anota aquí, para que el cupo del cliente funcione.
+				if ($fpagos[$pg['id_fpago']]['credito'] && !$config['id_fpago_credito'] && isset($cols['ctacte_cliente'])) {
+					$this->q($db, 'INSERT INTO ctacte_cliente (id_cliente, id_venta, monto, pagado) VALUES (?, ?, ?, 0)',
+						array($idCliente, $idVenta, $pg['monto']));
+				}
 			}
 
 			if ($idMesa) {
@@ -1329,7 +1727,7 @@ class Mcaja extends CI_Model
 			throw new Exception('El documento se está enviando al SII en este momento. Espera unos segundos y vuelve a intentar.', 409);
 		}
 		try {
-			return $this->anularVentaBloqueada($db, $config, $cols, $caja, $idUsuario, $idVenta, $motivo);
+			return $this->anularVentaBloqueada($db, $config, $cols, $caja, $idUsuario, $idVenta, $motivo) + array('config' => $config);
 		} finally {
 			$this->q($db, 'SELECT pg_advisory_unlock(?, ?)', array(self::LOCK_DTE, (int)$idVenta));
 		}
@@ -1357,6 +1755,12 @@ class Mcaja extends CI_Model
 					AND COALESCE(mensaje_pedido, \'\') NOT LIKE \'ANULADA%\'',
 					array((int)$v->id_tdocumento, (int)$v->folio, $v->dia))->row();
 				if ($nc && $nc->folios) throw new Exception('La venta tiene devoluciones (NC N° ' . $nc->folios . '). Anula primero la nota de crédito.', 409);
+			}
+
+			// Un crédito que el cliente ya pagó (total o en parte) no se anula: el pago quedaría sin su deuda
+			if ($this->hayPagosCredito($db)) {
+				$pc = $this->q($db, 'SELECT count(*) AS n FROM detalle_pago_credito WHERE id_venta = ?', array((int)$idVenta))->row();
+				if ($pc && (int)$pc->n > 0) throw new Exception('Esta venta a crédito ya tiene pagos registrados del cliente: no se puede anular. Usa Devolver.', 409);
 			}
 
 			$this->revertirStock($db, (int)$idVenta);
@@ -1400,6 +1804,19 @@ class Mcaja extends CI_Model
 			$db->trans_rollback();
 			throw $e;
 		}
+		// Datos para el comprobante de anulación (impreso y/o por correo, según Configuraciones)
+		$td = $this->q($db, 'SELECT nombre_tdocumento FROM tdocumento WHERE id_tdocumento = ?', array((int)$v->id_tdocumento))->row();
+		$u = $this->q($db, 'SELECT nombre_usuario FROM usuario WHERE id_usuario = ?', array((int)$idUsuario))->row();
+		return array(
+			'id_venta' => (int)$idVenta,
+			'documento' => $td ? (string)$td->nombre_tdocumento : 'Documento',
+			'folio' => (int)$v->folio,
+			'total' => (int)$v->total,
+			'motivo' => $motivo,
+			'usuario' => $u ? (string)$u->nombre_usuario : '',
+			'fecha' => date('d/m/Y H:i'),
+			'id_caja' => (int)$caja->id_caja,
+		);
 	}
 
 	/**
@@ -1447,7 +1864,7 @@ class Mcaja extends CI_Model
 				if ($f['efectivo']) { $rendido[$f['id_fpago']] = $entregado; break; }
 			}
 		}
-		$suma = $res['ventas'] + $res['ingresos'] - $res['egresos'];
+		$suma = $res['ventas'] + $res['ingresos'] - $res['egresos'] + $res['pagos_credito_otros'];
 		$diferencia = array_sum($rendido) + ($fondoSiguiente - $fondo) - $suma;
 		// Efectivo cobrado (con propina) y lo que queda tras pagar todas las propinas, como el POS
 		$efectivoVenta = $res['efectivo_ventas'] + $res['propinas_efectivo'];
@@ -1514,6 +1931,8 @@ class Mcaja extends CI_Model
 	public function insumosInventarioCierre()
 	{
 		$db = $this->conexion();
+		// Configuraciones > Inventario insumos cierre de caja: desmarcado, no se pide inventario al cerrar
+		if (!$this->configuracion($db)['inventario_cierre']) return array();
 		$c = $this->columnas($db, array('insumo', 'stock_insumo', 'bodega', 'inventario_turno', 'detalle_inventario_turno'));
 		if (!isset($c['insumo']['inventario_cierre_turno'], $c['stock_insumo'], $c['bodega'], $c['inventario_turno'], $c['detalle_inventario_turno'])) return array();
 
@@ -1683,8 +2102,15 @@ class Mcaja extends CI_Model
 		if (strpos($v->mensaje_pedido, 'ANULADA') === 0) throw new Exception('La venta está anulada', 409);
 		if ($v->cortesia === 't' || $v->cortesia === true) throw new Exception('Una cortesía no tiene monto que devolver', 409);
 		if ((int)$v->total <= 0 || (int)$v->subtotal <= 0) throw new Exception('La venta no tiene monto que devolver', 409);
+		// Venta a crédito que el cliente ya pagó (total o en parte) en la pestaña Créditos: no se devuelve ni se anula
+		if ($this->hayPagosCredito($db)) {
+			$pc = $this->q($db, 'SELECT count(*) AS n FROM detalle_pago_credito WHERE id_venta = ?', array((int)$v->id_venta))->row();
+			if ($pc && (int)$pc->n > 0) {
+				throw new Exception('Esta venta a crédito ya fue pagada por el cliente (pestaña Créditos): no se puede anular ni devolver.', 409);
+			}
+		}
 
-		$lineas = $this->q($db, "SELECT dv.id_detalle_venta, dv.id_producto, COALESCE(dv.id_agregado, 0) AS id_agregado,
+		$lineas =$this->q($db, "SELECT dv.id_detalle_venta, dv.id_producto, COALESCE(dv.id_agregado, 0) AS id_agregado,
 				COALESCE(p.nombre_producto, 'Producto ' || dv.id_producto) || COALESCE(' + ' || pa.nombre_producto, '') AS nombre,
 				dv.cantidad, dv.bruto_un, dv.subtotal, (COALESCE(dv.poriva, 1) = 0) AS exento
 			FROM detalle_venta dv
@@ -1805,12 +2231,20 @@ class Mcaja extends CI_Model
 			$ncElectronica = $v['nc_electronica'];
 			// Un documento electrónico solo se devuelve con nota de crédito electrónica (si no, el SII no se entera)
 			if (in_array((int)$v['cod_sii'], self::COD_SII_ELECTRONICOS) && !$ncElectronica) {
-				throw new Exception('Para devolver ' . $v['documento'] . ' se necesita la emisión electrónica configurada (terminal de Cloud Apps en Configuraciones)', 409);
+				throw new Exception('Para devolver ' . $v['documento'] . ' se necesita la facturación electrónica habilitada, la nota de crédito electrónica asignada y el terminal de Cloud Apps (Configuraciones > Facturación electrónica)', 409);
 			}
 			$idNc = $ncElectronica ? $this->idNotaCreditoElectronica($db) : $this->tipoNotaCredito($db, true);
 			$nombreNc = $ncElectronica ? $this->q($db, 'SELECT nombre_tdocumento FROM tdocumento WHERE id_tdocumento = ?', array($idNc))->row()->nombre_tdocumento : self::NC_NOMBRE;
 			if ($fpagos[$idFpago]['credito'] && (int)$v['id_cliente'] === (int)$config['id_cliente_publico']) {
 				throw new Exception('Devolver a ' . $fpagos[$idFpago]['nombre'] . ' requiere que la venta tenga cliente', 400);
+			}
+			// Su cuenta corriente: devolver "a crédito" solo baja la deuda de una venta que se hizo a crédito
+			$ctacte = isset($this->columnas($db, array('ctacte_cliente'))['ctacte_cliente'])
+				? $this->q($db, 'SELECT id_ctacte_cliente, monto, COALESCE(pagado, 0) AS pagado FROM ctacte_cliente
+					WHERE id_venta = ? AND monto > 0 ORDER BY id_ctacte_cliente LIMIT 1 FOR UPDATE', array((int)$v['id_venta']))->row()
+				: null;
+			if ($fpagos[$idFpago]['credito'] && !$ctacte) {
+				throw new Exception('La venta no se hizo a crédito: elige otra forma de devolver el dinero', 400);
 			}
 
 			$lineas = array();
@@ -1855,7 +2289,8 @@ class Mcaja extends CI_Model
 
 			$idVenta = $this->insertar($db, $cols, 'venta', array(
 				'id_tdocumento' => $idNc,
-				'id_cliente' => $v['id_cliente'],
+				// La nota de crédito siempre lleva cliente: el de la venta o, si no tiene, el CLIENTE HABITUAL
+				'id_cliente' => $v['id_cliente'] > 0 ? $v['id_cliente'] : (int)$config['id_cliente_publico'],
 				'id_lprecio' => $v['id_lprecio'],
 				'id_usuario' => (int)$idUsuario,
 				'fecha' => $dia . ' 00:00:00',
@@ -1981,6 +2416,14 @@ class Mcaja extends CI_Model
 				'fecha_pago' => $dia,
 			), null);
 
+			// Devolución a crédito: baja la deuda de la venta original (la pestaña Créditos y el plazo miran esa línea).
+			// La línea negativa que deja el trigger queda saldada para que la deuda no se descuente dos veces.
+			if ($fpagos[$idFpago]['credito'] && $ctacte) {
+				$this->q($db, 'UPDATE ctacte_cliente SET pagado = LEAST(monto, COALESCE(pagado, 0) + ?) WHERE id_ctacte_cliente = ?',
+					array($total, (int)$ctacte->id_ctacte_cliente));
+				$this->q($db, 'UPDATE ctacte_cliente SET pagado = monto WHERE id_venta = ? AND monto < 0', array((int)$idVenta));
+			}
+
 			$db->trans_commit();
 			log_message('info', 'Caja web: devolución ' . $v['documento'] . ' ' . $v['folio'] . ' por $' . $total . ' (usuario ' . (int)$idUsuario . ')');
 		} catch (Exception $e) {
@@ -2009,10 +2452,15 @@ class Mcaja extends CI_Model
 		return array_values(array_unique($ids));
 	}
 
+	/** NC electrónica: la asignada en Configuraciones > Facturación electrónica, y solo con la facturación habilitada. */
 	private function idNotaCreditoElectronica($db)
 	{
-		$r = $this->q($db, 'SELECT min(id_tdocumento) AS id FROM tdocumento WHERE cod_sii = ?', array(self::COD_SII_NC))->row();
-		return $r && $r->id ? (int)$r->id : 0;
+		$config = $this->configuracion($db);
+		if (!$config['facturacion_electronica'] || $config['id_nc'] <= 0) return 0;
+		// Tiene que ser una nota de crédito electrónica (código SII 61): si en Configuraciones quedó la NC INTERNA,
+		// se mandaba al SII un documento interno y Cloud Apps lo rechazaba ("La factura requiere un cliente con RUT")
+		$r = $this->q($db, 'SELECT 1 FROM tdocumento WHERE id_tdocumento = ? AND COALESCE(cod_sii, 0) = 61', array((int)$config['id_nc']))->row();
+		return $r ? (int)$config['id_nc'] : 0;
 	}
 
 	/** La empresa emite por Cloud Apps (credenciales y terminal configurados). */
@@ -2024,6 +2472,16 @@ class Mcaja extends CI_Model
 		} catch (Throwable $e) {
 			return false;
 		}
+	}
+
+	private $dteMotivoCache = null;
+	private function dteMotivo($db)
+	{
+		if ($this->dteMotivoCache === null) {
+			try { $this->dteMotivoCache = (string)$this->dte()->motivoSinEmision($db); } catch (Throwable $e) { $this->dteMotivoCache = ''; }
+			if ($this->dteMotivoCache === '') $this->dteMotivoCache = 'requiere emisión SII';
+		}
+		return $this->dteMotivoCache;
 	}
 
 	private function dteDisponible($db)
@@ -2734,6 +3192,12 @@ class Mcaja extends CI_Model
 			'por_propina' => 'por_propina',
 			'cant_agregados' => 'max_agregados',
 			'id_tdocumento_ticket' => 'id_comprobante',
+			// Documentos electrónicos asignados en Configuraciones > Facturación electrónica
+			'id_tdocumento_boleta_electronica' => 'id_boleta',
+			'id_tdocumento_factura' => 'id_factura',
+			'id_tdocumento_nota_credito' => 'id_nc',
+			'id_impuesto_iva' => 'id_impuesto_iva',
+			'copias_dte' => 'copias_documento',
 		);
 		// Opciones on/off de Configuraciones
 		$flags = array(
@@ -2747,14 +3211,42 @@ class Mcaja extends CI_Model
 			'imprimir_cierre_caja_impresora_termica' => 'imprimir_cierre_termica',
 			'habilitar_facturacion_electronica' => 'facturacion_electronica',
 			'imprimir_copia_cedible' => 'copia_cedible',
+			'requiere_cliente_descuento' => 'descuento_cliente',
+			'inventario_cierre_caja' => 'inventario_cierre',
+			'mostrar_recaudacion_cierre_no_efectivo' => 'llenar_no_efectivo',
+			'cierre_caja_manual' => 'cierre_detallado',
+			'ver_ingresos_egresos_cierre_caja' => 'cierre_ingresos',
+			'ver_creditos_a_clientes_cierre_caja' => 'cierre_creditos',
+			'ver_cortesias_cierre_caja' => 'cierre_cortesias',
+			'ver_anulaciones_eliminaciones_cierre_caja' => 'cierre_anulaciones',
+			'imprimir_comprobante_anulacion' => 'imprimir_anulacion',
+			'permitir_retiro_fondo_fijo' => 'retiro_fondo',
+			'boton_apertura_caja_solo_admin' => 'admin_gaveta',
+			'imprimir_pdf_dte' => 'imprimir_documento',
+			'usar_correo_electronico' => 'correo_cierre',
+			'informar_anulaciones_mail' => 'correo_anulaciones',
 		);
-		$config = array_fill_keys(array_values($mapa), 0) + array_fill_keys(array_values($flags), false);
+		// Opciones de texto (impresora del cierre, impresora de documentos, papel 58/80)
+		$textos = array(
+			'nombre_impresora_cierre' => 'impresora_cierre',
+			'ruta_dte_pdf' => 'ruta_documentos',
+			'formato_dte' => 'formato_papel',
+		);
+		// Si la base no tiene la columna, se mantiene lo que la caja hacía antes de existir la opción
+		$siFalta = array('inventario_cierre', 'llenar_no_efectivo', 'cierre_detallado', 'cierre_ingresos', 'cierre_creditos',
+			'cierre_cortesias', 'cierre_anulaciones', 'retiro_fondo', 'imprimir_documento');
+		$config = array_fill_keys(array_values($mapa), 0) + array_fill_keys(array_values($flags), false)
+			+ array_fill_keys(array_values($textos), '');
 		$config['por_iva'] = 19;
 		$existentes = array_keys(isset($cols['configuracion']) ? $cols['configuracion'] : array());
 		$sel = array_values(array_intersect(array_keys($mapa), $existentes));
 		$selFlags = array_values(array_intersect(array_keys($flags), $existentes));
-		if ($sel || $selFlags) {
-			$campos = $sel;
+		$selTextos = array_values(array_intersect(array_keys($textos), $existentes));
+		foreach ($siFalta as $k) {
+			if (!in_array(array_search($k, $flags), $existentes, true)) $config[$k] = true;
+		}
+		if ($sel || $selFlags || $selTextos) {
+			$campos = array_merge($sel, $selTextos);
 			foreach ($selFlags as $c) $campos[] = "($c IS TRUE) AS $c";
 			$fila = $this->q($db, 'SELECT ' . implode(', ', $campos) . ' FROM configuracion LIMIT 1')->row_array();
 			foreach ($sel as $c) {
@@ -2763,7 +3255,16 @@ class Mcaja extends CI_Model
 			foreach ($selFlags as $c) {
 				$config[$flags[$c]] = isset($fila[$c]) && ($fila[$c] === 't' || $fila[$c] === true);
 			}
+			foreach ($selTextos as $c) {
+				$config[$textos[$c]] = trim((string)(isset($fila[$c]) ? $fila[$c] : ''));
+			}
 		}
+		// IVA: el porcentaje del impuesto elegido en Configuraciones (Impuestos IVA); si no hay, el de configuracion.por_iva
+		if ($config['id_impuesto_iva'] > 0 && isset($this->columnas($db, array('impuesto'))['impuesto']['valor'])) {
+			$iva = $this->q($db, 'SELECT valor FROM impuesto WHERE id_impuesto = ?', array($config['id_impuesto_iva']))->row();
+			if ($iva && (float)$iva->valor > 0) $config['por_iva'] = (float)$iva->valor;
+		}
+		$config['copias_documento'] = max(1, min(5, (int)$config['copias_documento']));
 		// Bases sin la opción: se mantiene la facturación electrónica disponible
 		if (!in_array('habilitar_facturacion_electronica', $existentes)) $config['facturacion_electronica'] = true;
 		$config['admin_descuento'] = $config['admin_descuento'] || $config['admin_descuento_clave'];
@@ -2788,10 +3289,21 @@ class Mcaja extends CI_Model
 				'nombre' => $f->nombre_fpago,
 				'cortesia' => $f->cortesia === 't' || $f->cortesia === true,
 				'efectivo' => $this->esEfectivo($config, $f->id_fpago, $f->nombre_fpago),
-				'credito' => (int)$f->id_fpago === $config['id_fpago_credito'],
+				'credito' => $this->esCredito($config, $f->id_fpago, $f->nombre_fpago),
 			);
 		}
 		return $res;
+	}
+
+	/**
+	 * Forma de pago de crédito a clientes (fiado): la de Configuraciones. Si no está configurada (0), la que se llama
+	 * "CREDITO..." sin ser tarjeta (ej. CREDITO DE CONFIANZA), igual que el efectivo se reconoce por su nombre.
+	 */
+	private function esCredito($config, $idFpago, $nombre)
+	{
+		if ($config['id_fpago_credito'] > 0) return (int)$idFpago === $config['id_fpago_credito'];
+		$n = strtoupper(strtr((string)$nombre, array('É' => 'E', 'é' => 'E')));
+		return strpos($n, 'CREDITO') !== false && strpos($n, 'TARJETA') === false;
 	}
 
 	private function esEfectivo($config, $idFpago, $nombre)
@@ -2811,15 +3323,18 @@ class Mcaja extends CI_Model
 			FROM tdocumento";
 		if (isset($t['para_venta'])) $q .= ' WHERE para_venta IS TRUE';
 		$tipos = $this->q($db, $q . ' ORDER BY id_tdocumento')->result();
-		// Sin facturación electrónica habilitada, la caja vende solo con comprobante interno
+		// En la caja se vende solo con: el comprobante interno (siempre) y, con la facturación electrónica habilitada, la
+		// boleta y la factura ASIGNADAS en Configuraciones > Facturación electrónica. Sin facturación electrónica, o sin
+		// asignar, esos documentos no se pueden usar.
 		$config = $this->configuracion($db);
-		if (!$config['facturacion_electronica']) {
-			$tipos = array_values(array_filter($tipos, function ($d) use ($config) {
-				return $config['id_comprobante']
-					? (int)$d->id_tdocumento === $config['id_comprobante']
-					: stripos($d->nombre_tdocumento, 'COMPROBANTE') !== false;
-			}));
-		}
+		$asignados = $config['facturacion_electronica'] ? array_filter(array($config['id_boleta'], $config['id_factura'])) : array();
+		$tipos = array_values(array_filter($tipos, function ($d) use ($config, $asignados) {
+			$id = (int)$d->id_tdocumento;
+			if (in_array($id, $asignados, true)) return true;
+			return $config['id_comprobante']
+				? $id === $config['id_comprobante']
+				: stripos($d->nombre_tdocumento, 'COMPROBANTE') !== false && stripos($d->nombre_tdocumento, 'NOTA') === false;
+		}));
 		$res = array();
 		foreach ($tipos as $d) {
 			$cod = (int)$d->cod_sii;
@@ -2832,10 +3347,13 @@ class Mcaja extends CI_Model
 				'es_factura' => $esFactura,
 				'requiere_cliente' => $esFactura || $d->requiere === 't' || $d->requiere === true,
 				'electronico' => in_array($cod, self::COD_SII_ELECTRONICOS),
-				// Los electrónicos solo si la empresa emite por Cloud Apps
+				// Los electrónicos (ya filtrados: habilitados y asignados) solo si la empresa emite por Cloud Apps
 				'habilitado' => !in_array($cod, self::COD_SII_ELECTRONICOS)
-					|| ($config['facturacion_electronica'] && in_array($cod, self::COD_SII_EMITIBLES) && $this->dteDisponible($db)),
+					|| (in_array($cod, self::COD_SII_EMITIBLES) && $this->dteDisponible($db)),
 			);
+			$i = count($res) - 1;
+			// Por qué no se puede usar (ej. "Falta el terminal en Acceso facturación"), para mostrarlo en la Caja
+			$res[$i]['motivo'] = $res[$i]['habilitado'] ? '' : (in_array($cod, self::COD_SII_EMITIBLES) ? $this->dteMotivo($db) : 'no se emite desde la caja web');
 		}
 		return $res;
 	}

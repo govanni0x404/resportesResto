@@ -1,204 +1,71 @@
 <script>
-var base_url = "<?php echo base_url(); ?>";
+	(function () {
+		var base = "<?php echo base_url(); ?>index.php/PrivilegiosUsuario/";
+		var hayTabla = <?php echo $hayTabla ? 'true' : 'false' ?>;
+		if (!hayTabla) return;
 
-$(document).ready(function() {
-    cargarRoles();
-});
+		function error(x, defecto) {
+			var m = defecto;
+			try { m = (x.responseJSON && x.responseJSON.error) || JSON.parse(x.responseText).error || defecto; } catch (e) {}
+			swal('Atención', m, 'warning');
+		}
 
-function cargarRoles() {
-    $.post(base_url + "index.php/PrivilegiosUsuario/ListadoDeRoles")
-        .done(function(response) {
-            var roles = JSON.parse(response);
-            var select = $('#selectRol');
-            select.empty();
-            select.append('<option value="0">-- Seleccione un Rol --</option>');
-            
-            roles.forEach(function(rol) {
-                select.append('<option value="' + rol.id_rol + '">' + rol.nombre_rol + '</option>');
-            });
-        })
-        .fail(function() {
-            showAppAlert('error', "Error al cargar los roles", {
-                duration: 5000,
-                image: base_url + 'assets/img/errorGif.gif'
-            });
-        });
-}
+		function rol() { return parseInt($('#selectRol').val(), 10) || 0; }
 
-$('#selectRol').on('change', function() {
-    var id_rol = $(this).val();
-    
-    if (id_rol == "0") {
-        $('#divPrivilegios').hide();
-        return;
-    }
-    
-    $('#id_rol_selected').val(id_rol);
-    mostrarPrivilegiosPorRol(id_rol);
-});
+		$.ajax({ url: base + 'ListadoDeRoles', type: 'POST', dataType: 'json' }).done(function (r) {
+			var $s = $('#selectRol');
+			$.each(r.roles || [], function (i, f) { $s.append($('<option>').val(f.id_rol).text(f.nombre_rol)); });
+		}).fail(function (x) { error(x, 'No se pudieron cargar los roles'); });
 
-function mostrarPrivilegiosPorRol(id_rol) {
-    $.post(base_url + "index.php/PrivilegiosUsuario/ListarPrivilegiosPorRol", {
-        id_rol: id_rol
-    }, function(datos) {
-        var obj = JSON.parse(datos);
-        
-        if (obj.length == 0) {
-            showAppAlert('warning', "No hay módulos disponibles", {
-                duration: 3000,
-                image: base_url + 'assets/img/errorGif.gif'
-            });
-            $('#divPrivilegios').hide();
-            return;
-        }
-        
-        var tbl = "";
-        $.each(obj, function(index, v) {
-            var autoriza = v.autoriza == 't' || v.autoriza == true;
-            var bgColor = autoriza ? '#' : '#';
-            var checked = autoriza ? 'checked' : '';
-            var id_pusuario = v.id_pusuario ? v.id_pusuario : 0;
-            
-            tbl += "<tr style='background-color:" + bgColor + ";'>";
-            tbl += "<td class='text-center' style='display:none'>" + id_pusuario + "</td>";
-            tbl += "<td class='text-center' style='display:none'>" + v.id_psistema + "</td>";
-            tbl += "<td class='text-center' style='padding: 10px; font-weight: bold;'>" + id_pusuario + "</td>";
-            tbl += "<td class='text-left' style='padding: 10px;'>" + v.nombre_psistema + "</td>";
-            tbl += "<td class='text-center'><input type='checkbox' class='privilegio-check' data-id-pusuario='" + id_pusuario + "' data-id-psistema='" + v.id_psistema + "' data-id-rol='" + id_rol + "' " + checked + " style='width: 20px; height: 20px; cursor: pointer;'></td>";
-            tbl += "</tr>";
-        });
-        
-        $('#detallePrivilegios').html(tbl);
-        $('#divPrivilegios').show();
-        
-        // Evento para checkboxes
-        $('.privilegio-check').on('change', function() {
-            var id_pusuario = $(this).data('id-pusuario');
-            var id_psistema = $(this).data('id-psistema');
-            var id_rol = $(this).data('id-rol');
-            var autoriza = $(this).is(':checked');
-            
-            if (id_pusuario == 0) {
-                // No existe el registro, hay que crearlo
-                crearPrivilegio(id_rol, id_psistema, autoriza);
-            } else {
-                // Ya existe, solo actualizar
-                actualizarPrivilegio(id_pusuario, autoriza, id_rol);
-            }
-        });
-        
-    }).fail(function() {
-        showAppAlert('error', "Error al cargar privilegios", {
-            duration: 5000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-    });
-}
+		function cargar() {
+			if (!rol()) { $('#divPrivilegios').hide(); return; }
+			$.ajax({ url: base + 'ListarPrivilegiosPorRol', type: 'POST', data: { id_rol: rol() }, dataType: 'json' }).done(function (r) {
+				var html = '';
+				$.each(r.grupos || [], function (i, g) {
+					var activos = g.modulos.filter(function (m) { return m.autoriza; }).length;
+					html += '<div class="t-priv-grupo"><h5>' + escHtml(g.grupo) + ' <small>' + activos + ' de ' + g.modulos.length + ' habilitados</small></h5><div class="t-priv-lista">';
+					$.each(g.modulos, function (j, m) {
+						html += '<label>' + escHtml(m.nombre) + ' <input type="checkbox" class="privilegio-check" data-modulo="' + escHtml(m.modulo) + '"'
+							+ (m.autoriza ? ' checked' : '') + '></label>';
+					});
+					html += '</div></div>';
+				});
+				$('#gruposPrivilegios').html(html);
+				$('#divPrivilegios').show();
+			}).fail(function (x) { error(x, 'No se pudieron cargar los permisos'); });
+		}
 
-function crearPrivilegio(id_rol, id_psistema, autoriza) {
-    var miJson = {
-        'id_rol': id_rol,
-        'id_psistema': id_psistema,
-        'autoriza': autoriza
-    };
-    
-    $.post(base_url + "index.php/PrivilegiosUsuario/crearPrivilegio", {
-        'prod': miJson
-    }).done(function(response) {
-        console.log('Privilegio creado:', response);
-        mostrarPrivilegiosPorRol(id_rol);
-    }).fail(function() {
-        showAppAlert('error', "Error al crear privilegio", {
-            duration: 5000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-    });
-}
+		function guardar(modulo, autoriza, listo) {
+			return $.ajax({ url: base + 'guardar', type: 'POST', dataType: 'json',
+				data: { id_rol: rol(), modulo: modulo, autoriza: autoriza ? 1 : 0 } })
+				.done(function () { if (listo) listo(); })
+				.fail(function (x) { error(x, 'No se pudo guardar el permiso'); cargar(); });
+		}
 
-function actualizarPrivilegio(id_pusuario, autoriza, id_rol) {
-    var miJson = {
-        'id_pusuario': id_pusuario,
-        'autoriza': autoriza
-    };
-    
-    $.post(base_url + "index.php/PrivilegiosUsuario/actualizarPrivilegio", {
-        'prod': miJson
-    }).done(function(response) {
-        console.log('Privilegio actualizado:', response);
-        mostrarPrivilegiosPorRol(id_rol);
-    }).fail(function() {
-        showAppAlert('error', "Error al actualizar privilegio", {
-            duration: 5000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-    });
-}
+		$('#selectRol').on('change', cargar);
 
-$('#btnHabilitarTodos').on('click', function() {
-    var id_rol = $('#id_rol_selected').val();
-    
-    if (id_rol == "0") {
-        showAppAlert('warning', "Seleccione un rol primero", {
-            duration: 3000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-        return;
-    }
-    
-    swal({
-        title: "¿Está seguro?",
-        text: "Se habilitarán todos los privilegios para este rol",
-        type: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#B4432E",
-        confirmButtonText: "Sí, habilitar",
-        cancelButtonText: "Cancelar",
-        closeOnConfirm: false
-    }, function(isConfirm) {
-        if (isConfirm) {
-            $.post(base_url + "index.php/PrivilegiosUsuario/HabilitarTodosLosPrivilegios", {
-                'id_rol': id_rol
-            }).done(function() {
-                swal("¡Habilitado!", "Todos los privilegios han sido habilitados", "success");
-                mostrarPrivilegiosPorRol(id_rol);
-            }).fail(function() {
-                swal("Error", "No se pudieron habilitar los privilegios", "error");
-            });
-        }
-    });
-});
+		$('#gruposPrivilegios').on('change', '.privilegio-check', function () {
+			var $c = $(this);
+			guardar($c.data('modulo'), $c.is(':checked'), function () {
+				var $g = $c.closest('.t-priv-grupo'), total = $g.find('.privilegio-check').length;
+				$g.find('h5 small').text($g.find('.privilegio-check:checked').length + ' de ' + total + ' habilitados');
+				toastr.success('Permiso guardado');
+			});
+		});
 
-$('#btnBloquearTodos').on('click', function() {
-    var id_rol = $('#id_rol_selected').val();
-    
-    if (id_rol == "0") {
-        showAppAlert('warning', "Seleccione un rol primero", {
-            duration: 3000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-        return;
-    }
-    
-    swal({
-        title: "¿Está seguro?",
-        text: "Se Deshabilitaran todos los privilegios para este rol",
-        type: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#C9372C",
-        confirmButtonText: "Sí, deshabilitar",
-        cancelButtonText: "Cancelar",
-        closeOnConfirm: false
-    }, function(isConfirm) {
-        if (isConfirm) {
-            $.post(base_url + "index.php/PrivilegiosUsuario/BloquearTodosLosPrivilegios", {
-                'id_rol': id_rol
-            }).done(function() {
-                swal("¡Deshabilitados!", "Todos los privilegios han sido Deshabilitados", "success");
-                mostrarPrivilegiosPorRol(id_rol);
-            }).fail(function() {
-                swal("Error", "No se pudieron Deshabilitar los privilegios", "error");
-            });
-        }
-    });
-});
+		function todos(autoriza) {
+			if (!rol()) return;
+			swal({
+				title: '¿Está seguro?',
+				text: autoriza ? 'Este rol podrá entrar a todos los módulos, incluidos Usuarios y Configuraciones.'
+					: 'Este rol no podrá entrar a ningún módulo de la web, ni a la Caja.',
+				type: 'warning', showCancelButton: true, confirmButtonColor: '#B4432E',
+				confirmButtonText: autoriza ? 'Sí, habilitar todo' : 'Sí, quitar todo', cancelButtonText: 'Cancelar'
+			}, function (ok) {
+				if (ok) guardar('*', autoriza, function () { toastr.success('Permisos guardados'); cargar(); });
+			});
+		}
+		$('#btnHabilitarTodos').on('click', function () { todos(true); });
+		$('#btnBloquearTodos').on('click', function () { todos(false); });
+	})();
 </script>

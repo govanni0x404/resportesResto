@@ -252,10 +252,130 @@ class Caja extends CI_Controller
 	public function anular()
 	{
 		$this->ejecutar(function () {
-			$this->Mcaja->anularVenta($this->cajaRequerida(), $this->idUsuario(), $this->idRol(),
+			$a = $this->Mcaja->anularVenta($this->cajaRequerida(), $this->idUsuario(), $this->idRol(),
 				(int)$this->input->post('id_venta'), $this->input->post('motivo'), $this->input->post('autorizacion'));
-			return array('ok' => true);
+			$cfg = $a['config'];
+			unset($a['config']);
+			$res = array('ok' => true);
+			// Configuraciones > Imprimir comprobantes de anulación
+			if ($cfg['imprimir_anulacion']) {
+				$this->load->library('Ticket_impresion');
+				$res['impresion'] = $this->enviarAImpresora($this->Mcaja->destinoCaja(), $this->ticket_impresion->anulacion($a, $this->papelTicket()));
+			}
+			// Configuraciones > Informes por correo > Informar anulaciones
+			if ($cfg['correo_anulaciones']) {
+				$m = '$' . number_format($a['total'], 0, ',', '.');
+				$e = function ($t) { return htmlspecialchars((string)$t, ENT_QUOTES, 'UTF-8'); };
+				$html = '<h3>Venta anulada</h3><table cellpadding="4">'
+					. '<tr><td><b>Documento</b></td><td>' . $e($a['documento']) . ' N° ' . (int)$a['folio'] . '</td></tr>'
+					. '<tr><td><b>Monto</b></td><td>' . $m . '</td></tr>'
+					. '<tr><td><b>Fecha</b></td><td>' . $e($a['fecha']) . '</td></tr>'
+					. '<tr><td><b>Anulada por</b></td><td>' . $e($a['usuario']) . '</td></tr>'
+					. '<tr><td><b>Caja</b></td><td>N° ' . (int)$a['id_caja'] . '</td></tr>'
+					. '<tr><td><b>Motivo</b></td><td>' . $e($a['motivo']) . '</td></tr></table>';
+				list($ok, $detalle) = $this->correo('Anulación: ' . $a['documento'] . ' N° ' . (int)$a['folio'] . ' (' . $m . ')', $html);
+				$res['correo'] = array('ok' => $ok, 'detalle' => $detalle);
+			}
+			return $res;
 		}, true);
+	}
+
+	// ---------------- Créditos de clientes ----------------
+
+	/** Clientes con deuda de crédito (pestaña Créditos). */
+	public function clientesConDeuda()
+	{
+		$this->ejecutar(function () {
+			return array('clientes' => $this->Mcaja->clientesConDeuda());
+		});
+	}
+
+	/** Ventas a crédito pendientes del cliente, con su detalle, y sus últimos pagos. */
+	public function creditosCliente()
+	{
+		$this->ejecutar(function () {
+			return $this->Mcaja->creditosCliente((int)$this->input->get_post('id_cliente'));
+		});
+	}
+
+	/** Registra el pago de las ventas elegidas e imprime el comprobante en la impresora de la caja. */
+	public function pagarCredito()
+	{
+		$this->ejecutar(function () {
+			$c = $this->Mcaja->registrarPagoCredito($this->cajaRequerida(), $this->idUsuario(), array(
+				'id_cliente' => $this->input->post('id_cliente'),
+				'id_fpago' => $this->input->post('id_fpago'),
+				'ids' => (array)$this->input->post('ids'),
+				'paga_con' => (int)$this->input->post('paga_con'),
+				'observacion' => $this->input->post('observacion'),
+			));
+			$this->load->library('Ticket_impresion');
+			$imp = $this->enviarAImpresora($this->Mcaja->destinoCaja(), $this->ticket_impresion->pagoCredito($c, $this->papelTicket()));
+			unset($c['empresa']);
+			return array('ok' => true, 'pago' => $c, 'impresion' => $imp);
+		}, true);
+	}
+
+	/** Reimprime el comprobante de un pago de crédito. */
+	public function reimprimirPagoCredito()
+	{
+		$this->ejecutar(function () {
+			$c = $this->Mcaja->comprobantePagoCredito((int)$this->input->post('id_pago'));
+			$this->load->library('Ticket_impresion');
+			return $this->enviarAImpresora($this->Mcaja->destinoCaja(), $this->ticket_impresion->pagoCredito($c, $this->papelTicket()));
+		}, true);
+	}
+
+	/** Abre la gaveta de dinero (pulso a la impresora de la caja). Puede pedir clave de administrador (Configuraciones). */
+	public function abrirGaveta()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			$this->Mcaja->autorizarGaveta($this->idUsuario(), $this->idRol(), $this->input->post('autorizacion'));
+			$this->load->library('Ticket_impresion');
+			$r = $this->enviarAImpresora($this->Mcaja->destinoCaja(), Ticket_impresion::gaveta());
+			if (!$r['ok']) throw new Exception('No se pudo abrir la gaveta: ' . $r['detalle'], 409);
+			return $r;
+		}, true);
+	}
+
+	/** Cierre de caja / informe X a la impresora del cierre (Configuraciones > Impresora para cierre de caja). */
+	public function imprimirCierre()
+	{
+		$this->ejecutar(function () {
+			$datos = $this->Mcaja->datosCierre((int)$this->input->post('id_caja'));
+			if (!$datos) throw new Exception('La caja no existe', 404);
+			$this->load->library('Ticket_impresion');
+			return $this->enviarAImpresora($this->Mcaja->destinoCierre(), $this->ticket_impresion->cierre($datos, $this->papelTicket()));
+		}, true);
+	}
+
+	/**
+	 * Manda bytes ESC/POS a un destino de impresión: por el agente de impresión si está activo, si no directo desde el
+	 * servidor. Devuelve {ok, navegador, detalle}; navegador = true si hay que imprimir desde la pantalla.
+	 */
+	private function enviarAImpresora($destino, $bytes)
+	{
+		if (!$destino) return array('ok' => false, 'navegador' => true, 'detalle' => 'No hay impresora de caja en Configuraciones');
+		$this->load->library('Comanda_impresion');
+		$this->load->model('Mcola_impresion');
+		$this->Mcola_impresion->conectar(null, false);
+		if ($this->Mcola_impresion->hayAgenteActivo()) {
+			$ipOk = Comanda_impresion::ipPermitida(trim((string)$destino['ip']), $destino['puerto']);
+			$this->Mcola_impresion->encolar($destino['nombre'], Mcola_impresion::nombreImpresora($destino['ruta_windows']),
+				$ipOk ? trim((string)$destino['ip']) : '', $ipOk ? (int)$destino['puerto'] : 0, $bytes);
+			return array('ok' => true, 'navegador' => false, 'detalle' => 'en cola para el agente (' . $destino['nombre'] . ')');
+		}
+		list($ok, $detalle) = $this->comanda_impresion->enviar($destino, $bytes);
+		return array('ok' => $ok, 'navegador' => !$ok, 'detalle' => $detalle);
+	}
+
+	/** Correo a los destinatarios de Configuraciones > Informes por correo. Devuelve [ok, detalle]. */
+	private function correo($asunto, $html)
+	{
+		$this->load->helper('tenant');
+		$this->load->library('Correo_resto');
+		return $this->correo_resto->enviar($this, get_tenant_db($this), $asunto, $html);
 	}
 
 	/** Reintenta emitir ante el SII un documento electrónico pendiente. */
@@ -311,10 +431,21 @@ class Caja extends CI_Controller
 			}
 			$fondoSiguiente = $this->input->post('fondo_siguiente');
 			// Inventario de insumos marcados "al cierre de turno": {"idInsumo:idBodega": cantidad contada}
-			return $this->Mcaja->cerrarCaja($this->cajaRequerida(), $this->idUsuario(),
+			$r = $this->Mcaja->cerrarCaja($this->cajaRequerida(), $this->idUsuario(),
 				(int)$this->input->post('efectivo_contado'),
 				$fondoSiguiente === null || $fondoSiguiente === '' ? null : (int)$fondoSiguiente, $declarado,
 				(array)$this->input->post('inventario'));
+			// Configuraciones > Informes por correo > Enviar cierre de caja por correo
+			$cfg = $this->Mcaja->opciones();
+			if ($cfg['correo_cierre']) {
+				$datos = $this->Mcaja->datosCierre($r['id_caja']);
+				$datos['papel'] = 80;
+				$datos['correo'] = true;
+				$html = $this->load->view('caja/cierre_ticket.php', $datos, true);
+				list($ok, $detalle) = $this->correo('Cierre de caja N° ' . $r['id_caja'] . ' - ' . date('d/m/Y H:i'), $html);
+				$r['correo'] = array('ok' => $ok, 'detalle' => $detalle);
+			}
+			return $r;
 		}, true);
 	}
 
@@ -331,6 +462,8 @@ class Caja extends CI_Controller
 	private function papelTicket()
 	{
 		$papel = $this->input->get('papel') ?: $this->input->cookie('caja_papel');
+		// Si este computador no eligió el papel, el de Configuraciones > Impresión de documentos > Formato (58 u 80)
+		if (!$papel) $papel = $this->Mcaja->opciones()['formato_papel'];
 		return (int)$papel === 58 ? 58 : 80;
 	}
 
@@ -457,6 +590,28 @@ class Caja extends CI_Controller
 				$this->comandaGuardada((string)$this->input->post('comanda_id'), true);
 			}
 			return array('comandas' => $res);
+		}, true);
+	}
+
+	/**
+	 * Boleta / factura / comprobante directo a la impresora de la caja (Configuraciones > destino de impresión de la caja),
+	 * por el agente de impresión o enviada por el servidor, igual que las comandas. Responde {ok, detalle, navegador}:
+	 * navegador = true cuando no hay cómo mandarla a la impresora y la pantalla debe imprimirla desde el navegador.
+	 */
+	public function imprimirTicket()
+	{
+		$this->ejecutar(function () {
+			$idVenta = (int)$this->input->post('id_venta');
+			$doc = $idVenta ? $this->Mcaja->documento($idVenta) : null;
+			if (!$doc) throw new Exception('La venta no existe', 404);
+			$this->load->model('Mdte');
+			$this->load->library('Ticket_impresion');
+			$papel = $this->papelTicket();
+			$timbre = $doc['emitido'] ? $this->Mdte->timbreMatriz($doc['ted'], Ticket_impresion::puntos($papel)) : null;
+			$bytes = $this->ticket_impresion->armar($doc, $papel, $timbre);
+			// Configuraciones > Impresión de documentos > Copias
+			$bytes = str_repeat($bytes, $this->Mcaja->opciones()['copias_documento']);
+			return $this->enviarAImpresora($this->Mcaja->destinoDocumentos(), $bytes);
 		}, true);
 	}
 

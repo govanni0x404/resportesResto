@@ -76,12 +76,12 @@
                                 <!-- CAMPOS DE REGISTRO  -->
                                 <div class="t-card-titulo"><i class="fa fa-tag"></i> Datos del producto</div>
                                 <fieldset>
-                                    <div class="col-sm-3">
+                                    <div class="col-sm-3" style="display:none" data-id-auto="1">
                                         <label for="txtID">ID</label>
                                         <input type="text" disabled class="form-control input-sm input-sm" name="txtID"
                                             id="txtID" requerido="no" value="">
                                     </div>
-                                    <div class="col-sm-9">
+                                    <div class="col-sm-12">
                                         <label for="txtCbarra">Cód. Barra</label>
                                         <input type="text" autocomplete="off" class="form-control input-sm input-sm"
                                             name="txtCbarra" id="txtCbarra" requerido="no" value="">
@@ -433,7 +433,7 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-sm-4">
+                            <div class="col-sm-4" style="display:none" data-id-auto="1">
                                 <label for="idFamilia">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idFamilia"
                                     id="idFamilia" requerido="no" value="">
@@ -533,12 +533,12 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-sm-3">
+                            <div class="col-sm-3" style="display:none" data-id-auto="1">
                                 <label for="idBodega">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idBodega"
                                     id="idBodega" requerido="no" value="">
                             </div>
-                            <div class="col-sm-9">
+                            <div class="col-sm-12">
                                 <label for="nombreBodega">BODEGA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='28'
                                     onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
@@ -585,7 +585,7 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <div class="col-md-4 ">
+                            <div class="col-md-4 " style="display:none" data-id-auto="1">
                                 <label for="idSubFamilia">ID</label>
                                 <input type="number" disabled class="form-control input-sm input-sm" name="idSubFamilia"
                                     id="idSubFamilia" requerido="no" value="">
@@ -899,11 +899,11 @@
             <!-- CONTENIDO MODAL -->
             <div class="modal-body">
                 <div class="row">
-                    <div class="col-md-3">
+                    <div class="col-md-3" style="display:none" data-id-auto="1">
                         <label>ID</label>
                         <input type="text" disabled class="form-control input-sm" id="txtIdMenu" value="">
                     </div>
-                    <div class="col-md-9">
+                    <div class="col-md-12">
                         <label>Nombre del Menú</label>
                         <input type="text" class="form-control input-sm" id="txtNombreMenu" placeholder="Nombre Menu">
                     </div>
@@ -1029,11 +1029,11 @@
                 </div>
                 <br>
                 <div class="row">
-                    <div class="col-md-3">
+                    <div class="col-md-3" style="display:none" data-id-auto="1">
                         <label>ID</label>
                         <input type="text" disabled class="form-control input-sm" id="IdCategoria" value="">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-9">
                         <label>Nombre de la Categoria</label>
                         <input type="text" class="form-control input-sm" id="txtNombreCategoria" placeholder="Nombre Categoria">
                     </div>
@@ -1095,12 +1095,12 @@
                 </div>
 
                 <div class="row" style="background-color: var(--t-fondo-alt, #FBF8F3); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--t-borde, #EADFD2);">
-                    <div class="col-md-1">
+                    <div class="col-md-1" style="display:none" data-id-auto="1">
                         <label style="color: #B4432E;">ID</label>
                         <input type="text" disabled class="form-control input-sm" id="IdDetalleCategoria" style="background-color: var(--t-fondo-alt, #FBF8F3); border: 1px solid var(--t-borde, #EADFD2); font-weight: bold; text-align: center;">
                         <input type="hidden" id="IdDetalleCategoriaReal" value="">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-7">
                         <label style="color: #B4432E;">Producto <span id="labelRecetaProducto" style="font-weight: bold; color: var(--t-primario, #B4432E); margin-left: 15px; background: var(--t-primario-suave, #FBEEE8); padding: 2px 8px; border-radius: 10px; border: 1px solid var(--t-primario-borde, #EFD2C6); font-size: 10px;">SIN RECETA</span></label>
                         <select id="cboSelectorProductosFinal" class="form-control input-sm" style="border: 1px solid var(--t-borde, #EADFD2);"></select>
                     </div>
@@ -1228,7 +1228,7 @@
                                 <div>
                                     <!-- CAMPOS DE REGISTRO  -->
                                     <fieldset>
-                                        <div class="col-md-1">
+                                        <div class="col-md-1" style="display:none" data-id-auto="1">
                                             <input disabled class="form-control input-sm input-sm"
                                                 style="display: none;" name="contador" id="contador" requerido="no"
                                                 value="0">
@@ -1236,7 +1236,7 @@
                                             <input type="number" disabled class="form-control input-sm input-sm"
                                                 name="idReceta" id="idReceta" requerido="no" value="">
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-7">
                                             <label for="nombreReceta">NOMBRE RECETA</label>
                                             <input type="text" class="form-control input-sm input-sm"
                                                 name="nombreReceta" id="nombreReceta" maxlength='50'
