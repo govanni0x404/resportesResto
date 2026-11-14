@@ -1522,6 +1522,11 @@ class Mcaja extends CI_Model
 			if (!$c || $c->cerrada === 't' || $c->cerrada === true) throw new Exception('La caja ya está cerrada', 409);
 			$tokenVenta = $this->reservarTokenVenta($db, $p, (int)$caja->id_caja, (int)$idUsuario);
 			if ($montoCredito > 0) $this->validarCupoCredito($db, $idCliente, $montoCredito);
+			// 14-11-2026: vencimiento de una venta a crédito = día de la venta + plazo del cliente (cliente.plazo_credito,
+			// 15 a 90 días; 0 = sin plazo). Antes se grababa el mismo día de la venta y quedaba "vencida" desde el primer día
+			// para quien leyera venta.fecha_vencimiento (el POS de escritorio, informes). Sin crédito, el día de la venta.
+			$plazoVenta = $montoCredito > 0 ? $this->plazoCredito($db, $idCliente) : 0;
+			$diaVence = $plazoVenta > 0 ? date('Y-m-d', strtotime($dia . ' +' . $plazoVenta . ' days')) : $dia;
 
 			if ($idMesa) {
 				// Lo de la mesa ya se consumió: no se revisa stock, pero sí que el pedido siga igual al que se cobra
@@ -1577,7 +1582,7 @@ class Mcaja extends CI_Model
 				'nombre_retira' => $retira === '' ? null : $retira,   // migración 20261112120000 (sin la columna no se graba)
 				'es_cortesia' => $esCortesia,
 				'venta_directa' => !$idMesa,
-				'fecha_vencimiento' => $dia,
+				'fecha_vencimiento' => $diaVence,
 				'id_canal_venta' => $this->primerId($db, 'canal_venta', 'id_canal_venta', 1),
 				'monto_exento' => $exento,
 				'monto_afecto' => $esCortesia ? 0 : $total - $exento,
@@ -1659,7 +1664,8 @@ class Mcaja extends CI_Model
 					'id_cliente' => $idCliente,
 					'id_venta' => $idVenta,
 					'id_fpago' => $pg['id_fpago'],
-					'fecha_vencimiento' => $dia,
+					// Solo el pago a crédito vence con el plazo del cliente; los demás quedan pagados ese día
+					'fecha_vencimiento' => $fpagos[$pg['id_fpago']]['credito'] ? $diaVence : $dia,
 					'numero_documento' => '',
 					'valor_compra' => $total,
 					// paga_con es lo que entregó el cliente; el trigger de crédito directo lo usa como deuda
@@ -1736,9 +1742,12 @@ class Mcaja extends CI_Model
 		foreach ($items as $it) $ids[] = (int)$it['id_producto'];
 		$selVss = isset($cols['producto']['venta_segun_stock']) ? '(p.venta_segun_stock IS TRUE)' : 'false';
 		$selFraccion = isset($cols['producto']['permite_porcion']) ? '(p.permite_porcion IS TRUE)' : 'false';
+		// 14-11-2026: sin la columna, como el catálogo: un producto sin precio no se vende
+		$selSinPrecio = isset($cols['producto']['permitir_venta_sin_precio']) ? '(p.permitir_venta_sin_precio IS TRUE)' : 'false';
 		$productos = array();
 		$q = "SELECT p.id_producto, p.nombre_producto, COALESCE(p.id_receta, 0) AS id_receta, COALESCE(p.id_bodega, 0) AS id_bodega,
 				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, $selVss AS segun_stock, $selFraccion AS fraccion,
+				$selSinPrecio AS sin_precio_ok,
 				" . $this->sqlExento($db, 'p') . " AS exento
 			FROM producto p
 			LEFT JOIN detalle_lprecio dl ON dl.id_producto = p.id_producto AND dl.id_lprecio = ?
@@ -1761,6 +1770,12 @@ class Mcaja extends CI_Model
 			if (!isset($productos[$id])) throw new Exception('El producto ' . $id . ' no existe o no está vigente', 400);
 			$prod = $productos[$id];
 			if ($cantidad <= 0) throw new Exception('Cantidad inválida para ' . $prod->nombre_producto, 400);
+			// 14-11-2026 (QA): el catálogo de la Caja ya escondía los productos sin precio, pero el servidor los vendía a $0
+			// si llegaban igual (venta armada a mano, o el precio se borró con la pantalla abierta). Solo pasan los marcados
+			// "permitir venta sin precio" en el producto.
+			if ((float)$prod->precio <= 0 && !($prod->sin_precio_ok === 't' || $prod->sin_precio_ok === true)) {
+				throw new Exception($prod->nombre_producto . ' no tiene precio en esta lista de precios: asígnale uno en Lista de Precios antes de venderlo', 400);
+			}
 			// Solo los productos fraccionables (por kilo, porción) aceptan decimales: si no, una cantidad como 0,001
 			// dejaría el producto en $0 sin pasar por el descuento ni su autorización
 			$fraccion = $prod->fraccion === 't' || $prod->fraccion === true;

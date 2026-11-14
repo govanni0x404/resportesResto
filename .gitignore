@@ -42,3 +42,6 @@ assets/uploads/productos/*/
 .env
 .env.php
 .env.local
+
+# Instaladores pesados (agente de impresión, etc.): se copian a mano al servidor, no van a git (14-11-2026)
+instaladores/*.exe

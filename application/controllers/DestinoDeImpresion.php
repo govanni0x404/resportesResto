@@ -38,6 +38,25 @@ class DestinoDeImpresion extends CI_Controller
 		$this->load->view('funciones.php');
 	}
 
+	/**
+	 * 14-11-2026: descarga el instalador del agente de impresión local (impresionWeb.exe, puerto 5050) para instalarlo en
+	 * el computador de la caja de cada cliente. Está en instaladores/impresionWeb.exe; para actualizarlo se reemplaza
+	 * ese archivo. Solo con sesión iniciada (y el permiso del módulo, que revisa el hook Permisos).
+	 */
+	public function descargarAgenteLocal()
+	{
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+			redirect(base_url());
+		}
+		$ruta = FCPATH . 'instaladores' . DIRECTORY_SEPARATOR . 'impresionWeb.exe';
+		if (!is_file($ruta) || !is_readable($ruta)) {
+			show_error('El instalador del agente de impresión no está en el servidor (instaladores/impresionWeb.exe).', 404, 'Instalador no disponible');
+			return;
+		}
+		$this->load->helper('download');
+		force_download($ruta, NULL);
+	}
+
 	public function ListadoDestinoDeImpresionDatatable()
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {

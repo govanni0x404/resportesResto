@@ -58,6 +58,8 @@
             </div>
             <div class="t-acciones">
                 <a href="<?php echo base_url() ?>index.php/AgenteImpresion" class="btn btn-default"><i class="fa fa-plug"></i> Agente de impresión (Windows)</a>
+                <!-- 14-11-2026: instalador del agente de impresión local (puerto 5050) para el equipo de la caja del cliente -->
+                <a href="<?php echo base_url() ?>index.php/DestinoDeImpresion/descargarAgenteLocal" class="btn btn-default" title="Instalar en el computador de la caja (Windows). Es el que imprime boletas y comandas en las impresoras del local."><i class="fa fa-download"></i> Descargar agente de impresión local (.exe)</a>
                 <button onclick="AbrirModalNuevoDestinoDeImpresion()" type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Crear Nuevo Destino De Impresion</button>
             </div>
           </div>

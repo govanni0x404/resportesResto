@@ -260,6 +260,11 @@ $fechaActual = date('d-m-Y');
                                         ondrop="return false;" autocomplete="off" name="FormaDePagoActual"
                                         id="FormaDePagoActual" requerido="si" value="" />
                                 </div>
+                                <!-- 14-11-2026: pago dividido: se elige cuál de los pagos se cambia -->
+                                <div class="col-md-12" id="grupoPagoACambiar" style="display:none">
+                                    <label for="cboPagoACambiar">PAGO A CAMBIAR</label>
+                                    <select id="cboPagoACambiar" class="form-control input-sm" style="width:100%"></select>
+                                </div>
                             </fieldset>
                             <fieldset>
                                 <div class="col-md-12">

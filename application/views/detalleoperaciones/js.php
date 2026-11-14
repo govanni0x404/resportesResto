@@ -478,11 +478,12 @@
             id_venta: id_venta,
         }, function (datos) {
             var obj = $.parseJSON(datos);
+            // 14-11-2026: con pago dividido llegan varios pagos; se muestran juntos ("EFECTIVO + DEBITO")
             $.each(obj, function (index, v) {
                 $('#idTipoDocumento').val(v.nombre_tdocumento);
                 $('#folioDte').val(v.folio);
-                $('#idFormaDePago').val(v.nombre_fpago);
             });
+            $('#idFormaDePago').val($.map(obj, function (v) { return v.nombre_fpago; }).join(' + '));
         }).done(function () { })
             .fail(function () {
                 alert("Se produjo un error al realizar la consulta");
@@ -503,10 +504,15 @@
             id_venta: id_venta,
         }, function (datos) {
             var obj = $.parseJSON(datos);
-            $.each(obj, function (index, v) {
-                $('#Nventa').val(v.id_venta);
-                $('#FormaDePagoActual').val(v.nombre_fpago);
+            // 14-11-2026: con varios pagos se elige cuál cambiar (antes se cambiaban todos a la misma forma)
+            var fmtPago = function (v) { return v.nombre_fpago + ' $' + Number(v.monto || 0).toLocaleString('es-CL'); };
+            $('#Nventa').val(obj.length ? obj[0].id_venta : '');
+            $('#FormaDePagoActual').val($.map(obj, fmtPago).join(' + '));
+            var $cbo = $('#cboPagoACambiar').empty();
+            $.each(obj, function (i, v) {
+                $cbo.append($('<option>').val(v.id_pventa).attr('data-nombre', v.nombre_fpago).text(fmtPago(v)));
             });
+            $('#grupoPagoACambiar').toggle(obj.length > 1);
         }).done(function () { })
             .fail(function () {
                 alert("Se produjo un error al realizar la consulta");
@@ -546,8 +552,9 @@
                     if ($('#cboNuevaFormaDePago').val() == 0) {
                         msg = "La Nueva Forma De Pago De La venta\n";
                     }
-                    // FormaDePagoActual guarda el nombre: se compara con el texto de la opción elegida (no con su id)
-                    if ($.trim($('#cboNuevaFormaDePago option:selected').text()) == $.trim($('#FormaDePagoActual').val())) {
+                    // Se compara con la forma de pago del pago elegido (con pago dividido, el del combo "Pago a cambiar")
+                    var actual = $('#cboPagoACambiar option:selected').attr('data-nombre') || $('#FormaDePagoActual').val();
+                    if ($.trim($('#cboNuevaFormaDePago option:selected').text()) == $.trim(actual)) {
                         msg = "Otra Forma De Pago (No Se Puede Actualizar A la Misma F. De Pago Actual)\n";
                     }
                     if (msg.length) {
@@ -559,6 +566,7 @@
                         var miJson = {
                             'id_venta': IdVenta,
                             'id_fpago': IdNuevaFormaDePago,
+                            'id_pventa': $('#cboPagoACambiar').val() || 0,
                         };
                         // El envío va dentro del else: antes se mandaba aunque la validación fallara (prod vacío)
                         $.post(base_url + "index.php/DetalleOperaciones/actualizarFormaDePagoVenta", {

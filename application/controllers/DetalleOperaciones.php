@@ -84,10 +84,13 @@ class DetalleOperaciones extends CI_Controller
 			echo 'No se actualizó. ERROR: faltan la venta o la nueva forma de pago.'; // el JS busca "ERROR:" en posición > 0
 			return;
 		}
-		$miData = array(
-			'id_fpago' => $idFpago,
-		);
-		$r = $this->MdetalleOperaciones->actualizarFormaDePagoVenta($id, $miData);
+		// 14-11-2026: con pago dividido se cambia solo el pago elegido (id_pventa); reglas en el modelo
+		$idPventa = intval(is_array($d) && isset($d['id_pventa']) ? $d['id_pventa'] : 0);
+		$r = $this->MdetalleOperaciones->actualizarFormaDePagoVenta($id, $idPventa, $idFpago, (int)$this->session->userdata('id_rol'));
+		if (isset($r['error'])) {
+			echo 'No se actualizó. ERROR: ' . $r['error'];   // el JS busca "ERROR:" en posición > 0
+			return;
+		}
 		echo json_encode($r);
 	}
 }

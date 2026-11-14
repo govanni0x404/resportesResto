@@ -133,31 +133,90 @@ class MdetalleOperaciones extends CI_Model
         return $query;
     }
 
+    /**
+     * Pagos de una venta (14-11-2026: uno por fila, también en pago dividido), con el monto de cada uno sin la propina.
+     */
     public function DetalleFormaDePagoVenta($id_venta)
     {
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $q = 'SELECT  v.id_venta, v.folio, pv.id_fpago, fp.nombre_fpago, td.nombre_tdocumento from venta v
-        join pago_venta pv on pv.id_venta=v.id_venta
-        join fpago fp on fp.id_fpago=pv.id_fpago
-        join tdocumento td on td.id_tdocumento=v.id_tdocumento
-        where v.id_venta=' . (int)$id_venta;
-
-        $query = $this->db->query($q)->result();
-        return $query;
+        $q = "SELECT v.id_venta, v.folio, pv.id_pventa, pv.id_fpago, fp.nombre_fpago, td.nombre_tdocumento,
+                (COALESCE(pv.monto_pagado, 0) - COALESCE(pv.propina, 0)) AS monto
+            FROM venta v
+            JOIN pago_venta pv ON pv.id_venta = v.id_venta
+            JOIN fpago fp ON fp.id_fpago = pv.id_fpago
+            LEFT JOIN tdocumento td ON td.id_tdocumento = v.id_tdocumento
+            WHERE v.id_venta = ?
+            ORDER BY pv.id_pventa";
+        return $this->db->query($q, array((int)$id_venta))->result();
     }
 
-    public function actualizarFormaDePagoVenta($id, $data)
+    /**
+     * Cambia la forma de pago de UN pago de la venta (14-11-2026, QA).
+     * Antes se cambiaban todos los pagos de la venta: un pago dividido (efectivo + débito) quedaba entero en una sola
+     * forma. Reglas:
+     *  - Con varios pagos hay que elegir cuál ($idPventa).
+     *  - Ni desde ni hacia crédito directo o cortesía: el trigger f_creditodirecto solo crea la deuda al insertar el
+     *    pago, así que la cuenta corriente del cliente quedaría mal; eso se hace anulando o devolviendo la venta.
+     *  - Venta anulada: no.
+     *  - Caja ya cerrada: solo gerencia (el cierre quedó grabado con los montos de cada forma de pago).
+     * Devuelve array('ok' => true) o array('error' => mensaje).
+     */
+    public function actualizarFormaDePagoVenta($idVenta, $idPventa, $idFpago, $idRol)
     {
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $this->db->where('id_venta', $id);
-        $this->db->update('pago_venta', $data);
-        $consulta = $this->db->query("select " . (int)$id . " as id_venta");
-        return $consulta->result();
+        $this->load->helper('tenant'); $db = get_tenant_db($this);
+        $db->db_debug = FALSE;
+        $db->trans_begin();
+        try {
+            $v = $db->query("SELECT v.id_venta, COALESCE(v.mensaje_pedido, '') AS mensaje_pedido, COALESCE(c.cerrada, false) AS cerrada
+                FROM venta v LEFT JOIN caja c ON c.id_caja = v.id_caja WHERE v.id_venta = ? FOR UPDATE OF v", array((int)$idVenta))->row();
+            if (!$v) throw new Exception('La venta no existe');
+            if (strpos($v->mensaje_pedido, 'ANULADA') === 0) throw new Exception('La venta está anulada: no se le cambia la forma de pago');
+            $cerrada = $v->cerrada === 't' || $v->cerrada === true;
+            if ($cerrada && (int)$idRol !== 1) throw new Exception('La caja de esta venta ya está cerrada: solo gerencia puede cambiar la forma de pago');
+
+            $pagos = $db->query('SELECT pv.id_pventa, pv.id_fpago, fp.nombre_fpago, (fp.escortesia IS TRUE) AS cortesia
+                FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = ? ORDER BY pv.id_pventa FOR UPDATE OF pv',
+                array((int)$idVenta))->result();
+            if (!$pagos) throw new Exception('La venta no tiene pagos registrados');
+            if (count($pagos) > 1 && (int)$idPventa <= 0) throw new Exception('La venta tiene varios pagos: elige cuál cambiar');
+            $pago = null;
+            foreach ($pagos as $p) {
+                if ((int)$idPventa <= 0 || (int)$p->id_pventa === (int)$idPventa) { $pago = $p; break; }
+            }
+            if (!$pago) throw new Exception('El pago elegido no es de esta venta. Vuelve a abrir la venta.');
+
+            $nueva = $db->query('SELECT id_fpago, nombre_fpago, (escortesia IS TRUE) AS cortesia FROM fpago WHERE id_fpago = ? AND vigente IS NOT FALSE',
+                array((int)$idFpago))->row();
+            if (!$nueva) throw new Exception('La nueva forma de pago no existe o no está vigente');
+            if ((int)$nueva->id_fpago === (int)$pago->id_fpago) throw new Exception('Elige una forma de pago distinta a la actual');
+            $cfg = $db->query('SELECT COALESCE(id_fpago_creditodirecto, 0) AS credito FROM configuracion LIMIT 1')->row();
+            $credito = $cfg ? (int)$cfg->credito : 0;
+            $esCredito = function ($id, $nombre) use ($credito) {
+                return ($credito > 0 && (int)$id === $credito) || stripos((string)$nombre, 'CREDITO DIRECTO') !== false;
+            };
+            if ($esCredito($pago->id_fpago, $pago->nombre_fpago) || $esCredito($nueva->id_fpago, $nueva->nombre_fpago)) {
+                throw new Exception('Un pago a crédito no se cambia aquí (la deuda del cliente quedaría mal): anula o devuelve la venta');
+            }
+            $esCortesia = function ($x) { return $x === 't' || $x === true; };
+            if ($esCortesia($pago->cortesia) || $esCortesia($nueva->cortesia)) {
+                throw new Exception('Una cortesía no se cambia aquí (cambia el tipo de venta): anula la venta y vuelve a hacerla');
+            }
+            if (!$db->query('UPDATE pago_venta SET id_fpago = ? WHERE id_pventa = ? AND id_venta = ?',
+                array((int)$nueva->id_fpago, (int)$pago->id_pventa, (int)$idVenta))) {
+                $e = $db->error();
+                throw new Exception('No se pudo actualizar: ' . $e['message']);
+            }
+            $db->trans_commit();
+            return array('ok' => true, 'id_venta' => (int)$idVenta, 'pago' => (string)$pago->nombre_fpago, 'nueva' => (string)$nueva->nombre_fpago);
+        } catch (Exception $e) {
+            $db->trans_rollback();
+            return array('error' => $e->getMessage());
+        }
     }
 }
