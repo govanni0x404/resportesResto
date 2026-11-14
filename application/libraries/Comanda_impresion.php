@@ -52,6 +52,8 @@ class Comanda_impresion
 			$b .= $centro . $doble . $this->t('N ' . $venta->folio) . $normal . "\n";
 			$b .= $centro . $this->t((string)$venta->nombre_tdocumento) . "\n";
 		}
+		// Quien retira el pedido (venta directa, 12-11-2026)
+		if ($venta && !empty($venta->nombre_retira)) $b .= $centro . $doble . $this->envolver('RETIRA: ' . mb_strtoupper($venta->nombre_retira), $W / 2) . $normal;
 		$hora = $venta && !empty($venta->fecha_texto) ? $venta->fecha_texto : date('d/m/Y H:i');
 		$b .= $centro . $this->t($hora) . "\n";
 		if ($venta && !empty($venta->nombre_usuario)) $b .= $centro . $this->t('Atiende: ' . $venta->nombre_usuario) . "\n";

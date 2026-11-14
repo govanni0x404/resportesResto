@@ -283,10 +283,10 @@ class McierresDeCaja extends CI_Model
         from venta v
         join usuario u on v.id_usuario_garzon = u.id_usuario";
         if ($id_caja) {
-            $q = $q . " where v.id_caja = ? 
+            $q = $q . " where COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.id_caja = ? 
 			group by u.nombre_usuario";
         } else {
-            $q = $q . " where v.id_caja in ?
+            $q = $q . " where COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.id_caja in ?
 			group by u.nombre_usuario";
         }
         $b = array($id_caja ? (int)$id_caja : $this->idsCajas($listadoCajas));

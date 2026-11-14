@@ -45,6 +45,21 @@ class Productos extends CI_Controller
 		echo json_encode($this->Mproductos->ListadoCartaDeProductos());
 	}
 
+	/** Estrella del listado de la Carta: marca o desmarca el producto como favorito de la Caja. */
+	public function marcarFavorito()
+	{
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+			echo json_encode(['ok' => false, 'error' => 'Sesión expirada']);
+			return;
+		}
+		$id = (int)$this->input->post('id_producto');
+		if ($id <= 0) {
+			echo json_encode(['ok' => false, 'error' => 'Producto no válido']);
+			return;
+		}
+		echo json_encode($this->Mproductos->marcarFavorito($id, (int)$this->input->post('favorito') === 1));
+	}
+
 	public function obtenerPreciosDeVenta()
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
@@ -222,6 +237,10 @@ class Productos extends CI_Controller
 			'ver_en_dispositivos_moviles' => $producto['ver_en_dispositivos_moviles'],
 			'permite_cortesia' => $producto['permite_cortesia']
 		);
+		// Favorito de la Caja: solo si llegó del formulario y la base ya tiene la columna (migración 20261110190000)
+		if (isset($producto['favorito']) && $this->Mproductos->tieneColumnaFavorito()) {
+			$miData['favorito'] = ((string)$producto['favorito'] === '1') ? 'true' : 'false';
+		}
 		
 		// Grabar producto
 		$resultadoProducto = $this->Mproductos->grabarNuevoProducto($id, $miData);
@@ -759,7 +778,7 @@ class Productos extends CI_Controller
 			redirect(base_url());
 		}
 		
-		$this->db = $this->load->database($this->session->userdata('nombre_conexion'), TRUE);
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$query = $this->db->query('SELECT id_lprecio as id_detalle_lprecio, nombre_lprecio FROM lprecio ORDER BY nombre_lprecio');
 		echo json_encode($query->result());
 	}

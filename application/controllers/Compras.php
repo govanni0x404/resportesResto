@@ -44,6 +44,13 @@ class Compras extends CI_Controller
         return;
       }
       
+      // 14-11-2026: si una receta/insumo haría fallar el detalle, no se graba ni la cabecera (quedaba compra sin detalle)
+      $bloqueo = $this->recetasQueBloqueanCompras();
+      if ($bloqueo !== '') {
+        echo json_encode(['error' => $bloqueo]);
+        return;
+      }
+
       // VALIDACIÓN ADICIONAL: Verificar si ya existe la compra
       $existente = $this->Mcompra->verificarSiExisteLaCompra(
         $d['id_proveedor'], 
@@ -109,6 +116,15 @@ class Compras extends CI_Controller
       
       if (!is_array($d)) {
         echo json_encode(['error' => 'Datos incompletos']);
+        return;
+      }
+
+      // 14-11-2026: el trigger f_addptocomprado (del POS) recalcula TODAS las recetas en cada línea de compra y
+      // divide por rendimiento y por umedida_receta. Si alguna está en 0 la compra caía con 500 "division by zero"
+      // y quedaba la cabecera sin detalle. Se avisa antes, con el nombre de lo que hay que corregir.
+      $bloqueo = $this->recetasQueBloqueanCompras();
+      if ($bloqueo !== '') {
+        echo json_encode(['error' => $bloqueo]);
         return;
       }
 
@@ -180,6 +196,28 @@ class Compras extends CI_Controller
    * Convierte a número lo que manda la vista. Acepta "1234.5" (formato de los input number, sin miles),
    * "1,234.5" y también el formato chileno "1.234,5" o "1.234.567".
    */
+  /** '' si se puede comprar; si no, el mensaje con las recetas/insumos que tienen rendimiento o unidad de receta en 0. */
+  private function recetasQueBloqueanCompras()
+  {
+    $this->load->helper('tenant');
+    $db = get_tenant_db($this);
+    $nombres = array();
+    try {
+      $q = $db->query("SELECT nombre_receta FROM receta WHERE COALESCE(rendimiento, 0) <= 0 ORDER BY 1 LIMIT 10");
+      if ($q) foreach ($q->result() as $f) $nombres[] = 'receta "' . trim((string)$f->nombre_receta) . '" (rendimiento 0)';
+      $q = $db->query("SELECT i.nombre_insumo FROM insumo i
+                        WHERE COALESCE(i.umedida_receta, 0) <= 0
+                          AND EXISTS (SELECT 1 FROM detalle_receta dr WHERE dr.id_insumo = i.id_insumo)
+                        ORDER BY 1 LIMIT 10");
+      if ($q) foreach ($q->result() as $f) $nombres[] = 'insumo "' . trim((string)$f->nombre_insumo) . '" (unidad de receta 0)';
+    } catch (Throwable $e) {
+      log_message('error', 'recetasQueBloqueanCompras: ' . $e->getMessage());
+      return '';
+    }
+    if (!$nombres) return '';
+    return 'No se puede grabar la compra: corrija primero ' . implode(', ', $nombres) . '.';
+  }
+
   private function numeroDesdeTexto($valor)
   {
     $t = trim((string)$valor);

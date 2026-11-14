@@ -41,9 +41,19 @@ class Mesas extends CI_Controller
       redirect(base_url());
     }
     
+    // 14-11-2026 (QA): antes no había límite (se crearon 500 mesas en medio segundo). Ahora: solo gerencia,
+    // de 1 a 50 por vez y hasta 300 mesas en total (Mmesas::MAX_MESAS).
+    if ((int)$this->session->userdata('id_rol') !== 1) {
+      echo json_encode(array('error' => 'Solo gerencia puede crear mesas'));
+      return;
+    }
     $d = $this->input->post('prod');
-    $cantidad = isset($d['cantidad']) ? intval($d['cantidad']) : 1;
-    
+    $cantidad = (is_array($d) && isset($d['cantidad'])) ? intval($d['cantidad']) : 1;
+    if ($cantidad < 1 || $cantidad > Mmesas::MAX_POR_VEZ) {
+      echo json_encode(array('error' => 'Se pueden crear de 1 a ' . Mmesas::MAX_POR_VEZ . ' mesas por vez'));
+      return;
+    }
+
     $r = $this->Mmesas->crearMultiplesMesas($cantidad);
     echo json_encode($r);
   }
@@ -72,10 +82,6 @@ class Mesas extends CI_Controller
       $miData = array(
         'vigente' => $vigente_bool
       );
-      
-      error_log('ID Mesa: ' . $id);
-      error_log('Vigente recibido: ' . print_r($d['vigente'], true));
-      error_log('Vigente convertido: ' . ($vigente_bool ? 'true' : 'false'));
       
       $r = $this->Mmesas->editarMesa($id, $miData);
       echo json_encode($r);

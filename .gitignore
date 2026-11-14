@@ -37,3 +37,8 @@ application/config/caja_local.php
 
 # Imágenes de productos subidas desde la Carta (una carpeta por cliente)
 assets/uploads/productos/*/
+
+# Variables de entorno locales (claves): nunca subir a git
+.env
+.env.php
+.env.local

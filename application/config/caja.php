@@ -16,6 +16,11 @@ $config['caja_dte_terminales'] = array();
 
 $config['caja_dte_url'] = 'https://api.cloud-apps.cl/newDte/';
 
+// Empresa proveedora DTE = datamaule.cl (Configuraciones > Facturación electrónica): API de integración
+// SimpleFactura. Se usan /newDte/ para emitir y /cafInfo/ para consultar folios. La credencial es la
+// API Key de la empresa (tipo de autenticación en Configuraciones; ver helpers/dte_auth_helper.php).
+$config['caja_dte_url_datamaule'] = 'https://facturacion.datamaule.cl/api/v1/integracion';
+
 // Pie de boletas y facturas electrónicas: las boletas se verifican en el sitio del emisor
 // (las facturas y notas de crédito, en www.sii.cl)
 $config['caja_url_verificacion_boleta'] = 'http://dte.datamaule.cl';

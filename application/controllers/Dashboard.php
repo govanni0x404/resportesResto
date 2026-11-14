@@ -26,6 +26,27 @@ class Dashboard extends CI_Controller
 		$this->load->view('dashboard.php', $data);
 		$this->load->view('menuFooter.php');
 		$this->load->view('js.php', $data);
+		$this->load->view('dashboard_analitica_js.php');   // Análisis del período (arriba del Dashboard)
+	}
+
+	/**
+	 * Panel "Análisis del período" (arriba del Dashboard): KPIs y gráficos con los mismos filtros (caja y período).
+	 * Solo lectura; el cálculo está en models/Manalitica.php.
+	 */
+	public function analitica()
+	{
+		$this->output->set_content_type('application/json', 'utf-8');
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+			$this->output->set_status_header(401)->set_output(json_encode(array('error' => 'Sesión expirada, vuelve a ingresar')));
+			return;
+		}
+		try {
+			$this->load->model('Manalitica');
+			$this->output->set_output(json_encode($this->Manalitica->analitica(
+				(int)$this->input->post('id_caja'), $this->input->post('desde'), $this->input->post('hasta'))));
+		} catch (Throwable $e) {
+			$this->output->set_status_header(500)->set_output(json_encode(array('error' => $e->getMessage())));
+		}
 	}
 
 	public function empresa()

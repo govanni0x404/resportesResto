@@ -112,7 +112,7 @@ class Musuarios extends CI_Model
           $this->db->where('id_usuario', $id);
           $this->db->update('usuario', $data);
 
-          if ($this->db->error()['code'] != 0) {
+          if (!empty($this->db->error()['code'])) {
               throw new Exception($this->db->error()['message']);
           }
 

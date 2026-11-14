@@ -55,12 +55,15 @@ class Ticket_impresion
 
 			$b .= $izq . $this->t('Fecha: ' . $v->fecha_texto) . "\n";
 			$b .= $this->t('Cajero: ' . $v->nombre_usuario) . "\n";
+			if (!empty($v->nombre_retira)) $b .= $neg . $alto . $this->lineas('Retira: ' . $v->nombre_retira, $W) . $normal;
 			if ($v->rut) {
 				$b .= $this->lineas('Cliente: ' . $v->nombre_cliente, $W);
 				$b .= $this->t('RUT: ' . $rut($v->rut, $v->dv)) . "\n";
 				if ($v->giro) $b .= $this->lineas('Giro: ' . $v->giro, $W);
 				if ($v->direccion) $b .= $this->lineas('Dir: ' . $v->direccion, $W);
 				if ($v->comuna) $b .= $this->lineas('Comuna: ' . $v->comuna, $W);
+				if (!empty($v->solicitante)) $b .= $this->lineas('Solicita: ' . $v->solicitante, $W);
+				if (!empty($v->motivo_factura)) $b .= $this->lineas('Motivo: ' . $v->motivo_factura, $W);
 			}
 			$b .= str_repeat('-', $W) . "\n";
 			foreach ($doc['detalle'] as $d) {

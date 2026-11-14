@@ -301,6 +301,17 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <!-- Favorito: aparece en el botón ★ de la Caja. Se oculta si la base aún no tiene producto.favorito (migración 20261110190000) -->
+                                    <div class="col-md-4" id="grupoFavorito">
+                                        <div class="btn-group" role="group" aria-label="...">
+                                            <div class="checkbox checkbox-success checkbox-circle">
+                                                <input id="ckFavorito" type="checkbox">
+                                                <label for="ckFavorito" title="Aparece en el botón Favoritos (★) de la Caja">
+                                                    Favorito En Caja
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </fieldset>
                                 <br>
                                 <fieldset id="extras">

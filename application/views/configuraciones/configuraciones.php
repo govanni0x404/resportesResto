@@ -112,8 +112,16 @@ if (!function_exists('cfg_opciones')) {
                                                             <option value="<?php echo htmlspecialchars($impCierre, ENT_QUOTES, 'UTF-8'); ?>" selected><?php echo htmlspecialchars($impCierre, ENT_QUOTES, 'UTF-8'); ?> (no existe)</option>
                                                         <?php endif; ?>
                                                     </select>
-                                                    <p class="help-block">Destino de impresión donde sale el cierre y el informe X.</p>
+                                                    <p class="help-block">Destino de impresión donde sale el cierre y el informe X, y donde la caja imprime las boletas, facturas y comprobantes (directo al agente de impresión del equipo).</p>
                                                 </div>
+                                                <?php if (array_key_exists('impresion_local_caja', $config)) : ?>
+                                                <!-- 12-11-2026: la Caja imprime los documentos en el equipo del cajero por el agente local (como mipdv_web) -->
+                                                <label><input type="checkbox" name="impresion_local_caja" value="1" <?php echo ($config['impresion_local_caja'] ?? null) !== false ? 'checked' : ''; ?>> Imprimir documentos en el equipo de la caja (agente de impresión local, como mipdv)</label>
+                                                <?php endif; ?>
+                                                <?php if (array_key_exists('imprimir_comandas_app', $config)) : ?>
+                                                <!-- 14-11-2026: comandas de la app de garzones impresas por la Caja web (solo locales sin POS de escritorio) -->
+                                                <label><input type="checkbox" name="imprimir_comandas_app" value="1" <?php echo ($config['imprimir_comandas_app'] ?? null) === true || ($config['imprimir_comandas_app'] ?? null) === 't' ? 'checked' : ''; ?>> Imprimir las comandas de la app de garzones (cada producto en su destino de impresión). Marcar solo si el local NO usa el POS de escritorio: si no, salen dos veces</label>
+                                                <?php endif; ?>
                                                 <label><input type="checkbox" name="imprimir_comprobante_anulacion" value="1" <?php echo ($config['imprimir_comprobante_anulacion'] ?? false) ? 'checked' : ''; ?>> Imprimir comprobantes de anulacion</label>
                                             </div>
                                         </div>
@@ -125,7 +133,7 @@ if (!function_exists('cfg_opciones')) {
                                             <div class="panel-body">
                                                 <div class="form-group">
                                                     <label>Clave de administrador</label>
-                                                    <input type="password" id="txtclaveAdmin" class="form-control" name="txtclaveAdmin" value="<?php echo $config['pass_admin'] ?? ''; ?>">
+                                                    <input type="password" id="txtclaveAdmin" class="form-control" name="txtclaveAdmin" value="<?php echo html_escape((string)($config['pass_admin'] ?? '')); ?>">
                                                 </div>
                                                 <label><input type="checkbox" id="chkMostrarClaveAdmin" onchange="toggleMostrarClaveAdmin()" name="mostrar_clave_admin" value="1" <?php echo ($config['mostrar_clave_admin'] ?? false) ? 'checked' : ''; ?>> Mostrar clave</label>
                                                 <label><input type="checkbox" name="admin_anulacion_eliminacion" value="1" <?php echo ($config['admin_anulacion_eliminacion'] ?? false) ? 'checked' : ''; ?>> Requerir clave admin para anulacion</label>
@@ -324,7 +332,7 @@ if (!function_exists('cfg_opciones')) {
 
                             <!-- Tab Facturación Electrónica -->
                             <div id="facturacion" class="tab">
-                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Proveedor DTE, documentos electrónicos, acceso a Cloud Apps y folios autorizados por el SII.</p>
+                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Proveedor DTE, documentos electrónicos, acceso al proveedor (Cloud Apps o datamaule.cl) y folios autorizados por el SII.</p>
                                 <div class="row t-dos-columnas">
                                     <div class="col-md-6">
                                         <div class="config-card">
@@ -338,8 +346,9 @@ if (!function_exists('cfg_opciones')) {
                                                 <div class="form-group">
                                                     <label>EMPRESA PROVEEDORA DTE</label>
                                                     <div style="display: flex; gap: 20px; margin-top: 5px;">
-                                                        <label style="margin:0"><input type="radio" name="proveedor_dte" value="1" <?php echo ($config['acepta'] ?? false) ? 'checked' : ''; ?>> ACEPTA</label>
-                                                        <label style="margin:0"><input type="radio" name="proveedor_dte" value="2" <?php echo ($config['acierto'] ?? false) ? 'checked' : ''; ?>> ACIERTO</label>
+                                                        <?php $esDatamaule = ($dte_auth['proveedor'] ?? 'acierto') === 'datamaule'; ?>
+                                                        <label style="margin:0"><input type="radio" name="proveedor_dte" value="1" <?php echo $esDatamaule ? 'checked' : ''; ?>> datamaule.cl</label>
+                                                        <label style="margin:0"><input type="radio" name="proveedor_dte" value="2" <?php echo !$esDatamaule ? 'checked' : ''; ?>> nubika</label>
                                                     </div>
                                                 </div>
                                                 <div class="form-group">
@@ -419,23 +428,46 @@ if (!function_exists('cfg_opciones')) {
                                         </div>
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-cloud"></i>Acceso facturación (Cloud Apps)</h3>
+                                                <h3 class="panel-title"><i class="fa fa-cloud"></i>Acceso facturación (<span id="lblProveedorDte"><?php echo $esDatamaule ? 'datamaule.cl' : 'Cloud Apps'; ?></span>)</h3>
                                             </div>
                                             <div class="panel-body">
+                                                <?php $tipoAuthDte = $dte_auth['tipo'] ?? 'basic'; $tokenDte = $dte_auth['token'] ?? array('tiene' => false, 'last4' => ''); ?>
+                                                <div class="form-group">
+                                                    <label>Tipo de autenticación</label>
+                                                    <select class="form-control" name="tipo_auth_dte" id="cboTipoAuthDte">
+                                                        <?php foreach (($dte_auth['etiquetas'] ?? array('basic' => 'Basic (usuario y contraseña)')) as $valor => $texto) : ?>
+                                                            <option value="<?php echo $valor; ?>" <?php echo $valor === $tipoAuthDte ? 'selected' : ''; ?>><?php echo htmlspecialchars($texto, ENT_QUOTES); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                    <p class="help-block">Cómo se envía la credencial al proveedor. Con datamaule.cl la credencial es la API Key de la empresa (Administración &rarr; Empresas &rarr; Integración Ventas); X-API-Key es el recomendado.</p>
+                                                    <?php if (empty($dte_auth['columnas'])) : ?>
+                                                        <p class="help-block text-warning"><i class="fa fa-exclamation-triangle"></i> Esta base aún no tiene las columnas de la migración 20261111100000: se aplica al entrar al sistema. Mientras tanto se emite con Cloud Apps y Basic, como antes.</p>
+                                                    <?php endif; ?>
+                                                </div>
                                                 <div class="form-group">
                                                     <label>Usuario</label>
                                                     <?php $rutEmpresaDte = !empty($empresa['rut_empresa']) ? number_format((float)$empresa['rut_empresa'], 0, '', '') . '-' . strtoupper(trim($empresa['dv_empresa'] ?? '')) : ''; ?>
                                                     <input type="text" class="form-control" name="usuario_dte" id="txtUsuarioDte" value="<?php echo htmlspecialchars($config['usuario_dte'] ?? '', ENT_QUOTES); ?>" placeholder="<?php echo $rutEmpresaDte ? 'Ej: ' . $rutEmpresaDte : 'RUT de la empresa'; ?>">
                                                     <p class="help-block">RUT de la empresa con guion<?php echo $rutEmpresaDte ? ' (' . $rutEmpresaDte . ')' : ''; ?>.</p>
                                                 </div>
-                                                <div class="form-group">
+                                                <div class="form-group" id="grupoClaveDte">
                                                     <label>Contraseña</label>
                                                     <input type="password" class="form-control" name="clave_usuario_dte" id="txtClaveDte" value="<?php echo htmlspecialchars($config['clave_usuario_dte'] ?? '', ENT_QUOTES); ?>">
+                                                    <p class="help-block" id="ayudaClaveDatamaule" style="display:none">Con datamaule.cl en Basic, la contraseña es la API Key de la empresa.</p>
+                                                </div>
+                                                <div class="form-group" id="grupoTokenDte">
+                                                    <label>API Key</label>
+                                                    <input type="password" class="form-control" name="token_dte" id="txtTokenDte" autocomplete="new-password" value=""
+                                                        placeholder="<?php echo $tokenDte['tiene'] ? 'Guardada (termina en ' . htmlspecialchars($tokenDte['last4'], ENT_QUOTES) . '). Escriba una nueva solo para cambiarla' : 'Pegue aquí la API Key de la empresa'; ?>">
+                                                    <p class="help-block">Se guarda cifrada y no se vuelve a mostrar.<?php if (empty($dte_auth['clave_cifrado'])) : ?> <span class="text-danger"><i class="fa fa-exclamation-triangle"></i> Falta la variable RESTO_DTE_TOKEN_KEY en el servidor: sin ella no se puede guardar ni usar la API Key.</span><?php endif; ?></p>
+                                                    <?php if ($tokenDte['tiene']) : ?>
+                                                        <label style="font-weight:normal"><input type="checkbox" name="quitar_token_dte" value="1" id="chkQuitarTokenDte"> Quitar la API Key guardada</label>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Terminal</label>
                                                     <input type="text" class="form-control" name="terminal_dte" id="txtTerminalDte" maxlength="60" value="<?php echo htmlspecialchars($config['terminal_dte'] ?? '', ENT_QUOTES); ?>" placeholder="Ej: DATAPDV-CAJA1">
-                                                    <p class="help-block">Terminal registrado en Cloud Apps para la caja web. Sin terminal no se emiten boletas ni facturas.</p>
+                                                    <p class="help-block">Terminal registrado en el proveedor (Cloud Apps o datamaule.cl) para la caja web. Sin terminal no se emiten boletas ni facturas.</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -469,7 +501,7 @@ if (!function_exists('cfg_opciones')) {
                                                 <h3 class="panel-title"><i class="fa fa-list-ol"></i>Folios electrónicos</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <p class="text-muted">Consulta en Cloud Apps los folios autorizados por el SII para cada documento, con el usuario, la contraseña y el terminal de arriba (no hace falta grabar antes).</p>
+                                                <p class="text-muted">Consulta en el proveedor elegido los folios autorizados por el SII para cada documento, con el acceso y el terminal de arriba (no hace falta grabar antes). Con datamaule.cl el rango es el del CAF en uso, desde el próximo folio que se entregará.</p>
                                                 <div class="table-responsive">
                                                     <table class="table table-bordered table-condensed" id="tablaFoliosDte">
                                                         <thead>
@@ -506,91 +538,36 @@ if (!function_exists('cfg_opciones')) {
                                 </div>
                             </div>
 
-                            <!-- Tab Datos de la Empresa -->
+                            <!-- Tab Datos de la Empresa (11-11-2026): varias empresas y sus sucursales, con los datos de la intranet (Mempresas) -->
                             <div id="empresa" class="tab">
-                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Datos tributarios de la empresa y de la sucursal que aparecen en los documentos.</p>
+                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Empresas de esta base y sus sucursales. Los datos vienen de la intranet de Datamaule; las empresas las registran los técnicos de Datamaule.</p>
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="config-card">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-building-o"></i>Datos de la empresa</h3>
+                                            <div class="panel-heading emp-cabecera">
+                                                <h3 class="panel-title"><i class="fa fa-building-o"></i>Empresas</h3>
+                                                <button type="button" class="btn btn-default btn-sm" id="btnSincronizarEmpresas"><i class="fa fa-refresh"></i> Actualizar desde la intranet</button>
                                             </div>
                                             <div class="panel-body">
-                                                <div class="row">
-                                                    <div class="col-md-4 form-group">
-                                                        <label>Rut</label>
-                                                        <input type="text" class="form-control" name="rut_empresa" value="<?php echo $empresa['rut_empresa'] ?? ''; ?>">
-                                                    </div>
-                                                    <div class="col-md-2 form-group">
-                                                        <label>DV</label>
-                                                        <input type="text" class="form-control" name="dv_empresa" maxlength="1" value="<?php echo $empresa['dv_empresa'] ?? ''; ?>">
-                                                    </div>
-                                                    <div class="col-md-6 form-group">
-                                                        <label>Razón Social</label>
-                                                        <input type="text" class="form-control" name="razon_social" value="<?php echo $empresa['razon_social'] ?? ''; ?>">
-                                                    </div>
-                                                    <div class="col-md-6 form-group">
-                                                        <label>Nombre Fantasía</label>
-                                                        <input type="text" class="form-control" name="nombre_fantasia" value="<?php echo $empresa['nombre_fantasia'] ?? ''; ?>">
-                                                    </div>
-                                                    <div class="col-md-3 form-group">
-                                                        <label>Código Act. Económica</label>
-                                                        <input type="text" class="form-control" name="codigo_actividad_economica" value="<?php echo $empresa['codigo_actividad_economica'] ?? ''; ?>">
-                                                    </div>
-                                                    <div class="col-md-3 form-group">
-                                                        <label>Giro</label>
-                                                        <input type="text" class="form-control" name="giro" value="<?php echo $empresa['giro'] ?? ''; ?>">
-                                                    </div>
-                                                    <div class="col-md-12 form-group">
-                                                        <label>Dirección</label>
-                                                        <input type="text" class="form-control" name="direccion_empresa" value="<?php echo $empresa['direccion_empresa'] ?? ''; ?>">
-                                                    </div>
-                                                    <div class="col-md-4 form-group">
-                                                        <label>Comuna</label>
-                                                        <select class="form-control" id="cboIdComuna" name="id_comuna" data-selected="<?php echo $empresa['id_comuna'] ?? 0; ?>">
-                                                            <option value="0">Seleccione la comuna</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-4 form-group">
-                                                        <label>Correo</label>
-                                                        <input type="email" class="form-control" name="mail" value="<?php echo htmlspecialchars((string)($empresa['mail'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
-                                                    </div>
-                                                    <div class="col-md-4 form-group">
-                                                        <label>Teléfono</label>
-                                                        <input type="text" class="form-control" name="telefono" value="<?php echo $empresa['telefono'] ?? ''; ?>">
-                                                    </div>
+                                                <div class="table-responsive emp-tabla">
+                                                    <table class="table table-hover">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>RUT</th>
+                                                                <th>Empresa</th>
+                                                                <th>Giro</th>
+                                                                <th>Dirección</th>
+                                                                <th class="text-center">Sucursales</th>
+                                                                <th>Intranet</th>
+                                                                <th class="text-right"></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="cuerpoEmpresas">
+                                                            <tr><td colspan="7" class="emp-vacio"><i class="fa fa-spinner fa-spin"></i> Cargando…</td></tr>
+                                                        </tbody>
+                                                    </table>
                                                 </div>
-                                            </div>
-                                        </div>
-                                        <div class="config-card">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-map-marker"></i>Sucursal</h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <div class="row">
-                                                    <div class="col-md-4 form-group">
-                                                        <label>Código SII Sucursal</label>
-                                                        <input type="number" class="form-control" name="codigo_sii" value="<?php echo $empresa['codigo_sii'] ?? ''; ?>">
-                                                    </div>
-                                                    <div class="col-md-4 form-group">
-                                                        <label>Código Sucursal</label>
-                                                        <input type="text" class="form-control" name="codigo_sucursal" value="<?php echo $empresa['codigo_sucursal'] ?? ''; ?>">
-                                                    </div>
-                                                    <div class="col-md-4 form-group">
-                                                        <label>Nombre Sucursal</label>
-                                                        <input type="text" class="form-control" name="nombre_sucursal" value="<?php echo $empresa['nombre_sucursal'] ?? ''; ?>">
-                                                    </div>
-                                                    <div class="col-md-8 form-group">
-                                                        <label>Dirección Sucursal</label>
-                                                        <input type="text" class="form-control" name="direccion_sucursal" value="<?php echo $empresa['direccion_sucursal'] ?? ''; ?>">
-                                                    </div>
-                                                    <div class="col-md-4 form-group">
-                                                        <label>Comuna Sucursal</label>
-                                                        <select class="form-control" id="cboIdComunaSucursal" name="id_comuna_sucursal" data-selected="<?php echo $empresa['id_comuna_sucursal'] ?? 0; ?>">
-                                                            <option value="0">Seleccione la comuna</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
+                                                <p class="emp-nota"><i class="fa fa-print"></i> Las boletas, facturas y tickets de una caja (Herramientas &gt; Control de cajas) llevan la dirección, comuna y código SII de su sucursal. Emite la primera empresa de la lista.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -607,6 +584,102 @@ if (!function_exists('cfg_opciones')) {
         </div>
     </div>
 </section>
+
+<!-- Configuraciones > Datos de la Empresa: datos de una empresa -->
+<div class="modal fade" id="modalEmpresa" tabindex="-1" role="dialog" aria-labelledby="tituloModalEmpresa">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="tituloModalEmpresa"><i class="fa fa-building-o"></i> Datos de la empresa</h4>
+            </div>
+            <div class="modal-body emp-form">
+                <p class="emp-ayuda" id="ayudaModalEmpresa"></p>
+                <div class="row">
+                    <div class="col-sm-4 form-group"><label>RUT</label><input type="text" class="form-control" data-campo="rut_empresa" maxlength="10"></div>
+                    <div class="col-sm-2 form-group"><label>DV</label><input type="text" class="form-control" data-campo="dv_empresa" maxlength="1"></div>
+                    <div class="col-sm-6 form-group"><label>Razón social</label><input type="text" class="form-control" data-campo="razon_social"></div>
+                    <div class="col-sm-3 form-group"><label>Nombre fantasía</label><input type="text" class="form-control" data-campo="nombre_fantasia"></div>
+                    <div class="col-sm-3 form-group"><label>Código act. económica</label><input type="text" class="form-control" data-campo="codigo_actividad_economica"></div>
+                    <div class="col-sm-6 form-group"><label>Giro</label><input type="text" class="form-control" data-campo="giro"></div>
+                    <div class="col-sm-12 form-group"><label>Dirección</label><input type="text" class="form-control" data-campo="direccion_empresa"></div>
+                    <div class="col-sm-4 form-group"><label>Comuna</label><select class="form-control" data-campo="id_comuna"></select></div>
+                    <div class="col-sm-4 form-group"><label>Correo</label><input type="email" class="form-control" data-campo="mail"></div>
+                    <div class="col-sm-4 form-group"><label>Teléfono</label><input type="text" class="form-control" data-campo="telefono"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarEmpresa"><i class="fa fa-check"></i> Grabar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuraciones > Datos de la Empresa: sucursales de una empresa (de la intranet) -->
+<div class="modal fade" id="modalSucursales" tabindex="-1" role="dialog" aria-labelledby="tituloModalSucursales">
+    <div class="modal-dialog emp-modal-ancho" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="tituloModalSucursales"><i class="fa fa-map-marker"></i> Sucursales</h4>
+            </div>
+            <div class="modal-body">
+                <p class="emp-ayuda"><i class="fa fa-info-circle"></i> Las sucursales y sus datos vienen de la intranet. Aquí solo se completa el código SII de la sucursal (si la intranet no lo trae) y la comuna (si no calza con las comunas del sistema). Los cambios se guardan al instante.</p>
+                <div class="table-responsive">
+                    <table class="table emp-sucursales">
+                        <thead>
+                            <tr>
+                                <th>Sucursal</th>
+                                <th>Dirección</th>
+                                <th>Comuna</th>
+                                <th>Teléfono</th>
+                                <th>Código SII</th>
+                                <th class="text-center">Cajas</th>
+                                <th class="text-center">Vigente</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoSucursales"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Datos de la Empresa: empresas y sucursales */
+    .t-config .emp-cabecera { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .t-config .emp-cabecera .btn i { margin-right: 4px; color: inherit; }
+    .emp-tabla { margin: 0; border: 0; }
+    .emp-tabla th, .emp-sucursales th { font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave); white-space: nowrap; }
+    .emp-tabla td, .emp-sucursales td { vertical-align: middle !important; }
+    .emp-nombre { font-weight: 600; color: var(--t-texto-fuerte); }
+    .emp-rut { white-space: nowrap; }
+    .emp-sub { display: block; font-size: 12px; color: var(--t-texto-tenue); }
+    .emp-chip { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; border: 1px solid var(--t-borde); background: #f6f7f9; color: var(--t-texto-tenue); }
+    .emp-chip.ok { background: var(--t-primario-suave); color: var(--t-primario-osc); border-color: var(--t-primario-borde); }
+    .emp-chip.aviso { background: #fff7e0; color: #8a6200; border-color: #f0dc9c; }
+    .emp-acciones { white-space: nowrap; text-align: right; }
+    .emp-acciones .btn { margin-left: 4px; }
+    .emp-acciones .btn i { margin-right: 3px; color: inherit; }
+    .emp-vacio { padding: 26px 10px !important; text-align: center; color: var(--t-texto-tenue); }
+    .emp-nota { margin: 10px 0 0; font-size: 12px; color: var(--t-texto-tenue); }
+    .emp-nota i { margin-right: 4px; }
+    .emp-ayuda { font-size: 13px; color: var(--t-texto-tenue); margin-bottom: 14px; }
+    .emp-ayuda i { margin-right: 4px; }
+    .emp-form label { font-size: 12px; color: var(--t-texto-suave); text-transform: uppercase; letter-spacing: .3px; }
+    .emp-form .form-control[disabled] { background: var(--t-fondo-alt); color: var(--t-texto); cursor: not-allowed; }
+    .emp-form .emp-de-intranet { margin-left: 6px; font-size: 10px; text-transform: none; letter-spacing: 0; color: var(--t-primario-osc); }
+    .emp-sucursales tr.emp-no-vigente td { color: var(--t-texto-tenue); background: var(--t-fondo-alt); }
+    .emp-sucursales select.form-control, .emp-sucursales input.form-control { height: 32px; padding: 4px 8px; min-width: 150px; }
+    .emp-sucursales input.emp-codigo { min-width: 110px; max-width: 130px; }
+    .emp-modal-ancho { width: 96%; max-width: 1100px; }
+    @media (max-width: 767px) { .emp-modal-ancho { width: auto; margin: 10px; } .emp-acciones { white-space: normal; } }
+</style>
 
 
 

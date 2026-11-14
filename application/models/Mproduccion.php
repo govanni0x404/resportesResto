@@ -50,7 +50,7 @@ class Mproduccion extends CI_Model
         return $this->db->insert_id();
     }
 
-    public function obtenerStockActual($id_insumo, $id_bodega)
+    public function obtenerStockActual($id_insumo, $id_bodega, $bloquear = false)
     {
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url());
@@ -61,7 +61,7 @@ class Mproduccion extends CI_Model
         $q = "SELECT saldo as stock_actual 
               FROM stock_insumo 
               WHERE id_insumo = " . intval($id_insumo) . " 
-              AND id_bodega = " . intval($id_bodega);
+              AND id_bodega = " . intval($id_bodega) . ($bloquear ? " FOR UPDATE" : "");
         
         $consulta = $this->db->query($q);
         
@@ -89,9 +89,7 @@ class Mproduccion extends CI_Model
     
     public function obtenerCostoPPP($id_insumo)
     {
-        $this->db = $this->load->database(
-            $this->session->userdata('nombre_conexion'), TRUE
-        );
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT costo_neto_ppp
             FROM insumo
@@ -108,9 +106,7 @@ class Mproduccion extends CI_Model
 
     public function obtenerDatosInsumoCompleto($id_insumo)
     {
-        $this->db = $this->load->database(
-            $this->session->userdata('nombre_conexion'), TRUE
-        );
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT 
                 i.id_insumo,

@@ -25,6 +25,16 @@ class DestinoDeImpresion extends CI_Controller
 		$this->load->view('destinoImpresion/listadoDestinoImpresion.php');
 
 		$this->load->view('destinoImpresion/jsNuevoDestinoDeImpresion.php');
+		// Probar impresión directa en este equipo (agente local, como mipdv_web). Ver config/impresion_local.php
+		$this->config->load('impresion_local', true);
+		$this->load->view('destinoImpresion/probarImpresion.php', array(
+			'impresion_local' => array(
+				'url' => (string)$this->config->item('impresion_local_url', 'impresion_local'),
+				'clave' => (string)$this->config->item('impresion_local_clave', 'impresion_local'),
+			),
+			'usuario' => (string)$this->session->userdata('nombre_usuario'),
+			'empresa' => (string)$this->session->userdata('nombre_cliente'),
+		));
 		$this->load->view('funciones.php');
 	}
 
@@ -66,15 +76,16 @@ class DestinoDeImpresion extends CI_Controller
 			'nombre_dimpresion' => $d['nombre_dimpresion'],
 			'ip' => $ip,
 			'puerto' => $puerto,
-			'ruta_windows' => $d['ruta_windows'],
-			'impresion_grafica_windows' => $d['impresion_grafica_windows'],
-			'permite_precuenta' => $d['permite_precuenta'],
-			'impresion_local' => $d['impresion_local'],
-			'usar_logo_precuenta_pos' => $d['usar_logo_precuenta_pos'],
-			'size_font' => $d['size_font'],
-			'sin_impresion' => $d['sin_impresion'],
-			'usar_dimpresion_recinto' => $d['usar_dimpresion_recinto'],
-			'usar_dimpresion_precuenta_android' => $d['usar_dimpresion_precuenta_android'],
+			'ruta_windows' => trim((string)($d['ruta_windows'] ?? '')),
+			// 14-11-2026: casillas que no llegan = false (antes se grababa NULL)
+			'impresion_grafica_windows' => $this->siNo($d['impresion_grafica_windows'] ?? null),
+			'permite_precuenta' => $this->siNo($d['permite_precuenta'] ?? null),
+			'impresion_local' => $this->siNo($d['impresion_local'] ?? null),
+			'usar_logo_precuenta_pos' => $this->siNo($d['usar_logo_precuenta_pos'] ?? null),
+			'size_font' => max(6, min(30, (int)($d['size_font'] ?? 8) ?: 8)),
+			'sin_impresion' => $this->siNo($d['sin_impresion'] ?? null),
+			'usar_dimpresion_recinto' => $this->siNo($d['usar_dimpresion_recinto'] ?? null),
+			'usar_dimpresion_precuenta_android' => $this->siNo($d['usar_dimpresion_precuenta_android'] ?? null),
 		);
 		$r = $this->MdestinoDeImpresion->grabarNuevoDestinoDeImpresion($id, $miData);
 		echo json_encode($r);
@@ -85,6 +96,12 @@ class DestinoDeImpresion extends CI_Controller
 	 * "19216810070", que no sirve para imprimir y no se puede adivinar cómo era. También se acepta una ruta de red
 	 * (//equipo/impresora) o un nombre de equipo. Devuelve el texto limpio o array('error' => ...).
 	 */
+	private function siNo($v)
+	{
+		if (is_bool($v)) return $v;
+		return in_array(strtolower(trim((string)$v)), array('true', 't', '1', 'on', 'si', 'sí'), true);
+	}
+
 	private function limpiarIp($ip)
 	{
 		$ip = trim($ip);
@@ -98,7 +115,8 @@ class DestinoDeImpresion extends CI_Controller
 			}
 			return $ip;
 		}
-		if (!preg_match('#^[A-Za-z0-9._\-/\\]{1,50}$#', $ip)) {
+		// 14-11-2026: antes '\\]' dejaba el ] escapado ("missing terminating ]") y se rechazaba todo nombre de equipo
+		if (!preg_match('#^[A-Za-z0-9._/\\\\-]{1,50}$#', $ip)) {
 			return array('error' => 'La IP o ruta de la impresora tiene caracteres no válidos');
 		}
 		return $ip;

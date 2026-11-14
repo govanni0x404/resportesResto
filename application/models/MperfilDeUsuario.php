@@ -39,13 +39,13 @@ class MperfilDeUsuario extends CI_Model
     if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url()); //redireccionar al login
     }
-    // La intranet es el grupo 'default' (igual que Mlogin); el grupo 'intranet' no existe en database.php
-    $this->db = $this->load->database('default', TRUE);
-    $q = " SELECT u.correo_acceso
-        from usuario_appweb u
-        where id_usuario_cliente=?";
-    $query = $this->db->query($q, array((int)$id_usuario))->result();
-    return $query;
+    // 10-11-2026: la base de la intranet ya no se abre desde aquí (todo por API) y la API no
+    // busca correos por id de usuario. El correo de quien inició sesión está en la sesión;
+    // se devuelve con la misma forma de antes: arreglo de objetos con correo_acceso.
+    if ((int)$id_usuario !== (int)$this->session->userdata('id_usuario')) {
+      return array();
+    }
+    return array((object)array('correo_acceso' => (string)$this->session->userdata('correo_acceso')));
   }
 
   public function ActualizarNombreYPasswordDeUsuarioIntranet($id_usuario_cliente, $id_cliente, $data)

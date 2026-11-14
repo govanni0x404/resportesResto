@@ -111,6 +111,14 @@ class Insumos extends CI_Controller
 			'observaciones' => $d['observaciones'],
 			'inventario_cierre_turno' => $d['inv_cierre']
 		);
+		// 14-11-2026: la unidad de receta divide el costo en el trigger de compras (costo_pp = costo/umedida_receta);
+		// con 0 cualquier compra de este insumo (si está en una receta) daba "division by zero".
+		$umr = str_replace(',', '.', trim((string)($d['umedida_receta'] ?? '')));
+		if (!is_numeric($umr) || (float)$umr <= 0) {
+			echo json_encode(array('success' => false, 'status' => 'error', 'msg' => 'La unidad de receta debe ser mayor que 0'));
+			return;
+		}
+		$miData['umedida_receta'] = $umr;
 		$r = $this->Minsumos->grabarInsumo($id, $miData);
 		// Una sola respuesta JSON: antes se imprimían dos objetos seguidos (JSON inválido). El modelo devuelve
 		// un arreglo de filas ([{id_insumo}]), por eso el id se lee de la primera fila.

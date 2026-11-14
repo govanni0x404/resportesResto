@@ -429,7 +429,13 @@ function grabarNuevoProveedor() {
         'prod': miJson
     }).done(function(response) {
         console.log("✓ Proveedor guardado:", response);
-        
+
+					var r = response;
+					try { if (typeof r === 'string') r = JSON.parse(r); } catch (e) { r = null; }
+					if (r && !Array.isArray(r) && r.error) {
+						showAppAlert('error', r.error, { duration: 6000, image: base_url + 'assets/img/errorGif.gif' });
+						return;
+					}        
         showAppAlert('success', "¡Proveedor registrado exitosamente!", {
             duration: 4000,
             image: base_url + 'assets/img/success.gif'

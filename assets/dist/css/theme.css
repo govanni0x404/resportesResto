@@ -959,3 +959,70 @@ html body .sweet-alert button.confirm:hover { filter: brightness(.93); }
 html body .sweet-alert button.cancel { flex: 1 1 110px; max-width: 170px; background: #fff !important; border: 1px solid var(--t-borde); color: var(--t-texto); }
 html body .sweet-alert button.cancel:hover { background: var(--t-fondo-alt) !important; }
 html body .sweet-alert button:focus { outline: 2px solid var(--t-primario-borde); outline-offset: 2px; }
+
+/* =====================================================================
+   Barra lateral contraída (solo íconos) y usuario/rol al pie de la barra.
+   - menuTop pone la clase t-lateral-mini en <html> según la preferencia guardada en el navegador; el botón
+     #btnLateral (arriba de la barra) la cambia (ver menuFooter.php).
+   - Con t-lateral-flotante la barra contraída se despliega encima del contenido, sin moverlo, al abrir un grupo
+     o el menú de configuración.
+   - --t-sidebar-abierta guarda el ancho normal de la barra (el --t-sidebar de :root) para usarlo al flotar.
+   ===================================================================== */
+:root { --t-sidebar-abierta: var(--t-sidebar); --t-sidebar-mini: 68px; }
+.t-lateral-toggle, .main-header .t-usuario-pie { display: none; }
+
+@media (min-width: 993px) {
+    /* Botón Ocultar / Mostrar menú */
+    html body .t-lateral-toggle {
+        display: flex; align-items: center; gap: 11px; width: 100%; margin: 0 0 10px; padding: 8px 12px;
+        background: transparent; border: 0; border-bottom: 1px solid rgba(255, 255, 255, .10); border-radius: 9px 9px 0 0;
+        color: rgba(239, 228, 214, .78); font-size: 13px; font-weight: 500; text-align: left; white-space: nowrap; cursor: pointer;
+    }
+    html body .t-lateral-toggle i { width: 18px; flex: 0 0 18px; font-size: 18px; text-align: center; color: var(--t-mostaza, #E3B04B); }
+    html body .t-lateral-toggle:hover { background: rgba(255, 255, 255, .08); color: #fff; }
+    html body .t-lateral-toggle:focus { outline: none; }
+    html body .t-lateral-toggle:focus-visible { outline: 2px solid var(--t-mostaza, #E3B04B); outline-offset: 2px; }
+
+    /* Usuario y rol junto al engranaje (reemplaza el texto "Configuración"; el engranaje sigue abriendo el menú) */
+    html body .main-header .top-nav .navbar-top-links > li > a::after { content: none; }
+    html body .main-header .top-nav .t-usuario-pie { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; line-height: 1.25; text-align: left; }
+    html body .main-header .top-nav .t-usuario-pie b { font-size: 13.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    html body .main-header .top-nav .t-usuario-pie small { font-size: 11.5px; font-weight: 500; color: rgba(239, 228, 214, .72); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Contraída: la barra y los márgenes del contenido usan el ancho mínimo */
+    html.t-lateral-mini body { --t-sidebar: var(--t-sidebar-mini); }
+    /* Flotando: la barra (y el pie con el usuario) recuperan su ancho, el contenido no se mueve */
+    html.t-lateral-mini.t-lateral-flotante body nav.navbar.bootsnav,
+    html.t-lateral-mini.t-lateral-flotante body .main-header .top-nav { --t-sidebar: var(--t-sidebar-abierta); }
+    html.t-lateral-mini.t-lateral-flotante body nav.navbar.bootsnav { box-shadow: 10px 0 30px rgba(0, 0, 0, .30) !important; }
+
+    /* Contraída y sin flotar: solo íconos centrados */
+    html.t-lateral-mini:not(.t-lateral-flotante) body nav.navbar.bootsnav,
+    html.t-lateral-mini:not(.t-lateral-flotante) body nav.navbar.bootsnav.sticked,
+    html.t-lateral-mini:not(.t-lateral-flotante) body .wrap-sticky nav.navbar.bootsnav,
+    html.t-lateral-mini:not(.t-lateral-flotante) body .wrap-sticky nav.navbar.bootsnav.sticked { padding-left: 10px !important; padding-right: 10px !important; }
+    html.t-lateral-mini:not(.t-lateral-flotante) body .t-lateral-toggle { justify-content: center; padding: 8px 0; }
+    html.t-lateral-mini:not(.t-lateral-flotante) body .t-lateral-toggle span { display: none; }
+    html.t-lateral-mini:not(.t-lateral-flotante) body nav.navbar.bootsnav ul.nav > li > a {
+        justify-content: center; gap: 0; padding: 10px 0 !important; font-size: 0 !important;
+    }
+    html.t-lateral-mini:not(.t-lateral-flotante) body nav.navbar.bootsnav ul.nav > li > a > i { width: auto; font-size: 19px; }
+    html.t-lateral-mini:not(.t-lateral-flotante) body nav.navbar.bootsnav ul.nav > li.dropdown > a::after { display: none !important; }
+    html.t-lateral-mini:not(.t-lateral-flotante) body nav.navbar.bootsnav ul.nav > li.dropdown > ul.dropdown-menu { display: none !important; }
+    html.t-lateral-mini:not(.t-lateral-flotante) body .main-header .top-nav { left: 10px !important; width: calc(var(--t-sidebar) - 20px) !important; }
+    html.t-lateral-mini:not(.t-lateral-flotante) body .main-header .top-nav .navbar-top-links > li > a { justify-content: center; gap: 0; padding: 8px 0 !important; }
+    html.t-lateral-mini:not(.t-lateral-flotante) body .main-header .top-nav .t-usuario-pie,
+    html.t-lateral-mini:not(.t-lateral-flotante) body .main-header .top-nav .navbar-top-links > li.dropdown > .dropdown-menu { display: none !important; }
+
+    /* Pie de la barra (usuario y engranaje) con fondo propio (12-11-2026): el menú que se desplaza por debajo ya no se
+       superpone con el nombre y el rol. El fondo cubre todo el ancho de la barra (menos la barra de desplazamiento) y se
+       desvanece hacia arriba; el menú deja espacio abajo para que su última opción quede sobre el pie. */
+    html body .main-header .top-nav::before {
+        content: ""; display: block; position: absolute; z-index: -1; pointer-events: none;   /* block: bootstrap pone table en .navbar::before */
+        top: -16px; bottom: -14px; left: -12px; right: -6px;
+        background: linear-gradient(180deg, rgba(34, 21, 15, 0) 0, #22150F 16px);
+    }
+    html.t-lateral-mini:not(.t-lateral-flotante) body .main-header .top-nav::before { left: -10px; right: -4px; }
+    html body .wrap-sticky nav.navbar.bootsnav, html body .wrap-sticky nav.navbar.bootsnav.sticked,
+    html body nav.navbar.bootsnav, html body nav.navbar.bootsnav.sticked { padding-bottom: 88px !important; }
+}

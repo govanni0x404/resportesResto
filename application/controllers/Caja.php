@@ -28,6 +28,15 @@ class Caja extends CI_Controller
 		$this->load->view('menuTop.php', $data);
 		$this->load->view('caja/caja.php');
 		$this->load->view('menuFooter.php');
+		// Impresión local (12-11-2026): con Configuraciones > Imprimir documentos en el equipo de la caja, la pantalla manda
+		// los documentos al agente de impresión del equipo. La dirección y la clave del agente solo van si está marcada.
+		$local = false;
+		try { $local = !empty($this->Mcaja->opciones()['impresion_local']); } catch (Exception $e) {}
+		$this->config->load('impresion_local', true);
+		$this->load->view('caja/impresionLocal.php', array('impresion_local' => $local ? array(
+			'url' => (string)$this->config->item('impresion_local_url', 'impresion_local'),
+			'clave' => (string)$this->config->item('impresion_local_clave', 'impresion_local'),
+		) : null));
 		$this->load->view('caja/js.php');
 	}
 
@@ -35,9 +44,93 @@ class Caja extends CI_Controller
 	{
 		$this->ejecutar(function () {
 			$caja = $this->Mcaja->cajaAbierta($this->idUsuario());
-			if ($caja) return array('caja' => $this->Mcaja->resumenCaja($caja));
-			return array('caja' => null, 'fondo_sugerido' => $this->Mcaja->fondoSugerido($this->idUsuario()));
+			if ($caja) return array('caja' => $this->resumenVisible($this->Mcaja->resumenCaja($caja)));
+			// Herramientas > Control de cajas: al abrir se elige empresa, sucursal y una caja libre (sin cajas, como antes)
+			return array('caja' => null, 'fondo_sugerido' => $this->Mcaja->fondoSugerido($this->idUsuario())) + $this->apertura(0);
 		});
+	}
+
+	/** Cajas libres de la sucursal elegida al abrir (12-11-2026). */
+	public function cajasParaAbrir()
+	{
+		$this->ejecutar(function () {
+			$this->cajaNoAbierta();
+			return $this->apertura((int)$this->input->get('id_sucursal'));
+		});
+	}
+
+	/** La Caja abierta en el navegador mantiene viva la sesión (y el acceso a la intranet) mientras se trabaja en ella. */
+	public function mantenerSesion()
+	{
+		$this->ejecutar(function () {
+			$this->load->model('Mlogin');
+			$this->Mlogin->renovarBearerSiCorresponde();
+			return array('ok' => true);
+		});
+	}
+
+	private function cajaNoAbierta()
+	{
+		if ($this->Mcaja->cajaAbierta($this->idUsuario())) throw new Exception('Ya tienes una caja abierta', 409);
+	}
+
+	/**
+	 * Para abrir la caja: empresas y sucursales (Configuraciones > Datos de la Empresa, más la de inicio de sesión) y las
+	 * cajas de Control de cajas de la sucursal elegida que no están en uso (sin turno abierto en la tabla caja).
+	 * Sin la migración de empresas/sucursales: las cajas de la sucursal de la sesión, como antes.
+	 */
+	private function apertura($idSucursal)
+	{
+		$this->load->model(array('Mcontrolcaja', 'Mempresas'));
+		$res = array('empresas' => array(), 'id_empresa' => 0, 'id_sucursal' => 0, 'cajas_control' => array(), 'cajas_en_uso' => 0,
+			'hay_cajas' => false);
+		try {
+			$res['hay_cajas'] = $this->Mcontrolcaja->hayCajasVigentes();
+			$empresas = $this->Mempresas->selector();
+			// La empresa de inicio de sesión sin sucursales guardadas: se traen de la intranet una vez por sesión
+			if ($empresas && !empty($empresas[0]['sesion']) && !$empresas[0]['sucursales'] && !$this->session->userdata('empresa_sesion_sinc')) {
+				$this->session->set_userdata('empresa_sesion_sinc', 1);
+				try {
+					$this->Mempresas->sincronizarEmpresaSesion();
+				} catch (Exception $e) {
+					log_message('error', 'Caja::apertura empresa de la sesión: ' . $e->getMessage());
+				}
+				$empresas = $this->Mempresas->selector();
+			}
+			if (!$empresas) {
+				$cajas = $this->Mcontrolcaja->paraAbrir($this->idUsuario());
+			} else {
+				$idEmpresa = null;
+				$buscar = function ($id) use ($empresas, &$idEmpresa) {
+					foreach ($empresas as $e) foreach ($e['sucursales'] as $s) {
+						if ($s['id'] === $id) { $idEmpresa = $e['id']; return true; }
+					}
+					return false;
+				};
+				if (!$idSucursal || !$buscar($idSucursal)) {
+					$idSucursal = (int)$this->session->userdata('id_sucursal');
+					if (!$buscar($idSucursal)) {
+						$idSucursal = 0;
+						foreach ($empresas as $e) {
+							if ($e['sucursales']) { $idSucursal = $e['sucursales'][0]['id']; $idEmpresa = $e['id']; break; }
+						}
+						if ($idEmpresa === null) $idEmpresa = $empresas[0]['id'];
+					}
+				}
+				$res['empresas'] = $empresas;
+				$res['id_empresa'] = $idEmpresa;
+				$res['id_sucursal'] = $idSucursal;
+				$cajas = $idSucursal ? $this->Mcontrolcaja->paraAbrir($this->idUsuario(), $idSucursal) : array();
+			}
+			// Solo las que no están en uso (sin turno abierto de otro usuario)
+			foreach ($cajas as $c) {
+				if ($c['ocupada_por'] !== '') $res['cajas_en_uso']++;
+				else $res['cajas_control'][] = $c;
+			}
+		} catch (Exception $e) {
+			log_message('error', 'Caja::apertura: ' . $e->getMessage());
+		}
+		return $res;
 	}
 
 	public function catalogo()
@@ -52,7 +145,7 @@ class Caja extends CI_Controller
 		$this->ejecutar(function () {
 			$fondo = (int)$this->input->post('fondo');
 			if ($fondo < 0) throw new Exception('El fondo no puede ser negativo', 400);
-			$this->Mcaja->abrirCaja($this->idUsuario(), $fondo);
+			$this->Mcaja->abrirCaja($this->idUsuario(), $fondo, (int)$this->input->post('id_control_caja'));
 			return array('ok' => true);
 		}, true);
 	}
@@ -61,6 +154,15 @@ class Caja extends CI_Controller
 	{
 		$this->ejecutar(function () {
 			return array('clientes' => $this->Mcaja->buscarClientes($this->input->get('q')));
+		});
+	}
+
+	/** Factura: la ficha del cliente y los giros / direcciones / solicitantes usados antes en sus facturas. */
+	public function receptorCliente()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			return $this->Mcaja->receptorCliente((int)$this->input->get('id_cliente'));
 		});
 	}
 
@@ -90,8 +192,8 @@ class Caja extends CI_Controller
 			$r = $this->Mcaja->registrarVenta($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $body);
 			// Venta directa: la comanda la arma el servidor con lo vendido; la pantalla solo recibe su número
 			$r['comanda_id'] = $this->guardarComanda($r['comanda'], array('id_venta' => (int)$r['id_venta'], 'directa' => true,
-				'observacion' => $r['observacion']));
-			unset($r['comanda'], $r['observacion']);
+				'observacion' => $r['observacion'], 'retira' => isset($r['retira']) ? $r['retira'] : ''));
+			unset($r['comanda'], $r['observacion'], $r['retira']);
 			return $r;
 		}, true);
 	}
@@ -122,13 +224,90 @@ class Caja extends CI_Controller
 		});
 	}
 
+	/**
+	 * 14-11-2026: comandas de la app de garzones (Configuraciones > Imprimir las comandas de la app). La pantalla lo
+	 * consulta cada pocos segundos con la caja abierta; cada pedido nuevo de la app vuelve como una comanda guardada y la
+	 * pantalla la imprime igual que las suyas (imprimirComanda / comandaLocal), cada producto en su destino de impresión.
+	 */
+	public function comandasApp()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			$res = array();
+			foreach ($this->Mcaja->tomarComandasApp() as $p) {
+				$id = $this->guardarComanda($p['lineas'], array('id_mesa' => $p['id_mesa'],
+					'observacion' => 'Pedido de la app' . ($p['garzon'] !== '' ? ' - ' . $p['garzon'] : '')));
+				if ($id) $res[] = array('comanda_id' => $id, 'id_mesa' => $p['id_mesa'], 'mesa' => $this->Mcaja->etiquetaMesa($p['id_mesa']));
+			}
+			return array('comandas' => $res);
+		}, true);
+	}
+
 	public function enviarMesa()
 	{
 		$this->ejecutar(function () {
 			$b = $this->cuerpoJson();
+			unset($b['desde_app']);   // marca reservada a ApiMovil/pedidoMesa
 			$r = $this->Mcaja->enviarMesa($this->cajaRequerida(), $this->idUsuario(), $b, $this->idRol());
 			$r['comanda_id'] = $this->guardarComanda($r['comanda'], array('id_mesa' => (int)($b['id_mesa'] ?? 0)));
 			unset($r['comanda']);
+			return $r;
+		}, true);
+	}
+
+	// ---------------- Dividir cuenta guardado en la base (models/Mdivisioncuenta.php) ----------------
+
+	/** División del pedido abierto de la mesa. disponible = false si falta la migración (la pantalla la guarda en el computador). */
+	public function division()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			$this->load->model('Mdivisioncuenta');
+			if (!$this->Mdivisioncuenta->disponible()) return array('disponible' => false);
+			return array('disponible' => true) + $this->Mdivisioncuenta->leer((int)$this->input->get('id_mesa'));
+		});
+	}
+
+	public function guardarDivision()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			$this->cajaRequerida();
+			$this->load->model('Mdivisioncuenta');
+			if (!$this->Mdivisioncuenta->disponible()) throw new Exception('Falta actualizar la base de datos', 409);
+			return $this->Mdivisioncuenta->guardar($this->idUsuario(), $b);
+		}, true);
+	}
+
+	public function borrarDivision()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			$this->cajaRequerida();
+			$this->load->model('Mdivisioncuenta');
+			if (!$this->Mdivisioncuenta->disponible()) return array('ok' => true);
+			return $this->Mdivisioncuenta->borrar((int)($b['id_cotizacion'] ?? 0));
+		}, true);
+	}
+
+	/** Opciones de la mesa > Cambiar garzón: usuarios que pueden atenderla. */
+	public function garzones()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			return array('garzones' => $this->Mcaja->garzones());
+		});
+	}
+
+	/** Cambia quién atiende la mesa (queda en la auditoría de caja). */
+	public function cambiarGarzon()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			$caja = $this->cajaRequerida();
+			$r = $this->Mcaja->cambiarGarzonMesa($b);
+			$this->load->model('Mventasespera');
+			$this->Mventasespera->garzonCambiado($caja, $this->idUsuario(), $r);
 			return $r;
 		}, true);
 	}
@@ -220,10 +399,25 @@ class Caja extends CI_Controller
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) redirect(base_url());
 		if (!$this->Mcaja->tienePermiso($this->idRol())) show_error('Tu rol no tiene acceso a la Caja', 403, 'Sin acceso');
-		$d = $this->Mcaja->precuentaMesa((int)$this->input->get('id_mesa'));
+		// Dividir cuenta: precuenta de una parte (sel = "id_detalle:cantidad,...", la de un comensal) o de la mesa con su
+		// división en partes iguales (partes, parte = cuál se destaca, inicio = partes ya cobradas)
+		$sel = array();
+		foreach (explode(',', (string)$this->input->get('sel')) as $par) {
+			if (count($sel) >= 300) break;
+			$x = explode(':', $par);
+			if (count($x) === 2 && (int)$x[0] > 0 && is_numeric($x[1]) && (float)$x[1] > 0) $sel[] = array('id_detalle' => (int)$x[0], 'cantidad' => (float)$x[1]);
+		}
+		try {
+			$d = $this->Mcaja->precuentaMesa((int)$this->input->get('id_mesa'), $sel ?: null, (int)$this->input->get('partes'));
+		} catch (Exception $e) {
+			show_error($e->getMessage(), 409, 'Precuenta');
+		}
 		if (!$d) show_error('La mesa no tiene un pedido abierto', 404);
 		$d['descuento'] = max(0, (int)$this->input->get('descuento'));
 		$d['papel'] = $this->papelTicket();
+		$d['titulo'] = mb_substr(trim((string)$this->input->get('titulo')), 0, 60);
+		$d['parte'] = max(0, (int)$this->input->get('parte'));
+		$d['inicio'] = max(0, (int)$this->input->get('inicio'));
 		$this->load->view('caja/precuenta.php', $d);
 	}
 
@@ -247,6 +441,93 @@ class Caja extends CI_Controller
 		$this->ejecutar(function () {
 			return array('ventas' => $this->Mcaja->ventasCaja($this->cajaRequerida()->id_caja));
 		});
+	}
+
+	/** Opciones > Documentos: documentos tributarios (cod_sii > 10) de un día, para verlos y reimprimirlos. */
+	public function documentosEmitidos()
+	{
+		$this->ejecutar(function () {
+			$fecha = (string)$this->input->get('fecha');
+			if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha) || !checkdate((int)substr($fecha, 5, 2), (int)substr($fecha, 8, 2), (int)substr($fecha, 0, 4))) {
+				$fecha = date('Y-m-d');
+			}
+			return array('fecha' => $fecha, 'documentos' => $this->Mcaja->documentosEmitidos($fecha));
+		});
+	}
+
+	// ---------------- Ventas en espera y auditoría (10-11-2026, models/Mventasespera.php) ----------------
+
+	/** Opciones > Ventas en espera: las que siguen sin resolver, de todas las cajas. disponible = false si falta la migración. */
+	public function esperas()
+	{
+		$this->ejecutar(function () {
+			$this->load->model('Mventasespera');
+			if (!$this->Mventasespera->disponible()) return array('disponible' => false, 'esperas' => array());
+			$caja = $this->Mcaja->cajaAbierta($this->idUsuario());
+			return array('disponible' => true, 'esperas' => $this->Mventasespera->pendientes($caja ? (int)$caja->id_caja : 0));
+		});
+	}
+
+	/** Opciones > Poner en espera: guarda la venta directa con un nombre. */
+	public function ponerEnEspera()
+	{
+		$this->ejecutar(function () {
+			$this->load->model('Mventasespera');
+			return $this->Mventasespera->crear($this->cajaRequerida(), $this->idUsuario(), $this->cuerpoJson(), 'manual');
+		}, true);
+	}
+
+	/** Saca una venta de la espera para cargarla en la venta (la pantalla exige que la venta actual esté vacía). */
+	public function recuperarEspera()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			$this->load->model('Mventasespera');
+			return $this->Mventasespera->recuperar($this->cajaRequerida(), $this->idUsuario(), (int)($b['id'] ?? 0));
+		}, true);
+	}
+
+	/** Anula una venta en espera con su justificación (y la clave de administrador si Configuraciones la pide para anular). */
+	public function anularEspera()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			$caja = $this->cajaRequerida();
+			$this->Mcaja->autorizarAnulacionEspera($this->idUsuario(), $this->idRol(), $b['autorizacion'] ?? null);
+			$this->load->model('Mventasespera');
+			return $this->Mventasespera->anular($caja, $this->idUsuario(), (int)($b['id'] ?? 0), $b['motivo'] ?? '');
+		}, true);
+	}
+
+	/**
+	 * Salir de la Caja con una venta en curso: por el menú (confirmado por el cajero) o al recargar / cerrar la página
+	 * (lo manda el navegador al salir). La venta directa pasa a espera y lo no enviado de una mesa queda como omitido.
+	 * Acepta JSON o el campo "datos" (navegadores que solo pueden avisar con sendBeacon).
+	 */
+	public function registrarSalida()
+	{
+		$this->ejecutar(function () {
+			$b = json_decode($this->input->raw_input_stream, true);
+			if (!is_array($b)) $b = json_decode((string)$this->input->post('datos'), true);
+			if (!is_array($b)) throw new Exception('Datos inválidos', 400);
+			// Lo que se mandó al cerrar la página debe ser de esta misma empresa (pudo cambiarse en otra pestaña)
+			$huella = md5($this->session->userdata('nombre_conexion') . '|' . $this->session->userdata('db_server') . '|' . $this->session->userdata('bd_name'));
+			if (!isset($b['empresa']) || !is_string($b['empresa']) || !hash_equals($huella, $b['empresa'])) {
+				throw new Exception('La venta pendiente es de otra empresa', 409);
+			}
+			$this->load->model('Mventasespera');
+			return $this->Mventasespera->salida($this->cajaRequerida(), $this->idUsuario(), $b);
+		}, true);
+	}
+
+	/** Eventos de auditoría que informa la pantalla: venta vaciada y productos de mesa no enviados que se descartan. */
+	public function auditar()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			$this->load->model('Mventasespera');
+			return $this->Mventasespera->eventoPantalla($this->cajaRequerida(), $this->idUsuario(), (string)($b['evento'] ?? ''), $b);
+		}, true);
 	}
 
 	public function anular()
@@ -330,11 +611,14 @@ class Caja extends CI_Controller
 	public function abrirGaveta()
 	{
 		$this->ejecutar(function () {
-			$this->cajaRequerida();
+			$caja = $this->cajaRequerida();
 			$this->Mcaja->autorizarGaveta($this->idUsuario(), $this->idRol(), $this->input->post('autorizacion'));
 			$this->load->library('Ticket_impresion');
 			$r = $this->enviarAImpresora($this->Mcaja->destinoCaja(), Ticket_impresion::gaveta());
 			if (!$r['ok']) throw new Exception('No se pudo abrir la gaveta: ' . $r['detalle'], 409);
+			// Auditoría de caja: gaveta abierta sin venta (si falla, no afecta la apertura)
+			$this->load->model('Mventasespera');
+			$this->Mventasespera->gaveta($caja, $this->idUsuario());
 			return $r;
 		}, true);
 	}
@@ -343,6 +627,7 @@ class Caja extends CI_Controller
 	public function imprimirCierre()
 	{
 		$this->ejecutar(function () {
+			$this->validarCajaPropia((int)$this->input->post('id_caja'), false);
 			$datos = $this->Mcaja->datosCierre((int)$this->input->post('id_caja'));
 			if (!$datos) throw new Exception('La caja no existe', 404);
 			$this->load->library('Ticket_impresion');
@@ -417,7 +702,7 @@ class Caja extends CI_Controller
 	{
 		$this->ejecutar(function () {
 			$this->Mcaja->registrarMovimiento($this->cajaRequerida(), $this->input->post('tipo'),
-				$this->input->post('monto'), $this->input->post('observacion'));
+				$this->input->post('monto'), $this->input->post('observacion'), !$this->esGerencia());
 			return array('ok' => true);
 		}, true);
 	}
@@ -425,13 +710,22 @@ class Caja extends CI_Controller
 	public function cerrar()
 	{
 		$this->ejecutar(function () {
+			$caja = $this->cajaRequerida();
+			// No se cierra con ventas en espera pendientes (las mesas con pedido sí: siguen abiertas para el próximo turno)
+			$this->load->model('Mventasespera');
+			$pendientes = $this->Mventasespera->bloqueanCierre($caja->id_caja);
+			if ($pendientes) {
+				throw new Exception('No se puede cerrar la caja con ventas en espera pendientes ('
+					. implode(', ', array_map(function ($e) { return $e->nombre; }, $pendientes))
+					. '). Cárgalas y cóbralas, o anúlalas en Opciones > Ventas en espera.', 409);
+			}
 			$declarado = array();
 			foreach ((array)$this->input->post('declarado') as $idFpago => $monto) {
 				$declarado[(int)$idFpago] = (int)$monto;
 			}
 			$fondoSiguiente = $this->input->post('fondo_siguiente');
 			// Inventario de insumos marcados "al cierre de turno": {"idInsumo:idBodega": cantidad contada}
-			$r = $this->Mcaja->cerrarCaja($this->cajaRequerida(), $this->idUsuario(),
+			$r = $this->Mcaja->cerrarCaja($caja, $this->idUsuario(),
 				(int)$this->input->post('efectivo_contado'),
 				$fondoSiguiente === null || $fondoSiguiente === '' ? null : (int)$fondoSiguiente, $declarado,
 				(array)$this->input->post('inventario'));
@@ -473,6 +767,7 @@ class Caja extends CI_Controller
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
+		$this->accesoVista(function () use ($idVenta) { $this->validarVentaPropia((int)$idVenta); });
 		$doc = $this->Mcaja->documento((int)$idVenta);
 		if (!$doc) show_404();
 		$this->load->model('Mdte');
@@ -481,8 +776,11 @@ class Caja extends CI_Controller
 		$this->load->view('caja/ticket.php', $doc);
 	}
 
-	/** Líneas de la comanda enviadas por la Caja (campo "datos", JSON), ya saneadas. */
-	private function datosComanda($usar)
+	/**
+	 * Líneas de la comanda enviadas por la Caja (campo "datos", JSON), ya saneadas.
+	 * $porProducto = true (impresión local): también en venta directa cada producto va a SU destino de impresión.
+	 */
+	private function datosComanda($usar, $porProducto = false)
 	{
 		$id = $this->input->post('comanda_id');
 		if ($id === null) $id = $this->input->get('comanda_id');
@@ -509,7 +807,7 @@ class Caja extends CI_Controller
 		// Agrupa por destino de impresión; los productos sin destino (o "sin impresión") no salen en ninguna comanda
 		$destinos = $this->Mcaja->destinosComanda(array_column($lineas, 'id_producto'));
 		// Venta directa: la comanda sale completa en la impresora de la caja (Configuraciones), no en cocina/barra
-		$caja = !empty($datos['directa']) && empty($datos['id_mesa']) ? $this->Mcaja->destinoCaja() : null;
+		$caja = !$porProducto && !empty($datos['directa']) && empty($datos['id_mesa']) ? $this->Mcaja->destinoCaja() : null;
 		$grupos = array();
 		foreach ($lineas as $l) {
 			if (!isset($destinos[$l['id_producto']])) continue;
@@ -519,6 +817,8 @@ class Caja extends CI_Controller
 		}
 		$idVenta = isset($datos['id_venta']) ? (int)$datos['id_venta'] : 0;
 		$doc = $idVenta ? $this->Mcaja->documento($idVenta) : null;
+		// Quien retira (venta directa): de la venta; si la base aún no tiene la columna, el de la comanda guardada
+		if ($doc && empty($doc['venta']->nombre_retira) && !empty($datos['retira'])) $doc['venta']->nombre_retira = $texto($datos['retira'], 60);
 		return array(
 			'grupos' => $grupos,
 			'venta' => $doc ? $doc['venta'] : null,
@@ -594,6 +894,41 @@ class Caja extends CI_Controller
 	}
 
 	/**
+	 * Comanda para imprimir en el local por el agente de impresión del equipo (12-11-2026, como mipdv_web): las
+	 * impresoras están en el local y el sistema en un servidor, así que la pantalla le manda cada comanda al agente
+	 * (localhost:5050). Una comanda por destino de impresión de los productos (cocina, barra...), también en venta
+	 * directa, con todo lo de esa venta o mesa junto. Devuelve {comandas: [{destino, nombre, operaciones}]}; la
+	 * comanda queda guardada hasta que la pantalla avise que salió completa (comandaImpresa).
+	 */
+	public function comandaLocal()
+	{
+		$this->ejecutar(function () {
+			$c = $this->datosComanda(false, true);
+			if (!$c) throw new Exception('La comanda ya se imprimió o venció: vuelve a enviarla desde la mesa', 400);
+			$this->load->library('Comanda_local');
+			$res = array();
+			foreach ($c['grupos'] as $g) {
+				$d = $g['destino'];
+				$res[] = array(
+					'nombre' => $g['nombre'],
+					'destino' => array('nombre' => $d['nombre'], 'ip' => $d['ip'], 'puerto' => $d['puerto'], 'ruta_windows' => $d['ruta_windows']),
+					'operaciones' => $this->comanda_local->operaciones($g, $c['venta'], $c['observacion'], $c['mesa'], $c['aviso']),
+				);
+			}
+			return array('comandas' => $res);
+		}, true);
+	}
+
+	/** La comanda salió en todos sus destinos por el agente local: se descarta (no se puede volver a mandar la misma). */
+	public function comandaImpresa()
+	{
+		$this->ejecutar(function () {
+			$this->comandaGuardada((string)$this->input->post('comanda_id'), true);
+			return array('ok' => true);
+		}, true);
+	}
+
+	/**
 	 * Boleta / factura / comprobante directo a la impresora de la caja (Configuraciones > destino de impresión de la caja),
 	 * por el agente de impresión o enviada por el servidor, igual que las comandas. Responde {ok, detalle, navegador}:
 	 * navegador = true cuando no hay cómo mandarla a la impresora y la pantalla debe imprimirla desde el navegador.
@@ -602,6 +937,7 @@ class Caja extends CI_Controller
 	{
 		$this->ejecutar(function () {
 			$idVenta = (int)$this->input->post('id_venta');
+			if ($idVenta) $this->validarVentaPropia($idVenta);
 			$doc = $idVenta ? $this->Mcaja->documento($idVenta) : null;
 			if (!$doc) throw new Exception('La venta no existe', 404);
 			$this->load->model('Mdte');
@@ -615,12 +951,40 @@ class Caja extends CI_Controller
 		}, true);
 	}
 
+	/**
+	 * Documento para imprimir en el equipo de la caja por el agente de impresión local (12-11-2026, como mipdv_web), con
+	 * Configuraciones > Imprimir documentos en el equipo de la caja. Destino: Configuraciones > Impresora para cierre de
+	 * caja ("La de la caja" = la impresora de la caja). Devuelve {destino, operaciones}: las operaciones de PrinterJob
+	 * (Ticket_local, mismo contenido que imprimirTicket) con las copias de Configuraciones; la pantalla se las manda al
+	 * agente (assets/js/impresion-local/impresionLocal.js) y, si no puede, imprime como antes (imprimirTicket).
+	 */
+	public function ticketLocal()
+	{
+		$this->ejecutar(function () {
+			$idVenta = (int)$this->input->post('id_venta');
+			if ($idVenta) $this->validarVentaPropia($idVenta);
+			$doc = $idVenta ? $this->Mcaja->documento($idVenta) : null;
+			if (!$doc) throw new Exception('La venta no existe', 404);
+			$destino = $this->Mcaja->destinoCierre();
+			if (!$destino) throw new Exception('No hay impresora elegida en Configuraciones > Impresora para cierre de caja', 409);
+			$this->load->library('Ticket_local');
+			$ops = $this->ticket_local->operaciones($doc, $this->papelTicket());
+			$todas = array();
+			for ($i = 0; $i < $this->Mcaja->opciones()['copias_documento']; $i++) $todas = array_merge($todas, $ops);
+			return array(
+				'destino' => array('nombre' => $destino['nombre'], 'ip' => $destino['ip'], 'puerto' => $destino['puerto'], 'ruta_windows' => $destino['ruta_windows']),
+				'operaciones' => $todas,
+			);
+		}, true);
+	}
+
 	/** Cierre (caja cerrada) o informe X (caja abierta) en ticket 80mm o 58mm. */
 	public function cierreTicket($idCaja = 0)
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
+		$this->accesoVista(function () use ($idCaja) { $this->validarCajaPropia((int)$idCaja, false); });
 		$datos = $this->Mcaja->datosCierre((int)$idCaja);
 		if (!$datos) show_404();
 		$datos['papel'] = $this->papelTicket();
@@ -633,6 +997,7 @@ class Caja extends CI_Controller
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
+		$this->accesoVista(function () use ($idVenta) { $this->validarVentaPropia((int)$idVenta); });
 		$doc = $this->Mcaja->documento((int)$idVenta);
 		if (!$doc) show_404();
 		$v = $doc['venta'];
@@ -695,10 +1060,12 @@ class Caja extends CI_Controller
 			$filas = array(
 				array('Fecha', $v->fecha_texto, 'Cajero', $v->nombre_usuario),
 			);
+			if (!empty($v->nombre_retira)) $filas[] = array('Retira', $v->nombre_retira, '', '');
 			if ($rut) {
 				$filas[] = array('Cliente', $v->nombre_cliente, 'RUT', $rut);
 				$filas[] = array('Giro', $v->giro, 'Dirección', $v->direccion);
 				if ($v->comuna) $filas[] = array('Comuna', $v->comuna, '', '');
+				if (!empty($v->solicitante)) $filas[] = array('Solicita', $v->solicitante, '', '');
 			}
 			if ($doc['nc']) $filas[] = array('Ref.', $doc['referencia'], '', '');
 			foreach ($filas as $f) {
@@ -710,6 +1077,13 @@ class Caja extends CI_Controller
 				$pdf->Cell(20, 6, $t($f[2]), 'TB');
 				$pdf->SetFont('Arial', '', 9);
 				$pdf->Cell(71, 6, $t(mb_substr((string)$f[3], 0, 40)), 'TBR', 1);
+			}
+			// Motivo de la factura (glosa libre, hasta 200 caracteres): ocupa todo el ancho
+			if ($rut && !empty($v->motivo_factura)) {
+				$pdf->SetFont('Arial', 'B', 9);
+				$pdf->Cell(20, 6, 'Motivo', 'LTB');
+				$pdf->SetFont('Arial', '', 9);
+				$pdf->MultiCell(166, 6, $t($v->motivo_factura), 'TBR');
 			}
 
 			// Detalle
@@ -841,6 +1215,63 @@ class Caja extends CI_Controller
 	private function idRol()
 	{
 		return (int)$this->session->userdata('id_rol');
+	}
+
+	/** 14-11-2026: gerencia (rol 1) ve todas las cajas y lo esperado; los demás roles, solo lo suyo y con cierre ciego. */
+	private function esGerencia()
+	{
+		return $this->idRol() === 1;
+	}
+
+	/**
+	 * Cierre ciego (QA 14-11-2026): sin gerencia no se entrega nada que permita calcular el efectivo esperado
+	 * (antes Caja/estado devolvía efectivo_esperado y lo cobrado en efectivo).
+	 */
+	private function resumenVisible($res)
+	{
+		if ($this->esGerencia() || !is_array($res)) return $res;
+		foreach (array('efectivo_esperado', 'efectivo_ventas', 'propinas_efectivo', 'ventas') as $k) unset($res[$k]);
+		if (!empty($res['por_forma_pago']) && is_array($res['por_forma_pago'])) {
+			foreach ($res['por_forma_pago'] as $i => $f) {
+				if (!empty($f['efectivo'])) { $res['por_forma_pago'][$i]['monto'] = null; $res['por_forma_pago'][$i]['propina'] = null; }
+			}
+		}
+		$res['cierre_ciego'] = true;
+		return $res;
+	}
+
+	/** Sin gerencia: solo cajas propias, y el informe X (caja abierta) no, porque mostraría lo esperado. */
+	private function validarCajaPropia($idCaja, $permitirAbierta)
+	{
+		if ($this->esGerencia()) return;
+		$c = $this->Mcaja->duenoCaja((int)$idCaja);
+		if (!$c) throw new Exception('La caja no existe', 404);
+		if ((int)$c->id_usuario !== $this->idUsuario()) throw new Exception('Esa caja es de otro usuario', 403);
+		if (!$permitirAbierta && !$c->cerrada) {
+			throw new Exception('Cierre ciego: el informe X de una caja abierta solo lo puede ver gerencia', 403);
+		}
+	}
+
+	/** Sin gerencia: solo documentos de ventas hechas en una caja propia. */
+	private function validarVentaPropia($idVenta)
+	{
+		if ($this->esGerencia()) return;
+		$idCaja = $this->Mcaja->cajaDeVenta((int)$idVenta);
+		if ($idCaja === null) throw new Exception('La venta no existe', 404);
+		$this->validarCajaPropia($idCaja, true);
+	}
+
+	/** Para las páginas (ticket, PDF): sin permiso, página de error en vez de JSON. */
+	private function accesoVista($validar)
+	{
+		try {
+			if (!$this->Mcaja->tienePermiso($this->idRol())) throw new Exception('Tu rol no tiene acceso a la Caja', 403);
+			$validar();
+		} catch (Exception $e) {
+			$code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 403;
+			show_error(html_escape($e->getMessage()), $code);
+			exit;
+		}
 	}
 
 	private function cajaRequerida()

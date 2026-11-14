@@ -398,7 +398,8 @@ $config['sess_cookie_name'] = 'RestoWeb_session';
 $config['sess_samesite'] = 'Lax';
 $config['sess_expiration'] = 28800;   // 8 horas (un turno); al cerrar el navegador igual se pide entrar de nuevo si pasa ese tiempo
 //$config['sess_save_path'] = APPPATH . 'cache';
-$config['sess_save_path'] = NULL;
+// NULL = usa session.save_path de php.ini; si php.ini no lo define (PHP de Homebrew en Mac) se usa la carpeta temporal del sistema
+$config['sess_save_path'] = ini_get('session.save_path') ? NULL : sys_get_temp_dir();
 $config['sess_match_ip'] = FALSE;      // FALSE: en celulares la IP cambia entre wifi y datos
 $config['sess_time_to_update'] = 300;
 $config['sess_regenerate_destroy'] = FALSE;   // FALSE: la Caja hace varias peticiones a la vez y con TRUE alguna podía quedar sin sesión al renovar el id
@@ -541,3 +542,74 @@ $config['rewrite_short_tags'] = FALSE;
 | Array:		array('10.0.1.200', '192.168.5.0/24')
 */
 $config['proxy_ips'] = '';
+
+
+/*
+|==========================================================================
+| INTRANET SOLO POR API (10-11-2026) — igual que mipdv_web
+|==========================================================================
+| El login, el cambio de empresa y la base de datos de cada empresa salen de
+| la API de la intranet. Ya no hay conexiones en database.php.
+|
+|   AppWebLogin/index      usuario + clave + id_software (firma HMAC) -> Bearer
+|   AppWebLogin/relogin    cambio de empresa con el Bearer de la sesión
+|   api/validarCliente     servidor (clave del diccionario DbManager) y base
+|                          de la empresa: `con` / `con_sucursal`
+|
+| Las claves NO van en el código: se leen del entorno (SetEnv de Apache,
+| fastcgi_param de Nginx o el .env de la raíz, que carga index.php). Son los
+| mismos nombres que usa mipdv_web. Ver .env.example.
+*/
+if (!function_exists('_resto_env_raw')) {
+	/** Copia de _mipdv_env_raw (mipdv_web/application/config/config.php). */
+	function _resto_env_raw($k, $default = null)
+	{
+		$k = (string)$k;
+		if ($k === '') return $default;
+		if (isset($_SERVER[$k]) && is_string($_SERVER[$k]) && $_SERVER[$k] !== '') {
+			$v = $_SERVER[$k];
+		} elseif (isset($_ENV[$k]) && is_string($_ENV[$k]) && $_ENV[$k] !== '') {
+			$v = $_ENV[$k];
+		} elseif (is_callable('getenv')) {
+			$v = @getenv($k);
+			if (!is_string($v) || $v === '') {
+				return $default;
+			}
+		} else {
+			return $default;
+		}
+		$v = trim($v);
+		if (strlen($v) >= 2) {
+			$first = $v[0];
+			$last  = $v[strlen($v) - 1];
+			if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
+				$v = substr($v, 1, -1);
+			}
+		}
+		return $v === '' ? $default : $v;
+	}
+}
+
+// --- AppWebLogin -----------------------------------------------------------
+$config['app_web_login_url']    = (string)_resto_env_raw('MIPDV_APP_WEB_LOGIN_URL', 'https://datamaule.cl/miIntranet/index.php/api/AppWebLogin/index');
+$config['app_web_login_apikey'] = (string)_resto_env_raw('MIPDV_APP_WEB_LOGIN_APIKEY', '');
+$config['app_web_login_require_apikey'] = true;
+$config['app_web_login_require_hmac']   = true;
+$config['app_web_login_hmac_max_age']   = 300;
+$config['app_web_login_curl_timeout']   = 15;   // segundos
+$config['app_web_login_curl_connect_tm'] = 5;   // segundos
+// El Bearer dura 1 h; se renueva (refrescar_token) cuando le quedan menos de 15 min y se va a usar.
+$config['app_web_login_refresh_margin_seconds'] = 900;
+
+// --- validarCliente: servidor y base de cada empresa --------------------------
+// Principal: API de la intranet. Respaldo: la legacy validarPagos (solo si la intranet no contesta).
+$config['validar_cliente_url']          = (string)_resto_env_raw('MIPDV_VALIDAR_CLIENTE_URL', 'https://datamaule.cl/miIntranet/index.php/api/validarCliente');
+$config['validar_cliente_url_respaldo'] = (string)_resto_env_raw('MIPDV_VALIDAR_CLIENTE_URL_RESPALDO', 'https://datamaule.cl/validarPagos/validarCliente.php');
+// Firma HMAC opcional: el mismo valor que validar_cliente_hmac_secret de la intranet ('' = sin firma).
+// Hoy la intranet tiene validar_cliente_require_hmac = false, así que se deja vacía (igual que mipdv_web).
+$config['validar_cliente_hmac_secret']  = (string)_resto_env_raw('MIPDV_VALIDAR_CLIENTE_HMAC_SECRET', '');
+$config['validar_cliente_omitir_sensibles'] = true;
+// Usuario y clave de validarCliente (antes escritos en Login.php). Mismos nombres de variable
+// que usa la intranet (intranetDatamaule/application/config/api.php: getenv('validar_cliente_legacy_user')).
+$config['validar_cliente_user'] = (string)_resto_env_raw('validar_cliente_legacy_user', '');
+$config['validar_cliente_pass'] = (string)_resto_env_raw('validar_cliente_legacy_pass', '');

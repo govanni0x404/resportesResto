@@ -137,6 +137,8 @@
 
 			<!-- BOTONES  -->
 			<div class="modal-footer">
+				<!-- Imprime una hoja de prueba en este equipo con los datos del formulario (aún sin grabar). Ver probarImpresion.php -->
+				<button onclick="probarImpresionLocal()" type="button" class="btn btn-default pull-left" id="btnProbarImpresion"><i class="fa fa-print"></i> Probar impresión</button>
 				<button onclick="grabarNuevoDestinoDeImpresion()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> Grabar</button>
 				<button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
 			</div>

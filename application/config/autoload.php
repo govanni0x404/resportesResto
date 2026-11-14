@@ -58,7 +58,9 @@ $autoload['packages'] = array();
 |
 |	$autoload['libraries'] = array('user_agent' => 'ua');
 */
-$autoload['libraries'] = array('session', 'database');
+// 'database' ya no se autocarga (10-11-2026): no hay grupos en database.php. La base de cada
+// empresa la abre get_tenant_db() con DbManager, con el servidor y la base que entrega la intranet.
+$autoload['libraries'] = array('session');
 
 /*
 | -------------------------------------------------------------------

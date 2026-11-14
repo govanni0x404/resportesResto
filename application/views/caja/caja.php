@@ -14,6 +14,7 @@
 	.caja-tabs > li > a:hover { color: #3A2A22; }
 	.caja-tabs > li.active > a, .caja-tabs > li.active > a:hover, .caja-tabs > li.active > a:focus { color: var(--t-primario, #B4432E); font-weight: 600; border-bottom-color: var(--t-primario, #B4432E) !important; }
 	.caja-estado { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-left: auto; padding: 8px 0; }
+	.caja-estado .caja-btn-cierre { align-self: center; border-radius: 8px; font-weight: 600; }
 	.caja-estado > div { white-space: nowrap; }
 	.caja-estado small { display: block; color: var(--t-texto-tenue, #A89A8C); text-transform: uppercase; font-size: 10px; letter-spacing: .4px; line-height: 1.2; }
 	.caja-estado b { font-size: 14px; color: #3A2A22; }
@@ -216,6 +217,27 @@
 	.caja-acciones #btnLimpiar { height: 56px; }
 	.caja-acciones #btnEnviarMesa { flex: 1; font-size: 18px; font-weight: 600; border-radius: 8px; height: 56px; }
 	.caja-acciones #btnCobrar { flex: 1; font-size: 20px; font-weight: 600; padding: 13px; border-radius: 8px; height: 56px; }
+	.caja-acciones #btnPrecuenta { flex: 0 0 54px; height: 56px; border-radius: 8px; font-size: 18px; }
+	/* Mesa sin pedido: solo se arma el pedido. Sin panel lateral (cobro, opciones) ni documento; "Enviar a mesa" va junto al total */
+	#btnEnviarMesaBarra { display: none; align-items: center; gap: 8px; height: 50px; margin-left: auto; padding: 0 26px; border-radius: 10px; font-size: 17px; font-weight: 600; }
+	.caja-venta.mesa-sin-pedido .caja-venta-lateral, .caja-venta.mesa-sin-pedido #cboDocumento { display: none !important; }
+	.caja-venta.mesa-sin-pedido #btnEnviarMesaBarra { display: inline-flex; }
+	/* Mesa sin pedido: la ★ va en la barra de búsqueda y abre (o cierra) el panel lateral solo con Favoritos; Pagar y Opciones no aplican */
+	/* .btn.btn-fav-mesa: le gana al color del tema para .btn-default (la ★ va amarilla, igual que en el selector) */
+	.caja-busqueda .btn.btn-fav-mesa { display: none; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; align-items: center; justify-content: center;
+		border: 1px solid var(--t-borde, #EADFD2); border-radius: 8px; background: #fff; color: #E3A008; font-size: 18px; box-shadow: none; }
+	.caja-busqueda .btn.btn-fav-mesa:hover, .caja-busqueda .btn.btn-fav-mesa:focus { background: #FFF6E3; color: #C98A00; }
+	.caja-busqueda .btn.btn-fav-mesa.is-activo, .caja-busqueda .btn.btn-fav-mesa.is-activo:hover, .caja-busqueda .btn.btn-fav-mesa.is-activo:focus {
+		background: var(--t-primario, #B4432E); border-color: var(--t-primario, #B4432E); color: #fff; box-shadow: 0 4px 12px rgba(58, 42, 34, .16); }
+	.caja-venta.mesa-sin-pedido .caja-busqueda .btn.btn-fav-mesa { display: inline-flex; }
+	/* El tema pinta gris los íconos de .btn-default con !important (html body .btn-default i): la ★ sigue el color del botón */
+	html body .caja-busqueda .btn.btn-fav-mesa i { color: inherit !important; }
+	.caja-venta.mesa-sin-pedido.mesa-fav-abierto .caja-venta-lateral { display: flex !important; }
+	.caja-venta.mesa-sin-pedido .caja-panel-selector { display: none; }
+	/* Configuraciones > Modo de la caja web = Venta directa: las mesas con pedido de antes solo se cobran o anulan (sin productos nuevos ni cambio de mesa) */
+	.caja-venta.mesa-modo-directa .caja-busqueda, .caja-venta.mesa-modo-directa #btnMoverMesa, .caja-venta.mesa-modo-directa #btnFavoritos { display: none !important; }
+	.caja-mesas.solo-pendientes .leyenda-libre, .caja-mesas.solo-pendientes #btnOrganizarMesas { display: none !important; }
+	.caja-mesas.solo-pendientes #mesasAyuda { color: var(--t-texto, #3A2A22); font-weight: 600; }
 	.caja-num { text-align: right; white-space: nowrap; }
 
 	/* Modal de productos por familia */
@@ -286,6 +308,12 @@
 	.caja-linea .caja-btn-mensaje.con-mensaje { color: var(--t-primario, #B4432E); border-style: solid; border-color: var(--t-primario-borde, #EFD2C6); background: var(--t-primario-suave, #FBEEE8); }
 	.caja-frame-impresion { position: absolute; left: -10000px; top: 0; width: 400px; height: 600px; border: 0; }
 	.caja-apertura { max-width: 460px; margin: 30px auto; }
+	/* Sin caja abierta: de fondo la misma foto del login, oscurecida para que se lea la tarjeta (11-11-2026) */
+	body.caja-sin-abrir .content-wrapper {
+		background: linear-gradient(rgba(20, 14, 10, .45), rgba(20, 14, 10, .45)),
+			url("<?php echo base_url() ?>assets/dist/img/imgfondoo.jpg") center / cover no-repeat fixed;
+	}
+	body.caja-sin-abrir .caja-apertura { margin-top: 8vh; border: 0; box-shadow: 0 20px 60px rgba(0, 0, 0, .35); }
 	.caja-apertura .icono { width: 88px; height: 88px; line-height: 88px; margin: 6px auto 14px; border-radius: 50%; background: var(--t-primario-suave, #FBEEE8);
 		font-size: 48px; color: var(--t-primario, #B4432E); text-align: center; display: block; }
 	.caja-apertura p.text-muted { font-size: 14px; line-height: 1.6; margin-bottom: 18px; }
@@ -293,6 +321,8 @@
 	.caja-apertura .input-group-addon, .caja-cierre-form .input-group-addon { font-weight: 700; }
 	#fondoInicial, #efectivoContado { font-size: 22px; font-weight: 800; color: var(--t-texto-fuerte, #2A1D17); text-align: right; }
 	#btnAbrirCaja, #btnCerrarCaja { border-radius: 8px; font-weight: 700; padding: 12px; }
+	.caja-control-info { font-size: 13px; margin: 6px 0 0; }
+	.caja-control-info i { margin-right: 4px; }
 
 	/* Pestaña Ventas: estado vacío, acciones y montos legibles */
 	.caja-tab-ayuda { display: block; font-size: 12px; font-weight: 400; color: var(--t-texto-tenue, #A89A8C); margin-top: 2px; text-transform: none; letter-spacing: 0; }
@@ -364,6 +394,7 @@
 	.cierre-kpis small { display: block; font-size: 11px; font-weight: 700; color: var(--t-texto-suave, #7A6A5E); text-transform: uppercase; letter-spacing: .3px; }
 	.cierre-kpis b, .cierre-kpis span#lblDiferencia { display: block; font-size: 20px; font-weight: 800; color: var(--t-texto-fuerte, #2A1D17); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.cierre-kpis .cierre-diferencia { background: #fff; border-width: 2px; }
+	.cierre-kpis.cierre-ciego { grid-template-columns: 1fr; }
 	.cierre-ayuda { font-size: 12px; color: var(--t-texto-tenue, #A89A8C); text-align: center; margin: 8px 0 0; }
 
 	/* Totales con filas (devolución) */
@@ -410,6 +441,9 @@
 	.pago-billetes .btn { flex: 1 1 70px; font-weight: 700; }
 	#btnAgregarPago { font-size: 16px; font-weight: 700; padding: 10px; border-radius: 8px; }
 	.btn-pago-exacto { font-size: 20px; font-weight: 800; padding: 14px; border-radius: 8px; margin-top: auto; }
+	/* Venta directa: nombre de quien retira (opcional, 12-11-2026) */
+	.pago-retira label small { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--t-texto-tenue, #A89A8C); }
+	.pago-retira .form-control { height: 42px; font-size: 17px; font-weight: 700; }
 	#modalPago .modal-footer .btn { border-radius: 8px; }
 	@media (max-width: 767px) {
 		.pago-montos { grid-template-columns: repeat(2, 1fr); }
@@ -556,6 +590,397 @@
 		.cierre-kpis { grid-template-columns: 1fr 1fr; }
 		.cierre-kpis .cierre-diferencia { grid-column: 1 / -1; }
 	}
+
+	/* Datos de la factura (al cobrar con factura) */
+	#modalFactura .fac-cliente { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-bottom: 14px; padding: 10px 12px;
+		border-radius: 10px; background: var(--t-fondo-alt, #FBF8F3); font-size: 14px; }
+	#modalFactura .fac-cliente b { color: var(--t-texto-fuerte, #2A1D17); }
+	#modalFactura .fac-solicita { margin-top: 4px; padding: 10px 12px 0; border: 1px solid var(--t-borde, #EADFD2); border-radius: 10px; }
+	#modalFactura .fac-solicita legend { width: auto; margin: 0 0 4px; padding: 0 6px; border: 0; font-size: 13px; font-weight: 700; color: var(--t-texto, #3A2A22); }
+	#modalFactura label { font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #7A6A5E); }
+	#modalFactura .form-group.has-error .form-control { border-color: #C9372C; }
+	/* Listas del cliente (12-11-2026): se elige de la lista; "Otro…" muestra los campos para escribirlo */
+	#modalFactura [hidden] { display: none !important; }
+	#modalFactura .fac-otro { margin-top: 6px; }
+	#modalFactura .fac-guardar { margin: 4px 0 0; }
+	#modalFactura .fac-guardar label { text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--t-texto, #3A2A22); }
+
+	/* Modal de productos: interruptor tipo iOS "Cerrar al seleccionar" junto a Listo */
+	.modal-productos-pie { flex-wrap: wrap; gap: 10px; }
+	.modal-productos-acciones { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+	.caja-switch { position: relative; display: inline-flex; align-items: center; gap: 9px; margin: 0; font-weight: 600; font-size: 13px;
+		color: var(--t-texto-suave, #7A6A5E); cursor: pointer; -webkit-user-select: none; user-select: none; }
+	.caja-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+	.caja-switch-pista { position: relative; flex: 0 0 46px; width: 46px; height: 28px; border-radius: 14px; background: #D8D2CA; transition: background .2s; }
+	.caja-switch-pista::after { content: ""; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%; background: #fff;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, .25); transition: transform .2s; }
+	.caja-switch input:checked + .caja-switch-pista { background: var(--t-primario, #15803D); }
+	.caja-switch input:checked + .caja-switch-pista::after { transform: translateX(18px); }
+	.caja-switch input:focus-visible + .caja-switch-pista { box-shadow: 0 0 0 3px var(--t-primario-borde, #BBE3C9); }
+	.caja-switch input:checked ~ .caja-switch-texto { color: var(--t-texto, #3A2A22); }
+
+	/* Botón solo ícono junto al buscador: Productos (F2). Favoritos (★) va en el selector del panel lateral */
+	.caja-busqueda .btn-icono { flex: 0 0 44px; width: 44px; padding: 0; font-size: 18px; }
+	.caja-familias .caja-familia-fav i { color: #E3A008; margin-right: 2px; }
+	.caja-familias .caja-familia-fav.btn-success i { color: #fff; }
+
+	/* Ingresos / Retiros, Créditos y Cierre se abren desde el panel Opciones: arriba solo se ven mientras están abiertas.
+	   En modo "solo mesas" sin mesa elegida no se ve la venta (ni su panel), y ahí quedan visibles arriba (js.php). */
+	.caja-tabs > li.caja-tab-opcion:not(.active) { display: none; }
+	.caja-tabs.mostrar-opciones > li.caja-tab-opcion { display: block; }
+
+	/* Paneles laterales de la venta: selector Pagar / Opciones; se ve un panel a la vez y entra deslizándose */
+	.caja-venta-lateral { overflow-x: hidden; }
+	.caja-panel-selector { flex: 0 0 auto; display: flex; gap: 4px; padding: 4px; background: #fff; border: 1px solid var(--t-borde, #EADFD2);
+		border-radius: 14px; box-shadow: var(--t-sombra, 0 1px 2px rgba(58, 42, 34, .05)); }
+	.caja-panel-selector button { flex: 1 1 0; display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 10px;
+		border: 0; border-radius: 10px; background: transparent; color: var(--t-texto-suave, #7A6A5E); font-size: 15px; font-weight: 600;
+		cursor: pointer; transition: background .15s, color .15s; }
+	.caja-panel-selector button:hover { background: var(--t-fondo-alt, #FBF8F3); color: var(--t-texto, #3A2A22); }
+	.caja-panel-selector button.active { background: var(--t-primario, #B4432E); color: #fff; box-shadow: 0 4px 12px rgba(58, 42, 34, .16); }
+	.caja-panel-selector button:focus { outline: none; }
+	.caja-panel-selector button:focus-visible { outline: 2px solid var(--t-primario-borde, #EFD2C6); outline-offset: 2px; }
+	.caja-panel { display: none; flex: 1 0 auto; flex-direction: column; gap: 12px; }
+	.caja-panel.activo { display: flex; -webkit-animation: cajaPanelEntra .22s ease-out both; animation: cajaPanelEntra .22s ease-out both; }
+	.caja-panel.activo.desde-izq { -webkit-animation-name: cajaPanelEntraIzq; animation-name: cajaPanelEntraIzq; }
+	@keyframes cajaPanelEntra { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+	@keyframes cajaPanelEntraIzq { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+	@media (prefers-reduced-motion: reduce) { .caja-panel.activo { -webkit-animation: none; animation: none; } }
+
+	/* Panel Opciones: accesos grandes, de a dos por fila */
+	.caja-opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+	.caja-opcion { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 124px; padding: 14px 10px;
+		border: 1px solid var(--t-borde, #EADFD2); border-radius: 14px; background: #fff; color: var(--t-texto, #3A2A22); text-align: center;
+		cursor: pointer; transition: border-color .15s, background .15s, transform .15s; }
+	.caja-opcion:hover { background: var(--t-fondo-alt, #FBF8F3); border-color: var(--t-primario-borde, #EFD2C6); transform: translateY(-1px); }
+	.caja-opcion:focus { outline: none; }
+	.caja-opcion:focus-visible { outline: 2px solid var(--t-primario-borde, #EFD2C6); outline-offset: 2px; }
+	.caja-opcion i { display: inline-block; width: 50px; height: 50px; line-height: 50px; margin-bottom: 6px; border-radius: 50%; font-size: 22px; text-align: center;
+		background: var(--t-primario-suave, #FBEEE8); color: var(--t-primario, #B4432E); }
+	.caja-opcion[data-abrir="ingreso"] i { background: #E9F1DF; color: #46672A; }
+	.caja-opcion[data-abrir="retiro"] i { background: #FBE9E6; color: #A63A2B; }
+	.caja-opcion[data-abrir="creditos"] i { background: #FFF4DF; color: #9A6B12; font-size: 26px; }
+	.caja-opcion[data-abrir="cierre"] i { background: #F3EEE7; color: #5A4436; font-size: 26px; }
+	.caja-opcion b { font-size: 15px; font-weight: 700; color: var(--t-texto-fuerte, #2A1D17); }
+	.caja-opcion small { font-size: 12px; line-height: 1.3; color: var(--t-texto-suave, #7A6A5E); }
+
+	/* ===== Panel Favoritos (botón ★ del selector): sale desde la derecha, como Pagar y Opciones ===== */
+	/* ★ del selector: solo ícono, a la izquierda de Pagar; marcado igual que Pagar y Opciones cuando el panel está abierto */
+	.caja-panel-selector .sel-fav { flex: 0 0 52px; padding: 0; color: #E3A008; font-size: 18px; }
+	.caja-panel-selector .sel-fav:hover { background: #FFF6E3; color: #C98A00; }
+	.caja-panel-selector .sel-fav.is-activo { background: var(--t-primario, #B4432E); color: #fff; box-shadow: 0 4px 12px rgba(58, 42, 34, .16); }
+	.caja-favoritos { display: flex; flex-direction: column; flex: 1 0 auto; }
+	/* Escritorio (alto fijo): la cabecera queda quieta y solo la lista hace scroll */
+	.caja-venta.alto-fijo #panelFavoritos.activo, .caja-venta.alto-fijo .caja-favoritos { flex: 1 1 0; min-height: 0; }
+	.caja-venta.alto-fijo .fav-lista { flex: 1 1 0; min-height: 0; overflow-y: auto; margin-right: -8px; padding-right: 8px; }
+	.fav-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+	.fav-head-text { min-width: 0; }
+	.fav-title { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; color: var(--t-texto-fuerte, #2A1D17); }
+	.fav-title .fa-star { color: #F5B301; }
+	.fav-resumen { margin-top: 3px; font-size: 12px; color: var(--t-texto-suave, #7A6A5E); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.fav-head-acciones { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+	/* El tema pone los label del panel lateral en mayúsculas pequeñas: el switch Fijar va normal */
+	.caja-venta-lateral .fav-fijar { margin: 0; text-transform: none; letter-spacing: 0; }
+	.fav-fijar .caja-switch-texto { font-size: 13px; font-weight: 700; color: var(--t-texto, #3A2A22); }
+	.fav-recargar { flex-shrink: 0; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--t-borde, #EADFD2);
+		border-radius: 8px; background: #fff; color: var(--t-texto-suave, #7A6A5E); cursor: pointer; }
+	.fav-recargar:hover { background: var(--t-fondo-alt, #FBF8F3); color: var(--t-texto, #3A2A22); }
+	.fav-recargar:focus { outline: none; }
+	.fav-recargar:focus-visible { outline: 2px solid #F5B301; outline-offset: 2px; }
+	.fav-recargar.is-cargando .fa-refresh { -webkit-animation: favGirar .8s linear infinite; animation: favGirar .8s linear infinite; }
+	@keyframes favGirar { to { transform: rotate(360deg); } }
+	.fav-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+	.fav-toolbar[hidden] { display: none; }
+	.caja-venta-lateral .fav-familia { flex: 1; min-width: 0; height: 38px; padding: 0 10px; font-size: 13px; font-weight: 500; cursor: pointer; }
+	.fav-vista { display: inline-flex; flex-shrink: 0; border: 1px solid var(--t-borde, #EADFD2); border-radius: 8px; background: #fff; overflow: hidden; }
+	.fav-vista-btn { width: 38px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent;
+		color: var(--t-texto-suave, #7A6A5E); font-size: 14px; cursor: pointer; }
+	.fav-vista-btn + .fav-vista-btn { border-left: 1px solid var(--t-borde, #EADFD2); }
+	.fav-vista-btn:hover { background: var(--t-fondo-alt, #FBF8F3); color: var(--t-texto, #3A2A22); }
+	.fav-vista-btn.is-activo { background: #FFF4CC; color: #B7791F; }
+	.fav-vista-btn:focus { outline: none; }
+	.fav-vista-btn:focus-visible { outline: 2px solid #F5B301; outline-offset: -2px; }
+	.fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+	.fav-item { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 0; padding: 8px;
+		border: 1px solid var(--t-borde, #EADFD2); border-radius: 10px; background: #fff; color: inherit; font: inherit; text-align: left; cursor: pointer;
+		transition: border-color .15s ease, box-shadow .15s ease, transform .08s ease; }
+	.fav-item:hover { border-color: #F5B301; box-shadow: 0 4px 12px rgba(58, 42, 34, .10); }
+	.fav-item:active { transform: scale(.98); }
+	.fav-item:focus { outline: none; }
+	.fav-item:focus-visible { outline: 2px solid #F5B301; outline-offset: 2px; }
+	.fav-item.en-venta { border-color: var(--t-primario-borde, #EFD2C6); background: var(--t-primario-suave, #FBEEE8); }
+	.fav-cant { position: absolute; top: 6px; right: 6px; z-index: 1; padding: 1px 7px; border-radius: 10px; background: var(--t-primario, #B4432E); color: #fff; font-size: 11px; font-weight: 700; }
+	.fav-img { position: relative; display: flex; align-items: center; justify-content: center; height: 74px; border-radius: 8px; background: var(--t-fondo-alt, #FBF8F3); overflow: hidden; }
+	.fav-img img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+	.fav-img-ph { font-size: 26px; font-weight: 700; color: #C9BBAA; text-transform: uppercase; }
+	.fav-nombre { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em; font-size: 12.5px; font-weight: 600;
+		line-height: 1.25; color: var(--t-texto-fuerte, #2A1D17); text-transform: uppercase; word-break: break-word; }
+	.fav-pie { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: auto; }
+	.fav-precio { font-size: 15px; font-weight: 800; color: var(--t-primario, #B4432E); white-space: nowrap; }
+	.fav-opciones { font-size: 11px; color: var(--t-texto-tenue, #A89A8C); white-space: nowrap; }
+	.fav-ok { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; border-radius: 10px;
+		background: rgba(22, 163, 74, .14); color: #16A34A; font-size: 30px; opacity: 0; pointer-events: none; }
+	.fav-item.is-agregado { border-color: #16A34A; }
+	.fav-item.is-agregado .fav-ok { -webkit-animation: favAgregado .65s ease; animation: favAgregado .65s ease; }
+	@keyframes favAgregado { 0% { opacity: 0; transform: scale(.92); } 25% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+	/* Vista lista */
+	.fav-grid.fav-grid--lista { display: flex; flex-direction: column; gap: 6px; }
+	.fav-grid--lista .fav-item { flex-direction: row; align-items: center; gap: 10px; padding: 6px 10px 6px 6px; }
+	.fav-grid--lista .fav-img { flex-shrink: 0; width: 40px; height: 40px; border-radius: 6px; }
+	.fav-grid--lista .fav-img-ph { font-size: 16px; }
+	.fav-grid--lista .fav-nombre { flex: 1; min-width: 0; min-height: 0; }
+	.fav-grid--lista .fav-cant { position: static; order: 2; flex-shrink: 0; }
+	.fav-grid--lista .fav-pie { order: 3; flex-shrink: 0; margin-top: 0; align-items: flex-end; }
+	.fav-grid--lista .fav-ok { font-size: 22px; }
+	/* Estados: sin favoritos, sin catálogo, familia vacía */
+	.fav-estado { padding: 36px 16px; text-align: center; color: var(--t-texto-suave, #7A6A5E); }
+	.fav-grid .fav-estado { grid-column: 1 / -1; }
+	.fav-estado-icono { display: block; margin-bottom: 10px; font-size: 34px; color: #F5B301; }
+	.fav-estado-titulo { font-size: 15px; font-weight: 700; color: var(--t-texto, #3A2A22); }
+	.fav-estado-texto { margin-top: 6px; font-size: 13px; line-height: 1.4; }
+	@media (max-width: 991px) { .fav-lista { max-height: 70vh; overflow-y: auto; } }
+	@media (prefers-reduced-motion: reduce) {
+		.fav-item { transition: none; }
+		.fav-item.is-agregado .fav-ok, .fav-recargar.is-cargando .fa-refresh { -webkit-animation: none; animation: none; }
+	}
+
+	/* ===== Mesas: las que tienen pedido se destacan en azul; las libres quedan neutras ===== */
+	.mesa-card { background: #fff; border-color: #CFC6B8; color: var(--t-texto, #3A2A22); }
+	.mesa-card.libre:hover { border-color: #8FA88C; }
+	.mesas-leyenda i.libre { background: #fff; border: 1px solid #CFC6B8; }
+	.mesa-card.ocupada, .mesa-card.con-pedido { background: #2563EB; border-color: #1D4ED8; color: #fff; }
+	.mesas-leyenda i.ocupada { background: #2563EB; }
+	/* demora (ámbar) y crítica (rojo) siguen ganando: tienen más clases */
+	.mesa-card.ocupada.demora, .mesa-card.con-pedido.demora { background: #C98A12; border-color: #A87210; }
+	.mesa-card.ocupada.critica, .mesa-card.con-pedido.critica { background: #B83A2A; border-color: #96291C; }
+	.mesa-card.bloqueada { background: #EDE8E1; border-color: #D9D2C9; color: #7A6A5E; }
+
+	/* ===== Drawer de mesa ===== */
+	.mesa-drawer-fondo { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1036; background: rgba(42, 29, 23, .38);
+		opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s linear .2s; }
+	.mesa-drawer-fondo.abierto { opacity: 1; visibility: visible; transition: opacity .2s ease, visibility 0s; }
+	.mesa-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 1037; display: flex; flex-direction: column;
+		width: 1180px; max-width: calc(100vw - var(--t-sidebar, 220px) - 40px); background: var(--t-fondo, #F3ECE1);
+		box-shadow: -14px 0 40px rgba(42, 29, 23, .28); transform: translateX(105%); visibility: hidden;
+		transition: transform .25s ease, width .2s ease, visibility 0s linear .25s; }
+	.mesa-drawer.abierto { transform: none; visibility: visible; transition: transform .25s ease, width .2s ease, visibility 0s; }
+	/* Mesa sin pedido: sin panel lateral, la mitad de ancho. El borde izquierdo se arrastra para ajustarlo (se recuerda en este
+	   computador, por separado con y sin pedido; doble clic vuelve al ancho de siempre). Ver js.php (ancho del drawer de mesa) */
+	.mesa-drawer.sin-pedido { width: 590px; }
+	.mesa-drawer.redimensionando { transition: none; }
+	.mesa-drawer.redimensionando, .mesa-drawer.redimensionando * { cursor: col-resize !important; -webkit-user-select: none; user-select: none; }
+	.mesa-drawer-tirador { position: absolute; top: 0; bottom: 0; left: -6px; z-index: 2; width: 12px; cursor: col-resize; touch-action: none; }
+	.mesa-drawer-tirador::after { content: ''; position: absolute; top: 50%; left: 4px; width: 4px; height: 56px; margin-top: -28px; border-radius: 2px;
+		background: rgba(42, 29, 23, .28); opacity: 0; transition: opacity .15s; }
+	.mesa-drawer:hover .mesa-drawer-tirador::after, .mesa-drawer.redimensionando .mesa-drawer-tirador::after, .mesa-drawer-tirador:focus-visible::after { opacity: 1; }
+	.mesa-drawer-tirador:focus { outline: none; }
+	.mesa-drawer-cab { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px;
+		background: #fff; border-bottom: 1px solid var(--t-borde, #EADFD2); }
+	.mesa-drawer-titulo { min-width: 0; }
+	.mesa-drawer-titulo h3 { margin: 0; font-size: 20px; font-weight: 800; color: var(--t-texto-fuerte, #2A1D17); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.mesa-drawer-titulo h3 i { color: #2563EB; margin-right: 4px; }
+	.mesa-drawer-titulo small { display: block; margin-top: 2px; font-size: 12px; color: var(--t-texto-suave, #7A6A5E); }
+	.mesa-drawer-cerrar { flex: 0 0 auto; width: 40px; height: 40px; border: 1px solid var(--t-borde, #EADFD2); border-radius: 10px; background: #fff;
+		color: var(--t-texto-suave, #7A6A5E); font-size: 26px; line-height: 1; cursor: pointer; }
+	.mesa-drawer-cerrar:hover { background: var(--t-fondo-alt, #FBF8F3); color: var(--t-texto, #3A2A22); }
+	.mesa-drawer-cerrar:focus { outline: none; }
+	.mesa-drawer-cerrar:focus-visible { outline: 2px solid #2563EB; outline-offset: 2px; }
+	.mesa-drawer-cuerpo { flex: 1 1 auto; min-height: 0; padding: 14px 16px; overflow: hidden; }
+	.mesa-drawer-cuerpo > .caja-venta { height: 100%; }
+	/* En el drawer: el nombre ya va en la cabecera, la X reemplaza "Volver a mesas" y el selector Pagar / Opciones no aplica */
+	.mesa-drawer .caja-banner-mesa .nombre, .mesa-drawer #btnSalirMesa { display: none !important; }
+	/* Panel de la mesa: ★ / Pagar / Opciones; en Opciones solo las de la mesa (las de la caja quedan en la venta directa) */
+	#opcionesMesa, .mesa-drawer #panelOpciones > .caja-tarjeta:not(#opcionesMesa), .mesa-drawer #esperasBadgeSel { display: none !important; }
+	.mesa-drawer #opcionesMesa { display: block !important; }
+	.caja-opcion.opcion-mesa:disabled { opacity: .45; cursor: not-allowed; transform: none; background: #fff; }
+	.caja-opcion[data-mesa="mover"] i { background: #E8EEFB; color: #2F5BB7; }
+	.caja-opcion[data-mesa="dividir"] i { background: #F3EEE7; color: #5A4436; }
+	.caja-opcion[data-mesa="garzon"] i { background: #E9F1DF; color: #46672A; }
+	.caja-opcion[data-mesa="reenviar"] i { background: #FFF4DF; color: #9A6B12; }
+	.caja-opcion[data-mesa="precuenta"] i { background: #EEF2F6; color: #3A4A5C; }
+	.caja-opcion[data-mesa="anular"] i { background: #FBE9E6; color: #A63A2B; }
+	.caja-opcion[data-mesa="anular"] b { color: #A63A2B; }
+	.opciones-mesa-ayuda { margin: 10px 0 0; font-size: 12px; color: var(--t-texto-suave, #7A6A5E); }
+	.garzon-actual { margin-bottom: 12px; color: var(--t-texto-suave, #7A6A5E); }
+
+	/* ===== Opciones de la mesa > Dividir cuenta: por comensal (arrastrar), partes iguales o libre (10-11-2026) ===== */
+	#modalDividir .modal-dialog { width: 94%; max-width: 1060px; }
+	#modalDividir [hidden] { display: none !important; }
+	.dc-modos { display: flex; gap: 4px; margin-bottom: 12px; padding: 4px; border: 1px solid var(--t-borde, #EADFD2); border-radius: 12px; background: var(--t-fondo-alt, #FBF8F3); }
+	.dc-modos button { flex: 1 1 0; display: flex; align-items: center; justify-content: center; gap: 8px; height: 42px; border: 0; border-radius: 9px;
+		background: transparent; color: var(--t-texto-suave, #7A6A5E); font-size: 14px; font-weight: 600; }
+	.dc-modos button:hover { color: var(--t-texto, #3A2A22); }
+	.dc-modos button.activo { background: #fff; color: var(--t-texto-fuerte, #2A1D17); box-shadow: 0 1px 4px rgba(58, 42, 34, .14); }
+	.dc-resumen { margin-bottom: 14px; font-size: 13px; color: var(--t-texto-suave, #7A6A5E); }
+	.dc-resumen b { color: var(--t-texto-fuerte, #2A1D17); }
+	.dc-vacio { padding: 30px 12px; border: 1px dashed var(--t-borde, #EADFD2); border-radius: 12px; color: var(--t-texto-suave, #7A6A5E); text-align: center; }
+	.dc-vacio > i { display: block; margin-bottom: 8px; font-size: 30px; color: var(--t-texto-tenue, #A89A8C); }
+	.dc-vacio .btn { margin-top: 14px; }
+	.dc-ayuda { margin: 0 0 12px; font-size: 13px; color: var(--t-texto-suave, #7A6A5E); }
+	.dc-cols { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 16px; align-items: start; }
+	.dc-sin { max-height: 60vh; padding: 10px; overflow-y: auto; border: 2px dashed var(--t-borde, #EADFD2); border-radius: 12px; background: var(--t-fondo-alt, #FBF8F3); }
+	.dc-titulo-col { margin: 2px 4px 10px; font-size: 12px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--t-texto-suave, #7A6A5E); }
+	.dc-prod { position: relative; margin-bottom: 8px; padding: 10px 12px 10px 28px; border: 1px solid var(--t-borde, #EADFD2); border-radius: 10px; background: #fff; cursor: grab; }
+	.dc-prod:active, .dc-item:active { cursor: grabbing; }
+	.dc-prod .dc-asa { position: absolute; top: 13px; left: 12px; color: var(--t-texto-tenue, #A89A8C); }
+	.dc-prod b { display: block; font-size: 13px; color: var(--t-texto-fuerte, #2A1D17); }
+	.dc-prod small { display: block; font-size: 12px; color: var(--t-texto-suave, #7A6A5E); }
+	.dc-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+	.dc-chip { padding: 2px 9px; border: 1px solid var(--t-borde, #EADFD2); border-radius: 12px; background: #fff; color: var(--t-texto, #3A2A22); font-size: 11px; font-weight: 600; }
+	.dc-chip:hover { border-color: var(--t-primario, #15803D); color: var(--t-primario, #15803D); }
+	.dc-chip.dividir { color: #2F5BB7; }
+	.dc-repartir { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: #F3F7FE; font-size: 12px; }
+	.dc-repartir label { display: inline-flex; align-items: center; gap: 4px; margin: 0 10px 6px 0; font-weight: 500; }
+	.dc-sin-listo { padding: 16px; color: #276227; text-align: center; }
+	.dc-arrastrando { opacity: .45; }
+	.dc-zona.sobre { outline: 2px dashed var(--t-primario, #15803D); outline-offset: 2px; background: var(--t-primario-suave, #f1f7ec); }
+	.dc-nuevo { display: flex; gap: 8px; margin-bottom: 12px; }
+	.dc-nuevo input { flex: 1; height: 40px; }
+	.dc-com-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; max-height: 56vh; padding: 3px; overflow-y: auto; }
+	.dc-com { display: flex; flex-direction: column; min-height: 160px; padding: 12px; border: 1px solid var(--t-borde, #EADFD2); border-radius: 12px; background: #fff; }
+	.dc-com-cab { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+	.dc-com-nombre { flex: 1; min-width: 0; height: 30px; padding: 2px 6px; border: 1px solid transparent; border-radius: 6px; background: transparent;
+		font-size: 15px; font-weight: 700; color: var(--t-texto-fuerte, #2A1D17); }
+	.dc-com-nombre:hover, .dc-com-nombre:focus { border-color: var(--t-borde, #EADFD2); background: #fff; outline: none; }
+	.dc-com-quitar { border: 0; background: none; color: var(--t-texto-tenue, #A89A8C); }
+	.dc-com-quitar:hover { color: #A63A2B; }
+	.dc-com-items { flex: 1; min-height: 44px; }
+	.dc-com-vacio { padding: 14px 8px; border: 1px dashed var(--t-borde, #EADFD2); border-radius: 8px; color: var(--t-texto-tenue, #A89A8C); font-size: 12px; text-align: center; }
+	.dc-item { display: flex; align-items: center; gap: 6px; padding: 5px 0; border-bottom: 1px solid var(--t-borde-suave, #F0E8DD); font-size: 13px; cursor: grab; }
+	.dc-item > span:first-child { flex: 1; min-width: 0; }
+	.dc-item .monto { font-weight: 600; white-space: nowrap; }
+	.dc-item button { padding: 0 2px; border: 0; background: none; color: var(--t-texto-tenue, #A89A8C); font-size: 16px; line-height: 1; }
+	.dc-com-pie { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+	.dc-com-pie .total { margin-right: auto; font-size: 18px; font-weight: 800; color: var(--t-texto-fuerte, #2A1D17); }
+	.dc-com.pagado { min-height: 0; border-color: #CFE6CF; background: #F4FAF4; }
+	.dc-com.pagado .dc-com-items { min-height: 0; color: #276227; font-size: 13px; }
+	.dc-iguales-n { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+	.dc-iguales-n label { margin: 0 8px 0 0; }
+	.dc-iguales-n input { width: 74px; height: 42px; font-size: 18px; font-weight: 700; text-align: center; }
+	.dc-iguales-n .btn { width: 42px; height: 42px; }
+	.dc-partes { width: 100%; border: 1px solid var(--t-borde, #EADFD2); border-radius: 12px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+	.dc-partes th { padding: 9px 14px; background: var(--t-fondo-alt, #FBF8F3); color: var(--t-texto-suave, #7A6A5E); font-size: 12px; font-weight: 600; }
+	.dc-partes td { padding: 10px 14px; border-top: 1px solid var(--t-borde-suave, #F0E8DD); vertical-align: middle; }
+	.dc-partes .num { text-align: right; white-space: nowrap; }
+	.dc-partes .acc { width: 1%; text-align: right; white-space: nowrap; }
+	.dc-partes tr.pagada td { color: #276227; background: #F4FAF4; }
+	.dc-partes tfoot td { font-weight: 700; font-size: 15px; }
+	.dc-nota { margin: 10px 0 0; font-size: 12px; color: var(--t-texto-suave, #7A6A5E); }
+	.dc-cobro-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+	.dc-cobro-cab b { font-size: 18px; color: var(--t-texto-fuerte, #2A1D17); }
+	.dc-cobro-cab span { font-size: 24px; font-weight: 800; color: var(--t-primario, #15803D); }
+	.dc-cobro-detalle { max-height: 26vh; margin-bottom: 14px; padding: 8px 12px; overflow-y: auto; border-radius: 10px; background: var(--t-fondo-alt, #FBF8F3); font-size: 13px; }
+	.dc-cobro-detalle div { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
+	.dc-cliente { display: flex; align-items: center; gap: 8px; }
+	.dc-cliente .form-control { flex: 1; }
+	.dc-factura { margin-top: 4px; padding: 10px 12px; border: 1px solid #F2D49B; border-radius: 10px; background: #FFF7E6; }
+	.dc-acciones { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+	@media (max-width: 767px) { .dc-cols { grid-template-columns: 1fr; } .dc-modos button { font-size: 12px; } }
+	.mesa-drawer .caja-banner-mesa { background: #2563EB; }
+	body.mesa-drawer-abierto { overflow: hidden; }
+	body.mesa-drawer-abierto #barraMovil { display: none !important; }
+	@media (max-width: 991px) {
+		.mesa-drawer, .mesa-drawer.sin-pedido { width: 100%; max-width: 100%; }
+		.mesa-drawer-tirador { display: none; }
+		.mesa-drawer-cuerpo { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+		.mesa-drawer-cuerpo > .caja-venta { height: auto; }
+	}
+	@media (prefers-reduced-motion: reduce) { .mesa-drawer, .mesa-drawer-fondo { transition: none; } }
+
+	/* ===== Opciones > Documentos emitidos: lista a la izquierda, vista del documento a la derecha ===== */
+	#modalDocumentos .modal-dialog { width: 94%; max-width: 1180px; }
+	.doc-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 12px; }
+	.doc-filtros .doc-fecha { display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 600; color: var(--t-texto-suave, #7A6A5E); }
+	.doc-filtros .doc-fecha input { width: 170px; height: 40px; }
+	.doc-filtros .doc-buscar { flex: 1 1 260px; }
+	.doc-filtros .doc-buscar input { height: 40px; }
+	.doc-cuerpo { display: flex; gap: 14px; height: 64vh; min-height: 360px; }
+	.doc-lista { flex: 1 1 auto; min-width: 0; overflow: auto; border: 1px solid var(--t-borde, #EADFD2); border-radius: 12px; }
+	.doc-lista .table { margin: 0; }
+	.doc-lista thead th { position: sticky; top: 0; z-index: 1; }
+	#tablaDocumentos tbody tr { cursor: pointer; }
+	#tablaDocumentos tbody tr.activo > td { background: var(--t-primario-suave, #FBEEE8) !important; }
+	#tablaDocumentos tbody tr.anulada > td { color: var(--t-texto-tenue, #A89A8C); }
+	.doc-vista { flex: 0 0 360px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+	.doc-vista-vacia { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1px dashed var(--t-borde, #EADFD2);
+		border-radius: 12px; color: var(--t-texto-tenue, #A89A8C); text-align: center; padding: 20px; }
+	.doc-vista-vacia i { font-size: 34px; }
+	#docFrame { flex: 1; min-height: 0; width: 100%; border: 1px solid var(--t-borde, #EADFD2); border-radius: 12px; background: #fff; }
+	.doc-vista-acciones { display: flex; gap: 8px; }
+	.doc-vista-acciones .btn { flex: 1; }
+	@media (max-width: 991px) {
+		.doc-cuerpo { flex-direction: column; height: auto; }
+		.doc-lista { max-height: 45vh; }
+		.doc-vista { flex-basis: auto; }
+		#docFrame { height: 60vh; flex: none; }
+	}
+
+	/* ===== Ventas en espera (Opciones) y aviso al salir de la Caja con una venta en curso (10-11-2026) ===== */
+	.caja-opcion { position: relative; }
+	.caja-opcion[data-abrir="espera"] i { background: #E8EEFB; color: #2F5BB7; }
+	.caja-opcion[data-abrir="esperas"] i { background: #FFF4DF; color: #9A6B12; }
+	.caja-opcion-badge { position: absolute; top: 10px; right: 10px; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 12px;
+		background: var(--t-primario, #B4432E); color: #fff; font-size: 12px; font-weight: 700; line-height: 24px; }
+	.caja-panel-selector .caja-espera-badge { display: inline-block; min-width: 18px; height: 18px; margin-left: 4px; padding: 0 5px; border-radius: 9px;
+		background: #F5B301; color: #3A2A22; font-size: 11px; font-weight: 700; line-height: 18px; vertical-align: 1px; }
+	.caja-panel-selector .caja-espera-badge[hidden], .caja-opcion-badge[hidden], #opcionesEspera[hidden], #esperasVistaLista[hidden], #esperasVistaAnular[hidden],
+	#esperasAviso[hidden], #salidaDirecta[hidden], #salidaMesa[hidden], #salidaNombreGrupo[hidden] { display: none !important; }
+	#modalEsperas .modal-dialog { width: 94%; max-width: 860px; }
+	.esp-aviso { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: #FFF7E6;
+		border: 1px solid #F2D49B; color: #7A5410; font-size: 13px; }
+	.esp-lista { display: flex; flex-direction: column; gap: 10px; max-height: 62vh; overflow-y: auto; }
+	.esp-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 14px 16px; border: 1px solid var(--t-borde, #EADFD2);
+		border-radius: 12px; background: #fff; }
+	.esp-cabeza { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; }
+	.esp-nombre { font-size: 16px; font-weight: 700; color: var(--t-texto-fuerte, #2A1D17); overflow-wrap: anywhere; }
+	.esp-origen { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; background: #F3EEE7; color: #5A4436; }
+	.esp-origen.menu { background: #E8EEFB; color: #2F5BB7; }
+	.esp-origen.recarga { background: #FFF4DF; color: #8A5D0B; }
+	.esp-total { font-size: 18px; font-weight: 700; color: var(--t-texto-fuerte, #2A1D17); text-align: right; white-space: nowrap; }
+	.esp-productos { grid-column: 1; font-size: 13px; color: var(--t-texto, #3A2A22); overflow-wrap: anywhere; }
+	.esp-meta { grid-column: 1; font-size: 12px; color: var(--t-texto-suave, #7A6A5E); }
+	.esp-acciones { grid-column: 2; grid-row: 2 / span 2; display: flex; align-items: flex-end; justify-content: flex-end; gap: 8px; }
+	.esp-vacio { padding: 36px 12px; text-align: center; color: var(--t-texto-tenue, #A89A8C); }
+	.esp-vacio i { display: block; margin-bottom: 8px; font-size: 34px; }
+	.esp-anular-detalle { margin-bottom: 12px; padding: 12px 14px; border-radius: 10px; background: var(--t-fondo-alt, #FBF8F3); }
+	.mesa-drawer #opcionesEspera { display: none !important; }   /* en una mesa no hay venta en espera */
+	.salida-bloque { display: flex; gap: 12px; margin-bottom: 12px; padding: 12px 14px; border: 1px solid; border-radius: 12px; }
+	.salida-bloque > i { flex: 0 0 auto; margin-top: 2px; font-size: 22px; }
+	.salida-bloque.directa { background: #F3F7FE; border-color: #C9D8F5; }
+	.salida-bloque.directa > i { color: #2F5BB7; }
+	.salida-bloque.mesa { background: #FFF7E6; border-color: #F2D49B; }
+	.salida-bloque.mesa > i { color: #9A6B12; }
+	.salida-bloque p { margin: 0 0 6px; }
+	.salida-bloque .form-group { margin: 8px 0 0; }
+	@media (max-width: 767px) {
+		.esp-item { grid-template-columns: 1fr; }
+		.esp-total { text-align: left; }
+		.esp-acciones { grid-column: 1; grid-row: auto; justify-content: flex-start; }
+	}
+	/* Producto a granel (fraccionable + "Pedir cantidad en venta"), 12-11-2026: ventana Por valor | Por peso */
+	.pes-modo { display: flex; gap: 0; margin-bottom: 16px; border: 1px solid var(--t-borde, #e6eaf0); border-radius: 10px; overflow: hidden; }
+	.pes-modo button { flex: 1; border: 0; background: #fff; padding: 12px 10px; font-size: 16px; font-weight: 600; color: var(--t-texto-suave, #6b7a90); }
+	.pes-modo button + button { border-left: 1px solid var(--t-borde, #e6eaf0); }
+	.pes-modo button.activo { background: var(--t-primario, #558B2F); color: #fff; }
+	.pes-modo button i { margin-right: 6px; }
+	.pes-precio { text-align: center; color: var(--t-texto-suave, #6b7a90); margin-bottom: 10px; font-size: 15px; }
+	.pes-precio b { color: var(--t-texto-fuerte, #2b3a55); }
+	.pes-entrada { position: relative; }
+	.pes-entrada label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #6b7a90); margin-bottom: 6px; }
+	.pes-entrada .pes-input { width: 100%; height: 76px; font-size: 40px; font-weight: 700; text-align: right; padding: 6px 70px 6px 54px;
+		border: 2px solid var(--t-borde, #e6eaf0); border-radius: 12px; color: var(--t-texto-fuerte, #2b3a55); background: #fff; }
+	.pes-entrada .pes-input:focus { outline: 0; border-color: var(--t-primario, #558B2F); box-shadow: 0 0 0 3px rgba(85, 139, 47, .15); }
+	.pes-entrada.pes-error .pes-input { border-color: #c9302c; }
+	.pes-entrada.sin-unidad .pes-input { padding-right: 20px; }
+	.pes-entrada .pes-pre, .pes-entrada .pes-suf { position: absolute; bottom: 0; height: 76px; line-height: 76px; font-size: 24px; font-weight: 600; color: var(--t-texto-tenue, #8a94a6); }
+	.pes-entrada .pes-pre { left: 20px; }
+	.pes-entrada .pes-suf { right: 18px; }
+	.pes-msg { min-height: 20px; margin: 6px 2px 0; font-size: 13px; color: #c9302c; }
+	.pes-resultado { margin-top: 12px; padding: 14px 16px; border-radius: 12px; background: var(--t-fondo-alt, #f7f9fa); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+	.pes-resultado span { font-size: 14px; color: var(--t-texto-suave, #6b7a90); }
+	.pes-resultado b { font-size: 30px; color: var(--t-texto-fuerte, #2b3a55); }
+	.pes-nota { margin: 8px 2px 0; font-size: 12px; color: var(--t-texto-tenue, #8a94a6); min-height: 16px; }
+	#btnConfirmarPesable { min-width: 140px; font-weight: 700; }
 </style>
 
 <div class="row caja">
@@ -568,7 +993,22 @@
 			</div>
 			<div class="panel-body">
 				<i class="pe-7s-calculator icono"></i>
-				<p class="text-center text-muted">No tienes una caja abierta.<br>Ingresa el fondo inicial (sencillo) para comenzar a vender.</p>
+				<p class="text-center text-muted" id="textoApertura">No tienes una caja abierta.<br>Ingresa el fondo inicial (sencillo) para comenzar a vender.</p>
+				<!-- Herramientas > Control de cajas: la caja define la lista de precios y la bodega del stock -->
+				<!-- 12-11-2026: primero la empresa y la sucursal; después las cajas de esa sucursal que no están en uso -->
+				<div class="form-group" id="grupoEmpresaApertura" style="display:none">
+					<label for="cboEmpresaApertura">Empresa</label>
+					<select class="form-control" id="cboEmpresaApertura"></select>
+				</div>
+				<div class="form-group" id="grupoSucursalApertura" style="display:none">
+					<label for="cboSucursalApertura">Sucursal</label>
+					<select class="form-control" id="cboSucursalApertura"></select>
+				</div>
+				<div class="form-group" id="grupoControlCaja" style="display:none">
+					<label for="cboControlCaja">Caja</label>
+					<select class="form-control input-lg" id="cboControlCaja"></select>
+					<p class="help-block caja-control-info" id="infoControlCaja"></p>
+				</div>
 				<div class="form-group">
 					<label for="fondoInicial">Fondo inicial</label>
 					<div class="input-group">
@@ -587,23 +1027,19 @@
 				<span><i class="pe-7s-cart"></i> Ver venta (<span id="barraItems">0</span>)</span>
 				<span id="barraTotal">$0</span>
 			</div>
-			<div class="alert alert-warning" id="avisoDtePrueba" style="display:none; margin-bottom:10px">
-				<i class="fa fa-exclamation-triangle"></i> <b>MODO PRUEBAS:</b> las boletas y facturas se emiten con la cuenta de pruebas de Cloud Apps y no llegan al SII.
-			</div>
 			<div class="caja-barra">
 				<ul class="nav nav-tabs caja-tabs">
-					<li class="active"><a href="#tabVenta" data-toggle="tab" id="lnkVenta"><i class="pe-7s-cart"></i> Venta</a></li>
-					<li id="navMesas" style="display:none"><a href="#tabMesas" data-toggle="tab" id="lnkMesas"><i class="fa fa-th"></i> Mesas <span class="badge" id="mesasOcupadas" style="display:none">0</span></a></li>
-					<li><a href="#tabVentas" data-toggle="tab" id="lnkVentas"><i class="pe-7s-note2"></i> Ventas</a></li>
-					<li><a href="#tabMovimientos" data-toggle="tab" id="lnkMovimientos"><i class="pe-7s-cash"></i> Ingresos / Retiros</a></li>
-					<li><a href="#tabCreditos" data-toggle="tab" id="lnkCreditos"><i class="pe-7s-credit"></i> Créditos</a></li>
-					<li><a href="#tabCierre" data-toggle="tab" id="lnkCierre"><i class="pe-7s-lock"></i> Cierre</a></li>
+					<li class="active"><a href="#tabVenta" data-toggle="tab" id="lnkVenta"><i class="pe-7s-cart"></i> Venta directa</a></li>
+					<li id="navMesas" style="display:none"><a href="#tabMesas" data-toggle="tab" id="lnkMesas"><i class="fa fa-th"></i> <span id="lnkMesasTexto">Mesas y recintos</span> <span class="badge" id="mesasOcupadas" style="display:none">0</span></a></li>
+					<li class="caja-tab-opcion"><a href="#tabVentas" data-toggle="tab" id="lnkVentas"><i class="pe-7s-note2"></i> Ventas</a></li>
+					<li class="caja-tab-opcion"><a href="#tabMovimientos" data-toggle="tab" id="lnkMovimientos"><i class="pe-7s-cash"></i> Ingresos / Retiros</a></li>
+					<li class="caja-tab-opcion"><a href="#tabCreditos" data-toggle="tab" id="lnkCreditos"><i class="pe-7s-credit"></i> Créditos</a></li>
+					<li class="caja-tab-opcion"><a href="#tabCierre" data-toggle="tab" id="lnkCierre"><i class="pe-7s-lock"></i> Cierre</a></li>
 				</ul>
 				<div class="caja-estado">
+					<button type="button" class="btn btn-danger btn-sm caja-btn-cierre" id="btnIrCierre" title="Contar el dinero y cerrar la caja"><i class="fa fa-lock"></i> Cerrar caja</button>
 					<div><small>Caja</small><b id="estCaja">-</b></div>
 					<div><small>Apertura</small><b id="estApertura">-</b></div>
-					<div><small>Fondo inicial</small><b id="estFondo">$0</b></div>
-					<div class="ok"><small>Ventas</small><b id="estVentas">$0</b></div>
 				</div>
 			</div>
 
@@ -618,7 +1054,9 @@
 									<input type="text" id="buscarProducto" class="form-control" placeholder="Buscar por nombre o código · cantidad*código para varios (ej: 3*5)" autocomplete="off">
 									<div class="caja-resultados" id="resultados"></div>
 								</div>
-								<button type="button" class="btn btn-success btn-catalogo" id="btnCatalogo" title="Ver todos los productos por familia (F2)"><i class="fa fa-th-large"></i> Productos</button>
+								<!-- Solo con una mesa sin pedido (sin panel lateral): abre y cierra el panel Favoritos -->
+								<button type="button" class="btn btn-default btn-fav-mesa" id="btnFavMesa" title="Favoritos" aria-label="Favoritos" aria-pressed="false" aria-controls="panelFavoritos"><i class="fa fa-star"></i></button>
+								<button type="button" class="btn btn-success btn-catalogo btn-icono" id="btnCatalogo" title="Productos por familia (F2)" aria-label="Productos"><i class="fa fa-th-large"></i></button>
 								<select id="cboLista" class="form-control" title="Lista de precios"></select>
 							</div>
 
@@ -626,18 +1064,8 @@
 								<div class="caja-banner-mesa" id="bannerMesa" style="display:none">
 									<span class="nombre"><i class="fa fa-th"></i> <b id="bannerMesaNum"></b></span>
 									<span class="tiempo"><i class="fa fa-clock-o"></i> <span id="bannerMesaTiempo">Sin enviar</span></span>
-									<span class="caja-cobro-parcial" id="avisoCobroParcial" style="display:none"><i class="fa fa-scissors"></i> Cobrando una parte <a href="#" id="btnCancelarParcial">Cancelar</a></span>
-									<button type="button" class="btn btn-default btn-sm" id="btnPrecuenta" style="display:none" title="Imprime el detalle en la caja para que el cliente lo revise antes de pagar"><i class="fa fa-file-text-o"></i> Precuenta</button>
-									<div class="btn-group" id="grupoOpcionesMesa" style="display:none">
-										<button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown"><i class="fa fa-ellipsis-v"></i> Opciones <span class="caret"></span></button>
-										<ul class="dropdown-menu dropdown-menu-right">
-											<li><a href="#" id="btnMoverMesa"><i class="fa fa-exchange"></i> Cambiar o dividir mesa</a></li>
-											<li><a href="#" id="btnCobrarParte"><i class="fa fa-scissors"></i> Cobrar solo una parte</a></li>
-											<li><a href="#" id="btnReenviarTodo"><i class="fa fa-repeat"></i> Volver a enviar todo a cocina</a></li>
-											<li class="divider"></li>
-											<li><a href="#" id="btnAnularPedido" class="text-danger"><i class="fa fa-ban"></i> Anular pedido y liberar</a></li>
-										</ul>
-									</div>
+									<span class="caja-cobro-parcial" id="avisoCobroParcial" style="display:none"><i class="fa fa-scissors"></i> <span id="avisoCobroParcialTexto">Cobrando una parte</span> <a href="#" id="btnCancelarParcial">Cancelar</a></span>
+									<!-- Precuenta (abajo, en Pagar) y las opciones de la mesa (panel Opciones) ya no van en esta franja -->
 									<button type="button" class="btn btn-default btn-sm" id="btnSalirMesa"><i class="fa fa-arrow-left"></i> Volver a mesas</button>
 								</div>
 								<div class="caja-linea-cab">
@@ -650,12 +1078,23 @@
 								<div class="caja-lineas" id="lineas"></div>
 								<div class="caja-carro-pie">
 									<select id="cboDocumento" class="form-control" title="Documento"></select>
+									<!-- Mesa sin pedido: no hay panel lateral; el envío va aquí, junto al total -->
+									<button type="button" class="btn btn-primary btn-lg" id="btnEnviarMesaBarra" disabled><i class="fa fa-paper-plane"></i> Enviar a mesa</button>
 									<div class="total">Total <b id="lblTotal">$0</b></div>
 								</div>
 							</div>
 						</div>
 
 						<div class="caja-venta-lateral">
+							<!-- Paneles laterales: los botones muestran uno y ocultan los otros (★ Favoritos / Pagar / Opciones), ver js.php -->
+							<div class="caja-panel-selector" role="tablist" aria-label="Panel lateral de la venta">
+								<button type="button" class="sel-fav" id="btnFavoritos" title="Favoritos" aria-label="Favoritos" aria-pressed="false" aria-controls="panelFavoritos"><i class="fa fa-star"></i></button>
+								<button type="button" class="active" data-panel="pago" role="tab" aria-selected="true" aria-controls="panelPago"><i class="fa fa-money"></i> Pagar</button>
+								<button type="button" data-panel="opciones" role="tab" aria-selected="false" aria-controls="panelOpciones"><i class="fa fa-sliders"></i> Opciones<span class="caja-espera-badge" id="esperasBadgeSel" title="Ventas en espera" hidden></span></button>
+							</div>
+
+							<!-- Panel Pagar: el cobro de siempre (cliente, descuento, observación, totales y Cobrar) -->
+							<div class="caja-panel activo" id="panelPago" data-panel="pago" role="tabpanel">
 							<div class="caja-tarjeta">
 								<div class="caja-tarjeta-titulo">Cliente</div>
 								<div class="caja-cliente">
@@ -691,8 +1130,76 @@
 								<div class="fila" id="filaExento" style="display:none"><span>Exento</span><span id="lblExento">$0</span></div>
 								<div class="caja-acciones">
 									<button class="btn btn-default btn-lg" id="btnLimpiar" title="Vaciar venta"><i class="fa fa-trash"></i></button>
+									<button class="btn btn-default btn-lg" id="btnPrecuenta" style="display:none" title="Precuenta: imprime el detalle para que el cliente lo revise antes de pagar" aria-label="Precuenta"><i class="fa fa-print"></i></button>
 									<button class="btn btn-primary btn-lg" id="btnEnviarMesa" style="display:none" disabled><i class="fa fa-paper-plane"></i> Enviar a mesa</button>
 									<button class="btn btn-success btn-lg" id="btnCobrar" disabled><i class="fa fa-money"></i> Cobrar <span id="lblCobrar"></span></button>
+								</div>
+							</div>
+							</div>
+
+							<!-- Panel Opciones: lo que antes eran pestañas arriba (Ingresos / Retiros, Créditos y Cierre) -->
+							<div class="caja-panel" id="panelOpciones" data-panel="opciones" role="tabpanel">
+								<!-- Opciones de la mesa (solo en el panel de la mesa): lo que antes era el menú "Opciones" de la franja azul -->
+								<div class="caja-tarjeta" id="opcionesMesa">
+									<div class="caja-tarjeta-titulo">Mesa</div>
+									<div class="caja-opciones">
+										<button type="button" class="caja-opcion opcion-mesa" id="btnMoverMesa" data-mesa="mover"><i class="fa fa-exchange"></i><b>Cambiar mesa</b><small>Pasar todo o parte a otra mesa</small></button>
+										<button type="button" class="caja-opcion opcion-mesa" id="btnCobrarParte" data-mesa="dividir"><i class="fa fa-scissors"></i><b>Dividir cuenta</b><small>Cobrar solo una parte</small></button>
+										<button type="button" class="caja-opcion opcion-mesa" id="btnCambiarGarzon" data-mesa="garzon"><i class="fa fa-user"></i><b>Cambiar garzón</b><small id="opcionGarzonActual">Quién atiende la mesa</small></button>
+										<button type="button" class="caja-opcion opcion-mesa" id="btnReenviarTodo" data-mesa="reenviar"><i class="fa fa-repeat"></i><b>Reenviar a cocina</b><small>Volver a imprimir la comanda</small></button>
+										<button type="button" class="caja-opcion opcion-mesa" id="btnPrecuentaOpcion" data-mesa="precuenta"><i class="fa fa-print"></i><b>Precuenta</b><small>Detalle para el cliente</small></button>
+										<button type="button" class="caja-opcion opcion-mesa" id="btnAnularPedido" data-mesa="anular"><i class="fa fa-ban"></i><b>Anular pedido</b><small>Anula todo y libera la mesa</small></button>
+									</div>
+									<p class="opciones-mesa-ayuda" id="opcionesMesaAyuda">Envía el pedido a la mesa para usar estas opciones.</p>
+								</div>
+								<!-- Ventas en espera (10-11-2026): solo venta directa; lógica en js.php (ventas en espera) -->
+								<div class="caja-tarjeta" id="opcionesEspera" hidden>
+									<div class="caja-tarjeta-titulo">Venta</div>
+									<div class="caja-opciones">
+										<button type="button" class="caja-opcion" data-abrir="espera"><i class="fa fa-pause"></i><b>Poner en espera</b><small>Guarda la venta con un nombre</small></button>
+										<button type="button" class="caja-opcion" data-abrir="esperas"><i class="fa fa-clock-o"></i><b>Ventas en espera</b><small>Cargar o anular</small><span class="caja-opcion-badge" id="esperasBadge" hidden></span></button>
+									</div>
+								</div>
+								<div class="caja-tarjeta">
+									<div class="caja-tarjeta-titulo">Caja</div>
+									<div class="caja-opciones">
+										<button type="button" class="caja-opcion" data-abrir="ingreso"><i class="fa fa-arrow-down"></i><b>Ingreso</b><small>Dinero que entra a la caja</small></button>
+										<button type="button" class="caja-opcion" data-abrir="retiro"><i class="fa fa-arrow-up"></i><b>Retiro</b><small>Retiros y gastos</small></button>
+										<button type="button" class="caja-opcion" data-abrir="creditos"><i class="pe-7s-credit"></i><b>Créditos</b><small>Ventas a crédito y abonos</small></button>
+										<button type="button" class="caja-opcion" data-abrir="cierre"><i class="pe-7s-lock"></i><b>Cierre</b><small>Contar y cerrar la caja</small></button>
+										<button type="button" class="caja-opcion" data-abrir="documentos"><i class="fa fa-file-text-o"></i><b>Documentos</b><small>Ver y reimprimir boletas y facturas</small></button>
+										<button type="button" class="caja-opcion" data-abrir="ventas"><i class="pe-7s-note2"></i><b>Ventas</b><small>Anular, devolver o reenviar al SII</small></button>
+									</div>
+								</div>
+							</div>
+
+							<!-- Panel Favoritos: se abre con el botón ★ del selector (a la izquierda de Pagar) y sale desde la derecha.
+							     Los productos marcados «Favorito En Caja» en la Carta, con el precio de la lista elegida. Un clic agrega
+							     igual que el buscador; sin «Fijar» vuelve a Pagar. Lógica en js.php (panel Favoritos). -->
+							<div class="caja-panel" id="panelFavoritos" data-panel="favoritos" role="region" aria-labelledby="favTitulo">
+								<div class="caja-tarjeta caja-favoritos">
+									<div class="fav-head">
+										<div class="fav-head-text">
+											<h4 id="favTitulo" class="fav-title"><i class="fa fa-star" aria-hidden="true"></i> Favoritos</h4>
+											<div id="favResumen" class="fav-resumen" aria-live="polite"></div>
+										</div>
+										<div class="fav-head-acciones">
+											<label class="caja-switch fav-fijar" title="Al agregar un producto se queda en Favoritos en vez de volver a Pagar">
+												<span class="caja-switch-texto">Fijar</span>
+												<input type="checkbox" id="favFijar" role="switch">
+												<span class="caja-switch-pista" aria-hidden="true"></span>
+											</label>
+											<button type="button" id="btnFavRecargar" class="fav-recargar" title="Actualizar favoritos y precios" aria-label="Actualizar favoritos"><i class="fa fa-refresh" aria-hidden="true"></i></button>
+										</div>
+									</div>
+									<div id="favToolbar" class="fav-toolbar" hidden>
+										<select id="favFamilia" class="form-control fav-familia" aria-label="Filtrar favoritos por familia"><option value="0">Todas las familias</option></select>
+										<div class="fav-vista" role="group" aria-label="Ver favoritos como">
+											<button type="button" class="fav-vista-btn" data-fav-vista="iconos" title="Ver como íconos"><i class="fa fa-th-large" aria-hidden="true"></i></button>
+											<button type="button" class="fav-vista-btn" data-fav-vista="lista" title="Ver como lista"><i class="fa fa-list" aria-hidden="true"></i></button>
+										</div>
+									</div>
+									<div id="favLista" class="fav-lista"></div>
 								</div>
 							</div>
 						</div>
@@ -705,18 +1212,20 @@
 						<div class="mesas-barra">
 							<div class="mesas-sectores" id="mesasSectores"></div>
 							<div class="mesas-herramientas">
+								<!-- 14-11-2026: recargar al tiro (pedidos que llegan de la app de garzones u otra caja) -->
+								<button type="button" class="btn btn-default btn-sm" id="btnActualizarMesas" title="Volver a cargar las mesas"><i class="fa fa-refresh"></i> Actualizar</button>
 								<button type="button" class="btn btn-default btn-sm" id="btnOrganizarMesas"><i class="fa fa-arrows"></i> Organizar mesas</button>
 								<button type="button" class="btn btn-default btn-sm" id="btnCancelarPlano" style="display:none">Cancelar</button>
 								<button type="button" class="btn btn-success btn-sm" id="btnGuardarPlano" style="display:none"><i class="fa fa-check"></i> Guardar plano</button>
 							</div>
 						</div>
 						<div class="mesas-leyenda">
-							<span><i class="libre"></i> Libre</span>
-							<span><i class="ocupada"></i> Ocupada</span>
+							<span class="leyenda-libre"><i class="libre"></i> Libre</span>
+							<span><i class="ocupada"></i> Con pedido</span>
 							<span><i class="demora"></i> Más de 1 hora</span>
 							<span><i class="critica"></i> Más de 2 horas</span>
 							<span><i class="bloqueada"></i> Bloqueada</span>
-							<span class="text-muted" id="mesasAyuda">Toca una mesa libre para tomar el pedido, o una ocupada para agregar productos o cobrar.</span>
+							<span class="text-muted" id="mesasAyuda">Toca una mesa libre para tomar el pedido, o una con pedido para agregar productos, pedir la precuenta o cobrar.</span>
 						</div>
 						<div id="mesasGrilla"></div>
 					</div>
@@ -843,11 +1352,12 @@
 								</div>
 								<div class="panel-body caja-cierre-form">
 									<div class="form-group">
-										<label for="efectivoContado">Efectivo contado (incluye el fondo inicial, ya pagadas las propinas)</label>
+										<label for="efectivoContado">Efectivo contado * (incluye el fondo inicial, ya pagadas las propinas)</label>
 										<div class="input-group">
 											<span class="input-group-addon">$</span>
-											<input type="number" min="0" step="1" class="form-control input-lg" id="efectivoContado">
+											<input type="number" min="0" step="1" class="form-control input-lg" id="efectivoContado" placeholder="Cuenta el efectivo y escribe el total">
 										</div>
+										<p class="help-block">Cierre ciego: el sistema no muestra cuánto efectivo debería haber. La diferencia queda registrada al cerrar.</p>
 									</div>
 									<div class="row">
 										<div class="col-xs-6 form-group">
@@ -863,10 +1373,8 @@
 										</div>
 									</div>
 									<div id="declaradoOtros"></div>
-									<div class="cierre-kpis">
-										<div><small>Esperado</small><b id="lblEsperado">$0</b></div>
-										<div><small>Declarado</small><b id="lblDeclarado">$0</b></div>
-										<div class="cierre-diferencia"><small>Diferencia</small><span id="lblDiferencia">$0</span></div>
+									<div class="cierre-kpis cierre-ciego">
+										<div><small>Total declarado</small><b id="lblDeclarado">$0</b></div>
 									</div>
 									<button class="btn btn-danger btn-lg btn-block" id="btnCerrarCaja"><i class="fa fa-lock"></i> Cerrar caja</button>
 									<p class="cierre-ayuda">Después de cerrar no se pueden registrar más ventas en esta caja.</p>
@@ -877,6 +1385,24 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Drawer de mesa: al elegir una mesa, su venta (detalle, agregar productos, enviar, precuenta, cobrar y opciones de
+		     la mesa) se abre aquí, desde la derecha, sobre la pestaña Mesas. La venta (.caja-venta) se mueve a este panel
+		     mientras la mesa está abierta y vuelve a la pestaña Venta al cerrarla; la venta directa que hubiera queda
+		     guardada aparte y se recupera al cerrar (js.php, "drawer de mesa"). -->
+		<div class="mesa-drawer-fondo" id="mesaDrawerFondo"></div>
+		<aside class="mesa-drawer" id="mesaDrawer" role="dialog" aria-modal="true" aria-labelledby="mesaDrawerNombre" aria-hidden="true">
+			<div class="mesa-drawer-tirador" id="mesaDrawerTirador" role="separator" aria-orientation="vertical" aria-label="Ancho del panel de la mesa" tabindex="0"
+				title="Arrastra para cambiar el ancho (doble clic: ancho de siempre)"></div>
+			<div class="mesa-drawer-cab">
+				<div class="mesa-drawer-titulo">
+					<h3><i class="fa fa-th" aria-hidden="true"></i> <span id="mesaDrawerNombre"></span></h3>
+					<small id="mesaDrawerInfo"></small>
+				</div>
+				<button type="button" class="mesa-drawer-cerrar" id="btnCerrarDrawerMesa" title="Volver a mesas (Esc)" aria-label="Volver a mesas">&times;</button>
+			</div>
+			<div class="mesa-drawer-cuerpo" id="mesaDrawerCuerpo"></div>
+		</aside>
 	</div>
 </div>
 
@@ -899,8 +1425,269 @@
 			</div>
 			<div class="modal-footer modal-productos-pie">
 				<span class="text-muted">Toca un producto para agregarlo. En la venta: <b id="modalProductosItems">0</b></span>
-				<button type="button" class="btn btn-success" data-dismiss="modal"><i class="fa fa-check"></i> Listo</button>
+				<div class="modal-productos-acciones">
+					<label class="caja-switch" title="Al tocar un producto se agrega a la venta y se cierra esta ventana">
+						<input type="checkbox" id="chkCerrarAlElegir">
+						<span class="caja-switch-pista" aria-hidden="true"></span>
+						<span class="caja-switch-texto">Cerrar al seleccionar</span>
+					</label>
+					<button type="button" class="btn btn-success" data-dismiss="modal"><i class="fa fa-check"></i> Listo</button>
+				</div>
 			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Opciones > Documentos: documentos tributarios emitidos (tdocumento.cod_sii > 10) de un día, para verlos y reimprimirlos -->
+<div class="modal fade" id="modalDocumentos" tabindex="-1" role="dialog" aria-labelledby="docTitulo">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header btn-success">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">&times;</button>
+				<h4 class="modal-title" id="docTitulo"><i class="fa fa-file-text-o"></i> Documentos emitidos</h4>
+			</div>
+			<div class="modal-body">
+				<div class="doc-filtros">
+					<label class="doc-fecha">Día <input type="date" id="docFecha" class="form-control"></label>
+					<div class="caja-buscar doc-buscar">
+						<i class="fa fa-search"></i>
+						<input type="text" id="docBuscar" class="form-control" placeholder="Buscar por folio, cliente o documento" autocomplete="off">
+					</div>
+					<span class="doc-resumen text-muted" id="docResumen"></span>
+				</div>
+				<div class="doc-cuerpo">
+					<div class="doc-lista">
+						<table class="table table-hover no-alinear" id="tablaDocumentos">
+							<thead><tr><th>Hora</th><th>Documento</th><th>Folio</th><th>Cliente</th><th class="caja-num">Total</th><th class="text-center">Acciones</th></tr></thead>
+							<tbody></tbody>
+						</table>
+					</div>
+					<div class="doc-vista">
+						<div class="doc-vista-vacia" id="docVistaVacia"><i class="fa fa-file-text-o"></i>Elige un documento para verlo</div>
+						<iframe id="docFrame" title="Vista del documento" style="display:none"></iframe>
+						<div class="doc-vista-acciones" id="docVistaAcciones" style="display:none">
+							<a class="btn btn-default" id="docPdf" target="_blank" rel="noopener"><i class="fa fa-file-pdf-o"></i> PDF</a>
+							<button type="button" class="btn btn-success" id="docReimprimir"><i class="fa fa-print"></i> Reimprimir</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Opciones de la mesa > Dividir cuenta: por comensal (arrastrar productos), partes iguales o libre. Cada parte tiene su precuenta y
+     se cobra aparte con su propio documento y cliente. Lógica en js.php (dividir cuenta) -->
+<div class="modal fade" id="modalDividir" tabindex="-1" role="dialog" aria-labelledby="dcTitulo">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header btn-success">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">&times;</button>
+				<h4 class="modal-title" id="dcTitulo"><i class="fa fa-code-fork"></i> Dividir cuenta · <span id="dcMesa"></span></h4>
+			</div>
+			<div class="modal-body">
+				<div class="dc-modos" role="tablist" id="dcModos">
+					<button type="button" data-dc-modo="comensal" role="tab"><i class="fa fa-users"></i> Por comensal</button>
+					<button type="button" data-dc-modo="iguales" role="tab"><i class="fa fa-usd"></i> Partes iguales</button>
+					<button type="button" data-dc-modo="libre" role="tab"><i class="fa fa-hand-pointer-o"></i> Libre</button>
+				</div>
+				<div class="dc-resumen" id="dcResumen"></div>
+
+				<section data-dc-vista="comensal">
+					<div class="dc-vacio" id="dcComVacio">
+						<i class="fa fa-users" aria-hidden="true"></i>
+						Organiza los <span class="dc-n"></span> de la mesa entre comensales para dividir la cuenta.<br>
+						<button type="button" class="btn btn-primary" id="dcCrearComensales"><i class="fa fa-plus"></i> Crear comensales y asignar productos</button>
+					</div>
+					<div id="dcTablero" hidden>
+						<p class="dc-ayuda">Arrastra cada producto al comensal que corresponde (de a una unidad; con Mayús, todas), o usa los botones bajo cada producto.
+							<b>⑂ Dividir</b> reparte un producto entre varios comensales.</p>
+						<div class="dc-cols">
+							<div class="dc-sin dc-zona" data-zona="0">
+								<div class="dc-titulo-col"><i class="fa fa-cube"></i> Sin asignar (<span id="dcSinN">0</span>)</div>
+								<div id="dcSinLista"></div>
+							</div>
+							<div>
+								<form class="dc-nuevo" id="dcNuevo" autocomplete="off">
+									<input type="text" class="form-control" id="dcNuevoNombre" maxlength="40" placeholder="Nuevo comensal…">
+									<button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> Agregar</button>
+								</form>
+								<div class="dc-com-lista" id="dcComLista"></div>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<section data-dc-vista="iguales" hidden>
+					<div class="dc-iguales-n">
+						<label for="dcPartesN">¿En cuántas partes dividir?</label>
+						<button type="button" class="btn btn-default" id="dcPartesMenos" aria-label="Una parte menos"><i class="fa fa-minus"></i></button>
+						<input type="number" class="form-control" id="dcPartesN" min="2" max="30" step="1" value="2">
+						<button type="button" class="btn btn-default" id="dcPartesMas" aria-label="Una parte más"><i class="fa fa-plus"></i></button>
+					</div>
+					<table class="dc-partes" id="dcPartes">
+						<thead><tr><th>Desglose</th><th></th><th class="num" id="dcPorPersona"></th><th></th></tr></thead>
+						<tbody></tbody>
+						<tfoot></tfoot>
+					</table>
+					<p class="dc-nota">Cada parte lleva la misma fracción de cada producto (por ejemplo 0,5 de cada uno) y se cobra con su propio documento. Por el redondeo de las cantidades, las partes pueden diferir en unos pesos.</p>
+				</section>
+
+				<section data-dc-vista="libre" hidden>
+					<div class="dc-vacio">
+						<i class="fa fa-hand-pointer-o" aria-hidden="true"></i>
+						Elige qué productos y cuántos se pagan ahora; lo demás sigue en la mesa para cobrarlo después.<br>
+						<button type="button" class="btn btn-primary" id="dcLibre"><i class="fa fa-list"></i> Elegir productos a cobrar</button>
+					</div>
+				</section>
+
+				<section data-dc-vista="cobrar" hidden>
+					<div class="dc-cobro-cab"><b id="dcCobroNombre"></b><span id="dcCobroTotal"></span></div>
+					<div class="dc-cobro-detalle" id="dcCobroDetalle"></div>
+					<div class="row">
+						<div class="col-sm-5 form-group">
+							<label for="dcDocumento">Documento</label>
+							<select id="dcDocumento" class="form-control"></select>
+						</div>
+						<div class="col-sm-7 form-group">
+							<label>Cliente</label>
+							<div class="dc-cliente">
+								<input type="text" class="form-control" id="dcCliente" readonly>
+								<button type="button" class="btn btn-default" id="dcBuscarCliente" title="Buscar o crear cliente"><i class="fa fa-search"></i></button>
+								<button type="button" class="btn btn-default" id="dcQuitarCliente" title="Quitar cliente"><i class="fa fa-times"></i></button>
+							</div>
+							<p class="help-block text-danger" id="dcClienteFalta" hidden>Este documento requiere el cliente.</p>
+						</div>
+					</div>
+					<div class="dc-factura" id="dcFactura" hidden>
+						<p class="help-block" style="margin:0">Factura: al continuar se piden la razón social, el giro, la dirección y quién la solicita (RUT y nombre).</p>
+					</div>
+					<div class="dc-acciones">
+						<button type="button" class="btn btn-default" id="dcVolver"><i class="fa fa-arrow-left"></i> Volver</button>
+						<button type="button" class="btn btn-default" id="dcCobroPrecuenta"><i class="fa fa-print"></i> Precuenta</button>
+						<button type="button" class="btn btn-success" id="dcContinuar"><i class="fa fa-money"></i> Continuar al pago</button>
+					</div>
+				</section>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Opciones de la mesa > Cambiar garzón -->
+<div class="modal fade" id="modalGarzon" tabindex="-1" role="dialog" aria-labelledby="garzonTitulo">
+	<div class="modal-dialog modal-sm" role="document">
+		<div class="modal-content">
+			<form id="frmGarzon" autocomplete="off">
+				<div class="modal-header btn-success">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">&times;</button>
+					<h4 class="modal-title" id="garzonTitulo"><i class="fa fa-user"></i> Cambiar garzón</h4>
+				</div>
+				<div class="modal-body">
+					<p class="garzon-actual"><span id="garzonMesa"></span> · atiende <b id="garzonActual">—</b></p>
+					<div class="form-group">
+						<label for="garzonNuevo">Nuevo garzón</label>
+						<select id="garzonNuevo" class="form-control input-lg"></select>
+						<p class="help-block">Queda como garzón de la venta al cobrar (propinas por garzón). Lo ya pedido conserva quién lo envió.</p>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+					<button type="submit" class="btn btn-primary" id="btnGuardarGarzon"><i class="fa fa-check"></i> Cambiar</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- Opciones > Poner en espera: nombre para reconocer la venta al recuperarla -->
+<div class="modal fade" id="modalEspera" tabindex="-1" role="dialog" aria-labelledby="esperaTitulo">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<form id="frmEspera" autocomplete="off">
+				<div class="modal-header btn-success">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">&times;</button>
+					<h4 class="modal-title" id="esperaTitulo"><i class="fa fa-pause"></i> Poner venta en espera</h4>
+				</div>
+				<div class="modal-body">
+					<p class="text-muted" id="esperaResumen"></p>
+					<div class="form-group">
+						<label for="esperaNombre">Nombre</label>
+						<input type="text" id="esperaNombre" class="form-control input-lg" maxlength="80" placeholder="Ej: Juan, mesa de afuera, pedido teléfono">
+						<p class="help-block">La venta queda en Opciones &gt; Ventas en espera y la caja vuelve a quedar libre.</p>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+					<button type="submit" class="btn btn-primary" id="btnGuardarEspera"><i class="fa fa-pause"></i> Poner en espera</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- Opciones > Ventas en espera: lista para cargar (con la venta vacía) o anular con justificación -->
+<div class="modal fade" id="modalEsperas" tabindex="-1" role="dialog" aria-labelledby="esperasTitulo">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header btn-success">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">&times;</button>
+				<h4 class="modal-title" id="esperasTitulo"><i class="fa fa-clock-o"></i> Ventas en espera</h4>
+			</div>
+			<div class="modal-body">
+				<div id="esperasVistaLista">
+					<div class="esp-aviso" id="esperasAviso" hidden><i class="fa fa-info-circle"></i><span></span></div>
+					<div class="esp-lista" id="esperasLista"></div>
+				</div>
+				<form id="esperasVistaAnular" autocomplete="off" hidden>
+					<div class="esp-anular-detalle" id="anularEsperaDetalle"></div>
+					<div class="form-group">
+						<label for="anularEsperaMotivo">Justificación de la anulación</label>
+						<textarea id="anularEsperaMotivo" class="form-control" rows="3" maxlength="250" placeholder="Ej: el cliente se retiró sin pagar, venta duplicada"></textarea>
+						<p class="help-block">Queda registrada con tu usuario en Consultas &gt; Anulación de ventas y en la Auditoría de caja.</p>
+					</div>
+					<div class="text-right">
+						<button type="button" class="btn btn-default" id="btnAnularEsperaVolver"><i class="fa fa-arrow-left"></i> Volver</button>
+						<button type="submit" class="btn btn-danger" id="btnAnularEsperaConfirmar"><i class="fa fa-ban"></i> Anular venta</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Salir de la Caja (menú, cambiar empresa) con una venta en curso: la venta directa pasa a espera y lo no enviado de una mesa queda en la auditoría -->
+<div class="modal fade" id="modalSalida" tabindex="-1" role="dialog" aria-labelledby="salidaTitulo" data-backdrop="static">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<form id="frmSalida" autocomplete="off">
+				<div class="modal-header btn-success">
+					<h4 class="modal-title" id="salidaTitulo"><i class="fa fa-exclamation-triangle"></i> Tienes una venta en curso</h4>
+				</div>
+				<div class="modal-body">
+					<div class="salida-bloque directa" id="salidaDirecta">
+						<i class="fa fa-shopping-cart"></i>
+						<div>
+							<p><b>Venta directa</b> · <span id="salidaDirectaResumen"></span></p>
+							<p class="text-muted" id="salidaDirectaTexto">Al salir quedará en Opciones &gt; Ventas en espera para recuperarla.</p>
+							<div class="form-group" id="salidaNombreGrupo">
+								<label for="salidaNombre">Nombre de la venta en espera</label>
+								<input type="text" id="salidaNombre" class="form-control" maxlength="80">
+							</div>
+						</div>
+					</div>
+					<div class="salida-bloque mesa" id="salidaMesa">
+						<i class="fa fa-cutlery"></i>
+						<div>
+							<p><b id="salidaMesaNombre"></b> · <span id="salidaMesaResumen"></span> sin enviar</p>
+							<p class="text-muted">Si sales, esos productos no se envían a la mesa y quedan registrados como omitidos en la auditoría de caja.</p>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal" id="btnSalidaQuedarme">Quedarme en la caja</button>
+					<button type="submit" class="btn btn-primary" id="btnSalidaConfirmar"></button>
+				</div>
+			</form>
 		</div>
 	</div>
 </div>
@@ -938,6 +1725,11 @@
 						</div>
 						<div class="pago-billetes" id="billetesPago"></div>
 						<button type="button" class="btn btn-default" id="btnAgregarPago"><i class="fa fa-plus"></i> Agregar pago <small class="text-muted">(Enter)</small></button>
+						<!-- Venta directa: se imprime en la comanda y en el documento (venta.nombre_retira) -->
+						<div class="pago-retira" id="grupoRetira">
+							<label for="txtRetira"><i class="fa fa-user"></i> Nombre de quien retira <small>(opcional)</small></label>
+							<input type="text" class="form-control" id="txtRetira" maxlength="60" autocomplete="off" placeholder="Ej: Juan Pérez">
+						</div>
 						<button type="button" class="btn btn-success btn-pago-exacto" id="btnPagoExacto" title="Completa lo que falta con la forma de pago elegida y registra la venta">
 							<i class="fa fa-bolt"></i> Pago exacto
 						</button>
@@ -1007,7 +1799,125 @@
 	</div>
 </div>
 
+<!-- Datos de la factura (11-11-2026): se piden al cobrar con factura, también en las mesas y al cobrar una parte.
+     Se guardan con la venta (venta_receptor): la emisión y el ticket usan estos datos. Ver js.php (datos de la factura). -->
+<div class="modal fade" id="modalFactura" tabindex="-1" role="dialog" aria-labelledby="facTitulo">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header btn-success">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">&times;</button>
+				<h4 class="modal-title" id="facTitulo"><i class="fa fa-file-text-o"></i> Datos de la factura</h4>
+			</div>
+			<form class="modal-body" id="frmFactura" autocomplete="off" novalidate>
+				<div class="fac-cliente"><span>Cliente</span> <b id="facRut"></b></div>
+				<div class="form-group" id="facPreviosGrupo" hidden>
+					<label for="facPrevios">Usar los datos de</label>
+					<select id="facPrevios" class="form-control"></select>
+				</div>
+				<div class="form-group">
+					<label for="facRazon">Razón social *</label>
+					<input type="text" id="facRazon" class="form-control" maxlength="100">
+				</div>
+				<!-- Giro, dirección y solicitante se eligen de las listas del cliente (Clientes > Datos para factura y sus facturas
+				     anteriores); con "Otro…" se escriben (largos máximos del SII: giro 40, dirección 70, ciudad 20) -->
+				<div class="form-group">
+					<label for="facGiroSel">Giro *</label>
+					<select id="facGiroSel" class="form-control"></select>
+					<input type="text" id="facGiro" class="form-control fac-otro" maxlength="40" placeholder="Escribe el giro (hasta 40 caracteres)" hidden>
+				</div>
+				<div class="form-group">
+					<label for="facDirSel">Dirección (sucursal del cliente) *</label>
+					<select id="facDirSel" class="form-control"></select>
+				</div>
+				<div class="row" id="facDirOtra" hidden>
+					<div class="col-sm-7 form-group">
+						<label for="facDireccion">Dirección *</label>
+						<input type="text" id="facDireccion" class="form-control" maxlength="70" placeholder="Calle y número (hasta 70 caracteres)">
+					</div>
+					<div class="col-sm-5 form-group">
+						<label for="facComuna">Comuna *</label>
+						<select id="facComuna" class="form-control"></select>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-sm-5 form-group">
+						<label for="facCiudad">Ciudad</label>
+						<input type="text" id="facCiudad" class="form-control" maxlength="20">
+					</div>
+					<div class="col-sm-7 form-group">
+						<label for="facContacto">Contacto (teléfono o correo)</label>
+						<input type="text" id="facContacto" class="form-control" maxlength="80">
+					</div>
+				</div>
+				<fieldset class="fac-solicita">
+					<legend>Quién solicita la factura</legend>
+					<div class="form-group">
+						<label for="facSolSel">Solicitante *</label>
+						<select id="facSolSel" class="form-control"></select>
+					</div>
+					<div class="row" id="facSolOtro" hidden>
+						<div class="col-sm-5 form-group">
+							<label for="facRutSol">RUT *</label>
+							<input type="text" id="facRutSol" class="form-control" maxlength="12" placeholder="12345678-9">
+						</div>
+						<div class="col-sm-7 form-group">
+							<label for="facNombreSol">Nombre *</label>
+							<input type="text" id="facNombreSol" class="form-control" maxlength="80">
+						</div>
+					</div>
+				</fieldset>
+				<div class="form-group" style="margin-top: 14px">
+					<label for="facMotivo">Motivo de la solicitud</label>
+					<input type="text" id="facMotivo" class="form-control" maxlength="200" placeholder="Opcional. Se imprime en la factura">
+				</div>
+				<div class="checkbox checkbox-success fac-guardar" id="facGuardarGrupo" hidden>
+					<input type="checkbox" id="facGuardarFicha" checked><label for="facGuardarFicha">Guardar en la ficha del cliente lo nuevo (dirección, giro o solicitante)</label>
+				</div>
+			</form>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+				<button type="button" class="btn btn-success" id="btnFacturaContinuar"><i class="fa fa-arrow-right"></i> Continuar al pago</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <!-- Modal agregados / mensajes del producto -->
+<!-- Producto a granel (fraccionable + "Pedir cantidad en venta"): se vende por valor (lo que marca la balanza) o por peso -->
+<div class="modal fade" id="modalPesable" tabindex="-1" role="dialog" aria-labelledby="pesableTitulo">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header btn-success">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">&times;</button>
+				<h4 class="modal-title" id="pesableTitulo"></h4>
+			</div>
+			<div class="modal-body">
+				<div class="pes-modo" role="tablist">
+					<button type="button" data-modo="valor" role="tab"><i class="fa fa-usd"></i>Por valor</button>
+					<button type="button" data-modo="peso" role="tab"><i class="fa fa-balance-scale"></i>Por peso</button>
+				</div>
+				<p class="pes-precio">Precio: <b id="pesablePrecio"></b></p>
+				<div class="pes-entrada" id="pesableEntrada">
+					<label for="txtPesable" id="pesableEtiqueta"></label>
+					<span class="pes-pre" id="pesablePre"></span>
+					<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" class="pes-input" id="txtPesable">
+					<span class="pes-suf" id="pesableSuf"></span>
+				</div>
+				<p class="pes-msg" id="pesableMsg"></p>
+				<div class="pes-resultado">
+					<span id="pesableResEtiqueta"></span>
+					<b id="pesableRes">—</b>
+				</div>
+				<p class="pes-nota" id="pesableNota"></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+				<button type="button" class="btn btn-success btn-lg" id="btnConfirmarPesable" disabled><i class="fa fa-check"></i> Agregar</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <div class="modal fade" id="modalOpciones" tabindex="-1" role="dialog">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">

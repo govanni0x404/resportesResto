@@ -38,6 +38,71 @@
 
 /*
  *---------------------------------------------------------------
+ * .ENV DE LA RAÍZ (copiado de mipdv_web/index.php, 10-11-2026)
+ *---------------------------------------------------------------
+ * Carga .env.php, .env y .env.local solo si existen. NO sobreescribe variables ya
+ * definidas en el servidor (SetEnv de Apache, fastcgi_param de Nginx).
+ * Ahí van las claves que ya no están en el código: apikey de AppWebLogin,
+ * usuario/clave de validarCliente y el diccionario de servidores de BD
+ * (MIPDV_DB_<SERVIDOR>_*). Ver .env.example.
+ *---------------------------------------------------------------
+ */
+if (!function_exists('_resto_load_env_file')) {
+	function _resto_load_env_file($filePath)
+	{
+		if (!is_file($filePath) || !is_readable($filePath)) {
+			return;
+		}
+		$lines = @file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+		if ($lines === false) {
+			return;
+		}
+		foreach ($lines as $lineRaw) {
+			$line = trim((string)$lineRaw);
+			if ($line === '' || strncmp($line, '#', 1) === 0) {
+				continue;
+			}
+			$eqPos = strpos($line, '=');
+			if ($eqPos === false || $eqPos === 0) {
+				continue;
+			}
+			$key   = trim(substr($line, 0, $eqPos));
+			$value = trim((string) substr($line, $eqPos + 1));
+			if ($key === '' || preg_match('/[^A-Za-z0-9_]/', $key)) {
+				continue;
+			}
+			$len = strlen($value);
+			if ($len >= 2) {
+				$first = $value[0];
+				$last  = $value[$len - 1];
+				if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
+					$value = substr($value, 1, -1);
+				}
+			}
+			// No sobreescribir si la variable ya existe en el entorno real
+			$existing = getenv($key, true);
+			if (is_string($existing) && $existing !== '') {
+				continue;
+			}
+			if (isset($_ENV[$key]) && is_string($_ENV[$key]) && $_ENV[$key] !== '') {
+				continue;
+			}
+			if (isset($_SERVER[$key]) && is_string($_SERVER[$key]) && $_SERVER[$key] !== '') {
+				continue;
+			}
+			putenv($key . '=' . $value);
+			$_ENV[$key] = $value;
+		}
+	}
+}
+// .env.php primero: su primera línea es un exit de PHP; así, si alguien lo pide por HTTP, PHP lo ejecuta y no
+// entrega nada (el servidor de desarrollo php -S no aplica .htaccess y sí entregaría un .env como texto).
+_resto_load_env_file(__DIR__ . DIRECTORY_SEPARATOR . '.env.php');
+_resto_load_env_file(__DIR__ . DIRECTORY_SEPARATOR . '.env');
+_resto_load_env_file(__DIR__ . DIRECTORY_SEPARATOR . '.env.local');
+
+/*
+ *---------------------------------------------------------------
  * APPLICATION ENVIRONMENT
  *---------------------------------------------------------------
  *

@@ -98,6 +98,14 @@ class Recetas extends CI_Controller
 				'preparacion' => $d['preparacion'],
 			);
 
+			// 14-11-2026: rendimiento > 0. Con 0 el trigger f_addptocomprado (del POS) divide por cero al grabar
+			// CUALQUIER compra (hace update receta set costo_porcion=costo_insumos/rendimiento sin WHERE).
+			$rend = $this->numero(isset($d['rendimiento']) ? $d['rendimiento'] : '');
+			if ($rend === null || $rend <= 0) {
+				throw new Exception('El rendimiento de la receta debe ser mayor que 0');
+			}
+			$miData['rendimiento'] = $rend;
+
 			// Insumos: id_insumo entero > 0 y cantidad numérica > 0; lo demás se rechaza antes de tocar la base
 			$lineas = array();
 			$detalles = $this->input->post('detalleReceta');

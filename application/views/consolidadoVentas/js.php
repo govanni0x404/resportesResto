@@ -96,7 +96,7 @@
 		var hasta = $('#date-range-picker').data('daterangepicker').endDate.format('DD-MM-YYYY');
 		resumenVentasPorFamilia(desde, hasta);
 		resumenDetalleConsolidadoVentas(desde, hasta);
-		resumenMontoTotalVentas();
+		resumenMontoTotalVentas(desde, hasta);
 		resumenVentasPorCanalDeVentas(desde, hasta);
 		cargarValidacionReporteResumenVentasPorFamilias();
 		cargarValidacionReporteResumenVentasPorCanal();
@@ -178,8 +178,11 @@
 	}
 
 
-	function resumenMontoTotalVentas() {
-		$.post(base_url + "index.php/ConsolidadoVentas/MontoTotalventas", {}, function(data) {
+	function resumenMontoTotalVentas(desde, hasta) {
+		$.post(base_url + "index.php/ConsolidadoVentas/MontoTotalventas", {
+			desde: desde,
+			hasta: hasta
+		}, function(data) {
 			var obj = jQuery.parseJSON(data);
 			$.each(obj, function(index, v) {
 				if (v.monto_total_ventas > 0) {

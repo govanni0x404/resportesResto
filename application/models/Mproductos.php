@@ -35,6 +35,8 @@ class Mproductos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+		// Favoritos de la Caja (migración 20261110190000): sin la columna el listado sigue igual, sin estrellas
+		$tieneFavorito = $this->tieneColumnaFavorito();
 
 		$q = "SELECT p.id_producto, p.cbarra, p.nombre_producto, f.nombre_familia, u.nombre_umedida, i.nombre_impuesto as iva, ii.nombre_impuesto as impto_adicional,
         d.nombre_dimpresion, b.nombre_bodega, p.pponderado,
@@ -42,7 +44,8 @@ class Mproductos extends CI_Model
         (select nombre_subfamilia from subfamilia sf where sf.id_subfamilia=p.id_subfamilia) as subfamilia,
         (select nombre_receta from receta r where r.id_receta=p.id_receta) as receta, 
         p.vigente, p.con_agregado, p.venta_publico, p.permite_porcion, p.venta_segun_stock, p.elaboracion_propia, p.permitir_venta_sin_precio, p.venta_uno_a_uno, p.pedir_cantidad_en_venta,
-        p.ver_en_dispositivos_moviles,p.permite_cortesia
+        p.ver_en_dispositivos_moviles,p.permite_cortesia,
+        " . ($tieneFavorito ? "(p.favorito IS TRUE)" : "false") . " AS favorito
         from producto p
         join familia f on p.id_familia=f.id_familia
         join umedida u on p.id_umedida=u.id_umedida
@@ -84,7 +87,8 @@ class Mproductos extends CI_Model
 				'venta_uno_a_uno' => ($key->venta_uno_a_uno == 't' ? 'SI' : 'NO'),
 				'pedir_cantidad_en_venta' => ($key->pedir_cantidad_en_venta == 't' ? 'SI' : 'NO'),
 				'ver_en_dispositivos_moviles' => ($key->ver_en_dispositivos_moviles == 't' ? 'SI' : 'NO'),
-				'permite_cortesia' => ($key->permite_cortesia == 't' ? 'SI' : 'NO')
+				'permite_cortesia' => ($key->permite_cortesia == 't' ? 'SI' : 'NO'),
+				'favorito' => (($key->favorito === 't' || $key->favorito === true) ? 'SI' : 'NO')
 			)
 			);
 		}
@@ -92,10 +96,35 @@ class Mproductos extends CI_Model
 			"sEcho" => 1,
 			"iTotalRecords" => count($data),
 			"iTotalDisplayRecords" => count($data),
-			"aaData" => $data
+			"aaData" => $data,
+			// La Carta muestra la columna de estrellas solo si la base ya tiene producto.favorito
+			"favoritos" => $tieneFavorito
 		);
 
 		return $results;
+	}
+
+	/** ¿La base de la empresa ya tiene producto.favorito? (migración 20261110190000). Lectura del catálogo, sin locks. */
+	public function tieneColumnaFavorito()
+	{
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+		$r = $this->db->query("SELECT 1 FROM information_schema.columns
+			WHERE table_schema = 'public' AND table_name = 'producto' AND column_name = 'favorito'");
+		return $r && $r->num_rows() > 0;
+	}
+
+	/** Marca o desmarca un producto como favorito de la Caja (estrella del listado de la Carta). */
+	public function marcarFavorito($idProducto, $favorito)
+	{
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+		if (!$this->tieneColumnaFavorito()) {
+			return array('ok' => false, 'error' => 'Falta aplicar la migración 20261110190000_add_producto_favorito en esta base.');
+		}
+		$r = $this->db->query('UPDATE producto SET favorito = ' . ($favorito ? 'TRUE' : 'FALSE') . ' WHERE id_producto = ?', array((int)$idProducto));
+		if (!$r || $this->db->affected_rows() < 1) {
+			return array('ok' => false, 'error' => 'No se encontró el producto.');
+		}
+		return array('ok' => true, 'favorito' => (bool)$favorito);
 	}
 
 	public function obtenerPreciosDeVenta($idProducto){

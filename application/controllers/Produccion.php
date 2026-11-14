@@ -48,10 +48,28 @@ class Produccion extends CI_Controller
             // Procesar cada insumo de la receta
             $costoTotalProduccion = 0;
             foreach ($d['insumos'] as $insumo) {
-                // Obtener stock actual
+                // 14-11-2026 (QA): se valida lo que llega. Con cantidad -100 el stock SUBÍA de 20 a 120, y el costo lo
+                // mandaba el navegador (el trigger f_produccion lo copia a insumo.costo_neto_ppp).
+                $insumo['id_insumo'] = (int)($insumo['id_insumo'] ?? 0);
+                $insumo['id_bodega'] = (int)($insumo['id_bodega'] ?? 0);
+                $cant = str_replace(',', '.', trim((string)($insumo['cantidad'] ?? '')));
+                $nombre = (string)($insumo['nombre_insumo'] ?? ('insumo ' . $insumo['id_insumo']));
+                if ($insumo['id_insumo'] <= 0 || $insumo['id_bodega'] <= 0 || !is_numeric($cant) || (float)$cant <= 0) {
+                    $dbTenant->trans_rollback();
+                    echo json_encode(array('success' => false,
+                        'message' => 'Cantidad inválida para ' . $nombre . ': debe ser un número mayor que 0'));
+                    return;
+                }
+                $insumo['cantidad'] = (float)$cant;
+                // Costo: el promedio (PPP) del insumo en la base, no el que manda la pantalla
+                $insumo['costo_neto'] = $this->Mproduccion->obtenerCostoPPP($insumo['id_insumo']);
+                $insumo['costo_total'] = round($insumo['costo_neto'] * $insumo['cantidad'], 2);
+
+                // Obtener stock actual (fila bloqueada hasta terminar: dos producciones a la vez no pisan el saldo)
                 $stock_actual = $this->Mproduccion->obtenerStockActual(
                     $insumo['id_insumo'], 
-                    $insumo['id_bodega']
+                    $insumo['id_bodega'],
+                    true
                 );
                 
                 // Validar que hay suficiente stock

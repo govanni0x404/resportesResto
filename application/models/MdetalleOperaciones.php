@@ -25,21 +25,23 @@ class MdetalleOperaciones extends CI_Model
         }
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        // 14-11-2026: una fila por venta. Antes el JOIN con pago_venta repetía la venta (con su total completo)
+        // por cada forma de pago de un pago dividido. Las formas de pago se muestran juntas ("EFECTIVO + DEBITO").
         $q = "SELECT v.id_venta, u.nombre_usuario, co.id_mesa, count(index_comensal) AS comensales, to_char(co.fecha_transaccion, 'DD/MM/YYYY HH24:MI:SS') AS fecha_inicio, 
-				to_char(date_trunc('second',sum(v.fecha_transaccion-co.fecha_transaccion)), 'HH24:MI:SS') as tiempo_atencion, co.mensaje as observacion, fp.nombre_fpago, round(v.total) as total
+				to_char(date_trunc('second',sum(v.fecha_transaccion-co.fecha_transaccion)), 'HH24:MI:SS') as tiempo_atencion, co.mensaje as observacion, pg.nombre_fpago, round(v.total) as total
 			from venta v
 			join cotizacion co on v.id_venta = co.id_venta
 			join usuario u on co.id_usuario = u.id_usuario
-			join pago_venta pv on v.id_venta = pv.id_venta
-			join fpago fp on pv.id_fpago = fp.id_fpago
+			join lateral (SELECT string_agg(fp.nombre_fpago, ' + ' ORDER BY pv.id_pventa) AS nombre_fpago
+				FROM pago_venta pv JOIN fpago fp ON pv.id_fpago = fp.id_fpago WHERE pv.id_venta = v.id_venta) pg on pg.nombre_fpago IS NOT NULL
 			where v.fecha between ? and ?";
         if ($idFpago > 0) {
-            $q = $q . " and pv.id_fpago=" . (int)$idFpago;
+            $q = $q . " and EXISTS (SELECT 1 FROM pago_venta px WHERE px.id_venta = v.id_venta AND px.id_fpago = " . (int)$idFpago . ")";
         }
         if ($idUsuario > 0) {
             $q = $q . " and u.id_usuario=" . (int)$idUsuario;
         }
-        $q = $q . " group by v.id_venta, u.nombre_usuario, co.id_cotizacion, fp.id_fpago";
+        $q = $q . " group by v.id_venta, u.nombre_usuario, co.id_cotizacion, pg.nombre_fpago";
 
 
         $consulta = $this->db->query($q, array($de, $a));

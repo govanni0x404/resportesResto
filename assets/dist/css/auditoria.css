@@ -1,0 +1,91 @@
+/* Consultas > Auditoría de caja y Consultas > Anulación de ventas (10-11-2026).
+   Colores del tema (variables --t-* de theme.css); estado: bien #006300, mal #b42318, alerta ámbar. Una sola serie = azul #2a78d6. */
+.aud { --aud-borde: var(--t-borde, #EADFD2); --aud-linea: #F1EBE2; --aud-texto: var(--t-texto, #3A2A22); --aud-fuerte: var(--t-texto-fuerte, #2A1D17);
+	--aud-suave: var(--t-texto-suave, #7A6A5E); --aud-tenue: var(--t-texto-tenue, #A89A8C); --aud-ok: #006300; --aud-mal: #b42318; --aud-alerta: #b54708;
+	--aud-azul: #2a78d6; }
+.aud-card { margin-bottom: 18px; padding: 16px 18px; border: 1px solid var(--aud-borde); border-radius: 14px; background: #fff; }
+.aud-card > header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; margin-bottom: 12px; }
+.aud-card > header h4 { margin: 0; font-size: 16px; font-weight: 700; color: var(--aud-fuerte); }
+.aud-card > header small { color: var(--aud-suave); }
+.aud-x { overflow-x: auto; }
+.aud-scroll { max-height: 440px; overflow: auto; border: 1px solid var(--aud-borde); border-radius: 10px; }
+.aud-tabla { width: 100%; border-collapse: collapse; font-size: 13px; }
+.aud-tabla th { position: sticky; top: 0; z-index: 1; padding: 8px 10px; border-bottom: 1px solid var(--aud-borde); background: var(--t-fondo-alt, #FBF8F3);
+	color: var(--aud-suave); font-size: 11px; font-weight: 600; letter-spacing: .3px; text-align: left; text-transform: uppercase; white-space: nowrap; }
+.aud-tabla td { padding: 9px 10px; border-bottom: 1px solid var(--aud-linea); color: var(--aud-texto); vertical-align: top; }
+.aud-tabla tr:last-child td { border-bottom: 0; }
+.aud-tabla .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.aud-tabla tfoot td { border-top: 1px solid var(--aud-borde); font-weight: 700; color: var(--aud-fuerte); }
+.aud-tabla tbody tr.clic { cursor: pointer; }
+.aud-tabla tbody tr.clic:hover td { background: var(--t-fondo-alt, #FBF8F3); }
+.aud-tabla tbody tr.activa td { background: var(--t-primario-suave, #f1f7ec); }
+.aud-tabla .sub { display: block; margin-top: 2px; color: var(--aud-suave); font-size: 12px; overflow-wrap: anywhere; }
+.aud-tabla .anulada td { color: var(--aud-tenue); }
+.aud-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; background: #F3EEE7; color: #5A4436;
+	font-size: 11px; font-weight: 600; white-space: nowrap; }
+.aud-chip.ok { background: #E7F3E7; color: var(--aud-ok); }
+.aud-chip.mal { background: #FDECEA; color: var(--aud-mal); }
+.aud-chip.alerta { background: #FFF4DF; color: #8A5D0B; }
+.aud-chip.azul { background: #E8EEFB; color: #2F5BB7; }
+.aud-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.aud-kpi { min-width: 0; padding: 12px 14px; border: 1px solid var(--aud-borde); border-radius: 12px; background: #fff; }
+.aud-kpi small { display: block; margin-bottom: 4px; color: var(--aud-suave); font-size: 12px; }
+.aud-kpi b { display: block; color: var(--aud-fuerte); font-size: 22px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.aud-kpi span { display: block; margin-top: 3px; color: var(--aud-suave); font-size: 12px; }
+.aud-kpi .ok { color: var(--aud-ok); }
+.aud-kpi .mal { color: var(--aud-mal); }
+.aud-kpi.destacado { border-color: #F2D49B; background: #FFFBF2; }
+.aud-cabeza { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 4px 0 14px; }
+.aud-cabeza h3 { margin: 0; color: var(--aud-fuerte); font-size: 20px; font-weight: 700; }
+.aud-cabeza .meta { color: var(--aud-suave); font-size: 13px; }
+.aud-cuadro { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 18px; align-items: start; }
+.aud-cuadro > .aud-card { min-width: 0; margin-bottom: 0; }
+.aud-cuadro + * { margin-top: 18px; }
+.aud-filtro-linea { display: flex; flex-wrap: wrap; gap: 6px; }
+.aud-filtro-linea button { padding: 4px 12px; border: 1px solid var(--aud-borde); border-radius: 16px; background: #fff; color: var(--aud-texto); font-size: 12px; }
+.aud-filtro-linea button.activo { border-color: var(--t-primario, #15803D); background: var(--t-primario, #15803D); color: #fff; }
+.aud-linea { max-height: 560px; margin: 0; padding: 0; overflow: auto; list-style: none; }
+.aud-linea li { display: grid; grid-template-columns: 78px 20px minmax(0, 1fr) auto; gap: 2px 10px; padding: 10px 4px; border-bottom: 1px solid var(--aud-linea); }
+.aud-linea li:last-child { border-bottom: 0; }
+.aud-linea .hora { padding-top: 1px; color: var(--aud-suave); font-size: 12px; font-variant-numeric: tabular-nums; }
+.aud-linea .icono { padding-top: 2px; color: var(--aud-tenue); font-size: 13px; text-align: center; }
+.aud-linea li.alerta .icono { color: var(--aud-alerta); }
+.aud-linea li.critico .icono { color: var(--aud-mal); }
+.aud-linea .titulo { min-width: 0; color: var(--aud-fuerte); font-weight: 600; overflow-wrap: anywhere; }
+.aud-linea .texto { grid-column: 3; color: var(--aud-suave); font-size: 12px; overflow-wrap: anywhere; }
+.aud-linea .monto { color: var(--aud-texto); font-weight: 600; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.aud-linea .usuario { grid-column: 4; color: var(--aud-tenue); font-size: 11px; text-align: right; }
+.aud-vacio { padding: 26px 10px; color: var(--aud-tenue); text-align: center; }
+.aud-vacio i { display: block; margin-bottom: 6px; font-size: 28px; }
+.aud-tabs { margin-bottom: 12px; }
+.aud-tabs > li > a { padding: 8px 12px; font-size: 13px; }
+.aud-tabs .badge { margin-left: 4px; background: #E9E2D8; color: var(--aud-texto); font-weight: 600; }
+.aud-rank { display: flex; flex-direction: column; gap: 10px; }
+.aud-rank .fila { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
+.aud-rank .nombre { overflow: hidden; color: var(--aud-fuerte); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.aud-rank .valor { color: var(--aud-fuerte); font-weight: 700; font-variant-numeric: tabular-nums; }
+.aud-rank .barra { grid-column: 1 / -1; height: 8px; border-radius: 0 4px 4px 0; background: transparent; }
+.aud-rank .barra i { display: block; height: 100%; max-width: 100%; border-radius: 0 4px 4px 0; background: var(--aud-azul); }
+.aud-rank .sub { grid-column: 1 / -1; color: var(--aud-suave); font-size: 12px; }
+.aud-buscar { position: relative; flex: 1 1 220px; max-width: 320px; }
+.aud-buscar i { position: absolute; top: 11px; left: 11px; color: var(--aud-tenue); }
+.aud-buscar input { height: 36px; padding-left: 32px; }
+.aud .cargando { opacity: .55; transition: opacity .15s; }
+/* El rango de fechas completo cabe en la celda de 210px de los filtros */
+.aud #date-range-picker { padding-right: 6px; padding-left: 9px; font-size: 13px; letter-spacing: -.1px; }
+@media (max-width: 991px) { .aud-cuadro { grid-template-columns: 1fr; } }
+@media (max-width: 767px) {
+	.aud-card { padding: 14px; }
+	.aud-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+	.aud-kpi b { font-size: 19px; }
+	.aud-linea li { grid-template-columns: 62px 18px minmax(0, 1fr); }
+	.aud-linea .monto, .aud-linea .usuario { grid-column: 3; text-align: left; }
+}
+@media print {
+	.main-header, .main-footer, #page-loader, .rep-panel-filtros, .no-imprimir, .content-header .breadcrumb { display: none !important; }
+	.content-wrapper, .main-footer { margin-left: 0 !important; }
+	.aud-card, .aud-kpi { break-inside: avoid; }
+	.aud-scroll, .aud-linea { max-height: none !important; overflow: visible !important; }
+	.aud-tabs { display: none; }
+	.aud .tab-pane { display: block !important; opacity: 1 !important; margin-bottom: 14px; }
+}

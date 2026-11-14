@@ -88,12 +88,15 @@ $copias = !empty($cedible) ? array('', 'CEDIBLE') : array('');
 
 		<div>Fecha: <?php echo $h($v->fecha_texto); ?></div>
 		<div>Cajero: <?php echo $h($v->nombre_usuario); ?></div>
+		<?php if (!empty($v->nombre_retira)) : ?><div style="font-size: 1.25em; font-weight: 700">Retira: <?php echo $h($v->nombre_retira); ?></div><?php endif; ?>
 		<?php if ($v->rut) : ?>
 			<div>Cliente: <?php echo $h($v->nombre_cliente); ?></div>
 			<?php if ($v->rut) : ?><div>RUT: <?php echo $h(number_format((float)$v->rut, 0, ',', '.') . '-' . $v->dv); ?></div><?php endif; ?>
 			<?php if ($v->giro) : ?><div>Giro: <?php echo $h($v->giro); ?></div><?php endif; ?>
 			<?php if ($v->direccion) : ?><div>Dir: <?php echo $h($v->direccion); ?></div><?php endif; ?>
 			<?php if ($v->comuna) : ?><div>Comuna: <?php echo $h($v->comuna); ?></div><?php endif; ?>
+			<?php if (!empty($v->solicitante)) : ?><div>Solicita: <?php echo $h($v->solicitante); ?></div><?php endif; ?>
+			<?php if (!empty($v->motivo_factura)) : ?><div>Motivo: <?php echo $h($v->motivo_factura); ?></div><?php endif; ?>
 		<?php endif; ?>
 		<hr>
 		<table>

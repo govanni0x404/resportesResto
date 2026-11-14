@@ -15,30 +15,60 @@ class MapiMovil extends CI_Model
 		parent::__construct();
 	}
 
+	/**
+	 * 10-11-2026: el usuario se valida con la API de la intranet (AppWebLogin, igual que el login
+	 * web) y la base de la empresa sale de validarCliente. Nada de database.php.
+	 * Devuelve null si la clave no es válida, o array('error' => ...) si la intranet no responde
+	 * o no entrega la base de la empresa.
+	 */
 	public function validarUsuario($correo, $clave, $idSoftware)
 	{
-		$db = $this->load->database('default', TRUE);
-		$db->select('*');
-		$db->from('usuario_appweb');
-		$db->join('cliente', 'usuario_appweb.id_cliente = cliente.id_cliente');
-		$db->join('software', 'usuario_appweb.id_software = software.id_software');
-		$db->where('usuario_appweb.correo_acceso', $correo);
-		$db->where('usuario_appweb.clave_acceso', $clave);
-		$db->where('software.id_software', $idSoftware);
-		$db->order_by('id_usuario_appweb');
-		$db->limit(1);
-		$fila = $db->get()->row();
-		if (!$fila || empty($fila->nombre_conexion)) {
+		$this->load->model('Mlogin');
+		$fila = $this->Mlogin->login_user($correo, $clave, $idSoftware, false);
+		if (!$fila) {
+			$f = is_array($this->Mlogin->ultimo_fallo) ? $this->Mlogin->ultimo_fallo : array();
+			if (!empty($f['transitorio']) || ($f['motivo'] ?? '') === 'sin_apikey') {
+				return array('error' => $this->Mlogin->mensajeUltimoFallo(), 'status' => 503);
+			}
 			return null;
+		}
+		if (empty($fila->nombre_conexion)) {
+			return null;
+		}
+
+		$rut = number_format((int)$fila->rut, 0, ',', '.');
+		if ((int)$fila->rut < 10000000) {
+			$rut = '0' . $rut;
+		}
+		$this->load->library('ConexionesTenant');
+		$con = $this->conexionestenant->resolverDesdeIntranet($rut . '-' . $fila->dv, (int)$fila->id_sucursal, $idSoftware, $fila->abreviatura);
+		if (!$con['ok']) {
+			log_message('error', 'ApiMovil: sin base para ' . $fila->nombre_conexion . ' (' . $con['motivo'] . ')');
+			return array('error' => 'No se pudo obtener la base de datos de la empresa', 'status' => 503);
+		}
+		// Diccionario local: así los tokens ya emitidos (que solo traen nombre_conexion) siguen sirviendo
+		$this->conexionestenant->guardar($fila->nombre_conexion, $con['db_server'], $con['bd_name']);
+
+		// Nombre del usuario en la base de la empresa (si no, el de la intranet o el correo)
+		$nombre = isset($fila->nombre_usuario) && $fila->nombre_usuario !== '' ? $fila->nombre_usuario : $correo;
+		$db = $this->conexionestenant->conectar($con['db_server'], $con['bd_name'], array('db_debug' => FALSE));
+		if ($db && $db->conn_id) {
+			$q = $db->query('SELECT nombre_usuario FROM usuario WHERE id_usuario = ?', array((int)$fila->id_usuario_cliente));
+			$u = $q ? $q->row() : null;
+			if ($u && trim((string)$u->nombre_usuario) !== '') {
+				$nombre = $u->nombre_usuario;
+			}
 		}
 
 		return array(
 			'id_usuario' => (int)$fila->id_usuario_cliente,
 			'id_cliente' => (int)$fila->id_cliente,
-			'nombre_usuario' => isset($fila->nombre_usuario) ? $fila->nombre_usuario : $correo,
+			'nombre_usuario' => $nombre,
 			'nombre_cliente' => isset($fila->nombre_cliente) ? $fila->nombre_cliente : '',
 			'nombre_fantasia' => isset($fila->nombre_fantasia) ? $fila->nombre_fantasia : '',
 			'nombre_conexion' => $fila->nombre_conexion,
+			'db_server' => $con['db_server'],
+			'bd_name' => $con['bd_name'],
 		);
 	}
 
@@ -281,7 +311,7 @@ class MapiMovil extends CI_Model
 			$this->q($db, 'SET LOCAL TIME ZONE ' . $db->escape($zona->getName()));
 			$ctx = $this->contexto($db, $cols, $opciones);
 			$ctx['zona'] = $zona;
-			$ctx['por_iva'] = $porIva;
+			$ctx['por_iva'] = $ctx['por_iva_base'] !== null ? $ctx['por_iva_base'] : $porIva;
 
 			$idCaja = $this->subirCaja($db, $cols, $ctx, $caja);
 			$this->subirMovimientos($db, $cols, $ctx, $idCaja, $caja['uuid'], $movimientos);
@@ -352,6 +382,20 @@ class MapiMovil extends CI_Model
 			$r = $this->q($db, 'SELECT min(id_turno) AS id FROM turno')->row();
 			$ctx['id_turno'] = $r && $r->id ? (int)$r->id : 0;
 		}
+		// 14-11-2026: listas de precio válidas y la pública (configuracion.id_lpreciopublico)
+		$ctx['lprecios'] = array();
+		foreach ($this->q($db, 'SELECT id_lprecio FROM lprecio')->result() as $l) $ctx['lprecios'][(int)$l->id_lprecio] = true;
+		$ctx['id_lprecio_publico'] = $ctx['lprecios'] ? (int)min(array_keys($ctx['lprecios'])) : 0;
+		if (isset($cols['configuracion']['id_lpreciopublico'])) {
+			$r = $this->q($db, 'SELECT COALESCE(id_lpreciopublico, 0) AS id FROM configuracion LIMIT 1')->row();
+			if ($r && isset($ctx['lprecios'][(int)$r->id])) $ctx['id_lprecio_publico'] = (int)$r->id;
+		}
+		// El IVA es el de la empresa, no el que manda el teléfono
+		$ctx['por_iva_base'] = null;
+		if (isset($cols['configuracion']['por_iva'])) {
+			$r = $this->q($db, 'SELECT por_iva FROM configuracion LIMIT 1')->row();
+			if ($r && is_numeric($r->por_iva) && (float)$r->por_iva > 0) $ctx['por_iva_base'] = (float)$r->por_iva;
+		}
 		$ctx['id_canal_venta'] = 1;
 		if (isset($cols['canal_venta'])) {
 			$r = $this->q($db, 'SELECT min(id_canal_venta) AS id FROM canal_venta')->row();
@@ -394,7 +438,10 @@ class MapiMovil extends CI_Model
 			$esIngreso = isset($mv['tipo']) && $mv['tipo'] === 'ingreso';
 			if ($esIngreso) $ingresos += $monto; else $egresos += $monto;
 
-			$clave = 'mov:' . $uuidCaja . ':' . (int)$mv['id'];
+			// Sin id (o id 0) la clave era ':0' para todos y se descartaban; se usa el contenido como respaldo
+			$idMov = isset($mv['id']) ? (int)$mv['id'] : 0;
+			$clave = 'mov:' . $uuidCaja . ':' . ($idMov > 0 ? $idMov : 'h' . substr(sha1(json_encode($mv)), 0, 20));
+			if ($monto <= 0) continue;
 			if (!isset($cols['detalle_caja']) || $this->mapa($db, $clave)) continue;
 			$obs = trim(isset($mv['observacion']) ? (string)$mv['observacion'] : '');
 			$id = $this->insertar($db, $cols, 'detalle_caja', array(
@@ -408,6 +455,12 @@ class MapiMovil extends CI_Model
 				'vigente' => true,
 			), 'id_detalle_caja');
 			$this->q($db, "INSERT INTO movil_sync (clave, tipo, id_web) VALUES (?, 'movimiento', ?)", array($clave, $id));
+		}
+		// 14-11-2026: los totales salen de lo registrado en detalle_caja (antes un envío sin movimientos los dejaba en 0)
+		if (isset($cols['detalle_caja'])) {
+			$t = $this->q($db, 'SELECT COALESCE(sum(ingreso), 0) AS i, COALESCE(sum(egreso), 0) AS e FROM detalle_caja WHERE id_caja = ?', array($idCaja))->row();
+			$ingresos = (int)$t->i;
+			$egresos = (int)$t->e;
 		}
 		$this->actualizar($db, $cols, 'caja', array('ingresos' => $ingresos, 'egresos' => $egresos), 'id_caja', $idCaja);
 	}
@@ -460,18 +513,55 @@ class MapiMovil extends CI_Model
 		$fecha = $this->fechaLocal($ctx, isset($v['fecha']) ? $v['fecha'] : null);
 		$dia = substr($fecha, 0, 10);
 		$factor = 1 + $ctx['por_iva'] / 100;
-		$subtotal = (int)$v['subtotal'];
-		$descuento = (int)$v['descuento'];
-		$total = (int)$v['total'];
-		$neto = (int)$v['neto'];
-		$iva = (int)$v['iva'];
 		$cortesia = !empty($v['cortesia']);
-		$porDescuento = $subtotal > 0 ? round($descuento * 100 / $subtotal, 2) : 0;
 		$idUsuario = $this->usuarioValido($ctx, isset($v['id_cajero']) ? $v['id_cajero'] : 0);
 		$idCliente = !empty($v['id_cliente']) ? (int)$v['id_cliente'] : $ctx['id_cliente_publico'];
-		$detalle = isset($v['detalle']) && is_array($v['detalle']) ? $v['detalle'] : array();
+		$detalle = isset($v['detalle']) && is_array($v['detalle']) ? array_values($v['detalle']) : array();
 		$pagos = isset($v['pagos']) && is_array($v['pagos']) ? $v['pagos'] : array();
 		if (!$detalle) throw new Exception('Venta sin productos');
+		// Lista de precios: la del teléfono si existe en la web; si no, la pública (antes fallaba la FK fk_venta_lprecio)
+		$idLprecio = (int)(isset($v['id_lprecio']) ? $v['id_lprecio'] : 0);
+		if (!isset($ctx['lprecios'][$idLprecio])) $idLprecio = $ctx['id_lprecio_publico'];
+
+		// 14-11-2026 (QA): no se confía en los montos del teléfono. Antes se grababa tal cual lo que llegaba
+		// (se aceptó una venta con total 100, productos por 56.000 y un pago de 1). Ahora:
+		//  - cada línea: producto, cantidad > 0, precio >= 0 y total = cantidad x precio;
+		//  - subtotal = suma de las líneas, total = subtotal - descuento, neto e IVA se calculan aquí;
+		//  - los pagos tienen que sumar el total.
+		// Si algo no cuadra la venta NO se registra y el teléfono recibe el error de esa venta (las demás siguen).
+		$subtotal = 0;
+		foreach ($detalle as $i => $d) {
+			$n = $i + 1;
+			$cantidad = round((float)(isset($d['cantidad']) ? $d['cantidad'] : 0), 3);
+			$unitario = (int)(isset($d['precio_unitario']) ? $d['precio_unitario'] : 0);
+			$bruto = (int)(isset($d['total']) ? $d['total'] : 0);
+			if ((int)(isset($d['id_producto']) ? $d['id_producto'] : 0) <= 0) throw new Exception("Línea $n: producto inválido", 422);
+			if ($cantidad <= 0) throw new Exception("Línea $n: la cantidad debe ser mayor que 0", 422);
+			if ($unitario < 0 || $bruto < 0) throw new Exception("Línea $n: montos negativos", 422);
+			if (abs($bruto - (int)round($unitario * $cantidad)) > 1) {
+				throw new Exception("Línea $n: el total ($bruto) no es cantidad x precio (" . (int)round($unitario * $cantidad) . ')', 422);
+			}
+			$subtotal += $bruto;
+		}
+		$descuento = (int)(isset($v['descuento']) ? $v['descuento'] : 0);
+		if ($descuento < 0 || $descuento > $subtotal) throw new Exception('El descuento no puede ser negativo ni mayor que el subtotal', 422);
+		$total = $subtotal - $descuento;
+		if (isset($v['total']) && abs((int)$v['total'] - $total) > 1) {
+			throw new Exception('El total de la venta (' . (int)$v['total'] . ') no cuadra con sus productos menos el descuento (' . $total . ')', 422);
+		}
+		$sumaPagos = 0;
+		foreach ($pagos as $p) {
+			$monto = (int)(isset($p['monto']) ? $p['monto'] : 0);
+			$vuelto = (int)(isset($p['vuelto']) ? $p['vuelto'] : 0);
+			if ($monto < 0 || $vuelto < 0) throw new Exception('Un pago tiene monto o vuelto negativo', 422);
+			$sumaPagos += $monto;
+		}
+		if ((!$cortesia || $pagos) && abs($sumaPagos - $total) > 1) {
+			throw new Exception('Los pagos (' . $sumaPagos . ') no cuadran con el total de la venta (' . $total . ')', 422);
+		}
+		$neto = (int)round($total / $factor);
+		$iva = $total - $neto;
+		$porDescuento = $subtotal > 0 ? round($descuento * 100 / $subtotal, 2) : 0;
 
 		$notas = array();
 		foreach ($detalle as $d) {
@@ -488,7 +578,7 @@ class MapiMovil extends CI_Model
 		$idVenta = $this->insertar($db, $cols, 'venta', array(
 			'id_tdocumento' => $ctx['id_tdocumento'],
 			'id_cliente' => $idCliente,
-			'id_lprecio' => (int)$v['id_lprecio'],
+			'id_lprecio' => $idLprecio,
 			'id_usuario' => $idUsuario,
 			'fecha' => $dia . ' 00:00:00', // como el POS: los reportes filtran por día
 			'fecha_transaccion' => $fecha,
@@ -535,7 +625,7 @@ class MapiMovil extends CI_Model
 		$repartido = 0;
 		$n = count($detalle);
 		foreach (array_values($detalle) as $i => $d) {
-			$cantidad = (float)$d['cantidad'];
+			$cantidad = round((float)$d['cantidad'], 3);
 			$unitario = (int)$d['precio_unitario'];
 			$bruto = (int)$d['total'];
 			$descLinea = $i === $n - 1 ? $descuento - $repartido
@@ -567,7 +657,7 @@ class MapiMovil extends CI_Model
 				'porila' => 0,
 				// Los agregados van como línea propia del producto agregado (descuenta su stock/receta)
 				'id_agregado' => 0,
-				'id_lprecio' => (int)$v['id_lprecio'],
+				'id_lprecio' => $idLprecio,
 				'nombre_computador' => self::COMPUTADOR,
 				'fecha_transaccion' => $fecha,
 				'fecha_pedido' => $fecha,
@@ -587,11 +677,11 @@ class MapiMovil extends CI_Model
 		}
 
 		foreach ($pagos as $p) {
-			$idFpago = (int)$p['id_fpago'];
+			$idFpago = (int)(isset($p['id_fpago']) ? $p['id_fpago'] : 0);
 			if ($ctx['fpagos'] && !isset($ctx['fpagos'][$idFpago])) {
 				throw new Exception('La forma de pago ' . $idFpago . ' no existe en la web');
 			}
-			$monto = (int)$p['monto'];
+			$monto = (int)(isset($p['monto']) ? $p['monto'] : 0);
 			$vuelto = (int)(isset($p['vuelto']) ? $p['vuelto'] : 0);
 			$this->insertar($db, $cols, 'pago_venta', array(
 				'id_cliente' => $idCliente,
@@ -637,11 +727,17 @@ class MapiMovil extends CI_Model
 		$cero = array();
 		foreach (array('subtotal', 'descuento', 'neto', 'iva', 'total', 'monto_descuento', 'subtotal_condescuento',
 			'monto_afecto', 'monto_cortesia', 'subtotal_bruto', 'subtotal_neto', 'subtotal_neto_sin_descuento',
-			'monto_descuento_global', 'subtotal_neto_con_descuento', 'monto_iva', 'total_bruto_con_descuento') as $c) {
+			'monto_descuento_global', 'subtotal_neto_con_descuento', 'monto_iva', 'total_bruto_con_descuento',
+			// 14-11-2026: también la propina (seguía sumando en propinas por garzón y en el cierre)
+			'valor_propina', 'propina_final', 'monto_comision_propina') as $c) {
 			$cero[$c] = 0;
 		}
+		// 14-11-2026: la web (Caja, reportes, analítica) reconoce una venta anulada por mensaje_pedido = 'ANULADA (...'.
+		// Antes la app solo dejaba la observación y la venta aparecía como "venta de $0" sin anular.
+		$texto = 'ANULADA ($' . (int)$r->total . '): ' . ($motivo !== '' ? $motivo : 'ANULADA EN APP MOVIL');
 		$this->actualizar($db, $cols, 'venta', $cero + array(
 			'vigente' => false,
+			'mensaje_pedido' => mb_substr($texto, 0, 200),
 			'motivo_anulacion' => mb_substr($motivo, 0, 200),
 			'fecha_anulacion' => $this->fechaLocal($ctx, isset($v['fecha_anulacion']) ? $v['fecha_anulacion'] : null),
 			'id_usuario_anulacion' => $this->usuarioValido($ctx, isset($v['id_cajero']) ? $v['id_cajero'] : 0),
@@ -788,15 +884,11 @@ class MapiMovil extends CI_Model
 
 	private function conectarTenant($nombreConexion)
 	{
-		// Mismas credenciales que usa tenant_helper.php, pero sin depender de la sesión
-		include(APPPATH . 'config/database.php');
-		if (!isset($db[$nombreConexion])) {
-			log_message('error', 'ApiMovil: conexión no registrada en database.php: ' . $nombreConexion);
-			return null;
-		}
-		$config = $db[$nombreConexion];
-		$config['db_debug'] = FALSE; // que un error de BD no devuelva HTML a la app
-		$conn = $this->load->database($config, TRUE);
+		// 10-11-2026: sin database.php. Servidor y base desde el token (ApiMovil::requerirToken los
+		// recuerda) o desde el diccionario local; credenciales del servidor desde DbManager.
+		$this->load->library('ConexionesTenant');
+		// db_debug FALSE: que un error de BD no devuelva HTML a la app
+		$conn = $this->conexionestenant->conectarPorNombre($nombreConexion, array('db_debug' => FALSE));
 		return ($conn && $conn->conn_id) ? $conn : null;
 	}
 

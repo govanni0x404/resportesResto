@@ -2,8 +2,11 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
- * Emisión electrónica con Cloud Apps (mismo formato que el POS y AppCaja).
- * Cloud Apps asigna el folio (Folio "0") desde el CAF del terminal y devuelve el TED.
+ * Emisión electrónica con Cloud Apps o con facturacion.datamaule.cl (SimpleFactura), según
+ * Configuraciones > Empresa proveedora DTE. SimpleFactura recibe el mismo JSON de miFacturador
+ * (newDte) y responde igual, así que el documento es el mismo; cambian la URL y la credencial
+ * (tipo de autenticación: X-API-Key, Bearer, Token o Basic; ver helpers/dte_auth_helper.php).
+ * El proveedor asigna el folio (Folio "0") desde el CAF del terminal y devuelve el TED.
  * Boletas (39): detalle en montos brutos, como lo pide el formato de boleta del SII; el neto y el IVA son
  * informativos: Neto = round(Afecto / 1,19) e IVA = Afecto - Neto, igual que la pantalla y el ticket.
  * Facturas y notas de crédito: detalle en neto (IndMntNeto = 1); Neto e IVA = round(Neto x 19%) los
@@ -19,6 +22,19 @@ class Mdte extends CI_Model
 	{
 		parent::__construct();
 		$this->config->load('caja', true);
+		$this->load->helper('dte_auth');
+	}
+
+	/** URL de un método del proveedor: newDte o folios (Cloud Apps: getFolios; datamaule: cafInfo). */
+	private function urlProveedor($proveedor, $metodo)
+	{
+		if ($proveedor === 'datamaule') {
+			$base = rtrim((string)$this->config->item('caja_dte_url_datamaule', 'caja'), '/');
+			if ($base === '') $base = 'https://facturacion.datamaule.cl/api/v1/integracion';
+			return $base . ($metodo === 'folios' ? '/cafInfo/' : '/newDte/');
+		}
+		$url = (string)$this->config->item('caja_dte_url', 'caja');
+		return $metodo === 'folios' ? preg_replace('#/newDte/?$#', '/getFolios/', $url) : $url;
 	}
 
 	/** Cuenta demo de Cloud Apps: con este usuario se emite en pruebas (Cloud Apps timbra, pero no va al SII). */
@@ -27,17 +43,21 @@ class Mdte extends CI_Model
 
 	/**
 	 * Credenciales, terminal y emisor. null si la empresa no tiene emisión configurada (ver motivoSinEmision()).
-	 * Todo sale de Configuraciones > Facturación electrónica > Acceso facturación (Cloud Apps): usuario (RUT válido),
-	 * contraseña y terminal son obligatorios. El usuario debe ser el RUT de la empresa, salvo la cuenta demo de
-	 * Cloud Apps (66666666-6), que emite como EMPRESA DEMO y no envía al SII.
+	 * Todo sale de Configuraciones > Facturación electrónica > Acceso facturación: usuario (RUT válido) y terminal
+	 * son obligatorios, más la contraseña (Basic) o la API Key (X-API-Key, Bearer, Token). El usuario debe ser el RUT
+	 * de la empresa, salvo la cuenta demo (66666666-6), que emite como EMPRESA DEMO y no envía al SII.
+	 * La URL depende de la empresa proveedora (Cloud Apps o facturacion.datamaule.cl).
 	 */
 	public function configuracion($db)
 	{
 		$empresa = $db->query('SELECT e.*, COALESCE(c.nombre_comuna, \'\') AS nombre_comuna
 			FROM empresa e LEFT JOIN comuna c ON c.id_comuna = e.id_comuna ORDER BY e.id_empresa LIMIT 1')->row();
 		if (!$empresa) return null;
-		list($usuario, $clave, $terminal) = $this->accesoFacturacion($db);
-		if ($this->motivoAcceso($usuario, $clave, $terminal) !== '') return null;
+		$acceso = $this->accesoFacturacion($db);
+		$usuario = $acceso['usuario'];
+		if ($this->motivoAcceso($usuario, $acceso['clave'], $acceso['terminal'], $acceso['tipo'], $acceso['token']) !== '') return null;
+		$auth = dte_auth_headers($acceso['tipo'], $usuario, $acceso['clave'], $acceso['token']);
+		if (!$auth['ok']) return null;
 		$rut = number_format((float)$empresa->rut_empresa, 0, '', '') . '-' . strtoupper(trim((string)$empresa->dv_empresa));
 		$demo = $this->normalizarRut($usuario) === $this->normalizarRut(self::RUT_DEMO);
 		// Cada empresa emite con su propio RUT: un usuario de otra empresa firmaría documentos ajenos
@@ -56,8 +76,10 @@ class Mdte extends CI_Model
 		$prueba = $demo ? array('rut_emisor' => self::RUT_DEMO, 'razon_social' => self::RAZON_DEMO) : null;
 		return array(
 			'usuario' => $usuario,
-			'clave' => $clave,
-			'terminal' => $terminal,
+			'terminal' => $acceso['terminal'],
+			'proveedor' => $acceso['proveedor'],
+			'url' => $this->urlProveedor($acceso['proveedor'], 'newDte'),
+			'auth_headers' => $auth['headers'],
 			'envia_sii' => $enviaSii,
 			'prueba' => $demo,
 			'emisor' => array(
@@ -109,15 +131,15 @@ class Mdte extends CI_Model
 			return array('ok' => false, 'folio' => 0, 'mensaje' => $e->getMessage());
 		}
 
-		$ch = curl_init($this->config->item('caja_dte_url', 'caja'));
+		$nombreProveedor = dte_proveedor_nombre($cfg['proveedor']);
+		$ch = curl_init($cfg['url']);
 		curl_setopt_array($ch, array(
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_POST => true,
-			CURLOPT_HTTPHEADER => array(
-				'Authorization: Basic ' . base64_encode($cfg['usuario'] . ':' . $cfg['clave']),
+			CURLOPT_HTTPHEADER => array_merge($cfg['auth_headers'], array(
 				'Content-Type: application/json',
 				'Accept: application/json',
-			),
+			)),
 			CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 			CURLOPT_CONNECTTIMEOUT => 5,
 			CURLOPT_TIMEOUT => $this->segundosEspera($db),
@@ -128,7 +150,7 @@ class Mdte extends CI_Model
 		curl_close($ch);
 
 		if ($raw === false) {
-			$msg = 'Sin respuesta de Cloud Apps' . ($errorCurl ? ': ' . $errorCurl : '');
+			$msg = 'Sin respuesta de ' . $nombreProveedor . ($errorCurl ? ': ' . $errorCurl : '');
 			$this->registrarFalla($db, $idVenta, $msg);
 			return array('ok' => false, 'folio' => 0, 'mensaje' => $msg);
 		}
@@ -136,10 +158,10 @@ class Mdte extends CI_Model
 		$r = is_array($json) && isset($json[0]) && is_array($json[0]) ? $json[0] : (is_array($json) ? $json : array());
 		$status = isset($r['status']) ? (int)$r['status'] : (isset($r['error']) ? (int)$r['error'] : -1);
 		$folio = isset($r['folio']) ? (int)$r['folio'] : 0;
-		$retorno = isset($r['retorno']) ? (string)$r['retorno'] : (isset($r['msg']) ? (string)$r['msg'] : '');
+		$retorno = isset($r['retorno']) ? (string)$r['retorno'] : (isset($r['msg']) ? (string)$r['msg'] : (isset($r['detail']) && is_string($r['detail']) ? $r['detail'] : ''));
 
 		if ($status !== 0 || $folio <= 0) {
-			$msg = $retorno !== '' ? $retorno : 'Respuesta inesperada de Cloud Apps';
+			$msg = $retorno !== '' ? $retorno : 'Respuesta inesperada de ' . $nombreProveedor;
 			log_message('error', 'Caja web DTE venta ' . (int)$idVenta . ' (HTTP ' . $http . '): ' . substr($raw, 0, 500));
 			$this->registrarFalla($db, $idVenta, $msg);
 			return array('ok' => false, 'folio' => 0, 'mensaje' => $msg);
@@ -147,7 +169,8 @@ class Mdte extends CI_Model
 
 		$ted = stripos($retorno, '<TED') !== false ? $retorno : '';
 		if ($ted === '') log_message('error', 'Caja web DTE venta ' . (int)$idVenta . ': folio ' . $folio . ' emitido sin TED: ' . substr($raw, 0, 500));
-		$trackid = isset($r['trackid']) ? (int)$r['trackid'] : 0;
+		// SimpleFactura informa trackId y trackid; Cloud Apps, trackid
+		$trackid = isset($r['trackid']) ? (int)$r['trackid'] : (isset($r['trackId']) ? (int)$r['trackId'] : 0);
 		$this->registrarEmision($db, (int)$idVenta, $folio, $trackid, $ted);
 		return array('ok' => true, 'folio' => $folio, 'trackid' => $trackid, 'mensaje' => 'Documento emitido');
 	}
@@ -277,6 +300,24 @@ class Mdte extends CI_Model
 		} elseif (!$esBoleta && !$esNc) {
 			throw new Exception('La factura requiere un cliente con RUT');
 		}
+		// Datos elegidos en la Caja al cobrar (venta_receptor, migración 20261111180000): giro, dirección, comuna, contacto y
+		// quién solicita la factura. Sin esa tabla o sin fila para la venta, los de la ficha del cliente, como antes.
+		$rutSolicita = '';
+		if ($conCliente) {
+			$hay = $db->query("SELECT to_regclass('public.venta_receptor') IS NOT NULL AS ok");
+			$hay = $hay ? $hay->row() : null;
+			$rec = ($hay && ($hay->ok === 't' || $hay->ok === true)) ? $db->query('SELECT * FROM venta_receptor WHERE id_venta = ?', array($idVenta)) : null;
+			$rec = $rec ? $rec->row() : null;
+			if ($rec) {
+				if (trim((string)$rec->razon_social) !== '') $receptor['RznSocRecep'] = $this->texto($rec->razon_social, 100);
+				$receptor['GiroRecep'] = $this->texto($rec->giro, 40);
+				$receptor['DirRecep'] = $this->texto($rec->direccion, 70);
+				$receptor['CmnaRecep'] = $this->texto($rec->comuna, 20);
+				if (trim((string)$rec->ciudad) !== '') $receptor['CiudadRecep'] = $this->texto($rec->ciudad, 20);
+				if (trim((string)$rec->contacto) !== '') $receptor['Contacto'] = $this->texto($rec->contacto, 80);
+				if ((int)$rec->rut_solicita > 0) $rutSolicita = (int)$rec->rut_solicita . '-' . strtoupper(trim((string)$rec->dv_solicita));
+			}
+		}
 
 		$idDoc = array(
 			'TipoDTE' => (string)$cod,
@@ -291,7 +332,7 @@ class Mdte extends CI_Model
 		$doc = array(
 			'Encabezado' => array(
 				'IdDoc' => $idDoc,
-				'Emisor' => $cfg['emisor'],
+				'Emisor' => $this->emisorDeSucursal($db, $v, $cfg['emisor']),
 				'Receptor' => $receptor,
 			),
 			'Totales' => $this->totalesDte($exento, $total, $neto, $iva, $montoExento, $tasa),
@@ -325,6 +366,15 @@ class Mdte extends CI_Model
 				'CodRef' => $this->esDevolucionTotal($db, $v) ? '1' : '3',
 				'RazonRef' => $this->texto($motivo !== '' ? $motivo : 'DEVOLUCION', 90),
 			));
+		}
+		// Quién solicita la factura (elegido en la Caja): va en el Encabezado, después del Receptor (orden del esquema del SII)
+		if ($rutSolicita !== '') {
+			$enc = array();
+			foreach ($doc['Encabezado'] as $k => $val) {
+				$enc[$k] = $val;
+				if ($k === 'Receptor') $enc['RUTSolicita'] = $rutSolicita;
+			}
+			$doc['Encabezado'] = $enc;
 		}
 		return $doc;
 	}
@@ -407,7 +457,10 @@ class Mdte extends CI_Model
 		}
 	}
 
-	/** [usuario, clave, terminal] de Configuraciones > Acceso facturación (Cloud Apps). */
+	/**
+	 * Configuraciones > Acceso facturación: usuario (RUT), contraseña, terminal, tipo de autenticación,
+	 * API Key / token (descifrado) y empresa proveedora.
+	 */
 	private function accesoFacturacion($db)
 	{
 		$u = $c = $t = '';
@@ -419,15 +472,31 @@ class Mdte extends CI_Model
 			$r = $db->query("SELECT trim(COALESCE(terminal_dte, '')) AS t FROM configuracion LIMIT 1")->row();
 			$t = $r ? $r->t : '';
 		}
-		return array(self::rutUsuario($u), $c, $t);
+		$tipo = dte_auth_tipo($db);
+		return array(
+			'usuario' => self::rutUsuario($u),
+			'clave' => $c,
+			'terminal' => $t,
+			'tipo' => $tipo,
+			'token' => $tipo === 'basic' ? '' : dte_auth_token($db),
+			'proveedor' => dte_proveedor_actual($db),
+		);
 	}
 
-	/** '' si usuario/clave/terminal sirven; si no, qué falta (para mostrarlo en pantalla). */
-	public function motivoAcceso($usuario, $clave, $terminal)
+	/**
+	 * '' si el acceso sirve; si no, qué falta (para mostrarlo en pantalla). El usuario (RUT de la empresa) se pide
+	 * siempre: con él se comprueba que se emita con el RUT de esta empresa y se reconoce la cuenta demo.
+	 * Basic necesita la contraseña; X-API-Key, Bearer y Token, la API Key.
+	 */
+	public function motivoAcceso($usuario, $clave, $terminal, $tipoAuth = 'basic', $token = '')
 	{
 		if (trim((string)$usuario) === '') return 'Falta el usuario (RUT) en Acceso facturación';
 		if (!self::rutValido($usuario)) return 'El usuario de Acceso facturación no es un RUT válido (' . $usuario . ')';
-		if ((string)$clave === '') return 'Falta la contraseña en Acceso facturación';
+		if ($tipoAuth === 'basic' || !in_array($tipoAuth, dte_auth_tipos_validos(), true)) {
+			if ((string)$clave === '') return 'Falta la contraseña en Acceso facturación';
+		} elseif (trim((string)$token) === '') {
+			return 'Falta la API Key en Acceso facturación';
+		}
 		if (trim((string)$terminal) === '') return 'Falta el terminal en Acceso facturación';
 		return '';
 	}
@@ -435,8 +504,11 @@ class Mdte extends CI_Model
 	/** Por qué la empresa no puede emitir ('' si puede): lo muestra la Caja. */
 	public function motivoSinEmision($db)
 	{
-		list($usuario, $clave, $terminal) = $this->accesoFacturacion($db);
-		$m = $this->motivoAcceso($usuario, $clave, $terminal);
+		$a = $this->accesoFacturacion($db);
+		if ($a['tipo'] !== 'basic' && $a['token'] === '' && dte_auth_clave_cifrado() === '' && dte_auth_token_info($db)['tiene']) {
+			return 'Falta RESTO_DTE_TOKEN_KEY en el servidor para leer la API Key guardada';
+		}
+		$m = $this->motivoAcceso($a['usuario'], $a['clave'], $a['terminal'], $a['tipo'], $a['token']);
 		if ($m !== '') return $m;
 		return $this->configuracion($db) ? '' : 'El usuario de Acceso facturación no es el RUT de esta empresa';
 	}
@@ -466,6 +538,27 @@ class Mdte extends CI_Model
 		$res = 11 - ($suma % 11);
 		$esperado = $res === 11 ? '0' : ($res === 10 ? 'K' : (string)$res);
 		return $dv === $esperado;
+	}
+
+	/**
+	 * Configuraciones > Datos de la Empresa (11-11-2026): el documento de una caja de Control de cajas lleva la dirección,
+	 * comuna y código SII (CdgSIISucur) de su sucursal, si es de la empresa que emite. Sin sucursal, el emisor de siempre.
+	 */
+	private function emisorDeSucursal($db, $v, $emisor)
+	{
+		$this->load->helper('sucursal_empresa');
+		$s = sucursal_de_caja($db, isset($v->id_caja) ? (int)$v->id_caja : 0);
+		if (!$s) return $emisor;
+		$res = array();
+		foreach ($emisor as $k => $valor) {
+			if ($k === 'DirOrigen' && $s->codigo_sii > 0) $res['CdgSIISucur'] = (string)$s->codigo_sii;
+			if ($s->direccion !== '') {
+				if ($k === 'DirOrigen') $valor = $this->texto($s->direccion, 70);
+				if (($k === 'CmnaOrigen' || $k === 'CiudadOrigen') && $s->comuna !== '') $valor = $this->texto($s->comuna, 20);
+			}
+			$res[$k] = $valor;
+		}
+		return $res;
 	}
 
 	private function tieneColumna($db, $tabla, $columna)
@@ -499,42 +592,69 @@ class Mdte extends CI_Model
 	// ====================== Folios ======================
 
 	/**
-	 * Folios disponibles en Cloud Apps para un tipo de documento y terminal.
+	 * Folios disponibles para un tipo de documento y terminal, en el proveedor indicado
+	 * (Cloud Apps: getFolios; datamaule.cl: cafInfo). Usa los datos de la pantalla aunque no estén grabados.
 	 * Devuelve {ok, mensaje, rangos: [{desde, hasta, ultimo, disponibles, vence}], disponibles}.
 	 */
-	public function consultarFolios($usuario, $clave, $terminal, $tipoDte)
+	public function consultarFolios($proveedor, $tipoAuth, $usuario, $clave, $token, $terminal, $tipoDte)
 	{
+		$proveedor = in_array($proveedor, dte_proveedores_validos(), true) ? $proveedor : 'acierto';
+		$nombre = dte_proveedor_nombre($proveedor);
 		$usuario = self::rutUsuario($usuario);
-		$falta = $this->motivoAcceso($usuario, $clave, $terminal);
+		$falta = $this->motivoAcceso($usuario, $clave, $terminal, $tipoAuth, $token);
 		if ($falta !== '') return array('ok' => false, 'mensaje' => $falta);
 		if ($tipoDte <= 0) return array('ok' => false, 'mensaje' => 'Tipo de documento no válido');
+		$auth = dte_auth_headers($tipoAuth, $usuario, $clave, $token);
+		if (!$auth['ok']) return array('ok' => false, 'mensaje' => $auth['mensaje']);
 
-		$url = preg_replace('#/newDte/?$#', '/getFolios/', $this->config->item('caja_dte_url', 'caja'));
-		$ch = curl_init($url);
+		$cuerpo = $proveedor === 'datamaule'
+			? array(array('tipoDTE' => (string)$tipoDte, 'terminal' => $terminal))
+			: array(array('tipoDTE' => (string)$tipoDte, 'terminal' => $terminal, 'reobtener' => 0));
+		$ch = curl_init($this->urlProveedor($proveedor, 'folios'));
 		curl_setopt_array($ch, array(
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_POST => true,
-			CURLOPT_HTTPHEADER => array(
-				'Authorization: Basic ' . base64_encode($usuario . ':' . $clave),
+			CURLOPT_HTTPHEADER => array_merge($auth['headers'], array(
 				'Content-Type: application/json',
 				'Accept: application/json',
-			),
-			CURLOPT_POSTFIELDS => json_encode(array(array('tipoDTE' => (string)$tipoDte, 'terminal' => $terminal, 'reobtener' => 0))),
+			)),
+			CURLOPT_POSTFIELDS => json_encode($cuerpo),
 			CURLOPT_CONNECTTIMEOUT => 5,
 			CURLOPT_TIMEOUT => 15,
 		));
 		$raw = curl_exec($ch);
 		$errorCurl = curl_error($ch);
 		curl_close($ch);
-		if ($raw === false) return array('ok' => false, 'mensaje' => 'Sin respuesta de Cloud Apps' . ($errorCurl ? ': ' . $errorCurl : ''));
+		if ($raw === false) return array('ok' => false, 'mensaje' => 'Sin respuesta de ' . $nombre . ($errorCurl ? ': ' . $errorCurl : ''));
 
 		$json = json_decode($raw, true);
-		if (!is_array($json)) return array('ok' => false, 'mensaje' => 'Respuesta inválida de Cloud Apps');
+		if (!is_array($json)) return array('ok' => false, 'mensaje' => 'Respuesta inválida de ' . $nombre);
+		// SimpleFactura: errores de autenticación en cafInfo vienen como {"detail": "..."} (HTTP 401/403)
+		if (isset($json['detail']) && is_string($json['detail'])) return array('ok' => false, 'mensaje' => $json['detail']);
 		$filas = isset($json[0]) ? $json : array($json);
 		$rangos = array();
 		$errores = array();
 		foreach ($filas as $f) {
 			if (!is_array($f)) continue;
+			if ($proveedor === 'datamaule') {
+				// cafInfo: próximo folio, disponibles en el CAF en uso y en todos los CAF vigentes del terminal
+				$retorno = trim((string)($f['retorno'] ?? ''));
+				$siguiente = (int)($f['nextFolio'] ?? 0);
+				if ($retorno !== '' || $siguiente <= 0) {
+					$errores[] = $retorno !== '' ? $retorno : (isset($f['msg']) ? (string)$f['msg'] : 'Sin folios');
+					continue;
+				}
+				$enUso = (int)($f['disponibles'] ?? 0);
+				$total = isset($f['disponible_total']) ? (int)$f['disponible_total'] : $enUso;
+				$rangos[] = array(
+					'desde' => $siguiente,                       // próximo folio que se entregará
+					'hasta' => $siguiente + max(0, $enUso - 1),  // último folio del CAF en uso
+					'ultimo' => $siguiente - 1,
+					'disponibles' => max(0, $total),
+					'vence' => isset($f['vencimiento']) ? (string)$f['vencimiento'] : '',
+				);
+				continue;
+			}
 			$error = isset($f['error']) ? (string)$f['error'] : (isset($f['status']) ? (string)$f['status'] : '');
 			if ($error !== '0' || !isset($f['desde'], $f['hasta'])) {
 				$msg = isset($f['msg']) ? $f['msg'] : (isset($f['retorno']) ? $f['retorno'] : 'Sin folios');
@@ -554,10 +674,11 @@ class Mdte extends CI_Model
 				'vence' => isset($f['fecha_vencimiento']) ? $f['fecha_vencimiento'] : '',
 			);
 		}
-		if (!$rangos) return array('ok' => false, 'mensaje' => $errores ? implode(' | ', array_unique($errores)) : 'Cloud Apps no devolvió folios');
+		if (!$rangos) return array('ok' => false, 'mensaje' => $errores ? implode(' | ', array_unique($errores)) : $nombre . ' no devolvió folios');
 		$disponibles = 0;
 		foreach ($rangos as $r) $disponibles += $r['disponibles'];
-		return array('ok' => true, 'mensaje' => 'Folios disponibles', 'rangos' => $rangos, 'disponibles' => $disponibles);
+		return array('ok' => true, 'mensaje' => 'Folios disponibles', 'rangos' => $rangos, 'disponibles' => $disponibles,
+			'proveedor' => $proveedor);
 	}
 
 	// ====================== Timbre (TED → PDF417) ======================

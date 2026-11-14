@@ -11,7 +11,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | and disable it back when you're done.
 |
 */
-$config['migration_enabled'] = FALSE;
+$config['migration_enabled'] = TRUE;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,7 +43,9 @@ $config['migration_type'] = 'timestamp';
 | will migrate up. This must be set.
 |
 */
-$config['migration_table'] = 'migrations';
+// Tabla propia de resportesResto (no "migrations"): si una base la compartiera con miPDV, sus versiones
+// no se mezclan. La crea y la usa libraries/MigracionesResto.php.
+$config['migration_table'] = 'migrations_resto';
 
 /*
 |--------------------------------------------------------------------------
@@ -69,7 +71,19 @@ $config['migration_auto_latest'] = FALSE;
 | be upgraded / downgraded to.
 |
 */
-$config['migration_version'] = 0;
+// Versión objetivo = la migración con número más alto de la carpeta (CONVENCIONES.md, Regla 8). Así no hay que
+// tocar este archivo al agregar una migración. auto_latest queda en FALSE: las aplica MigracionesResto, una a una
+// y solo hacia arriba (Login::postLoginWarmup y php index.php despliegue esquema).
+$config['migration_version'] = call_user_func(function () {
+	$piso = 20261110190000;   // primera migración del proyecto; nunca se baja de aquí
+	$max = $piso;
+	foreach ((array)@scandir(APPPATH . 'migrations/') as $archivo) {
+		if (preg_match('/^(\d{14})_.+\.php$/', (string)$archivo, $m) && (int)$m[1] > $max) {
+			$max = (int)$m[1];
+		}
+	}
+	return $max;
+});
 
 /*
 |--------------------------------------------------------------------------

@@ -4,6 +4,15 @@ $date = new DateTime('now');
 $date->modify('last day of this month');
 $fechaActual = date('Y-m-d');
 ?>
+<style>
+	/* Estrella de favoritos de la Caja en el listado de la Carta */
+	#tableCartaProductos .btn-favorito { width: 34px; height: 34px; padding: 0; border: 1px solid transparent; border-radius: 50%; background: transparent;
+		color: #C9BBAA; font-size: 18px; line-height: 32px; cursor: pointer; transition: color .15s, background .15s; }
+	#tableCartaProductos .btn-favorito:hover { background: #FFF6E3; color: #E3A008; }
+	#tableCartaProductos .btn-favorito.activo { color: #E3A008; }
+	#tableCartaProductos .btn-favorito:focus-visible { outline: 2px solid #E3A008; outline-offset: 1px; }
+	#tableCartaProductos .btn-favorito[disabled] { opacity: .5; cursor: progress; }
+</style>
 <div class="content-header">
 	<div class="header-icon">
 		<i class="pe-7s-photo-gallery"></i>
@@ -40,6 +49,7 @@ $fechaActual = date('Y-m-d');
 							<thead>
 								<tr>
 									<th class="text text-center">N° PRODUCTO</th>
+									<th class="text text-center">FAVORITO</th>
 									<th class="text text-center">CODIGO DE BARRAS</th>
 									<th class="text text-left">PRODUCTO</th>
 									<th class="text text-left">FAMILIA</th>
@@ -67,6 +77,7 @@ $fechaActual = date('Y-m-d');
 							</thead>
 							<tfoot>
 								<tr>
+									<th></th>
 									<th></th>
 									<th></th>
 									<th></th>

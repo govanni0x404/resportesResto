@@ -72,126 +72,22 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 (ENVIRONMENT !== 'production')
 */
-$active_group = '76193938-6';
+/*
+| 10-11-2026: SIN GRUPOS DE CONEXIÓN.
+|
+| Ya no se usan conexiones de database.php: ni la intranet (antes 'default'),
+| ni una por cliente ('76193938-6', etc.). Todo es por API, igual que mipdv_web:
+|
+|   - Login y empresas:  API AppWebLogin de la intranet (models/Mlogin.php).
+|   - Base de la empresa: la intranet (api/validarCliente) entrega servidor + base;
+|     libraries/ConexionesTenant.php la abre con libraries/DbManager.php, cuyo
+|     diccionario de servidores toma las credenciales del entorno
+|     (MIPDV_DB_<SERVIDOR>_HOSTNAME / _PORT / _USERNAME / _PASSWORD; ver .env.example).
+|
+| No agregue grupos aquí: get_tenant_db() no los lee. Un $this->load->database()
+| sin parámetros falla a propósito ("No database connection settings were found").
+*/
+$active_group = 'default';
 $query_builder = TRUE;
 
-
-$db['default'] = array(
-	'dsn'	=> '',
-	// Intranet remota (por VPN); para volver, descomentar estas 4 líneas y borrar las 4 locales:
-	//'hostname' => '10.66.66.1',
-	//'username' => 'ccerda',
-	//'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
-	//'database' => 'ccerda_intranet2',
-	'hostname' => 'localhost',
-	'username' => 'postgres',
-	'password' => '123datamaule2019.,#-',
-	'database' => 'intranet_local',
-	'dbdriver' => 'postgre',
-	'dbprefix' => '',
-	'pconnect' => FALSE,
-	'db_debug' => TRUE,
-	'cache_on' => FALSE,
-	'cachedir' => '',
-	'char_set' => 'utf8',
-	'dbcollat' => 'utf8_general_ci',
-	'swap_pre' => '',
-	'encrypt' => FALSE,
-	'compress' => FALSE,
-	'stricton' => FALSE,
-	'failover' => array(),
-	'save_queries' => TRUE,
-	'schema'=>'public'
-);
-
-$db['76193938-6'] = array(
-	'dsn' => '',
-	'hostname' => 'localhost', //localhost
-	'username' => 'postgres',
-	'password' => '123datamaule2019.,#-',
-	'database' => 'laToscana',
-	'dbdriver' => 'postgre',
-	'dbprefix' => '',
-	'pconnect' => FALSE,
-	'db_debug' => TRUE,
-	'cache_on' => FALSE,
-	'cachedir' => '',
-	'char_set' => 'utf8',
-	'dbcollat' => 'utf8_general_ci',
-	'swap_pre' => '',
-	'encrypt' => FALSE,
-	'compress' => FALSE,
-	'stricton' => FALSE,
-	'failover' => array(),
-	'save_queries' => TRUE,
-	'schema'=>'public'
-);
-
-$db['9209734-K'] = array(
-	'dsn' => '',
-	'hostname' => '10.66.66.1',
-	'username' => 'ccerda',
-	'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
-	'database' => 'ccerda_escuela_artilleria',
-	'dbdriver' => 'postgre',
-	'dbprefix' => '',
-	'pconnect' => FALSE,
-	'db_debug' => TRUE,
-	'cache_on' => FALSE,
-	'cachedir' => '',
-	'char_set' => 'utf8',
-	'dbcollat' => 'utf8_general_ci',
-	'swap_pre' => '',
-	'encrypt' => FALSE,
-	'compress' => FALSE,
-	'stricton' => FALSE,
-	'failover' => array(),
-	'save_queries' => TRUE,
-	'schema'=>'public'
-);
-
-$db['77115675-4'] = array(
-	'dsn' => '',
-	'hostname' => '10.66.66.1',
-	'username' => 'ccerda',
-	'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
-	'database' => 'ccerda_pruebasrestoweb',
-	'dbdriver' => 'postgre',
-	'dbprefix' => '',
-	'pconnect' => FALSE,
-	'db_debug' => TRUE,
-	'cache_on' => FALSE,
-	'cachedir' => '',
-	'char_set' => 'utf8',
-	'dbcollat' => 'utf8_general_ci',
-	'swap_pre' => '',
-	'encrypt' => FALSE,
-	'compress' => FALSE,
-	'stricton' => FALSE,
-	'failover' => array(),
-	'save_queries' => TRUE,
-	'schema'=>'public'
-);
-
-$db['10918252-4'] = array(
-	'dsn' => '',
-	'hostname' => '10.66.66.1',
-	'username' => 'ccerda',
-	'password' => 'oQnUPUuiwqq6ZWpGgfDqxvxgHYU(',
-	'database' => 'ccerda_bajon_alameda_web',
-	'dbdriver' => 'postgre',
-	'dbprefix' => '',
-	'pconnect' => FALSE,
-	'db_debug' => TRUE,
-	'cache_on' => FALSE,
-	'cachedir' => '',
-	'char_set' => 'utf8',
-	'dbcollat' => 'utf8_general_ci',
-	'swap_pre' => '',
-	'encrypt' => FALSE,
-	'compress' => FALSE,
-	'stricton' => FALSE,
-	'failover' => array(),
-	'save_queries' => TRUE,
-	'schema'=>'public'
-);
+$db = array();

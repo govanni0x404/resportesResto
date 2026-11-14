@@ -62,7 +62,8 @@ $propina = $por_propina > 0 ? (int)round($total * $por_propina / 100) : 0;
 			<div class="c b"><?php echo $h($e->nombre_fantasia ?: $e->razon_social); ?></div>
 			<?php if (!empty($e->direccion_empresa)) : ?><div class="c"><?php echo $h($e->direccion_empresa); ?></div><?php endif; ?>
 		<?php endif; ?>
-		<div class="doc c b">PRECUENTA<br><?php echo $h(mb_strtoupper($nombre_mesa)); ?></div>
+		<div class="doc c b">PRECUENTA<br><?php echo $h(mb_strtoupper($nombre_mesa)); ?>
+			<?php if (!empty($titulo)) : ?><br><?php echo $h(mb_strtoupper($titulo)); ?><?php endif; ?></div>
 		<div>Llegada: <?php echo $h($desde); ?></div>
 		<div>Emitida: <?php echo date('d/m/Y H:i'); ?></div>
 		<hr>
@@ -87,6 +88,19 @@ $propina = $por_propina > 0 ? (int)round($total * $por_propina / 100) : 0;
 				<tr class="total"><td>TOTAL CON PROPINA</td><td class="r"><?php echo $m($total + $propina); ?></td></tr>
 			<?php endif; ?>
 		</table>
+		<?php if (!empty($partes)) : ?>
+			<?php $inicio = isset($inicio) ? (int)$inicio : 0; $parte = isset($parte) ? (int)$parte : 0; ?>
+			<hr>
+			<div class="c b">DIVIDIDA EN <?php echo count($partes) + $inicio; ?> PARTES</div>
+			<table>
+				<?php foreach ($partes as $i => $monto) : ?>
+					<tr<?php echo $parte === $i + 1 ? ' class="total"' : ''; ?>>
+						<td><?php echo $parte === $i + 1 ? '&gt; ' : ''; ?>Parte <?php echo $i + 1 + $inicio; ?></td>
+						<td class="r"><?php echo $m($monto); ?></td>
+					</tr>
+				<?php endforeach; ?>
+			</table>
+		<?php endif; ?>
 		<div class="nota c">La propina es voluntaria.<br>Este documento no es válido como boleta.</div>
 	</div>
 	<script>

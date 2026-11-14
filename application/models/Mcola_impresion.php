@@ -20,9 +20,12 @@ class Mcola_impresion extends CI_Model
 		if ($nombreConexion === null) {
 			$db = get_tenant_db($this);
 		} else {
-			include(APPPATH . 'config/database.php');
-			if (!preg_match('/^[A-Za-z0-9_-]+$/', $nombreConexion) || !isset($db[$nombreConexion])) return false;
-			$db = $this->load->database($db[$nombreConexion], true);
+			// 10-11-2026: sin database.php. El agente sigue mandando "<conexion>.<secreto>"; la conexión
+			// se busca en el diccionario local (ConexionesTenant), que se llena en cada login web.
+			if (!preg_match('/^[A-Za-z0-9_-]+$/', $nombreConexion)) return false;
+			$this->load->library('ConexionesTenant');
+			$db = $this->conexionestenant->conectarPorNombre($nombreConexion, array('db_debug' => FALSE));
+			if (!$db || !$db->conn_id) return false;
 		}
 		$db->db_debug = false;
 		$this->db = $db;

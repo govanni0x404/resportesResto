@@ -83,3 +83,16 @@ defined('EXIT_USER_INPUT')     OR define('EXIT_USER_INPUT', 7); // invalid user 
 defined('EXIT_DATABASE')       OR define('EXIT_DATABASE', 8); // database error
 defined('EXIT__AUTO_MIN')      OR define('EXIT__AUTO_MIN', 9); // lowest automatically-assigned error code
 defined('EXIT__AUTO_MAX')      OR define('EXIT__AUTO_MAX', 125); // highest automatically-assigned error code
+
+/*
+|--------------------------------------------------------------------------
+| Identificador del software en la intranet (10-11-2026)
+|--------------------------------------------------------------------------
+|
+| Igual que MIPDV_ID_SOFTWARE en mipdv_web: es el valor con el que la API de la
+| intranet (AppWebLogin y validarCliente) filtra usuarios, empresas y las bases
+| de datos de cada sucursal (conexion_sucursal.id_software). Lo usan Login y
+| ApiMovil. Antes estaba escrito como 5 en esos dos lugares.
+|
+*/
+defined('RESTO_ID_SOFTWARE') OR define('RESTO_ID_SOFTWARE', 24);

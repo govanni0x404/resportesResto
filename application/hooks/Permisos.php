@@ -24,19 +24,19 @@ class Permisos
 	private static $publicos = array('login', 'welcome', 'apimovil', 'agenteimpresion');
 
 	/** Métodos públicos que actúan sobre la sesión del usuario (cambiar empresa, descargar el instalador del agente). */
-	private static $publicosConSesion = array('login/relogin' => true, 'agenteimpresion/instalador' => true);
+	private static $publicosConSesion = array('login/relogin' => true, 'login/postloginwarmup' => true, 'agenteimpresion/instalador' => true);
 
 	/** Cualquier usuario con sesión (trabaja solo sobre el propio usuario). */
 	private static $libres = array('perfildeusuario');
 
 	/** Solo gerencia o un rol autorizado explícitamente en Privilegios de Usuario. */
-	private static $sensibles = array('usuario', 'privilegiosusuario', 'configuraciones');
+	private static $sensibles = array('usuario', 'privilegiosusuario', 'configuraciones', 'controlcaja');
 
 	/** Reportes: sin excepción para las consultas, muestran ventas, cajas y propinas. */
 	private static $reportes = array('dashboard', 'cierresdecaja', 'consolidadoventas', 'detalleoperaciones',
 		'documentostributarios', 'insumosporbodega', 'listadodeclientes', 'propinasporgarzon', 'resumenanulaciones',
 		'resumendecompras', 'resumenentradabodega', 'resumensalidabodega', 'resumenventasproductosmes',
-		'ventasmensualestotalizadas', 'ventasporproducto');
+		'ventasmensualestotalizadas', 'ventasporproducto', 'auditoriacaja', 'anulacionventas');
 
 	/** Controladores sin menú propio: se rigen por el módulo de la pantalla que los usa. */
 	private static $modulo = array('imagenproducto' => 'Productos', 'produccion' => 'Insumos', 'recetaproduccion' => 'Insumos');

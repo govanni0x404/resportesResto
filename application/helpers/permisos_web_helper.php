@@ -12,55 +12,66 @@ defined('BASEPATH') or exit('No direct script access allowed');
  * Lo usan el menú (menu_visible en menuTop) y el control del servidor (hooks/Permisos.php): la misma regla en los dos lados.
  */
 
-/** Módulos de la web agrupados como en el menú: nombre del controlador => nombre visible. */
+/**
+ * Módulos de la web agrupados como en el menú: nombre del controlador => nombre visible.
+ * 11-11-2026: mismo orden y grupos que la barra lateral (menuTop). Mantención muestra primero sus submenús
+ * ("Mantención › ...") y después sus opciones. Compras está en la raíz y también dentro de Bodega: es un solo permiso.
+ * El orden de este arreglo es el orden de la pantalla Privilegios; las claves (módulos) no cambian.
+ */
 function permisos_web_catalogo()
 {
 	return array(
-		'Ventas' => array(
-			'Dashboard' => 'Mis ventas (inicio)',
+		'Menú principal' => array(
+			'Dashboard' => 'Dashboard',
 			'Caja' => 'Caja',
-			'Mesas' => 'Mesas (herramientas)',
-		),
-		'Procesos' => array(
-			'EntradaBodega' => 'Entrada a bodega',
-			'SalidaBodega' => 'Salida de bodega',
-			'Compras' => 'Compras',
-			'Inventario' => 'Inventario',
-		),
-		'Mantención' => array(
-			'Productos' => 'Productos de la carta',
+			'Productos' => 'Carta',
 			'Insumos' => 'Insumos',
 			'Recetas' => 'Recetas',
-			'ListaDePrecios' => 'Lista de precios',
 			'Cliente' => 'Clientes',
-			'Proveedor' => 'Proveedores',
+			'Proveedor' => 'Proveedor',
+			'Compras' => 'Compras (también en Bodega)',
+			'ListaDePrecios' => 'Lista de precios',
+		),
+		'Mantención › Delivery' => array(
+			'Delivery' => 'Sector',
+		),
+		'Mantención › Eventos o presupuestos' => array(
+			'GastoEventos' => 'Gastos en eventos',
+			'IngresoEventos' => 'Ingresos en eventos',
+			'TipoEvento' => 'Tipos de evento',
+		),
+		'Mantención › Grupos/Familias' => array(
+			'Familias' => 'Familias de productos',
+			'FamiliasInsumos' => 'Familias de insumos',
+			'FamiliasReceta' => 'Familias de recetas',
+		),
+		'Mantención › Recintos' => array(
 			'Recintos' => 'Recintos',
 			'MesasPorRecinto' => 'Mesas por recinto',
 		),
-		'Tablas' => array(
+		'Mantención' => array(
 			'Agregados' => 'Agregados',
 			'Bodegas' => 'Bodegas',
 			'CanalDeVenta' => 'Canal de venta',
 			'CentroCosto' => 'Centro de costo',
 			'Comuna' => 'Comunas',
-			'Provincias' => 'Provincias',
-			'Delivery' => 'Sectores de delivery',
 			'DestinoDeImpresion' => 'Destinos de impresión',
-			'GastoEventos' => 'Gastos en eventos',
-			'IngresoEventos' => 'Ingresos en eventos',
-			'TipoEvento' => 'Tipos de evento',
-			'Familias' => 'Familias de productos',
-			'FamiliasInsumos' => 'Familias de insumos',
-			'FamiliasReceta' => 'Familias de recetas',
-			'SubFamilias' => 'Subfamilias',
 			'FormasDePago' => 'Formas de pago',
 			'DocumentosTributarios' => 'Documentos tributarios',
 			'Impuestos' => 'Impuestos',
 			'MensajesPorProductos' => 'Mensajes por producto',
 			'Moneda' => 'Moneda',
+			'Provincias' => 'Provincias',
+			'SubFamilias' => 'Subfamilias',
 			'Turnos' => 'Turnos',
 			'Umedida' => 'Unidades de medida',
 			'ItemGastosMensuales' => 'Ítems de gastos mensuales',
+			'Usuario' => 'Usuarios',
+		),
+		'Bodega' => array(
+			'EntradaBodega' => 'Entrada a bodega',
+			'SalidaBodega' => 'Salida de bodega',
+			'Inventario' => 'Inventario',
 		),
 		'Consultas' => array(
 			'InsumosPorBodega' => 'Stock de insumos',
@@ -71,14 +82,19 @@ function permisos_web_catalogo()
 			'VentasPorProducto' => 'Ventas por producto',
 			'PropinasPorGarzon' => 'Propinas por garzón',
 			'ResumenAnulaciones' => 'Resumen de anulaciones',
+			'AnulacionVentas' => 'Anulación de ventas',
+			'AuditoriaCaja' => 'Auditoría de caja',
 			'ListadoDeClientes' => 'Listado de clientes',
 			'VentasMensualesTotalizadas' => 'Resumen de ventas mensuales',
 			'ResumenVentasProductosMes' => 'Venta de productos mensual',
 			'ResumenEntradaBodega' => 'Movimientos: entradas de stock',
 			'ResumenSalidaBodega' => 'Movimientos: salidas de stock',
 		),
-		'Administración' => array(
-			'Usuario' => 'Usuarios',
+		'Herramientas' => array(
+			'Mesas' => 'Mesas',
+			'ControlCaja' => 'Control de cajas',
+		),
+		'Configuración' => array(
 			'Configuraciones' => 'Configuraciones',
 		),
 	);
@@ -87,7 +103,7 @@ function permisos_web_catalogo()
 /** Módulos que con la regla antigua exigían permiso explícito. */
 function permisos_web_sensibles()
 {
-	return array('usuario', 'privilegiosusuario', 'configuraciones');
+	return array('usuario', 'privilegiosusuario', 'configuraciones', 'controlcaja');
 }
 
 /** nombre en minúsculas => true, de todos los módulos del catálogo. */
@@ -165,6 +181,32 @@ function permiso_web($CI, $modulo, $idRol = null)
 	}
 	if (!array_key_exists($k, $a['accesos'])) return !in_array($k, permisos_web_sensibles(), true);
 	return $a['accesos'][$k];
+}
+
+/**
+ * Nombre del rol del usuario (tabla rol de la base de la empresa), para mostrarlo al pie de la barra lateral.
+ * Se lee una vez y queda en la sesión; si cambia la empresa/conexión o el rol se vuelve a leer.
+ */
+function nombre_rol_web($CI)
+{
+	$idRol = (int)$CI->session->userdata('id_rol');
+	$clave = $CI->session->userdata('nombre_conexion') . '|' . $CI->session->userdata('bd_name') . '|' . $idRol;
+	$guardado = $CI->session->userdata('nombre_rol_web');
+	if (is_array($guardado) && isset($guardado['clave']) && $guardado['clave'] === $clave) return (string)$guardado['nombre'];
+	if ($idRol <= 0) return '';
+	try {
+		$CI->load->helper('tenant');
+		$db = get_tenant_db($CI);
+		$r = $db->query('SELECT nombre_rol FROM rol WHERE id_rol = ?', array($idRol));
+		if (!$r) return '';
+		$f = $r->row();
+		$nombre = $f ? trim((string)$f->nombre_rol) : '';
+		$CI->session->set_userdata('nombre_rol_web', array('clave' => $clave, 'nombre' => $nombre));
+		return $nombre;
+	} catch (Throwable $e) {
+		log_message('error', 'nombre_rol_web: no se pudo leer el rol: ' . $e->getMessage());
+		return '';
+	}
 }
 
 /**

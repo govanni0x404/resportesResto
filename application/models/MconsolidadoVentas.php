@@ -26,21 +26,25 @@ class MconsolidadoVentas extends CI_Model
         $q = "SELECT count(v.id_venta) as cantidad_ventas, round(sum(v.neto)) as total_neto, round(sum(v.iva)) as total_iva, round(sum(v.monto_descuento)) as total_descuento, round(sum(v.total)) as total_ventas,
 		round(sum(v.total + v.monto_descuento)) as total_general
 		from venta v 
-		join pago_venta pv on v.id_venta = pv.id_venta
-		join fpago fp on pv.id_fpago = fp.id_fpago
 		join canal_venta cv on v.id_canal_venta = cv.id_canal_venta
-		where fp.escortesia = false and v.fecha between ? and ?";
+		where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?";
         $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
-    public function MontoTotalventas()
+    public function MontoTotalventas($desde = null, $hasta = null)
     {
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
-        }$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $q = " SELECT round(sum(v.total)) as monto_total_ventas from venta v";
-        $query = $this->db->query($q)->result();
+        }
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        // 14-11-2026: antes sumaba TODA la historia de ventas ("MONTO TOTAL VENTAS" de $2.349 millones).
+        // Ahora solo el período elegido, sin anuladas ni cortesías, una vez por venta.
+        $de = ($desde !== null && strtotime($desde) !== false) ? date('Y-m-d', strtotime($desde)) : date('Y-m-d');
+        $a = ($hasta !== null && strtotime($hasta) !== false) ? date('Y-m-d', strtotime($hasta)) : $de;
+        $q = "SELECT coalesce(round(sum(v.total)), 0) as monto_total_ventas from venta v
+              where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?";
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
@@ -69,9 +73,7 @@ class MconsolidadoVentas extends CI_Model
 		join producto p on dv.id_producto = p.id_producto
 		join familia f on p.id_familia = f.id_familia
 		join caja ca on v.id_caja = ca.id_caja
-		join pago_venta pv on v.id_venta = pv.id_venta
-		join fpago fp on pv.id_fpago = fp.id_fpago
-		where fp.escortesia = false and fp.vigente = true and v.fecha between ? and ?
+		where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false AND fp.vigente = true) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?
 		group by f.id_familia";
         $query = $this->db->query($q, array($de, $a))->result();
         return $query;
@@ -93,13 +95,11 @@ class MconsolidadoVentas extends CI_Model
         if ($jsDateTS !== false) {
             $a = date('Y-m-d', $jsDateTS);
         }$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $q = "SELECT cv.nombre_canal_venta, round(sum(dv.subtotal_neto_con_descuento)) as total_neto, round(sum(dv.monto_iva)) as total_iva, round(sum(dv.total_bruto_con_descuento)) as total_ventas, count(v.id_venta) as cantidad_ventas
+        $q = "SELECT cv.nombre_canal_venta, round(sum(dv.subtotal_neto_con_descuento)) as total_neto, round(sum(dv.monto_iva)) as total_iva, round(sum(dv.total_bruto_con_descuento)) as total_ventas, count(DISTINCT v.id_venta) as cantidad_ventas
 		from venta v
 		join detalle_venta dv on v.id_venta = dv.id_venta
-		join pago_venta pv on v.id_venta = pv.id_venta
-		join fpago fp on pv.id_fpago = fp.id_fpago
 		join canal_venta cv on v.id_canal_venta = cv.id_canal_venta
-		where fp.vigente = true and fp.escortesia = false and v.fecha between ? and ?
+		where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false AND fp.vigente = true) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?
 		group by cv.nombre_canal_venta";
 
         $query = $this->db->query($q, array($de, $a))->result();
@@ -138,9 +138,7 @@ class MconsolidadoVentas extends CI_Model
 		join producto p on dv.id_producto = p.id_producto
 		join familia f on p.id_familia = f.id_familia
 		join caja ca on v.id_caja = ca.id_caja
-		join pago_venta pv on v.id_venta = pv.id_venta
-		join fpago fp on pv.id_fpago = fp.id_fpago
-		where fp.escortesia = false and v.fecha between ? and ?
+		where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?
 		group by f.nombre_familia
 		order by f.nombre_familia";
         $query = $this->db->query($q, array($de, $a))->result();
@@ -163,14 +161,12 @@ class MconsolidadoVentas extends CI_Model
         }
 
       $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $q = "SELECT cv.nombre_canal_venta, round(sum(dv.neto)) as total_neto, round(sum(dv.iva)) as total_iva, round(sum(dv.total_bruto)) as total_ventas, count(v.id_venta) as cantidad_ventas,
-		round(sum(v.total)) as monto_total_ventas
+        $q = "SELECT cv.nombre_canal_venta, round(sum(dv.neto)) as total_neto, round(sum(dv.iva)) as total_iva, round(sum(dv.total_bruto)) as total_ventas, count(DISTINCT v.id_venta) as cantidad_ventas,
+		round(sum(v.total / (SELECT count(*) FROM detalle_venta x WHERE x.id_venta = v.id_venta))) as monto_total_ventas
 		from venta v
 		join detalle_venta dv on v.id_venta = dv.id_venta
-		join pago_venta pv on v.id_venta = pv.id_venta
-		join fpago fp on pv.id_fpago = fp.id_fpago
 		join canal_venta cv on v.id_canal_venta = cv.id_canal_venta
-		where fp.vigente = true and fp.escortesia = false and v.fecha between ? and ?
+		where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false AND fp.vigente = true) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?
 		group by cv.nombre_canal_venta";
         $query = $this->db->query($q, array($de, $a))->result();
         return $query;
@@ -193,22 +189,25 @@ class MconsolidadoVentas extends CI_Model
         $q = "SELECT count(v.id_venta) as cantidad_ventas, round(sum(v.neto)) as total_neto, round(sum(v.iva)) as total_iva, round(sum(v.monto_descuento)) as total_descuento, round(sum(v.total)) as total_ventas,
 		round(sum(v.total + v.monto_descuento)) as total_general
 		from venta v 
-		join pago_venta pv on v.id_venta = pv.id_venta
-		join fpago fp on pv.id_fpago = fp.id_fpago
 		join canal_venta cv on v.id_canal_venta = cv.id_canal_venta
-		where fp.escortesia = false and v.fecha between ? and ?";
+		where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?";
         $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 
-    public function totalSistema()
+    public function totalSistema($desde = null, $hasta = null)
     {
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $q = " SELECT round(sum(v.total)) as monto_total_ventas from venta v";
-        $query = $this->db->query($q)->result();
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        // 14-11-2026: antes sumaba TODA la historia de ventas ("MONTO TOTAL VENTAS" de $2.349 millones).
+        // Ahora solo el período elegido, sin anuladas ni cortesías, una vez por venta.
+        $de = ($desde !== null && strtotime($desde) !== false) ? date('Y-m-d', strtotime($desde)) : date('Y-m-d');
+        $a = ($hasta !== null && strtotime($hasta) !== false) ? date('Y-m-d', strtotime($hasta)) : $de;
+        $q = "SELECT coalesce(round(sum(v.total)), 0) as monto_total_ventas from venta v
+              where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?";
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 }

@@ -9,6 +9,32 @@ $(document).ready(function() {
     ListadoCartaDeProductos();
 });
 
+// Favoritos de la Caja: la estrella del listado marca o desmarca el producto sin abrir su ficha
+// (la celda de la estrella no selecciona la fila, ver "select" en ListadoCartaDeProductos)
+$('#tableCartaProductos').on('click.favorito', '.btn-favorito', function() {
+    var $b = $(this);
+    var fila = tablaCartaProductos.row($b.closest('tr'));
+    var datos = fila.data();
+    if (!datos) return;
+    var nuevo = datos.favorito !== 'SI';
+    $b.prop('disabled', true);
+    $.post(base_url + "index.php/Productos/marcarFavorito", {
+        id_producto: datos.id_producto,
+        favorito: nuevo ? 1 : 0
+    }, null, 'json').done(function(r) {
+        if (!r || !r.ok) {
+            swal('No se pudo guardar', (r && r.error) || 'Intenta nuevamente', 'error');
+            return;
+        }
+        datos.favorito = nuevo ? 'SI' : 'NO';
+        fila.data(datos).draw(false);
+    }).fail(function() {
+        swal('No se pudo guardar', 'Revisa la conexión e intenta nuevamente', 'error');
+    }).always(function() {
+        $b.prop('disabled', false);
+    });
+});
+
 $('#btnFiltrar').on('click', function() {
     var id_familia = $("#cboFamilias").val();
     console.log(id_familia);
@@ -98,7 +124,8 @@ function ListadoCartaDeProductos() {
         "bPaginate": true,
         "bProcessing": false,
         "pageLength": 15,
-        "select": true,
+        // La celda de la estrella (favorito de la Caja) no abre la ficha del producto
+        "select": { style: 'os', selector: 'td:not(.col-favorito)' },
         //"dom": "Bfrtip",
         "ordering": true,
         "filter": true,
@@ -113,6 +140,13 @@ function ListadoCartaDeProductos() {
         },
         "columns": [
             {mData: "id_producto", className: "text-center", visible: false},
+            {mData: "favorito", className: "text-center col-favorito", responsivePriority: 1, render: function(d, type) {
+                if (type !== 'display') return d === 'SI' ? 1 : 0;
+                var on = d === 'SI';
+                return '<button type="button" class="btn-favorito' + (on ? ' activo' : '') + '" title="' +
+                    (on ? 'Quitar de favoritos de la Caja' : 'Marcar como favorito de la Caja') + '" aria-pressed="' + on + '">' +
+                    '<i class="fa ' + (on ? 'fa-star' : 'fa-star-o') + '"></i></button>';
+            }},
             {mData: "cbarra", className: "text-center"},
             {mData: "nombre_producto", className: "text-left"},
             {mData: "nombre_familia", className: "text-left"},
@@ -137,6 +171,12 @@ function ListadoCartaDeProductos() {
             {mData: "ver_en_dispositivos_moviles", className: "text-center", visible: false},
             {mData: "permite_cortesia", className: "text-center", visible: false}
         ],
+        // Sin la columna producto.favorito en la base (migración pendiente) no se muestran las estrellas
+        "initComplete": function(settings, json) {
+            var hayFavoritos = !!(json && json.favoritos);
+            this.api().column(1).visible(hayFavoritos);
+            $('#grupoFavorito').toggle(hayFavoritos);
+        },
         'language': {
             url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
             select: {
@@ -179,6 +219,7 @@ function ListadoCartaDeProductos() {
         $('#ckPedirCantidadEnVenta').prop('checked', rowData[0].pedir_cantidad_en_venta == 'SI');
         $('#ckVerDispositivomovil').prop('checked', rowData[0].ver_en_dispositivos_moviles == 'SI');
         $('#ckPermiteCortesia').prop('checked', rowData[0].permite_cortesia == 'SI');
+        $('#ckFavorito').prop('checked', rowData[0].favorito == 'SI');
         
         if (rowData[0].con_agregado == 'SI') {
             $("#btnAgregados").attr("disabled", false);
@@ -223,6 +264,7 @@ function crearNuevoProducto() {
     $('#ckPedirCantidadEnVenta').prop('checked', false);
     $('#ckVerDispositivomovil').prop('checked', true);
     $('#ckPermiteCortesia').prop('checked', false);
+    $('#ckFavorito').prop('checked', false);
     
     $("#extras").addClass('hidden');
     $("#btnAgregados").attr("disabled", true);
@@ -426,6 +468,7 @@ function GrabarProducto() {
         'mostrar_detalle_insumos_receta': false,
         'ver_en_dispositivos_moviles': $('#ckVerDispositivomovil').is(":checked") ? 1 : 0,
         'permite_cortesia': $('#ckPermiteCortesia').is(":checked") ? 1 : 0,
+        'favorito': $('#ckFavorito').is(":checked") ? 1 : 0,
     };
     
     var idProducto = $('#txtID').val();

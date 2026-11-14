@@ -37,6 +37,20 @@
 
 <script src="<?php echo base_url() ?>assets/plugins/select2/select2.js"></script>
 <script src="<?php echo base_url() ?>assets/plugins/toastr/toastr.min.js"></script>
+<script>
+  // 11-11-2026: todos los avisos (verde, rojo, naranjo y azul) traen una X para cerrarlos, en todo el sistema
+  if (window.toastr) {
+    toastr.options.closeButton = true;
+    toastr.options.closeHtml = '<button type="button" aria-label="Cerrar aviso" title="Cerrar">&times;</button>';
+  }
+</script>
+<style>
+  /* La X del aviso: más grande y fácil de presionar (toastr la deja muy pequeña) */
+  #toast-container > .toast { padding-right: 44px; }
+  #toast-container .toast-close-button { position: absolute; top: 50%; right: 8px; margin-top: -15px; width: 30px; height: 30px; float: none;
+    border-radius: 8px; color: #fff; font-size: 24px; font-weight: 400; line-height: 28px; text-align: center; opacity: .85; text-shadow: none; }
+  #toast-container .toast-close-button:hover, #toast-container .toast-close-button:focus { opacity: 1; background: rgba(255, 255, 255, .18); color: #fff; outline: none; }
+</style>
 <!-- Sparkline js -->
 <script src="<?php echo base_url() ?>assets/plugins/sparkline/sparkline.min.js"></script>
 <script src="<?php echo base_url() ?>assets/plugins/sparkline/sparkline-active.js"></script>
@@ -60,6 +74,8 @@
 <script src="<?php echo base_url() ?>assets/plugins/amcharts/plugins/export/libs/jszip/jszip.min.js"></script>
 <script src="<?php echo base_url() ?>assets/plugins/datatables/dataTables.min.js"></script>
 <script src="<?php echo base_url() ?>assets/plugins/datatables/dataTables.responsive.js"></script>
+<!-- 14-11-2026: las celdas de texto de todas las tablas se muestran como texto (XSS guardado) -->
+<script src="<?php echo base_url() ?>assets/js/dt-escapar.js?v=20261114"></script>
 <script src="https://cdn.datatables.net/select/1.3.3/js/dataTables.select.min.js"></script>
 <!-- <script src="<?php echo base_url() ?>assets/plugins/datatables/buttons.bootstrap.js"></script> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.js"></script>
@@ -283,7 +299,9 @@
       if (!esEscritorio()) return;
       e.preventDefault();
       var $li = $(this).parent(), $menu = $li.children('.dropdown-menu');
-      var abrir = !$li.hasClass('t-abierto');
+      // Barra contraída: se despliega flotando sobre el contenido con este grupo abierto
+      var desplegada = !!(window.tLateral && window.tLateral.desplegar());
+      var abrir = desplegada || !$li.hasClass('t-abierto');
       $li.siblings('.t-abierto').removeClass('t-abierto').children('.dropdown-menu').stop(true, true).slideUp(160);
       $li.toggleClass('t-abierto', abrir);
       $menu.stop(true, true)[abrir ? 'slideDown' : 'slideUp'](160);
@@ -294,6 +312,70 @@
       $nav.find('ul.nav.navbar-nav > li.dropdown.t-actual').addClass('t-abierto').children('.dropdown-menu').show();
       $nav.find('.dropdown-menu li.dropdown.t-actual').addClass('open');
     }
+  });
+
+  // Barra lateral contraída (solo íconos), escritorio. El botón de arriba la oculta o la muestra y queda recordado en
+  // este navegador (menuTop pone la clase t-lateral-mini en <html> antes de pintar). Contraída, al abrir un grupo o el
+  // menú de configuración se despliega flotando sobre el contenido (sin moverlo) y se vuelve a contraer al salir de
+  // ella con el mouse, al hacer clic fuera o con Esc.
+  $(function(){
+    var CLAVE = 'restoWeb.lateralMini';
+    var $html = $('html'), $btn = $('#btnLateral');
+    var $zona = $('nav.bootsnav').add('.main-header .top-nav');
+    var $enlaces = $('nav.bootsnav ul.nav.navbar-nav > li > a');
+    var timer = null;
+    function esEscritorio(){ return window.innerWidth >= 993; }
+    function mini(){ return $html.hasClass('t-lateral-mini'); }
+    function flotando(){ return $html.hasClass('t-lateral-flotante'); }
+    function pintar(){
+      var m = mini(), texto = m ? 'Mostrar menú' : 'Ocultar menú';
+      $btn.attr({ 'aria-expanded': m ? 'false' : 'true', title: texto });
+      $btn.find('i').attr('class', m ? 'fa fa-angle-double-right' : 'fa fa-angle-double-left');
+      $btn.find('span').text(texto);
+      // Contraída solo se ven los íconos: el nombre de cada opción queda como ayuda al pasar el mouse
+      $enlaces.each(function(){
+        if (m) $(this).attr('title', $.trim($(this).text())); else $(this).removeAttr('title');
+      });
+    }
+    function plegar(){
+      clearTimeout(timer);
+      if (!flotando()) return;
+      $html.removeClass('t-lateral-flotante');
+      $('.main-header .top-nav .navbar-top-links > li.open').removeClass('open').children('.dropdown-toggle').attr('aria-expanded', 'false');
+    }
+    window.tLateral = {
+      // Al abrir un grupo: si la barra está contraída la despliega flotando y devuelve true
+      desplegar: function(){
+        clearTimeout(timer);
+        if (!esEscritorio() || !mini() || flotando()) return false;
+        $html.addClass('t-lateral-flotante');
+        return true;
+      }
+    };
+    $btn.on('click', function(){
+      var m = !mini();
+      plegar();
+      $html.toggleClass('t-lateral-mini', m);
+      try { localStorage.setItem(CLAVE, m ? '1' : '0'); } catch (e) {}
+      pintar();
+      // Cambió el ancho del contenido: tablas y gráficos se reacomodan
+      setTimeout(function(){ try { window.dispatchEvent(new Event('resize')); } catch (e) { $(window).trigger('resize'); } }, 0);
+    });
+    // Engranaje de configuración (pie de la barra) con la barra contraída: también la despliega
+    $('.main-header .top-nav .navbar-top-links > li.dropdown').on('show.bs.dropdown', function(){ window.tLateral.desplegar(); });
+    $zona.on('mouseenter', function(){ clearTimeout(timer); })
+      .on('mouseleave', function(){
+        if (!flotando()) return;
+        clearTimeout(timer);
+        timer = setTimeout(plegar, 350);
+      });
+    $(document).on('click', function(e){
+      if (flotando() && !$(e.target).closest($zona).length) plegar();
+    }).on('keydown', function(e){
+      if ((e.key === 'Escape' || e.keyCode === 27) && flotando()) plegar();
+    });
+    $(window).on('resize', function(){ if (!esEscritorio()) plegar(); });
+    pintar();
   });
   </script>
  <script>
@@ -455,6 +537,25 @@
   })();
  </script>
 
+<?php
+// Migraciones de la base de la empresa: una vez por sesión y empresa, en segundo plano (Login::postLoginWarmup).
+$__ciMig =& get_instance();
+$__ciMig->load->library('MigracionesResto');
+if ($__ciMig->migracionesresto->revisarEnSesion()) : ?>
+ <script>
+  // global: false para que no muestre el aviso de carga ni bloquee la pantalla mientras corre
+  $(function () {
+    $.ajax({ url: '<?php echo base_url() ?>index.php/Login/postLoginWarmup', type: 'POST', dataType: 'json', global: false })
+      .done(function (r) {
+        if (!r || !window.toastr) return;
+        if (r.aviso) toastr.warning(r.aviso);
+        else if (r.aplicadas > 0 && <?php echo ((int)$this->session->userdata('id_rol') === 1) ? 'true' : 'false' ?>) {
+          toastr.success('Se actualizó la base de la empresa (' + r.aplicadas + (r.aplicadas === 1 ? ' migración' : ' migraciones') + '). Recarga la página para ver los cambios.');
+        }
+      });
+  });
+ </script>
+<?php endif; ?>
 </body>
 
 </html>

@@ -74,11 +74,13 @@ class Mcaja extends CI_Model
 		$tieneUm = $this->columnas($db, array('umedida'));
 		$colFraccion = isset($tiene['producto']['permite_porcion']) ? '(p.permite_porcion IS TRUE)' : 'false';
 		$colPedir = isset($tiene['producto']['pedir_cantidad_en_venta']) ? '(p.pedir_cantidad_en_venta IS TRUE)' : 'false';
+		// Favoritos marcados en la Carta (migración 20261110190000); sin la columna no hay favoritos
+		$colFavorito = isset($tiene['producto']['favorito']) ? '(p.favorito IS TRUE)' : 'false';
 		$usaUm = isset($tiene['producto']['id_umedida']) && isset($tieneUm['umedida']['nombre_umedida']);
 		$q = "SELECT p.id_producto, p.nombre_producto, COALESCE(p.cbarra, '') AS cbarra,
 				COALESCE(p.id_familia, 0) AS id_familia,
 				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, " . $this->sqlExento($db, 'p') . " AS exento,
-				$colFraccion AS fraccion, $colPedir AS pedir_cantidad, " . ($usaUm ? "COALESCE(um.nombre_umedida, '')" : "''") . " AS umedida
+				$colFraccion AS fraccion, $colPedir AS pedir_cantidad, $colFavorito AS favorito, " . ($usaUm ? "COALESCE(um.nombre_umedida, '')" : "''") . " AS umedida
 			FROM producto p
 			LEFT JOIN detalle_lprecio dl ON dl.id_producto = p.id_producto AND dl.id_lprecio = ?
 			" . ($usaUm ? "LEFT JOIN umedida um ON um.id_umedida = p.id_umedida" : "") . "
@@ -102,6 +104,7 @@ class Mcaja extends CI_Model
 				'exento' => $p->exento === 't' || $p->exento === true,
 				'fraccion' => $p->fraccion === 't' || $p->fraccion === true,
 				'pedir_cantidad' => $p->pedir_cantidad === 't' || $p->pedir_cantidad === true,
+				'favorito' => $p->favorito === 't' || $p->favorito === true,
 				'umedida' => $this->abreviaturaUmedida($p->umedida),
 				'imagen' => isset($imagenes[(int)$p->id_producto]) ? $imagenes[(int)$p->id_producto] : null,
 			);
@@ -305,9 +308,18 @@ class Mcaja extends CI_Model
 			$this->session->unset_userdata(self::SESION_LISTA);
 			return array('ok' => true, 'autorizada' => false);
 		}
+		$this->exigirListaDeCaja($config);
 		$this->exigirAutorizacion($db, 'usar la lista de precios ' . $l->nombre_lprecio, $idUsuario, $idRol, $aut);
 		$this->session->set_userdata(self::SESION_LISTA, $idLprecio);
 		return array('ok' => true, 'autorizada' => true);
+	}
+
+	/** Control de cajas: una caja sin "Cambiar lista en caja" vende solo con su lista (ni con clave de administración). */
+	private function exigirListaDeCaja($config)
+	{
+		if (empty($config['caja_fija_lista'])) return;
+		throw new Exception('La ' . $config['caja_control']['nombre'] . ' no permite cambiar la lista de precios'
+			. ' (Herramientas > Control de cajas)', 409);
 	}
 
 	/** Se permite la lista pública, la asignada al cliente de la venta o la que se autorizó en la sesión. */
@@ -315,6 +327,7 @@ class Mcaja extends CI_Model
 	{
 		$idLprecio = (int)$idLprecio;
 		if ($idLprecio === (int)$config['id_lprecio_publico']) return;
+		$this->exigirListaDeCaja($config);
 		if ((int)$this->session->userdata(self::SESION_LISTA) === $idLprecio) return;
 		if ($this->esAdmin($db, $idUsuario, $idRol)) return;
 		if ($idCliente) {
@@ -364,6 +377,10 @@ class Mcaja extends CI_Model
 				throw new Exception('El cliente de venta al público no se puede editar', 400);
 			}
 		}
+		// 14-11-2026: comuna inexistente = mensaje claro (antes 500 con el error SQL de la clave foránea)
+		if (!empty($d['id_comuna']) && !$this->q($db, 'SELECT 1 FROM comuna WHERE id_comuna = ?', array((int)$d['id_comuna']))->row()) {
+			throw new Exception('La comuna elegida no existe', 400);
+		}
 		$existe = $this->q($db, 'SELECT id_cliente FROM cliente WHERE rut = ? AND id_cliente <> ? LIMIT 1', array($rut, $idCliente))->row();
 		if ($existe) throw new Exception('Ya existe un cliente con ese RUT', 409);
 		$cols = $this->columnas($db, array('cliente'));
@@ -382,7 +399,8 @@ class Mcaja extends CI_Model
 			$this->actualizar($db, $cols, 'cliente', $fila, 'id_cliente', $idCliente);
 			$id = $idCliente;
 		} else {
-			$id = $this->insertar($db, $cols, 'cliente', $fila + array('id_lprecio' => 0, 'creditomaximo' => 0), 'id_cliente');
+			// 14-11-2026: con la lista pública (con id_lprecio 0 el cliente no salía en el mantenedor de Clientes)
+			$id = $this->insertar($db, $cols, 'cliente', $fila + array('id_lprecio' => (int)$this->configuracion($db)['id_lprecio_publico'], 'creditomaximo' => 0), 'id_cliente');
 		}
 		return array('id_cliente' => $id, 'nombre_cliente' => $nombre, 'rut' => $rut ? $rut . '-' . $dv : '',
 			'giro' => trim(isset($d['giro']) ? $d['giro'] : ''), 'direccion' => trim(isset($d['direccion']) ? $d['direccion'] : ''),
@@ -422,6 +440,35 @@ class Mcaja extends CI_Model
 			if ($v['anulada']) $v['pendiente_dte'] = false;
 		}
 		return $ventas;
+	}
+
+	/**
+	 * Documentos tributarios (tdocumento.cod_sii > 10) emitidos en un día, de todas las cajas, para la ventana
+	 * "Documentos emitidos" de la Caja (verlos y reimprimirlos). Solo lectura.
+	 */
+	public function documentosEmitidos($fecha)
+	{
+		$db = $this->conexion();
+		$enElec = $this->sqlEn(self::COD_SII_ELECTRONICOS);
+		$docs = $this->q($db, "SELECT v.id_venta, to_char(v.fecha_transaccion, 'HH24:MI') AS hora, v.id_caja,
+				td.nombre_tdocumento, v.folio, v.total, COALESCE(c.nombre_cliente, '') AS nombre_cliente,
+				(COALESCE(v.mensaje_pedido, '') LIKE 'ANULADA%') AS anulada,
+				(td.cod_sii $enElec AND COALESCE(v.folio_dte, 0) = 0) AS pendiente_sii
+			FROM venta v
+			JOIN tdocumento td ON td.id_tdocumento = v.id_tdocumento
+			LEFT JOIN cliente c ON c.id_cliente = v.id_cliente
+			WHERE td.cod_sii > 10
+			  AND v.fecha_transaccion >= ?::date AND v.fecha_transaccion < ?::date + 1
+			ORDER BY v.fecha_transaccion DESC, v.id_venta DESC
+			LIMIT 500", array($fecha, $fecha))->result_array();
+		foreach ($docs as &$d) {
+			$d['id_venta'] = (int)$d['id_venta'];
+			$d['id_caja'] = (int)$d['id_caja'];
+			$d['total'] = (int)round((float)$d['total']);
+			$d['anulada'] = $d['anulada'] === 't' || $d['anulada'] === true;
+			$d['pendiente_sii'] = !$d['anulada'] && ($d['pendiente_sii'] === 't' || $d['pendiente_sii'] === true);
+		}
+		return $docs;
 	}
 
 	public function movimientosCaja($idCaja)
@@ -501,6 +548,8 @@ class Mcaja extends CI_Model
 		$fondo = (int)$caja->fondo_fijo_anterior ?: (int)$caja->fondo_fijo;
 		return array(
 			'id_caja' => $idCaja,
+			// Caja de Control de cajas con que se abrió (nombre, lista y bodega), o null
+			'caja_control' => isset($caja->id_control_caja) ? $this->datosControlCaja($db, (int)$caja->id_control_caja) : null,
 			'pagos_credito' => $this->totalPagosCredito($db, $idCaja),
 			'pagos_credito_otros' => $creditoOtros,
 			'apertura' => $caja->apertura,
@@ -694,6 +743,13 @@ class Mcaja extends CI_Model
 		if ($this->configuracion($db)['admin_gaveta']) $this->exigirAutorizacion($db, 'abrir la gaveta', $idUsuario, $idRol, $aut);
 	}
 
+	/** Anular una venta en espera: pide la clave de administrador si Configuraciones lo exige para anular (igual que anular una venta). */
+	public function autorizarAnulacionEspera($idUsuario, $idRol, $aut)
+	{
+		$db = $this->conexion();
+		if ($this->configuracion($db)['admin_anulacion']) $this->exigirAutorizacion($db, 'anular una venta en espera', $idUsuario, $idRol, $aut);
+	}
+
 	public function destinoCaja()
 	{
 		$db = $this->conexion();
@@ -743,9 +799,26 @@ class Mcaja extends CI_Model
 		if ((int)$v->id_cliente === (int)$config['id_cliente_publico'] || (int)$v->rut === 66666666) {
 			$v->nombre_cliente = $v->rut = $v->dv = $v->giro = $v->direccion = $v->comuna = '';
 		}
+		// Factura con giro / dirección elegidos al cobrar: se imprime con esos datos y quién la solicitó
+		$v->solicitante = '';
+		$v->motivo_factura = '';
+		$rec = $this->hayReceptor($db) ? $this->q($db, 'SELECT * FROM venta_receptor WHERE id_venta = ?', array((int)$idVenta))->row() : null;
+		if ($rec && $v->rut) {
+			if (trim((string)$rec->razon_social) !== '') $v->nombre_cliente = $rec->razon_social;
+			$v->giro = $rec->giro;
+			$v->direccion = $rec->direccion;
+			$v->comuna = $rec->comuna;
+			if ((int)$rec->rut_solicita) {
+				$v->solicitante = trim(number_format((float)$rec->rut_solicita, 0, ',', '.') . '-' . $rec->dv_solicita . ' ' . (string)$rec->nombre_solicita);
+			}
+			if (isset($rec->motivo)) $v->motivo_factura = trim((string)$rec->motivo);
+		}
 		if ($empresa) {
 			$r = $this->q($db, 'SELECT nombre_comuna FROM comuna WHERE id_comuna = ?', array((int)$empresa->id_comuna))->row();
 			$empresa->comuna = $r ? $r->nombre_comuna : '';
+			// Configuraciones > Datos de la Empresa: la dirección, comuna y teléfono de la sucursal de la caja que vendió
+			$this->load->helper('sucursal_empresa');
+			$empresa = empresa_con_sucursal($empresa, sucursal_de_caja($db, isset($v->id_caja) ? (int)$v->id_caja : 0));
 		}
 
 		// La NC se guarda en negativo; impresa se muestra en positivo con su documento de referencia
@@ -824,14 +897,49 @@ class Mcaja extends CI_Model
 
 	// ====================== Escritura ======================
 
-	public function abrirCaja($idUsuario, $fondo)
+	/**
+	 * $idControlCaja: la caja de Herramientas > Control de cajas que eligió el cajero. Si hay cajas vigentes es obligatoria,
+	 * vigente y no abierta por otro usuario; sin cajas (o sin la migración) se abre como antes.
+	 */
+	public function abrirCaja($idUsuario, $fondo, $idControlCaja = 0)
 	{
 		$db = $this->conexion();
 		if ($this->cajaAbierta($idUsuario)) throw new Exception('Ya tienes una caja abierta', 409);
+		$idControlCaja = (int)$idControlCaja;
+		$this->load->model('Mcontrolcaja');
+		// 12-11-2026: la caja se elige después de la empresa y la sucursal (de cualquier sucursal). Si hay cajas vigentes
+		// de la intranet, hay que elegir una; sin cajas se abre como antes.
+		$elegible = null;
+		if ($this->Mcontrolcaja->hayCajasVigentes()) {
+			if ($idControlCaja <= 0) throw new Exception('Elige la empresa, la sucursal y la caja que vas a abrir', 400);
+			$elegible = current($this->Mcontrolcaja->paraAbrir($idUsuario, null, $idControlCaja)) ?: null;
+			if (!$elegible) throw new Exception('La caja elegida ya no está vigente. Actualiza la página y elige otra.', 400);
+		}
+		if ($elegible === null) $idControlCaja = 0;
 		$cols = $this->columnas($db, array('caja'));
 		$ahora = date('Y-m-d H:i:s');
 		$r = $this->q($db, 'SELECT min(id_turno) AS id FROM turno')->row();
-		return $this->insertar($db, $cols, 'caja', array(
+		if (!$idControlCaja) return $this->insertarCaja($db, $cols, $idUsuario, $fondo, $ahora, $r, 0);
+		// La caja elegida se bloquea mientras se abre: dos cajeros no abren la misma a la vez
+		$db->trans_begin();
+		try {
+			$this->q($db, 'SELECT 1 FROM control_caja WHERE id_control_caja = ? FOR UPDATE', array($idControlCaja));
+			$otro = $this->q($db, "SELECT COALESCE(u.nombre_usuario, 'otro usuario') AS usuario FROM caja c LEFT JOIN usuario u ON u.id_usuario = c.id_usuario
+				WHERE c.id_control_caja = ? AND c.cerrada IS NOT TRUE AND c.id_usuario <> ? LIMIT 1", array($idControlCaja, (int)$idUsuario))->row();
+			if ($otro) throw new Exception('La ' . $elegible['nombre'] . ' ya está abierta por ' . $otro->usuario . '. Elige otra caja.', 409);
+			$id = $this->insertarCaja($db, $cols, $idUsuario, $fondo, $ahora, $r, $idControlCaja);
+			$db->trans_commit();
+		} catch (Exception $e) {
+			$db->trans_rollback();
+			throw $e;
+		}
+		$this->cajaControl = false;
+		return $id;
+	}
+
+	private function insertarCaja($db, $cols, $idUsuario, $fondo, $ahora, $r, $idControlCaja)
+	{
+		return $this->insertar($db, $cols, 'caja', ($idControlCaja > 0 ? array('id_control_caja' => (int)$idControlCaja) : array()) + array(
 			'fecha' => date('Y-m-d') . ' 00:00:00',
 			'id_usuario' => (int)$idUsuario,
 			'ingresos' => 0,
@@ -845,7 +953,23 @@ class Mcaja extends CI_Model
 		), 'id_caja');
 	}
 
-	public function registrarMovimiento($caja, $tipo, $monto, $observacion)
+	/** Dueño y estado de una caja (para que un cajero solo vea sus cajas). null si no existe. */
+	public function duenoCaja($idCaja)
+	{
+		$r = $this->q($this->conexion(), 'SELECT id_usuario, (cerrada IS TRUE) AS cerrada FROM caja WHERE id_caja = ?', array((int)$idCaja))->row();
+		if (!$r) return null;
+		$r->cerrada = $r->cerrada === 't' || $r->cerrada === true;
+		return $r;
+	}
+
+	/** Caja en que se hizo una venta, o null si la venta no existe. */
+	public function cajaDeVenta($idVenta)
+	{
+		$r = $this->q($this->conexion(), 'SELECT COALESCE(id_caja, 0) AS id_caja FROM venta WHERE id_venta = ?', array((int)$idVenta))->row();
+		return $r ? (int)$r->id_caja : null;
+	}
+
+	public function registrarMovimiento($caja, $tipo, $monto, $observacion, $ocultarDisponible = false)
 	{
 		$db = $this->conexion();
 		$monto = (int)$monto;
@@ -866,6 +990,10 @@ class Mcaja extends CI_Model
 				// Configuraciones > Permitir retiro fondo fijo: si está desmarcado, el fondo inicial no se puede retirar
 				$sinFondo = !$this->configuracion($db)['retiro_fondo'];
 				if ($sinFondo) $disponible -= (int)$res['fondo'];
+				if ($monto > $disponible && $ocultarDisponible) {
+					// Cierre ciego: sin gerencia no se dice cuánto hay (con eso se sabía el efectivo esperado)
+					throw new Exception('El retiro es mayor que el efectivo disponible en la caja', 400);
+				}
 				if ($monto > $disponible) {
 					$f = '$' . number_format(max(0, $disponible), 0, ',', '.');
 					throw new Exception($disponible > 0
@@ -1097,13 +1225,18 @@ class Mcaja extends CI_Model
 			$c = $this->q($db, 'SELECT cerrada FROM caja WHERE id_caja = ? FOR UPDATE', array((int)$caja->id_caja))->row();
 			if (!$c || $c->cerrada === 't' || $c->cerrada === true) throw new Exception('La caja ya está cerrada', 409);
 			// Las deudas quedan bloqueadas: dos cajas no pueden cobrar la misma venta a la vez
-			$filas = $this->q($db, 'SELECT cc.id_ctacte_cliente, cc.id_venta, cc.monto, COALESCE(cc.pagado, 0) AS pagado, v.folio
+			$filas = $this->q($db, 'SELECT cc.id_ctacte_cliente, cc.id_venta, cc.monto, COALESCE(cc.pagado, 0) AS pagado, v.folio,
+					COALESCE(v.mensaje_pedido, \'\') AS mensaje_pedido
 				FROM ctacte_cliente cc JOIN venta v ON v.id_venta = cc.id_venta
 				WHERE cc.id_cliente = ? AND cc.id_ctacte_cliente ' . $this->sqlEn($ids) . ' ORDER BY cc.id_ctacte_cliente FOR UPDATE OF cc',
 				array($idCliente))->result();
 			if (count($filas) !== count($ids)) throw new Exception('Alguna venta elegida no es un crédito de este cliente', 409);
 			$total = 0;
 			foreach ($filas as $f) {
+				// 14-11-2026: una venta anulada no tiene deuda (el listado y el cupo ya la excluían, pero se podía pagar)
+				if (strpos((string)$f->mensaje_pedido, 'ANULADA') === 0) {
+					throw new Exception('La venta folio ' . (int)$f->folio . ' está anulada: no tiene deuda que pagar. Vuelve a cargar los créditos.', 409);
+				}
 				$saldo = (int)$f->monto - (int)$f->pagado;
 				if ($saldo <= 0) throw new Exception('La venta folio ' . (int)$f->folio . ' ya estaba pagada. Vuelve a cargar los créditos.', 409);
 				$total += $saldo;
@@ -1228,6 +1361,14 @@ class Mcaja extends CI_Model
 			FROM cliente WHERE id_cliente = ?', array($idCliente))->row() : null;
 		if ($idCliente && !$cliente) throw new Exception('El cliente no existe', 400);
 		$esPublico = !$cliente || (int)$cliente->id_cliente === $config['id_cliente_publico'];
+		// Factura: giro, dirección, comuna y solicitante elegidos al cobrar (venta_receptor). Sin ellos, los de la ficha, como antes
+		$fac = null;
+		if ($doc['es_factura'] && !$esPublico && !empty($p['factura']) && is_array($p['factura']) && $this->hayReceptor($db)) {
+			$fac = $this->datosFactura($db, $cliente, $p['factura']);
+			$cliente->giro = $fac['giro'];
+			$cliente->direccion = $fac['direccion'];
+			$cliente->id_comuna = $fac['id_comuna'];
+		}
 		if ($doc['electronico'] && $doc['es_factura']) {
 			$faltan = array();
 			if ($esPublico || !(int)$cliente->rut) $faltan[] = 'RUT';
@@ -1368,6 +1509,8 @@ class Mcaja extends CI_Model
 		if ($notas) $observacion = trim($observacion . ($observacion !== '' ? ' | ' : '') . implode(' | ', $notas));
 		// "ANULADA..." al inicio de mensaje_pedido es la marca de venta anulada
 		if (stripos($observacion, 'ANULADA') === 0) $observacion = 'Obs: ' . $observacion;
+		// Venta directa: nombre de quien retira el pedido (opcional, 12-11-2026); va en la comanda y en el documento
+		$retira = $idMesa ? '' : mb_substr(trim(preg_replace('/[\x00-\x1F\x7F\s]+/u', ' ', (string)(isset($p['retira']) ? $p['retira'] : ''))), 0, 60);
 		$ahora = date('Y-m-d H:i:s');
 		$dia = date('Y-m-d');
 
@@ -1377,6 +1520,7 @@ class Mcaja extends CI_Model
 			// La caja pudo cerrarse en otra pestaña
 			$c = $this->q($db, 'SELECT cerrada FROM caja WHERE id_caja = ? FOR UPDATE', array((int)$caja->id_caja))->row();
 			if (!$c || $c->cerrada === 't' || $c->cerrada === true) throw new Exception('La caja ya está cerrada', 409);
+			$tokenVenta = $this->reservarTokenVenta($db, $p, (int)$caja->id_caja, (int)$idUsuario);
 			if ($montoCredito > 0) $this->validarCupoCredito($db, $idCliente, $montoCredito);
 
 			if ($idMesa) {
@@ -1430,6 +1574,7 @@ class Mcaja extends CI_Model
 				'version_pdv' => self::COMPUTADOR,
 				'mensaje_pedido' => $observacion === '' ? null : mb_substr($observacion, 0, 200),
 				'observacion' => $observacion === '' ? null : $observacion,
+				'nombre_retira' => $retira === '' ? null : $retira,   // migración 20261112120000 (sin la columna no se graba)
 				'es_cortesia' => $esCortesia,
 				'venta_directa' => !$idMesa,
 				'fecha_vencimiento' => $dia,
@@ -1451,6 +1596,7 @@ class Mcaja extends CI_Model
 				'total_bruto_con_descuento' => $total,
 				'folio_dte' => 0,
 			), 'id_venta');
+			if ($tokenVenta !== '') $this->q($db, 'UPDATE caja_venta_token SET id_venta = ? WHERE token = ?', array((int)$idVenta, $tokenVenta));
 
 			// El descuento global se reparte entre las líneas según su monto (montos())
 			foreach ($lineas as $i => $l) {
@@ -1500,11 +1646,12 @@ class Mcaja extends CI_Model
 					'monto_ila' => 0,
 					'total_bruto_con_descuento' => $conDesc,
 					'monto_exento' => $ml['exento'] ? $conDesc : 0,
-				), null);
+				// Bodega de la caja (Control de cajas), si detalle_venta tiene la columna; sin bodega en la caja no se informa (como antes)
+				) + ((int)$config['id_bodega_caja'] > 0 ? array('id_bodega' => (int)$config['id_bodega_caja']) : array()), null);
 			}
 
 			if (!$this->tieneTriggerStock($db)) {
-				$this->descontarStock($db, $cols, $idVenta);
+				$this->descontarStock($db, $cols, $idVenta, (int)$config['id_bodega_caja']);
 			}
 
 			foreach ($pagos as $pg) {
@@ -1547,11 +1694,23 @@ class Mcaja extends CI_Model
 				}
 				if ($mesaLiberada) $this->desocuparMesa($db, $idMesa);
 			}
+			if ($fac) $this->guardarReceptor($db, $idVenta, (int)$cliente->id_cliente, $fac, $ahora);
 
 			$db->trans_commit();
 		} catch (Exception $e) {
 			$db->trans_rollback();
 			throw $e;
+		}
+
+		// Lo nuevo de la factura (dirección, giro, solicitante) queda en la ficha del cliente. Fuera de la transacción:
+		// si falla, la venta ya está hecha y solo se registra en el log
+		if ($fac && $fac['guardar_ficha']) {
+			try {
+				$this->load->model('Mclientefactura');
+				$this->Mclientefactura->recordar((int)$cliente->id_cliente, $fac);
+			} catch (Throwable $e) {
+				log_message('error', 'Mcaja: no se guardaron en la ficha los datos de la factura de la venta ' . (int)$idVenta . ': ' . $e->getMessage());
+			}
 		}
 
 		// La emisión va fuera de la transacción: si Cloud Apps falla, la venta queda pendiente de envío
@@ -1564,7 +1723,8 @@ class Mcaja extends CI_Model
 			'vuelto' => $vuelto, 'documento' => $doc['nombre'], 'dte' => $dte,
 			'mesa_liberada' => $idMesa ? !empty($mesaLiberada) : null,
 			'comanda' => $idMesa ? array() : (isset($comandaVenta) ? $comandaVenta : array()),
-			'observacion' => mb_substr(trim(isset($p['observacion']) ? (string)$p['observacion'] : ''), 0, 200));
+			'observacion' => mb_substr(trim(isset($p['observacion']) ? (string)$p['observacion'] : ''), 0, 200),
+			'retira' => $retira);
 	}
 
 	/** Valida los productos pedidos y arma las líneas con los precios del servidor. Devuelve [lineas, subtotal, notas]. */
@@ -1637,8 +1797,10 @@ class Mcaja extends CI_Model
 			$unitario = (int)round((float)$prod->precio) + ($primero ? (int)$primero->valor : 0);
 			$bruto = (int)round($unitario * $cantidad);
 			$subtotal += $bruto;
-			$recetas = array(array((int)$prod->id_receta, (int)$prod->id_bodega));
-			if ($primero) $recetas[] = array((int)$primero->id_receta, (int)$prod->id_bodega);
+			// Bodega de la caja (Control de cajas); sin bodega en la caja, la de cada producto (como antes)
+			$bodega = !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : (int)$prod->id_bodega;
+			$recetas = array(array((int)$prod->id_receta, $bodega));
+			if ($primero) $recetas[] = array((int)$primero->id_receta, $bodega);
 			$lineas[] = array(
 				'id_producto' => $id, 'nombre' => $prod->nombre_producto, 'cantidad' => $cantidad,
 				'unitario' => $unitario, 'bruto' => $bruto, 'id_agregado' => $primero ? (int)$primero->id_producto : 0,
@@ -1650,7 +1812,7 @@ class Mcaja extends CI_Model
 				$lineas[] = array(
 					'id_producto' => (int)$a->id_producto, 'nombre' => $a->nombre_producto, 'cantidad' => $cantidad,
 					'unitario' => (int)$a->valor, 'bruto' => $bruto, 'id_agregado' => 0, 'nota' => '',
-					'segun_stock' => $segunStock, 'recetas' => array(array((int)$a->id_receta, (int)$a->id_bodega)),
+					'segun_stock' => $segunStock, 'recetas' => array(array((int)$a->id_receta, !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : (int)$a->id_bodega)),
 					'exento' => $exento,
 				);
 			}
@@ -1778,7 +1940,9 @@ class Mcaja extends CI_Model
 			foreach (array('subtotal', 'descuento', 'neto', 'iva', 'total', 'monto_descuento', 'subtotal_condescuento',
 				'monto_afecto', 'monto_cortesia', 'subtotal_bruto', 'subtotal_neto', 'subtotal_neto_sin_descuento',
 				'monto_descuento_global', 'subtotal_neto_con_descuento', 'monto_iva', 'total_bruto_con_descuento',
-				'monto_exento_con_descuento', 'monto_afecto_con_descuento') as $c) {
+				'monto_exento_con_descuento', 'monto_afecto_con_descuento',
+				// 14-11-2026: la propina también se anula (antes quedaba y la sumaban propinas por garzón y el cierre)
+				'valor_propina', 'propina_final', 'monto_comision_propina') as $c) {
 				$cero[$c] = 0;
 			}
 			$texto = 'ANULADA ($' . (int)$v->total . '): ' . $motivo;
@@ -1830,10 +1994,9 @@ class Mcaja extends CI_Model
 	public function cerrarCaja($caja, $idUsuario, $efectivoContado, $fondoSiguiente, $declarado, $inventario = array())
 	{
 		$db = $this->conexion();
-		$abiertas = $this->mesasAbiertas($db);
-		if ($abiertas) {
-			throw new Exception('No se puede cerrar la caja con mesas abiertas (' . implode(', ', array_map(array($this, 'etiquetaMesa'), $abiertas)) . '). Cóbralas o anula sus pedidos primero.', 409);
-		}
+		// Las mesas con pedido NO impiden el cierre: el pedido no es de ninguna caja hasta que se cobra (cotizacion.id_caja
+		// se graba al pagar), así que sigue abierto y se cobra en el turno siguiente. Lo que sí lo impide son las ventas
+		// en espera pendientes (Caja::cerrar, Mventasespera::bloqueanCierre).
 		$cols = $this->columnas($db, array('caja', 'detalle_pagocaja'));
 		// Inventario de insumos al cierre: se exige todo lo marcado en el insumo y se valida antes de tocar nada
 		$filasInventario = $this->insumosInventarioCierre();
@@ -2343,6 +2506,14 @@ class Mcaja extends CI_Model
 				'total_bruto_con_descuento' => -$total,
 				'folio_dte' => 0,
 			), 'id_venta');
+			$bodegaNc = $this->bodegaDeVenta($db, (int)$v['id_venta']);
+			// La nota de crédito va al mismo receptor de la factura (giro, dirección y solicitante elegidos al venderla)
+			if ($this->hayReceptor($db)) {
+				$this->q($db, 'INSERT INTO venta_receptor (id_venta, id_cliente, razon_social, giro, direccion, id_comuna, comuna, ciudad, contacto,
+						rut_solicita, dv_solicita, nombre_solicita, fecha)
+					SELECT ?, id_cliente, razon_social, giro, direccion, id_comuna, comuna, ciudad, contacto, rut_solicita, dv_solicita, nombre_solicita, ?
+					FROM venta_receptor WHERE id_venta = ? ON CONFLICT (id_venta) DO NOTHING', array((int)$idVenta, $ahora, (int)$v['id_venta']));
+			}
 
 			foreach ($lineas as $i => $l) {
 				$ml = $m['lineas'][$i];
@@ -2390,12 +2561,13 @@ class Mcaja extends CI_Model
 					'monto_ila' => 0,
 					'total_bruto_con_descuento' => -$conDesc,
 					'monto_exento' => $ml['exento'] ? -$conDesc : 0,
-				), null);
+				) + ($bodegaNc > 0 ? array('id_bodega' => $bodegaNc) : array()), null);
 			}
 
-			// Con trigger: la cantidad negativa devuelve los insumos. Sin trigger: igual, con signo negativo.
+			// Con trigger: la cantidad negativa devuelve los insumos. Sin trigger: igual, con signo negativo, a la bodega
+			// de donde salieron (la de la caja que vendió, Control de cajas; o la de cada producto, como antes)
 			if (!$this->tieneTriggerStock($db)) {
-				$this->descontarStock($db, $cols, $idVenta);
+				$this->descontarStock($db, $cols, $idVenta, $bodegaNc);
 			}
 
 			// Pago negativo: sale de la forma de pago elegida (y si es crédito, baja la deuda vía trigger)
@@ -2585,10 +2757,13 @@ class Mcaja extends CI_Model
 		return (bool)$r;
 	}
 
-	/** Para bases sin el trigger del POS: mismo efecto que f_addconsolidado. */
-	private function descontarStock($db, $cols, $idVenta)
+	/**
+	 * Para bases sin el trigger del POS: mismo efecto que f_addconsolidado.
+	 * $idBodega > 0: todo sale de esa bodega (la de la caja, Control de cajas); 0 = la bodega de cada producto (como antes).
+	 */
+	private function descontarStock($db, $cols, $idVenta, $idBodega = 0)
 	{
-		foreach ($this->lineasStock($db, $idVenta) as $l) {
+		foreach ($this->lineasStock($db, $idVenta, $idBodega) as $l) {
 			if (isset($cols['consolidado_ventas'])) {
 				$this->insertar($db, $cols, 'consolidado_ventas', array(
 					'id_venta' => $idVenta,
@@ -2603,22 +2778,54 @@ class Mcaja extends CI_Model
 		}
 	}
 
+	/** Devuelve a la bodega de donde salió cada línea (consolidado_ventas); sin registro, a la del producto (como antes). */
 	private function revertirStock($db, $idVenta)
 	{
-		foreach ($this->lineasStock($db, $idVenta) as $l) {
+		foreach ($this->lineasStock($db, $idVenta, 0, true) as $l) {
 			$this->moverStock($db, (int)$l->id_receta, (int)$l->id_bodega, (float)$l->cantidad, -1);
 			$this->moverStock($db, (int)$l->id_receta_agregado, (int)$l->id_bodega, (float)$l->cantidad, -1);
 		}
 	}
 
-	private function lineasStock($db, $idVenta)
+	private function lineasStock($db, $idVenta, $idBodega = 0, $segunConsolidado = false)
 	{
+		$bodega = 'COALESCE(p.id_bodega, 0)';
+		if ($idBodega > 0) {
+			$bodega = (int)$idBodega;
+		} elseif ($segunConsolidado) {
+			$c = $this->columnas($db, array('consolidado_ventas'));
+			if (isset($c['consolidado_ventas']['id_dventa'], $c['consolidado_ventas']['id_bodega'])) {
+				$bodega = 'COALESCE((SELECT cv.id_bodega FROM consolidado_ventas cv WHERE cv.id_dventa = d.id_detalle_venta AND cv.id_bodega > 0
+					ORDER BY cv.id_bodega LIMIT 1), p.id_bodega, 0)';
+			}
+		}
 		return $this->q($db, 'SELECT d.id_detalle_venta, d.id_producto, d.cantidad, COALESCE(p.id_receta, 0) AS id_receta,
-				COALESCE(p.id_bodega, 0) AS id_bodega, COALESCE(pa.id_receta, 0) AS id_receta_agregado
+				' . $bodega . ' AS id_bodega, COALESCE(pa.id_receta, 0) AS id_receta_agregado
 			FROM detalle_venta d
 			JOIN producto p ON p.id_producto = d.id_producto
 			LEFT JOIN producto pa ON pa.id_producto = d.id_agregado AND d.id_agregado > 0
 			WHERE d.id_venta = ?', array((int)$idVenta))->result();
+	}
+
+	/**
+	 * Bodega de donde salió el stock de una venta, para devolverlo ahí con la nota de crédito: la única bodega de su
+	 * consolidado_ventas; si salió de varias (bodega de cada producto) o no hay registro, 0 = la de cada producto (como antes).
+	 * Sin consolidado, la bodega de la caja con que se vendió (Control de cajas).
+	 */
+	private function bodegaDeVenta($db, $idVenta)
+	{
+		$c = $this->columnas($db, array('consolidado_ventas', 'venta', 'caja', 'control_caja'));
+		if (isset($c['consolidado_ventas']['id_venta'], $c['consolidado_ventas']['id_bodega'])) {
+			$r = $this->q($db, 'SELECT min(id_bodega) AS b, count(DISTINCT id_bodega) AS n FROM consolidado_ventas
+				WHERE id_venta = ? AND id_bodega > 0', array((int)$idVenta))->row();
+			if ($r && (int)$r->n > 0) return (int)$r->n === 1 ? (int)$r->b : 0;
+		}
+		if (isset($c['venta']['id_caja'], $c['caja']['id_control_caja'], $c['control_caja']['id_bodega'])) {
+			$r = $this->q($db, 'SELECT COALESCE(cc.id_bodega, 0) AS b FROM venta v JOIN caja c ON c.id_caja = v.id_caja
+				JOIN control_caja cc ON cc.id_control_caja = c.id_control_caja WHERE v.id_venta = ?', array((int)$idVenta))->row();
+			if ($r && (int)$r->b > 0 && $this->q($db, 'SELECT 1 FROM bodega WHERE id_bodega = ?', array((int)$r->b))->row()) return (int)$r->b;
+		}
+		return 0;
 	}
 
 	/** $signo 1 = salida (venta), -1 = devuelve la salida (anulación). */
@@ -2657,12 +2864,50 @@ class Mcaja extends CI_Model
 		return count($this->columnas($db, array('mesa', 'cotizacion', 'detalle_cotizacion'))) === 3;
 	}
 
-	/** Pedido abierto de una mesa o null. */
+	/**
+	 * Pedido abierto de una mesa o null.
+	 * 14-11-2026 (API2 de la app de garzones): la app puede dejar mesa.id_cotizacion = 0 con el pedido abierto
+	 * (desbloqueomesa.php) y lo vuelve a encontrar por cotizacion.id_mesa (verificarMesaNuevo.php). La web hace lo
+	 * mismo: si la mesa no apunta a un pedido, busca el último pedido abierto CON productos de esa mesa (no las partes de
+	 * dividir cuenta) y vuelve a amarrar la mesa, para no abrir un segundo pedido encima del de la app.
+	 */
 	private function cotizacionDeMesa($db, $idMesa)
 	{
-		return $this->q($db, "SELECT c.* FROM mesa m JOIN cotizacion c ON c.id_cotizacion = m.id_cotizacion
+		$c = $this->q($db, "SELECT c.* FROM mesa m JOIN cotizacion c ON c.id_cotizacion = m.id_cotizacion
 			WHERE m.id_mesa = ? AND m.id_cotizacion > 0 AND c.pagado IS NOT TRUE AND c.vigente IS NOT FALSE
 				AND c.eseliminado IS NOT TRUE AND c.esanulado IS NOT TRUE", array((int)$idMesa))->row();
+		if ($c) return $c;
+		$c = $this->q($db, "SELECT c.* FROM mesa m JOIN cotizacion c ON c.id_mesa = m.id_mesa
+			WHERE m.id_mesa = ? AND COALESCE(m.id_cotizacion, 0) = 0 AND COALESCE(c.id_divpedido, 0) = 0
+				AND c.pagado IS NOT TRUE AND c.vigente IS NOT FALSE AND c.eseliminado IS NOT TRUE AND c.esanulado IS NOT TRUE
+				AND EXISTS (SELECT 1 FROM detalle_cotizacion d WHERE d.id_cotizacion = c.id_cotizacion
+					AND d.vigente IS NOT FALSE AND d.esanulado IS NOT TRUE AND d.eseliminado IS NOT TRUE)
+			ORDER BY c.id_cotizacion DESC LIMIT 1", array((int)$idMesa))->row();
+		if ($c) {
+			$this->q($db, 'UPDATE mesa SET id_cotizacion = ?, disponible = false WHERE id_mesa = ? AND COALESCE(id_cotizacion, 0) = 0',
+				array((int)$c->id_cotizacion, (int)$idMesa));
+		}
+		return $c;
+	}
+
+	/**
+	 * 14-11-2026 (API2): pedidos "fantasma" de una mesa. La app manda primero la cabecera y después las líneas, sin
+	 * transacción: si falla una línea queda un pedido abierto sin productos (con el total que mandó el teléfono), la
+	 * mesa aparece ocupada y no se puede ni cobrar ni liberar; y aunque se libere, verificarMesaNuevo.php lo vuelve a
+	 * amarrar a la mesa. Se cierran los pedidos de la mesa sin productos vigentes que tengan más de 2 minutos (las
+	 * líneas de un envío en curso llegan en milisegundos). No toca las partes de dividir cuenta.
+	 */
+	private function cerrarPedidosVacios($db, $idMesa, $sinEspera = false)
+	{
+		$cols = $this->columnas($db, array('cotizacion'));
+		$motivo = isset($cols['cotizacion']['motivo_anulacion'])
+			? ", motivo_anulacion = 'Pedido sin productos (envío incompleto de la app), cerrado por la Caja web'" : '';
+		$this->q($db, "UPDATE cotizacion c SET vigente = false, eseliminado = true$motivo
+			WHERE c.id_mesa = ? AND COALESCE(c.id_divpedido, 0) = 0
+				AND c.pagado IS NOT TRUE AND c.vigente IS NOT FALSE AND c.eseliminado IS NOT TRUE AND c.esanulado IS NOT TRUE
+				AND (? OR c.fecha_transaccion < now() - interval '2 minutes')
+				AND NOT EXISTS (SELECT 1 FROM detalle_cotizacion d WHERE d.id_cotizacion = c.id_cotizacion
+					AND d.vigente IS NOT FALSE AND d.esanulado IS NOT TRUE AND d.eseliminado IS NOT TRUE)", array((int)$idMesa, (bool)$sinEspera));
 	}
 
 	private function bloquearMesa($db, $idMesa)
@@ -2674,6 +2919,7 @@ class Mcaja extends CI_Model
 
 	private function desocuparMesa($db, $idMesa)
 	{
+		$this->cerrarPedidosVacios($db, $idMesa);
 		$this->q($db, 'UPDATE mesa SET disponible = true, id_cotizacion = 0, id_garzon = 0, bloqueo_caja = false, bloqueo_pedido = false
 			WHERE id_mesa = ?', array((int)$idMesa));
 	}
@@ -2732,8 +2978,15 @@ class Mcaja extends CI_Model
 				EXTRACT(EPOCH FROM (now() - c.fecha_transaccion))::bigint AS segundos
 			FROM mesa m
 			LEFT JOIN recinto r ON r.id_recinto = m.id_recinto
-			LEFT JOIN cotizacion c ON c.id_cotizacion = m.id_cotizacion AND m.id_cotizacion > 0 AND c.pagado IS NOT TRUE
-				AND c.vigente IS NOT FALSE AND c.eseliminado IS NOT TRUE AND c.esanulado IS NOT TRUE
+			-- 14-11-2026: si la mesa no apunta a un pedido (la app de garzones la dejó en 0), el último pedido abierto con
+			-- productos de esa mesa, igual que cotizacionDeMesa() y verificarMesaNuevo.php de la app
+			LEFT JOIN LATERAL (SELECT cc.* FROM cotizacion cc
+				WHERE cc.pagado IS NOT TRUE AND cc.vigente IS NOT FALSE AND cc.eseliminado IS NOT TRUE AND cc.esanulado IS NOT TRUE
+					AND ((m.id_cotizacion > 0 AND cc.id_cotizacion = m.id_cotizacion)
+						OR (COALESCE(m.id_cotizacion, 0) = 0 AND cc.id_mesa = m.id_mesa AND COALESCE(cc.id_divpedido, 0) = 0
+							AND EXISTS (SELECT 1 FROM detalle_cotizacion d WHERE d.id_cotizacion = cc.id_cotizacion
+								AND d.vigente IS NOT FALSE AND d.esanulado IS NOT TRUE AND d.eseliminado IS NOT TRUE)))
+				ORDER BY cc.id_cotizacion DESC LIMIT 1) c ON true
 			LEFT JOIN usuario u ON u.id_usuario = c.id_usuario
 			$joinPlano
 			WHERE m.vigente IS NOT FALSE AND r.vigente IS NOT FALSE AND m.id_mesa <> ?
@@ -2751,12 +3004,20 @@ class Mcaja extends CI_Model
 				'nombre' => trim((string)$m->nombre),
 			);
 		}
+		// Modo venta directa con pedidos de antes: solo esas mesas (para cobrarlas o anularlas), sin mesas libres
+		// ni recintos vacíos. Abrir pedidos nuevos ya lo impide enviarMesa.
+		if ($modo === 'directa') {
+			$res = array_values(array_filter($res, function ($m) { return $m['con_pedido']; }));
+			$conMesas = array();
+			foreach ($res as $m) $conMesas[$m['id_recinto']] = true;
+		}
 		// También los recintos que aún no tienen mesas
 		$sectores = array();
 		foreach ($this->q($db, 'SELECT id_recinto, nombre_recinto FROM recinto WHERE vigente IS NOT FALSE ORDER BY id_recinto')->result() as $r) {
+			if ($modo === 'directa' && !isset($conMesas[(int)$r->id_recinto])) continue;
 			$sectores[] = array('id' => (int)$r->id_recinto, 'nombre' => $r->nombre_recinto);
 		}
-		return array('habilitado' => true, 'mesas' => $res, 'sectores' => $sectores, 'modo' => $modo);
+		return array('habilitado' => true, 'mesas' => $res, 'sectores' => $sectores, 'modo' => $modo, 'solo_pendientes' => $modo === 'directa');
 	}
 
 	/** Nombre visible de una mesa (ej: "Terraza 2"); sin nombre propio, "Mesa N". */
@@ -2806,7 +3067,56 @@ class Mcaja extends CI_Model
 		if (!$c) return array('id_mesa' => (int)$idMesa, 'id_cotizacion' => 0, 'id_lprecio' => 0, 'segundos' => 0, 'lineas' => array());
 		$t = $this->q($db, 'SELECT EXTRACT(EPOCH FROM (now() - fecha_transaccion))::bigint AS s FROM cotizacion WHERE id_cotizacion = ?', array((int)$c->id_cotizacion))->row();
 		return array('id_mesa' => (int)$idMesa, 'id_cotizacion' => (int)$c->id_cotizacion, 'id_lprecio' => (int)$c->id_lprecio,
+			'id_garzon' => (int)$c->id_usuario,
 			'segundos' => (int)$t->s, 'lineas' => $this->lineasDeCotizacion($db, (int)$c->id_cotizacion));
+	}
+
+	/** Opciones de la mesa > Cambiar garzón: usuarios vigentes, los marcados como garzón primero. */
+	public function garzones()
+	{
+		$db = $this->conexion();
+		$c = $this->columnas($db, array('usuario'));
+		$u = isset($c['usuario']) ? $c['usuario'] : array();
+		$esGarzon = isset($u['esgarzon']) ? '(esgarzon IS TRUE)' : 'false';
+		$vigente = isset($u['vigente']) ? 'WHERE vigente IS NOT FALSE' : '';
+		$res = array();
+		foreach ($this->q($db, "SELECT id_usuario, COALESCE(nombre_usuario, '') AS nombre, $esGarzon AS garzon FROM usuario $vigente
+			ORDER BY 3 DESC, 2")->result() as $f) {
+			$res[] = array('id_usuario' => (int)$f->id_usuario, 'nombre' => (string)$f->nombre, 'garzon' => $f->garzon === 't' || $f->garzon === true);
+		}
+		return $res;
+	}
+
+	/**
+	 * Cambia quién atiende la mesa: el garzón del pedido (cotizacion.id_usuario, el que queda en la venta al cobrar y en
+	 * Propinas por garzón) y el de la mesa (mesa.id_garzon). Lo ya enviado conserva quién lo pidió (detalle_cotizacion).
+	 */
+	public function cambiarGarzonMesa($p)
+	{
+		$db = $this->conexion();
+		if (!$this->tieneMesas($db)) throw new Exception('Este cliente no tiene mesas', 400);
+		$idMesa = (int)(isset($p['id_mesa']) ? $p['id_mesa'] : 0);
+		$idGarzon = (int)(isset($p['id_garzon']) ? $p['id_garzon'] : 0);
+		$c = $this->columnas($db, array('usuario'));
+		$vigente = isset($c['usuario']['vigente']) ? ' AND vigente IS NOT FALSE' : '';
+		$g = $this->q($db, 'SELECT id_usuario, COALESCE(nombre_usuario, \'\') AS nombre FROM usuario WHERE id_usuario = ?' . $vigente, array($idGarzon))->row();
+		if (!$g) throw new Exception('El garzón elegido no existe o no está vigente', 400);
+		$db->trans_begin();
+		try {
+			$this->validarMesaUsable($this->bloquearMesa($db, $idMesa), $db);
+			$cot = $this->cotizacionDeMesa($db, $idMesa);
+			if (!$cot) throw new Exception('La mesa ya no tiene un pedido abierto', 409);
+			$anterior = (int)$cot->id_usuario;
+			$this->q($db, 'UPDATE cotizacion SET id_usuario = ? WHERE id_cotizacion = ?', array($idGarzon, (int)$cot->id_cotizacion));
+			$this->q($db, 'UPDATE mesa SET id_garzon = ? WHERE id_mesa = ?', array($idGarzon, $idMesa));
+			$db->trans_commit();
+		} catch (Exception $e) {
+			$db->trans_rollback();
+			throw $e;
+		}
+		$a = $this->q($db, 'SELECT COALESCE(nombre_usuario, \'\') AS nombre FROM usuario WHERE id_usuario = ?', array($anterior))->row();
+		return array('id_mesa' => $idMesa, 'mesa' => $this->etiquetaMesa($idMesa), 'id_garzon' => $idGarzon, 'nombre' => (string)$g->nombre,
+			'anterior' => $a ? (string)$a->nombre : '');
 	}
 
 	/** Rechaza mesas bloqueadas o que quedaron marcadas ocupadas sin un pedido abierto. */
@@ -2878,8 +3188,10 @@ class Mcaja extends CI_Model
 					'id_cotizacion' => $idCot, 'id_producto' => $l['id_producto'], 'cantidad' => $l['cantidad'],
 					'bruto_un' => $l['unitario'], 'subtotal' => 0, 'descuento' => 0, 'descuento_porcentual' => 0, 'total_bruto' => $l['bruto'],
 					'poriva' => 0, 'id_agregado' => $l['id_agregado'], 'mensaje' => mb_substr($l['nota'], 0, 200),
-					'vigente' => true, 'impreso' => true, 'imprimir' => true, 'fecha_hora_impresion' => $ahora, 'desde_android' => false,
-					'id_garzon' => (int)$idUsuario, 'nombre_computador' => self::COMPUTADOR,
+					'vigente' => true, 'impreso' => true, 'imprimir' => true, 'fecha_hora_impresion' => $ahora,
+					// 14-11-2026: los pedidos que llegan de la app móvil (ApiMovil/pedidoMesa) quedan marcados
+					'desde_android' => !empty($p['desde_app']),
+					'id_garzon' => (int)$idUsuario, 'nombre_computador' => !empty($p['desde_app']) ? 'APP MOVIL' : self::COMPUTADOR,
 					'id_dimpresion' => isset($destinos[$l['id_producto']]) ? $destinos[$l['id_producto']]['id'] : 0,
 				), null);
 			}
@@ -2890,6 +3202,63 @@ class Mcaja extends CI_Model
 			throw $e;
 		}
 		return array('id_cotizacion' => $idCot, 'detalle' => $this->detalleMesa($idMesa, false), 'comanda' => $comandaMesa);
+	}
+
+	/**
+	 * 14-11-2026: comandas de la app de garzones (API2) que nadie ha impreso.
+	 * La app graba las líneas con desde_android = true e impreso = false y hasta ahora solo el POS de escritorio las
+	 * imprimía. Con Configuraciones > "Imprimir las comandas de la app" la Caja web las toma: las marca impresas en la
+	 * misma transacción (FOR UPDATE SKIP LOCKED: con dos cajas abiertas cada línea la toma una sola) y devuelve por mesa
+	 * las líneas para armar la comanda; la Caja las imprime como las suyas, cada producto en su destino de impresión.
+	 * Solo líneas de las últimas 3 horas de pedidos abiertos (al encender la opción no salen pedidos viejos).
+	 * f_manejo_stock_menu solo actúa al insertar: marcar impreso no vuelve a descontar stock.
+	 */
+	public function tomarComandasApp()
+	{
+		$db = $this->conexion();
+		if (!$this->tieneMesas($db) || !$this->configuracion($db)['comandas_app']) return array();
+		$cols = $this->columnas($db, array('detalle_cotizacion'));
+		if (!isset($cols['detalle_cotizacion']['desde_android'], $cols['detalle_cotizacion']['impreso'])) return array();
+		$db->trans_begin();
+		try {
+			$this->q($db, 'SET LOCAL TIME ZONE ' . $db->escape(self::TZ));
+			$rows = $this->q($db, "SELECT d.id_detalle_cotizacion, d.id_producto, d.cantidad, COALESCE(d.mensaje, '') AS nota,
+					COALESCE(p.nombre_producto, 'Producto ' || d.id_producto) AS nombre, pa.nombre_producto AS agregado,
+					c.id_mesa, c.id_cotizacion, COALESCE(u.nombre_usuario, '') AS garzon
+				FROM detalle_cotizacion d
+				JOIN cotizacion c ON c.id_cotizacion = d.id_cotizacion
+				LEFT JOIN producto p ON p.id_producto = d.id_producto
+				LEFT JOIN producto pa ON pa.id_producto = d.id_agregado AND d.id_agregado > 0
+				LEFT JOIN usuario u ON u.id_usuario = c.id_usuario
+				WHERE d.desde_android IS TRUE AND d.impreso IS NOT TRUE
+					AND d.vigente IS NOT FALSE AND d.esanulado IS NOT TRUE AND d.eseliminado IS NOT TRUE
+					AND c.pagado IS NOT TRUE AND c.vigente IS NOT FALSE AND c.esanulado IS NOT TRUE AND c.eseliminado IS NOT TRUE
+					AND COALESCE(d.fecha_movimiento, c.fecha_transaccion) > now() - interval '3 hours'
+				ORDER BY d.id_detalle_cotizacion
+				LIMIT 300
+				FOR UPDATE OF d SKIP LOCKED")->result();
+			if (!$rows) {
+				$db->trans_rollback();
+				return array();
+			}
+			$ids = array_map(function ($r) { return (int)$r->id_detalle_cotizacion; }, $rows);
+			$set = 'impreso = true' . (isset($cols['detalle_cotizacion']['fecha_hora_impresion']) ? ', fecha_hora_impresion = now()' : '');
+			$this->q($db, 'UPDATE detalle_cotizacion SET ' . $set . ' WHERE id_detalle_cotizacion ' . $this->sqlEn($ids));
+			$db->trans_commit();
+		} catch (Exception $e) {
+			$db->trans_rollback();
+			throw $e;
+		}
+		$porMesa = array();
+		foreach ($rows as $r) {
+			$k = (int)$r->id_cotizacion;
+			if (!isset($porMesa[$k])) $porMesa[$k] = array('id_mesa' => (int)$r->id_mesa, 'garzon' => trim((string)$r->garzon), 'lineas' => array());
+			$porMesa[$k]['lineas'][] = array(
+				'id_producto' => (int)$r->id_producto, 'nombre' => $r->nombre, 'cantidad' => (float)$r->cantidad,
+				'agregados' => $r->agregado !== null && $r->agregado !== '' ? array($r->agregado) : array(), 'nota' => $r->nota,
+			);
+		}
+		return array_values($porMesa);
 	}
 
 	private function recalcularCotizacion($db, $idCot)
@@ -3048,7 +3417,11 @@ class Mcaja extends CI_Model
 	}
 
 	/** Datos para imprimir la precuenta de una mesa (en la impresora de la caja, antes de pagar). */
-	public function precuentaMesa($idMesa)
+	/**
+	 * Precuenta de la mesa. $seleccion (Dividir cuenta): solo esa parte [{id_detalle, cantidad}], con la misma cuenta del cobro.
+	 * $partes >= 2: además, cuánto paga cada una de esas partes iguales (partesIguales).
+	 */
+	public function precuentaMesa($idMesa, $seleccion = null, $partes = 0)
 	{
 		$db = $this->conexion();
 		$cot = $this->cotizacionDeMesa($db, $idMesa);
@@ -3060,11 +3433,79 @@ class Mcaja extends CI_Model
 		if ($marca) $this->q($db, 'UPDATE cotizacion SET ' . implode(', ', $marca) . ' WHERE id_cotizacion = ?', array((int)$cot->id_cotizacion));
 		$t = $this->q($db, "SELECT to_char(fecha_transaccion, 'DD/MM/YYYY HH24:MI') AS desde FROM cotizacion WHERE id_cotizacion = ?", array((int)$cot->id_cotizacion))->row();
 		$config = $this->configuracion($db);
+		$lineas = $this->lineasDeCotizacion($db, (int)$cot->id_cotizacion);
+		if ($seleccion) $lineas = $this->seleccionDeLineas($lineas, $seleccion);
 		return array(
-			'id_mesa' => (int)$idMesa, 'nombre_mesa' => $this->etiquetaMesa($idMesa), 'desde' => $t ? $t->desde : '', 'lineas' => $this->lineasDeCotizacion($db, (int)$cot->id_cotizacion),
+			'id_mesa' => (int)$idMesa, 'nombre_mesa' => $this->etiquetaMesa($idMesa), 'desde' => $t ? $t->desde : '', 'lineas' => $lineas,
+			'partes' => !$seleccion && (int)$partes >= 2 ? $this->partesIguales($lineas, (int)$partes) : array(),
 			'por_propina' => (float)$config['por_propina'],
-			'empresa' => $this->q($db, 'SELECT * FROM empresa ORDER BY id_empresa LIMIT 1')->row(),
+			'empresa' => $this->empresaPrecuenta($db),
 		);
+	}
+
+	/** Empresa de la precuenta, con la dirección de la sucursal de la caja abierta del usuario (como los documentos). */
+	private function empresaPrecuenta($db)
+	{
+		$e = $this->q($db, 'SELECT * FROM empresa ORDER BY id_empresa LIMIT 1')->row();
+		$caja = $e ? $this->cajaAbierta((int)$this->session->userdata('id_usuario')) : null;
+		if (!$caja) return $e;
+		$this->load->helper('sucursal_empresa');
+		return empresa_con_sucursal($e, sucursal_de_caja($db, (int)$caja->id_caja));
+	}
+
+	/**
+	 * Dividir cuenta > Partes iguales: cuánto paga cada parte si se cobran una tras otra, igual que lo cobra la Caja (js.php,
+	 * dcSimularPartes, misma cuenta paso a paso). Cada parte, menos la última, lleva de cada producto cantidad / partes que
+	 * faltan, en milésimas (hacia abajo, o una milésima más si así queda más cerca de lo que le toca: se revisan los productos
+	 * en orden) y paga su proporción (seleccionDeLineas / partirLinea); la última paga lo que queda. Devuelve los montos.
+	 */
+	private function partesIguales($lineas, $n)
+	{
+		$n = max(1, min(50, (int)$n));
+		// Redondeo como Math.round de la Caja (floor(x + 0,5)): así la precuenta muestra lo mismo que la pantalla
+		$r = function ($x) { return (int)floor($x + 0.5); };
+		$r3 = function ($x) { return floor($x * 1000 + 0.5) / 1000; };
+		$sim = array();
+		foreach ($lineas as $l) $sim[] = array('c' => $r3((float)$l['cantidad']), 'b' => (float)$l['bruto_exacto']);
+		$monto1 = function ($s, $qm) use ($r) {
+			$q = $qm / 1000;
+			return $q >= $s['c'] - 0.0005 ? $r($s['b']) : $r($s['b'] * $q / $s['c']);
+		};
+		$montos = array();
+		for ($k = $n; $k >= 1; $k--) {
+			$resto = 0;
+			foreach ($sim as $s) if ($s['c'] > 0) $resto += $r($s['b']);
+			$meta = $resto / $k;
+			$qs = array();
+			$suma = 0;
+			foreach ($sim as $i => $s) {
+				$cm = $r($s['c'] * 1000);
+				$qs[$i] = $s['c'] <= 0 ? 0 : ($k === 1 ? $cm : (int)floor($cm / $k));
+				if ($qs[$i] > 0) $suma += $monto1($s, $qs[$i]);
+			}
+			if ($k > 1) {
+				foreach ($sim as $i => $s) {
+					if ($s['c'] <= 0 || $r($s['c'] * 1000) % $k === 0) continue;
+					$d = $monto1($s, $qs[$i] + 1) - ($qs[$i] > 0 ? $monto1($s, $qs[$i]) : 0);
+					if (abs($suma + $d - $meta) < abs($suma - $meta)) { $qs[$i]++; $suma += $d; }
+				}
+			}
+			$monto = 0;
+			foreach ($sim as $i => $s) {
+				if ($s['c'] <= 0 || $qs[$i] <= 0) continue;
+				$q = $qs[$i] / 1000;
+				if ($q >= $s['c'] - 0.0005) {
+					$monto += $r($s['b']);
+					$sim[$i] = array('c' => 0, 'b' => 0);
+					continue;
+				}
+				$parte = $r($s['b'] * $q / $s['c']);
+				$monto += $parte;
+				$sim[$i] = array('c' => $r3($s['c'] - $q), 'b' => $s['b'] - $parte);
+			}
+			$montos[] = $monto;
+		}
+		return $montos;
 	}
 
 	/** Anula un producto ya enviado. Si era el último, el pedido se anula y la mesa queda libre. */
@@ -3165,7 +3606,12 @@ class Mcaja extends CI_Model
 		$db->trans_begin();
 		try {
 			$this->bloquearMesa($db, $idMesa);
-			if ($this->cotizacionDeMesa($db, $idMesa)) throw new Exception('La mesa tiene un pedido abierto: cóbralo o anula sus productos', 409);
+			// Un pedido sin productos (envío incompleto de la app) no impide liberar la mesa; liberarla a mano lo cierra ya
+			$this->cerrarPedidosVacios($db, $idMesa, true);
+			$cot = $this->cotizacionDeMesa($db, $idMesa);
+			if ($cot && $this->lineasDeCotizacion($db, (int)$cot->id_cotizacion)) {
+				throw new Exception('La mesa tiene un pedido abierto: cóbralo o anula sus productos', 409);
+			}
 			$this->desocuparMesa($db, $idMesa);
 			$db->trans_commit();
 		} catch (Exception $e) {
@@ -3265,6 +3711,19 @@ class Mcaja extends CI_Model
 			if ($iva && (float)$iva->valor > 0) $config['por_iva'] = (float)$iva->valor;
 		}
 		$config['copias_documento'] = max(1, min(5, (int)$config['copias_documento']));
+		// Documentos de la caja directo al agente de impresión del equipo (localhost:5050), como mipdv_web: activa salvo que
+		// Configuraciones la desmarque (columna impresion_local_caja, migración 20261112110000; NULL o sin la columna = activa)
+		$config['impresion_local'] = true;
+		if (in_array('impresion_local_caja', $existentes, true)) {
+			$il = $this->q($db, 'SELECT (impresion_local_caja IS NOT FALSE) AS ok FROM configuracion LIMIT 1')->row();
+			if ($il) $config['impresion_local'] = $il->ok === 't' || $il->ok === true;
+		}
+		// 14-11-2026: imprimir las comandas de la app de garzones (migración 20261114130000; NULL o sin la columna = apagada)
+		$config['comandas_app'] = false;
+		if (in_array('imprimir_comandas_app', $existentes, true)) {
+			$ca = $this->q($db, 'SELECT (imprimir_comandas_app IS TRUE) AS ok FROM configuracion LIMIT 1')->row();
+			if ($ca) $config['comandas_app'] = $ca->ok === 't' || $ca->ok === true;
+		}
 		// Bases sin la opción: se mantiene la facturación electrónica disponible
 		if (!in_array('habilitar_facturacion_electronica', $existentes)) $config['facturacion_electronica'] = true;
 		$config['admin_descuento'] = $config['admin_descuento'] || $config['admin_descuento_clave'];
@@ -3273,11 +3732,71 @@ class Mcaja extends CI_Model
 			$r = $this->q($db, 'SELECT min(id_cliente) AS id FROM cliente')->row();
 			$config['id_cliente_publico'] = $r ? (int)$r->id : 0;
 		}
+		// Herramientas > Control de cajas: la caja elegida al abrir el turno trae su lista de precios (reemplaza a la pública
+		// de Configuraciones), su bodega para el stock y si el cajero puede cambiar la lista
+		$config['caja_control'] = null;
+		$config['id_bodega_caja'] = 0;
+		$config['caja_fija_lista'] = false;
+		$cc = $this->cajaControl($db);
+		if ($cc) {
+			if ($cc['id_lprecio'] > 0) $config['id_lprecio_publico'] = $cc['id_lprecio'];
+			$config['id_bodega_caja'] = $cc['id_bodega'];
+			$config['caja_fija_lista'] = !$cc['permitir_cambio_lista'];
+			$config['caja_control'] = $cc;
+		}
 		if (!$config['id_lprecio_publico']) {
 			$r = $this->q($db, 'SELECT min(id_lprecio) AS id FROM lprecio')->row();
 			$config['id_lprecio_publico'] = $r ? (int)$r->id : 0;
 		}
 		return $config;
+	}
+
+	/**
+	 * Caja de Herramientas > Control de cajas con que se abrió el turno abierto del usuario de la sesión
+	 * (caja.id_control_caja, migración 20261111190000). null: sin la migración o turno abierto sin caja elegida (como antes).
+	 * Una lista o bodega que ya no existe no se usa (queda la pública / la de cada producto).
+	 */
+	private $cajaControl = false;   // false = aún no se lee en esta petición
+	private function cajaControl($db)
+	{
+		if ($this->cajaControl !== false) return $this->cajaControl;
+		$this->cajaControl = null;
+		$c = $this->columnas($db, array('caja', 'control_caja'));
+		if (!isset($c['caja']['id_control_caja'], $c['control_caja']['id_lprecio'], $c['control_caja']['id_bodega'],
+			$c['control_caja']['permitir_cambio_lprecio_caja'], $c['control_caja']['nombre_caja'])) return null;
+		$idUsuario = (int)$this->session->userdata('id_usuario');
+		if ($idUsuario <= 0) return null;
+		$c = $this->q($db, "SELECT COALESCE(id_control_caja, 0) AS id FROM caja WHERE cerrada IS NOT TRUE AND nombre_computador = ? AND id_usuario = ?
+			ORDER BY id_caja DESC LIMIT 1", array(self::COMPUTADOR, $idUsuario))->row();
+		return $this->cajaControl = $c ? $this->datosControlCaja($db, (int)$c->id) : null;
+	}
+
+	/** Nombre, lista, bodega y cambio de lista de una caja de Control de cajas (null si no existe o falta la migración). */
+	private function datosControlCaja($db, $idControlCaja)
+	{
+		if ($idControlCaja <= 0) return null;
+		$c = $this->columnas($db, array('control_caja'));
+		if (!isset($c['control_caja']['id_lprecio'], $c['control_caja']['id_bodega'], $c['control_caja']['permitir_cambio_lprecio_caja'],
+			$c['control_caja']['nombre_caja'])) return null;
+		$r = $this->q($db, "SELECT cc.id_control_caja, COALESCE(cc.caja_n, 0) AS caja_n, COALESCE(cc.nombre_caja, '') AS nombre_caja,
+				COALESCE(l.id_lprecio, 0) AS id_lprecio, COALESCE(l.nombre_lprecio, '') AS lista,
+				COALESCE(b.id_bodega, 0) AS id_bodega, COALESCE(b.nombre_bodega, '') AS bodega,
+				(cc.permitir_cambio_lprecio_caja IS TRUE) AS permitir
+			FROM control_caja cc
+			LEFT JOIN lprecio l ON l.id_lprecio = cc.id_lprecio AND cc.id_lprecio > 0
+			LEFT JOIN bodega b ON b.id_bodega = cc.id_bodega AND cc.id_bodega > 0
+			WHERE cc.id_control_caja = ?", array((int)$idControlCaja))->row();
+		if (!$r) return null;
+		return array(
+			'id' => (int)$r->id_control_caja,
+			'caja_n' => (int)$r->caja_n,
+			'nombre' => $r->nombre_caja !== '' ? $r->nombre_caja : 'Caja ' . (int)$r->caja_n,
+			'id_lprecio' => (int)$r->id_lprecio,
+			'lista' => (string)$r->lista,
+			'id_bodega' => (int)$r->id_bodega,
+			'bodega' => (string)$r->bodega,
+			'permitir_cambio_lista' => $r->permitir === 't' || $r->permitir === true,
+		);
 	}
 
 	private function catalogoFpago($db, $config)
@@ -3520,6 +4039,27 @@ class Mcaja extends CI_Model
 		return $neto;
 	}
 
+	/**
+	 * 14-11-2026: evita registrar dos veces el mismo cobro (doble clic, reintento por red lenta, dos pestañas).
+	 * La pantalla manda un token por cobro y lo repite al reintentar. Se inserta en la transacción de la venta:
+	 * un segundo envío espera a que termine el primero y, si ya quedó grabado, se rechaza con 409.
+	 * Sin la tabla (migración 20261114100000 no aplicada) o sin token, todo sigue como antes. Devuelve el token usado o ''.
+	 */
+	private function reservarTokenVenta($db, $p, $idCaja, $idUsuario)
+	{
+		$token = isset($p['token']) ? preg_replace('/[^A-Za-z0-9_-]/', '', (string)$p['token']) : '';
+		if (strlen($token) < 16 || strlen($token) > 64) return '';
+		$t = $this->columnas($db, array('caja_venta_token'));
+		if (!isset($t['caja_venta_token']['token'])) return '';
+		$ok = $this->q($db, 'INSERT INTO caja_venta_token (token, id_caja, id_usuario) VALUES (?, ?, ?)
+			ON CONFLICT (token) DO NOTHING RETURNING token', array($token, (int)$idCaja, (int)$idUsuario))->row();
+		if ($ok) return $token;
+		$prev = $this->q($db, 'SELECT v.id_venta, v.folio FROM caja_venta_token t LEFT JOIN venta v ON v.id_venta = t.id_venta
+			WHERE t.token = ?', array($token))->row();
+		$cual = ($prev && $prev->id_venta) ? ' (venta ' . (int)$prev->id_venta . ($prev->folio ? ', folio ' . (int)$prev->folio : '') . ')' : '';
+		throw new Exception('Este cobro ya se registró' . $cual . '. No se volvió a cobrar: revisa Documentos antes de intentarlo de nuevo.', 409);
+	}
+
 	private function columnas($db, $tablas)
 	{
 		$faltan = array_values(array_diff($tablas, array_keys($this->cols)));
@@ -3537,6 +4077,149 @@ class Mcaja extends CI_Model
 	}
 
 	/** "12.345.678-9" -> [12345678, '9'] */
+	// ---------------- Datos de la factura (venta_receptor, migración 20261111180000) ----------------
+
+	/** ¿Existe la tabla venta_receptor? Si falta, la factura usa la ficha del cliente, como antes. */
+	private $hayReceptor = null;
+	private $hayMotivoReceptor = null;
+	/** venta_receptor.motivo (migración 20261112100000): glosa libre de la factura */
+	private function hayMotivoReceptor($db)
+	{
+		if ($this->hayMotivoReceptor === null) {
+			$r = $this->q($db, "SELECT count(*) AS n FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'venta_receptor' AND column_name = 'motivo'")->row();
+			$this->hayMotivoReceptor = $r && (int)$r->n > 0;
+		}
+		return $this->hayMotivoReceptor;
+	}
+	private function hayReceptor($db)
+	{
+		if ($this->hayReceptor === null) {
+			$r = $this->q($db, "SELECT to_regclass('public.venta_receptor') IS NOT NULL AS ok")->row();
+			$this->hayReceptor = $r && ($r->ok === 't' || $r->ok === true);
+		}
+		return $this->hayReceptor;
+	}
+
+	/**
+	 * Para la ventana "Datos de la factura": la ficha del cliente y lo usado antes en sus facturas
+	 * (combinaciones de giro / dirección / comuna y quiénes las solicitaron), lo más reciente primero.
+	 */
+	public function receptorCliente($idCliente)
+	{
+		$db = $this->conexion();
+		$c = $this->q($db, "SELECT c.id_cliente, COALESCE(c.nombre_cliente, '') AS nombre_cliente, COALESCE(c.rut, 0) AS rut, COALESCE(c.dv, '') AS dv,
+				COALESCE(c.giro, '') AS giro, COALESCE(c.direccion, '') AS direccion, COALESCE(c.id_comuna, 0) AS id_comuna,
+				COALESCE(co.nombre_comuna, '') AS comuna
+			FROM cliente c LEFT JOIN comuna co ON co.id_comuna = c.id_comuna WHERE c.id_cliente = ?", array((int)$idCliente))->row();
+		if (!$c) throw new Exception('El cliente no existe', 404);
+		$res = array(
+			'disponible' => $this->hayReceptor($db),
+			'cliente' => array('id_cliente' => (int)$c->id_cliente, 'rut' => (int)$c->rut, 'dv' => strtoupper(trim((string)$c->dv)),
+				'razon_social' => trim((string)$c->nombre_cliente), 'giro' => trim((string)$c->giro), 'direccion' => trim((string)$c->direccion),
+				'id_comuna' => (int)$c->id_comuna, 'comuna' => trim((string)$c->comuna)),
+			'anteriores' => array(),
+			'solicitantes' => array(),
+		);
+		if (!$res['disponible']) return $res;
+		foreach ($this->q($db, "SELECT razon_social, giro, direccion, id_comuna, comuna, ciudad, contacto, to_char(max(fecha), 'DD/MM/YYYY') AS fecha
+				FROM venta_receptor WHERE id_cliente = ?
+				GROUP BY razon_social, giro, direccion, id_comuna, comuna, ciudad, contacto
+				ORDER BY max(fecha) DESC LIMIT 10", array((int)$idCliente))->result() as $r) {
+			$res['anteriores'][] = array('razon_social' => $r->razon_social, 'giro' => $r->giro, 'direccion' => $r->direccion,
+				'id_comuna' => (int)$r->id_comuna, 'comuna' => $r->comuna, 'ciudad' => $r->ciudad, 'contacto' => $r->contacto, 'fecha' => $r->fecha);
+		}
+		$historial = array();
+		foreach ($this->q($db, "SELECT rut_solicita, dv_solicita, (array_agg(nombre_solicita ORDER BY fecha DESC))[1] AS nombre
+				FROM venta_receptor WHERE id_cliente = ? AND COALESCE(rut_solicita, 0) > 0
+				GROUP BY rut_solicita, dv_solicita ORDER BY max(fecha) DESC LIMIT 15", array((int)$idCliente))->result() as $r) {
+			$historial[] = array('rut' => (int)$r->rut_solicita, 'dv' => (string)$r->dv_solicita, 'nombre' => (string)$r->nombre);
+		}
+		// Listas para elegir (12-11-2026): la ficha del cliente, sus direcciones / giros / solicitantes (Clientes) y lo usado
+		// en sus facturas anteriores, sin repetir
+		$this->load->model('Mclientefactura');
+		$ficha = $this->Mclientefactura->listas((int)$idCliente);
+		$res['guardar_ficha'] = $ficha['disponible'];
+		$vistos = array();
+		$res['giros'] = array();
+		$giros = array(array('giro' => $res['cliente']['giro'], 'origen' => 'ficha'));
+		foreach ($ficha['giros'] as $g) $giros[] = array('giro' => $g['giro'], 'origen' => 'lista');
+		foreach ($res['anteriores'] as $a) $giros[] = array('giro' => $a['giro'], 'origen' => 'anterior');
+		foreach ($giros as $g) {
+			$g['giro'] = trim((string)$g['giro']);
+			$k = mb_strtoupper($g['giro']);
+			if ($g['giro'] === '' || isset($vistos[$k])) continue;
+			$vistos[$k] = 1;
+			$res['giros'][] = $g;
+		}
+		$vistos = array();
+		$res['direcciones'] = array();
+		$c = $res['cliente'];
+		$dirs = array(array('direccion' => $c['direccion'], 'id_comuna' => $c['id_comuna'], 'comuna' => $c['comuna'], 'ciudad' => '', 'origen' => 'ficha'));
+		foreach ($ficha['direcciones'] as $d) $dirs[] = array('direccion' => $d['direccion'], 'id_comuna' => $d['id_comuna'], 'comuna' => $d['comuna'], 'ciudad' => $d['ciudad'], 'origen' => 'lista');
+		foreach ($res['anteriores'] as $a) $dirs[] = array('direccion' => $a['direccion'], 'id_comuna' => $a['id_comuna'], 'comuna' => $a['comuna'], 'ciudad' => (string)$a['ciudad'], 'origen' => 'anterior');
+		foreach ($dirs as $d) {
+			$d['direccion'] = trim((string)$d['direccion']);
+			$k = mb_strtoupper($d['direccion']) . '|' . (int)$d['id_comuna'];
+			if ($d['direccion'] === '' || isset($vistos[$k])) continue;
+			$vistos[$k] = 1;
+			$res['direcciones'][] = $d;
+		}
+		$vistos = array();
+		foreach (array_merge($ficha['solicitantes'], $historial) as $s) {
+			if (isset($vistos[$s['rut']])) continue;
+			$vistos[$s['rut']] = 1;
+			$res['solicitantes'][] = array('rut' => (int)$s['rut'], 'dv' => strtoupper((string)$s['dv']), 'nombre' => (string)$s['nombre']);
+		}
+		return $res;
+	}
+
+	/** Valida y limpia los datos de la factura que manda la Caja (todos obligatorios, salvo ciudad y contacto). */
+	private function datosFactura($db, $cliente, $f)
+	{
+		$t = function ($k, $max) use ($f) {
+			return mb_substr(trim(preg_replace('/\s+/u', ' ', (string)(isset($f[$k]) ? $f[$k] : ''))), 0, $max);
+		};
+		$r = array('razon_social' => $t('razon_social', 100), 'giro' => $t('giro', 80), 'direccion' => $t('direccion', 100),
+			'id_comuna' => (int)(isset($f['id_comuna']) ? $f['id_comuna'] : 0), 'comuna' => '', 'ciudad' => $t('ciudad', 40),
+			'contacto' => $t('contacto', 80), 'rut_solicita' => 0, 'dv_solicita' => '', 'nombre_solicita' => $t('nombre_solicita', 80),
+			// Motivo de la solicitud: glosa libre que se imprime en la factura (opcional)
+			'motivo' => $t('motivo', 200),
+			// Lo nuevo (dirección, giro, solicitante) se agrega a la ficha del cliente, salvo que se desmarque
+			'guardar_ficha' => !isset($f['guardar_ficha']) || !in_array($f['guardar_ficha'], array(false, 0, '0', 'false'), true));
+		if ($r['razon_social'] === '') $r['razon_social'] = mb_substr(trim((string)$cliente->nombre_cliente), 0, 100);
+		if ($r['giro'] === '') throw new Exception('Indica el giro del cliente para la factura', 400);
+		if ($r['direccion'] === '') throw new Exception('Indica la dirección del cliente para la factura', 400);
+		$co = $r['id_comuna'] ? $this->q($db, 'SELECT nombre_comuna FROM comuna WHERE id_comuna = ?', array($r['id_comuna']))->row() : null;
+		if (!$co) throw new Exception('Indica la comuna del cliente para la factura', 400);
+		$r['comuna'] = mb_substr(trim((string)$co->nombre_comuna), 0, 40);
+		$rutSol = trim((string)(isset($f['rut_solicita']) ? $f['rut_solicita'] : ''));
+		if ($rutSol === '') throw new Exception('Indica el RUT de quien solicita la factura', 400);
+		try {
+			list($r['rut_solicita'], $r['dv_solicita']) = $this->separarRut($rutSol);
+		} catch (Exception $e) {
+			throw new Exception('El RUT de quien solicita la factura no es válido', 400);
+		}
+		if ($r['nombre_solicita'] === '') throw new Exception('Indica el nombre de quien solicita la factura', 400);
+		return $r;
+	}
+
+	private function guardarReceptor($db, $idVenta, $idCliente, $fac, $fecha)
+	{
+		if ($this->hayMotivoReceptor($db)) {
+			$this->q($db, 'INSERT INTO venta_receptor (id_venta, id_cliente, razon_social, giro, direccion, id_comuna, comuna, ciudad, contacto,
+					rut_solicita, dv_solicita, nombre_solicita, fecha, motivo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				ON CONFLICT (id_venta) DO NOTHING',
+				array((int)$idVenta, (int)$idCliente, $fac['razon_social'], $fac['giro'], $fac['direccion'], (int)$fac['id_comuna'], $fac['comuna'],
+					$fac['ciudad'], $fac['contacto'], (int)$fac['rut_solicita'], $fac['dv_solicita'], $fac['nombre_solicita'], $fecha, $fac['motivo']));
+			return;
+		}
+		$this->q($db, 'INSERT INTO venta_receptor (id_venta, id_cliente, razon_social, giro, direccion, id_comuna, comuna, ciudad, contacto,
+				rut_solicita, dv_solicita, nombre_solicita, fecha) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			ON CONFLICT (id_venta) DO NOTHING',
+			array((int)$idVenta, (int)$idCliente, $fac['razon_social'], $fac['giro'], $fac['direccion'], (int)$fac['id_comuna'], $fac['comuna'],
+				$fac['ciudad'], $fac['contacto'], (int)$fac['rut_solicita'], $fac['dv_solicita'], $fac['nombre_solicita'], $fecha));
+	}
+
 	private function separarRut($texto)
 	{
 		$limpio = strtoupper(preg_replace('/[^0-9kK]/', '', (string)$texto));

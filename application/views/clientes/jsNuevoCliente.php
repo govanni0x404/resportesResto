@@ -1,3 +1,23 @@
+<style>
+	/* Datos para factura del cliente (12-11-2026) */
+	#ModalNuevoCliente [hidden] { display: none !important; }
+	#ModalNuevoCliente .cf-ayuda { margin: -4px 0 10px; font-size: 12.5px; color: var(--t-texto-tenue, #8A7A6E); }
+	#ModalNuevoCliente .cf-aviso { padding: 8px 10px; border-radius: 8px; background: var(--t-fondo-alt, #FBF8F3); color: var(--t-texto, #3A2A22); }
+	#ModalNuevoCliente .cf-bloque { margin-bottom: 10px; padding: 8px 10px; border: 1px solid var(--t-borde, #EADFD2); border-radius: 8px; }
+	#ModalNuevoCliente .cf-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 700; color: var(--t-texto, #3A2A22); }
+	#ModalNuevoCliente .cf-lista { margin: 6px 0 0; padding: 0; list-style: none; }
+	#ModalNuevoCliente .cf-lista li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--t-borde-suave, #F2EAE0); font-size: 13px; }
+	#ModalNuevoCliente .cf-lista li:first-child { border-top: 0; }
+	#ModalNuevoCliente .cf-lista .cf-vacio { color: var(--t-texto-tenue, #8A7A6E); font-style: italic; }
+	#ModalNuevoCliente .cf-texto { min-width: 0; overflow-wrap: anywhere; }
+	#ModalNuevoCliente .cf-sub { display: block; font-size: 12px; color: var(--t-texto-tenue, #8A7A6E); }
+	#ModalNuevoCliente .cf-acciones { flex: 0 0 auto; white-space: nowrap; }
+	#ModalNuevoCliente .cf-form { margin-top: 8px; padding-top: 10px; border-top: 1px dashed var(--t-borde, #EADFD2); }
+	#ModalNuevoCliente .cf-form .row > [class*="col-"] { margin-bottom: 8px; }
+	#ModalNuevoCliente .cf-form label { margin-bottom: 3px; font-size: 11px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #7A6A5E); }
+	#ModalNuevoCliente .cf-mayus { text-transform: uppercase; }
+	#ModalNuevoCliente .cf-botones { text-align: right; }
+</style>
 <!--  MODAL NUEVO REGISTRO  -->
 <div id="ModalNuevoCliente" class="modal fade t-form-modal" role="dialog" style="overflow-y: scroll;">
 	<div class="modal-dialog">
@@ -109,6 +129,55 @@
 								</select>
 							</div>
 						</fieldset>
+						<!-- Datos para factura (12-11-2026): direcciones (sucursales), giros y quienes solicitan facturas. En la Caja,
+						     al cobrar con factura, se eligen de estas listas. Ver Mclientefactura y Cliente::guardarDatoFactura -->
+						<div class="t-card-titulo">Datos para factura</div>
+						<p class="cf-ayuda">Direcciones (sucursales), giros y personas que solicitan facturas. En la Caja se eligen de estas listas; lo nuevo que se use en una factura se agrega aquí.</p>
+						<p class="cf-ayuda cf-aviso" id="cfSinGrabar">Graba primero el cliente para agregar sus direcciones, giros y solicitantes.</p>
+						<p class="cf-ayuda cf-aviso" id="cfSinTablas" hidden>Falta actualizar la base de datos para estas listas. Vuelve a ingresar al sistema en unos minutos.</p>
+						<div id="cfListas" hidden>
+							<div class="cf-bloque" data-tipo="direccion">
+								<div class="cf-cab"><span>Direcciones / sucursales</span><button type="button" class="btn btn-default btn-xs cf-agregar"><i class="fa fa-plus"></i> Agregar</button></div>
+								<ul class="cf-lista"></ul>
+								<div class="cf-form" hidden>
+									<div class="row">
+										<div class="col-sm-7"><label>Dirección *</label><input type="text" class="form-control input-sm cf-mayus" data-campo="direccion" maxlength="70" placeholder="Calle y número (máx. 70, SII)" autocomplete="off"></div>
+										<div class="col-sm-5"><label>Comuna *</label><select class="form-control input-sm" data-campo="id_comuna"></select></div>
+									</div>
+									<div class="row">
+										<div class="col-sm-5"><label>Ciudad</label><input type="text" class="form-control input-sm cf-mayus" data-campo="ciudad" maxlength="20" autocomplete="off"></div>
+										<div class="col-sm-7"><label>Referencia</label><input type="text" class="form-control input-sm cf-mayus" data-campo="referencia" maxlength="80" placeholder="Opcional (ej. local 3, bodega)" autocomplete="off"></div>
+									</div>
+									<div class="cf-botones"><button type="button" class="btn btn-default btn-xs cf-cancelar">Cancelar</button> <button type="button" class="btn btn-primary btn-xs cf-guardar"><i class="fa fa-check"></i> Guardar</button></div>
+								</div>
+							</div>
+							<div class="cf-bloque" data-tipo="giro">
+								<div class="cf-cab"><span>Giros</span><button type="button" class="btn btn-default btn-xs cf-agregar"><i class="fa fa-plus"></i> Agregar</button></div>
+								<ul class="cf-lista"></ul>
+								<div class="cf-form" hidden>
+									<div class="row">
+										<div class="col-sm-8"><label>Giro *</label><input type="text" class="form-control input-sm cf-mayus" data-campo="giro" maxlength="40" placeholder="Máx. 40 caracteres (SII)" autocomplete="off"></div>
+										<div class="col-sm-4"><label>Código actividad</label><input type="text" class="form-control input-sm" data-campo="codigo_sii" maxlength="6" inputmode="numeric" placeholder="Opcional" autocomplete="off"></div>
+									</div>
+									<div class="cf-botones"><button type="button" class="btn btn-default btn-xs cf-cancelar">Cancelar</button> <button type="button" class="btn btn-primary btn-xs cf-guardar"><i class="fa fa-check"></i> Guardar</button></div>
+								</div>
+							</div>
+							<div class="cf-bloque" data-tipo="solicitante">
+								<div class="cf-cab"><span>Quienes solicitan facturas</span><button type="button" class="btn btn-default btn-xs cf-agregar"><i class="fa fa-plus"></i> Agregar</button></div>
+								<ul class="cf-lista"></ul>
+								<div class="cf-form" hidden>
+									<div class="row">
+										<div class="col-sm-4"><label>RUT *</label><input type="text" class="form-control input-sm" data-campo="rut" maxlength="12" placeholder="12345678-9" autocomplete="off"></div>
+										<div class="col-sm-8"><label>Nombre *</label><input type="text" class="form-control input-sm cf-mayus" data-campo="nombre" maxlength="80" autocomplete="off"></div>
+									</div>
+									<div class="row">
+										<div class="col-sm-5"><label>Cargo</label><input type="text" class="form-control input-sm cf-mayus" data-campo="cargo" maxlength="60" placeholder="Opcional" autocomplete="off"></div>
+										<div class="col-sm-7"><label>Correo</label><input type="text" class="form-control input-sm" data-campo="mail" maxlength="100" placeholder="Opcional" autocomplete="off"></div>
+									</div>
+									<div class="cf-botones"><button type="button" class="btn btn-default btn-xs cf-cancelar">Cancelar</button> <button type="button" class="btn btn-primary btn-xs cf-guardar"><i class="fa fa-check"></i> Guardar</button></div>
+								</div>
+							</div>
+						</div>
 						<!-- FIN CAMPOS DE REGISTRO  -->
 					</div>
 				</div>
@@ -319,7 +388,13 @@
 			console.log(miJson);
 			$.post(base_url + "index.php/Cliente/grabarNuevoCliente", {
 					'prod': miJson
-				}).done(function() {
+				}).done(function(respuesta) {
+					var r = respuesta;
+					try { if (typeof r === 'string') r = JSON.parse(r); } catch (e) { r = null; }
+					if (r && !Array.isArray(r) && r.error) {
+						showAppAlert('error', r.error, { duration: 6000, image: base_url + 'assets/img/errorGif.gif' });
+						return;
+					}
 					showAppAlert('success', "Se registro Exitosamente El Nuevo Cliente!", {
                         duration: 4000,
                         image: base_url + 'assets/img/success.gif'
@@ -423,6 +498,141 @@
 			return false;
 		}
 	}
+
+	// ---------------- Datos para factura (12-11-2026): direcciones, giros y solicitantes del cliente ----------------
+	var cfCliente = 0, cfDatos = null, cfComunas = null, cfEditando = null;
+	var CF = {
+		direccion: { lista: 'direcciones', vacio: 'Sin direcciones adicionales (se usa la de la ficha)', quitar: 'la dirección',
+			texto: function (x) { return x.direccion; }, sub: function (x) { return $.grep([x.comuna, x.ciudad, x.referencia], Boolean).join(' · '); } },
+		giro: { lista: 'giros', vacio: 'Sin giros adicionales (se usa el de la ficha)', quitar: 'el giro',
+			texto: function (x) { return x.giro; }, sub: function (x) { return x.codigo_sii ? 'Código actividad ' + x.codigo_sii : ''; } },
+		solicitante: { lista: 'solicitantes', vacio: 'Sin solicitantes registrados', quitar: 'a',
+			texto: function (x) { return cfRut(x.rut, x.dv) + ' · ' + x.nombre; }, sub: function (x) { return $.grep([x.cargo, x.mail], Boolean).join(' · '); } }
+	};
+	function cfRut(rut, dv) { return String(rut).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + String(dv || '').toUpperCase(); }
+	function cfError(x) {
+		if (x && x.status === 401) return;   // la sesión expiró: menuTop lleva al ingreso
+		showAppAlert('error', (x && x.responseJSON && x.responseJSON.error) || 'No se pudo completar. Intenta de nuevo.', {
+			duration: 5000,
+			image: base_url + 'assets/img/errorGif.gif'
+		});
+	}
+	function cfCerrarForm() {
+		cfEditando = null;
+		$('#cfListas .cf-form').prop('hidden', true);
+		$('#cfListas .cf-agregar').prop('disabled', false);
+	}
+	function cfCargar() {
+		cfCliente = parseInt($('#idCliente').val(), 10) || 0;
+		cfCerrarForm();
+		$('#cfSinTablas').prop('hidden', true);
+		$('#cfSinGrabar').prop('hidden', cfCliente > 0);
+		$('#cfListas').prop('hidden', cfCliente <= 0);
+		if (!cfCliente) return;
+		var pedido = cfCliente;
+		$('#cfListas .cf-lista').html('<li class="cf-vacio">Cargando…</li>');
+		$.ajax({ url: base_url + 'index.php/Cliente/listarDatosFactura', data: { id_cliente: cfCliente }, dataType: 'json', cache: false })
+			.done(function (r) {
+				if (pedido !== cfCliente) return;
+				if (!r.disponible) { $('#cfListas').prop('hidden', true); $('#cfSinTablas').prop('hidden', false); return; }
+				cfDatos = r;
+				cfPintar();
+			}).fail(cfError);
+	}
+	function cfPintar() {
+		$.each(CF, function (tipo, def) {
+			var $ul = $('#cfListas .cf-bloque[data-tipo="' + tipo + '"] .cf-lista').empty(), lista = cfDatos[def.lista] || [];
+			if (!lista.length) $ul.append($('<li class="cf-vacio">').text(def.vacio));
+			$.each(lista, function (i, x) {
+				var sub = def.sub(x);
+				$ul.append($('<li>').attr('data-i', i).append(
+					$('<span class="cf-texto">').text(def.texto(x)).append(sub ? $('<span class="cf-sub">').text(sub) : null),
+					$('<span class="cf-acciones">').append(
+						$('<button type="button" class="btn btn-default btn-xs cf-editar" title="Editar"><i class="fa fa-pencil"></i></button>'), ' ',
+						$('<button type="button" class="btn btn-default btn-xs cf-quitar" title="Quitar"><i class="fa fa-trash"></i></button>'))));
+			});
+		});
+	}
+	function cfConComunas(listo) {
+		if (cfComunas) return listo();
+		$.post(base_url + 'index.php/Comuna/ListarComunas', { id: '' }, function (datos) {
+			var obj = typeof datos === 'string' ? jQuery.parseJSON(datos) : datos;
+			cfComunas = $('<select>').append($('<option>').val('0').text('Seleccione la comuna'));
+			$.each(obj, function (i, v) { cfComunas.append($('<option>').val(v.id_comuna).text(v.nombre_comuna)); });
+			listo();
+		}).fail(cfError);
+	}
+	function cfAbrirForm(tipo, x) {
+		var $b = $('#cfListas .cf-bloque[data-tipo="' + tipo + '"]'), $f = $b.find('.cf-form');
+		var abrir = function () {
+			cfCerrarForm();
+			cfEditando = { tipo: tipo, id: x ? x.id : 0 };
+			$f.find('[data-campo]').each(function () {
+				var c = $(this).data('campo'), v = x ? x[c] : '';
+				if (c === 'rut') v = x ? x.rut + '-' + x.dv : '';
+				if (c === 'id_comuna') v = String(x ? x.id_comuna : 0);
+				$(this).val(v == null ? '' : v);
+			});
+			$('#cfListas .cf-agregar').prop('disabled', true);
+			$f.prop('hidden', false).find('[data-campo]').first().focus();
+		};
+		if (tipo !== 'direccion') return abrir();
+		cfConComunas(function () {
+			var $s = $f.find('[data-campo="id_comuna"]');
+			if (!$s.children().length) $s.html(cfComunas.html());
+			abrir();
+		});
+	}
+	$('#ModalNuevoCliente').on('show.bs.modal', function (e) { if (e.target === this) cfCargar(); });
+	$('#cfListas').on('click', '.cf-agregar', function () {
+		cfAbrirForm($(this).closest('.cf-bloque').data('tipo'), null);
+	}).on('click', '.cf-editar', function () {
+		var tipo = $(this).closest('.cf-bloque').data('tipo');
+		cfAbrirForm(tipo, cfDatos[CF[tipo].lista][$(this).closest('li').data('i')]);
+	}).on('click', '.cf-cancelar', cfCerrarForm).on('click', '.cf-guardar', function () {
+		if (!cfEditando) return;
+		var $f = $(this).closest('.cf-form'), datos = {}, falta = null, btn = this;
+		$f.find('[data-campo]').each(function () { datos[$(this).data('campo')] = $.trim($(this).val()); });
+		if (cfEditando.tipo === 'direccion') {
+			if (!datos.direccion) falta = 'Indica la dirección';
+			else if (!(Number(datos.id_comuna) > 0)) falta = 'Elige la comuna';
+		} else if (cfEditando.tipo === 'giro') {
+			if (!datos.giro) falta = 'Indica el giro';
+			else if (datos.codigo_sii && !/^\d{1,6}$/.test(datos.codigo_sii)) falta = 'El código de actividad tiene hasta 6 dígitos';
+		} else {
+			var r = datos.rut.replace(/[^0-9kK]/g, '');
+			if (r.length < 2 || String(validarDV(Number(r.slice(0, -1)))).toUpperCase() !== r.slice(-1).toUpperCase()) falta = 'El RUT no es válido';
+			else if (!datos.nombre) falta = 'Indica el nombre';
+		}
+		if (falta) {
+			showAppAlert('error', falta, { duration: 4000, image: base_url + 'assets/img/errorGif.gif' });
+			return;
+		}
+		$(btn).prop('disabled', true);
+		$.ajax({ url: base_url + 'index.php/Cliente/guardarDatoFactura', type: 'POST', dataType: 'json',
+			data: { tipo: cfEditando.tipo, id_cliente: cfCliente, id: cfEditando.id, datos: datos } })
+			.done(function () {
+				showAppAlert('success', 'Guardado', { duration: 2500, image: base_url + 'assets/img/success.gif' });
+				cfCargar();
+			}).fail(cfError).always(function () { $(btn).prop('disabled', false); });
+	}).on('click', '.cf-quitar', function () {
+		var tipo = $(this).closest('.cf-bloque').data('tipo'), x = cfDatos[CF[tipo].lista][$(this).closest('li').data('i')];
+		swal({
+			title: '¿Quitar?',
+			text: 'Se quitará ' + CF[tipo].quitar + ' ' + CF[tipo].texto(x) + ' de la ficha del cliente. Las facturas ya emitidas no cambian.',
+			type: 'warning',
+			showCancelButton: true,
+			confirmButtonColor: '#C9372C',
+			cancelButtonText: 'Cancelar',
+			confirmButtonText: 'Quitar',
+			closeOnConfirm: true
+		}, function () {
+			$.ajax({ url: base_url + 'index.php/Cliente/quitarDatoFactura', type: 'POST', dataType: 'json',
+				data: { tipo: tipo, id_cliente: cfCliente, id: x.id } }).done(cfCargar).fail(cfError);
+		});
+	}).on('keydown', '.cf-form input', function (e) {
+		if (e.which === 13) { e.preventDefault(); $(this).closest('.cf-form').find('.cf-guardar').click(); }
+	});
 
 	const validateEmail = (email) => {
 		return email.match(

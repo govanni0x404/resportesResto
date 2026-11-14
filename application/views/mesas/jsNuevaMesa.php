@@ -100,6 +100,12 @@
                     'prod': miJson
                 }).done(function(response) {
                     console.log('Respuesta del servidor:', response);
+                    var r = response;
+                    try { if (typeof r === 'string') r = JSON.parse(r); } catch (e) { r = null; }
+                    if (r && !Array.isArray(r) && r.error) {
+                        showAppAlert('error', r.error, { duration: 6000, image: base_url + 'assets/img/errorGif.gif' });
+                        return;
+                    }
                     showAppAlert('success', "Se actualizó exitosamente la mesa!", {
                         duration: 4000,
                         image: base_url + 'assets/img/success.gif'
@@ -136,6 +142,12 @@
             $.post(base_url + "index.php/Mesas/crearMultiplesMesas", {
                     'prod': miJson
                 }).done(function(response) {
+                    var r = response;
+                    try { if (typeof r === 'string') r = JSON.parse(r); } catch (e) { r = null; }
+                    if (r && r.error) {
+                        showAppAlert('error', r.error, { duration: 6000, image: base_url + 'assets/img/errorGif.gif' });
+                        return;
+                    }
                     showAppAlert('success', "Se crearon exitosamente " + cantidad + " mesa(s)!", {
                         duration: 4000,
                         image: base_url + 'assets/img/success.gif'

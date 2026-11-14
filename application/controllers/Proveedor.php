@@ -45,18 +45,30 @@ class Proveedor extends CI_Controller
     	echo json_encode(array('error' => 'Datos incompletos'));
     	return;
     }
-    $id = intval($d['id_proveedor']);
+    $id = intval($d['id_proveedor'] ?? 0);
 
     // El crédito es solo para clientes: el proveedor ya no tiene crédito máximo (no se envía ni se toca en la base)
     $miData = array(
-      'nombre_proveedor' => $d['nombre_proveedor'],
-      'rut' => $d['rut'],
-      'dv' => $d['dv'],
-      'direccion' => $d['direccion'],
-      'telefono' => $d['telefono'],
-      'mail' => $d['mail'],
-      'giro' => $d['giro'],
+      'nombre_proveedor' => $d['nombre_proveedor'] ?? '',
+      'rut' => $d['rut'] ?? '',
+      'dv' => $d['dv'] ?? '',
+      'direccion' => $d['direccion'] ?? '',
+      'telefono' => $d['telefono'] ?? '',
+      'mail' => $d['mail'] ?? '',
+      'giro' => $d['giro'] ?? '',
     );
+    // 14-11-2026 (QA): RUT con dígito verificador correcto y sin repetir; correo válido si viene.
+    $this->load->helper(array('tenant', 'rut'));
+    $db = get_tenant_db($this);
+    $rut = rut_validar_unico($db, 'proveedor', 'id_proveedor', $id, $d['rut'] ?? '', $d['dv'] ?? '', 'proveedor');
+    if (isset($rut['error'])) { echo json_encode($rut); return; }
+    list($miData['rut'], $miData['dv']) = $rut;
+    $miData['nombre_proveedor'] = trim((string)($d['nombre_proveedor'] ?? ''));
+    if ($miData['nombre_proveedor'] === '') { echo json_encode(array('error' => 'El nombre del proveedor es obligatorio')); return; }
+    $miData['mail'] = trim((string)($d['mail'] ?? ''));
+    if ($miData['mail'] !== '' && !filter_var($miData['mail'], FILTER_VALIDATE_EMAIL)) {
+      echo json_encode(array('error' => 'El correo del proveedor no es válido')); return;
+    }
     $r = $this->Mproveedor->grabarNuevoProveedor($id, $miData);
     if ($r && isset($r['id_proveedor'])) {
         echo json_encode(array(

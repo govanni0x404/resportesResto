@@ -39,7 +39,7 @@ class ConsolidadoVentas extends CI_Controller
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        echo json_encode($this->MconsolidadoVentas->MontoTotalventas());
+        echo json_encode($this->MconsolidadoVentas->MontoTotalventas($this->input->post('desde'), $this->input->post('hasta')));
     }
 
     public function ResumenVentasPorFamilia()

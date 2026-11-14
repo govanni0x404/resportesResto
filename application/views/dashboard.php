@@ -111,6 +111,74 @@
 	@media (max-width: 479px) {
 		.dash .dash-kpis { grid-template-columns: minmax(0, 1fr); }
 	}
+
+	/* ===== Análisis del período (prefijo .dsa-): KPIs y gráficos; colores de datos validados (azul #2a78d6, naranjo #eb6834) ===== */
+	.dsa { --dsa-azul: #2a78d6; --dsa-azul-suave: #cde2fb; --dsa-naranjo: #eb6834; --dsa-grilla: #e1e0d9; --dsa-tenue: #898781;
+		--dsa-sube: #006300; --dsa-baja: #b42318; margin-bottom: 26px; transition: opacity .2s; }
+	.dsa.cargando { opacity: .55; pointer-events: none; }
+	.dsa-error { margin: 0 0 14px; padding: 10px 14px; border-radius: 10px; background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; font-size: 13px; }
+	.dsa-grupo { margin: 0 0 18px; }
+	.dsa-grupo-titulo { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 12px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--t-texto-suave, #7A6A5E); }
+	.dsa-grupo-titulo i { color: var(--t-texto-tenue, #A89A8C); font-size: 14px; }
+	.dsa-kpis { display: grid; grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 14px; }
+	.dsa-kpi { min-width: 0; padding: 16px 18px; background: #fff; border: 1px solid var(--t-borde, #EADFD2); border-radius: 14px; box-shadow: var(--t-sombra, 0 1px 2px rgba(58, 42, 34, .05)); }
+	.dsa-kpi-etiqueta { font-size: 12px; font-weight: 600; color: var(--t-texto-suave, #7A6A5E); }
+	.dsa-kpi-valor { margin: 6px 0 4px; font-size: 26px; font-weight: 700; line-height: 1.15; color: var(--t-texto-fuerte, #2A1D17); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.dsa-kpi.heroe .dsa-kpi-valor { font-size: 40px; letter-spacing: -.5px; }
+	.dsa-kpi-delta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 12px; color: var(--dsa-tenue); }
+	.dsa-kpi-delta b { font-weight: 700; }
+	.dsa-kpi-delta .sube { color: var(--dsa-sube); }
+	.dsa-kpi-delta .baja { color: var(--dsa-baja); }
+	.dsa-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+	.dsa-card { min-width: 0; padding: 16px 18px; background: #fff; border: 1px solid var(--t-borde, #EADFD2); border-radius: 14px; box-shadow: var(--t-sombra, 0 1px 2px rgba(58, 42, 34, .05)); }
+	.dsa-span2 { grid-column: span 2; }
+	.dsa-card > header { margin: 0 0 12px; }
+	.dsa-card > header h4 { margin: 0; font-size: 15px; font-weight: 700; color: var(--t-texto, #3A2A22); font-family: inherit; }
+	.dsa-card > header small { display: block; margin-top: 2px; font-size: 12px; color: var(--dsa-tenue); }
+	.dsa-chart { position: relative; height: 240px; }
+	.dsa-vacio { padding: 26px 8px; text-align: center; font-size: 13px; color: var(--dsa-tenue); }
+	.dsa-tabla { margin-top: 10px; font-size: 12px; }
+	.dsa-tabla summary { cursor: pointer; color: var(--t-texto-suave, #7A6A5E); font-weight: 600; }
+	.dsa-tabla table { width: 100%; margin-top: 8px; border-collapse: collapse; }
+	.dsa-tabla th, .dsa-tabla td { padding: 4px 6px; border-bottom: 1px solid var(--t-borde-suave, #F0E8DD); text-align: right; font-variant-numeric: tabular-nums; }
+	.dsa-tabla th:first-child, .dsa-tabla td:first-child { text-align: left; }
+	/* Barras ordenadas: nombre y valor arriba, barra fina debajo (un solo color) */
+	.dsa-rank { display: flex; flex-direction: column; gap: 10px; }
+	.dsa-rank-fila { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: baseline; }
+	.dsa-rank-nombre { min-width: 0; font-size: 13px; font-weight: 600; color: var(--t-texto, #3A2A22); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.dsa-rank-valor { font-size: 13px; font-weight: 700; color: var(--t-texto-fuerte, #2A1D17); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.dsa-rank-barra { grid-column: 1 / -1; height: 10px; }
+	.dsa-rank-barra i { display: block; height: 100%; min-width: 3px; border-radius: 0 4px 4px 0; background: var(--dsa-azul); }
+	.dsa-rank-sub { grid-column: 1 / -1; font-size: 11.5px; color: var(--dsa-tenue); }
+	/* Barra segmentada alta (mesa / directa) */
+	.dsa-seg { display: flex; gap: 2px; height: 28px; margin: 4px 0 10px; }
+	.dsa-seg span { display: flex; align-items: center; padding: 0 8px; min-width: 0; border-radius: 4px; color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; }
+	.dsa-leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 14px; font-size: 12.5px; color: var(--t-texto, #3A2A22); }
+	.dsa-leyenda i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; vertical-align: -1px; }
+	.dsa-mini { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+	.dsa-mini div { padding: 10px 12px; border-radius: 10px; background: var(--t-fondo-alt, #FBF8F3); }
+	.dsa-mini small { display: block; font-size: 11.5px; color: var(--t-texto-suave, #7A6A5E); }
+	.dsa-mini b { display: block; margin-top: 2px; font-size: 17px; color: var(--t-texto-fuerte, #2A1D17); }
+	/* Medidores (control): nombre, barra contra el total y cifra */
+	.dsa-medidores { display: flex; flex-direction: column; gap: 12px; }
+	.dsa-medidor { display: grid; grid-template-columns: 150px minmax(0, 1fr) 230px; gap: 12px; align-items: center; font-size: 13px; }
+	.dsa-medidor-nombre { font-weight: 600; color: var(--t-texto, #3A2A22); }
+	.dsa-medidor-barra { height: 8px; border-radius: 4px; background: var(--dsa-azul-suave); overflow: hidden; }
+	.dsa-medidor-barra i { display: block; height: 100%; min-width: 2px; border-radius: 4px; background: var(--dsa-azul); }
+	.dsa-medidor-cifra { text-align: right; color: var(--t-texto-suave, #7A6A5E); font-variant-numeric: tabular-nums; }
+	.dsa-medidor-cifra b { color: var(--t-texto-fuerte, #2A1D17); }
+	.dsa-resumen-dia { display: flex; flex-direction: column; gap: 10px; }
+	@media (max-width: 1199px) {
+		.dsa-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.dsa-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.dsa-medidor { grid-template-columns: 120px minmax(0, 1fr); }
+		.dsa-medidor-cifra { grid-column: 1 / -1; text-align: left; }
+	}
+	@media (max-width: 767px) {
+		.dsa-kpis, .dsa-grid { grid-template-columns: minmax(0, 1fr); }
+		.dsa-span2 { grid-column: auto; }
+		.dsa-kpi.heroe .dsa-kpi-valor { font-size: 32px; }
+	}
 </style>
 <?php
 date_default_timezone_set('America/Santiago');
@@ -213,6 +281,56 @@ $fechaActual = date('d-m-Y');
 			<!---------------------------------------------TAB CAJA ACTUAL ------------------------------------------------------------>
 			<div class="tab-pane fade active in" id="cajaActual">
 				<div class="panel-body dash-cuerpo">
+					<!-- ===== Análisis del período (10-11-2026): KPIs y gráficos con los mismos filtros (caja y período).
+					     Datos: Dashboard/analitica (models/Manalitica.php). Dibujo: views/dashboard_analitica_js.php ===== -->
+					<div class="dash-bloque dsa" id="dsa">
+						<div class="dash-seccion-titulo">
+							<h3>Análisis del período</h3>
+							<small id="dsaPeriodo"></small>
+						</div>
+						<div class="dsa-error" id="dsaError" role="alert" style="display:none"></div>
+
+						<div class="dsa-grupo">
+							<div class="dsa-grupo-titulo"><i class="fa fa-line-chart" aria-hidden="true"></i> Ventas y ticket</div>
+							<div class="dsa-kpis" id="dsaKpis"></div>
+							<div class="dsa-grid">
+								<section class="dsa-card dsa-span2">
+									<header><h4>Ventas por hora</h4><small>Según la hora de emisión del documento</small></header>
+									<div class="dsa-chart"><canvas id="dsaChartHora" role="img" aria-label="Ventas por hora del día"></canvas></div>
+									<details class="dsa-tabla"><summary>Ver como tabla</summary><div id="dsaTablaHora"></div></details>
+								</section>
+								<section class="dsa-card">
+									<header><h4 id="dsaDiaTitulo">Ventas por día</h4><small id="dsaDiaSub"></small></header>
+									<div id="dsaDia"></div>
+								</section>
+							</div>
+						</div>
+
+						<div class="dsa-grupo">
+							<div class="dsa-grupo-titulo"><i class="fa fa-cutlery" aria-hidden="true"></i> Productos y familias</div>
+							<div class="dsa-grid">
+								<section class="dsa-card"><header><h4>Productos más vendidos</h4><small>Top 10 por monto</small></header><div id="dsaTop"></div></section>
+								<section class="dsa-card"><header><h4>Ventas por familia</h4><small>Monto y participación</small></header><div id="dsaFamilias"></div></section>
+								<section class="dsa-card"><header><h4>Menos vendidos</h4><small id="dsaMenosSub">Con al menos una venta</small></header><div id="dsaMenos"></div></section>
+							</div>
+						</div>
+
+						<div class="dsa-grupo">
+							<div class="dsa-grupo-titulo"><i class="fa fa-th" aria-hidden="true"></i> Mesas y garzones</div>
+							<div class="dsa-grid">
+								<section class="dsa-card"><header><h4>Mesa y venta directa</h4><small>Participación en la venta</small></header><div id="dsaMesa"></div></section>
+								<section class="dsa-card dsa-span2"><header><h4>Ventas por garzón</h4><small>Venta, propina, documentos y ticket promedio</small></header><div id="dsaGarzones"></div></section>
+							</div>
+						</div>
+
+						<div class="dsa-grupo">
+							<div class="dsa-grupo-titulo"><i class="fa fa-shield" aria-hidden="true"></i> Caja y control</div>
+							<div class="dsa-grid">
+								<section class="dsa-card"><header><h4>Formas de pago</h4><small>Lo cobrado, sin propina</small></header><div id="dsaPagos"></div></section>
+								<section class="dsa-card dsa-span2"><header><h4>Control</h4><small>Sobre la venta bruta del período</small></header><div id="dsaControl"></div></section>
+							</div>
+						</div>
+					</div>
 					<div class="dash-bloque">
 						<div class="dash-seccion-titulo">
 							<h3>Resumen de caja</h3>

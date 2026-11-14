@@ -165,6 +165,15 @@ function cargarRoles(callback) {
                 	'prod': miJson
                 }).done(function(response) {
                     console.log('Respuesta del servidor:', response);
+                    var r = response;
+                    try { if (typeof r === 'string') r = JSON.parse(r); } catch (e) { r = null; }
+                    if (r && !Array.isArray(r) && r.error) {
+                        showAppAlert('error', r.error, {
+                            duration: 5000,
+                            image: base_url + 'assets/img/errorGif.gif'
+                        });
+                        return;
+                    }
                     showAppAlert('success', "Se actualizó exitosamente el usuario!", {
                         duration: 4000,
                         image: base_url + 'assets/img/success.gif'
@@ -225,6 +234,15 @@ function cargarRoles(callback) {
                     'prod': miJson
                 }).done(function(response) {
                     console.log('Respuesta del servidor:', response);
+                    var r = response;
+                    try { if (typeof r === 'string') r = JSON.parse(r); } catch (e) { r = null; }
+                    if (r && !Array.isArray(r) && r.error) {
+                        showAppAlert('error', r.error, {
+                            duration: 5000,
+                            image: base_url + 'assets/img/errorGif.gif'
+                        });
+                        return;
+                    }
                     showAppAlert('success', "Se creó exitosamente el nuevo usuario!", {
                         duration: 4000,
                         image: base_url + 'assets/img/success.gif'
