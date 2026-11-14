@@ -22,6 +22,8 @@ class Mcaja extends CI_Model
 	const PROPINA_MAX_PCT = 15;
 	/** Clave de los bloqueos (pg_advisory_lock) de emisión de documentos electrónicos, junto al id de la venta. */
 	const LOCK_DTE = 77001;
+	// 14-11-2026: abrir caja (candado por usuario, ver abrirCaja)
+	const LOCK_ABRIR_CAJA = 77003;
 	// Electrónicos que emite la caja web (boleta, boleta exenta, factura, factura exenta) y la NC
 	const COD_SII_EMITIBLES = array(33, 34, 39, 41);
 	const COD_SII_NC = 61;
@@ -919,10 +921,18 @@ class Mcaja extends CI_Model
 		$cols = $this->columnas($db, array('caja'));
 		$ahora = date('Y-m-d H:i:s');
 		$r = $this->q($db, 'SELECT min(id_turno) AS id FROM turno')->row();
-		if (!$idControlCaja) return $this->insertarCaja($db, $cols, $idUsuario, $fondo, $ahora, $r, 0);
-		// La caja elegida se bloquea mientras se abre: dos cajeros no abren la misma a la vez
 		$db->trans_begin();
 		try {
+			// 14-11-2026 (QA): un doble clic abría dos cajas del mismo usuario (la revisión de arriba iba fuera de la
+			// transacción). Candado por usuario hasta terminar: el segundo envío espera al primero y aquí ya la ve abierta.
+			$this->q($db, 'SELECT pg_advisory_xact_lock(?, ?)', array(self::LOCK_ABRIR_CAJA, (int)$idUsuario));
+			if ($this->cajaAbierta($idUsuario)) throw new Exception('Ya tienes una caja abierta', 409);
+			if (!$idControlCaja) {
+				$id = $this->insertarCaja($db, $cols, $idUsuario, $fondo, $ahora, $r, 0);
+				$db->trans_commit();
+				return $id;
+			}
+			// La caja elegida se bloquea mientras se abre: dos cajeros no abren la misma a la vez
 			$this->q($db, 'SELECT 1 FROM control_caja WHERE id_control_caja = ? FOR UPDATE', array($idControlCaja));
 			$otro = $this->q($db, "SELECT COALESCE(u.nombre_usuario, 'otro usuario') AS usuario FROM caja c LEFT JOIN usuario u ON u.id_usuario = c.id_usuario
 				WHERE c.id_control_caja = ? AND c.cerrada IS NOT TRUE AND c.id_usuario <> ? LIMIT 1", array($idControlCaja, (int)$idUsuario))->row();

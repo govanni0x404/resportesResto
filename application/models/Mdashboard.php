@@ -362,27 +362,29 @@ class Mdashboard extends CI_Model
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $q = "SELECT f.nombre_familia, sum(dv.total_bruto_con_descuento) as monto_total,
-			round(((sum(dv.cantidad)/
-				(select sum(dve.cantidad)
-				from detalle_venta dve
-				join venta ve on dve.id_venta = ve.id_venta
-				join caja caj on ve.id_caja = caj.id_caja
-				where caj.fecha between ? and ?))*100),3) as porcentaje
-			from familia f
-			join producto p on f.id_familia = p.id_familia
-			join detalle_venta dv on p.id_producto = dv.id_producto
-			join venta v on dv.id_venta = v.id_venta
-			join caja ca on v.id_caja = ca.id_caja
-			where ca.fecha between ? and ?";
-        if ($id_caja > 0) {
-            $q = $q . " and ca.id_caja = " . (int)$id_caja . "
-				group by f.nombre_familia";
-        } else {
-            $q = $q . " group by f.nombre_familia";
-        }
+        // 14-11-2026 (QA): el % es el monto de la familia sobre el total de ventas del mismo filtro (antes era por
+        // unidades, el total no aplicaba el filtro de caja y sumaba cortesías y anuladas: con una caja elegida los %
+        // no sumaban 100). Una vez por venta aunque tenga pago dividido, como el resto del Dashboard.
+        $filtroCaja = $id_caja > 0 ? " and ca.id_caja = " . (int)$id_caja : "";
+        $q = "SELECT x.nombre_familia, x.monto_total,
+                round((x.monto_total * 100.0 / NULLIF(sum(x.monto_total) OVER (), 0))::numeric, 1) as porcentaje
+            FROM (
+                SELECT f.nombre_familia, round(sum(dv.total_bruto_con_descuento)::numeric) as monto_total
+                from familia f
+                join producto p on f.id_familia = p.id_familia
+                join detalle_venta dv on p.id_producto = dv.id_producto
+                join venta v on dv.id_venta = v.id_venta
+                join caja ca on v.id_caja = ca.id_caja
+                where ca.fecha between ? and ?" . $filtroCaja . "
+                    and COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%'
+                    and EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago
+                        WHERE pv.id_venta = v.id_venta AND fp.escortesia = false)
+                group by f.nombre_familia
+            ) x
+            WHERE x.monto_total > 0
+            ORDER BY x.monto_total DESC";
 
-        $query = $this->db->query($q, array($de, $a, $de, $a))->result();
+        $query = $this->db->query($q, array($de, $a))->result();
         return $query;
     }
 

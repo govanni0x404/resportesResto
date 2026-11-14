@@ -153,7 +153,10 @@ function ListadoDeUsuarios() {
         
         $("#idUsuario").val(rowData[0].id_usuario);
         $("#nombreUsuario").val(rowData[0].nombre_usuario);
-        $("#claveUsuario").val(rowData[0].clave_usuario);
+        // 14-11-2026: la clave no viaja al navegador; vacía = se conserva la actual
+        $("#claveUsuario, #claveUsuario2").val('');
+        $('#lblClaveUsuario').text('NUEVA CLAVE (dejar vacío para no cambiarla)');
+        $('#claveUsuario').attr('placeholder', 'Dejar vacío para no cambiarla');
         
         // El rol se fija cuando el combo ya está cargado (antes un setTimeout de 200 ms; si la consulta
         // tardaba más el combo quedaba vacío y al grabar se enviaba id_rol vacío)

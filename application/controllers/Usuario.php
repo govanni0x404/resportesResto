@@ -136,7 +136,21 @@ class Usuario extends CI_Controller
         if (mb_strlen($data['nombre_usuario']) > 50) return 'El nombre de usuario es demasiado largo';
         if ($data['clave'] === '') {
             if ($esNuevo) return 'La clave es obligatoria';
-            unset($data['clave']);
+            unset($data['clave']);   // edición sin clave nueva: se conserva la actual
+        } else {
+            // 14-11-2026: la clave nueva se escribe dos veces (la pantalla ya no muestra la actual)
+            $confirmar = trim((string)($this->input->post('prod')['clave_confirmar'] ?? $data['clave']));
+            if ($confirmar !== $data['clave']) return 'Las claves no coinciden';
+            if (mb_strlen($data['clave']) < 4) return 'La clave debe tener al menos 4 caracteres';
+            // usuario.clave es única (la app de garzones identifica al usuario solo por la clave). Se revisa antes de
+            // grabar: el error de la base traía la clave del otro usuario en el detalle. No se dice de quién es.
+            if ($db->query('SELECT 1 FROM usuario WHERE clave = ? AND id_usuario <> ?', array($data['clave'], (int)$id))->row()) {
+                return 'Esa clave no se puede usar: elige otra';
+            }
+        }
+        if ($db->query('SELECT 1 FROM usuario WHERE upper(trim(nombre_usuario)) = upper(?) AND id_usuario <> ?',
+            array($data['nombre_usuario'], (int)$id))->row()) {
+            return 'Ya existe un usuario con ese nombre';
         }
 
         $actual = null;

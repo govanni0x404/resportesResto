@@ -15,6 +15,20 @@ $subtotal = (int)array_sum(array_column($lineas, 'bruto'));
 $descuento = min($subtotal, (int)$descuento);
 $total = $subtotal - $descuento;
 $propina = $por_propina > 0 ? (int)round($total * $por_propina / 100) : 0;
+// 14-11-2026 (QA): con descuento, las partes iguales también lo llevan, repartido en proporción a lo que paga cada una
+// (la última absorbe el redondeo). Antes las partes eran sin descuento y sumaban más que el TOTAL.
+if (!empty($partes) && $descuento > 0) {
+	$sumaPartes = (int)array_sum($partes);
+	if ($sumaPartes > 0) {
+		$repartido = 0;
+		$ultima = count($partes) - 1;
+		foreach (array_values($partes) as $i => $montoParte) {
+			$d = $i === $ultima ? $descuento - $repartido : (int)round($descuento * $montoParte / $sumaPartes);
+			$repartido += $d;
+			$partes[$i] = max(0, (int)$montoParte - $d);
+		}
+	}
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">

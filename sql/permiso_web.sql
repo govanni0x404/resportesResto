@@ -26,3 +26,12 @@ CROSS JOIN (VALUES ('Dashboard'), ('Caja'), ('Mesas'), ('EntradaBodega'), ('Sali
 	('Usuario'), ('Configuraciones')) AS m (modulo)
 WHERE r.id_rol <> 1
 ON CONFLICT (id_rol, modulo) DO NOTHING;
+
+-- 14-11-2026: pantallas nuevas de gestión (Anulación de ventas, Auditoría de caja, Control de cajas). Para los roles
+-- 2, 3, 4... quedan SIN acceso: gerencia decide en Privilegios a quién se las da. No pisa lo ya configurado.
+INSERT INTO permiso_web (id_rol, modulo, autoriza)
+SELECT r.id_rol, m.modulo, false
+FROM (SELECT DISTINCT id_rol FROM rol WHERE id_rol IS NOT NULL) r
+CROSS JOIN (VALUES ('AnulacionVentas'), ('AuditoriaCaja'), ('ControlCaja')) AS m (modulo)
+WHERE r.id_rol <> 1
+ON CONFLICT (id_rol, modulo) DO NOTHING;

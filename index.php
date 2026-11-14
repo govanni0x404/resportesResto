@@ -101,6 +101,14 @@ _resto_load_env_file(__DIR__ . DIRECTORY_SEPARATOR . '.env.php');
 _resto_load_env_file(__DIR__ . DIRECTORY_SEPARATOR . '.env');
 _resto_load_env_file(__DIR__ . DIRECTORY_SEPARATOR . '.env.local');
 
+// 14-11-2026: hora de Chile para todo PHP (date(), fechas de ventas en espera, división de cuenta, bitácoras).
+// Sin esto PHP usaba UTC (php.ini sin date.timezone) y esas fechas quedaban 3 horas adelantadas respecto de la base,
+// que trabaja en America/Santiago. Otra zona: RESTO_ZONA_HORARIA en .env.php (ej. America/Lima).
+$_resto_zona = getenv('RESTO_ZONA_HORARIA') ?: 'America/Santiago';
+if (!in_array($_resto_zona, timezone_identifiers_list(), true)) $_resto_zona = 'America/Santiago';
+date_default_timezone_set($_resto_zona);
+unset($_resto_zona);
+
 /*
  *---------------------------------------------------------------
  * APPLICATION ENVIRONMENT

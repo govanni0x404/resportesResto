@@ -57,8 +57,13 @@ function cargarRoles(callback) {
                                 <input type="text" class="form-control input-sm" maxlength='200' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreUsuario" id="nombreUsuario" requerido="si" value="" placeholder="Nombre Usuario" />
                             </div>
                             <div class="col-md-12" id="divClaveUsuario">
-                                <label for="claveUsuario">CLAVE USUARIO *</label>
-                                <input type="password" class="form-control input-sm" maxlength='200' autocomplete="off" name="claveUsuario" id="claveUsuario" requerido="si" value="" placeholder="Clave Usuario" />
+                                <label for="claveUsuario" id="lblClaveUsuario">CLAVE USUARIO *</label>
+                                <input type="password" class="form-control input-sm" maxlength='200' autocomplete="new-password" name="claveUsuario" id="claveUsuario" requerido="si" value="" placeholder="Clave Usuario" />
+                            </div>
+                            <!-- 14-11-2026: la clave nueva se repite (la actual ya no se muestra) -->
+                            <div class="col-md-12" id="divClaveUsuario2">
+                                <label for="claveUsuario2">REPETIR CLAVE</label>
+                                <input type="password" class="form-control input-sm" maxlength='200' autocomplete="new-password" name="claveUsuario2" id="claveUsuario2" value="" placeholder="Escriba la misma clave" />
                             </div>
                             <div class="col-md-12" id="divVigente">
                                 <label for="vigente">VIGENTE *</label>
@@ -98,7 +103,9 @@ function cargarRoles(callback) {
         modoEdicion = false;
         $('#idUsuario').val("");
         $('#nombreUsuario').val("");
-        $('#claveUsuario').val("");
+        $('#claveUsuario, #claveUsuario2').val("");
+        $('#lblClaveUsuario').text('CLAVE USUARIO *');
+        $('#claveUsuario').attr('placeholder', 'Clave Usuario');
         $('#vigente').val("true");
 		
 		cargarRoles();
@@ -144,6 +151,7 @@ function cargarRoles(callback) {
     			'id_usuario': idUsuario,
     			'nombre_usuario': $('#nombreUsuario').val(),
     			'clave_usuario': $('#claveUsuario').val(),
+    			'clave_confirmar': $('#claveUsuario2').val(),
     			'vigente': vigenteSeleccionado,
 				'id_rol': idRol
 			};
@@ -153,8 +161,9 @@ function cargarRoles(callback) {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });
-			}else if(clave === ""){
-				showAppAlert('error', "La clave de Usuario no puede quedar vacia", {
+			}else if(clave !== "" && clave !== $.trim($('#claveUsuario2').val())){
+				// Edición: clave vacía = se conserva la actual; si se escribe una nueva, se repite
+				showAppAlert('error', "Las claves no coinciden", {
                     duration: 5000,
                     image: base_url + 'assets/img/errorGif.gif'
                 });
@@ -206,6 +215,13 @@ function cargarRoles(callback) {
                 });
                 return;
             }
+            if ($('#claveUsuario').val() !== $('#claveUsuario2').val()) {
+                showAppAlert('error', "Las claves no coinciden", {
+                    duration: 5000,
+                    image: base_url + 'assets/img/errorGif.gif'
+                });
+                return;
+            }
 
 			if ($("#rolUsuario").val() == "" || $("#rolUsuario").val() == null) {
 			    showAppAlert('error', "Debe seleccionar un rol!", {
@@ -224,6 +240,7 @@ function cargarRoles(callback) {
                 'id_usuario': 0,
                 'nombre_usuario': nombreUsuario,
                 'clave_usuario': claveUsuario,
+                'clave_confirmar': $('#claveUsuario2').val(),
 				'vigente': vigenteUsuario,
 				'id_rol': idRol
             };
