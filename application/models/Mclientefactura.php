@@ -82,10 +82,20 @@ class Mclientefactura extends CI_Model
 		$repetida = $this->q('SELECT id_sucursal_cliente FROM sucursal_cliente WHERE id_cliente = ? AND vigente IS NOT FALSE AND id_comuna = ?
 			AND upper(trim(nombre_sucursal_cliente)) = upper(?) AND id_sucursal_cliente <> ? LIMIT 1', array((int)$idCliente, $idComuna, $direccion, (int)$id))->row();
 		if ($repetida) throw new Exception('El cliente ya tiene esa dirección', 409);
+		// 16-11-2026 (QA): quitar una dirección la deja no vigente, pero el índice único del POS
+		// (unique_id_cliente_direccion_cliente: cliente + dirección + comuna) también la cuenta. Volver a agregarla daba
+		// "duplicate key". Si la misma dirección está quitada, se reactiva (con la ciudad y referencia nuevas).
+		$quitada = $this->q('SELECT id_sucursal_cliente FROM sucursal_cliente WHERE id_cliente = ? AND vigente IS FALSE AND id_comuna = ?
+			AND nombre_sucursal_cliente = ? AND id_sucursal_cliente <> ? LIMIT 1', array((int)$idCliente, $idComuna, $direccion, (int)$id))->row();
 		if ((int)$id > 0) {
 			$this->propia('sucursal_cliente', 'id_sucursal_cliente', $id, $idCliente);
+			if ($quitada) throw new Exception('Esa dirección estaba quitada de este cliente: agrégala como nueva (se recupera) en vez de editar otra', 409);
 			$this->actualizar('sucursal_cliente', 'id_sucursal_cliente', $id, $fila);
 			return array('ok' => true, 'id' => (int)$id);
+		}
+		if ($quitada) {
+			$this->actualizar('sucursal_cliente', 'id_sucursal_cliente', (int)$quitada->id_sucursal_cliente, $fila + array('vigente' => 't'));
+			return array('ok' => true, 'id' => (int)$quitada->id_sucursal_cliente, 'reactivada' => true);
 		}
 		$fila['id_cliente'] = (int)$idCliente;
 		$fila['vigente'] = 't';

@@ -117,10 +117,15 @@ class MventasMensualesTotalizadas extends CI_Model
                 venta v
             WHERE 
                 v.fecha BETWEEN ? AND ?
+                -- 16-11-2026: sin anuladas ni cortesías (como el resto de los reportes)
+                AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%'
+                AND EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago
+                    WHERE pv.id_venta = v.id_venta AND fp.escortesia = false)
             GROUP BY 
                 DATE(v.fecha)
+            -- 16-11-2026: mayor venta = mayor MONTO (antes ordenaba por cantidad de documentos)
             ORDER BY 
-                total_documentos DESC
+                monto_total DESC, total_documentos DESC
             LIMIT 10;";
         $query = $this->db->query($q, array($de, $a))->result();
         return $query;
@@ -147,10 +152,15 @@ class MventasMensualesTotalizadas extends CI_Model
             venta v
         WHERE 
             v.fecha BETWEEN ? AND ?
+            -- 16-11-2026: sin anuladas ni cortesías (como el resto de los reportes)
+            AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%'
+            AND EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago
+                WHERE pv.id_venta = v.id_venta AND fp.escortesia = false)
         GROUP BY 
             DATE(v.fecha)
+        -- 16-11-2026: menor venta = menor MONTO (antes ordenaba por cantidad de documentos)
         ORDER BY 
-            total_documentos ASC
+            monto_total ASC, total_documentos ASC
         LIMIT 10;
         ";
         $query = $this->db->query($q, array($de, $a))->result();

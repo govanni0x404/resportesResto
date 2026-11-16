@@ -128,41 +128,72 @@ class Compras extends CI_Controller
         return;
       }
 
-      foreach ($d as $key => $value) {
-        // Limpiar valores numéricos. La vista manda el número con punto decimal y sin separador de miles
-        // (ej. "1.5"); antes se borraban todos los puntos y 1.5 kg quedaba grabado como 15.
-        $miData = array(
-          'id_compra' => (int)$idCompra,
-          'cantidad' => $this->numeroDesdeTexto($value['cantidad'] ?? 0),
-          'bruto_unitario' => $this->numeroDesdeTexto($value['bruto_unitario'] ?? 0),
-          'bruto_total' => $this->numeroDesdeTexto($value['bruto_total'] ?? 0),
-          'id_insumo' => (int)($value['id_insumo'] ?? 0),
-        );
-        
-        $r = $this->Mcompra->grabarDetalleCompra($miData);
-        
-        // Verificar si hay error
-        if (isset($r['error'])) {
-          log_message('error', 'Error al insertar detalle #' . ($key + 1) . ': ' . print_r($r['error'], true));
-          $errores[] = $r;
-        } else {
-          log_message('debug', 'Detalle #' . ($key + 1) . ' insertado correctamente');
-          $respuesta[] = $r;
+      // 16-11-2026 (QA): todas las líneas se revisan antes y se graban juntas (todo o nada). Antes cada línea iba por su
+      // lado: si fallaba una, la compra quedaba a medias; se aceptaban insumo 0 y cantidades negativas.
+      $this->load->helper('tenant');
+      $db = get_tenant_db($this);
+      $db->db_debug = FALSE;
+      $idCompra = (int)$idCompra;
+      $lineas = array();
+      foreach (array_values($d) as $n => $value) {
+        $fila = $n + 1;
+        $idInsumo = (int)($value['id_insumo'] ?? 0);
+        $cantidad = $this->numeroDesdeTexto($value['cantidad'] ?? 0);
+        $unitario = $this->numeroDesdeTexto($value['bruto_unitario'] ?? 0);
+        $totalLinea = $this->numeroDesdeTexto($value['bruto_total'] ?? 0);
+        if ($idInsumo <= 0 || !$db->query('SELECT 1 FROM insumo WHERE id_insumo = ?', array($idInsumo))->row()) {
+          echo json_encode(['error' => "Línea $fila: el insumo no existe"]);
+          $this->borrarCompraVacia($db, $idCompra);
+          return;
         }
+        if ($cantidad <= 0) {
+          echo json_encode(['error' => "Línea $fila: la cantidad debe ser mayor que 0"]);
+          $this->borrarCompraVacia($db, $idCompra);
+          return;
+        }
+        if ($unitario < 0 || $totalLinea < 0) {
+          echo json_encode(['error' => "Línea $fila: el precio no puede ser negativo"]);
+          $this->borrarCompraVacia($db, $idCompra);
+          return;
+        }
+        $lineas[] = array('id_compra' => $idCompra, 'cantidad' => $cantidad, 'bruto_unitario' => $unitario,
+          'bruto_total' => $totalLinea, 'id_insumo' => $idInsumo);
       }
-      
-      // Si hubo errores, incluirlos en la respuesta
-      if (!empty($errores)) {
-        log_message('error', 'Se encontraron errores al grabar detalles: ' . print_r($errores, true));
-        echo json_encode([
-          'success' => $respuesta,
-          'errors' => $errores
-        ]);
-      } else {
-        log_message('debug', 'Todos los detalles se insertaron correctamente');
-        echo json_encode($respuesta);
+      if (!$db->query('SELECT 1 FROM compra WHERE id_compra = ?', array($idCompra))->row()) {
+        echo json_encode(['error' => 'La compra no existe']);
+        return;
       }
+
+      $respuesta = array();
+      $db->trans_begin();
+      $nivel = error_reporting(0);   // un error de la base no sale como página HTML: se responde el mensaje
+      foreach ($lineas as $n => $miData) {
+        $r = $this->Mcompra->grabarDetalleCompra($miData);
+        if (isset($r['error'])) {
+          $db->trans_rollback();
+          error_reporting($nivel);
+          $msg = is_array($r['error']) ? (string)($r['error']['message'] ?? '') : (string)$r['error'];
+          log_message('error', 'grabarDetalleCompra: línea ' . ($n + 1) . ' de la compra ' . $idCompra . ': ' . $msg);
+          $this->borrarCompraVacia($db, $idCompra);
+          echo json_encode(['error' => 'No se pudo grabar la línea ' . ($n + 1) . ' de la compra: ' . trim(preg_replace('/^ERROR:\s*/', '', $msg)) . '. No se grabó nada, vuelve a intentarlo.']);
+          return;
+        }
+        $respuesta[] = $r;
+      }
+      error_reporting($nivel);
+      $db->trans_commit();
+      echo json_encode($respuesta);
     }
+  }
+
+  /** La cabecera recién creada sin ninguna línea se borra (quedaba como compra vacía cuando fallaba el detalle). */
+  private function borrarCompraVacia($db, $idCompra)
+  {
+    if ((int)$idCompra <= 0) return;
+    if ($db->query('SELECT 1 FROM detalle_compra WHERE id_compra = ? LIMIT 1', array((int)$idCompra))->row()) return;
+    $nivel = error_reporting(0);
+    $db->query('DELETE FROM compra WHERE id_compra = ?', array((int)$idCompra));
+    error_reporting($nivel);
   }
 
   public function ListadoTipoDeDocumento()

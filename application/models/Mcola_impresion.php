@@ -34,31 +34,21 @@ class Mcola_impresion extends CI_Model
 		return $db;
 	}
 
+	/**
+	 * 16-11-2026: las tablas las crea la migración 20261116100000 (Regla 6: nada de DDL dentro de una petición).
+	 * Aquí solo se avisa en el log si faltan.
+	 */
 	private function asegurarTablas()
 	{
-		$this->db->query("CREATE TABLE IF NOT EXISTS agente_impresion (
-			id_agente serial PRIMARY KEY,
-			nombre text NOT NULL DEFAULT '',
-			token_hash text NOT NULL,
-			impresoras text NOT NULL DEFAULT '[]',
-			ultimo_contacto timestamp NULL,
-			creado timestamp NOT NULL DEFAULT now(),
-			activo boolean NOT NULL DEFAULT true)");
-		$this->db->query("CREATE TABLE IF NOT EXISTS cola_impresion (
-			id_cola serial PRIMARY KEY,
-			destino text NOT NULL DEFAULT '',
-			impresora text NOT NULL DEFAULT '',
-			ip text NOT NULL DEFAULT '',
-			puerto integer NOT NULL DEFAULT 0,
-			datos_b64 text NOT NULL,
-			estado text NOT NULL DEFAULT 'pendiente',
-			intentos integer NOT NULL DEFAULT 0,
-			id_agente integer NULL,
-			error text NOT NULL DEFAULT '',
-			creado timestamp NOT NULL DEFAULT now(),
-			reclamado timestamp NULL,
-			impreso timestamp NULL)");
+		foreach (array('agente_impresion', 'cola_impresion') as $t) {
+			$r = $this->db->query('SELECT to_regclass(?) IS NOT NULL AS hay', array('public.' . $t));
+			$f = $r ? $r->row() : null;
+			if (!$f || ($f->hay !== 't' && $f->hay !== true)) {
+				log_message('error', "Impresión: falta la tabla $t. Corre las migraciones: php index.php despliegue esquema");
+			}
+		}
 	}
+
 
 	/** Nombre de impresora de Windows a partir de la ruta del destino: "//equipo/COCINA" => "COCINA". */
 	public static function nombreImpresora($ruta)

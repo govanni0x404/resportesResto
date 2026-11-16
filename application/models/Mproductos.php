@@ -273,6 +273,11 @@ class Mproductos extends CI_Model
 		if ($id) {
 			$this->db->where('id_familia', $id);
 			$this->db->update('familia', $data);
+			// 16-11-2026 (QA): si no se actualizó ninguna fila el registro no existe: error (404) y no "éxito"
+			if ($this->db->affected_rows() < 1) {
+				set_status_header(404);
+				return array('error' => 'El registro ya no existe (pudo haberlo borrado otra persona). Recarga la página.');
+			}
 			$consulta = $this->db->query("select " . (int)$id . " as id_familia");
 		} else {
 			$this->db->insert('familia', $data);
@@ -323,6 +328,11 @@ class Mproductos extends CI_Model
 		if ($id) {
 			$this->db->where('id_subfamilia', $id);
 			$this->db->update('subfamilia', $data);
+			// 16-11-2026 (QA): si no se actualizó ninguna fila el registro no existe: error (404) y no "éxito"
+			if ($this->db->affected_rows() < 1) {
+				set_status_header(404);
+				return array('error' => 'El registro ya no existe (pudo haberlo borrado otra persona). Recarga la página.');
+			}
 			$consulta = $this->db->query("select " . (int)$id . " as id_subfamilia");
 		} else {
 			$this->db->insert('subfamilia', $data);
@@ -340,6 +350,11 @@ class Mproductos extends CI_Model
 		if ($id) {
 			$this->db->where('id_bodega', $id);
 			$this->db->update('bodega', $data);
+			// 16-11-2026 (QA): si no se actualizó ninguna fila el registro no existe: error (404) y no "éxito"
+			if ($this->db->affected_rows() < 1) {
+				set_status_header(404);
+				return array('error' => 'El registro ya no existe (pudo haberlo borrado otra persona). Recarga la página.');
+			}
 			$consulta = $this->db->query("select " . (int)$id . " as id_bodega");
 		} else {
 			$this->db->insert('bodega', $data);
@@ -381,6 +396,11 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 		if ($id) {
 			$this->db->where('id_agregado', $id);
 			$this->db->update('agregados', $data);
+			// 16-11-2026 (QA): si no se actualizó ninguna fila el registro no existe: error (404) y no "éxito"
+			if ($this->db->affected_rows() < 1) {
+				set_status_header(404);
+				return array('error' => 'El registro ya no existe (pudo haberlo borrado otra persona). Recarga la página.');
+			}
 			$consulta = $this->db->query("select " . (int)$id . " as id_agregado");
 		} else {
 			$this->db->insert('agregados', $data);
@@ -458,6 +478,11 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 		if ($id) {
 			$this->db->where('id_mensaje_producto', $id);
 			$this->db->update('mensaje_producto', $data);
+			// 16-11-2026 (QA): si no se actualizó ninguna fila el registro no existe: error (404) y no "éxito"
+			if ($this->db->affected_rows() < 1) {
+				set_status_header(404);
+				return array('error' => 'El registro ya no existe (pudo haberlo borrado otra persona). Recarga la página.');
+			}
 			$consulta = $this->db->query("select " . (int)$id . " as id_mensaje_producto");
 		} else {
 			$this->db->insert('mensaje_producto', $data);
@@ -529,6 +554,11 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 		if ($id) {
 			$this->db->where('id_menu', $id);
 			$this->db->update('menu', $data);
+			// 16-11-2026 (QA): si no se actualizó ninguna fila el registro no existe: error (404) y no "éxito"
+			if ($this->db->affected_rows() < 1) {
+				set_status_header(404);
+				return array('error' => 'El registro ya no existe (pudo haberlo borrado otra persona). Recarga la página.');
+			}
 			$consulta = $this->db->query("select " . (int)$id . " as id_menu");
 		} else {
 			$this->db->insert('menu', $data);
@@ -599,6 +629,11 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 		if ($id) {
 			$this->db->where('id_categoria_menu', $id);
 			$this->db->update('categoria_menu', $data);
+			// 16-11-2026 (QA): si no se actualizó ninguna fila el registro no existe: error (404) y no "éxito"
+			if ($this->db->affected_rows() < 1) {
+				set_status_header(404);
+				return array('error' => 'El registro ya no existe (pudo haberlo borrado otra persona). Recarga la página.');
+			}
 			$consulta = $this->db->query("select " . (int)$id . " as id_categoria_menu");
 		} else {
 			$this->db->insert('categoria_menu', $data);
@@ -651,6 +686,11 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 		if ($id) {
 			$this->db->where('id_detalle_categoria_menu', $id);
 			$this->db->update('detalle_categoria_menu', $data);
+			// 16-11-2026 (QA): si no se actualizó ninguna fila el registro no existe: error (404) y no "éxito"
+			if ($this->db->affected_rows() < 1) {
+				set_status_header(404);
+				return array('error' => 'El registro ya no existe (pudo haberlo borrado otra persona). Recarga la página.');
+			}
 			$consulta = $this->db->query("select " . (int)$id . " as id_detalle_categoria_menu");
 		} else {
 			$this->db->insert('detalle_categoria_menu', $data);
@@ -726,11 +766,29 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 		$this->db->where('id_lprecio', $data['id_lprecio']);
 		$existe = $this->db->get('detalle_lprecio');
 		
+		// 16-11-2026: detalle_lprecio.neto, iva e ila son obligatorios (NOT NULL). Antes solo se grababa el total y un
+		// precio NUEVO daba error 500 (el producto quedaba sin precio). Se calculan con los impuestos del producto
+		// (impto_iva e impto_ila, tabla impuesto): neto = total / (1 + (iva + ila) / 100).
+		$total = (int)round((float)str_replace(',', '.', (string)($data['total'] ?? 0)));
+		if ($total < 0) return ['error' => 'El precio no puede ser negativo'];
+		$tasas = $this->db->query("SELECT COALESCE((SELECT i.valor FROM impuesto i WHERE i.id_impuesto = p.impto_iva), 0) AS iva,
+				COALESCE((SELECT i.valor FROM impuesto i WHERE i.id_impuesto = p.impto_ila), 0) AS ila
+			FROM producto p WHERE p.id_producto = ?", array((int)$data['id_producto']))->row();
+		if (!$tasas) return ['error' => 'El producto no existe'];
+		$pIva = (float)$tasas->iva;
+		$pIla = (float)$tasas->ila;
+		$neto = (int)round($total / (1 + ($pIva + $pIla) / 100));
+		$iva = (int)round($neto * $pIva / 100);
+		$ila = $total - $neto - $iva;
+
 		// Preparar datos base (siempre presentes)
 		$dataToSave = array(
 			'id_producto' => $data['id_producto'],
 			'id_lprecio' => $data['id_lprecio'],
-			'total' => $data['total']
+			'total' => $total,
+			'neto' => $neto,
+			'iva' => $iva,
+			'ila' => $ila,
 		);
 		
 		// SOLO agregar comisión si la columna existe

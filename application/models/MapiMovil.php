@@ -291,14 +291,9 @@ class MapiMovil extends CI_Model
 		foreach (array('venta', 'detalle_venta', 'pago_venta', 'caja', 'tdocumento') as $t) {
 			if (!isset($cols[$t])) return array('error' => 'La base del cliente no tiene la tabla ' . $t);
 		}
+		// 16-11-2026: la tabla la crea la migración 20261114120000 (antes se creaba aquí, dentro de la petición)
 		if (!isset($cols['movil_sync'])) {
-			$ok = $db->query("CREATE TABLE IF NOT EXISTS movil_sync (
-				clave varchar(100) PRIMARY KEY, tipo varchar(20) NOT NULL, id_web integer NOT NULL DEFAULT 0,
-				estado varchar(20) NOT NULL DEFAULT 'ok', fecha timestamp NOT NULL DEFAULT now())");
-			if (!$ok) {
-				$e = $db->error();
-				return array('error' => 'No se pudo crear la tabla movil_sync: ' . $e['message']);
-			}
+			return array('error' => 'Falta la tabla movil_sync en la base del cliente: hay que correr las migraciones (php index.php despliegue esquema)', 'status' => 409);
 		}
 
 		$caja = $body['caja'];

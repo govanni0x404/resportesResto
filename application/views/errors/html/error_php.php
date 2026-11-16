@@ -1,5 +1,8 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
+// 16-11-2026: en peticiones AJAX el aviso no se imprime (iba antes del JSON y lo rompía); queda en el log
+require_once APPPATH . 'views/errors/error_json.php';
+if (resto_es_ajax()) return;
 ?>
 
 <div style="border:1px solid #990000;padding-left:20px;margin:0 0 10px 0;">

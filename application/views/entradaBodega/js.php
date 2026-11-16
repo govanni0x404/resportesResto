@@ -220,6 +220,11 @@ function grabarEntradaBodega() {
                     },
                     dataType: "json",
                     success: function (resp) {
+                        // 16-11-2026: el detalle se graba todo o nada; si algo no cuadra (stock, cantidad) el servidor dice por qué
+                        if (resp && !Array.isArray(resp) && resp.error) {
+                            showAppAlert('error', resp.error, { duration: 8000, image: base_url + 'assets/img/errorGif.gif' });
+                            return;
+                        }
                         showAppAlert('success', "La entrada a Bodega se almacenó con éxito!", {
                             duration: 4000,
                             image: base_url + 'assets/img/success.gif'

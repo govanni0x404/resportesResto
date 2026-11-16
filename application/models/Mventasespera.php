@@ -281,7 +281,10 @@ class Mventasespera extends CI_Model
 			'id_lprecio' => (int)($p['id_lprecio'] ?? 0),
 		);
 		if (!in_array($origen, array('manual', 'menu', 'recarga'), true)) $origen = 'manual';
-		$total = $this->monto($p['total'] ?? 0);
+		// 16-11-2026 (QA): el total lo calcula la pantalla (con agregados y descuento) y solo se usa para mostrar la lista y
+		// en la auditoría; al recuperar la venta la Caja vuelve a poner los precios de la base. Nunca negativo (quedó una
+		// espera con total -5).
+		$total = max(0, $this->monto($p['total'] ?? 0));
 		$ahora = date('Y-m-d H:i:s');
 		$f = $this->q("INSERT INTO caja_venta_espera (uid, nombre, estado, origen, id_caja, id_usuario, fecha, total, unidades, lineas, datos)
 			VALUES (?, ?, 'espera', ?, ?, ?, ?, ?, ?, ?, ?)
@@ -357,7 +360,7 @@ class Mventasespera extends CI_Model
 			$res[] = array(
 				'id_producto' => $id,
 				'nombre' => $this->texto($l['nombre'] ?? '', 120),
-				'precio' => $this->monto($l['precio'] ?? 0),
+				'precio' => max(0, $this->monto($l['precio'] ?? 0)),
 				'cantidad' => $cant,
 				'agregados' => $agregados,
 				'opciones' => $this->texto($l['opciones'] ?? '', 200),

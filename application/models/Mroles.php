@@ -127,6 +127,11 @@ class Mroles extends CI_Model
     if ($id) {
       $this->db->where('id_rol', $id);
       $this->db->update('rol', $data);
+      // 16-11-2026 (QA): si no se actualizó ninguna fila el registro no existe: error (404) y no "éxito"
+      if ($this->db->affected_rows() < 1) {
+      	set_status_header(404);
+      	return array('error' => 'El registro ya no existe (pudo haberlo borrado otra persona). Recarga la página.');
+      }
       $consulta = $this->db->query("select " . (int)$id . " as id_rol");
     } else {
       $this->db->insert('rol', $data);

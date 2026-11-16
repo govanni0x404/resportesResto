@@ -143,8 +143,15 @@ class Caja extends CI_Controller
 	public function abrir()
 	{
 		$this->ejecutar(function () {
-			$fondo = (int)$this->input->post('fondo');
-			if ($fondo < 0) throw new Exception('El fondo no puede ser negativo', 400);
+			// 16-11-2026 (QA): "abc" abría la caja con $0. Se aceptan números con o sin puntos de miles y el signo $;
+			// vacío = $0. Cualquier otra cosa se rechaza.
+			$txt = trim((string)$this->input->post('fondo'));
+			$limpio = str_replace(array('.', ' ', '$'), '', $txt);
+			if ($limpio !== '' && !ctype_digit($limpio)) {
+				throw new Exception('El fondo de apertura debe ser un monto en pesos (solo números)', 400);
+			}
+			if (strlen($limpio) > 10) throw new Exception('El fondo de apertura es demasiado alto', 400);
+			$fondo = $limpio === '' ? 0 : (int)$limpio;
 			$this->Mcaja->abrirCaja($this->idUsuario(), $fondo, (int)$this->input->post('id_control_caja'));
 			return array('ok' => true);
 		}, true);

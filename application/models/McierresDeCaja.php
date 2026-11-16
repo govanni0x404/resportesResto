@@ -95,8 +95,10 @@ class McierresDeCaja extends CI_Model
             $q = "SELECT c.*, t.nombre_turno, u.nombre_usuario, to_char(c.fecha, 'DD/MM/YYYY') as fecha_caja, to_char(c.fecha_movimiento, 'DD/MM/YYYY')||' '||c.fecha_movimiento :: timestamp(0) :: time as fecha_apertura, to_char(c.fecha_rendicion, 'DD/MM/YYYY')||' '||c.fecha_rendicion :: timestamp(0) :: time as fecha_rendicion,
 			c.ingresos, c.egresos, (c.ventas_local) as ventas, (suma_detalle_caja) as total_recaudacion, c.fondo_fijo_anterior as sencillo_apertura, c.fondo_fijo as sencillo_cierre, c.suma_detalle_caja, sum(c.cortesia) as cortesia
 			from caja c
-			join turno t on c.id_turno = t.id_turno
-			join usuario u on c.id_usuario = u.id_usuario
+			-- 16-11-2026: LEFT JOIN: una caja sin turno (id_turno = 0) o con un usuario borrado igual imprime su cierre
+			-- (antes el PDF decía: No se encontraron datos de la caja)
+			left join turno t on c.id_turno = t.id_turno
+			left join usuario u on c.id_usuario = u.id_usuario
 			where c.id_caja = ?
 			group by c.id_caja, t.id_turno, u.id_usuario";
         } else {
@@ -193,17 +195,19 @@ class McierresDeCaja extends CI_Model
         }
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $q = "SELECT f.id_familia, count(p.id_producto) as cantidad, p.nombre_producto, sum(dv.total_bruto) as total_producto
+        // 16-11-2026: cantidad = unidades vendidas (antes contaba líneas: 2 adicionales en una línea salían como "X1");
+        // sin ventas anuladas
+        $q = "SELECT f.id_familia, sum(dv.cantidad) as cantidad, p.nombre_producto, sum(dv.total_bruto) as total_producto
 		from detalle_venta dv
 		join venta v on dv.id_venta = v.id_venta
 		join caja c on v.id_caja = c.id_caja
 		join producto p on dv.id_producto = p.id_producto
 		join familia f on p.id_familia = f.id_familia";
         if ($id_caja) {
-            $q = $q . " where c.id_caja = ?
+            $q = $q . " where c.id_caja = ? and COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%'
 			group by p.id_producto, f.id_familia";
         } else {
-            $q = $q . " where c.id_caja in ?
+            $q = $q . " where c.id_caja in ? and COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%'
 			group by p.id_producto, f.id_familia";
         }
         $b = array($id_caja ? (int)$id_caja : $this->idsCajas($listadoCajas));
@@ -308,10 +312,11 @@ class McierresDeCaja extends CI_Model
 		join venta v on co.id_venta = v.id_venta
 		join caja ca on v.id_caja = ca.id_caja";
         if ($id_caja) {
-            $q = $q . " where co.vigente = true and v.id_caja = ?  
+            // 16-11-2026: sin ventas anuladas (antes una anulada sumaba mesas y monto en "atención")
+            $q = $q . " where co.vigente = true and COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.id_caja = ?
 			group by u.nombre_usuario, co.venta_directa";
         } else {
-            $q = $q . " where co.vigente = true and v.id_caja in ?
+            $q = $q . " where co.vigente = true and COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.id_caja in ?
 			group by u.nombre_usuario, co.venta_directa";
         }
         $b = array($id_caja ? (int)$id_caja : $this->idsCajas($listadoCajas));

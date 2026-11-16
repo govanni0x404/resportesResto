@@ -155,10 +155,10 @@ class Mconfiguraciones extends CI_Model {
             }
 
             // Casillas: una sola vez por base
+            // 16-11-2026: la columna la crea la migración 20261116100000 (antes un ALTER en cada inicio de sesión).
+            // Sin la columna no se aplican los valores por defecto (se aplicarán cuando corra la migración).
             if (!array_key_exists('defectos_web', $fila)) {
-                $db->query('ALTER TABLE configuracion ADD COLUMN IF NOT EXISTS defectos_web boolean NOT NULL DEFAULT false');
-                $hayMarca = (bool)$db->query("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public'
-                    AND table_name = 'configuracion' AND column_name = 'defectos_web'")->row();
+                $hayMarca = false;
                 $marcado = false;
             } else {
                 $hayMarca = true;
@@ -262,10 +262,12 @@ class Mconfiguraciones extends CI_Model {
         }
         // modo_caja_web: 'directa', 'mesas' o 'ambos' (Caja web; el POS de escritorio no la usa)
         $tipos = array('usuario_dte' => 'varchar(100)', 'clave_usuario_dte' => 'varchar(100)', 'terminal_dte' => 'varchar(60)', 'modo_caja_web' => 'varchar(10)');
-        foreach ($tipos as $col => $tipo) {
-            if (!in_array($col, $existentes)) {
-                $this->db->query("ALTER TABLE configuracion ADD COLUMN IF NOT EXISTS $col $tipo");
-            }
+        // 16-11-2026: las columnas las crea la migración 20261116100000; aquí ya no se hace ALTER (Regla 6). Si faltan,
+        // se avisa en el log: al grabar, Configuraciones solo escribe las columnas que existen.
+        $faltan = array_diff(array_keys($tipos), $existentes);
+        if ($faltan) {
+            log_message('error', 'Configuraciones: faltan las columnas ' . implode(', ', $faltan)
+                . ' en configuracion. Corre las migraciones: php index.php despliegue esquema');
         }
     }
 

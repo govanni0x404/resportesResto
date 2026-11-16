@@ -49,6 +49,11 @@ class Mturnos extends CI_Model
     if ($id) {
       $this->db->where('id_turno', $id);
       $this->db->update('turno', $data);
+      // 16-11-2026 (QA): si no se actualizó ninguna fila el registro no existe: error (404) y no "éxito"
+      if ($this->db->affected_rows() < 1) {
+      	set_status_header(404);
+      	return array('error' => 'El registro ya no existe (pudo haberlo borrado otra persona). Recarga la página.');
+      }
       $consulta = $this->db->query("select " . (int)$id . " as id_turno");
     } else {
       $this->db->insert('turno', $data);

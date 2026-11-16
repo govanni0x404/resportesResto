@@ -51,6 +51,11 @@ class McanalDeVenta extends CI_Model
 		if ($id) {
 			$this->db->where('id_canal_venta', $id);
 			$this->db->update('canal_venta', $data);
+			// 16-11-2026 (QA): si no se actualizó ninguna fila el registro no existe: error (404) y no "éxito"
+			if ($this->db->affected_rows() < 1) {
+				set_status_header(404);
+				return array('error' => 'El registro ya no existe (pudo haberlo borrado otra persona). Recarga la página.');
+			}
 			$consulta = $this->db->query("select " . (int)$id . " as id_canal_venta");
 		} else {
 			$this->db->insert('canal_venta', $data);

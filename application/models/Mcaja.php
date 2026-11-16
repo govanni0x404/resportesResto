@@ -3060,8 +3060,11 @@ class Mcaja extends CI_Model
 		$db = $this->conexion();
 		if (!$this->tieneMesas($db)) throw new Exception('Este cliente no tiene mesas', 400);
 		$posiciones = isset($p['posiciones']) && is_array($p['posiciones']) ? $p['posiciones'] : array();
-		$this->q($db, 'CREATE TABLE IF NOT EXISTS mesa_plano (id_mesa integer PRIMARY KEY, x integer NOT NULL DEFAULT 0, y integer NOT NULL DEFAULT 0)');
-		$this->q($db, 'ALTER TABLE mesa_plano ADD COLUMN IF NOT EXISTS nombre text');
+		// 16-11-2026: la tabla la crea la migración 20261116100000 (antes CREATE/ALTER en cada guardado: bloqueaba la tabla)
+		$plano = $this->columnas($db, array('mesa_plano'));
+		if (!isset($plano['mesa_plano']['nombre'])) {
+			throw new Exception('Falta la tabla del plano de mesas en esta base: hay que correr las migraciones (php index.php despliegue esquema)', 409);
+		}
 		$db->trans_begin();
 		try {
 			foreach ($posiciones as $pos) {
@@ -3548,8 +3551,14 @@ class Mcaja extends CI_Model
 			$this->validarMesaUsable($this->bloquearMesa($db, $idMesa), $db);
 			$cot = $this->cotizacionDeMesa($db, $idMesa);
 			if (!$cot) throw new Exception('La mesa ya no tiene un pedido abierto', 409);
-			// Con cantidad menor a la de la línea se anula solo esa parte (ej: 1 de 3 bebidas)
-			$cantidad = isset($p['cantidad']) ? (float)$p['cantidad'] : 0;
+			// Con cantidad menor a la de la línea se anula solo esa parte (ej: 1 de 3 bebidas).
+			// 16-11-2026 (QA): una cantidad negativa o que no es número se rechaza (antes -1 anulaba la línea completa);
+			// sin cantidad (o vacía) se anula la línea completa, como siempre.
+			$cantTxt = isset($p['cantidad']) ? trim((string)$p['cantidad']) : '';
+			if ($cantTxt !== '' && (!is_numeric($cantTxt) || (float)$cantTxt <= 0)) {
+				throw new Exception('La cantidad a anular debe ser mayor que 0', 400);
+			}
+			$cantidad = $cantTxt === '' ? 0 : (float)$cantTxt;
 			$anuladas = $this->seleccionDeLineas($this->lineasDeCotizacion($db, (int)$cot->id_cotizacion),
 				array(array('id_detalle' => $idDetalle, 'cantidad' => $cantidad > 0 ? $cantidad : null)));
 			$this->partirLinea($db, $idDetalle, $anuladas[0]['cantidad'], (int)$cot->id_cotizacion, array(

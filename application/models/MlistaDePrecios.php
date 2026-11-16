@@ -122,6 +122,11 @@ class MlistaDePrecios extends CI_Model
         if ($id) {
             $this->db->where('id_lprecio', $id);
             $this->db->update('lprecio', $data);
+            // 16-11-2026 (QA): si no se actualizó ninguna fila el registro no existe: error (404) y no "éxito"
+            if ($this->db->affected_rows() < 1) {
+            	set_status_header(404);
+            	return array('error' => 'El registro ya no existe (pudo haberlo borrado otra persona). Recarga la página.');
+            }
             $consulta = $this->db->query("select " . (int)$id . " as id_lprecio");
         } else {
             $this->db->insert('lprecio', $data);
@@ -150,8 +155,23 @@ class MlistaDePrecios extends CI_Model
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $tieneComision = $this->verificarColumnaExiste('detalle_lprecio', 'monto_comision');
+        // 16-11-2026: neto, IVA e ILA se recalculan con el precio nuevo y los impuestos del producto (antes solo cambiaba
+        // el total y el neto quedaba el anterior)
+        $total = (int)round((float)str_replace(',', '.', (string)($data['total'] ?? 0)));
+        if ($total < 0) return array('error' => 'El precio no puede ser negativo');
+        $t = $this->db->query("SELECT COALESCE((SELECT i.valor FROM impuesto i WHERE i.id_impuesto = p.impto_iva), 0) AS iva,
+                COALESCE((SELECT i.valor FROM impuesto i WHERE i.id_impuesto = p.impto_ila), 0) AS ila
+            FROM detalle_lprecio d JOIN producto p ON p.id_producto = d.id_producto
+            WHERE d.id_detalle_lprecio = ?", array((int)$idDetalleLprecio))->row();
+        $pIva = $t ? (float)$t->iva : 0;
+        $pIla = $t ? (float)$t->ila : 0;
+        $neto = (int)round($total / (1 + ($pIva + $pIla) / 100));
+        $iva = (int)round($neto * $pIva / 100);
         $dataToSave = array(
-            'total' => $data['total']
+            'total' => $total,
+            'neto' => $neto,
+            'iva' => $iva,
+            'ila' => $total - $neto - $iva,
         );
         if ($tieneComision && array_key_exists('monto_comision', $data)) {
             $dataToSave['monto_comision'] = $data['monto_comision'];

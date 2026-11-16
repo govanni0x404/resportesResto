@@ -73,33 +73,14 @@ class EntradaBodega extends CI_Controller
           return;
         }
 
-        $respueta = array();
-        foreach ($d as $value) {
-          $idInsumo = (int)($value['id_insumo'] ?? 0);
-          $cantidad = (float)str_replace(',', '', (string)($value['cantidad'] ?? 0));
-          if ($idInsumo <= 0 || $cantidad <= 0) {
-            continue;
-          }
-          // El stock anterior se lee de la BD y no del valor que mostraba la pantalla: si el mismo insumo
-          // venía dos veces en la grilla, o el stock cambió mientras tanto, se perdía una de las cantidades.
-          $stock = $this->MentradaBodega->obtenerStockActualPorBodega($idInsumo, $idBodegaStock);
-          $stockAnterior = !empty($stock) ? (float)$stock[0]->saldo : (float)str_replace(',', '', (string)($value['stock_anterior'] ?? 0));
-
-          $miData=array(
-            'id_esbodega'=>$idEsBodega,
-            'id_insumo'=>$idInsumo,
-            'cantidad'=>$cantidad,
-            'stock_anterior'=>$stockAnterior,
-            'nuevo_stock'=>$stockAnterior + $cantidad,
-          );
-
-          $dataUpdateStock = $miData;
-          $dataUpdateStock['id_bodega_stock'] = $idBodegaStock; // Añadimos la bodega solo aquí
-
-          $r=$this->MentradaBodega->grabarDetalleEntradaBodega($miData, $dataUpdateStock);
-          $respueta[]=$r;
-        }
-        echo json_encode($respueta);
+        // 16-11-2026 (QA): se revisa todo antes y se graba todo o nada (helpers/movimiento_bodega_helper.php)
+        $this->load->helper(array('tenant', 'movimiento_bodega'));
+        $db = get_tenant_db($this);
+        $modelo = $this->MentradaBodega;
+        $r = movimiento_bodega_grabar($db, 'entrada', $idEsBodega, $idBodegaStock, $d, function ($miData, $dataUpdateStock) use ($modelo) {
+          return $modelo->grabarDetalleEntradaBodega($miData, $dataUpdateStock);
+        });
+        echo json_encode($r);
     }// fin validacion de usuario
 
   }//fin grabarDetalleEntrada

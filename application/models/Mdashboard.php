@@ -889,7 +889,9 @@ class Mdashboard extends CI_Model
         FROM venta v
         JOIN usuario u ON V.id_usuario_garzon=u.id_usuario
         JOIN fpago fp ON V.id_fpagopropina=fp.id_fpago
-        where COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?";
+        JOIN caja ca ON ca.id_caja = v.id_caja
+        -- 16-11-2026: por la fecha de la caja, como el resto del Dashboard (antes venta.fecha: 17.637 vs 22.266)
+        where COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and ca.fecha between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and v.id_caja = " . (int)$id_caja . " ";
         }

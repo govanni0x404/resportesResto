@@ -586,6 +586,15 @@ function GrabarIngresoDeCompra() {
                         console.log("Respuesta grabarDetalleCompra:", datos);
                         try {
                              var detalleObj = $.parseJSON(datos);
+                             // 16-11-2026: el detalle se graba todo o nada; si falla, el servidor dice por qué y borra la cabecera
+                             if (detalleObj && !Array.isArray(detalleObj) && detalleObj.error) {
+                                showAppAlert('error', detalleObj.error, {
+                                    duration: 7000,
+                                    image: base_url+ 'assets/img/errorGif.gif'
+                                });
+                                $('#GrabaIngresoDeCompra').attr("disabled", false);
+                                return;
+                             }
                              if (detalleObj.errors && detalleObj.errors.length > 0) {
                                 showAppAlert('error',"- Se grabó la cabecera, pero hubo errores al grabar algunos detalles.", {
                                     duration: 5000,

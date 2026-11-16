@@ -317,7 +317,9 @@ class CierresDeCaja extends CI_Controller
                     $pdf->Ln();
                     $pdf->SetX(30);
                     $pdf->Cell(90, 5, substr(mb_convert_encoding((string)($row2->nombre_producto), 'ISO-8859-1', 'UTF-8'), 0, 30), 1);
-                    $pdf->Cell(15, 5, mb_convert_encoding((string)('X' . $row2->cantidad), 'ISO-8859-1', 'UTF-8'), 1);
+                    // 16-11-2026: unidades (pesables con decimales): "X2", "X0,5"
+                    $cantTxt = rtrim(rtrim(number_format((float)$row2->cantidad, 3, ',', ''), '0'), ',');
+                    $pdf->Cell(15, 5, mb_convert_encoding((string)('X' . $cantTxt), 'ISO-8859-1', 'UTF-8'), 1);
                     $pdf->Cell(10, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
                     $pdf->Cell(20, 5, number_format($row2->total_producto), 1, 0, 'R');
                 }

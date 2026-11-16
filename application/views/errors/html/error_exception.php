@@ -1,5 +1,8 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
+// 16-11-2026: en peticiones AJAX el error se responde como JSON (views/errors/error_json.php)
+require_once APPPATH . 'views/errors/error_json.php';
+if (resto_error_json('php', (string)$message)) return;
 ?>
 
 <div style="border:1px solid #990000;padding-left:20px;margin:0 0 10px 0;">
