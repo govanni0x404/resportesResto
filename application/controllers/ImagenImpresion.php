@@ -8,6 +8,32 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class ImagenImpresion extends CI_Controller
 {
+	/**
+	 * 18-11-2026: POST ImagenImpresion/subir con la cabecera X-Firma-Impresion (la firma que la Caja recibe al cargar,
+	 * libraries/Imagen_impresion::firma) y el PNG en "imagen". La pantalla la llama SIN cookies, así no espera el
+	 * candado de la sesión. Responde {url} como Caja/subirImagenImpresion; si la firma no vale, 403 y la pantalla sube
+	 * por ese otro camino (con la sesión).
+	 */
+	public function subir()
+	{
+		$this->load->library('Imagen_impresion');
+		$codigo = 200;
+		try {
+			if ($this->input->method() !== 'post') throw new Exception('Método no permitido', 405);
+			if (!$this->imagen_impresion->firmaValida((string)$this->input->get_request_header('X-Firma-Impresion'))) {
+				throw new Exception('Firma de impresión inválida o vencida', 403);
+			}
+			$clave = $this->imagen_impresion->guardar(isset($_FILES['imagen']) ? $_FILES['imagen'] : null);
+			$res = array('url' => $this->imagen_impresion->rutaPublica($clave));
+		} catch (Exception $e) {
+			$codigo = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
+			$res = array('error' => $e->getMessage());
+		}
+		// Sin cookie, CodeIgniter abrió una sesión nueva y vacía: se borra para no dejar archivos sueltos
+		if (session_status() === PHP_SESSION_ACTIVE) $this->session->sess_destroy();
+		$this->output->set_status_header($codigo)->set_content_type('application/json', 'utf-8')->set_output(json_encode($res));
+	}
+
 	/** GET ImagenImpresion/ver/<clave>.png */
 	public function ver($archivo = '')
 	{

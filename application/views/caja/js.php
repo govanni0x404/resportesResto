@@ -115,8 +115,10 @@
 		// Imprime la página como imagen; si la imagen no se pudo hacer (o el agente no la aceptó) sale con porAgente(),
 		// el formato del agente. Si el agente no respondió a tiempo no se repite: puede haber impreso igual.
 		// 18-11-2026: preparada = promesa de prepararImagen() hecha antes (ej. la comanda mientras sale la boleta)
+		// 18-11-2026: sube sin la sesión con la firma de la Caja (más rápido); si no, con la sesión
+		var URL_SUBIR_LIBRE = "<?php echo base_url(); ?>index.php/ImagenImpresion/subir";
 		function prepararImagen(urlPagina) {
-			var p = ImagenDocumento.preparar(urlPagina, { subir: URL_SUBIR_IMAGEN });
+			var p = ImagenDocumento.preparar(urlPagina, { subir: URL_SUBIR_IMAGEN, subirLibre: URL_SUBIR_LIBRE, firma: window.IMAGEN_IMPRESION_FIRMA || null });
 			p.catch(function () {});   // el error se atiende al imprimir (sale con el formato del agente)
 			return p;
 		}

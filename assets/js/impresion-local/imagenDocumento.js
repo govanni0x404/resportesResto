@@ -102,17 +102,36 @@
 		});
 	}
 
-	/** Sube la imagen y devuelve la dirección completa que descargará el agente. */
-	function subir(urlSubida, blob) {
+	function respuestaSubida(r) {
+		return r.json().catch(function () { return {}; }).then(function (j) {
+			if (!r.ok || !j.url) throw new Error((j && j.error) || ('No se pudo subir la imagen (' + r.status + ')'));
+			return new URL(j.url, location.href).href;
+		});
+	}
+
+	/**
+	 * Sube la imagen y devuelve la dirección completa que descargará el agente.
+	 * 18-11-2026: primero SIN cookies, con la firma de la Caja (ImagenImpresion/subir): así no espera en la fila de la
+	 * sesión (con la sesión tardaba 2-3 s después de cobrar). Si no hay firma o no sirve, con la sesión (urlSubida).
+	 * opciones: subirLibre (url de ImagenImpresion/subir), firma.
+	 */
+	function subir(urlSubida, blob, opciones) {
+		opciones = opciones || {};
+		var conSesion = function () {
+			var fd = new FormData();
+			fd.append('imagen', blob, 'documento.png');
+			// fetch: menuTop.php le agrega la cabecera X-CSRF-Token
+			return fetch(urlSubida, { method: 'POST', body: fd, credentials: 'same-origin' }).then(respuestaSubida);
+		};
+		if (!opciones.firma || !opciones.subirLibre) return conSesion();
 		var fd = new FormData();
 		fd.append('imagen', blob, 'documento.png');
-		// fetch: menuTop.php le agrega la cabecera X-CSRF-Token
-		return fetch(urlSubida, { method: 'POST', body: fd, credentials: 'same-origin' }).then(function (r) {
-			return r.json().catch(function () { return {}; }).then(function (j) {
-				if (!r.ok || !j.url) throw new Error((j && j.error) || ('No se pudo subir la imagen (' + r.status + ')'));
-				return new URL(j.url, location.href).href;
+		return fetch(opciones.subirLibre, { method: 'POST', body: fd, credentials: 'omit', headers: { 'X-Firma-Impresion': opciones.firma } })
+			.then(respuestaSubida)
+			.catch(function (e) {
+				if (global.console) console.warn('Subida sin sesión no resultó, se usa la sesión:', e);
+				return conSesion();
 			});
-		});
 	}
 
 	// 18-11-2026: milisegundos desde t0 (para medir cuánto tarda cada paso; Caja con ?medir=1)
@@ -162,7 +181,7 @@
 		var tiempos = {};
 		var hojas = await dibujar(urlPagina, tiempos);
 		var t0 = performance.now();
-		var urls = await Promise.all(hojas.map(async function (h) { return subir(opciones.subir, await aBlob(h)); }));
+		var urls = await Promise.all(hojas.map(async function (h) { return subir(opciones.subir, await aBlob(h), opciones); }));
 		tiempos.subida = ms(t0);
 		urls.tiempos = tiempos;   // {pagina, dibujo, subida} en ms
 		urls.listo = performance.now();

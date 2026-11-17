@@ -49,6 +49,53 @@ class Imagen_impresion
 		return $clave;
 	}
 
+	/** Dirección (solo la ruta) donde el agente descarga la imagen; la pantalla le pone el equipo y el puerto. */
+	public function rutaPublica($clave)
+	{
+		return rtrim((string)parse_url(base_url(), PHP_URL_PATH), '/') . '/index.php/ImagenImpresion/ver/' . $clave . '.png';
+	}
+
+	/**
+	 * 18-11-2026: firma para subir imágenes SIN la sesión (ImagenImpresion/subir). Con sesiones en archivos, PHP atiende
+	 * de a una las peticiones de un usuario: después de cobrar la subida esperaba ~2-3 s en la fila (medido con
+	 * ?medir=1). La Caja recibe la firma al cargar; vale $horas. Formato: vence.azar.hmac
+	 */
+	public function firma($horas = 24)
+	{
+		$secreto = $this->secreto();
+		if ($secreto === null) return null;
+		$cuerpo = (time() + (int)$horas * 3600) . '.' . bin2hex(random_bytes(8));
+		return $cuerpo . '.' . hash_hmac('sha256', $cuerpo, $secreto);
+	}
+
+	public function firmaValida($firma)
+	{
+		if (!is_string($firma) || !preg_match('/^(\d{10})\.([a-f0-9]{16})\.([a-f0-9]{64})$/', $firma, $m)) return false;
+		if ((int)$m[1] < time()) return false;
+		$secreto = $this->secreto();
+		return $secreto !== null && hash_equals(hash_hmac('sha256', $m[1] . '.' . $m[2], $secreto), $m[3]);
+	}
+
+	/**
+	 * Clave secreta de este servidor para las firmas: se crea sola la primera vez (64 hex) en la carpeta de las imágenes,
+	 * que no se sirve por la web. Si se borra, se crea otra y las firmas viejas dejan de valer (la Caja sube con la sesión).
+	 */
+	private function secreto()
+	{
+		try {
+			$f = $this->carpeta() . DIRECTORY_SEPARATOR . 'firma.key';
+		} catch (Exception $e) {
+			return null;
+		}
+		$s = @file_get_contents($f);
+		if (is_string($s) && preg_match('/^[a-f0-9]{64}$/', $s)) return $s;
+		if (@file_put_contents($f, bin2hex(random_bytes(32)), LOCK_EX) === false) return null;
+		@chmod($f, 0600);
+		// Otra petición pudo crearla a la vez: vale la que quedó escrita
+		$s = @file_get_contents($f);
+		return (is_string($s) && preg_match('/^[a-f0-9]{64}$/', $s)) ? $s : null;
+	}
+
 	/** Ruta del archivo de la clave, o null si no existe o venció. */
 	public function ruta($clave)
 	{

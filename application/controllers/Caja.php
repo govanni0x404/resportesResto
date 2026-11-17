@@ -33,9 +33,16 @@ class Caja extends CI_Controller
 		$local = false;
 		try { $local = !empty($this->Mcaja->opciones()['impresion_local']); } catch (Exception $e) {}
 		$this->config->load('impresion_local', true);
+		// 18-11-2026: firma para subir las imágenes a imprimir sin esperar el candado de la sesión
+		$firma = null;
+		if ($local) {
+			$this->load->library('Imagen_impresion');
+			$firma = $this->imagen_impresion->firma();
+		}
 		$this->load->view('caja/impresionLocal.php', array('impresion_local' => $local ? array(
 			'url' => (string)$this->config->item('impresion_local_url', 'impresion_local'),
 			'clave' => (string)$this->config->item('impresion_local_clave', 'impresion_local'),
+			'firma_imagen' => $firma,
 		) : null));
 		$this->load->view('caja/js.php');
 	}
@@ -44,7 +51,12 @@ class Caja extends CI_Controller
 	{
 		$this->ejecutar(function () {
 			$caja = $this->Mcaja->cajaAbierta($this->idUsuario());
-			if ($caja) return array('caja' => $this->resumenVisible($this->Mcaja->resumenCaja($caja)));
+			// 18-11-2026: con la caja abierta solo se lee: se suelta la sesión para no frenar la impresión que corre a la
+			// vez (después de cobrar se piden estado, boleta y comanda juntos). La apertura (abajo) sí escribe.
+			if ($caja) {
+				$this->soltarSesion();
+				return array('caja' => $this->resumenVisible($this->Mcaja->resumenCaja($caja)));
+			}
 			// Herramientas > Control de cajas: al abrir se elige empresa, sucursal y una caja libre (sin cajas, como antes)
 			return array('caja' => null, 'fondo_sugerido' => $this->Mcaja->fondoSugerido($this->idUsuario())) + $this->apertura(0);
 		});
@@ -1019,8 +1031,7 @@ class Caja extends CI_Controller
 			$clave = $this->imagen_impresion->guardar(isset($_FILES['imagen']) ? $_FILES['imagen'] : null);
 			// Solo la ruta: la pantalla le pone la dirección con que se abrió la Caja (la que el equipo de la caja alcanza;
 			// base_url podría decir localhost)
-			$ruta = rtrim((string)parse_url(base_url(), PHP_URL_PATH), '/') . '/index.php/ImagenImpresion/ver/' . $clave . '.png';
-			return array('url' => $ruta);
+			return array('url' => $this->imagen_impresion->rutaPublica($clave));
 		}, true);
 	}
 
