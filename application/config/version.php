@@ -7,10 +7,10 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 
 $config['version'] = [
-    'number' => '1.8.2',
-    'commit' => 'dec36c6',
+    'number' => '1.8.3',
+    'commit' => 'b7a9ec3',
     'branch' => 'main',
-    'date' => '2026-11-18 12:00:00',
-    'build' => 96,
-    'full' => '1.8.2+dec36c6'
+    'date' => '2026-11-18 13:00:00',
+    'build' => 97,
+    'full' => '1.8.3+b7a9ec3'
 ];

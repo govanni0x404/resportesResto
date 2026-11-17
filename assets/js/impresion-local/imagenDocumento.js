@@ -115,10 +115,17 @@
 		});
 	}
 
-	/** Dibuja las hojas de la página: [canvas, ...] */
-	async function dibujar(urlPagina) {
+	// 18-11-2026: milisegundos desde t0 (para medir cuánto tarda cada paso; Caja con ?medir=1)
+	function ms(t0) { return Math.round(performance.now() - t0); }
+
+	/** Dibuja las hojas de la página: [canvas, ...]. tiempos (opcional) recibe pagina y dibujo en ms. */
+	async function dibujar(urlPagina, tiempos) {
 		if (!global.html2canvas) throw new Error('No se cargó html2canvas: recarga la página');
+		tiempos = tiempos || {};
+		var t0 = performance.now();
 		var f = await cargarMarco(urlPagina);
+		tiempos.pagina = ms(t0);
+		t0 = performance.now();
 		try {
 			var doc = f.contentDocument;
 			if (!doc || !doc.body) throw new Error('No se pudo leer la página del documento');
@@ -138,6 +145,7 @@
 				});
 				res.push(blancoYNegro(alAncho(c, ancho)));
 			}
+			tiempos.dibujo = ms(t0);
 			return res;
 		} finally {
 			f.remove();
@@ -151,12 +159,23 @@
 	 */
 	async function preparar(urlPagina, opciones) {
 		opciones = opciones || {};
-		var hojas = await dibujar(urlPagina);
-		return Promise.all(hojas.map(async function (h) { return subir(opciones.subir, await aBlob(h)); }));
+		var tiempos = {};
+		var hojas = await dibujar(urlPagina, tiempos);
+		var t0 = performance.now();
+		var urls = await Promise.all(hojas.map(async function (h) { return subir(opciones.subir, await aBlob(h)); }));
+		tiempos.subida = ms(t0);
+		urls.tiempos = tiempos;   // {pagina, dibujo, subida} en ms
+		urls.listo = performance.now();
+		return urls;
 	}
 
-	/** Paso 2: manda al agente las hojas ya subidas (urls de preparar), copias veces. */
+	/**
+	 * Paso 2: manda al agente las hojas ya subidas (urls de preparar), copias veces. La respuesta lleva tiempos:
+	 * los de preparar + espera (lista hasta que se mandó, por la cola de impresión) + impresora (lo que tardó el agente).
+	 */
 	function enviar(urls, destino, copias) {
+		var t0 = performance.now();
+		var tiempos = Object.assign({}, urls.tiempos || {}, { espera: urls.listo ? Math.round(t0 - urls.listo) : 0 });
 		if (!global.ImpresionLocal || !global.PrinterJob) return Promise.reject(new Error('No se cargó el cliente de impresión local: recarga la Caja'));
 		var job = new global.PrinterJob({});
 		var n = Math.max(1, Math.min(5, copias || 1));
@@ -164,7 +183,10 @@
 			urls.forEach(function (u) { job.img_url(u).feed(3).cut(); });
 		}
 		// Imágenes largas: el agente las descarga y las convierte, le damos más tiempo que a un texto
-		return global.ImpresionLocal.imprimir(destino, job.operaciones, { tiempo: 60000 });
+		return global.ImpresionLocal.imprimir(destino, job.operaciones, { tiempo: 60000 }).then(function (res) {
+			tiempos.impresora = ms(t0);
+			return Object.assign({}, res, { tiempos: tiempos });
+		});
 	}
 
 	/**

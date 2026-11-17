@@ -120,9 +120,24 @@
 			p.catch(function () {});   // el error se atiende al imprimir (sale con el formato del agente)
 			return p;
 		}
+		// 18-11-2026: Caja abierta con ?medir=1 → aviso con lo que tardó cada paso de la impresión como imagen
+		var MEDIR_IMPRESION = /[?&]medir=1(?:&|$)/.test(location.search);
+		function avisoTiempos(urlPagina, destino, t) {
+			if (!MEDIR_IMPRESION || !t) return;
+			var s = function (n) { return ((n || 0) / 1000).toFixed(1) + ' s'; };
+			var que = /ticket\//.test(urlPagina) ? 'Boleta' : (/comanda\?/.test(urlPagina) ? 'Comanda' : 'Precuenta');
+			var total = (t.pagina || 0) + (t.dibujo || 0) + (t.subida || 0) + (t.impresora || 0);
+			toastr.info('Página ' + s(t.pagina) + ' · Dibujo ' + s(t.dibujo) + ' · Subida ' + s(t.subida)
+				+ ' · Esperó turno ' + s(t.espera) + ' · Impresora ' + s(t.impresora) + ' · Total ' + s(total),
+				'Tiempos: ' + que + ' (' + ((destino && destino.nombre) || '') + ')', { timeOut: 0, extendedTimeOut: 0, closeButton: true });
+			if (window.console) console.log('Tiempos impresión', que, t);
+		}
 		function imprimirComoImagen(urlPagina, destino, copias, porAgente, preparada) {
 			return (preparada || prepararImagen(urlPagina)).then(function (urls) {
 				return ImagenDocumento.enviar(urls, destino, copias || 1);
+			}).then(function (res) {
+				avisoTiempos(urlPagina, destino, res && res.tiempos);
+				return res;
 			}).catch(function (e) {
 				if (e && e.tipo === 'tiempo') throw e;
 				if (window.console) console.warn('Impresión como imagen:', e);
