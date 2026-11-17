@@ -29,8 +29,10 @@ $titulos = array('anulacion' => array('ANULACIÓN', 'NO PREPARAR'), 'traslado' =
 		body { margin: 0; background: #eee; font-family: Arial, Helvetica, sans-serif; color: #000; }
 		.ticket { width: 72mm; margin: 10px auto; padding: 3mm 4mm 6mm; background: #fff; font-size: 14px; line-height: 1.25; }
 		.destino { font-size: 22px; font-weight: bold; text-align: center; border: 3px solid #000; padding: 4px; letter-spacing: 2px; }
-		.aviso { margin-top: 6px; background: #000; color: #fff; text-align: center; font-size: 22px; font-weight: bold; padding: 4px;
-			-webkit-print-color-adjust: exact; print-color-adjust: exact; }
+		/* 18-11-2026: antes fondo negro sólido (un bloque negro en la térmica); ahora blanco con doble marco */
+		.aviso { margin-top: 6px; background: #fff; color: #000; border: 4px double #000; text-align: center; font-size: 22px; font-weight: bold; padding: 4px; }
+		/* 18-11-2026: la anulación sin negrita en los productos (el usuario la encontró muy gruesa) */
+		.t-anulacion .linea .prod, .t-anulacion .linea .agregado, .t-anulacion .linea .mensaje, .t-anulacion .total, .t-anulacion .obs { font-weight: normal; }
 		.aviso small { display: block; font-size: 13px; letter-spacing: 1px; }
 		.mesa { margin-top: 6px; text-align: center; font-size: 38px; font-weight: bold; line-height: 1.05; }
 		.antes { text-align: center; font-size: 15px; font-weight: bold; }
@@ -79,7 +81,7 @@ $titulos = array('anulacion' => array('ANULACIÓN', 'NO PREPARAR'), 'traslado' =
 	<?php endif; ?>
 	<?php foreach ($grupos as $g) : ?>
 	<?php $total = 0; foreach ($g['lineas'] as $l) $total += (float)$l['cantidad']; ?>
-	<div class="ticket">
+	<div class="ticket<?php echo $tipo ? ' t-' . $h($tipo) : ''; ?>">
 		<div class="destino"><?php echo $h(mb_strtoupper($g['nombre'])); ?></div>
 		<?php if (isset($titulos[$tipo])) : ?>
 			<div class="aviso"><?php echo $h($titulos[$tipo][0]); ?><small><?php echo $h($titulos[$tipo][1]); ?></small></div>
