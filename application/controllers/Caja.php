@@ -813,8 +813,16 @@ class Caja extends CI_Controller
 		}
 		// Agrupa por destino de impresión; los productos sin destino (o "sin impresión") no salen en ninguna comanda
 		$destinos = $this->Mcaja->destinosComanda(array_column($lineas, 'id_producto'));
-		// Venta directa: la comanda sale completa en la impresora de la caja (Configuraciones), no en cocina/barra
-		$caja = !$porProducto && !empty($datos['directa']) && empty($datos['id_mesa']) ? $this->Mcaja->destinoCaja() : null;
+		// 17-11-2026 (pedido del usuario): depende de Configuraciones > Modo de la caja.
+		// - Solo venta directa: hay una sola impresora, la de la caja; la comanda sale completa ahí, después de la boleta
+		//   (la misma impresora de la boleta: destinoCierre, que si no hay elegida es la de la caja).
+		// - Mesas o ambos: hay más impresoras; la comanda de la venta directa va al destino de impresión de cada producto,
+		//   igual que la de las mesas.
+		// $porProducto ya no se usa: antes el agente local siempre separaba por producto y el envío por servidor nunca.
+		$caja = null;
+		if (!empty($datos['directa']) && empty($datos['id_mesa']) && $this->Mcaja->modoCaja() === 'directa') {
+			$caja = $this->Mcaja->destinoCierre();
+		}
 		$grupos = array();
 		foreach ($lineas as $l) {
 			if (!isset($destinos[$l['id_producto']])) continue;

@@ -68,17 +68,72 @@ $__flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON
 			return job.operaciones;
 		}
 
-		/** Segunda hoja: texto como imagen (texto_raster) en 3 tamaños; aparte por si el agente no lo acepta */
-		function hojaRaster(rasterAncho) {
-			var job = new PrinterJob();
-			job.fontsize(1).fontbold(true).texto('TAMANOS (imagen):').fontbold(false);
-			[28, 36, 44].forEach(function (px) {
-				job.texto_raster({ texto: px + 'px: 1 x PAILA HUEVO', font_size: px, bold: true, align: 'left', max_width: rasterAncho, padding_y: 2 });
+		// 17-11-2026: se quitó la hoja 2 (texto_raster): el agente impresionWeb.exe no la entiende y la ignora en silencio.
+
+		/**
+		 * 17-11-2026: "Probar imagen". La idea es imprimir la boleta con el diseño de la página (letra grande y timbre)
+		 * como UNA imagen por el agente (orden img_url), sin el cuadro de impresión del navegador. No se sabe qué acepta
+		 * img_url, así que se manda la misma boleta de muestra (assets/img/prueba_impresion_imagen.png, 576 px = 80 mm)
+		 * de 3 formas, cada una con su título impreso: la que salga es la que se usará en la Caja.
+		 */
+		var IMG_PRUEBA = 'assets/img/prueba_impresion_imagen.png';
+		function urlAbsoluta(rel) { return new URL(base_url + rel, location.href).href; }
+		async function imagenDataUrl() {
+			var r = await fetch(urlAbsoluta(IMG_PRUEBA), { cache: 'no-store' });
+			if (!r.ok) throw new Error('No se pudo leer la imagen de prueba (' + r.status + ')');
+			var blob = await r.blob();
+			return await new Promise(function (ok, mal) {
+				var fr = new FileReader();
+				fr.onload = function () { ok(String(fr.result)); };
+				fr.onerror = function () { mal(new Error('No se pudo leer la imagen de prueba')); };
+				fr.readAsDataURL(blob);
 			});
-			job.texto_raster({ texto: 'MESA 7', font_size: 52, bold: true, align: 'center', max_width: rasterAncho, padding_y: 2 });
-			job.feed(4).cut();
+		}
+		function hojaImagen(n, titulo, valor) {
+			var job = new PrinterJob();
+			job.fontsize(1).textaling('center').fontbold(true).texto('IMAGEN ' + n + ': ' + titulo).fontbold(false)
+				.img_url(valor)
+				.texto('FIN IMAGEN ' + n).feed(4).cut();
 			return job.operaciones;
 		}
+		function leerDestino() {
+			return {
+				nombre: $.trim($('#nombreDestinoDeImpresion').val()) || 'SIN NOMBRE',
+				ruta_windows: $.trim($('#RutaWindowsImpresora').val()), ip: $.trim($('#rutaImpresora').val()), puerto: parseInt($('#PuertoImpresora').val(), 10) || 0
+			};
+		}
+		window.probarImagenLocal = async function () {
+			if (probando) return;
+			if (!window.ImpresionLocal || !window.PrinterJob) { aviso('error', 'No se cargó el cliente de impresión local. Recarga la página.'); return; }
+			var destino = leerDestino();
+			if (!destino.ruta_windows && !(ImpresionLocal.esIp(destino.ip) && destino.puerto > 0)) { aviso('error', 'Indica la ruta para Windows o la IP y el puerto de la impresora.'); return; }
+			var $b = $('#btnProbarImagen'), html = $b.html();
+			probando = true;
+			$b.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Imprimiendo…');
+			try {
+				var dataUrl = await imagenDataUrl();
+				var formas = [
+					['DIRECCION WEB', urlAbsoluta(IMG_PRUEBA)],
+					['DATA URL', dataUrl],
+					['BASE64', dataUrl.slice(dataUrl.indexOf(',') + 1)]
+				];
+				var res = [];
+				for (var i = 0; i < formas.length; i++) {
+					try {
+						await ImpresionLocal.imprimir(destino, hojaImagen(i + 1, formas[i][0], formas[i][1]));
+						res.push('Imagen ' + (i + 1) + ' (' + formas[i][0] + '): enviada');
+					} catch (e) {
+						res.push('Imagen ' + (i + 1) + ' (' + formas[i][0] + '): ' + ImpresionLocal.mensaje(e));
+					}
+				}
+				aviso('success', res.join('<br>') + '<br>Mira en el papel cuál imagen salió completa.', 'Prueba de imagen');
+			} catch (e) {
+				aviso('error', esc(e && e.message ? e.message : e), 'No se pudo probar la imagen');
+			} finally {
+				probando = false;
+				$b.prop('disabled', false).html(html);
+			}
+		};
 
 		window.probarImpresionLocal = async function () {
 			if (probando) return;
@@ -97,14 +152,6 @@ $__flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON
 				var mm = ImpresionLocal.anchoMm(con.nombre);
 				var r = await ImpresionLocal.imprimir(destino, hojaPrueba(destino.nombre, con.impresora, mm));
 				aviso('success', 'Se envió la hoja de prueba a <b>' + esc(r.impresora) + '</b>.', 'Impresión enviada');
-				// Hoja 2: texto como imagen. Si el agente no lo acepta se avisa, pero la hoja 1 ya salió
-				try {
-					var ancho = (String(con.nombre).toLowerCase().indexOf('pos80') >= 0 || mm === 58) ? 384 : 576;
-					await ImpresionLocal.imprimir(destino, hojaRaster(ancho));
-					aviso('success', 'Se envió la hoja 2 (texto como imagen).', 'Hoja 2 enviada');
-				} catch (e2) {
-					aviso('error', ImpresionLocal.mensaje(e2), 'La hoja 2 (texto como imagen) no se pudo imprimir');
-				}
 			} catch (e) {
 				aviso('error', ImpresionLocal.mensaje(e), 'No se pudo imprimir');
 			} finally {

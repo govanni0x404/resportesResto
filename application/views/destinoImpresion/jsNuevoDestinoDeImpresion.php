@@ -139,6 +139,8 @@
 			<div class="modal-footer">
 				<!-- Imprime una hoja de prueba en este equipo con los datos del formulario (aún sin grabar). Ver probarImpresion.php -->
 				<button onclick="probarImpresionLocal()" type="button" class="btn btn-default pull-left" id="btnProbarImpresion"><i class="fa fa-print"></i> Probar impresión</button>
+				<!-- 17-11-2026: boleta de muestra como imagen (img_url) de 3 formas, para saber cuál acepta el agente -->
+				<button onclick="probarImagenLocal()" type="button" class="btn btn-default pull-left" id="btnProbarImagen" style="margin-left:6px"><i class="fa fa-picture-o"></i> Probar imagen</button>
 				<button onclick="grabarNuevoDestinoDeImpresion()" type="button" class="btn btn-primary"><i class="fa fa-check"></i> Grabar</button>
 				<button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
 			</div>
