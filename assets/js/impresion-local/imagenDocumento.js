@@ -20,7 +20,9 @@
 (function (global) {
 	'use strict';
 
-	var UMBRAL = 170;   // 0..255: más claro que esto queda blanco
+	// 0..255: más claro que esto queda blanco. 18-11-2026: 170 → 155, los bordes grises de las letras engrosaban todo
+	// (con 135 los trazos quedaban de 1 punto, muy finos para la térmica)
+	var UMBRAL = 155;
 
 	function cargarMarco(url) {
 		return new Promise(function (ok, mal) {
@@ -55,12 +57,15 @@
 		}));
 	}
 
-	/** Estilos de impresión aplicados en pantalla: fondo blanco, sin botones y letra gruesa (como al imprimir). */
+	/**
+	 * Estilos de impresión aplicados en pantalla: fondo blanco y sin botones.
+	 * 18-11-2026: ya no se fuerza la negrita en boleta y precuenta (el usuario la encontró muy gruesa); en negrita queda
+	 * solo lo que la página marca así (total, títulos, comanda).
+	 */
 	function estilosImpresion(doc) {
 		var s = doc.createElement('style');
 		s.textContent = 'body{background:#fff!important;margin:0!important}.acciones{display:none!important}'
-			+ '.ticket{margin:0!important;box-shadow:none!important}'
-			+ (doc.querySelector('.destino') ? '' : '.ticket{font-weight:bold}');   // boleta y precuenta en negrita, como en el papel
+			+ '.ticket{margin:0!important;box-shadow:none!important}';
 		doc.head.appendChild(s);
 	}
 

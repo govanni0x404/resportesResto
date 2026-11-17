@@ -15,5 +15,5 @@
 <script src="<?php echo base_url() ?>assets/js/impresion-local/impresionLocal.js?v=1"></script>
 <?php /* 17-11-2026: boletas, precuentas y comandas con el diseño de la página, como imagen por el agente */ ?>
 <script src="<?php echo base_url() ?>assets/js/vendor/html2canvas.min.js?v=1.4.1"></script>
-<script src="<?php echo base_url() ?>assets/js/impresion-local/imagenDocumento.js?v=1"></script>
+<script src="<?php echo base_url() ?>assets/js/impresion-local/imagenDocumento.js?v=2"></script>
 <?php endif; ?>
