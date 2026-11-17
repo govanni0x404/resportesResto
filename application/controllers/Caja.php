@@ -406,6 +406,7 @@ class Caja extends CI_Controller
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) redirect(base_url());
 		if (!$this->Mcaja->tienePermiso($this->idRol())) show_error('Tu rol no tiene acceso a la Caja', 403, 'Sin acceso');
+		$this->soltarSesion();
 		// Dividir cuenta: precuenta de una parte (sel = "id_detalle:cantidad,...", la de un comensal) o de la mesa con su
 		// división en partes iguales (partes, parte = cuál se destaca, inicio = partes ya cobradas)
 		$sel = array();
@@ -775,6 +776,7 @@ class Caja extends CI_Controller
 			redirect(base_url());
 		}
 		$this->accesoVista(function () use ($idVenta) { $this->validarVentaPropia((int)$idVenta); });
+		$this->soltarSesion();
 		$doc = $this->Mcaja->documento((int)$idVenta);
 		if (!$doc) show_404();
 		$this->load->model('Mdte');
@@ -863,6 +865,7 @@ class Caja extends CI_Controller
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
 			redirect(base_url());
 		}
+		$this->soltarSesion();
 		$c = $this->datosComanda(false);
 		if (!$c) show_404();
 		// 16-11-2026: ?solo=1,4 = solo esos destinos (los que salen en la impresora de la caja; el resto va por el agente)
@@ -923,6 +926,7 @@ class Caja extends CI_Controller
 	public function comandaLocal()
 	{
 		$this->ejecutar(function () {
+			$this->soltarSesion();
 			$c = $this->datosComanda(false, true);
 			if (!$c) throw new Exception('La comanda ya se imprimió o venció: vuelve a enviarla desde la mesa', 400);
 			$this->load->library('Comanda_local');
@@ -982,6 +986,7 @@ class Caja extends CI_Controller
 	public function ticketLocal()
 	{
 		$this->ejecutar(function () {
+			$this->soltarSesion();
 			$idVenta = (int)$this->input->post('id_venta');
 			if ($idVenta) $this->validarVentaPropia($idVenta);
 			$doc = $idVenta ? $this->Mcaja->documento($idVenta) : null;
@@ -1009,6 +1014,7 @@ class Caja extends CI_Controller
 	public function subirImagenImpresion()
 	{
 		$this->ejecutar(function () {
+			$this->soltarSesion();
 			$this->load->library('Imagen_impresion');
 			$clave = $this->imagen_impresion->guardar(isset($_FILES['imagen']) ? $_FILES['imagen'] : null);
 			// Solo la ruta: la pantalla le pone la dirección con que se abrió la Caja (la que el equipo de la caja alcanza;
@@ -1025,6 +1031,7 @@ class Caja extends CI_Controller
 	public function precuentaLocal()
 	{
 		$this->ejecutar(function () {
+			$this->soltarSesion();
 			$sel = array();
 			foreach (explode(',', (string)$this->input->post('sel')) as $par) {
 				if (count($sel) >= 300) break;
@@ -1351,6 +1358,17 @@ class Caja extends CI_Controller
 	}
 
 	/** Ejecuta la acción y responde JSON; los errores salen como {error} con su código HTTP. */
+	/**
+	 * 18-11-2026: suelta el candado de la sesión (sesiones en archivos: PHP atiende de a una las peticiones de un mismo
+	 * usuario). Solo en lo que lee la sesión sin cambiarla (boleta, precuenta, comanda y sus imágenes), para que la
+	 * Caja pueda preparar la boleta y la comanda a la vez. La sesión se sigue pudiendo leer; lo que se cambie después
+	 * ya no se guarda.
+	 */
+	private function soltarSesion()
+	{
+		if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+	}
+
 	private function ejecutar($accion, $soloPost = false)
 	{
 		$this->output->set_content_type('application/json', 'utf-8');

@@ -114,8 +114,16 @@
 		var URL_SUBIR_IMAGEN = base + 'subirImagenImpresion';
 		// Imprime la página como imagen; si la imagen no se pudo hacer (o el agente no la aceptó) sale con porAgente(),
 		// el formato del agente. Si el agente no respondió a tiempo no se repite: puede haber impreso igual.
-		function imprimirComoImagen(urlPagina, destino, copias, porAgente) {
-			return ImagenDocumento.imprimir(urlPagina, destino, { subir: URL_SUBIR_IMAGEN, copias: copias || 1 }).catch(function (e) {
+		// 18-11-2026: preparada = promesa de prepararImagen() hecha antes (ej. la comanda mientras sale la boleta)
+		function prepararImagen(urlPagina) {
+			var p = ImagenDocumento.preparar(urlPagina, { subir: URL_SUBIR_IMAGEN });
+			p.catch(function () {});   // el error se atiende al imprimir (sale con el formato del agente)
+			return p;
+		}
+		function imprimirComoImagen(urlPagina, destino, copias, porAgente, preparada) {
+			return (preparada || prepararImagen(urlPagina)).then(function (urls) {
+				return ImagenDocumento.enviar(urls, destino, copias || 1);
+			}).catch(function (e) {
 				if (e && e.tipo === 'tiempo') throw e;
 				if (window.console) console.warn('Impresión como imagen:', e);
 				return porAgente();
@@ -159,10 +167,12 @@
 				fin();
 				return;
 			}
+			// 18-11-2026: la imagen se empieza a dibujar a la vez que se piden la impresora y el formato del agente
+			var prep = imagen ? prepararImagen(base + 'ticket/' + idVenta) : null;
 			$.ajax({ url: base + 'ticketLocal', type: 'POST', dataType: 'json', data: { id_venta: idVenta } })
 				.done(function (r) {
 					var envio = !imagen ? ImpresionLocal.imprimir(r.destino, r.operaciones)
-						: imprimirComoImagen(base + 'ticket/' + idVenta, r.destino, r.copias, function () { return ImpresionLocal.imprimir(r.destino, r.operaciones); });
+						: imprimirComoImagen(base + 'ticket/' + idVenta, r.destino, r.copias, function () { return ImpresionLocal.imprimir(r.destino, r.operaciones); }, prep);
 					envio.then(function (res) {
 						toastr.success('Documento enviado a ' + res.impresora, '', { timeOut: 2500 });
 						fin();
@@ -229,9 +239,9 @@
 		}
 		// La comanda la arma y guarda el servidor al grabar el pedido (venta, envío a mesa, anulación, cambio de mesa,
 		// reenvío) y devuelve su número: aquí solo se pide imprimirla. que = texto del aviso (Comanda, Anulación...).
-		function imprimirComanda(comandaId, que) {
+		function imprimirComanda(comandaId, que, preparada) {
 			if (!comandaId) return;
-			if (impresionLocalActiva()) { imprimirComandaLocal(comandaId, que); return; }
+			if (impresionLocalActiva()) { imprimirComandaLocal(comandaId, que, preparada); return; }
 			$.ajax({
 				url: base + 'imprimirComanda', type: 'POST', dataType: 'json', data: { comanda_id: comandaId }
 			}).done(function (r) {
@@ -247,11 +257,28 @@
 		// Impresión local (12-11-2026): las impresoras están en el local y el sistema en un servidor, así que cada comanda va
 		// al agente de impresión de este equipo (localhost:5050), una por destino de impresión de los productos (cocina,
 		// barra...) con todo lo de la venta o mesa junto, una tras otra. Si salen todas, el servidor la descarta.
-		function imprimirComandaLocal(comandaId, que) {
+		// 18-11-2026: prepara la comanda sin imprimirla: pide los destinos y, con "diseño de la página", empieza a dibujar y
+		// subir la imagen de TODOS los destinos a la vez. Así la de la venta directa queda lista mientras sale la boleta.
+		// Devuelve una promesa {r, imagenes: {id_destino: promesa de urls}}.
+		function prepararComandaLocal(comandaId) {
+			return new Promise(function (ok, mal) {
+				$.ajax({ url: base + 'comandaLocal', type: 'POST', dataType: 'json', data: { comanda_id: comandaId } }).done(function (r) {
+					var imagenes = {};
+					if (conImagen()) {
+						$.each(r.comandas || [], function (i, g) {
+							imagenes[g.id] = prepararImagen(base + 'comanda?comanda_id=' + encodeURIComponent(comandaId) + '&solo=' + g.id);
+						});
+					}
+					ok({ r: r, imagenes: imagenes });
+				}).fail(mal);
+			});
+		}
+		// preparada = promesa de prepararComandaLocal (opcional)
+		function imprimirComandaLocal(comandaId, que, preparada) {
 			que = que || 'Comanda';
 			if (!window.ImpresionLocal) { toastr.error('No se cargó el cliente de impresión local: recarga la Caja.', que + ' sin imprimir', { timeOut: 15000, closeButton: true }); return; }
-			$.ajax({ url: base + 'comandaLocal', type: 'POST', dataType: 'json', data: { comanda_id: comandaId } }).done(function (r) {
-				var grupos = r.comandas || [], i = 0, fallas = 0;
+			(preparada || prepararComandaLocal(comandaId)).then(function (p) {
+				var r = p.r, grupos = r.comandas || [], i = 0, fallas = 0;
 				// 17-11-2026: con "Boletas, precuentas y comandas con el diseño de la página", cada destino (caja, cocina,
 				// barra...) recibe su comanda como imagen por el agente, directo (antes la de la caja salía por el navegador,
 				// con el cuadro de impresión). Si la imagen no se puede hacer, sale con el formato del agente.
@@ -263,7 +290,7 @@
 					}
 					var g = grupos[i++];
 					var porAgente = function () { return ImpresionLocal.imprimir(g.destino, g.operaciones); };
-					var envio = imagen ? imprimirComoImagen(base + 'comanda?comanda_id=' + encodeURIComponent(comandaId) + '&solo=' + g.id, g.destino, 1, porAgente) : porAgente();
+					var envio = imagen ? imprimirComoImagen(base + 'comanda?comanda_id=' + encodeURIComponent(comandaId) + '&solo=' + g.id, g.destino, 1, porAgente, p.imagenes[g.id]) : porAgente();
 					envio.then(function (res) {
 						toastr.success(que + ' enviada a ' + g.nombre + ' (' + res.impresora + ')', '', { timeOut: 2500 });
 						siguiente();
@@ -273,8 +300,8 @@
 						siguiente();
 					});
 				})();
-			}).fail(function (x) {
-				toastr.error((x.responseJSON && x.responseJSON.error) || 'error de conexión', 'No se pudo preparar la ' + que.toLowerCase(), { timeOut: 15000, closeButton: true });
+			}, function (x) {
+				toastr.error((x && x.responseJSON && x.responseJSON.error) || 'error de conexión', 'No se pudo preparar la ' + que.toLowerCase(), { timeOut: 15000, closeButton: true });
 			});
 		}
 		// Reenviar a cocina lo ya guardado en la mesa: idsDetalle = líneas (vacío = todo el pedido)
@@ -2154,7 +2181,14 @@
 				// La comanda sale después de la boleta (en la cola del agente quedan en ese orden).
 				// En una mesa la comanda ya salió al enviar el pedido.
 				var comandaVenta = imprimeComanda() && !idMesa ? r.comanda_id : null;
-				var conComanda = function () { if (comandaVenta) imprimirComanda(comandaVenta, 'Comanda'); };
+				// 18-11-2026: con "diseño de la página" la comanda se prepara (imagen dibujada y subida) mientras sale la
+				// boleta; se imprime igual después de ella
+				var comandaLista = null;
+				if (comandaVenta && imprimeTicket() && conImagen()) {
+					comandaLista = prepararComandaLocal(comandaVenta);
+					comandaLista.catch(function () {});
+				}
+				var conComanda = function () { if (comandaVenta) imprimirComanda(comandaVenta, 'Comanda', comandaLista); };
 				if (imprimeTicket()) imprimirTicket(r.id_venta, conComanda);
 				else conComanda();
 				limpiarVenta();

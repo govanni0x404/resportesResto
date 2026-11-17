@@ -145,23 +145,37 @@
 	}
 
 	/**
-	 * Imprime la página como imagen en el destino (impresora) por el agente.
-	 * opciones: subir (url de Caja/subirImagenImpresion), copias (veces que sale todo, por defecto 1).
+	 * 18-11-2026: paso 1, dibujar y subir. Devuelve las direcciones de las hojas, listas para el agente. Va aparte para
+	 * adelantarlo: la Caja prepara la boleta y la comanda a la vez, y después las imprime en orden (enviar).
+	 * opciones: subir (url de Caja/subirImagenImpresion).
 	 */
-	async function imprimir(urlPagina, destino, opciones) {
+	async function preparar(urlPagina, opciones) {
 		opciones = opciones || {};
-		if (!global.ImpresionLocal || !global.PrinterJob) throw new Error('No se cargó el cliente de impresión local: recarga la Caja');
 		var hojas = await dibujar(urlPagina);
-		var urls = [];
-		for (var i = 0; i < hojas.length; i++) urls.push(await subir(opciones.subir, await aBlob(hojas[i])));
+		return Promise.all(hojas.map(async function (h) { return subir(opciones.subir, await aBlob(h)); }));
+	}
+
+	/** Paso 2: manda al agente las hojas ya subidas (urls de preparar), copias veces. */
+	function enviar(urls, destino, copias) {
+		if (!global.ImpresionLocal || !global.PrinterJob) return Promise.reject(new Error('No se cargó el cliente de impresión local: recarga la Caja'));
 		var job = new global.PrinterJob({});
-		var copias = Math.max(1, Math.min(5, opciones.copias || 1));
-		for (var k = 0; k < copias; k++) {
+		var n = Math.max(1, Math.min(5, copias || 1));
+		for (var k = 0; k < n; k++) {
 			urls.forEach(function (u) { job.img_url(u).feed(3).cut(); });
 		}
 		// Imágenes largas: el agente las descarga y las convierte, le damos más tiempo que a un texto
 		return global.ImpresionLocal.imprimir(destino, job.operaciones, { tiempo: 60000 });
 	}
 
-	global.ImagenDocumento = { imprimir: imprimir, dibujar: dibujar };
+	/**
+	 * Imprime la página como imagen en el destino (impresora) por el agente: preparar + enviar.
+	 * opciones: subir (url de Caja/subirImagenImpresion), copias (veces que sale todo, por defecto 1).
+	 */
+	async function imprimir(urlPagina, destino, opciones) {
+		opciones = opciones || {};
+		if (!global.ImpresionLocal || !global.PrinterJob) throw new Error('No se cargó el cliente de impresión local: recarga la Caja');
+		return enviar(await preparar(urlPagina, opciones), destino, opciones.copias);
+	}
+
+	global.ImagenDocumento = { imprimir: imprimir, preparar: preparar, enviar: enviar, dibujar: dibujar };
 })(window);
