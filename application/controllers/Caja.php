@@ -936,11 +936,7 @@ class Caja extends CI_Controller
 					'operaciones' => $this->comanda_local->operaciones($g, $c['venta'], $c['observacion'], $c['mesa'], $c['aviso']),
 				);
 			}
-			// 16-11-2026: la impresora de la caja (la del navegador): con "Boletas y precuentas con el diseño de la página",
-			// los destinos que usan esa misma impresora salen como página y no por el agente
-			$cajaD = $this->Mcaja->destinoCierre();
-			$caja = $cajaD ? array('id' => (int)$cajaD['id'], 'ip' => $cajaD['ip'], 'puerto' => $cajaD['puerto'], 'ruta_windows' => $cajaD['ruta_windows']) : null;
-			return array('comandas' => $res, 'caja' => $caja);
+			return array('comandas' => $res);
 		}, true);
 	}
 
@@ -995,11 +991,30 @@ class Caja extends CI_Controller
 			$this->load->library('Ticket_local');
 			$ops = $this->ticket_local->operaciones($doc, $this->papelTicket());
 			$todas = array();
-			for ($i = 0; $i < $this->Mcaja->opciones()['copias_documento']; $i++) $todas = array_merge($todas, $ops);
+			$copias = (int)$this->Mcaja->opciones()['copias_documento'];
+			for ($i = 0; $i < $copias; $i++) $todas = array_merge($todas, $ops);
 			return array(
 				'destino' => array('nombre' => $destino['nombre'], 'ip' => $destino['ip'], 'puerto' => $destino['puerto'], 'ruta_windows' => $destino['ruta_windows']),
 				'operaciones' => $todas,
+				'copias' => max(1, $copias),   // 17-11-2026: para la boleta como imagen (imagenDocumento.js)
 			);
+		}, true);
+	}
+
+	/**
+	 * 17-11-2026: imagen de una boleta, precuenta o comanda con el diseño de la página, dibujada por la Caja
+	 * (assets/js/impresion-local/imagenDocumento.js). Se guarda 10 minutos (libraries/Imagen_impresion.php) y se responde
+	 * la dirección donde la descarga el agente de impresión (ImagenImpresion/ver/<clave>.png, sin sesión).
+	 */
+	public function subirImagenImpresion()
+	{
+		$this->ejecutar(function () {
+			$this->load->library('Imagen_impresion');
+			$clave = $this->imagen_impresion->guardar(isset($_FILES['imagen']) ? $_FILES['imagen'] : null);
+			// Solo la ruta: la pantalla le pone la dirección con que se abrió la Caja (la que el equipo de la caja alcanza;
+			// base_url podría decir localhost)
+			$ruta = rtrim((string)parse_url(base_url(), PHP_URL_PATH), '/') . '/index.php/ImagenImpresion/ver/' . $clave . '.png';
+			return array('url' => $ruta);
 		}, true);
 	}
 

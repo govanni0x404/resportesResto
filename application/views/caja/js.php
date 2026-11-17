@@ -101,13 +101,33 @@
 		function impresionLocalActiva() {
 			return !!(catalogo && catalogo.config && catalogo.config.impresion_local);
 		}
-		// 16-11-2026: Configuraciones > Boletas y precuentas con el diseño de la página: se imprimen desde el navegador
-		// (con el acceso directo "Caja Web" salen sin cuadro de impresión); las comandas siguen por el agente
+		// Configuraciones > "Boletas, precuentas y comandas con el diseño de la página".
+		// 17-11-2026: ya no por el navegador (salía el cuadro de impresión): la página se convierte en imagen y la imprime
+		// el agente de impresión, directo (assets/js/impresion-local/imagenDocumento.js). Si la imagen no se puede hacer,
+		// sale con el formato del agente para que no quede sin imprimir.
 		function documentosEnNavegador() {
 			return !!(catalogo && catalogo.config && catalogo.config.documentos_navegador);
 		}
+		function conImagen() {
+			return documentosEnNavegador() && impresionLocalActiva() && !!window.ImagenDocumento && !!window.ImpresionLocal;
+		}
+		var URL_SUBIR_IMAGEN = base + 'subirImagenImpresion';
+		// Imprime la página como imagen; si la imagen no se pudo hacer (o el agente no la aceptó) sale con porAgente(),
+		// el formato del agente. Si el agente no respondió a tiempo no se repite: puede haber impreso igual.
+		function imprimirComoImagen(urlPagina, destino, copias, porAgente) {
+			return ImagenDocumento.imprimir(urlPagina, destino, { subir: URL_SUBIR_IMAGEN, copias: copias || 1 }).catch(function (e) {
+				if (e && e.tipo === 'tiempo') throw e;
+				if (window.console) console.warn('Impresión como imagen:', e);
+				return porAgente();
+			});
+		}
 		function imprimirTicket(idVenta, despues) {
-			if (documentosEnNavegador()) {
+			if (conImagen()) {
+				imprimirTicketLocal(idVenta, despues, true);
+				return;
+			}
+			if (documentosEnNavegador() && !impresionLocalActiva()) {
+				// Sin agente en este equipo: como antes, por el navegador
 				imprimir(base + 'ticket/' + idVenta);
 				if (despues) setTimeout(despues, 800);   // la comanda sale después del documento
 				return;
@@ -121,7 +141,7 @@
 		// "Imprimir ticket" (Venta registrada) y el ícono de la pestaña Ventas también van al agente del equipo; con la
 		// impresión local desmarcada abren el ticket en el navegador, como antes
 		$(document).on('click', '#ventaOkTicket, #tablaVentas a[title="Ticket"]', function (e) {
-			if (!impresionLocalActiva() || documentosEnNavegador()) return;
+			if (!impresionLocalActiva()) return;
 			var m = /ticket\/(\d+)/.exec($(this).attr('href') || '');
 			if (!m) return;
 			e.preventDefault();
@@ -131,7 +151,8 @@
 			toastr.error(texto + ' Cuando esté listo, reimprímelo en Opciones > Documentos.', 'No se imprimió el documento',
 				{ timeOut: 15000, extendedTimeOut: 5000, closeButton: true });
 		}
-		function imprimirTicketLocal(idVenta, despues) {
+		// imagen = true: con el diseño de la página, como imagen (si falla, con el formato del agente)
+		function imprimirTicketLocal(idVenta, despues, imagen) {
 			var fin = function () { if (despues) despues(); };
 			if (!window.ImpresionLocal) {
 				avisoNoImpreso('No se cargó el cliente de impresión local: recarga la Caja.');
@@ -140,7 +161,9 @@
 			}
 			$.ajax({ url: base + 'ticketLocal', type: 'POST', dataType: 'json', data: { id_venta: idVenta } })
 				.done(function (r) {
-					ImpresionLocal.imprimir(r.destino, r.operaciones).then(function (res) {
+					var envio = !imagen ? ImpresionLocal.imprimir(r.destino, r.operaciones)
+						: imprimirComoImagen(base + 'ticket/' + idVenta, r.destino, r.copias, function () { return ImpresionLocal.imprimir(r.destino, r.operaciones); });
+					envio.then(function (res) {
 						toastr.success('Documento enviado a ' + res.impresora, '', { timeOut: 2500 });
 						fin();
 					}, function (e) {
@@ -160,11 +183,13 @@
 		}
 		// 16-11-2026: precuenta directa al agente de impresión del equipo (como la boleta). Sin impresión local, como antes
 		// (se abre en el navegador). p = {id_mesa, sel, partes, parte, inicio, descuento, titulo}
+		// 17-11-2026: con el diseño de la página, como imagen por el agente (antes por el navegador, con el cuadro de impresión)
 		function imprimirPrecuenta(p, url) {
-			if (documentosEnNavegador() || !impresionLocalActiva() || !window.ImpresionLocal) { imprimir(url); return; }
+			if (!impresionLocalActiva() || !window.ImpresionLocal) { imprimir(url); return; }
 			$.ajax({ url: base + 'precuentaLocal', type: 'POST', dataType: 'json', data: p })
 				.done(function (r) {
-					ImpresionLocal.imprimir(r.destino, r.operaciones).then(function (res) {
+					var porAgente = function () { return ImpresionLocal.imprimir(r.destino, r.operaciones); };
+					(conImagen() ? imprimirComoImagen(url, r.destino, 1, porAgente) : porAgente()).then(function (res) {
 						toastr.success('Precuenta enviada a ' + res.impresora, '', { timeOut: 2500 });
 					}, function (e) {
 						toastr.error(textoPlano(ImpresionLocal.mensaje(e)), 'No se imprimió la precuenta', { timeOut: 12000, closeButton: true });
@@ -227,33 +252,19 @@
 			if (!window.ImpresionLocal) { toastr.error('No se cargó el cliente de impresión local: recarga la Caja.', que + ' sin imprimir', { timeOut: 15000, closeButton: true }); return; }
 			$.ajax({ url: base + 'comandaLocal', type: 'POST', dataType: 'json', data: { comanda_id: comandaId } }).done(function (r) {
 				var grupos = r.comandas || [], i = 0, fallas = 0;
-				// 16-11-2026: con "Boletas y precuentas con el diseño de la página", los destinos que usan la MISMA impresora de
-				// la caja (local chico: todo en una) salen como página por el navegador, con el diseño grande; los que tienen su
-				// propia impresora (cocina o barra aparte) siguen por el agente.
-				var enPagina = [];
-				if (documentosEnNavegador() && r.caja) {
-					var mismaImpresora = function (d) {
-						var n1 = ImpresionLocal.nombreImpresora(d.ruta_windows || ''), n2 = ImpresionLocal.nombreImpresora(r.caja.ruta_windows || '');
-						if (n1 && n2) return n1.toLowerCase() === n2.toLowerCase();
-						return !!(d.ip && r.caja.ip && d.ip === r.caja.ip && Number(d.puerto) === Number(r.caja.puerto));
-					};
-					grupos = $.grep(grupos, function (g) {
-						if (g.id === r.caja.id || mismaImpresora(g.destino)) { enPagina.push(g.id); return false; }
-						return true;
-					});
-					if (enPagina.length) {
-						imprimir(base + 'comanda?comanda_id=' + encodeURIComponent(comandaId) + '&solo=' + enPagina.join(','));
-						toastr.success(que + ' enviada a la impresora de la caja', '', { timeOut: 2500 });
-					}
-				}
+				// 17-11-2026: con "Boletas, precuentas y comandas con el diseño de la página", cada destino (caja, cocina,
+				// barra...) recibe su comanda como imagen por el agente, directo (antes la de la caja salía por el navegador,
+				// con el cuadro de impresión). Si la imagen no se puede hacer, sale con el formato del agente.
+				var imagen = conImagen();
 				(function siguiente() {
 					if (i >= grupos.length) {
-						// La página de la comanda todavía la necesita: si hubo parte en página no se descarta (vence sola en 15 min)
-						if (!fallas && !enPagina.length) $.ajax({ url: base + 'comandaImpresa', type: 'POST', dataType: 'json', data: { comanda_id: comandaId }, global: false });
+						if (!fallas) $.ajax({ url: base + 'comandaImpresa', type: 'POST', dataType: 'json', data: { comanda_id: comandaId }, global: false });
 						return;
 					}
 					var g = grupos[i++];
-					ImpresionLocal.imprimir(g.destino, g.operaciones).then(function (res) {
+					var porAgente = function () { return ImpresionLocal.imprimir(g.destino, g.operaciones); };
+					var envio = imagen ? imprimirComoImagen(base + 'comanda?comanda_id=' + encodeURIComponent(comandaId) + '&solo=' + g.id, g.destino, 1, porAgente) : porAgente();
+					envio.then(function (res) {
 						toastr.success(que + ' enviada a ' + g.nombre + ' (' + res.impresora + ')', '', { timeOut: 2500 });
 						siguiente();
 					}, function (e) {
@@ -1956,10 +1967,24 @@
 			if (existente) { existente.monto += monto; existente.tocado = true; }
 			else pagos.push({ id_fpago: id, monto: monto, tocado: monto !== faltaPagar() });
 		}
+		// 17-11-2026: formas que ya tienen un pago (no se repiten: el segundo pago va con otra forma)
+		function fpagoUsada(id) {
+			return $.grep(pagos, function (p) { return p.id_fpago === id && p.monto > 0 && !fpago(id).cortesia; }).length > 0;
+		}
 		$('#btnAgregarPago').on('click', function () {
+			if (fpagoUsada(fpagoSel)) { toastr.warning('Esa forma de pago ya está agregada: elige otra o corrige el monto en la lista'); return; }
 			agregarPago(fpagoSel, Math.max(0, Math.round(Number($('#montoPago').val())) || 0));
 			renderPagos();
-			// Queda lista la misma forma con el saldo que falta
+			// 17-11-2026: si falta, queda elegida la siguiente forma libre (efectivo primero) con el saldo; antes quedaba la
+			// misma y "Pago exacto" o Enter sumaban el resto a esa forma (débito + efectivo terminaba todo en débito)
+			if (!fpago(fpagoSel).cortesia && faltaPagar() > 0) {
+				var libre = null;
+				$('#botonesFpago .btn').each(function () {
+					var id = $(this).data('id');
+					if (!libre && !fpago(id).cortesia && !fpagoUsada(id)) libre = id;
+				});
+				if (libre) elegirFpago(libre);
+			}
 			if (!fpago(fpagoSel).cortesia) { montoTocado = false; $('#montoPago').val(faltaPagar()); }
 			if (!$('#btnConfirmarPago').prop('disabled')) $('#btnConfirmarPago').focus();
 			else $('#montoPago').focus().select();
@@ -2004,6 +2029,11 @@
 				$f.append('<div class="pago-fila" data-i="' + i + '"><span class="nombre">' + esc(f.nombre) + '</span>'
 					+ '<input type="number" min="0" step="1" class="form-control monto" value="' + p.monto + '"' + (f.cortesia ? ' readonly' : '') + '>'
 					+ '<button type="button" class="btn btn-default quitar" title="Quitar pago"><i class="fa fa-times"></i></button></div>');
+			});
+			// 17-11-2026: las formas ya agregadas quedan bloqueadas (quitando su fila se liberan)
+			$('#botonesFpago .btn').each(function () {
+				var usada = fpagoUsada($(this).data('id'));
+				$(this).prop('disabled', usada).toggleClass('usada', usada).attr('title', usada ? 'Ya está agregada' : null);
 			});
 			// La cortesía no lleva propina
 			var cortesia = esCortesia();

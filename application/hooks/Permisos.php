@@ -21,7 +21,8 @@ class Permisos
 	const SISTEMA = 'RESTO WEB';
 
 	/** Sin sesión: tienen su propia autenticación (login, token de la app o del agente). */
-	private static $publicos = array('login', 'welcome', 'apimovil', 'agenteimpresion');
+	// imagenimpresion (17-11-2026): el agente de impresión descarga la imagen del documento con una clave aleatoria
+	private static $publicos = array('login', 'welcome', 'apimovil', 'agenteimpresion', 'imagenimpresion');
 
 	/** Métodos públicos que actúan sobre la sesión del usuario (cambiar empresa, descargar el instalador del agente). */
 	private static $publicosConSesion = array('login/relogin' => true, 'login/postloginwarmup' => true, 'agenteimpresion/instalador' => true);
