@@ -22,7 +22,10 @@ class Comanda_local
 		$this->ops = array();
 		$papel = self::papel(isset($grupo['destino']) ? $grupo['destino'] : array());
 		$W = $papel == 58 ? 28 : 40;
-		$W2 = (int)floor($W / 2);   // texto destacado (fontsize 2)
+		// 16-11-2026: el fontsize 2 de este agente es doble ALTO (no más ancho): el texto grande usa todo el ancho
+		$W2 = $W;
+		$this->ancho = $W;
+		$this->centrado = false;
 		$tipo = $aviso ? $aviso['tipo'] : '';
 		$anula = $tipo === 'anulacion';
 
@@ -93,14 +96,27 @@ class Comanda_local
 
 	// ---------------- apoyo ----------------
 
+	/**
+	 * 16-11-2026: este agente no respeta textaling center (todo salía a la izquierda): mientras se pide centrado, cada
+	 * texto se rellena con espacios a la izquierda según el ancho del papel ($this->ancho columnas).
+	 */
+	private $centrado = false;
+	private $ancho = 40;
+
 	private function op($accion, $valor = '')
 	{
+		if ($accion === 'textaling') $this->centrado = ($valor === 'center');
 		$this->ops[] = array('accion' => $accion, 'valor' => $valor);
 	}
 
 	private function texto($s)
 	{
-		$this->op('texto', $this->limpiar($s));
+		$s = $this->limpiar($s);
+		if ($this->centrado) {
+			$s = trim($s);
+			$s = str_repeat(' ', max(0, (int)floor(($this->ancho - mb_strlen($s)) / 2))) . $s;
+		}
+		$this->op('texto', $s);
 	}
 
 	private function negrita($lineas)
@@ -149,6 +165,8 @@ class Comanda_local
 
 	private function limpiar($s)
 	{
-		return preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)$s);
+		$s = preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)$s);
+		// 16-11-2026: el símbolo de grado sale como "ø" en este agente ("Nø 80068")
+		return str_replace(array('N°', 'Nº', '°', 'º'), array('N.', 'N.', 'o', 'o'), $s);
 	}
 }

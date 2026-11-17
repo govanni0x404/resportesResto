@@ -168,6 +168,19 @@ class Mdte extends CI_Model
 		}
 
 		$ted = stripos($retorno, '<TED') !== false ? $retorno : '';
+		// 16-11-2026: "duplicado" SIN timbre = el proveedor ya tenía un documento con este folioInterno (id_venta) en este
+		// terminal y devuelve el folio de ESE documento, no de esta venta. Pasaba con una copia local de la base del
+		// cliente que usa el mismo terminal: la venta quedaba "emitida" con el folio de otra boleta y sin timbre.
+		// No se da por emitida: queda pendiente y se explica. (Duplicado CON timbre = reintento de la misma venta: se acepta.)
+		$duplicado = isset($r['duplicado']) && (int)$r['duplicado'] === 1;
+		if ($duplicado && $ted === '') {
+			$msg = 'El proveedor dice que el número interno ' . ((int)$idVenta + $this->baseFolioInterno()) . ' ya se envió antes en este terminal (folio ' . $folio
+				. ' es de ese otro documento). No se emitió. Si esta base es una copia de la del local, usa otro terminal de facturación'
+				. ' o define RESTO_DTE_FOLIO_INTERNO_BASE en .env.php.';
+			log_message('error', 'Caja web DTE venta ' . (int)$idVenta . ': duplicado sin TED, no se emite: ' . substr($raw, 0, 500));
+			$this->registrarFalla($db, $idVenta, $msg);
+			return array('ok' => false, 'folio' => 0, 'mensaje' => $msg);
+		}
 		if ($ted === '') log_message('error', 'Caja web DTE venta ' . (int)$idVenta . ': folio ' . $folio . ' emitido sin TED: ' . substr($raw, 0, 500));
 		// SimpleFactura informa trackId y trackid; Cloud Apps, trackid
 		$trackid = isset($r['trackid']) ? (int)$r['trackid'] : (isset($r['trackId']) ? (int)$r['trackId'] : 0);
@@ -347,7 +360,10 @@ class Mdte extends CI_Model
 			'wsDte' => array(
 				'enviaSII' => (string)$cfg['envia_sii'],
 				'tipoReturn' => 'TED',
-				'folioInterno' => (string)$idVenta,
+				// 16-11-2026: RESTO_DTE_FOLIO_INTERNO_BASE (.env.php) se suma al id de la venta. Sirve cuando otra base usa
+				// el mismo terminal con los mismos números (una copia local de la base del cliente): el proveedor respondía
+				// "duplicado" y no entregaba el timbre. Sin la variable, igual que siempre (el id de la venta).
+				'folioInterno' => (string)($idVenta + $this->baseFolioInterno()),
 				'marcaUTF8' => '1',
 				'terminal' => $cfg['terminal'],
 			),
@@ -433,7 +449,14 @@ class Mdte extends CI_Model
 		return strtoupper(trim($dv)) === $esperado;
 	}
 
-	private function registrarFalla($db, $idVenta, $mensaje)
+	/** Desplazamiento del folioInterno que se manda al proveedor (RESTO_DTE_FOLIO_INTERNO_BASE, 0 si no está). */
+	private function baseFolioInterno()
+	{
+		$b = trim((string)getenv('RESTO_DTE_FOLIO_INTERNO_BASE'));
+		return ctype_digit($b) && strlen($b) <= 10 ? (int)$b : 0;
+	}
+
+		private function registrarFalla($db, $idVenta, $mensaje)
 	{
 		log_message('error', 'Caja web DTE venta ' . (int)$idVenta . ' pendiente: ' . $mensaje);
 		$this->documentoElectronico($db, $idVenta, array('enviado' => false));

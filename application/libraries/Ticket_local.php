@@ -19,6 +19,8 @@ class Ticket_local
 	{
 		$this->ops = array();
 		$W = $papel == 58 ? 28 : 40;
+		$this->ancho = $W;
+		$this->centrado = false;
 		$v = $doc['venta'];
 		$e = $doc['empresa'];
 		$sii = isset($doc['sii']) ? $doc['sii'] : null;
@@ -34,7 +36,10 @@ class Ticket_local
 			$this->op('fontbold', false);
 			$this->op('textaling', 'center');
 			if ($e) {
-				$this->negrita($this->lineasTexto($e->nombre_fantasia ?: $e->razon_social, $W));
+				// 16-11-2026: nombre del local en doble alto y negrita, centrado
+				$this->op('fontsize', 2);
+				$this->negrita($this->lineasTexto(mb_strtoupper($e->nombre_fantasia ?: $e->razon_social), $W));
+				$this->op('fontsize', 1);
 				if ($e->nombre_fantasia && $e->razon_social) $this->lineas($e->razon_social, $W);
 				$this->texto('RUT ' . $rut($e->rut_empresa, $e->dv_empresa));
 				if (!empty($e->giro)) $this->lineas($e->giro, $W);
@@ -46,11 +51,15 @@ class Ticket_local
 			$this->linea($W);
 			$recuadro = array();
 			if ($sii && $e) $recuadro[] = 'R.U.T.: ' . $rut($e->rut_empresa, $e->dv_empresa);
-			$recuadro = array_merge($recuadro, $this->lineasTexto(mb_strtoupper($v->nombre_tdocumento), $W));
-			$recuadro[] = 'N° ' . (int)$v->folio;
-			$this->negrita($recuadro);
+			$this->op('textaling', 'center');
+			if ($recuadro) $this->negrita($recuadro);
+			$this->op('fontsize', 2);
+			$this->negrita($this->lineasTexto(mb_strtoupper($v->nombre_tdocumento), $W));
+			$this->negrita(array('N. ' . (int)$v->folio));
+			$this->op('fontsize', 1);
 			$this->linea($W);
 			if ($sii && !empty($sii['oficina'])) $this->negrita(array($sii['oficina']));
+			$this->op('textaling', 'left');
 			if (!empty($doc['anulada'])) {
 				$this->op('fontsize', 2);
 				$this->negrita(array('ANULADA'));
@@ -87,9 +96,11 @@ class Ticket_local
 			$this->fila('Monto neto', $m($v->neto), $W);
 			$this->fila('IVA (19%)', $m($v->iva), $W);
 			if ($v->monto_exento > 0) $this->fila('Monto exento', $m($v->monto_exento), $W);
+			$this->op('fontsize', 2);
 			$this->op('fontbold', true);
 			$this->fila($nc ? 'TOTAL DEVUELTO' : 'TOTAL', $m($v->total), $W);
 			$this->op('fontbold', false);
+			$this->op('fontsize', 1);
 			$propina = isset($v->valor_propina) ? (int)$v->valor_propina : 0;
 			if ($propina > 0) {
 				$this->fila('Propina (voluntaria)', $m($propina), $W);
@@ -153,16 +164,125 @@ class Ticket_local
 		return $this->ops;
 	}
 
+	/**
+	 * 16-11-2026: precuenta de mesa para el agente de impresión local (antes solo en el navegador: abría el cuadro de
+	 * impresión y había que elegir la impresora). Mismo contenido que views/caja/precuenta.php.
+	 * $d = Mcaja::precuentaMesa() + descuento, titulo, parte, inicio. No es un documento tributario.
+	 */
+	public function precuenta($d, $papel = 80)
+	{
+		$this->ops = array();
+		$W = $papel == 58 ? 28 : 40;
+		$this->ancho = $W;
+		$this->centrado = false;
+		$m = function ($n) { return '$' . number_format((float)$n, 0, ',', '.'); };
+		$cant = function ($n) { return rtrim(rtrim(number_format((float)$n, 3, ',', ''), '0'), ','); };
+		$e = isset($d['empresa']) ? $d['empresa'] : null;
+		$lineas = isset($d['lineas']) ? $d['lineas'] : array();
+		$subtotal = (int)array_sum(array_column($lineas, 'bruto'));
+		$descuento = min($subtotal, max(0, (int)(isset($d['descuento']) ? $d['descuento'] : 0)));
+		$total = $subtotal - $descuento;
+		$porPropina = (float)(isset($d['por_propina']) ? $d['por_propina'] : 0);
+		$propina = $porPropina > 0 ? (int)round($total * $porPropina / 100) : 0;
+
+		$this->op('fontsize', 1);
+		$this->op('fontbold', false);
+		$this->op('textaling', 'center');
+		if ($e) {
+			$this->op('fontsize', 2);
+			$this->negrita($this->lineasTexto(mb_strtoupper($e->nombre_fantasia ?: $e->razon_social), $W));
+			$this->op('fontsize', 1);
+			if (!empty($e->direccion_empresa)) $this->lineas($e->direccion_empresa, $W);
+		}
+		$this->linea($W);
+		$this->negrita(array('PRECUENTA'));
+		$this->op('fontsize', 2);
+		$this->negrita($this->lineasTexto(mb_strtoupper((string)$d['nombre_mesa']), $W));
+		$this->op('fontsize', 1);
+		if (!empty($d['titulo'])) $this->negrita($this->lineasTexto(mb_strtoupper($d['titulo']), $W));
+		$this->linea($W);
+		$this->op('textaling', 'left');
+		if (!empty($d['desde'])) $this->texto('Llegada: ' . $d['desde']);
+		$this->texto('Emitida: ' . date('d/m/Y H:i'));
+		$this->linea($W);
+		foreach ($lineas as $l) {
+			$this->fila($cant($l['cantidad']) . ' x ' . $l['nombre'], $m($l['bruto']), $W);
+			if (isset($l['agregado']) && $l['agregado'] !== '') $this->lineas('   + ' . $l['agregado'], $W);
+		}
+		$this->linea($W);
+		if ($descuento) {
+			$this->fila('Subtotal', $m($subtotal), $W);
+			$this->fila('Descuento', '-' . $m($descuento), $W);
+		}
+		$this->op('fontsize', 2);
+		$this->op('fontbold', true);
+		$this->fila('TOTAL', $m($total), $W);
+		$this->op('fontbold', false);
+		$this->op('fontsize', 1);
+		if ($propina) {
+			$this->fila('Propina sugerida (' . rtrim(rtrim(number_format($porPropina, 2, ',', ''), '0'), ',') . '%)', $m($propina), $W);
+			$this->op('fontbold', true);
+			$this->fila('TOTAL CON PROPINA', $m($total + $propina), $W);
+			$this->op('fontbold', false);
+		}
+		// Partes iguales con el descuento repartido (igual que la vista)
+		$partes = isset($d['partes']) && is_array($d['partes']) ? array_values($d['partes']) : array();
+		if ($partes) {
+			if ($descuento > 0) {
+				$suma = (int)array_sum($partes);
+				$rep = 0;
+				foreach ($partes as $i => $mp) {
+					$dd = $i === count($partes) - 1 ? $descuento - $rep : ($suma > 0 ? (int)round($descuento * $mp / $suma) : 0);
+					$rep += $dd;
+					$partes[$i] = max(0, (int)$mp - $dd);
+				}
+			}
+			$inicio = (int)(isset($d['inicio']) ? $d['inicio'] : 0);
+			$parte = (int)(isset($d['parte']) ? $d['parte'] : 0);
+			$this->linea($W);
+			$this->op('textaling', 'center');
+			$this->negrita(array('DIVIDIDA EN ' . (count($partes) + $inicio) . ' PARTES'));
+			$this->op('textaling', 'left');
+			foreach ($partes as $i => $mp) {
+				$marca = $parte === $i + 1;
+				if ($marca) $this->op('fontbold', true);
+				$this->fila(($marca ? '> ' : '') . 'Parte ' . ($i + 1 + $inicio), $m($mp), $W);
+				if ($marca) $this->op('fontbold', false);
+			}
+		}
+		$this->op('feed', 1);
+		$this->op('textaling', 'center');
+		$this->texto('La propina es voluntaria.');
+		$this->texto('Este documento no es valido como boleta.');
+		$this->op('textaling', 'left');
+		$this->op('feed', 4);
+		$this->op('cut', '');
+		return $this->ops;
+	}
+
 	// ---------------- apoyo ----------------
+
+	/**
+	 * 16-11-2026: este agente no respeta textaling center (todo salía a la izquierda): mientras se pide centrado, cada
+	 * texto se rellena con espacios a la izquierda según el ancho del papel ($this->ancho columnas).
+	 */
+	private $centrado = false;
+	private $ancho = 40;
 
 	private function op($accion, $valor = '')
 	{
+		if ($accion === 'textaling') $this->centrado = ($valor === 'center');
 		$this->ops[] = array('accion' => $accion, 'valor' => $valor);
 	}
 
 	private function texto($s)
 	{
-		$this->op('texto', $this->limpiar($s));
+		$s = $this->limpiar($s);
+		if ($this->centrado) {
+			$s = trim($s);
+			$s = str_repeat(' ', max(0, (int)floor(($this->ancho - mb_strlen($s)) / 2))) . $s;
+		}
+		$this->op('texto', $s);
 	}
 
 	private function negrita($lineas)
@@ -218,6 +338,8 @@ class Ticket_local
 
 	private function limpiar($s)
 	{
-		return preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)$s);
+		$s = preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)$s);
+		// 16-11-2026: el símbolo de grado sale como "ø" en este agente ("Nø 80068")
+		return str_replace(array('N°', 'Nº', '°', 'º'), array('N.', 'N.', 'o', 'o'), $s);
 	}
 }

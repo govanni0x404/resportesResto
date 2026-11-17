@@ -57,6 +57,25 @@ class DestinoDeImpresion extends CI_Controller
 		force_download($ruta, NULL);
 	}
 
+	/**
+	 * 16-11-2026: descarga instaladores/crear_acceso_caja.bat: crea en el escritorio del equipo de la caja el acceso
+	 * "Caja Web" (perfil propio de Firefox/Chrome/Edge con impresión silenciosa), para que boletas y precuentas con el
+	 * diseño de la página salgan directo, sin el cuadro de impresión. Solo con sesión iniciada.
+	 */
+	public function descargarAccesoCaja()
+	{
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+			redirect(base_url());
+		}
+		$ruta = FCPATH . 'instaladores' . DIRECTORY_SEPARATOR . 'crear_acceso_caja.bat';
+		if (!is_file($ruta) || !is_readable($ruta)) {
+			show_error('El instalador del acceso directo no está en el servidor (instaladores/crear_acceso_caja.bat).', 404, 'Instalador no disponible');
+			return;
+		}
+		$this->load->helper('download');
+		force_download($ruta, NULL);
+	}
+
 	public function ListadoDestinoDeImpresionDatatable()
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {

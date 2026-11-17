@@ -118,9 +118,17 @@ if (!function_exists('cfg_opciones')) {
                                                 <!-- 12-11-2026: la Caja imprime los documentos en el equipo del cajero por el agente local (como mipdv_web) -->
                                                 <label><input type="checkbox" name="impresion_local_caja" value="1" <?php echo ($config['impresion_local_caja'] ?? null) !== false ? 'checked' : ''; ?>> Imprimir documentos en el equipo de la caja (agente de impresión local, como mipdv)</label>
                                                 <?php endif; ?>
+                                                <?php if (array_key_exists('documentos_en_navegador', $config)) : ?>
+                                                <!-- 16-11-2026: boletas y precuentas con el diseño de la página (acceso directo Caja Web con impresión silenciosa) -->
+                                                <label style="margin-left:22px"><input type="checkbox" name="documentos_en_navegador" value="1" <?php echo ($config['documentos_en_navegador'] ?? null) === true || ($config['documentos_en_navegador'] ?? null) === 't' ? 'checked' : ''; ?>> Boletas y precuentas con el diseño de la página (letra grande y timbre), por el navegador. Abrir la Caja con el acceso directo "Caja Web" para que salgan sin el cuadro de impresión. Las comandas siguen por el agente</label>
+                                                <?php endif; ?>
                                                 <?php if (array_key_exists('imprimir_comandas_app', $config)) : ?>
                                                 <!-- 14-11-2026: comandas de la app de garzones impresas por la Caja web (solo locales sin POS de escritorio) -->
                                                 <label><input type="checkbox" name="imprimir_comandas_app" value="1" <?php echo ($config['imprimir_comandas_app'] ?? null) === true || ($config['imprimir_comandas_app'] ?? null) === 't' ? 'checked' : ''; ?>> Imprimir las comandas de la app de garzones (cada producto en su destino de impresión). Marcar solo si el local NO usa el POS de escritorio: si no, salen dos veces</label>
+                                                <?php endif; ?>
+                                                <?php if (array_key_exists('imprimir_comandas_app_forzar', $config)) : ?>
+                                                <!-- 16-11-2026: celulares que mandan el pedido con "imprimir": 0 (la API2 lo graba como ya impreso) -->
+                                                <label style="margin-left:22px"><input type="checkbox" name="imprimir_comandas_app_forzar" value="1" <?php echo ($config['imprimir_comandas_app_forzar'] ?? null) === true || ($config['imprimir_comandas_app_forzar'] ?? null) === 't' ? 'checked' : ''; ?>> Imprimir también los pedidos que el celular manda sin pedir impresión (si algún celular imprime él mismo por Bluetooth, saldrían dos veces)</label>
                                                 <?php endif; ?>
                                                 <label><input type="checkbox" name="imprimir_comprobante_anulacion" value="1" <?php echo ($config['imprimir_comprobante_anulacion'] ?? false) ? 'checked' : ''; ?>> Imprimir comprobantes de anulacion</label>
                                             </div>

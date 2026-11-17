@@ -83,10 +83,12 @@
 
 		// La página del ticket se imprime sola al cargar (?imprimir=1). En un iframe oculto no hay
 		// ventana emergente que bloquear, y con Chrome --kiosk-printing sale directo a la impresora.
+		// 16-11-2026: un marco por impresión (antes uno solo que se borraba en la siguiente: con boleta + comanda, o varias
+		// comandas seguidas de la app, solo salía la última). Cada marco se quita solo después de un minuto.
 		function imprimir(url) {
-			$('#frameImpresion').remove();
-			$('<iframe id="frameImpresion" class="caja-frame-impresion" aria-hidden="true">')
+			var $f = $('<iframe class="caja-frame-impresion" aria-hidden="true">')
 				.attr('src', url + (url.indexOf('?') < 0 ? '?' : '&') + 'imprimir=1').appendTo('body');
+			setTimeout(function () { $f.remove(); }, 60000);
 		}
 
 		// Boleta/factura a la impresora de la caja por el agente de impresión (como las comandas). Si no hay impresora
@@ -99,7 +101,17 @@
 		function impresionLocalActiva() {
 			return !!(catalogo && catalogo.config && catalogo.config.impresion_local);
 		}
+		// 16-11-2026: Configuraciones > Boletas y precuentas con el diseño de la página: se imprimen desde el navegador
+		// (con el acceso directo "Caja Web" salen sin cuadro de impresión); las comandas siguen por el agente
+		function documentosEnNavegador() {
+			return !!(catalogo && catalogo.config && catalogo.config.documentos_navegador);
+		}
 		function imprimirTicket(idVenta, despues) {
+			if (documentosEnNavegador()) {
+				imprimir(base + 'ticket/' + idVenta);
+				if (despues) setTimeout(despues, 800);   // la comanda sale después del documento
+				return;
+			}
 			if (impresionLocalActiva()) {
 				imprimirTicketLocal(idVenta, despues);
 				return;
@@ -109,7 +121,7 @@
 		// "Imprimir ticket" (Venta registrada) y el ícono de la pestaña Ventas también van al agente del equipo; con la
 		// impresión local desmarcada abren el ticket en el navegador, como antes
 		$(document).on('click', '#ventaOkTicket, #tablaVentas a[title="Ticket"]', function (e) {
-			if (!impresionLocalActiva()) return;
+			if (!impresionLocalActiva() || documentosEnNavegador()) return;
 			var m = /ticket\/(\d+)/.exec($(this).attr('href') || '');
 			if (!m) return;
 			e.preventDefault();
@@ -144,6 +156,22 @@
 				.fail(function (x) {
 					avisoNoImpreso(x && x.responseJSON && x.responseJSON.error ? x.responseJSON.error + '.' : 'No se pudo preparar el documento.');
 					fin();
+				});
+		}
+		// 16-11-2026: precuenta directa al agente de impresión del equipo (como la boleta). Sin impresión local, como antes
+		// (se abre en el navegador). p = {id_mesa, sel, partes, parte, inicio, descuento, titulo}
+		function imprimirPrecuenta(p, url) {
+			if (documentosEnNavegador() || !impresionLocalActiva() || !window.ImpresionLocal) { imprimir(url); return; }
+			$.ajax({ url: base + 'precuentaLocal', type: 'POST', dataType: 'json', data: p })
+				.done(function (r) {
+					ImpresionLocal.imprimir(r.destino, r.operaciones).then(function (res) {
+						toastr.success('Precuenta enviada a ' + res.impresora, '', { timeOut: 2500 });
+					}, function (e) {
+						toastr.error(textoPlano(ImpresionLocal.mensaje(e)), 'No se imprimió la precuenta', { timeOut: 12000, closeButton: true });
+					});
+				})
+				.fail(function (x) {
+					toastr.error((x && x.responseJSON && x.responseJSON.error) || 'No se pudo preparar la precuenta', 'Precuenta', { timeOut: 9000 });
 				});
 		}
 		function imprimirTicketServidor(idVenta, despues) {
@@ -199,9 +227,29 @@
 			if (!window.ImpresionLocal) { toastr.error('No se cargó el cliente de impresión local: recarga la Caja.', que + ' sin imprimir', { timeOut: 15000, closeButton: true }); return; }
 			$.ajax({ url: base + 'comandaLocal', type: 'POST', dataType: 'json', data: { comanda_id: comandaId } }).done(function (r) {
 				var grupos = r.comandas || [], i = 0, fallas = 0;
+				// 16-11-2026: con "Boletas y precuentas con el diseño de la página", los destinos que usan la MISMA impresora de
+				// la caja (local chico: todo en una) salen como página por el navegador, con el diseño grande; los que tienen su
+				// propia impresora (cocina o barra aparte) siguen por el agente.
+				var enPagina = [];
+				if (documentosEnNavegador() && r.caja) {
+					var mismaImpresora = function (d) {
+						var n1 = ImpresionLocal.nombreImpresora(d.ruta_windows || ''), n2 = ImpresionLocal.nombreImpresora(r.caja.ruta_windows || '');
+						if (n1 && n2) return n1.toLowerCase() === n2.toLowerCase();
+						return !!(d.ip && r.caja.ip && d.ip === r.caja.ip && Number(d.puerto) === Number(r.caja.puerto));
+					};
+					grupos = $.grep(grupos, function (g) {
+						if (g.id === r.caja.id || mismaImpresora(g.destino)) { enPagina.push(g.id); return false; }
+						return true;
+					});
+					if (enPagina.length) {
+						imprimir(base + 'comanda?comanda_id=' + encodeURIComponent(comandaId) + '&solo=' + enPagina.join(','));
+						toastr.success(que + ' enviada a la impresora de la caja', '', { timeOut: 2500 });
+					}
+				}
 				(function siguiente() {
 					if (i >= grupos.length) {
-						if (!fallas) $.ajax({ url: base + 'comandaImpresa', type: 'POST', dataType: 'json', data: { comanda_id: comandaId }, global: false });
+						// La página de la comanda todavía la necesita: si hubo parte en página no se descarta (vence sola en 15 min)
+						if (!fallas && !enPagina.length) $.ajax({ url: base + 'comandaImpresa', type: 'POST', dataType: 'json', data: { comanda_id: comandaId }, global: false });
 						return;
 					}
 					var g = grupos[i++];
@@ -3041,9 +3089,10 @@
 			if (!mesa) return;
 			if (pendientesMesa().length) { toastr.warning('Primero envía a la mesa los productos nuevos'); return; }
 			var url = base + 'precuenta?id_mesa=' + mesa.id_mesa + '&titulo=' + encodeURIComponent(o.titulo || '');
-			if (o.sel) url += '&sel=' + encodeURIComponent($.map(o.sel, function (q, id) { return id + ':' + q; }).join(','));
-			if (o.partes) url += '&partes=' + o.partes + '&parte=' + o.parte + '&inicio=' + (o.inicio || 0);
-			imprimir(url);
+			var p = { id_mesa: mesa.id_mesa, titulo: o.titulo || '' };
+			if (o.sel) { p.sel = $.map(o.sel, function (q, id) { return id + ':' + q; }).join(','); url += '&sel=' + encodeURIComponent(p.sel); }
+			if (o.partes) { p.partes = o.partes; p.parte = o.parte; p.inicio = o.inicio || 0; url += '&partes=' + o.partes + '&parte=' + o.parte + '&inicio=' + (o.inicio || 0); }
+			imprimirPrecuenta(p, url);
 			toastr.info('Imprimiendo precuenta: ' + o.titulo);
 		}
 
@@ -3246,7 +3295,7 @@
 			cobroParcial = null;   // la precuenta es de toda la mesa
 			var descuento = totales().descuento;
 			cobroParcial = parcial;
-			imprimir(base + 'precuenta?id_mesa=' + mesa.id_mesa + '&descuento=' + descuento);
+			imprimirPrecuenta({ id_mesa: mesa.id_mesa, descuento: descuento }, base + 'precuenta?id_mesa=' + mesa.id_mesa + '&descuento=' + descuento);
 			toastr.info('Imprimiendo precuenta de ' + nombreMesa(mesa.id_mesa));
 		});
 

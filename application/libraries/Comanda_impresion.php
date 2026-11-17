@@ -65,10 +65,12 @@ class Comanda_impresion
 		foreach ($grupo['lineas'] as $i => $l) {
 			$total += (float)$l['cantidad'];
 			$cant = rtrim(rtrim(number_format((float)$l['cantidad'], 3, ',', ''), '0'), ',');
-			$b .= $izq . $neg . $alto . $this->envolver($cant . ' x ' . mb_strtoupper($l['nombre']), $W) . $normal;
-			foreach ($l['agregados'] as $a) $b .= $neg . $this->envolver('   + ' . $a, $W) . $normal;
+			// 16-11-2026: producto en doble ancho y alto (antes solo doble alto) para leerlo de lejos en la cocina;
+			// agregados y nota en doble alto
+			$b .= $izq . $neg . $doble . $this->envolver($cant . ' x ' . mb_strtoupper($l['nombre']), (int)floor($W / 2)) . $normal;
+			foreach ($l['agregados'] as $a) $b .= $neg . $alto . $this->envolver('  + ' . mb_strtoupper($a), $W) . $normal;
 			if ($l['nota'] !== '') {
-				$b .= "\n" . $inv . $neg . $this->envolver(' >> ' . mb_strtoupper($l['nota']), $W) . $normal;
+				$b .= $inv . $neg . $alto . $this->envolver(' >> ' . mb_strtoupper($l['nota']), $W) . $normal;
 			}
 			$b .= $i < $n - 1 ? str_repeat('-', $W) . "\n" : "\n";
 		}

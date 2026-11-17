@@ -3244,9 +3244,15 @@ class Mcaja extends CI_Model
 	public function tomarComandasApp()
 	{
 		$db = $this->conexion();
-		if (!$this->tieneMesas($db) || !$this->configuracion($db)['comandas_app']) return array();
+		$config = $this->configuracion($db);
+		if (!$this->tieneMesas($db) || !$config['comandas_app']) return array();
 		$cols = $this->columnas($db, array('detalle_cotizacion'));
 		if (!isset($cols['detalle_cotizacion']['desde_android'], $cols['detalle_cotizacion']['impreso'])) return array();
+		// 16-11-2026: con "imprimir también los que el celular marca como no imprimir", se toman además las líneas que la
+		// API2 grabó con impreso = true por "imprimir": 0. Se reconocen porque no tienen fecha_hora_impresion (nadie las
+		// imprimió); la web, la API móvil y el POS sí la ponen al imprimir. Sin esa columna no se puede: se ignora.
+		$forzar = $config['comandas_app_forzar'] && isset($cols['detalle_cotizacion']['fecha_hora_impresion']);
+		$pendiente = $forzar ? '(d.impreso IS NOT TRUE OR d.fecha_hora_impresion IS NULL)' : 'd.impreso IS NOT TRUE';
 		$db->trans_begin();
 		try {
 			$this->q($db, 'SET LOCAL TIME ZONE ' . $db->escape(self::TZ));
@@ -3258,7 +3264,7 @@ class Mcaja extends CI_Model
 				LEFT JOIN producto p ON p.id_producto = d.id_producto
 				LEFT JOIN producto pa ON pa.id_producto = d.id_agregado AND d.id_agregado > 0
 				LEFT JOIN usuario u ON u.id_usuario = c.id_usuario
-				WHERE d.desde_android IS TRUE AND d.impreso IS NOT TRUE
+				WHERE d.desde_android IS TRUE AND $pendiente
 					AND d.vigente IS NOT FALSE AND d.esanulado IS NOT TRUE AND d.eseliminado IS NOT TRUE
 					AND c.pagado IS NOT TRUE AND c.vigente IS NOT FALSE AND c.esanulado IS NOT TRUE AND c.eseliminado IS NOT TRUE
 					AND COALESCE(d.fecha_movimiento, c.fecha_transaccion) > now() - interval '3 hours'
@@ -3757,6 +3763,18 @@ class Mcaja extends CI_Model
 		if (in_array('imprimir_comandas_app', $existentes, true)) {
 			$ca = $this->q($db, 'SELECT (imprimir_comandas_app IS TRUE) AS ok FROM configuracion LIMIT 1')->row();
 			if ($ca) $config['comandas_app'] = $ca->ok === 't' || $ca->ok === true;
+		}
+		// 16-11-2026: boletas y precuentas con el diseño de la página, por el navegador (migración 20261116120000)
+		$config['documentos_navegador'] = false;
+		if (in_array('documentos_en_navegador', $existentes, true)) {
+			$dn = $this->q($db, 'SELECT (documentos_en_navegador IS TRUE) AS ok FROM configuracion LIMIT 1')->row();
+			if ($dn) $config['documentos_navegador'] = $dn->ok === 't' || $dn->ok === true;
+		}
+		// 16-11-2026: también los pedidos que el celular manda con "imprimir": 0 (migración 20261116110000; NULL = apagada)
+		$config['comandas_app_forzar'] = false;
+		if ($config['comandas_app'] && in_array('imprimir_comandas_app_forzar', $existentes, true)) {
+			$cf = $this->q($db, 'SELECT (imprimir_comandas_app_forzar IS TRUE) AS ok FROM configuracion LIMIT 1')->row();
+			if ($cf) $config['comandas_app_forzar'] = $cf->ok === 't' || $cf->ok === true;
 		}
 		// Bases sin la opción: se mantiene la facturación electrónica disponible
 		if (!in_array('habilitar_facturacion_electronica', $existentes)) $config['facturacion_electronica'] = true;

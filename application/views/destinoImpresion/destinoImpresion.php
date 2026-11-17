@@ -59,7 +59,9 @@
             <div class="t-acciones">
                 <a href="<?php echo base_url() ?>index.php/AgenteImpresion" class="btn btn-default"><i class="fa fa-plug"></i> Agente de impresión (Windows)</a>
                 <!-- 14-11-2026: instalador del agente de impresión local (puerto 5050) para el equipo de la caja del cliente -->
-                <a href="<?php echo base_url() ?>index.php/DestinoDeImpresion/descargarAgenteLocal" class="btn btn-default" title="Instalar en el computador de la caja (Windows). Es el que imprime boletas y comandas en las impresoras del local."><i class="fa fa-download"></i> Descargar agente de impresión local (.exe)</a>
+                <a href="<?php echo base_url() ?>index.php/DestinoDeImpresion/descargarAgenteLocal" download="impresionWeb.exe" class="btn btn-default" title="Instalar en el computador de la caja (Windows). Es el que imprime boletas y comandas en las impresoras del local."><i class="fa fa-download"></i> Descargar agente de impresión local (.exe)</a>
+                <!-- 16-11-2026: acceso directo "Caja Web" con impresión silenciosa (boletas y precuentas sin el cuadro de impresión) -->
+                <a href="<?php echo base_url() ?>index.php/DestinoDeImpresion/descargarAccesoCaja" download="crear_acceso_caja.bat" class="btn btn-default" title="Ejecutar en el computador de la caja: crea en el escritorio el acceso Caja Web, que imprime boletas y precuentas sin el cuadro de impresión."><i class="fa fa-desktop"></i> Descargar acceso directo Caja Web (.bat)</a>
                 <button onclick="AbrirModalNuevoDestinoDeImpresion()" type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Crear Nuevo Destino De Impresion</button>
             </div>
           </div>

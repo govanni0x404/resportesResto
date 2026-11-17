@@ -57,8 +57,26 @@ $__flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON
 				.texto(fila('Subtotal', '$' + miles(1234567.5, 2), cols))
 				.fontbold(true).texto(fila('TOTAL', '$' + miles(1469135), cols)).fontbold(false)
 				.linea({ caracter: '=', ancho: cols, ancho_maximo: cols })
-				.textaling('center').texto('Si lees esto, la impresora funciona')
-				.feed(4).cut();
+				.textaling('center').texto('Si lees esto, la impresora funciona');
+			// 16-11-2026: muestra de tamaños para elegir el de las comandas de cocina (este agente no documenta la escala)
+			job.linea({ caracter: '-', ancho: cols, ancho_maximo: cols }).textaling('left').fontbold(true).texto('TAMANOS (fontsize):').fontbold(false);
+			for (var n = 1; n <= 6; n++) {
+				job.fontsize(n).fontbold(true).texto(n + ': 1 x PAILA HUEVO').fontbold(false);
+			}
+			job.fontsize(1).textaling('center').justificar('center').texto('[centrado]').textaling('left').justificar('left');
+			job.feed(4).cut();
+			return job.operaciones;
+		}
+
+		/** Segunda hoja: texto como imagen (texto_raster) en 3 tamaños; aparte por si el agente no lo acepta */
+		function hojaRaster(rasterAncho) {
+			var job = new PrinterJob();
+			job.fontsize(1).fontbold(true).texto('TAMANOS (imagen):').fontbold(false);
+			[28, 36, 44].forEach(function (px) {
+				job.texto_raster({ texto: px + 'px: 1 x PAILA HUEVO', font_size: px, bold: true, align: 'left', max_width: rasterAncho, padding_y: 2 });
+			});
+			job.texto_raster({ texto: 'MESA 7', font_size: 52, bold: true, align: 'center', max_width: rasterAncho, padding_y: 2 });
+			job.feed(4).cut();
 			return job.operaciones;
 		}
 
@@ -79,6 +97,14 @@ $__flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON
 				var mm = ImpresionLocal.anchoMm(con.nombre);
 				var r = await ImpresionLocal.imprimir(destino, hojaPrueba(destino.nombre, con.impresora, mm));
 				aviso('success', 'Se envió la hoja de prueba a <b>' + esc(r.impresora) + '</b>.', 'Impresión enviada');
+				// Hoja 2: texto como imagen. Si el agente no lo acepta se avisa, pero la hoja 1 ya salió
+				try {
+					var ancho = (String(con.nombre).toLowerCase().indexOf('pos80') >= 0 || mm === 58) ? 384 : 576;
+					await ImpresionLocal.imprimir(destino, hojaRaster(ancho));
+					aviso('success', 'Se envió la hoja 2 (texto como imagen).', 'Hoja 2 enviada');
+				} catch (e2) {
+					aviso('error', ImpresionLocal.mensaje(e2), 'La hoja 2 (texto como imagen) no se pudo imprimir');
+				}
 			} catch (e) {
 				aviso('error', ImpresionLocal.mensaje(e), 'No se pudo imprimir');
 			} finally {

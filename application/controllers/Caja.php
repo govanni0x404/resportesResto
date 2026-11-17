@@ -857,6 +857,11 @@ class Caja extends CI_Controller
 		}
 		$c = $this->datosComanda(false);
 		if (!$c) show_404();
+		// 16-11-2026: ?solo=1,4 = solo esos destinos (los que salen en la impresora de la caja; el resto va por el agente)
+		$solo = array_filter(array_map('intval', explode(',', (string)$this->input->get('solo'))));
+		if ($solo) {
+			$c['grupos'] = array_filter($c['grupos'], function ($g) use ($solo) { return in_array((int)$g['destino']['id'], $solo, true); });
+		}
 		$c['papel'] = $this->papelTicket();
 		$this->load->view('caja/comanda.php', $c);
 	}
@@ -918,11 +923,16 @@ class Caja extends CI_Controller
 				$d = $g['destino'];
 				$res[] = array(
 					'nombre' => $g['nombre'],
+					'id' => (int)$d['id'],
 					'destino' => array('nombre' => $d['nombre'], 'ip' => $d['ip'], 'puerto' => $d['puerto'], 'ruta_windows' => $d['ruta_windows']),
 					'operaciones' => $this->comanda_local->operaciones($g, $c['venta'], $c['observacion'], $c['mesa'], $c['aviso']),
 				);
 			}
-			return array('comandas' => $res);
+			// 16-11-2026: la impresora de la caja (la del navegador): con "Boletas y precuentas con el diseño de la página",
+			// los destinos que usan esa misma impresora salen como página y no por el agente
+			$cajaD = $this->Mcaja->destinoCierre();
+			$caja = $cajaD ? array('id' => (int)$cajaD['id'], 'ip' => $cajaD['ip'], 'puerto' => $cajaD['puerto'], 'ruta_windows' => $cajaD['ruta_windows']) : null;
+			return array('comandas' => $res, 'caja' => $caja);
 		}, true);
 	}
 
@@ -981,6 +991,35 @@ class Caja extends CI_Controller
 			return array(
 				'destino' => array('nombre' => $destino['nombre'], 'ip' => $destino['ip'], 'puerto' => $destino['puerto'], 'ruta_windows' => $destino['ruta_windows']),
 				'operaciones' => $todas,
+			);
+		}, true);
+	}
+
+	/**
+	 * 16-11-2026: precuenta para el agente de impresión local (sale directo en la impresora de la caja, sin el cuadro de
+	 * impresión del navegador). Mismos parámetros que precuenta(): id_mesa, sel, partes, parte, inicio, descuento, titulo.
+	 */
+	public function precuentaLocal()
+	{
+		$this->ejecutar(function () {
+			$sel = array();
+			foreach (explode(',', (string)$this->input->post('sel')) as $par) {
+				if (count($sel) >= 300) break;
+				$x = explode(':', $par);
+				if (count($x) === 2 && (int)$x[0] > 0 && is_numeric($x[1]) && (float)$x[1] > 0) $sel[] = array('id_detalle' => (int)$x[0], 'cantidad' => (float)$x[1]);
+			}
+			$d = $this->Mcaja->precuentaMesa((int)$this->input->post('id_mesa'), $sel ?: null, (int)$this->input->post('partes'));
+			if (!$d) throw new Exception('La mesa no tiene un pedido abierto', 404);
+			$d['descuento'] = max(0, (int)$this->input->post('descuento'));
+			$d['titulo'] = mb_substr(trim((string)$this->input->post('titulo')), 0, 60);
+			$d['parte'] = max(0, (int)$this->input->post('parte'));
+			$d['inicio'] = max(0, (int)$this->input->post('inicio'));
+			$destino = $this->Mcaja->destinoCierre();
+			if (!$destino) throw new Exception('No hay impresora elegida en Configuraciones > Impresora para cierre de caja', 409);
+			$this->load->library('Ticket_local');
+			return array(
+				'destino' => array('nombre' => $destino['nombre'], 'ip' => $destino['ip'], 'puerto' => $destino['puerto'], 'ruta_windows' => $destino['ruta_windows']),
+				'operaciones' => $this->ticket_local->precuenta($d, $this->papelTicket()),
 			);
 		}, true);
 	}
