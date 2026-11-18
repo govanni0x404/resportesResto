@@ -981,6 +981,23 @@
 	.pes-resultado b { font-size: 30px; color: var(--t-texto-fuerte, #2b3a55); }
 	.pes-nota { margin: 8px 2px 0; font-size: 12px; color: var(--t-texto-tenue, #8a94a6); min-height: 16px; }
 	#btnConfirmarPesable { min-width: 140px; font-weight: 700; }
+
+	/* 18-11-2026: pantalla "Imprimiendo…" (js.php, bloquearImpresion): tapa todo mientras salen boleta, precuenta o comanda */
+	#bloqueoImpresion { position: fixed; inset: 0; z-index: 20000; display: flex; align-items: center; justify-content: center; padding: 16px;
+		background: rgba(42, 29, 23, .45); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+		opacity: 0; visibility: hidden; transition: opacity .15s ease, visibility 0s linear .15s; cursor: progress; }
+	#bloqueoImpresion.visible { opacity: 1; visibility: visible; transition: opacity .15s ease; }
+	#bloqueoImpresion .bloqueo-caja { width: 300px; max-width: 100%; padding: 26px 24px 22px; border-radius: 16px; background: #fff; text-align: center;
+		box-shadow: 0 20px 50px rgba(42, 29, 23, .35); transform: translateY(6px) scale(.98); transition: transform .15s ease; }
+	#bloqueoImpresion.visible .bloqueo-caja { transform: none; }
+	#bloqueoImpresion .bloqueo-icono { position: relative; width: 72px; height: 72px; margin: 0 auto 14px; border-radius: 50%; background: #e8f5ec;
+		color: #1e7e34; font-size: 28px; line-height: 72px; }
+	#bloqueoImpresion .bloqueo-giro { position: absolute; inset: -5px; border-radius: 50%; border: 4px solid transparent; border-top-color: #1e7e34;
+		border-right-color: rgba(30, 126, 52, .35); animation: bloqueoGiro .8s linear infinite; }
+	#bloqueoImpresion .bloqueo-texto { font-size: 18px; font-weight: 700; color: #2A1D17; }
+	#bloqueoImpresion .bloqueo-sub { margin-top: 4px; font-size: 13px; color: #7A6A5E; }
+	@keyframes bloqueoGiro { to { transform: rotate(360deg); } }
+	@media (prefers-reduced-motion: reduce) { #bloqueoImpresion .bloqueo-giro { animation-duration: 2.4s; } }
 </style>
 
 <div class="row caja">

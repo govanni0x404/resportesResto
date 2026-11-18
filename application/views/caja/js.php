@@ -170,7 +170,7 @@
 			var m = /ticket\/(\d+)/.exec($(this).attr('href') || '');
 			if (!m) return;
 			e.preventDefault();
-			imprimirTicket(Number(m[1]));
+			imprimirTicket(Number(m[1]), bloquearImpresion('Imprimiendo documento…'));
 		});
 		function avisoNoImpreso(texto) {
 			toastr.error(texto + ' Cuando esté listo, reimprímelo en Opciones > Documentos.', 'No se imprimió el documento',
@@ -211,18 +211,23 @@
 		// 16-11-2026: precuenta directa al agente de impresión del equipo (como la boleta). Sin impresión local, como antes
 		// (se abre en el navegador). p = {id_mesa, sel, partes, parte, inicio, descuento, titulo}
 		// 17-11-2026: con el diseño de la página, como imagen por el agente (antes por el navegador, con el cuadro de impresión)
-		function imprimirPrecuenta(p, url) {
-			if (!impresionLocalActiva() || !window.ImpresionLocal) { imprimir(url); return; }
+		// 18-11-2026: listo() = avisa que terminó (quita la pantalla de "Imprimiendo…")
+		function imprimirPrecuenta(p, url, listo) {
+			listo = listo || function () {};
+			if (!impresionLocalActiva() || !window.ImpresionLocal) { imprimir(url); setTimeout(listo, 800); return; }
 			$.ajax({ url: base + 'precuentaLocal', type: 'POST', dataType: 'json', data: p })
 				.done(function (r) {
 					var porAgente = function () { return ImpresionLocal.imprimir(r.destino, r.operaciones); };
 					(conImagen() ? imprimirComoImagen(url, r.destino, 1, porAgente) : porAgente()).then(function (res) {
+						listo();
 						toastr.success('Precuenta enviada a ' + res.impresora, '', { timeOut: 2500 });
 					}, function (e) {
+						listo();
 						toastr.error(textoPlano(ImpresionLocal.mensaje(e)), 'No se imprimió la precuenta', { timeOut: 12000, closeButton: true });
 					});
 				})
 				.fail(function (x) {
+					listo();
 					toastr.error((x && x.responseJSON && x.responseJSON.error) || 'No se pudo preparar la precuenta', 'Precuenta', { timeOut: 9000 });
 				});
 		}
@@ -256,9 +261,11 @@
 		}
 		// La comanda la arma y guarda el servidor al grabar el pedido (venta, envío a mesa, anulación, cambio de mesa,
 		// reenvío) y devuelve su número: aquí solo se pide imprimirla. que = texto del aviso (Comanda, Anulación...).
-		function imprimirComanda(comandaId, que, preparada) {
-			if (!comandaId) return;
-			if (impresionLocalActiva()) { imprimirComandaLocal(comandaId, que, preparada); return; }
+		// 18-11-2026: listo() = avisa que terminó (quita la pantalla de "Imprimiendo…")
+		function imprimirComanda(comandaId, que, preparada, listo) {
+			listo = listo || function () {};
+			if (!comandaId) { listo(); return; }
+			if (impresionLocalActiva()) { imprimirComandaLocal(comandaId, que, preparada, listo); return; }
 			$.ajax({
 				url: base + 'imprimirComanda', type: 'POST', dataType: 'json', data: { comanda_id: comandaId }
 			}).done(function (r) {
@@ -269,7 +276,7 @@
 				});
 			}).fail(function (x) {
 				toastr.error('No se pudo enviar la comanda: ' + ((x.responseJSON && x.responseJSON.error) || 'error de conexión'), '', { timeOut: 9000 });
-			});
+			}).always(listo);
 		}
 		// Impresión local (12-11-2026): las impresoras están en el local y el sistema en un servidor, así que cada comanda va
 		// al agente de impresión de este equipo (localhost:5050), una por destino de impresión de los productos (cocina,
@@ -291,9 +298,10 @@
 			});
 		}
 		// preparada = promesa de prepararComandaLocal (opcional)
-		function imprimirComandaLocal(comandaId, que, preparada) {
+		function imprimirComandaLocal(comandaId, que, preparada, listo) {
 			que = que || 'Comanda';
-			if (!window.ImpresionLocal) { toastr.error('No se cargó el cliente de impresión local: recarga la Caja.', que + ' sin imprimir', { timeOut: 15000, closeButton: true }); return; }
+			listo = listo || function () {};
+			if (!window.ImpresionLocal) { listo(); toastr.error('No se cargó el cliente de impresión local: recarga la Caja.', que + ' sin imprimir', { timeOut: 15000, closeButton: true }); return; }
 			(preparada || prepararComandaLocal(comandaId)).then(function (p) {
 				var r = p.r, grupos = r.comandas || [], i = 0, fallas = 0;
 				// 17-11-2026: con "Boletas, precuentas y comandas con el diseño de la página", cada destino (caja, cocina,
@@ -302,6 +310,7 @@
 				var imagen = conImagen();
 				(function siguiente() {
 					if (i >= grupos.length) {
+						listo();
 						if (!fallas) $.ajax({ url: base + 'comandaImpresa', type: 'POST', dataType: 'json', data: { comanda_id: comandaId }, global: false });
 						return;
 					}
@@ -318,15 +327,60 @@
 					});
 				})();
 			}, function (x) {
+				listo();
 				toastr.error((x && x.responseJSON && x.responseJSON.error) || 'error de conexión', 'No se pudo preparar la ' + que.toLowerCase(), { timeOut: 15000, closeButton: true });
 			});
 		}
 		// Reenviar a cocina lo ya guardado en la mesa: idsDetalle = líneas (vacío = todo el pedido)
 		function reenviarComanda(idMesa, idsDetalle) {
 			postJson('reenviarComanda', { id_mesa: idMesa, ids_detalle: idsDetalle || [] }).done(function (r) {
-				imprimirComanda(r.comanda_id, 'Reenvío');
+				imprimirComandaBloqueando(r.comanda_id, 'Reenvío');
 			}).fail(error);
 		}
+
+		// ---------------- pantalla "Imprimiendo…" ----------------
+		// 18-11-2026 (pedido del usuario): mientras salen la boleta, la precuenta o las comandas, la pantalla queda
+		// bloqueada (mouse y teclado) para que nadie toque nada en esos segundos. Cada impresión suma 1 y su listo() resta 1;
+		// se quita cuando no queda ninguna. Si algo se traba, se quita sola a los 25 s (la Caja nunca queda bloqueada).
+		// Las comandas que llegan solas de la app de garzones NO bloquean (no interrumpen al cajero).
+		var imprimiendoN = 0, imprimiendoTope = null;
+		var $bloqueo = $('<div id="bloqueoImpresion" role="alertdialog" aria-modal="true" aria-live="assertive" aria-label="Imprimiendo">'
+			+ '<div class="bloqueo-caja"><div class="bloqueo-icono"><i class="fa fa-print"></i><span class="bloqueo-giro"></span></div>'
+			+ '<div class="bloqueo-texto">Imprimiendo…</div><div class="bloqueo-sub">Espera un momento, no cierres ni toques la Caja</div></div></div>').appendTo('body');
+		function quitarBloqueo() {
+			imprimiendoN = 0;
+			clearTimeout(imprimiendoTope);
+			$bloqueo.removeClass('visible');
+		}
+		/** Muestra la pantalla y devuelve listo(): llamarlo cuando esa impresión terminó (salió bien o falló). */
+		function bloquearImpresion(texto) {
+			imprimiendoN++;
+			$bloqueo.find('.bloqueo-texto').text(texto || 'Imprimiendo…');
+			if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+			$bloqueo.addClass('visible');
+			clearTimeout(imprimiendoTope);
+			imprimiendoTope = setTimeout(quitarBloqueo, 25000);
+			var hecho = false;
+			return function () {
+				if (hecho) return;
+				hecho = true;
+				imprimiendoN = Math.max(0, imprimiendoN - 1);
+				if (!imprimiendoN) {
+					quitarBloqueo();
+					// Vuelve al buscador de productos si no hay una ventana abierta (ej. "Venta registrada")
+					if (!$('.modal.in:visible').length) $('#buscarProducto:visible').focus();
+				}
+			};
+		}
+		/** Imprime la comanda con la pantalla "Imprimiendo…" (solo si hay comanda: sin destinos no se muestra nada). */
+		function imprimirComandaBloqueando(comandaId, que) {
+			if (!comandaId) return;
+			imprimirComanda(comandaId, que, null, bloquearImpresion('Imprimiendo ' + (que || 'comanda').toLowerCase() + '…'));
+		}
+		// El teclado no hace nada mientras se imprime (Enter, F2, Esc...)
+		document.addEventListener('keydown', function (e) {
+			if (imprimiendoN > 0) { e.preventDefault(); e.stopPropagation(); }
+		}, true);
 
 		// ---------------- estado de caja ----------------
 		function cargarEstado() {
@@ -1375,7 +1429,8 @@
 			var d = docPorId(id);
 			if (!id || (d && d.anulada)) return;
 			$b.prop('disabled', true);
-			imprimirTicket(id, function () { $b.prop('disabled', false); });
+			var listo = bloquearImpresion('Imprimiendo documento…');
+			imprimirTicket(id, function () { $b.prop('disabled', false); listo(); });
 		}
 		$('#docFecha').on('change', cargarDocumentos);
 		$('#docBuscar').on('input', renderDocumentos);
@@ -2205,7 +2260,16 @@
 					comandaLista = prepararComandaLocal(comandaVenta);
 					comandaLista.catch(function () {});
 				}
-				var conComanda = function () { if (comandaVenta) imprimirComanda(comandaVenta, 'Comanda', comandaLista); };
+				// 18-11-2026: pantalla "Imprimiendo…" hasta que salen la boleta y la comanda
+				var listoVenta = (imprimeTicket() || comandaVenta)
+					? bloquearImpresion(imprimeTicket() ? 'Imprimiendo ' + (r.documento ? r.documento.toLowerCase() : 'documento') + '…' : 'Imprimiendo comanda…')
+					: function () {};
+				var conComanda = function () {
+					if (comandaVenta) {
+						if (imprimeTicket()) $bloqueo.find('.bloqueo-texto').text('Imprimiendo comanda…');
+						imprimirComanda(comandaVenta, 'Comanda', comandaLista, listoVenta);
+					} else listoVenta();
+				};
 				if (imprimeTicket()) imprimirTicket(r.id_venta, conComanda);
 				else conComanda();
 				limpiarVenta();
@@ -2636,7 +2700,7 @@
 			enviando = true;
 			$('#btnEnviarMesa, #btnEnviarMesaBarra, #btnCobrar').prop('disabled', true);
 			postJson('enviarMesa', { id_mesa: idMesa, id_lprecio: Number($('#cboLista').val()), detalle: detalle }).done(function (r) {
-				if (imprimeComanda()) imprimirComanda(r.comanda_id, 'Comanda');
+				if (imprimeComanda()) imprimirComandaBloqueando(r.comanda_id, 'Comanda');
 				// Se conserva lo que se agregó mientras se enviaba
 				carro = $.grep(carro, function (l) { return !l.enviada && $.inArray(l, enviadas) < 0; });
 				aplicarDetalleMesa(r.detalle);
@@ -2746,7 +2810,7 @@
 				postJson('moverMesa', { id_mesa: idMesa, id_mesa_destino: destino, lineas: lineas }).done(function (r) {
 					$('#modalMesaProductos').modal('hide');
 					toastr.success('Productos pasados a ' + nombreMesa(destino));
-					imprimirComanda(r.comanda_id, 'Cambio de mesa');
+					imprimirComandaBloqueando(r.comanda_id, 'Cambio de mesa');
 					cargarMesas();
 					if (r.liberada) { limpiarVenta(); $('#lnkMesas').tab('show'); } else aplicarDetalleMesa(r.detalle);
 				}).fail(error).always(function () { $('#mpConfirmar').prop('disabled', false); });
@@ -2761,7 +2825,7 @@
 				return postJson('anularLineaMesa', { id_mesa: idMesa, id_detalle: lineas[0].id_detalle, cantidad: lineas[0].cantidad, motivo: motivo, autorizacion: aut });
 			}, function (r) {
 				cargarMesas();
-				imprimirComanda(r.comanda_id, 'Anulación');
+				imprimirComandaBloqueando(r.comanda_id, 'Anulación');
 				if (r.liberada) { toastr.info(nombreMesa(idMesa) + ' quedó libre'); limpiarVenta(); $('#lnkMesas').tab('show'); return; }
 				aplicarDetalleMesa(r.detalle);
 			});
@@ -3173,7 +3237,7 @@
 			var p = { id_mesa: mesa.id_mesa, titulo: o.titulo || '' };
 			if (o.sel) { p.sel = $.map(o.sel, function (q, id) { return id + ':' + q; }).join(','); url += '&sel=' + encodeURIComponent(p.sel); }
 			if (o.partes) { p.partes = o.partes; p.parte = o.parte; p.inicio = o.inicio || 0; url += '&partes=' + o.partes + '&parte=' + o.parte + '&inicio=' + (o.inicio || 0); }
-			imprimirPrecuenta(p, url);
+			imprimirPrecuenta(p, url, bloquearImpresion('Imprimiendo precuenta…'));
 			toastr.info('Imprimiendo precuenta: ' + o.titulo);
 		}
 
@@ -3376,7 +3440,7 @@
 			cobroParcial = null;   // la precuenta es de toda la mesa
 			var descuento = totales().descuento;
 			cobroParcial = parcial;
-			imprimirPrecuenta({ id_mesa: mesa.id_mesa, descuento: descuento }, base + 'precuenta?id_mesa=' + mesa.id_mesa + '&descuento=' + descuento);
+			imprimirPrecuenta({ id_mesa: mesa.id_mesa, descuento: descuento }, base + 'precuenta?id_mesa=' + mesa.id_mesa + '&descuento=' + descuento, bloquearImpresion('Imprimiendo precuenta…'));
 			toastr.info('Imprimiendo precuenta de ' + nombreMesa(mesa.id_mesa));
 		});
 
@@ -3388,7 +3452,7 @@
 				enviarConAutorizacion(function (aut) {
 					return postJson('anularPedidoMesa', { id_mesa: idMesa, motivo: motivo, autorizacion: aut });
 				}, function (r) {
-					imprimirComanda(r.comanda_id, 'Anulación');
+					imprimirComandaBloqueando(r.comanda_id, 'Anulación');
 					toastr.success('Pedido anulado: ' + nombreMesa(idMesa) + ' quedó libre');
 					limpiarVenta();
 					cargarMesas();
@@ -3775,7 +3839,7 @@
 				$('#ventaOkTicket').attr('href', base + 'ticket/' + r.id_venta + '?imprimir=1');
 				$('#ventaOkPdf').attr('href', base + 'pdf/' + r.id_venta);
 				$('#modalVentaOk').modal('show');
-				if (imprimeTicket()) imprimirTicket(r.id_venta);
+				if (imprimeTicket()) imprimirTicket(r.id_venta, bloquearImpresion('Imprimiendo documento…'));
 				if ($('#tabVentas').hasClass('active')) cargarVentas();
 				cargarEstado();
 			}, function () { $b.prop('disabled', false); });

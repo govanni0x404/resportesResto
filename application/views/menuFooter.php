@@ -45,11 +45,39 @@
   }
 </script>
 <style>
-  /* La X del aviso: más grande y fácil de presionar (toastr la deja muy pequeña) */
-  #toast-container > .toast { padding-right: 44px; }
+  /*
+   * 18-11-2026: avisos (toastr) con diseño nuevo en todo el sistema (el usuario encontraba feos los de color sólido):
+   * tarjeta blanca, franja e ícono del color del tipo (verde = listo, rojo = error, naranjo = cuidado, azul = info).
+   */
+  #toast-container > .toast {
+    --tc: #2563eb; --tc-suave: #dbeafe;
+    position: relative; overflow: hidden; width: 360px; max-width: calc(100vw - 24px);
+    margin: 0 0 10px; padding: 14px 46px 14px 64px; border-radius: 12px; border: 1px solid #e5e7eb; border-left: 5px solid var(--tc);
+    background: #fff none !important; color: #1f2937; opacity: 1;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .16), 0 2px 6px rgba(15, 23, 42, .08);
+    font-family: inherit;
+  }
+  #toast-container > .toast:hover { opacity: 1; cursor: default; box-shadow: 0 14px 32px rgba(15, 23, 42, .22), 0 3px 8px rgba(15, 23, 42, .1); }
+  #toast-container > .toast::before {
+    font-family: 'FontAwesome'; position: absolute; left: 16px; top: 50%; margin-top: -17px; width: 34px; height: 34px; border-radius: 50%;
+    background: var(--tc-suave); color: var(--tc); font-size: 16px; line-height: 34px; text-align: center;
+  }
+  #toast-container > .toast-success { --tc: #16a34a; --tc-suave: #dcfce7; }
+  #toast-container > .toast-success::before { content: "\f00c"; }
+  #toast-container > .toast-error { --tc: #dc2626; --tc-suave: #fee2e2; }
+  #toast-container > .toast-error::before { content: "\f00d"; }
+  #toast-container > .toast-warning { --tc: #d97706; --tc-suave: #fef3c7; }
+  #toast-container > .toast-warning::before { content: "\f12a"; }
+  #toast-container > .toast-info { --tc: #2563eb; --tc-suave: #dbeafe; }
+  #toast-container > .toast-info::before { content: "\f129"; }
+  #toast-container .toast-title { font-size: 14px; font-weight: 700; color: #111827; line-height: 1.3; margin-bottom: 2px; }
+  #toast-container .toast-message { font-size: 13px; color: #4b5563; line-height: 1.4; word-wrap: break-word; }
+  #toast-container .toast-message a, #toast-container .toast-message label { color: var(--tc); }
+  #toast-container .toast-progress { height: 3px; background: var(--tc); opacity: .35; }
+  /* La X del aviso: grande y fácil de presionar (toastr la deja muy pequeña) */
   #toast-container .toast-close-button { position: absolute; top: 50%; right: 8px; margin-top: -15px; width: 30px; height: 30px; float: none;
-    border-radius: 8px; color: #fff; font-size: 24px; font-weight: 400; line-height: 28px; text-align: center; opacity: .85; text-shadow: none; }
-  #toast-container .toast-close-button:hover, #toast-container .toast-close-button:focus { opacity: 1; background: rgba(255, 255, 255, .18); color: #fff; outline: none; }
+    border-radius: 8px; color: #9ca3af; font-size: 22px; font-weight: 400; line-height: 28px; text-align: center; opacity: 1; text-shadow: none; }
+  #toast-container .toast-close-button:hover, #toast-container .toast-close-button:focus { background: #f3f4f6; color: #111827; outline: none; }
 </style>
 <!-- Sparkline js -->
 <script src="<?php echo base_url() ?>assets/plugins/sparkline/sparkline.min.js"></script>
