@@ -121,22 +121,58 @@ class Mproduccion extends CI_Model
     }
 
     /**
-     * 18-11-2026: costo promedio ponderado del insumo elaborado después de producir: lo que había (en todas las bodegas)
-     * a su costo, más lo producido a su costo. Llamar ANTES de entradaStock (usa el saldo anterior). Devuelve el costo
-     * unitario nuevo. El bruto se ajusta en la misma proporción que tenía (o con IVA 19% si no tenía).
+     * 18-11-2026: el trigger trg_produccion (f_produccion, del POS) está activo en produccion: entonces él mueve el stock
+     * de cada fila grabada y la web no debe moverlo de nuevo.
      */
-    public function actualizarCostoElaborado($id_insumo, $cantidad, $costoTotal)
+    public function triggerMueveStock()
+    {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $r = $this->db->query("SELECT 1 FROM pg_trigger t JOIN pg_proc p ON p.oid = t.tgfoid
+            WHERE t.tgrelid = to_regclass('public.produccion') AND NOT t.tgisinternal AND t.tgenabled <> 'D'
+              AND p.proname = 'f_produccion' LIMIT 1")->row();
+        return (bool)$r;
+    }
+
+    /** 18-11-2026: crea la fila de stock del insumo en la bodega (en 0) si no existe. */
+    public function asegurarFilaStock($id_insumo, $id_bodega)
+    {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->db->query('INSERT INTO stock_insumo (id_insumo, id_bodega, cantidad_entrada, cantidad_salida, saldo)
+            SELECT ?, ?, 0, 0, 0 WHERE NOT EXISTS (SELECT 1 FROM stock_insumo WHERE id_insumo = ? AND id_bodega = ?)',
+            array((int)$id_insumo, (int)$id_bodega, (int)$id_insumo, (int)$id_bodega));
+    }
+
+    /** 18-11-2026: saldo del insumo sumando todas las bodegas. */
+    public function saldoTotal($id_insumo)
+    {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $s = $this->db->query('SELECT COALESCE(sum(saldo), 0) AS saldo FROM stock_insumo WHERE id_insumo = ?', array((int)$id_insumo))->row();
+        return (float)$s->saldo;
+    }
+
+    /** 18-11-2026: costo neto y bruto actuales del insumo (leer ANTES de grabar la producción: el trigger los pisa). */
+    public function costoActual($id_insumo)
     {
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $i = $this->db->query('SELECT COALESCE(costo_neto_ppp, 0) AS neto, COALESCE(costo_bruto_ppp, 0) AS bruto FROM insumo WHERE id_insumo = ?',
             array((int)$id_insumo))->row();
-        if (!$i) return 0;
-        $s = $this->db->query('SELECT COALESCE(sum(saldo), 0) AS saldo FROM stock_insumo WHERE id_insumo = ?', array((int)$id_insumo))->row();
-        $antes = max(0, (float)$s->saldo);   // un saldo negativo no aporta costo
+        return array('neto' => $i ? (float)$i->neto : 0.0, 'bruto' => $i ? (float)$i->bruto : 0.0);
+    }
+
+    /**
+     * 18-11-2026: costo promedio ponderado del insumo elaborado después de producir: lo que había (en todas las bodegas)
+     * a su costo, más lo producido a su costo. $saldoAntes (saldoTotal) y $costoAntes (costoActual) se leen ANTES de grabar
+     * la fila; esto se llama DESPUÉS, porque el trigger deja en insumo el costo de esta producción sola y aquí se reemplaza.
+     * Devuelve el costo unitario nuevo. El bruto mantiene la proporción que tenía (o IVA 19% si no tenía).
+     */
+    public function actualizarCostoElaborado($id_insumo, $cantidad, $costoTotal, $saldoAntes, $costoAntes)
+    {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $cantidad = (float)$cantidad;
-        if ($cantidad <= 0) return (float)$i->neto;
-        $neto = round(($antes * (float)$i->neto + (float)$costoTotal) / ($antes + $cantidad), 4);
-        $factor = (float)$i->neto > 0 && (float)$i->bruto > 0 ? (float)$i->bruto / (float)$i->neto : 1.19;
+        if ($cantidad <= 0) return (float)$costoAntes['neto'];
+        $antes = max(0, (float)$saldoAntes);   // un saldo negativo no aporta costo
+        $neto = round(($antes * (float)$costoAntes['neto'] + (float)$costoTotal) / ($antes + $cantidad), 4);
+        $factor = $costoAntes['neto'] > 0 && $costoAntes['bruto'] > 0 ? $costoAntes['bruto'] / $costoAntes['neto'] : 1.19;
         $this->db->query('UPDATE insumo SET costo_neto_ppp = ?, costo_bruto_ppp = ? WHERE id_insumo = ?',
             array($neto, round($neto * $factor, 4), (int)$id_insumo));
         return $neto;

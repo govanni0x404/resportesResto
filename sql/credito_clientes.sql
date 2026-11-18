@@ -1,3 +1,7 @@
+-- 18-11-2026: YA NO SE CORRE A MANO. La fuente oficial es la migración
+-- application/migrations/20261118110000_add_permiso_web_credito_clientes.php (se aplica sola en el login o con
+-- php index.php despliegue esquema). Este archivo queda solo como documentación.
+
 -- Crédito a clientes: plazo máximo y pagos de crédito desde la Caja web.
 -- Se corre una vez en la base de CADA cliente (ej. laToscana):
 --   psql -h localhost -U postgres -d laToscana -f sql/credito_clientes.sql

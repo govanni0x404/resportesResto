@@ -45,6 +45,12 @@ class Produccion extends CI_Controller
             $dbTenant = get_tenant_db($this);
             $dbTenant->trans_start();
             
+            // 18-11-2026 (prueba en copia): el trigger trg_produccion del POS (f_produccion) ya mueve el stock en cada fila que
+            // se graba en produccion (cantidad_entrada += cantidad; negativa = consumo) y pisa insumo.costo_neto_ppp con el
+            // costo_unitario. Si además se movía aquí, el consumo bajaba el doble y lo producido subía el doble. Solo se
+            // mueve a mano si el trigger no está (o está desactivado) en este cliente.
+            $porTrigger = $this->Mproduccion->triggerMueveStock();
+
             // Procesar cada insumo de la receta
             $costoTotalProduccion = 0;
             foreach ($d['insumos'] as $insumo) {
@@ -103,12 +109,10 @@ class Produccion extends CI_Controller
                 
                 $this->Mproduccion->grabarProduccion($miData);
                 
-                // Actualizar stock (restar). 18-11-2026: como salida (cantidad_salida), no pisando el saldo
-                $this->Mproduccion->salidaStock(
-                    $insumo['id_insumo'],
-                    $insumo['id_bodega'],
-                    $insumo['cantidad']
-                );
+                // Actualizar stock (restar): lo hace el trigger al grabar la fila; sin trigger, como salida (cantidad_salida)
+                if (!$porTrigger) {
+                    $this->Mproduccion->salidaStock($insumo['id_insumo'], $insumo['id_bodega'], $insumo['cantidad']);
+                }
                 
                 $costoTotalProduccion += floatval($insumo['costo_total']);
             }
@@ -130,9 +134,12 @@ class Produccion extends CI_Controller
                 echo json_encode(array('success' => false, 'message' => 'El producto elaborado o la bodega de destino no existen'));
                 return;
             }
+            // El trigger solo hace UPDATE: sin fila de stock en la bodega de destino, la entrada se perdía. Se crea en 0.
+            $this->Mproduccion->asegurarFilaStock($id_insumo_elaborado, $id_bodega_destino);
             $stock_destino_actual = (float)$this->Mproduccion->obtenerStockActual($id_insumo_elaborado, $id_bodega_destino, true);
-            // Costo promedio del elaborado: antes de sumar la entrada (usa el saldo que había)
-            $costo_unitario_elaborado = $this->Mproduccion->actualizarCostoElaborado($id_insumo_elaborado, $cantidad_producida, $costoTotalProduccion);
+            // Costo promedio del elaborado: con el saldo que había ANTES de la entrada
+            $saldo_elaborado_antes = $this->Mproduccion->saldoTotal($id_insumo_elaborado);
+            $costo_elaborado_antes = $this->Mproduccion->costoActual($id_insumo_elaborado);
             $this->Mproduccion->grabarProduccion(array(
                 'fecha' => $d['fecha'],
                 'id_insumo' => $id_insumo_elaborado,
@@ -147,7 +154,10 @@ class Produccion extends CI_Controller
                 'observaciones' => mb_substr('Producción de ' . (isset($d['nombre_insumo_elaborado']) ? $d['nombre_insumo_elaborado'] : '')
                     . (!empty($d['observaciones']) ? ' - ' . $d['observaciones'] : ''), 0, 250),
             ));
-            $this->Mproduccion->entradaStock($id_insumo_elaborado, $id_bodega_destino, $cantidad_producida);
+            if (!$porTrigger) $this->Mproduccion->entradaStock($id_insumo_elaborado, $id_bodega_destino, $cantidad_producida);
+            // Después de grabar: el trigger dejó el costo de esta producción (promedio simple); se reemplaza por el ponderado
+            $costo_unitario_elaborado = $this->Mproduccion->actualizarCostoElaborado($id_insumo_elaborado, $cantidad_producida,
+                $costoTotalProduccion, $saldo_elaborado_antes, $costo_elaborado_antes);
 
             // Ejemplo original (reemplazado por lo de arriba el 18-11-2026):
             /*

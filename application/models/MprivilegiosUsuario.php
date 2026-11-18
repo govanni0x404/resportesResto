@@ -18,7 +18,7 @@ class MprivilegiosUsuario extends CI_Model
 	private function exigirTabla($db)
 	{
 		if (!permisos_web_tabla($db)) {
-			throw new Exception('Falta crear la tabla de permisos: corre el script sql/permiso_web.sql en la base de datos', 409);
+			throw new Exception('Falta crear la tabla de permisos: aplica las migraciones (php index.php despliegue esquema; la crea 20261118110000)', 409);
 		}
 	}
 

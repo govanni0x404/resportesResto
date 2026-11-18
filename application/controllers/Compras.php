@@ -168,7 +168,14 @@ class Compras extends CI_Controller
       $db->trans_begin();
       $nivel = error_reporting(0);   // un error de la base no sale como página HTML: se responde el mensaje
       foreach ($lineas as $n => $miData) {
+        // 18-11-2026: costo promedio PONDERADO. El trigger f_addptocomprado (del POS, no se toca) deja el promedio simple
+        // de todas las compras de la historia; justo después se reemplaza por (stock que había x su costo + lo comprado x
+        // su precio) / stock nuevo. Lo que había se lee ANTES de grabar la línea.
+        $antes = $this->Mcompra->costoAntesDeComprar($miData['id_insumo']);
         $r = $this->Mcompra->grabarDetalleCompra($miData);
+        if (!isset($r['error']) && !$this->Mcompra->aplicarCostoPonderado($miData['id_insumo'], $miData['cantidad'], $miData['bruto_unitario'], $antes)) {
+          $r = array('error' => array('message' => 'no se pudo actualizar el costo promedio del insumo'));
+        }
         if (isset($r['error'])) {
           $db->trans_rollback();
           error_reporting($nivel);
