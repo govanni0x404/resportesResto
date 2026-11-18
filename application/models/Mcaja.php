@@ -277,19 +277,27 @@ class Mcaja extends CI_Model
 		if ($this->esAdmin($db, $idUsuario, $idRol)) return;
 		$clave = is_array($aut) && isset($aut['clave']) ? (string)$aut['clave'] : '';
 		if ($clave === '') throw new AutorizacionRequerida($motivo);
+		// 18-11-2026: límite de intentos (5 incorrectas en 10 min → 5 min de bloqueo), por cajero y empresa
+		$this->load->library('Limite_intentos');
+		$conteo = 'caja_admin|' . (string)$this->session->userdata('db_server') . '|' . (string)$this->session->userdata('bd_name') . '|' . (int)$idUsuario;
+		$this->limite_intentos->revisar($conteo);
 		$idAdmin = (int)(isset($aut['id_usuario']) ? $aut['id_usuario'] : 0);
 		if ($idAdmin === 0) {
 			$general = $this->claveAdminGeneral($db);
-			if ($general !== '' && hash_equals($general, $clave)) return;
+			if ($general !== '' && hash_equals($general, $clave)) { $this->limite_intentos->exito($conteo); return; }
 		} else {
 			$u = $this->q($db, 'SELECT COALESCE(u.clave, \'\') AS clave FROM usuario u LEFT JOIN rol r ON r.id_rol = u.id_rol
 				WHERE u.id_usuario = ? AND u.vigente IS NOT FALSE AND ' . self::SQL_ES_ADMIN, array($idAdmin))->row();
 			if ($u && $u->clave !== '' && hash_equals($u->clave, $clave)) {
+				$this->limite_intentos->exito($conteo);
 				log_message('info', 'Caja web: ' . $motivo . ' autorizado por usuario ' . $idAdmin . ' (cajero ' . (int)$idUsuario . ')');
 				return;
 			}
 		}
-		throw new AutorizacionRequerida($motivo, 'Clave de administrador incorrecta');
+		$quedan = $this->limite_intentos->fallo($conteo);
+		log_message('error', 'Caja web: clave de administrador incorrecta para "' . $motivo . '" (cajero ' . (int)$idUsuario . ', quedan ' . $quedan . ')');
+		if ($quedan <= 0) $this->limite_intentos->revisar($conteo);   // recién bloqueado: avisa cuánto esperar
+		throw new AutorizacionRequerida($motivo, 'Clave de administrador incorrecta' . ($quedan <= 2 ? ' (quedan ' . $quedan . ' intento' . ($quedan === 1 ? '' : 's') . ')' : ''));
 	}
 
 	// ---------------- lista de precios ----------------

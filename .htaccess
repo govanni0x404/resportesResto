@@ -1,0 +1,20 @@
+# 18-11-2026: lo que NO se debe ver por la web. Responde "404 no existe" (no da pistas de que el archivo está).
+# El proyecto se sirve desde su carpeta completa (docker-compose: .:/var/www/html), así que sin esto se podían descargar
+# el historial de git (.git, con contraseñas viejas), los respaldos, los scripts SQL y las copias de trabajo (.claude).
+# Apache debe tener AllowOverride All para leer este archivo (docker/apache-seguridad.conf lo activa en Docker).
+# En Nginx (VPS) las mismas reglas están en docker/nginx-seguridad.conf.
+
+Options -Indexes
+
+<IfModule mod_alias.c>
+    # Archivos y carpetas ocultos: .git, .claude, .env, .htaccess, .gitignore... (menos .well-known, que usa el
+    # certificado https)
+    RedirectMatch 404 "(?i)(^|/)\.(?!well-known(/|$))"
+    # Respaldos del usuario y scripts de la base
+    RedirectMatch 404 "(?i)(^|/)_respaldos[^/]*(/|$)"
+    RedirectMatch 404 "(?i)(^|/)sql(/|$)"
+    # Archivos de configuración y documentación del proyecto (en la raíz)
+    RedirectMatch 404 "(?i)/(docker-compose\.ya?ml|composer\.(json|lock)|readme\.rst|license\.txt|c\.txt)$"
+    # Tipos que nunca son parte de la página: volcados de base, respaldos, registros, scripts, claves
+    RedirectMatch 404 "(?i)\.(sql|bak|old|orig|swp|log|sh|bat|ps1|key|pem|env|ini|dist)$"
+</IfModule>

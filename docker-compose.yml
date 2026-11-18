@@ -6,6 +6,8 @@ services:
       - "8082:80"
     volumes:
       - .:/var/www/html
+      # 18-11-2026: Apache lee los .htaccess y no deja ver .git, respaldos ni scripts SQL (docker/apache-seguridad.conf)
+      - ./docker/apache-seguridad.conf:/etc/apache2/conf-enabled/zz-seguridad.conf:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: >

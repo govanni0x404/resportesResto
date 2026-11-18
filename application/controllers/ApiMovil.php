@@ -199,8 +199,16 @@ class ApiMovil extends CI_Controller
 			if (!empty($body['id_garzon'])) {
 				$idGarzon = (int)$body['id_garzon'];
 				$claveGarzon = isset($body['clave']) && is_scalar($body['clave']) ? (string)$body['clave'] : '';
+				// 18-11-2026: límite de intentos (5 incorrectas en 10 min → 5 min de bloqueo), por garzón y empresa
+				$this->load->library('Limite_intentos');
+				$conteo = 'movil_garzon|' . (isset($sesion['srv']) ? $sesion['srv'] : '') . '|' . (isset($sesion['bd']) ? $sesion['bd'] : '') . '|' . $idGarzon;
+				$this->limite_intentos->revisar($conteo);
 				$g = $db->query('SELECT clave FROM usuario WHERE id_usuario = ? AND vigente IS NOT FALSE', array($idGarzon))->row();
-				if (!$g || $claveGarzon === '' || !hash_equals((string)$g->clave, $claveGarzon)) throw new Exception('Garzón o clave incorrectos', 403);
+				if (!$g || $claveGarzon === '' || !hash_equals((string)$g->clave, $claveGarzon)) {
+					$this->limite_intentos->fallo($conteo);
+					throw new Exception('Garzón o clave incorrectos', 403);
+				}
+				$this->limite_intentos->exito($conteo);
 			}
 			$u = $db->query('SELECT id_usuario, COALESCE(id_rol, 0) AS id_rol FROM usuario WHERE id_usuario = ? AND vigente IS NOT FALSE', array($idGarzon))->row();
 			if (!$u) throw new Exception('El usuario no existe o no está vigente en la empresa', 403);

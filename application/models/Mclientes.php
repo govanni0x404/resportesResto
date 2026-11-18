@@ -18,9 +18,11 @@ class Mclientes extends CI_Model
     $plazo = $this->db->field_exists('plazo_credito', 'cliente') ? 'COALESCE(c.plazo_credito, 30)' : '30';
     $q = "SELECT c.id_cliente, c.rut, c.dv, c.nombre_cliente, c.giro, c.direccion, co.nombre_comuna, c.telefono, lp.nombre_lprecio,
     c.mail, c.creditomaximo, c.referencia_direccion, $plazo AS plazo_credito
-    from cliente c 
-    join comuna co on c.id_comuna=co.id_comuna
-    join lprecio lp on c.id_lprecio=lp.id_lprecio
+    from cliente c
+    -- 18-11-2026: LEFT JOIN: los clientes sin comuna o con una lista que no existe (ej. los creados en la Caja con
+    -- id_lprecio = 0) no salían en el mantenedor
+    left join comuna co on c.id_comuna=co.id_comuna
+    left join lprecio lp on c.id_lprecio=lp.id_lprecio
     order by c.id_cliente";
 
     $consulta = $this->db->query($q);
@@ -36,9 +38,9 @@ class Mclientes extends CI_Model
         "nombre_cliente" => $key->nombre_cliente,
         "giro" => $key->giro,
         "direccion" => $key->direccion,
-        "nombre_comuna" => $key->nombre_comuna,
+        "nombre_comuna" => ($key->nombre_comuna === null ? 'SIN COMUNA' : $key->nombre_comuna),
         'telefono' => ($key->telefono == '' ? 'SIN TELEFONO' : $key->telefono),
-        "nombre_lprecio" => $key->nombre_lprecio,
+        "nombre_lprecio" => ($key->nombre_lprecio === null ? 'SIN LISTA' : $key->nombre_lprecio),
         "mail" => $key->mail,
         "creditomaximo" => $key->creditomaximo,
         "plazo_credito" => (int)$key->plazo_credito,
