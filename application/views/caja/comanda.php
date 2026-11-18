@@ -38,7 +38,7 @@ $titulos = array('anulacion' => array('ANULACIÓN', 'NO PREPARAR'), 'traslado' =
 		.antes { text-align: center; font-size: 15px; font-weight: bold; }
 		.doc { text-align: center; font-size: 20px; font-weight: bold; margin-top: 4px; }
 		.retira { text-align: center; font-size: 20px; font-weight: bold; margin-top: 4px; }
-		.entrega { font-size: 15px; font-weight: bold; margin-top: 4px; word-break: break-word; }
+		.entrega { font-size: 15px; font-weight: 400; margin-top: 4px; word-break: break-word; }
 		.meta { font-size: 13px; text-align: center; margin-top: 3px; }
 		hr { border: 0; border-top: 2px dashed #000; margin: 6px 0; }
 		.linea { padding: 5px 0; border-bottom: 1px dashed #000; }

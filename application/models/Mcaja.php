@@ -1546,7 +1546,9 @@ class Mcaja extends CI_Model
 
 		// --- Autorizaciones de administrador (Configuraciones)
 		$requiere = array();
-		if ($descuento > 0 && $config['admin_descuento']) $requiere[] = 'descuento';
+		// 18-11-2026: el descuento guardado (y autorizado) al tomar un delivery que se cobra al entregar no se vuelve a pedir
+		$descuentoYaAutorizado = $pedidoDelivery && $descuento === (int)$pedidoDelivery['descuento'];
+		if ($descuento > 0 && $config['admin_descuento'] && !$descuentoYaAutorizado) $requiere[] = 'descuento';
 		if ($esCortesia && $config['admin_cortesia']) $requiere[] = 'cortesía';
 		if ($conCredito && $config['admin_credito']) $requiere[] = 'venta a crédito';
 		if ($requiere) {
@@ -1759,12 +1761,14 @@ class Mcaja extends CI_Model
 					WHERE id_delivery = ? AND id_venta IS NULL AND estado <> 'anulado'",
 					array($idVenta, $subtotal - $descuento, $pedidoDelivery['id_delivery']));
 				if ($db->affected_rows() !== 1) throw new Exception('Ese delivery ya se cobró o se anuló en otra pantalla', 409);
+				$this->guardarDescuentoDelivery($db, $pedidoDelivery['id_delivery'], $descuento);
 				$idDelivery = $pedidoDelivery['id_delivery'];
 			} elseif ($entregaDelivery) {
 				$idDelivery = $this->insertarDelivery($db, $entregaDelivery, array('id_caja' => (int)$caja->id_caja, 'id_usuario' => (int)$idUsuario,
 					'id_cliente' => $esPublico ? 0 : $idCliente, 'id_lprecio' => $idLprecio, 'detalle' => $p['detalle'],
 					'subtotal' => $subtotalProductos, 'costo_envio' => $costoEnvio, 'total' => $subtotal - $descuento,
 					'cobrar_al_entregar' => false, 'id_venta' => $idVenta));
+				$this->guardarDescuentoDelivery($db, $idDelivery, $descuento);
 			}
 
 			$db->trans_commit();
@@ -3054,18 +3058,53 @@ class Mcaja extends CI_Model
 		$this->validarStock($db, $lineas);
 		$envio = $this->lineaEnvio($db, $config);
 		$costoEnvio = $envio ? (int)$envio['bruto'] : 0;
+		// 18-11-2026: el descuento puesto al tomar el pedido queda guardado (antes se perdía y había que ponerlo de nuevo al
+		// cobrar). Mismas reglas que al vender; la autorización se pide ahora y al cobrarlo no se vuelve a pedir.
+		$descuento = max(0, (int)(isset($p['descuento']) ? $p['descuento'] : 0));
+		if ($descuento > 0) {
+			if (!$this->hayDescuentoDelivery($db)) {
+				throw new Exception('Para guardar un delivery con descuento falta aplicar las migraciones (php index.php despliegue esquema)', 409);
+			}
+			$bruto = $subtotal + $costoEnvio;
+			if ($descuento > $bruto) throw new Exception('El descuento no puede superar el subtotal', 400);
+			if ($config['por_maximo_descuento'] > 0 && round($descuento * 100 / $bruto, 2) > $config['por_maximo_descuento']) {
+				throw new Exception('El descuento máximo permitido es ' . $config['por_maximo_descuento'] . '%', 400);
+			}
+			if ($config['descuento_cliente'] && (!$idCliente || $idCliente === $config['id_cliente_publico'])) {
+				throw new Exception('Para hacer un descuento debes elegir el cliente de la venta (Configuraciones > Descuentos > Requerir cliente)', 400);
+			}
+			if ($config['admin_descuento']) {
+				$this->exigirAutorizacion($db, 'descuento', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
+			}
+		}
+		$total = $subtotal + $costoEnvio - $descuento;
 		$db->trans_begin();
 		try {
 			$id = $this->insertarDelivery($db, $entrega, array('id_caja' => (int)$caja->id_caja, 'id_usuario' => (int)$idUsuario,
 				'id_cliente' => $idCliente, 'id_lprecio' => $idLprecio, 'detalle' => $detalle, 'subtotal' => $subtotal,
-				'costo_envio' => $costoEnvio, 'total' => $subtotal + $costoEnvio, 'cobrar_al_entregar' => true, 'id_venta' => null));
+				'costo_envio' => $costoEnvio, 'total' => $total, 'cobrar_al_entregar' => true, 'id_venta' => null));
+			$this->guardarDescuentoDelivery($db, $id, $descuento);
 			$db->trans_commit();
 		} catch (Exception $e) {
 			$db->trans_rollback();
 			throw $e;
 		}
-		return array('id_delivery' => $id, 'total' => $subtotal + $costoEnvio, 'comanda' => $comanda, 'observacion' => $entrega['observacion'],
+		return array('id_delivery' => $id, 'total' => $total, 'comanda' => $comanda, 'observacion' => $entrega['observacion'],
 			'entrega' => $this->entregaComanda($entrega));
+	}
+
+	/** delivery_pedido.descuento (migración 20261118120000). */
+	private function hayDescuentoDelivery($db)
+	{
+		$c = $this->columnas($db, array('delivery_pedido'));
+		return isset($c['delivery_pedido']['descuento']);
+	}
+
+	/** Graba el descuento del pedido (NULL = sin descuento). Sin la columna no hace nada (el delivery funciona igual). */
+	private function guardarDescuentoDelivery($db, $idDelivery, $descuento)
+	{
+		if (!$this->hayDescuentoDelivery($db)) return;
+		$this->q($db, 'UPDATE delivery_pedido SET descuento = NULLIF(?, 0) WHERE id_delivery = ?', array(max(0, (int)$descuento), (int)$idDelivery));
 	}
 
 	/** 18-11-2026: lo de la entrega que va impreso en la comanda del delivery. */
@@ -3139,7 +3178,13 @@ class Mcaja extends CI_Model
 		if ((int)$d['id_venta']) throw new Exception('El delivery ya está cobrado', 409);
 		return array('id_delivery' => (int)$d['id_delivery'], 'id_lprecio' => (int)$d['id_lprecio'], 'id_cliente' => (int)$d['id_cliente'],
 			'detalle' => (array)json_decode((string)$d['detalle'], true), 'costo_envio' => (int)$d['costo_envio'], 'nombre' => $d['nombre'],
-			'observacion' => (string)$d['observacion']);
+			'observacion' => (string)$d['observacion'],
+			// 18-11-2026: el descuento puesto al tomarlo, y el cliente (para mostrarlo en la venta al cobrar)
+			'descuento' => isset($d['descuento']) ? (int)$d['descuento'] : 0,
+			'cliente' => (int)$d['id_cliente'] ? $this->q($db, "SELECT cl.id_cliente, cl.nombre_cliente, COALESCE(cl.rut::text, '') AS rut, COALESCE(cl.dv, '') AS dv,
+					COALESCE(cl.giro, '') AS giro, COALESCE(cl.direccion, '') AS direccion, COALESCE(cl.id_comuna, 0) AS id_comuna,
+					COALESCE(cl.telefono, '') AS telefono, COALESCE(cl.mail, '') AS mail
+				FROM cliente cl WHERE cl.id_cliente = ?", array((int)$d['id_cliente']))->row_array() : null);
 	}
 
 	/**

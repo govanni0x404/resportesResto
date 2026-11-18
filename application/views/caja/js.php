@@ -507,18 +507,27 @@
 		}
 		function guardarDeliveryPendiente() {
 			if (guardandoDelivery || !carro.length) return;
+			// 18-11-2026: el descuento se guarda con el pedido (mismas reglas que al cobrar; la autorización se pide ahora)
+			if (!validarCobro()) return;
 			guardandoDelivery = true;
 			$('#btnCobrar').prop('disabled', true);
-			postJson('deliveryGuardar', {
+			var pedido = {
 				delivery: entregaPantalla(), id_lprecio: Number($('#cboLista').val()), id_cliente: cliente ? cliente.id_cliente : 0,
+				descuento: totales().descuento,
 				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota }; })
-			}).done(function (r) {
+			};
+			var terminar = function () { guardandoDelivery = false; renderCarro(); };
+			enviarConAutorizacion(function (aut) {
+				pedido.autorizacion = aut;
+				return postJson('deliveryGuardar', pedido);
+			}, function (r) {
+				terminar();
 				toastr.success('Se cobra al entregar · ' + fmt(r.total), 'Delivery N° ' + r.id_delivery + ' guardado', { timeOut: 6000 });
 				if (imprimeComanda()) imprimirComandaBloqueando(r.comanda_id, 'Comanda');
 				salirDelivery();
 				$('#lnkDelivery').tab('show');
 				cargarDeliverys();
-			}).fail(error).always(function () { guardandoDelivery = false; renderCarro(); });
+			}, terminar);
 		}
 		// "Cobrar" en la lista: se carga lo guardado en la venta (sin poder cambiarlo) y se cobra como venta directa
 		function cobrarDelivery(id) {
@@ -546,6 +555,14 @@
 					limpiarVenta();
 					carro = lineas;
 					$('#txtObservacion').val(d.observacion || '');
+					// 18-11-2026: el cliente y el descuento puestos al tomar el pedido (antes había que ponerlos de nuevo)
+					if (d.cliente && Number(d.cliente.id_cliente)) {
+						cliente = $.extend({}, d.cliente, { id_cliente: Number(d.cliente.id_cliente), id_comuna: Number(d.cliente.id_comuna) || 0 });
+						$('#txtCliente').val(cliente.nombre_cliente);
+					}
+					$('#txtDescuento').val(Number(d.descuento) || 0);
+					tipoDesc = 'monto';
+					$('[data-tipo-desc]').each(function () { $(this).toggleClass('active', $(this).data('tipo-desc') === tipoDesc); });
 					pintarModoDelivery();
 					$('#lnkVenta').tab('show');
 					mostrarPanel('pago');
