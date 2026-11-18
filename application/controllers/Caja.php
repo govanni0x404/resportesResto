@@ -223,6 +223,9 @@ class Caja extends CI_Controller
 	{
 		$this->ejecutar(function () {
 			$this->cajaRequerida();
+			// 18-11-2026: solo lee la sesión; se suelta para no frenar lo que corre a la vez (después de cobrar, la comanda
+			// esperaba ~3 s a que terminara la lista de mesas; medido con ?medir=1)
+			$this->soltarSesion();
 			return $this->Mcaja->mesas();
 		});
 	}
@@ -239,6 +242,8 @@ class Caja extends CI_Controller
 	{
 		$this->ejecutar(function () {
 			$this->cajaRequerida();
+			// 18-11-2026: solo lee la sesión: abrir una mesa ya no espera a que termine la lista de mesas
+			$this->soltarSesion();
 			return $this->Mcaja->detalleMesa((int)$this->input->get('id_mesa'));
 		});
 	}
