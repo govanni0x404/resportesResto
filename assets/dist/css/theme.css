@@ -811,6 +811,22 @@ html body .main-header .top-nav .navbar-brand { display: none !important; }
     html body nav.navbar.bootsnav li.dropdown ul.dropdown-menu > li.t-actual > a { color: #fff !important; background: rgba(180, 67, 46, .55) !important; font-weight: 600; }
     html body nav.navbar.bootsnav .dropdown-menu .dropdown > a::after { content: "\203A"; position: static; margin-left: auto; color: var(--t-mostaza, #E3B04B); font-size: 16px; -webkit-transition: transform .15s; transition: transform .15s; }
     html body nav.navbar.bootsnav .dropdown-menu .dropdown.open > a::after { -webkit-transform: rotate(90deg); transform: rotate(90deg); }
+    /* 18-11-2026: bootsnav agrega su propia flecha (::before, FontAwesome) a los submenús anidados. Con el enlace en flex
+       salía a la IZQUIERDA ("› Delivery") y corría el texto: los grupos no quedaban alineados con las opciones sueltas
+       (Agregados, Bodegas...). Queda una sola flecha, la de la derecha. */
+    html body nav.navbar.bootsnav li.dropdown ul.dropdown-menu li.dropdown > a::before,
+    html body nav.navbar.bootsnav li.dropdown ul.dropdown-menu li.dropdown > a.dropdown-toggle::before { content: none !important; display: none !important; }
+    /* La flecha de los grupos con el mismo tipo de letra que el texto: bootsnav le pone FontAwesome, y el "›" salía
+       como un triángulo al lado de Mantención. Mismo tamaño en todos los niveles. */
+    html body nav.navbar.bootsnav ul.nav > li.dropdown > a::after,
+    html body nav.navbar.bootsnav ul.nav > li.dropdown > a.dropdown-toggle::after,
+    html body nav.navbar.bootsnav .dropdown-menu .dropdown > a::after,
+    html body nav.navbar.bootsnav li.dropdown ul.dropdown-menu li.dropdown > a.dropdown-toggle::after {
+        content: "\203A" !important; display: inline-block !important; font-family: inherit !important; font-size: 17px !important; line-height: 1 !important;
+        width: auto !important; height: auto !important; border: 0 !important; background: none !important; margin: 0 0 0 auto !important; float: none !important;
+    }
+    /* Las opciones de un grupo anidado (Delivery > Sector) un poco más chicas que las del grupo, para que se lea el nivel */
+    html body nav.navbar.bootsnav .dropdown-menu .dropdown > .dropdown-menu > li > a { font-size: 12.5px; padding: 6px 10px !important; }
 
     /* Sección actual: solo la opción actual va en terracota; su grupo padre queda resaltado suave */
     html body nav.navbar.bootsnav ul.nav > li.t-actual > a { background: var(--t-primario, #B4432E) !important; color: #fff !important; }
