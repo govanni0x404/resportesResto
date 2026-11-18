@@ -42,6 +42,12 @@ class Migration_add_cliente_factura extends CI_Migration
             codigo_sii character varying(50) NOT NULL DEFAULT '',
             nombre_giro_cliente character varying(200) NOT NULL
         )", 'CREATE giro_cliente');
+        // 18-11-2026: si el POS ya la creó sin alguna columna, el índice de abajo fallaba y la migración se trababa en
+        // cada login. Se agregan las que falten (sin NOT NULL: la tabla puede tener filas).
+        foreach (array('id_cliente' => 'integer DEFAULT 0', 'codigo_sii' => "character varying(50) DEFAULT ''",
+            'nombre_giro_cliente' => 'character varying(200)') as $c => $t) {
+            $this->ejecutar("ALTER TABLE public.giro_cliente ADD COLUMN IF NOT EXISTS $c $t", "ADD COLUMN giro_cliente.$c");
+        }
         $this->ejecutar('CREATE INDEX IF NOT EXISTS ix_giro_cliente_cliente ON public.giro_cliente (id_cliente)', 'INDEX giro_cliente');
 
         $this->ejecutar('CREATE TABLE IF NOT EXISTS public.solicitante_cliente (
@@ -54,6 +60,11 @@ class Migration_add_cliente_factura extends CI_Migration
             mail character varying(100),
             vigente boolean
         )', 'CREATE solicitante_cliente');
+        // 18-11-2026: igual que giro_cliente, las columnas que falten si la tabla ya existía
+        foreach (array('id_cliente' => 'integer', 'rut' => 'integer', 'dv' => 'character varying(1)', 'nombre' => 'character varying(80)',
+            'cargo' => 'character varying(60)', 'mail' => 'character varying(100)', 'vigente' => 'boolean') as $c => $t) {
+            $this->ejecutar("ALTER TABLE public.solicitante_cliente ADD COLUMN IF NOT EXISTS $c $t", "ADD COLUMN solicitante_cliente.$c");
+        }
         $this->ejecutar('CREATE INDEX IF NOT EXISTS ix_solicitante_cliente_cliente ON public.solicitante_cliente (id_cliente)', 'INDEX solicitante_cliente');
         $this->ejecutar("COMMENT ON TABLE public.solicitante_cliente IS 'Quienes piden la factura en nombre del cliente (RUTSolicita del SII)'",
             'COMMENT solicitante_cliente');
