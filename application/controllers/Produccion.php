@@ -103,19 +103,53 @@ class Produccion extends CI_Controller
                 
                 $this->Mproduccion->grabarProduccion($miData);
                 
-                // Actualizar stock (restar)
-                $this->Mproduccion->actualizarStock(
-                    $insumo['id_insumo'], 
-                    $insumo['id_bodega'], 
-                    $nuevo_stock
+                // Actualizar stock (restar). 18-11-2026: como salida (cantidad_salida), no pisando el saldo
+                $this->Mproduccion->salidaStock(
+                    $insumo['id_insumo'],
+                    $insumo['id_bodega'],
+                    $insumo['cantidad']
                 );
                 
                 $costoTotalProduccion += floatval($insumo['costo_total']);
             }
             
-            // TODO: Agregar entrada del producto elaborado a la bodega destino
-            // Esto dependerá de tu estructura de base de datos y lógica de negocio
-            // Ejemplo:
+            // 18-11-2026: entrada de lo producido (insumo elaborado) a la bodega de destino. Pedido del usuario: "si se
+            // crean 10 panes y existe el producto panes, se le suma el stock". Los productos no tienen stock propio (al
+            // venderse descuentan los insumos de su receta), así que sumar al insumo elaborado es darle stock al producto.
+            $id_insumo_elaborado = (int)(isset($d['id_insumo_elaborado']) ? $d['id_insumo_elaborado'] : 0);
+            $id_bodega_destino = (int)(isset($d['id_bodega_destino']) ? $d['id_bodega_destino'] : 0);
+            $cantidad_producida = (float)(isset($d['cantidad_producida']) ? $d['cantidad_producida'] : 0);
+            if ($id_insumo_elaborado <= 0 || $id_bodega_destino <= 0 || !is_finite($cantidad_producida) || $cantidad_producida <= 0) {
+                $dbTenant->trans_rollback();
+                echo json_encode(array('success' => false, 'message' => 'Falta el producto elaborado, su bodega de destino o la cantidad producida (mayor que 0)'));
+                return;
+            }
+            if (!$dbTenant->query('SELECT 1 FROM insumo WHERE id_insumo = ?', array($id_insumo_elaborado))->row()
+                || !$dbTenant->query('SELECT 1 FROM bodega WHERE id_bodega = ?', array($id_bodega_destino))->row()) {
+                $dbTenant->trans_rollback();
+                echo json_encode(array('success' => false, 'message' => 'El producto elaborado o la bodega de destino no existen'));
+                return;
+            }
+            $stock_destino_actual = (float)$this->Mproduccion->obtenerStockActual($id_insumo_elaborado, $id_bodega_destino, true);
+            // Costo promedio del elaborado: antes de sumar la entrada (usa el saldo que había)
+            $costo_unitario_elaborado = $this->Mproduccion->actualizarCostoElaborado($id_insumo_elaborado, $cantidad_producida, $costoTotalProduccion);
+            $this->Mproduccion->grabarProduccion(array(
+                'fecha' => $d['fecha'],
+                'id_insumo' => $id_insumo_elaborado,
+                'id_bodega' => $id_bodega_destino,
+                'cantidad' => $cantidad_producida,   // positivo: entrada
+                'stock_actual' => $stock_destino_actual,
+                'nuevo_stock' => $stock_destino_actual + $cantidad_producida,
+                'costo_total' => $costoTotalProduccion,
+                'costo_unitario' => round($costoTotalProduccion / $cantidad_producida, 4),
+                'id_usuario' => $this->session->userdata('id_usuario'),
+                'fecha_transaccion' => date('Y-m-d H:i:s'),
+                'observaciones' => mb_substr('Producción de ' . (isset($d['nombre_insumo_elaborado']) ? $d['nombre_insumo_elaborado'] : '')
+                    . (!empty($d['observaciones']) ? ' - ' . $d['observaciones'] : ''), 0, 250),
+            ));
+            $this->Mproduccion->entradaStock($id_insumo_elaborado, $id_bodega_destino, $cantidad_producida);
+
+            // Ejemplo original (reemplazado por lo de arriba el 18-11-2026):
             /*
             $stock_destino_actual = $this->Mproduccion->obtenerStockActual(
                 $id_insumo_elaborado, 
