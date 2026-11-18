@@ -81,6 +81,29 @@ if (!function_exists('cfg_opciones')) {
                                             </div>
                                         </div>
 
+                                        <?php if (array_key_exists('delivery_habilitado', $config)) : ?>
+                                        <!-- 18-11-2026: Delivery en la Caja (migración 20261118100000; sin ella la tarjeta no aparece) -->
+                                        <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"><i class="fa fa-motorcycle"></i>Delivery</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <label><input type="checkbox" name="delivery_habilitado" value="1" <?php echo ($config['delivery_habilitado'] ?? null) === true || ($config['delivery_habilitado'] ?? null) === 't' ? 'checked' : ''; ?>> Habilitar Delivery en la Caja (pestaña aparte de venta directa y mesas)</label>
+                                                <div class="form-group" style="margin-top:10px">
+                                                    <label>Costo de envío (el mismo para todos los pedidos)</label>
+                                                    <input type="number" min="0" step="1" class="form-control" name="delivery_costo_envio" value="<?php echo (int)($config['delivery_costo_envio'] ?? 0); ?>">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Producto con que va el envío en la boleta</label>
+                                                    <select class="form-control" name="delivery_id_producto_envio">
+<?php cfg_opciones($opciones['producto'] ?? array(), $config['delivery_id_producto_envio'] ?? 0, 'SIN ENVÍO'); ?>
+                                                    </select>
+                                                    <p class="help-block">El SII pide que todo lo cobrado sea una línea del documento: crea un producto (ej. "DESPACHO"), elígelo aquí y el envío se suma solo a cada delivery con el valor de arriba. Con costo 0 o sin producto, no se cobra envío.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+
                                         <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title"><i class="fa fa-money"></i>Propinas</h3>

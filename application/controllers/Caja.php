@@ -211,9 +211,65 @@ class Caja extends CI_Controller
 			$r = $this->Mcaja->registrarVenta($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $body);
 			// Venta directa: la comanda la arma el servidor con lo vendido; la pantalla solo recibe su número
 			$r['comanda_id'] = $this->guardarComanda($r['comanda'], array('id_venta' => (int)$r['id_venta'], 'directa' => true,
-				'observacion' => $r['observacion'], 'retira' => isset($r['retira']) ? $r['retira'] : ''));
-			unset($r['comanda'], $r['observacion'], $r['retira']);
+				'observacion' => $r['observacion'], 'retira' => isset($r['retira']) ? $r['retira'] : '',
+				'delivery' => !empty($r['id_delivery']) ? $this->etiquetaDelivery($r['id_delivery'], $r['delivery_nombre']) : ''));
+			unset($r['comanda'], $r['observacion'], $r['retira'], $r['delivery_nombre']);
 			return $r;
+		}, true);
+	}
+
+	// ---------------- delivery (18-11-2026) ----------------
+	// Módulo aparte de venta directa y mesas (Mcaja, sección Delivery). Cobrar ahora = vender con body.delivery;
+	// cobrar al entregar = deliveryGuardar; cobrarlo después = vender con body.id_delivery.
+
+	/** Texto grande de la comanda: "DELIVERY N° 12 · JUAN" */
+	private function etiquetaDelivery($id, $nombre)
+	{
+		return 'DELIVERY N° ' . (int)$id . ($nombre !== '' ? ' · ' . mb_strtoupper(mb_substr($nombre, 0, 30)) : '');
+	}
+
+	/** Delivery a cobrar al entregar: se guarda el pedido y sale la comanda. */
+	public function deliveryGuardar()
+	{
+		$this->ejecutar(function () {
+			$body = $this->cuerpoJson();
+			$r = $this->Mcaja->guardarDeliveryPendiente($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $body);
+			$nombre = isset($body['delivery']['nombre']) && is_scalar($body['delivery']['nombre']) ? trim((string)$body['delivery']['nombre']) : '';
+			return array('id_delivery' => $r['id_delivery'], 'total' => $r['total'],
+				'comanda_id' => $this->guardarComanda($r['comanda'], array('directa' => true, 'observacion' => $r['observacion'],
+					'delivery' => $this->etiquetaDelivery($r['id_delivery'], $nombre))));
+		}, true);
+	}
+
+	/** Pedidos de la pestaña Delivery. ?todos=1: también los entregados y anulados de hoy. */
+	public function deliverys()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			$this->soltarSesion();
+			return array('pedidos' => $this->Mcaja->listarDelivery((bool)$this->input->get('todos')));
+		});
+	}
+
+	/** Lo guardado de un delivery pendiente, para cargarlo en la venta y cobrarlo. */
+	public function deliveryCobrar()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			$this->soltarSesion();
+			return $this->Mcaja->deliveryParaCobrar((int)$this->input->get('id_delivery'));
+		});
+	}
+
+	/** Cambia el estado de un delivery (en camino, entregado, anulado) y, si viene, el repartidor. */
+	public function deliveryEstado()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			$b = $this->cuerpoJson();
+			$rep = array_key_exists('id_repartidor', $b) ? (int)$b['id_repartidor'] : null;
+			return $this->Mcaja->cambiarEstadoDelivery((int)(isset($b['id_delivery']) ? $b['id_delivery'] : 0),
+				(string)(isset($b['estado']) ? $b['estado'] : ''), $rep, isset($b['motivo']) ? $b['motivo'] : '');
 		}, true);
 	}
 
@@ -857,7 +913,9 @@ class Caja extends CI_Controller
 			'grupos' => $grupos,
 			'venta' => $doc ? $doc['venta'] : null,
 			'observacion' => $texto(isset($datos['observacion']) ? $datos['observacion'] : '', 200),
-			'mesa' => !empty($datos['id_mesa']) ? $this->Mcaja->etiquetaMesa((int)$datos['id_mesa']) : '',
+			// 18-11-2026: el delivery va con su número y nombre en grande, donde va la mesa
+			'mesa' => !empty($datos['id_mesa']) ? $this->Mcaja->etiquetaMesa((int)$datos['id_mesa'])
+				: (!empty($datos['delivery']) ? $texto($datos['delivery'], 60) : ''),
 			'aviso' => $this->avisoComanda($datos),
 		);
 	}

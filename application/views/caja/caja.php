@@ -982,6 +982,51 @@
 	.pes-nota { margin: 8px 2px 0; font-size: 12px; color: var(--t-texto-tenue, #8a94a6); min-height: 16px; }
 	#btnConfirmarPesable { min-width: 140px; font-weight: 700; }
 
+	/* 18-11-2026: Delivery (js.php, sección delivery) */
+	.caja-banner-delivery { background: #fff4e5; border-color: #f0c27a; color: #7a4a00; }
+	.caja-delivery .del-datos .form-group { margin-bottom: 8px; }
+	.caja-delivery .del-datos label { font-size: 12px; margin-bottom: 2px; }
+	.caja-delivery .del-fila { display: flex; gap: 8px; }
+	.caja-delivery .del-fila .form-group { flex: 1; min-width: 0; }
+	.caja-delivery .del-cobro { display: flex; gap: 6px; margin-top: 4px; }
+	.caja-delivery .del-cobro label { flex: 1; margin: 0; padding: 8px 10px; border: 1px solid #EADFD2; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px; }
+	.caja-delivery .del-cobro label:has(input:checked) { border-color: #1e7e34; background: #e8f5ec; color: #14532d; }
+	.caja-delivery .del-ayuda { margin: 6px 0 0; font-size: 12px; color: #7A6A5E; }
+	.caja-delivery .del-ayuda:empty { display: none; }
+	/* Cobrando un delivery pendiente: se cobra lo guardado, los productos no se cambian */
+	.caja-venta.delivery-bloqueado .caja-linea .cantidad .btn, .caja-venta.delivery-bloqueado .caja-linea .quitar,
+	.caja-venta.delivery-bloqueado .caja-linea .editar { visibility: hidden; pointer-events: none; }
+	.caja-venta.delivery-bloqueado .caja-linea .cant { pointer-events: none; background: transparent; border-color: transparent; }
+	.caja-venta.delivery-bloqueado .caja-busqueda { opacity: .5; pointer-events: none; }
+	.caja-delivery-lista { padding: 14px; }
+	.caja-delivery-lista .del-barra { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+	.caja-delivery-lista .del-filtro { margin-left: auto; }
+	.del-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+	.del-vacio { grid-column: 1 / -1; padding: 30px; text-align: center; color: #7A6A5E; }
+	.del-pedido { border: 1px solid #EADFD2; border-left: 5px solid #A89A8C; border-radius: 12px; background: #fff; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+	.del-pedido.est-preparando { border-left-color: #d97706; }
+	.del-pedido.est-en_camino { border-left-color: #2563eb; }
+	.del-pedido.est-entregado { border-left-color: #16a34a; opacity: .85; }
+	.del-pedido.est-anulado { border-left-color: #dc2626; opacity: .6; }
+	.del-pedido .del-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+	.del-pedido .del-num { font-weight: 800; color: #2A1D17; font-size: 15px; }
+	.del-pedido .del-hora { font-size: 12px; color: #7A6A5E; }
+	.del-pedido .del-estado { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; padding: 2px 8px; border-radius: 999px; background: #f3f4f6; color: #374151; }
+	.del-pedido.est-preparando .del-estado { background: #fef3c7; color: #92400e; }
+	.del-pedido.est-en_camino .del-estado { background: #dbeafe; color: #1e40af; }
+	.del-pedido.est-entregado .del-estado { background: #dcfce7; color: #166534; }
+	.del-pedido.est-anulado .del-estado { background: #fee2e2; color: #991b1b; }
+	.del-pedido .del-cliente { font-weight: 700; color: #3A2A22; }
+	.del-pedido .del-linea { font-size: 13px; color: #4b3a30; }
+	.del-pedido .del-linea i { width: 16px; color: #A89A8C; }
+	.del-pedido .del-items { font-size: 12px; color: #7A6A5E; border-top: 1px dashed #EADFD2; padding-top: 6px; }
+	.del-pedido .del-total { display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #2A1D17; }
+	.del-pedido .del-pago { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+	.del-pedido .del-pago.cobrado { background: #dcfce7; color: #166534; }
+	.del-pedido .del-pago.pendiente { background: #fee2e2; color: #991b1b; }
+	.del-pedido .del-acciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+	.del-pedido .del-acciones .btn { flex: 1 1 auto; }
+
 	/* 18-11-2026: pantalla "Imprimiendo…" (js.php, bloquearImpresion): tapa todo mientras salen boleta, precuenta o comanda */
 	#bloqueoImpresion { position: fixed; inset: 0; z-index: 20000; display: flex; align-items: center; justify-content: center; padding: 16px;
 		background: rgba(42, 29, 23, .45); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
@@ -1048,6 +1093,8 @@
 				<ul class="nav nav-tabs caja-tabs">
 					<li class="active"><a href="#tabVenta" data-toggle="tab" id="lnkVenta"><i class="pe-7s-cart"></i> Venta directa</a></li>
 					<li id="navMesas" style="display:none"><a href="#tabMesas" data-toggle="tab" id="lnkMesas"><i class="fa fa-th"></i> <span id="lnkMesasTexto">Mesas y recintos</span> <span class="badge" id="mesasOcupadas" style="display:none">0</span></a></li>
+					<!-- 18-11-2026: Delivery (Configuraciones > Delivery; js.php, sección delivery) -->
+					<li id="navDelivery" style="display:none"><a href="#tabDelivery" data-toggle="tab" id="lnkDelivery"><i class="fa fa-motorcycle"></i> Delivery <span class="badge" id="deliveryAbiertos" style="display:none">0</span></a></li>
 					<li class="caja-tab-opcion"><a href="#tabVentas" data-toggle="tab" id="lnkVentas"><i class="pe-7s-note2"></i> Ventas</a></li>
 					<li class="caja-tab-opcion"><a href="#tabMovimientos" data-toggle="tab" id="lnkMovimientos"><i class="pe-7s-cash"></i> Ingresos / Retiros</a></li>
 					<li class="caja-tab-opcion"><a href="#tabCreditos" data-toggle="tab" id="lnkCreditos"><i class="pe-7s-credit"></i> Créditos</a></li>
@@ -1085,6 +1132,11 @@
 									<!-- Precuenta (abajo, en Pagar) y las opciones de la mesa (panel Opciones) ya no van en esta franja -->
 									<button type="button" class="btn btn-default btn-sm" id="btnSalirMesa"><i class="fa fa-arrow-left"></i> Volver a mesas</button>
 								</div>
+								<!-- 18-11-2026: tomando o cobrando un delivery en la venta directa -->
+								<div class="caja-banner-mesa caja-banner-delivery" id="bannerDelivery" style="display:none">
+									<span class="nombre"><i class="fa fa-motorcycle"></i> <b id="bannerDeliveryTexto">Nuevo delivery</b></span>
+									<button type="button" class="btn btn-default btn-sm" id="btnSalirDelivery"><i class="fa fa-arrow-left"></i> Volver a delivery</button>
+								</div>
 								<div class="caja-linea-cab">
 									<span class="info">Producto <span class="badge" id="cantItems">0</span></span>
 									<span class="precio">Precio</span>
@@ -1112,6 +1164,25 @@
 
 							<!-- Panel Pagar: el cobro de siempre (cliente, descuento, observación, totales y Cobrar) -->
 							<div class="caja-panel activo" id="panelPago" data-panel="pago" role="tabpanel">
+							<!-- 18-11-2026: datos del delivery (solo tomando uno nuevo; al cobrar uno pendiente ya están guardados) -->
+							<div class="caja-tarjeta caja-delivery" id="tarjetaDelivery" style="display:none">
+								<div class="caja-tarjeta-titulo"><i class="fa fa-motorcycle"></i> Datos del delivery</div>
+								<div class="del-datos">
+									<div class="form-group"><label for="delNombre">Nombre *</label><input type="text" id="delNombre" class="form-control" maxlength="120" autocomplete="off" placeholder="Quién recibe"></div>
+									<div class="form-group"><label for="delTelefono">Teléfono *</label><input type="tel" id="delTelefono" class="form-control" maxlength="30" autocomplete="off" placeholder="Ej: 9 1234 5678"></div>
+									<div class="form-group"><label for="delDireccion">Dirección *</label><input type="text" id="delDireccion" class="form-control" maxlength="250" autocomplete="off" placeholder="Calle, número, depto."></div>
+									<div class="form-group"><label for="delReferencia">Referencia</label><input type="text" id="delReferencia" class="form-control" maxlength="250" autocomplete="off" placeholder="Ej: casa azul, portón negro"></div>
+									<div class="del-fila">
+										<div class="form-group"><label for="delSector">Sector</label><select id="delSector" class="form-control"><option value="0">— Sin sector —</option></select></div>
+										<div class="form-group"><label for="delRepartidor">Repartidor</label><select id="delRepartidor" class="form-control"><option value="0">— Sin asignar —</option></select></div>
+									</div>
+									<div class="del-cobro" id="grupoCobroDelivery" role="radiogroup" aria-label="Cuándo se cobra">
+										<label><input type="radio" name="delCobro" id="delCobroAhora" value="ahora" checked> Cobrar ahora</label>
+										<label><input type="radio" name="delCobro" id="delCobroEntregar" value="entregar"> Cobrar al entregar</label>
+									</div>
+								</div>
+								<p class="del-ayuda" id="delAyuda"></p>
+							</div>
 							<div class="caja-tarjeta">
 								<div class="caja-tarjeta-titulo">Cliente</div>
 								<div class="caja-cliente">
@@ -1140,6 +1211,7 @@
 
 							<div class="caja-tarjeta caja-resumen">
 								<div class="fila"><span>Subtotal</span><span id="lblSubtotal">$0</span></div>
+								<div class="fila" id="filaEnvio" style="display:none"><span>Incluye envío</span><span id="lblEnvio">$0</span></div>
 								<div class="fila descuento" id="filaDescuento" style="display:none"><span>Descuento</span><span id="lblDescuento">$0</span></div>
 								<div class="fila con-descuento" id="filaConDescuento" style="display:none"><span>Total con descuento</span><span id="lblConDescuento">$0</span></div>
 								<div class="fila"><span>Neto</span><span id="lblNeto">$0</span></div>
@@ -1149,7 +1221,7 @@
 									<button class="btn btn-default btn-lg" id="btnLimpiar" title="Vaciar venta"><i class="fa fa-trash"></i></button>
 									<button class="btn btn-default btn-lg" id="btnPrecuenta" style="display:none" title="Precuenta: imprime el detalle para que el cliente lo revise antes de pagar" aria-label="Precuenta"><i class="fa fa-print"></i></button>
 									<button class="btn btn-primary btn-lg" id="btnEnviarMesa" style="display:none" disabled><i class="fa fa-paper-plane"></i> Enviar a mesa</button>
-									<button class="btn btn-success btn-lg" id="btnCobrar" disabled><i class="fa fa-money"></i> Cobrar <span id="lblCobrar"></span></button>
+									<button class="btn btn-success btn-lg" id="btnCobrar" disabled><i class="fa fa-money"></i> <span id="txtCobrar">Cobrar</span> <span id="lblCobrar"></span></button>
 								</div>
 							</div>
 							</div>
@@ -1245,6 +1317,21 @@
 							<span class="text-muted" id="mesasAyuda">Toca una mesa libre para tomar el pedido, o una con pedido para agregar productos, pedir la precuenta o cobrar.</span>
 						</div>
 						<div id="mesasGrilla"></div>
+					</div>
+				</div>
+
+				<!-- ===================== DELIVERY (18-11-2026) ===================== -->
+				<div class="tab-pane fade" id="tabDelivery">
+					<div class="caja-tarjeta caja-delivery-lista">
+						<div class="del-barra">
+							<button type="button" class="btn btn-success" id="btnNuevoDelivery"><i class="fa fa-plus"></i> Nuevo delivery</button>
+							<div class="btn-group del-filtro" role="group" aria-label="Qué pedidos ver">
+								<button type="button" class="btn btn-default active" data-del-filtro="abiertos">Por entregar</button>
+								<button type="button" class="btn btn-default" data-del-filtro="hoy">Todos de hoy</button>
+							</div>
+							<button type="button" class="btn btn-default" id="btnRecargarDelivery" title="Actualizar"><i class="fa fa-refresh"></i></button>
+						</div>
+						<div id="listaDelivery" class="del-lista" aria-live="polite"></div>
 					</div>
 				</div>
 
@@ -1798,6 +1885,47 @@
 </div>
 
 <!-- Modal propina: se pregunta al presionar Cobrar -->
+<!-- 18-11-2026: delivery. Mensaje para WhatsApp (copiar o abrir WhatsApp con el mensaje) -->
+<div class="modal fade" id="modalDeliveryWsp" tabindex="-1" role="dialog" aria-labelledby="delWspTitulo">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">&times;</button>
+				<h4 class="modal-title" id="delWspTitulo"><i class="fa fa-whatsapp"></i> Mensaje para WhatsApp</h4>
+			</div>
+			<div class="modal-body">
+				<textarea id="delWspTexto" class="form-control" rows="14" aria-label="Mensaje"></textarea>
+				<p class="help-block">Puedes cambiar el texto antes de copiarlo.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+				<button type="button" class="btn btn-primary" id="btnDelWspCopiar"><i class="fa fa-copy"></i> Copiar mensaje</button>
+				<a class="btn btn-success" id="btnDelWspAbrir" href="#" target="_blank" rel="noopener"><i class="fa fa-whatsapp"></i> Abrir WhatsApp</a>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 18-11-2026: delivery. Cambio de estado: "En camino" (con repartidor) o "Anular" (con motivo) -->
+<div class="modal fade" id="modalDeliveryEstado" tabindex="-1" role="dialog" aria-labelledby="delEstTitulo">
+	<div class="modal-dialog modal-sm" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">&times;</button>
+				<h4 class="modal-title" id="delEstTitulo"></h4>
+			</div>
+			<div class="modal-body">
+				<div class="form-group" id="delEstGrupoRep"><label for="delEstRepartidor">Repartidor</label><select id="delEstRepartidor" class="form-control"></select></div>
+				<div class="form-group" id="delEstGrupoMotivo"><label for="delEstMotivo">Motivo de la anulación *</label><input type="text" id="delEstMotivo" class="form-control" maxlength="200"></div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+				<button type="button" class="btn btn-primary" id="btnDelEstConfirmar">Confirmar</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <div class="modal fade" id="modalPropina" tabindex="-1" role="dialog">
 	<div class="modal-dialog modal-sm" role="document">
 		<div class="modal-content">

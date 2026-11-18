@@ -215,6 +215,8 @@ class Mconfiguraciones extends CI_Model {
             'indicador_traslado' => $lista('SELECT id_indicador_traslado AS id, nombre_indicador_traslado AS nombre FROM indicador_traslado ORDER BY id_indicador_traslado'),
             // Los clientes pueden ser miles: los primeros 1000 por nombre más el que está elegido
             'cliente' => $lista('SELECT id_cliente AS id, nombre_cliente AS nombre FROM cliente ORDER BY nombre_cliente LIMIT 1000'),
+            // 18-11-2026: producto del costo de envío del delivery (vigentes)
+            'producto' => $lista('SELECT id_producto AS id, nombre_producto AS nombre FROM producto WHERE vigente IS TRUE ORDER BY nombre_producto LIMIT 3000'),
         );
         // Destinos de impresión por nombre (Impresora para cierre de caja guarda el nombre)
         if ($db->table_exists('dimpresion')) {

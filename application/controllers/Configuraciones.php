@@ -126,6 +126,7 @@ class Configuraciones extends CI_Controller {
             'imprimir_comandas_app_forzar',  // 16-11-2026: también los que el celular manda sin pedir impresión
             'imprimir_comandas_app',  // 14-11-2026: la Caja web imprime las comandas de la app de garzones (solo si la columna existe)
             'impresion_local_caja',   // 12-11-2026: documentos de la caja por el agente local (solo se graba si la columna existe)
+            'delivery_habilitado',    // 18-11-2026: pestaña Delivery en la Caja (migración 20261118100000)
             'acepta',
             'acierto'
         ];
@@ -170,7 +171,9 @@ class Configuraciones extends CI_Controller {
             'id_fpago_compra',
             'id_fpago_creditodirecto',
             'id_pagocreditodirecto',
-            'id_mesa_venta_directa'
+            'id_mesa_venta_directa',
+            'delivery_id_producto_envio',   // 18-11-2026: producto con que va el costo de envío en la boleta
+            'delivery_costo_envio'          // 18-11-2026: costo de envío (el mismo para todos los delivery)
         ];
 
         foreach ($numeric_fields as $f) {
@@ -178,6 +181,8 @@ class Configuraciones extends CI_Controller {
                 $update_config[$f] = intval($post[$f]);
             }
         }
+        // 18-11-2026: el costo de envío no puede ser negativo
+        if (isset($update_config['delivery_costo_envio'])) $update_config['delivery_costo_envio'] = max(0, $update_config['delivery_costo_envio']);
 
         // TEXTO / OTROS (nombres exactos según la BD)
         $text_fields = [

@@ -182,6 +182,8 @@ class Mcaja extends CI_Model
 			// Emisión con la cuenta de pruebas de Cloud Apps (config/caja_local.php): la Caja lo avisa en pantalla
 			'dte_prueba' => (bool)$this->dtePrueba($db),
 			'modo_caja' => $this->modoCaja($db),
+			// 18-11-2026: pestaña Delivery (null = apagada en Configuraciones o sin la migración 20261118100000)
+			'delivery' => $this->datosDelivery($db, $config),
 		);
 	}
 
@@ -1403,9 +1405,25 @@ class Mcaja extends CI_Model
 		}
 		if (!$cliente) $idCliente = $config['id_cliente_publico'];
 
-		// --- Detalle: precios del servidor; en una mesa, lo ya pedido (con el precio al que se pidió)
+		// --- Delivery (18-11-2026): cobrar uno pendiente ($p['id_delivery']: se cobra lo guardado, no lo que mande la
+		// pantalla) o uno nuevo cobrado al tomarlo ($p['delivery']: los datos de entrega)
 		$idMesa = (int)(isset($p['id_mesa']) ? $p['id_mesa'] : 0);
-		if (!$idMesa && $this->modoCaja($db) === 'mesas') {
+		$pedidoDelivery = null;
+		$entregaDelivery = null;
+		if (!empty($p['id_delivery'])) {
+			$pedidoDelivery = $this->deliveryParaCobrar((int)$p['id_delivery']);
+			$p['detalle'] = $pedidoDelivery['detalle'];
+			if ($pedidoDelivery['id_lprecio']) $idLprecio = $pedidoDelivery['id_lprecio'];
+		} elseif (!empty($p['delivery']) && is_array($p['delivery'])) {
+			if (empty($config['delivery']) || !$this->hayDelivery($db)) throw new Exception('El delivery no está habilitado (Configuraciones > Delivery)', 409);
+			$entregaDelivery = $this->datosEntrega($db, $p['delivery']);
+			$p['detalle'] = $this->detalleDelivery(isset($p['detalle']) ? $p['detalle'] : null);
+		}
+		$esDelivery = $pedidoDelivery || $entregaDelivery;
+		if ($esDelivery && $idMesa) throw new Exception('Un delivery no va en una mesa', 400);
+
+		// --- Detalle: precios del servidor; en una mesa, lo ya pedido (con el precio al que se pidió)
+		if (!$idMesa && !$esDelivery && $this->modoCaja($db) === 'mesas') {
 			throw new Exception('Este local vende solo por mesas: abre una mesa para cobrar (deja una libre para la venta rápida)', 409);
 		}
 		$cotMesa = null;
@@ -1425,6 +1443,19 @@ class Mcaja extends CI_Model
 			$notas = array();
 		} else {
 			list($lineas, $subtotal, $notas, $comandaVenta) = $this->armarLineas($db, $config, $cols, isset($p['detalle']) ? $p['detalle'] : null, $idLprecio);
+		}
+		// 18-11-2026: el envío del delivery es una línea más de la boleta (el guardado en el pedido, o el de Configuraciones)
+		$subtotalProductos = $subtotal;
+		$costoEnvio = 0;
+		if ($esDelivery) {
+			$envio = $this->lineaEnvio($db, $config, $pedidoDelivery ? $pedidoDelivery['costo_envio'] : null);
+			if ($envio) {
+				$lineas[] = $envio;
+				$subtotal += $envio['bruto'];
+				$costoEnvio = (int)$envio['bruto'];
+			}
+			// Pendiente: la comanda ya salió al tomar el pedido
+			if ($pedidoDelivery) $comandaVenta = array();
 		}
 
 		$descuento = max(0, (int)(isset($p['descuento']) ? $p['descuento'] : 0));
@@ -1720,6 +1751,22 @@ class Mcaja extends CI_Model
 			}
 			if ($fac) $this->guardarReceptor($db, $idVenta, (int)$cliente->id_cliente, $fac, $ahora);
 
+			// 18-11-2026: delivery. Pendiente: queda cobrado con esta venta (si otra pantalla lo cobró o anuló, no se vende
+			// dos veces). Nuevo: se registra ya cobrado.
+			$idDelivery = null;
+			if ($pedidoDelivery) {
+				$this->q($db, "UPDATE delivery_pedido SET id_venta = ?, total = ?, fecha_estado = now()
+					WHERE id_delivery = ? AND id_venta IS NULL AND estado <> 'anulado'",
+					array($idVenta, $subtotal - $descuento, $pedidoDelivery['id_delivery']));
+				if ($db->affected_rows() !== 1) throw new Exception('Ese delivery ya se cobró o se anuló en otra pantalla', 409);
+				$idDelivery = $pedidoDelivery['id_delivery'];
+			} elseif ($entregaDelivery) {
+				$idDelivery = $this->insertarDelivery($db, $entregaDelivery, array('id_caja' => (int)$caja->id_caja, 'id_usuario' => (int)$idUsuario,
+					'id_cliente' => $esPublico ? 0 : $idCliente, 'id_lprecio' => $idLprecio, 'detalle' => $p['detalle'],
+					'subtotal' => $subtotalProductos, 'costo_envio' => $costoEnvio, 'total' => $subtotal - $descuento,
+					'cobrar_al_entregar' => false, 'id_venta' => $idVenta));
+			}
+
 			$db->trans_commit();
 		} catch (Exception $e) {
 			$db->trans_rollback();
@@ -1748,7 +1795,9 @@ class Mcaja extends CI_Model
 			'mesa_liberada' => $idMesa ? !empty($mesaLiberada) : null,
 			'comanda' => $idMesa ? array() : (isset($comandaVenta) ? $comandaVenta : array()),
 			'observacion' => mb_substr(trim(isset($p['observacion']) ? (string)$p['observacion'] : ''), 0, 200),
-			'retira' => $retira);
+			'retira' => $retira,
+			'id_delivery' => $idDelivery,
+			'delivery_nombre' => $entregaDelivery ? $entregaDelivery['nombre'] : ($pedidoDelivery ? $pedidoDelivery['nombre'] : ''));
 	}
 
 	/** Valida los productos pedidos y arma las líneas con los precios del servidor. Devuelve [lineas, subtotal, notas]. */
@@ -2872,6 +2921,257 @@ class Mcaja extends CI_Model
 		}
 	}
 
+	// ====================== Delivery (18-11-2026) ======================
+	// Módulo aparte de venta directa y mesas, sin mesa (pedido del usuario). Tabla propia de la web, delivery_pedido
+	// (migración 20261118100000); el POS de escritorio no lo usa. En cada pedido se elige:
+	// - cobrar ahora: es una venta directa con los datos de entrega (registrarVenta con $p['delivery']);
+	// - cobrar al entregar: se guarda el pedido y sale la comanda (guardarDeliveryPendiente); al cobrarlo es una venta
+	//   directa con lo guardado (registrarVenta con $p['id_delivery']) y no vuelve a salir la comanda.
+	// El costo de envío es una línea de la boleta: el producto y el valor de Configuraciones > Delivery.
+
+	const DELIVERY_ESTADOS = array('preparando', 'en_camino', 'entregado', 'anulado');
+
+	private function hayDelivery($db)
+	{
+		return isset($this->columnas($db, array('delivery_pedido'))['delivery_pedido']);
+	}
+
+	/** Lo que la pestaña Delivery necesita (sectores, repartidores y el envío); null si el delivery está apagado. */
+	private function datosDelivery($db, $config)
+	{
+		if (empty($config['delivery']) || !$this->hayDelivery($db)) return null;
+		$sectores = array();
+		if (isset($this->columnas($db, array('sector'))['sector'])) {
+			foreach ($this->q($db, "SELECT id_sector, nombre_sector FROM sector WHERE trim(COALESCE(nombre_sector, '')) <> '' ORDER BY nombre_sector")->result() as $s) {
+				$sectores[] = array('id' => (int)$s->id_sector, 'nombre' => (string)$s->nombre_sector);
+			}
+		}
+		$repartidores = array();
+		foreach ($this->q($db, "SELECT id_usuario, nombre_usuario FROM usuario WHERE vigente IS NOT FALSE AND trim(COALESCE(nombre_usuario, '')) <> ''
+			ORDER BY nombre_usuario")->result() as $u) {
+			$repartidores[] = array('id' => (int)$u->id_usuario, 'nombre' => (string)$u->nombre_usuario);
+		}
+		$envio = null;
+		try {
+			$l = $this->lineaEnvio($db, $config);
+			if ($l) $envio = array('id_producto' => $l['id_producto'], 'nombre' => $l['nombre'], 'monto' => $l['bruto'], 'exento' => $l['exento']);
+		} catch (Exception $e) {
+			$envio = null;   // producto del envío borrado: sin envío (al cobrar se avisa)
+		}
+		return array('sectores' => $sectores, 'repartidores' => $repartidores, 'envio' => $envio);
+	}
+
+	/**
+	 * Línea de la boleta con el costo de envío (Configuraciones > Delivery: producto y valor). $monto = el guardado en un
+	 * pedido pendiente (null = el de Configuraciones). null si no hay envío.
+	 */
+	private function lineaEnvio($db, $config, $monto = null)
+	{
+		$monto = $monto === null ? (int)$config['delivery_costo_envio'] : (int)$monto;
+		$id = (int)$config['delivery_producto_envio'];
+		if ($monto <= 0 || $id <= 0) return null;
+		$p = $this->q($db, 'SELECT p.id_producto, p.nombre_producto, ' . $this->sqlExento($db, 'p') . ' AS exento FROM producto p WHERE p.id_producto = ?',
+			array($id))->row();
+		if (!$p) throw new Exception('El producto del costo de envío (Configuraciones > Delivery) ya no existe: elige otro', 409);
+		return array(
+			'id_producto' => $id, 'nombre' => (string)$p->nombre_producto, 'cantidad' => 1, 'unitario' => $monto, 'bruto' => $monto,
+			'id_agregado' => 0, 'nota' => '', 'segun_stock' => false, 'recetas' => array(), 'exento' => $p->exento === 't' || $p->exento === true,
+			'es_envio' => true,
+		);
+	}
+
+	/** Datos de entrega revisados (nombre, teléfono, dirección obligatorios; sector y repartidor deben existir). */
+	private function datosEntrega($db, $d)
+	{
+		$d = is_array($d) ? $d : array();
+		$texto = function ($k, $max) use ($d) {
+			return mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)(isset($d[$k]) && is_scalar($d[$k]) ? $d[$k] : ''))), 0, $max);
+		};
+		$e = array(
+			'nombre' => $texto('nombre', 120), 'telefono' => $texto('telefono', 30), 'direccion' => $texto('direccion', 250),
+			'referencia' => $texto('referencia', 250), 'observacion' => $texto('observacion', 250),
+			'id_sector' => (int)(isset($d['id_sector']) ? $d['id_sector'] : 0), 'id_repartidor' => (int)(isset($d['id_repartidor']) ? $d['id_repartidor'] : 0),
+		);
+		if ($e['nombre'] === '') throw new Exception('Falta el nombre de quien recibe el delivery', 400);
+		if (!preg_match('/^\+?[0-9][0-9 ()-]{5,}$/', $e['telefono'])) throw new Exception('Falta el teléfono del delivery (solo números)', 400);
+		if ($e['direccion'] === '') throw new Exception('Falta la dirección del delivery', 400);
+		if ($e['id_sector'] && !$this->q($db, 'SELECT 1 FROM sector WHERE id_sector = ?', array($e['id_sector']))->row()) {
+			throw new Exception('El sector elegido ya no existe', 400);
+		}
+		if ($e['id_repartidor'] && !$this->q($db, 'SELECT 1 FROM usuario WHERE id_usuario = ? AND vigente IS NOT FALSE', array($e['id_repartidor']))->row()) {
+			throw new Exception('El repartidor elegido ya no existe o no está vigente', 400);
+		}
+		return $e;
+	}
+
+	/** Lo pedido tal como llega de la pantalla, solo lo necesario para volver a armarlo al cobrar. */
+	private function detalleDelivery($items)
+	{
+		$res = array();
+		foreach (is_array($items) ? $items : array() as $it) {
+			if (!is_array($it) || empty($it['id_producto'])) continue;
+			$res[] = array(
+				'id_producto' => (int)$it['id_producto'], 'cantidad' => round((float)(isset($it['cantidad']) ? $it['cantidad'] : 0), 3),
+				'agregados' => array_values(array_map('intval', isset($it['agregados']) && is_array($it['agregados']) ? $it['agregados'] : array())),
+				'nota' => mb_substr(trim((string)(isset($it['nota']) && is_scalar($it['nota']) ? $it['nota'] : '')), 0, 200),
+			);
+			if (count($res) >= 200) break;
+		}
+		return $res;
+	}
+
+	/** Graba el pedido (dentro de la transacción de quien llama). Devuelve id_delivery. */
+	private function insertarDelivery($db, $e, $extra)
+	{
+		$r = $this->q($db, 'INSERT INTO delivery_pedido (id_caja, id_usuario, id_cliente, nombre, telefono, direccion, referencia, id_sector,
+				observacion, id_lprecio, detalle, subtotal, costo_envio, total, cobrar_al_entregar, id_venta, estado, id_repartidor, fecha_estado)
+			VALUES (?, ?, ?, ?, ?, ?, ?, NULLIF(?, 0), ?, ?, ?::jsonb, ?, ?, ?, ?, ?, \'preparando\', NULLIF(?, 0), now()) RETURNING id_delivery',
+			array((int)$extra['id_caja'], (int)$extra['id_usuario'], $extra['id_cliente'] ? (int)$extra['id_cliente'] : null,
+				$e['nombre'], $e['telefono'], $e['direccion'], $e['referencia'], $e['id_sector'], $e['observacion'], (int)$extra['id_lprecio'],
+				json_encode($extra['detalle']), (int)$extra['subtotal'], (int)$extra['costo_envio'], (int)$extra['total'],
+				!empty($extra['cobrar_al_entregar']) ? 't' : 'f', $extra['id_venta'] ? (int)$extra['id_venta'] : null, $e['id_repartidor']))->row();
+		return (int)$r->id_delivery;
+	}
+
+	/**
+	 * Delivery a cobrar al entregar: se guarda el pedido (con los precios del servidor) y se devuelve la comanda para
+	 * imprimirla. El descuento se aplica al cobrarlo. Devuelve {id_delivery, total, comanda, observacion}.
+	 */
+	public function guardarDeliveryPendiente($caja, $idUsuario, $idRol, $p)
+	{
+		$db = $this->conexion();
+		$config = $this->configuracion($db);
+		if (empty($config['delivery']) || !$this->hayDelivery($db)) throw new Exception('El delivery no está habilitado (Configuraciones > Delivery)', 409);
+		$cols = $this->columnas($db, array('producto'));
+		$entrega = $this->datosEntrega($db, isset($p['delivery']) ? $p['delivery'] : null);
+		$idLprecio = !empty($p['id_lprecio']) ? (int)$p['id_lprecio'] : $config['id_lprecio_publico'];
+		$idCliente = (int)(isset($p['id_cliente']) ? $p['id_cliente'] : 0);
+		if ($idCliente && !$this->q($db, 'SELECT 1 FROM cliente WHERE id_cliente = ?', array($idCliente))->row()) throw new Exception('El cliente no existe', 400);
+		$detalle = $this->detalleDelivery(isset($p['detalle']) ? $p['detalle'] : null);
+		list($lineas, $subtotal, $notas, $comanda) = $this->armarLineas($db, $config, $cols, $detalle, $idLprecio);
+		$this->validarStock($db, $lineas);
+		$envio = $this->lineaEnvio($db, $config);
+		$costoEnvio = $envio ? (int)$envio['bruto'] : 0;
+		$db->trans_begin();
+		try {
+			$id = $this->insertarDelivery($db, $entrega, array('id_caja' => (int)$caja->id_caja, 'id_usuario' => (int)$idUsuario,
+				'id_cliente' => $idCliente, 'id_lprecio' => $idLprecio, 'detalle' => $detalle, 'subtotal' => $subtotal,
+				'costo_envio' => $costoEnvio, 'total' => $subtotal + $costoEnvio, 'cobrar_al_entregar' => true, 'id_venta' => null));
+			$db->trans_commit();
+		} catch (Exception $e) {
+			$db->trans_rollback();
+			throw $e;
+		}
+		return array('id_delivery' => $id, 'total' => $subtotal + $costoEnvio, 'comanda' => $comanda, 'observacion' => $entrega['observacion']);
+	}
+
+	/**
+	 * Pedidos para la pestaña Delivery: los de hoy y los que siguen abiertos (no entregados ni anulados) de otros días.
+	 * $todos = true: también los entregados y anulados de hoy (si no, solo los abiertos).
+	 */
+	public function listarDelivery($todos = false)
+	{
+		$db = $this->conexion();
+		if (!$this->hayDelivery($db)) return array();
+		$tieneSector = isset($this->columnas($db, array('sector'))['sector']);
+		$q = "SELECT d.id_delivery, to_char(d.fecha AT TIME ZONE ?, 'DD/MM HH24:MI') AS hora, d.nombre, d.telefono, d.direccion, d.referencia,
+				d.id_sector, " . ($tieneSector ? 's.nombre_sector' : "''") . " AS sector, d.observacion, d.detalle, d.subtotal, d.costo_envio, d.total,
+				d.cobrar_al_entregar, d.id_venta, d.estado, d.id_repartidor, r.nombre_usuario AS repartidor, u.nombre_usuario AS atendio,
+				to_char(d.fecha_entrega AT TIME ZONE ?, 'HH24:MI') AS hora_entrega, d.motivo_anulacion,
+				v.folio_dte, td.nombre_tdocumento AS documento, (COALESCE(v.mensaje_pedido, '') LIKE 'ANULADA%') AS venta_anulada,
+				(SELECT string_agg(f.nombre_fpago, ', ' ORDER BY f.nombre_fpago) FROM pago_venta pv JOIN fpago f ON f.id_fpago = pv.id_fpago
+					WHERE pv.id_venta = d.id_venta) AS formas_pago
+			FROM delivery_pedido d
+			" . ($tieneSector ? 'LEFT JOIN sector s ON s.id_sector = d.id_sector' : '') . "
+			LEFT JOIN usuario r ON r.id_usuario = d.id_repartidor
+			LEFT JOIN usuario u ON u.id_usuario = d.id_usuario
+			LEFT JOIN venta v ON v.id_venta = d.id_venta
+			LEFT JOIN tdocumento td ON td.id_tdocumento = v.id_tdocumento
+			WHERE (d.estado NOT IN ('entregado', 'anulado') AND d.fecha > now() - interval '7 days')"
+			. ($todos ? " OR (d.fecha AT TIME ZONE ?)::date = (now() AT TIME ZONE ?)::date" : '') . "
+			ORDER BY d.id_delivery DESC LIMIT 300";
+		$binds = array(self::TZ, self::TZ);
+		if ($todos) { $binds[] = self::TZ; $binds[] = self::TZ; }
+		// Nombres de los productos para mostrar lo pedido y armar el mensaje de WhatsApp
+		$filas = $this->q($db, $q, $binds)->result_array();
+		$ids = array();
+		foreach ($filas as $f) foreach ((array)json_decode((string)$f['detalle'], true) as $it) $ids[(int)$it['id_producto']] = true;
+		$nombres = array();
+		if ($ids) {
+			foreach ($this->q($db, 'SELECT id_producto, nombre_producto FROM producto WHERE id_producto IN (' . implode(',', array_map('intval', array_keys($ids))) . ')')->result() as $pr) {
+				$nombres[(int)$pr->id_producto] = (string)$pr->nombre_producto;
+			}
+		}
+		foreach ($filas as &$f) {
+			$items = array();
+			foreach ((array)json_decode((string)$f['detalle'], true) as $it) {
+				$items[] = array('nombre' => isset($nombres[(int)$it['id_producto']]) ? $nombres[(int)$it['id_producto']] : ('Producto ' . (int)$it['id_producto']),
+					'cantidad' => (float)$it['cantidad'], 'nota' => (string)(isset($it['nota']) ? $it['nota'] : ''));
+			}
+			$f['items'] = $items;
+			unset($f['detalle']);
+			foreach (array('id_delivery', 'id_sector', 'subtotal', 'costo_envio', 'total', 'id_venta', 'id_repartidor', 'folio_dte') as $k) $f[$k] = (int)$f[$k];
+			$f['cobrar_al_entregar'] = $f['cobrar_al_entregar'] === 't' || $f['cobrar_al_entregar'] === true;
+			$f['venta_anulada'] = $f['venta_anulada'] === 't' || $f['venta_anulada'] === true;
+			$f['cobrado'] = $f['id_venta'] > 0 && !$f['venta_anulada'];
+		}
+		unset($f);
+		return $filas;
+	}
+
+	/** Lo guardado de un pedido pendiente, para cargarlo en la venta y cobrarlo. */
+	public function deliveryParaCobrar($idDelivery)
+	{
+		$db = $this->conexion();
+		if (!$this->hayDelivery($db)) throw new Exception('El delivery no está habilitado', 409);
+		$d = $this->q($db, 'SELECT * FROM delivery_pedido WHERE id_delivery = ?', array((int)$idDelivery))->row_array();
+		if (!$d) throw new Exception('El delivery no existe', 404);
+		if ($d['estado'] === 'anulado') throw new Exception('El delivery está anulado', 409);
+		if ((int)$d['id_venta']) throw new Exception('El delivery ya está cobrado', 409);
+		return array('id_delivery' => (int)$d['id_delivery'], 'id_lprecio' => (int)$d['id_lprecio'], 'id_cliente' => (int)$d['id_cliente'],
+			'detalle' => (array)json_decode((string)$d['detalle'], true), 'costo_envio' => (int)$d['costo_envio'], 'nombre' => $d['nombre'],
+			'observacion' => (string)$d['observacion']);
+	}
+
+	/**
+	 * Cambia el estado: preparando → en_camino → entregado (entregado solo cobrado), o anulado (solo sin cobrar, o con la
+	 * boleta ya anulada en Ventas). $idRepartidor > 0 lo cambia (null = como estaba).
+	 */
+	public function cambiarEstadoDelivery($idDelivery, $estado, $idRepartidor, $motivo)
+	{
+		$db = $this->conexion();
+		if (!$this->hayDelivery($db)) throw new Exception('El delivery no está habilitado', 409);
+		if (!in_array($estado, self::DELIVERY_ESTADOS, true)) throw new Exception('Estado inválido', 400);
+		$db->trans_begin();
+		try {
+			$d = $this->q($db, "SELECT d.id_delivery, d.estado, d.id_venta, (COALESCE(v.mensaje_pedido, '') LIKE 'ANULADA%') AS venta_anulada
+				FROM delivery_pedido d LEFT JOIN venta v ON v.id_venta = d.id_venta WHERE d.id_delivery = ? FOR UPDATE OF d", array((int)$idDelivery))->row();
+			if (!$d) throw new Exception('El delivery no existe', 404);
+			if ($d->estado === 'anulado') throw new Exception('El delivery ya está anulado', 409);
+			$cobrado = (int)$d->id_venta > 0 && !($d->venta_anulada === 't' || $d->venta_anulada === true);
+			if ($estado === 'entregado' && !$cobrado) throw new Exception('Cobra el delivery antes de marcarlo entregado', 409);
+			if ($estado === 'anulado' && $cobrado) {
+				throw new Exception('Este delivery ya está cobrado: anula primero su boleta en Opciones > Ventas, y después el delivery', 409);
+			}
+			if ($idRepartidor !== null && $idRepartidor > 0 && !$this->q($db, 'SELECT 1 FROM usuario WHERE id_usuario = ? AND vigente IS NOT FALSE', array((int)$idRepartidor))->row()) {
+				throw new Exception('El repartidor elegido ya no existe o no está vigente', 400);
+			}
+			$motivo = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)$motivo)), 0, 200);
+			if ($estado === 'anulado' && $motivo === '') throw new Exception('Indica el motivo de la anulación', 400);
+			$this->q($db, 'UPDATE delivery_pedido SET estado = ?, fecha_estado = now(),
+					fecha_entrega = CASE WHEN ? = \'entregado\' THEN now() ELSE fecha_entrega END,
+					id_repartidor = CASE WHEN ? THEN NULLIF(?, 0) ELSE id_repartidor END,
+					motivo_anulacion = CASE WHEN ? = \'anulado\' THEN ? ELSE motivo_anulacion END
+				WHERE id_delivery = ?',
+				array($estado, $estado, $idRepartidor !== null ? 't' : 'f', (int)$idRepartidor, $estado, $motivo, (int)$idDelivery));
+			$db->trans_commit();
+		} catch (Exception $e) {
+			$db->trans_rollback();
+			throw $e;
+		}
+		return array('ok' => true);
+	}
+
 	// ====================== Mesas ======================
 
 	/**
@@ -3692,6 +3992,9 @@ class Mcaja extends CI_Model
 			'id_tdocumento_nota_credito' => 'id_nc',
 			'id_impuesto_iva' => 'id_impuesto_iva',
 			'copias_dte' => 'copias_documento',
+			// 18-11-2026: delivery (migración 20261118100000)
+			'delivery_id_producto_envio' => 'delivery_producto_envio',
+			'delivery_costo_envio' => 'delivery_costo_envio',
 		);
 		// Opciones on/off de Configuraciones
 		$flags = array(
@@ -3719,6 +4022,7 @@ class Mcaja extends CI_Model
 			'imprimir_pdf_dte' => 'imprimir_documento',
 			'usar_correo_electronico' => 'correo_cierre',
 			'informar_anulaciones_mail' => 'correo_anulaciones',
+			'delivery_habilitado' => 'delivery',   // 18-11-2026: pestaña Delivery en la Caja
 		);
 		// Opciones de texto (impresora del cierre, impresora de documentos, papel 58/80)
 		$textos = array(

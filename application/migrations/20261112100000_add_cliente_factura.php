@@ -16,6 +16,12 @@ defined('BASEPATH') or exit('No direct script access allowed');
  * - CREATE TABLE IF NOT EXISTS: si el POS ya las creó, solo se agregan las columnas que falten (ADD COLUMN IF NOT EXISTS,
  *   sin DEFAULT: no reescribe tablas). Sin claves foráneas; índices simples por id_cliente.
  * - El código no asume que esta migración ya corrió (Mclientefactura::disponible()): sin ella, todo como antes.
+ *
+ * 18-11-2026 (CONVENCIONES.md, regla 4, excepción "una migración que falla siempre"): se editó este archivo.
+ * Si el POS ya había creado giro_cliente o solicitante_cliente sin alguna columna, el CREATE INDEX sobre id_cliente
+ * fallaba y la migración se trababa en cada login (las siguientes nunca corrían). Se agregó, para esas dos tablas, el
+ * mismo ADD COLUMN IF NOT EXISTS que ya tenía sucursal_cliente. Las bases donde ya se aplicó no cambian (ya tenían las
+ * columnas: si no, habría fallado); el panel la mostrará "editado" en ellas, es lo esperado.
  */
 class Migration_add_cliente_factura extends CI_Migration
 {
