@@ -1797,7 +1797,9 @@ class Mcaja extends CI_Model
 			'observacion' => mb_substr(trim(isset($p['observacion']) ? (string)$p['observacion'] : ''), 0, 200),
 			'retira' => $retira,
 			'id_delivery' => $idDelivery,
-			'delivery_nombre' => $entregaDelivery ? $entregaDelivery['nombre'] : ($pedidoDelivery ? $pedidoDelivery['nombre'] : ''));
+			'delivery_nombre' => $entregaDelivery ? $entregaDelivery['nombre'] : ($pedidoDelivery ? $pedidoDelivery['nombre'] : ''),
+			// 18-11-2026: dirección, referencia y teléfono para la comanda del delivery (para el repartidor)
+			'delivery_entrega' => $entregaDelivery ? $this->entregaComanda($entregaDelivery) : null);
 	}
 
 	/** Valida los productos pedidos y arma las líneas con los precios del servidor. Devuelve [lineas, subtotal, notas]. */
@@ -3062,7 +3064,14 @@ class Mcaja extends CI_Model
 			$db->trans_rollback();
 			throw $e;
 		}
-		return array('id_delivery' => $id, 'total' => $subtotal + $costoEnvio, 'comanda' => $comanda, 'observacion' => $entrega['observacion']);
+		return array('id_delivery' => $id, 'total' => $subtotal + $costoEnvio, 'comanda' => $comanda, 'observacion' => $entrega['observacion'],
+			'entrega' => $this->entregaComanda($entrega));
+	}
+
+	/** 18-11-2026: lo de la entrega que va impreso en la comanda del delivery. */
+	private function entregaComanda($e)
+	{
+		return array('direccion' => $e['direccion'], 'referencia' => $e['referencia'], 'telefono' => $e['telefono']);
 	}
 
 	/**

@@ -17,7 +17,7 @@ class Comanda_local
 	 * $grupo = ['nombre' =>, 'destino' => [...], 'lineas' => [...]] (Caja::datosComanda); $mesa: nombre visible de la mesa
 	 * o '' en venta directa; $aviso: null o ['tipo' => 'anulacion' | 'traslado' | 'reenvio', ...] (igual que Comanda_impresion).
 	 */
-	public function operaciones($grupo, $venta, $observacion, $mesa = '', $aviso = null)
+	public function operaciones($grupo, $venta, $observacion, $mesa = '', $aviso = null, $entrega = array())
 	{
 		$this->ops = array();
 		$papel = self::papel(isset($grupo['destino']) ? $grupo['destino'] : array());
@@ -55,6 +55,14 @@ class Comanda_local
 		}
 		// Quien retira el pedido (venta directa)
 		if ($venta && !empty($venta->nombre_retira)) $this->grande('RETIRA: ' . mb_strtoupper($venta->nombre_retira), $W2);
+		// 18-11-2026: delivery: dirección, referencia y teléfono (para el repartidor)
+		if ($entrega) {
+			$this->op('textaling', 'left');
+			$filas = array();
+			foreach ($entrega as $t) $filas = array_merge($filas, $this->lineasTexto($t, $W));
+			$this->negrita($filas);
+			$this->op('textaling', 'center');
+		}
 		$this->texto($venta && !empty($venta->fecha_texto) ? $venta->fecha_texto : date('d/m/Y H:i'));
 		if ($venta && !empty($venta->nombre_usuario)) $this->texto('Atiende: ' . $venta->nombre_usuario);
 		$this->op('textaling', 'left');

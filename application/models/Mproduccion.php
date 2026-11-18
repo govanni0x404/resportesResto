@@ -133,6 +133,18 @@ class Mproduccion extends CI_Model
         return (bool)$r;
     }
 
+    /**
+     * 18-11-2026: el trigger f_produccion anota el consumo como entrada negativa (cantidad_entrada - X). Se deja como
+     * salida: entrada + X y salida + X. El saldo (entradas - salidas) queda igual; los informes de bodega lo ven como salida.
+     */
+    public function entradaNegativaComoSalida($id_insumo, $id_bodega, $cantidad)
+    {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $c = (float)$cantidad;
+        $this->db->query('UPDATE stock_insumo SET cantidad_entrada = COALESCE(cantidad_entrada, 0) + ?, cantidad_salida = COALESCE(cantidad_salida, 0) + ?
+            WHERE id_insumo = ? AND id_bodega = ?', array($c, $c, (int)$id_insumo, (int)$id_bodega));
+    }
+
     /** 18-11-2026: crea la fila de stock del insumo en la bodega (en 0) si no existe. */
     public function asegurarFilaStock($id_insumo, $id_bodega)
     {

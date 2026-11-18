@@ -17,7 +17,7 @@ class Comanda_impresion
 	 * $aviso: null = comanda normal; ['tipo' => 'anulacion', 'motivo'] (no preparar), ['tipo' => 'traslado', 'desde'] (cambio de
 	 * mesa) o ['tipo' => 'reenvio'] (se vuelve a enviar algo ya pedido).
 	 */
-	public function armar($grupo, $venta, $observacion, $mesa = '', $aviso = null)
+	public function armar($grupo, $venta, $observacion, $mesa = '', $aviso = null, $entrega = array())
 	{
 		$W = self::ANCHO;
 		$centro = "\x1ba\x01";
@@ -54,6 +54,8 @@ class Comanda_impresion
 		}
 		// Quien retira el pedido (venta directa, 12-11-2026)
 		if ($venta && !empty($venta->nombre_retira)) $b .= $centro . $doble . $this->envolver('RETIRA: ' . mb_strtoupper($venta->nombre_retira), $W / 2) . $normal;
+		// 18-11-2026: delivery: dirección, referencia y teléfono (para el repartidor)
+		foreach ((array)$entrega as $t) $b .= $izq . $neg . $this->envolver($t, $W) . $normal;
 		$hora = $venta && !empty($venta->fecha_texto) ? $venta->fecha_texto : date('d/m/Y H:i');
 		$b .= $centro . $this->t($hora) . "\n";
 		if ($venta && !empty($venta->nombre_usuario)) $b .= $centro . $this->t('Atiende: ' . $venta->nombre_usuario) . "\n";

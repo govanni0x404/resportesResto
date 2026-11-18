@@ -109,8 +109,11 @@ class Produccion extends CI_Controller
                 
                 $this->Mproduccion->grabarProduccion($miData);
                 
-                // Actualizar stock (restar): lo hace el trigger al grabar la fila; sin trigger, como salida (cantidad_salida)
-                if (!$porTrigger) {
+                // Actualizar stock (restar): lo hace el trigger al grabar la fila, pero como "entrada negativa"; se pasa a
+                // salida (cantidad_salida) sin cambiar el saldo. Sin trigger, la salida se hace aquí.
+                if ($porTrigger) {
+                    $this->Mproduccion->entradaNegativaComoSalida($insumo['id_insumo'], $insumo['id_bodega'], $insumo['cantidad']);
+                } else {
                     $this->Mproduccion->salidaStock($insumo['id_insumo'], $insumo['id_bodega'], $insumo['cantidad']);
                 }
                 

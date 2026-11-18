@@ -38,6 +38,7 @@ $titulos = array('anulacion' => array('ANULACIÓN', 'NO PREPARAR'), 'traslado' =
 		.antes { text-align: center; font-size: 15px; font-weight: bold; }
 		.doc { text-align: center; font-size: 20px; font-weight: bold; margin-top: 4px; }
 		.retira { text-align: center; font-size: 20px; font-weight: bold; margin-top: 4px; }
+		.entrega { font-size: 15px; font-weight: bold; margin-top: 4px; word-break: break-word; }
 		.meta { font-size: 13px; text-align: center; margin-top: 3px; }
 		hr { border: 0; border-top: 2px dashed #000; margin: 6px 0; }
 		.linea { padding: 5px 0; border-bottom: 1px dashed #000; }
@@ -93,6 +94,7 @@ $titulos = array('anulacion' => array('ANULACIÓN', 'NO PREPARAR'), 'traslado' =
 			<div class="doc"><?php echo $h($v->nombre_tdocumento); ?> N° <?php echo $h($v->folio); ?></div>
 		<?php endif; ?>
 		<?php if ($v && !empty($v->nombre_retira)) : ?><div class="retira">RETIRA: <?php echo $h(mb_strtoupper($v->nombre_retira)); ?></div><?php endif; ?>
+		<?php if (!empty($entrega)) : ?><div class="entrega"><?php foreach ($entrega as $t) : ?><div><?php echo $h($t); ?></div><?php endforeach; ?></div><?php endif; ?>
 		<div class="meta"><?php echo $h($hora); ?><?php echo $v && !empty($v->nombre_usuario) ? ' · ' . $h($v->nombre_usuario) : ''; ?></div>
 		<hr>
 		<?php foreach ($g['lineas'] as $l) : ?>

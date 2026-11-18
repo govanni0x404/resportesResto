@@ -212,8 +212,9 @@ class Caja extends CI_Controller
 			// Venta directa: la comanda la arma el servidor con lo vendido; la pantalla solo recibe su número
 			$r['comanda_id'] = $this->guardarComanda($r['comanda'], array('id_venta' => (int)$r['id_venta'], 'directa' => true,
 				'observacion' => $r['observacion'], 'retira' => isset($r['retira']) ? $r['retira'] : '',
-				'delivery' => !empty($r['id_delivery']) ? $this->etiquetaDelivery($r['id_delivery'], $r['delivery_nombre']) : ''));
-			unset($r['comanda'], $r['observacion'], $r['retira'], $r['delivery_nombre']);
+				'delivery' => !empty($r['id_delivery']) ? $this->etiquetaDelivery($r['id_delivery'], $r['delivery_nombre']) : '',
+				'entrega' => !empty($r['delivery_entrega']) ? $r['delivery_entrega'] : null));
+			unset($r['comanda'], $r['observacion'], $r['retira'], $r['delivery_nombre'], $r['delivery_entrega']);
 			return $r;
 		}, true);
 	}
@@ -237,7 +238,7 @@ class Caja extends CI_Controller
 			$nombre = isset($body['delivery']['nombre']) && is_scalar($body['delivery']['nombre']) ? trim((string)$body['delivery']['nombre']) : '';
 			return array('id_delivery' => $r['id_delivery'], 'total' => $r['total'],
 				'comanda_id' => $this->guardarComanda($r['comanda'], array('directa' => true, 'observacion' => $r['observacion'],
-					'delivery' => $this->etiquetaDelivery($r['id_delivery'], $nombre))));
+					'delivery' => $this->etiquetaDelivery($r['id_delivery'], $nombre), 'entrega' => $r['entrega'])));
 		}, true);
 	}
 
@@ -917,7 +918,24 @@ class Caja extends CI_Controller
 			'mesa' => !empty($datos['id_mesa']) ? $this->Mcaja->etiquetaMesa((int)$datos['id_mesa'])
 				: (!empty($datos['delivery']) ? $texto($datos['delivery'], 60) : ''),
 			'aviso' => $this->avisoComanda($datos),
+			'entrega' => $this->entregaComanda($datos, $texto),
 		);
+	}
+
+	/**
+	 * 18-11-2026: líneas de la entrega de un delivery (dirección, referencia, teléfono) para la comanda. El repartidor sale
+	 * con la comanda: ahí ve a dónde va sin volver a la caja. array() si no es delivery.
+	 */
+	private function entregaComanda($datos, $texto)
+	{
+		if (empty($datos['entrega']) || !is_array($datos['entrega'])) return array();
+		$e = $datos['entrega'];
+		$res = array();
+		foreach (array('direccion' => 'Direccion: ', 'referencia' => 'Ref.: ', 'telefono' => 'Fono: ') as $k => $etq) {
+			$v = $texto(isset($e[$k]) && is_scalar($e[$k]) ? $e[$k] : '', 250);
+			if ($v !== '') $res[] = $etq . $v;
+		}
+		return $res;
 	}
 
 	/** Comanda especial: anulación, cambio de mesa o reenvío de algo ya enviado. null = comanda normal. */
@@ -970,7 +988,7 @@ class Caja extends CI_Controller
 			$conAgente = $this->Mcola_impresion->hayAgenteActivo();
 			$res = array();
 			foreach ($c['grupos'] as $g) {
-				$bytes = $this->comanda_impresion->armar($g, $c['venta'], $c['observacion'], $c['mesa'], $c['aviso']);
+				$bytes = $this->comanda_impresion->armar($g, $c['venta'], $c['observacion'], $c['mesa'], $c['aviso'], $c['entrega']);
 				if ($conAgente) {
 					$d = $g['destino'];
 					$ipOk = Comanda_impresion::ipPermitida(trim((string)$d['ip']), $d['puerto']);
@@ -1012,7 +1030,7 @@ class Caja extends CI_Controller
 					'nombre' => $g['nombre'],
 					'id' => (int)$d['id'],
 					'destino' => array('nombre' => $d['nombre'], 'ip' => $d['ip'], 'puerto' => $d['puerto'], 'ruta_windows' => $d['ruta_windows']),
-					'operaciones' => $this->comanda_local->operaciones($g, $c['venta'], $c['observacion'], $c['mesa'], $c['aviso']),
+					'operaciones' => $this->comanda_local->operaciones($g, $c['venta'], $c['observacion'], $c['mesa'], $c['aviso'], $c['entrega']),
 				);
 			}
 			return array('comandas' => $res);
