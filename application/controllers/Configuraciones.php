@@ -122,10 +122,9 @@ class Configuraciones extends CI_Controller {
             'imprimir_pdf_dte',
             'imprimir_copia_cedible',
             'enviar_dte_sii',
-            'documentos_en_navegador',  // 16-11-2026: boletas y precuentas con el diseño de la página (navegador)
             'imprimir_comandas_app_forzar',  // 16-11-2026: también los que el celular manda sin pedir impresión
             'imprimir_comandas_app',  // 14-11-2026: la Caja web imprime las comandas de la app de garzones (solo si la columna existe)
-            'impresion_local_caja',   // 12-11-2026: documentos de la caja por el agente local (solo se graba si la columna existe)
+            // 18-11-2026: impresion_local_caja y documentos_en_navegador ya no se graban: siempre encendidas (Mcaja::configuracion)
             'delivery_habilitado',    // 18-11-2026: pestaña Delivery en la Caja (migración 20261118100000)
             'acepta',
             'acierto'

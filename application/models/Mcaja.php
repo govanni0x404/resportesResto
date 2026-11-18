@@ -4117,25 +4117,19 @@ class Mcaja extends CI_Model
 			if ($iva && (float)$iva->valor > 0) $config['por_iva'] = (float)$iva->valor;
 		}
 		$config['copias_documento'] = max(1, min(5, (int)$config['copias_documento']));
-		// Documentos de la caja directo al agente de impresión del equipo (localhost:5050), como mipdv_web: activa salvo que
-		// Configuraciones la desmarque (columna impresion_local_caja, migración 20261112110000; NULL o sin la columna = activa)
+		// Documentos de la caja directo al agente de impresión del equipo (impresionWeb.exe, localhost:5050), como mipdv_web.
+		// 18-11-2026 (usuario: "todos usan el .exe"): siempre encendida. Se quitó la casilla de Configuraciones; la columna
+		// impresion_local_caja queda en la base pero ya no se lee.
 		$config['impresion_local'] = true;
-		if (in_array('impresion_local_caja', $existentes, true)) {
-			$il = $this->q($db, 'SELECT (impresion_local_caja IS NOT FALSE) AS ok FROM configuracion LIMIT 1')->row();
-			if ($il) $config['impresion_local'] = $il->ok === 't' || $il->ok === true;
-		}
 		// 14-11-2026: imprimir las comandas de la app de garzones (migración 20261114130000; NULL o sin la columna = apagada)
 		$config['comandas_app'] = false;
 		if (in_array('imprimir_comandas_app', $existentes, true)) {
 			$ca = $this->q($db, 'SELECT (imprimir_comandas_app IS TRUE) AS ok FROM configuracion LIMIT 1')->row();
 			if ($ca) $config['comandas_app'] = $ca->ok === 't' || $ca->ok === true;
 		}
-		// 16-11-2026: boletas y precuentas con el diseño de la página, por el navegador (migración 20261116120000)
-		$config['documentos_navegador'] = false;
-		if (in_array('documentos_en_navegador', $existentes, true)) {
-			$dn = $this->q($db, 'SELECT (documentos_en_navegador IS TRUE) AS ok FROM configuracion LIMIT 1')->row();
-			if ($dn) $config['documentos_navegador'] = $dn->ok === 't' || $dn->ok === true;
-		}
+		// Boletas, precuentas y comandas con el diseño de la página, como imagen por el agente. 18-11-2026: siempre encendida
+		// (se quitó la casilla; documentos_en_navegador ya no se lee). Si la imagen falla, sale con el formato del agente.
+		$config['documentos_navegador'] = true;
 		// 16-11-2026: también los pedidos que el celular manda con "imprimir": 0 (migración 20261116110000; NULL = apagada)
 		$config['comandas_app_forzar'] = false;
 		if ($config['comandas_app'] && in_array('imprimir_comandas_app_forzar', $existentes, true)) {
