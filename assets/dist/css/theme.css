@@ -805,7 +805,14 @@ html body .main-header .top-nav .navbar-brand { display: none !important; }
         color: #E6D9C8 !important; background: transparent !important; border: 0 !important;
         padding: 7px 10px !important; font-size: 13px; border-radius: 8px; white-space: normal;
     }
-    html body nav.navbar.bootsnav li.dropdown ul.dropdown-menu > li > a > i { display: none; }
+    /* 18-11-2026 (pedido del usuario): las opciones de los submenús con ícono, como las de afuera (mostaza, un poco más chico) */
+    html body nav.navbar.bootsnav li.dropdown ul.dropdown-menu > li > a > i {
+        display: inline-block !important; flex: 0 0 16px; width: 16px; margin: 0; font-size: 14px; line-height: 1; text-align: center;
+        color: var(--t-mostaza, #E3B04B) !important; opacity: .9;
+    }
+    html body nav.navbar.bootsnav .dropdown-menu .dropdown > .dropdown-menu > li > a > i { font-size: 13px; opacity: .75; }
+    html body nav.navbar.bootsnav li.dropdown ul.dropdown-menu > li > a:hover > i,
+    html body nav.navbar.bootsnav li.dropdown ul.dropdown-menu > li.t-actual > a > i { color: #fff !important; opacity: 1; }
     html body nav.navbar.bootsnav li.dropdown ul.dropdown-menu > li > a:hover,
     html body nav.navbar.bootsnav li.dropdown ul.dropdown-menu > li.open > a { background: rgba(255, 255, 255, .08) !important; color: #fff !important; padding-left: 10px !important; }
     html body nav.navbar.bootsnav li.dropdown ul.dropdown-menu > li.t-actual > a { color: #fff !important; background: rgba(180, 67, 46, .55) !important; font-weight: 600; }
