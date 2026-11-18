@@ -186,7 +186,17 @@ class Productos extends CI_Controller
 		}
 
 		$id = intval($producto['id_producto']);
-		
+
+		// 18-11-2026: producto nuevo con el código automático (el que sugirió la pantalla, sin cambiarlo) o sin código: si
+		// ese número ya lo tomó otro producto mientras tanto (otra pantalla, un reintento), se usa el siguiente libre en vez
+		// de rechazarlo. Un código escrito a mano que ya existe se sigue rechazando.
+		$producto['cbarra'] = trim((string)$producto['cbarra']);
+		if ($id <= 0 && ($producto['cbarra'] === '' || !empty($producto['cbarra_auto']))
+			&& ($producto['cbarra'] === '' || $this->Mproductos->existeCodigoBarra($producto['cbarra'], $id))) {
+			$producto['cbarra'] = $this->Mproductos->obtenerSiguienteCodigoBarra();
+		}
+		unset($producto['cbarra_auto']);
+
 		// VALIDAR CODIGO DE BARRAS DUPLICADO - Pasando el ID del producto actual
 		if ($this->Mproductos->existeCodigoBarra($producto['cbarra'], $id)) {
 			echo json_encode([
@@ -279,6 +289,7 @@ class Productos extends CI_Controller
 		echo json_encode([
 			'success' => true,
 			'id_producto' => $idProducto,
+			'cbarra' => $producto['cbarra'],   // 18-11-2026: el código con que quedó (puede ser el siguiente libre)
 			'precios_grabados' => count($preciosGrabados)
 		]);
 	}

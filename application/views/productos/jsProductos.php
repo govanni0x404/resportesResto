@@ -288,7 +288,10 @@ $('#ckConAgregado').on('change', function() {
     }
 });
 
+// 18-11-2026: el código automático sugerido; si se guarda sin cambiarlo, el servidor puede darle el siguiente libre
+var cbarraSugerido = null;
 function cargarSiguienteCodigoBarra() {
+    cbarraSugerido = null;
     $.ajax({
         url: base_url + "index.php/Productos/obtenerSiguienteCodigoBarra",
         type: "POST",
@@ -296,6 +299,7 @@ function cargarSiguienteCodigoBarra() {
         success: function(resp) {
             console.log("Respuesta siguiente código:", resp);
             if (resp && resp.codigo) {
+                cbarraSugerido = String(resp.codigo);
                 $('#txtCbarra').val(resp.codigo);
             } else {
                 // Fallback manual si el controlador falla
@@ -309,6 +313,7 @@ function cargarSiguienteCodigoBarra() {
                 try {
                     var obj = JSON.parse(datos);
                     if (obj && obj[0] && obj[0].new_id) {
+                        cbarraSugerido = String(obj[0].new_id);
                         $('#txtCbarra').val(obj[0].new_id);
                     }
                 } catch(e) {
@@ -431,6 +436,7 @@ function GrabarProducto() {
         'id_producto': $('#txtID').val() || 0, // Asegurar que sea 0 si está vacío
         'nombre_producto': $('#txtNombre').val().toUpperCase().replace(/[,.'"$#%&]+/g, ''),
         'cbarra': $('#txtCbarra').val(),
+        'cbarra_auto': cbarraSugerido !== null && $.trim($('#txtCbarra').val()) === cbarraSugerido ? 1 : 0,
         'impto_iva': $('#cboImpuestoIva').val(),
         'impto_ila': 1,
         'id_familia': $('#cboFamilia').val(),
@@ -611,6 +617,8 @@ function grabarPreciosYProducto() {
                 return;
             }
             
+            // 18-11-2026: el código con que quedó (si el sugerido se ocupó, el servidor usó el siguiente libre)
+            if (response.cbarra) datosProductoPendiente.cbarra = response.cbarra;
             // Crear insumo si es venta directa
             if (datosProductoPendiente.venta_uno_a_uno == 1) {
                 GrabarNuevoInsumo();

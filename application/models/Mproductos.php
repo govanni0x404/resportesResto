@@ -304,19 +304,22 @@ class Mproductos extends CI_Model
 	{
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
-		// Se calcula en base a los datos reales de la tabla (MAX id_producto / MAX cbarra numérico)
-		// en lugar de la secuencia interna: si la secuencia queda desincronizada (p.ej. tras
-		// recrear/restaurar la tabla) el código propuesto se queda pegado en el mismo valor
-		// aunque se sigan creando productos con id_producto nuevos.
+		// 18-11-2026 (pedido del usuario): correlativo propio, "el último automático + 1", sin contar los códigos propios.
+		// Ej.: si va en el 5 y se crea uno con 12872847, el siguiente vuelve a ser 6. Antes era el MAYOR de todos los
+		// códigos + 1: un código largo (2000000000895) arrastraba la sugerencia a 2000000000896.
+		// Automático = código numérico que no pasa del id_producto más alto (los automáticos nacen con el id del producto o
+		// menos; los propios, EAN y similares, son mucho más largos). Se toma el primero libre después del último.
 		$query = $this->db->query(
-			"SELECT COALESCE(GREATEST(
-				(SELECT MAX(id_producto) FROM producto),
-				(SELECT MAX(cbarra::bigint) FROM producto WHERE cbarra ~ '^[0-9]+$')
-			), 0) + 1 as siguiente"
+			"WITH base AS (
+				SELECT COALESCE(MAX(cbarra::bigint), 0) AS b FROM producto
+				WHERE cbarra ~ '^[0-9]{1,18}$' AND cbarra::bigint <= (SELECT COALESCE(MAX(id_producto), 0) FROM producto)
+			)
+			SELECT COALESCE((SELECT min(n) FROM base, generate_series(base.b + 1, base.b + 5000) AS n
+				WHERE NOT EXISTS (SELECT 1 FROM producto p WHERE trim(p.cbarra) = n::text)), (SELECT b FROM base) + 1) AS siguiente"
 		);
 		$row = $query->row();
 
-		return ($row && $row->siguiente) ? $row->siguiente : 1;
+		return ($row && $row->siguiente) ? (string)$row->siguiente : '1';
 	}
 
 	public function grabarNuevaSubFamilia($id, $data)
@@ -739,13 +742,8 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $query = $this->db->query(
-            "SELECT COALESCE(GREATEST(
-                (SELECT MAX(id_producto) FROM producto),
-                (SELECT MAX(cbarra::bigint) FROM producto WHERE cbarra ~ '^[0-9]+$')
-            ), 0) + 1 as new_id"
-        );
-        return $query->result();
+        // 18-11-2026: el mismo correlativo que obtenerSiguienteCodigoBarra (antes era el mayor código + 1)
+        return array((object)array('new_id' => $this->obtenerSiguienteCodigoBarra()));
     }
 
 	public function grabarPrecioProducto($data, $idDetalle = null)
