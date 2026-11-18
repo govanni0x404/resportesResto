@@ -45,3 +45,8 @@ assets/uploads/productos/*/
 
 # Instaladores pesados (agente de impresión, etc.): se copian a mano al servidor, no van a git (14-11-2026)
 instaladores/*.exe
+
+# Respaldos, pruebas e imagenes subidas: nunca a git
+/_respaldos_*/
+/c.txt
+/uploads/*/
