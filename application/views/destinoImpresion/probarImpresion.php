@@ -45,7 +45,7 @@ $__flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON
 			var cols = mm === 58 ? 28 : 41, job = new PrinterJob({});
 			job.fontsize(1).textaling('center').fontbold(true).texto('PRUEBA DE IMPRESION').fontbold(false);
 			if (EMPRESA) job.texto(EMPRESA);
-			job.texto('dat@Resto').linea({ caracter: '-', ancho: cols, ancho_maximo: cols })
+			job.texto('DataRestoWeb').linea({ caracter: '-', ancho: cols, ancho_maximo: cols })
 				.textaling('left')
 				.texto(fila('Destino:', destino, cols))
 				.texto('Impresora: ' + impresora)

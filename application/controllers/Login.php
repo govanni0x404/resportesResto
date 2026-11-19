@@ -410,7 +410,7 @@ class Login extends CI_Controller
 	/* =====================================================================
 	 * RECUPERAR CONTRASEÑA DESDE EL LOGIN (11-11-2026), igual que mipdv_web:
 	 *   1. desafioRecuperarClave         → pregunta anti-bot.
-	 *   2. recuperarClaveEnviarCodigo    → el correo debe tener acceso a dat@Resto en la intranet;
+	 *   2. recuperarClaveEnviarCodigo    → el correo debe tener acceso a DataRestoWeb en la intranet;
 	 *                                      código de 6 dígitos al correo.
 	 *   3. recuperarClaveVerificarCodigo → valida el código en el servidor.
 	 *   4. recuperarClaveGuardar         → contraseña nueva + repetición; la aplica la intranet
@@ -454,7 +454,7 @@ class Login extends CI_Controller
 			return;
 		}
 
-		// Antes de enviar el código, el correo debe tener acceso a dat@Resto (RESTO_ID_SOFTWARE). Cada consulta
+		// Antes de enviar el código, el correo debe tener acceso a DataRestoWeb (RESTO_ID_SOFTWARE). Cada consulta
 		// cuesta una pregunta anti-bot y hay un máximo por IP, para que no sirva para adivinar correos.
 		if ($correo === '' || strlen($correo) > 100 || !filter_var($correo, FILTER_VALIDATE_EMAIL)) {
 			$this->rcJson(array('ok' => false, 'msg' => 'Ingresa un correo válido.', 'campo' => 'correo'));
@@ -477,14 +477,14 @@ class Login extends CI_Controller
 				'no_existe' => true,
 				'nuevo_desafio' => true,
 				'campo' => 'correo',
-				'msg' => 'Ese correo no tiene una cuenta de dat@Resto. Revisa que esté bien escrito o escríbenos a Datamaule.'
+				'msg' => 'Ese correo no tiene una cuenta de DataRestoWeb. Revisa que esté bien escrito o escríbenos a Datamaule.'
 			));
 			return;
 		}
 
 		$this->load->library('CodigoCorreo', null, 'codigocorreo');
 		$this->rcJson($this->codigocorreo->enviar('recuperar_clave', $correo, 'Recuperar contraseña',
-			'Usa este código para crear una nueva contraseña de dat@Resto:'));
+			'Usa este código para crear una nueva contraseña de DataRestoWeb:'));
 	}
 
 	public function recuperarClaveVerificarCodigo()
@@ -526,7 +526,7 @@ class Login extends CI_Controller
 		$this->session->unset_userdata('recuperar_clave_desafio');
 
 		if ((int)$r['filas'] <= 0) {
-			$this->rcJson(array('ok' => false, 'msg' => 'No encontramos una cuenta de dat@Resto con ese correo. Si crees que es un error, escríbenos a Datamaule.', 'sin_cuenta' => true));
+			$this->rcJson(array('ok' => false, 'msg' => 'No encontramos una cuenta de DataRestoWeb con ese correo. Si crees que es un error, escríbenos a Datamaule.', 'sin_cuenta' => true));
 			return;
 		}
 

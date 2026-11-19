@@ -142,7 +142,7 @@
         })();
     </script>
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <title>DATAMAULE RESTO WEB</title>
+    <title>DataRestoWeb</title>
 
     <!-- Favicon and touch icons -->
     <link rel="shortcut icon" href="<?php echo base_url() ?>assets/dist/img/ico/datamaule36x36.png" type="image/x-icon">

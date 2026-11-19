@@ -3,7 +3,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
  * Codigos de verificacion enviados al correo.
- * Copia de mipdv_web (21-10-2026), adaptada a dat@Resto el 11-11-2026.
+ * Copia de mipdv_web (21-10-2026), adaptada a DataRestoWeb el 11-11-2026.
  *
  * Hoy lo usa 'recuperar_clave' (recuperar la contrasena desde el login).
  * El correo sale con application/config/email.php (variables MIPDV_SMTP_* del entorno).
@@ -87,7 +87,7 @@ class CodigoCorreo
     $enviado = false;
     try {
       $from = $this->_prepararCorreo();
-      $this->CI->email->from($from, 'dat@Resto Datamaule');
+      $this->CI->email->from($from, 'DataRestoWeb Datamaule');
       $this->CI->email->to($correo);
       $this->CI->email->subject($titulo . ': tu código es ' . $codigo);
       $this->CI->email->message($this->CI->load->view('login/email_codigo_verificacion', array(
@@ -204,9 +204,9 @@ class CodigoCorreo
       }
 
       $from = $this->_prepararCorreo();
-      $this->CI->email->from($from, 'dat@Resto Datamaule');
+      $this->CI->email->from($from, 'DataRestoWeb Datamaule');
       $this->CI->email->to($correo);
-      $this->CI->email->subject('Tu contraseña de dat@Resto fue cambiada');
+      $this->CI->email->subject('Tu contraseña de DataRestoWeb fue cambiada');
       $this->CI->email->message($this->CI->load->view('login/email_aviso_cambio_clave', array(
         'correo' => $correo,
         'fecha' => $fecha->format('d-m-Y'),

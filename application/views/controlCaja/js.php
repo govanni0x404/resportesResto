@@ -89,7 +89,7 @@
 						'Pulsa <b>Actualizar desde la intranet</b> para traer sus sucursales y cajas.');
 				} else if (porSucursal()) {
 					vacio('<i class="fa fa-desktop"></i>' + (traidas[datos.id_sucursal]
-						? 'La intranet no tiene cajas de dat@Resto autorizadas para esta sucursal.'
+						? 'La intranet no tiene cajas de DataRestoWeb autorizadas para esta sucursal.'
 						: 'No hay cajas registradas para esta sucursal.<br>Pulsa <b>Actualizar desde la intranet</b> para traerlas.'));
 				} else {
 					vacio('<i class="fa fa-desktop"></i>No hay cajas registradas para este sistema.<br>' +

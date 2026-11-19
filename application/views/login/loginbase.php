@@ -6,7 +6,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-	<title>DATAMAULE</title>
+	<title>DataRestoWeb</title>
 
 	<!-- Favicon and touch icons -->
 	<link rel="shortcut icon" href="<?php echo base_url() ?>assets/dist/img/ico/datamaule36x36.png" type="image/x-icon">
@@ -64,7 +64,7 @@
 										<i class="pe-7s-unlock"></i>
 									</div>
 									<div class="header-title">
-										<h3>dat@Resto</h3>
+										<h3>DataRestoWeb</h3>
 										<br>
 										<small><strong>Inicio De Sesion.</strong></small>
 									</div>

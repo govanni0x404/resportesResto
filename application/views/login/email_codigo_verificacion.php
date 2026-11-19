@@ -5,7 +5,7 @@
 <body style="margin:0;padding:24px;background:#f2f4f7;font-family:Arial,Helvetica,sans-serif;color:#1d2939;">
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e3e8ef;">
     <tr>
-      <td style="background:#3d6b20;color:#ffffff;padding:18px 24px;font-size:18px;font-weight:bold;"><?php echo html_escape($titulo); ?> · dat@Resto Datamaule</td>
+      <td style="background:#3d6b20;color:#ffffff;padding:18px 24px;font-size:18px;font-weight:bold;"><?php echo html_escape($titulo); ?> · DataRestoWeb Datamaule</td>
     </tr>
     <tr>
       <td style="padding:24px;">

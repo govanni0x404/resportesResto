@@ -27,7 +27,7 @@ $config['intervalo_segundos'] = 7;
 
 $config['anuncios'] = array(
 	array(
-		'etiqueta'         => 'dat@Resto',
+		'etiqueta'         => 'DataRestoWeb',
 		'titulo'           => 'Tu restaurante,',
 		'titulo_destacado' => 'en orden y a tiempo.',
 		'texto'            => 'Mesas, comandas a cocina, caja y reportes en una sola plataforma web.',

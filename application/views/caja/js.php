@@ -834,7 +834,7 @@
 					? '<i class="fa fa-exclamation-triangle"></i>' + (cajasControl.length ? '' : 'Todas las cajas de esta sucursal están en uso. ')
 						+ enUso + (enUso === 1 ? ' caja abierta' : ' cajas abiertas') + ' por otros usuarios.'
 					: (!cajasControl.length && apertura.id_sucursal && apertura.hay_cajas
-						? '<i class="fa fa-info-circle"></i>Esta sucursal no tiene cajas de dat@Resto autorizadas en la intranet.' : ''));
+						? '<i class="fa fa-info-circle"></i>Esta sucursal no tiene cajas de DataRestoWeb autorizadas en la intranet.' : ''));
 				return;
 			}
 			$('#infoControlCaja').html('<i class="fa fa-tags"></i>Lista de precios: <b>' + esc(c.lista) + '</b>' + (c.cambia_lista ? '' : ' (fija)')

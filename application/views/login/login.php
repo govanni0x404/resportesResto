@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DATARESTO</title>
+    <title>DataRestoWeb</title>
 
     <link rel="shortcut icon" href="<?php echo base_url() ?>assets/dist/img/ico/datamaule36x36.png" type="image/x-icon">
     
@@ -288,7 +288,7 @@
         }
 
         /* ================================================================
-           11-11-2026: publicidad dat@Resto / Datamaule sobre el fondo y
+           11-11-2026: publicidad DataRestoWeb / Datamaule sobre el fondo y
            "¿Olvidaste tu contraseña?" (igual que mipdv_web).
            La tarjeta de acceso no cambia: solo se ubica a la derecha.
            ================================================================ */
@@ -456,7 +456,7 @@
         );
     }
     if (!$lgLimpios) {
-        $lgLimpios[] = array('etiqueta' => 'dat@Resto', 'titulo' => 'Tu restaurante,', 'titulo_destacado' => 'en orden y a tiempo.',
+        $lgLimpios[] = array('etiqueta' => 'DataRestoWeb', 'titulo' => 'Tu restaurante,', 'titulo_destacado' => 'en orden y a tiempo.',
             'texto' => 'Mesas, comandas a cocina, caja y reportes en una sola plataforma web.', 'boton_texto' => '', 'boton_url' => '');
     }
     $lgE = function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); };
@@ -469,7 +469,7 @@
                 <div class="login-icon">
                     <img src="<?php echo base_url() ?>assets/dist/img/logo_datamaule_d.png" alt="Logo Datamaule">
                 </div>
-                <h1 class="login-title">dat@Resto</h1>
+                <h1 class="login-title">DataRestoWeb</h1>
                 <p class="login-subtitle">Bienvenido de nuevo</p>
             </div>
 
@@ -531,14 +531,14 @@
         <?php echo form_close(); ?>
     </div>
 
-    <!-- Publicidad dat@Resto / Datamaule (11-11-2026): textos en application/config/login_publicidad.php -->
-    <section class="lg-hero" aria-label="dat@Resto, de Datamaule">
+    <!-- Publicidad DataRestoWeb / Datamaule (11-11-2026): textos en application/config/login_publicidad.php -->
+    <section class="lg-hero" aria-label="DataRestoWeb, de Datamaule">
         <div class="lg-brand">
             <div class="lg-brand-logo">
                 <img src="<?php echo base_url() ?>assets/dist/img/logo_datamaule_spa.png" alt="Datamaule SpA - Soluciones Informáticas" width="208" height="82">
             </div>
             <div class="lg-brand-text">
-                <div class="lg-brand-name">dat@Resto</div>
+                <div class="lg-brand-name">DataRestoWeb</div>
                 <div class="lg-brand-sub">Sistema para restaurantes</div>
             </div>
         </div>
@@ -586,7 +586,7 @@
             </div>
             <div class="dm-ad-pie">Escríbenos por WhatsApp y te asesoramos</div>
         </div>
-        <div class="lg-firma">dat@Resto es un producto de Datamaule SpA · Soluciones informáticas</div>
+        <div class="lg-firma">DataRestoWeb es un producto de Datamaule SpA · Soluciones informáticas</div>
     </section>
     </div>
 
@@ -729,7 +729,7 @@
         var correoVerificado = '';
         var timer = null;
         var ultimoFoco = null;
-        // Correo sin cuenta de dat@Resto → botones bloqueados hasta cambiarlo
+        // Correo sin cuenta de DataRestoWeb → botones bloqueados hasta cambiarlo
         var correoBloqueado = '';
         function bloquearPorCorreo(correo) {
             correoBloqueado = correo || '';
@@ -849,7 +849,7 @@
             var resp = $id('rcVerificacion').value.trim();
             if (correoBloqueado && correo.toLowerCase() === correoBloqueado.toLowerCase()) {
                 marcar('correo', true);
-                mensaje('error', 'Ese correo no tiene una cuenta de dat@Resto. Corrígelo para continuar.');
+                mensaje('error', 'Ese correo no tiene una cuenta de DataRestoWeb. Corrígelo para continuar.');
                 return;
             }
             var ok = marcar('correo', !correoValido(correo));

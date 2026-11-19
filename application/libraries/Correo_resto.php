@@ -65,7 +65,7 @@ class Correo_resto
 				'crlf' => "\r\n",
 				'wordwrap' => false,
 			));
-			$CI->email->from($usuario, 'Resto Web');
+			$CI->email->from($usuario, 'DataRestoWeb');
 			$CI->email->to($destinos);
 			$CI->email->subject($asunto);
 			$CI->email->message($html);

@@ -307,8 +307,8 @@ class Configuraciones extends CI_Controller {
             echo json_encode(array('ok' => false, 'detalle' => 'Ningún correo válido. Sepáralos por coma, ej: uno@correo.cl, otro@correo.cl'));
             return;
         }
-        list($ok, $detalle) = $this->correo_resto->enviar($this, get_tenant_db($this), 'Prueba de correo - Resto Web',
-            '<p>Este es un correo de prueba de <b>Resto Web</b>.</p><p>Si lo recibiste, los informes por correo (cierre de caja y anulaciones) llegarán a esta dirección.</p>', $correos);
+        list($ok, $detalle) = $this->correo_resto->enviar($this, get_tenant_db($this), 'Prueba de correo - DataRestoWeb',
+            '<p>Este es un correo de prueba de <b>DataRestoWeb</b>.</p><p>Si lo recibiste, los informes por correo (cierre de caja y anulaciones) llegarán a esta dirección.</p>', $correos);
         echo json_encode(array('ok' => $ok, 'detalle' => $detalle), JSON_UNESCAPED_UNICODE);
     }
 

@@ -466,7 +466,7 @@ class Mlogin extends CI_Model
 	// ======================================================================
 
 	/**
-	 * ¿El correo tiene acceso a dat@Resto (id_software=24) en la intranet? Se consulta antes de enviar el código.
+	 * ¿El correo tiene acceso a DataRestoWeb (id_software=24) en la intranet? Se consulta antes de enviar el código.
 	 * @return array ok(bool: la consulta respondió), existe(bool), mensaje(string)
 	 */
 	public function existeCorreoAppWeb($correo)
