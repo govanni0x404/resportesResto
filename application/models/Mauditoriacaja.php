@@ -352,8 +352,12 @@ class Mauditoriacaja extends CI_Model
 		$usuario = isset($dc['id_cajero']) ? 'COALESCE(NULLIF(dc.id_cajero, 0), dc.id_garzon)' : 'dc.id_garzon';
 		$motivo = isset($dc['motivo_anulacion']) ? "COALESCE(dc.motivo_anulacion, '')" : "''";
 		$plano = $this->columnasDe('mesa_plano');
-		$nombreMesa = isset($plano['nombre']) ? "COALESCE(NULLIF(trim(mp.nombre), ''), 'Mesa ' || c.id_mesa)" : "'Mesa ' || c.id_mesa";
+		// 19-11-2026: sin nombre propio, el del tipo de mesa (ej. "Mesa D1"); sin mesa en la tabla, "Mesa N"
+		$this->load->model('Mtipomesa');
+		$porTipo = $this->Mtipomesa->conMesa() ? "COALESCE(" . $this->Mtipomesa->nombreSql('mw', 'tmw') . ", 'Mesa ' || c.id_mesa)" : "'Mesa ' || c.id_mesa";
+		$nombreMesa = isset($plano['nombre']) ? "COALESCE(NULLIF(trim(mp.nombre), ''), $porTipo)" : $porTipo;
 		$joinPlano = isset($plano['nombre']) ? 'LEFT JOIN mesa_plano mp ON mp.id_mesa = c.id_mesa' : '';
+		if ($this->Mtipomesa->conMesa()) $joinPlano .= ' LEFT JOIN mesa mw ON mw.id_mesa = c.id_mesa ' . $this->Mtipomesa->joinSql('mw', 'tmw');
 		$filas = $this->q("SELECT to_char(dc.hora_anulacion, 'YYYY-MM-DD HH24:MI:SS') AS fecha, COALESCE(p.nombre_producto, 'Producto') AS producto,
 				COALESCE(dc.cantidad, 0) AS cantidad, COALESCE(dc.total_bruto, 0) AS total, $motivo AS motivo,
 				COALESCE(u.nombre_usuario, '') AS usuario, $nombreMesa AS mesa

@@ -270,6 +270,7 @@
 				url: base + 'imprimirComanda', type: 'POST', dataType: 'json', data: { comanda_id: comandaId }
 			}).done(function (r) {
 				var com = r.comandas || [];
+				if (!com.length) toastr.info('Ningún producto tiene impresora (destino "Sin impresión"): no sale ' + (que || 'comanda').toLowerCase() + '.', '', { timeOut: 5000 });
 				$.each(com, function (i, c) {
 					if (c.ok) toastr.success((que || 'Comanda') + ' enviada a ' + c.destino, '', { timeOut: 2500 });
 					else toastr.error('Comanda de ' + c.destino + ': ' + c.detalle, '', { timeOut: 9000 });
@@ -304,6 +305,8 @@
 			if (!window.ImpresionLocal) { listo(); toastr.error('No se cargó el cliente de impresión local: recarga la Caja.', que + ' sin imprimir', { timeOut: 15000, closeButton: true }); return; }
 			(preparada || prepararComandaLocal(comandaId)).then(function (p) {
 				var r = p.r, grupos = r.comandas || [], i = 0, fallas = 0;
+				// 19-11-2026: todos los productos con destino "Sin impresión" (o sin destino): no hay nada que imprimir, se avisa
+				if (!grupos.length) toastr.info('Ningún producto tiene impresora (destino "Sin impresión"): no sale ' + que.toLowerCase() + '.', '', { timeOut: 5000 });
 				// 17-11-2026: con "Boletas, precuentas y comandas con el diseño de la página", cada destino (caja, cocina,
 				// barra...) recibe su comanda como imagen por el agente, directo (antes la de la caja salía por el navegador,
 				// con el cuadro de impresión). Si la imagen no se puede hacer, sale con el formato del agente.
@@ -514,7 +517,7 @@
 			var pedido = {
 				delivery: entregaPantalla(), id_lprecio: Number($('#cboLista').val()), id_cliente: cliente ? cliente.id_cliente : 0,
 				descuento: totales().descuento,
-				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota }; })
+				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {} }; })
 			};
 			var terminar = function () { guardandoDelivery = false; renderCarro(); };
 			enviarConAutorizacion(function (aut) {
@@ -544,7 +547,8 @@
 						var p = producto(Number(it.id_producto));
 						if (!p) { faltan.push(it.id_producto); return; }
 						lineas.push({ id_producto: Number(it.id_producto), nombre: p.nombre, precio: p.precio, cantidad: Number(it.cantidad),
-							agregados: $.grep((it.agregados || []).map(Number), function (a) { return !!agregado(a); }), nota: it.nota || '' });
+							agregados: $.grep((it.agregados || []).map(Number), function (a) { return !!agregado(a); }), nota: it.nota || '',
+							notas_agregados: it.notas_agregados && typeof it.notas_agregados === 'object' ? it.notas_agregados : {} });
 					});
 					if (faltan.length || !lineas.length) {
 						toastr.error('Algún producto de este delivery ya no está a la venta en su lista de precios', 'No se puede cobrar');
@@ -1301,9 +1305,12 @@
 			$('#opcionesMaxAgregados').text(max > 0 ? '(máximo ' + max + ')' : '');
 			$('#listaAgregados').html($.map(ags, function (a) {
 				var marcado = linea && $.inArray(a.id_agregado, linea.agregados) >= 0;
+				// 19-11-2026: cada agregado marcado puede llevar su propio mensaje para la comanda (ej. Palta: sin sal)
+				var notaAg = linea && linea.notas_agregados ? (linea.notas_agregados[a.id_agregado] || '') : '';
 				// Estructura del tema (checkbox-success): el input va antes del label
-				return '<div class="checkbox checkbox-success"><input type="checkbox" class="chk-agregado" id="ag' + a.id_agregado + '" value="' + a.id_agregado + '"' + (marcado ? ' checked' : '') + '>'
-					+ '<label for="ag' + a.id_agregado + '">' + esc(a.nombre) + (a.valor ? ' <span class="valor">+' + fmt(a.valor) + '</span>' : '') + '</label></div>';
+				return '<div class="ag-item"><div class="checkbox checkbox-success"><input type="checkbox" class="chk-agregado" id="ag' + a.id_agregado + '" value="' + a.id_agregado + '"' + (marcado ? ' checked' : '') + '>'
+					+ '<label for="ag' + a.id_agregado + '">' + esc(a.nombre) + (a.valor ? ' <span class="valor">+' + fmt(a.valor) + '</span>' : '') + '</label></div>'
+					+ '<input type="text" class="form-control input-sm ag-nota" data-id="' + a.id_agregado + '" maxlength="60" placeholder="Mensaje para ' + esc(a.nombre) + ' (opcional)" value="' + esc(notaAg) + '"' + (marcado ? '' : ' style="display:none"') + '></div>';
 			}).join(''));
 
 			// La nota guarda las indicaciones elegidas + el texto libre, separados por coma
@@ -1334,6 +1341,7 @@
 				this.checked = false;
 				toastr.warning('Máximo ' + max + ' agregado(s) por producto');
 			}
+			$(this).closest('.ag-item').find('.ag-nota').toggle(this.checked);
 			precioOpciones();
 		});
 
@@ -1345,18 +1353,24 @@
 			var libre = $.trim($('#txtNotaProducto').val());
 			if (libre) partes.push(libre);
 			var nota = partes.join(', ');
+			var notasAg = {};
+			$('#listaAgregados .chk-agregado:checked').each(function () {
+				var t = $.trim($(this).closest('.ag-item').find('.ag-nota').val());
+				if (t) notasAg[this.value] = t.slice(0, 60);
+			});
 			if (opcionEdicion.indice === null) {
-				agregar(id, ags, nota);
+				agregar(id, ags, nota, undefined, notasAg);
 			} else {
 				carro[opcionEdicion.indice].agregados = ags;
 				carro[opcionEdicion.indice].nota = nota;
+				carro[opcionEdicion.indice].notas_agregados = notasAg;
 				renderCarro();
 			}
 			$('#modalOpciones').modal('hide');
 		});
 
 		$('#modalOpciones').on('shown.bs.modal', function () { $('#txtNotaProducto').focus(); })
-			.on('keydown', '#txtNotaProducto', function (e) { if (e.which === 13) $('#btnConfirmarOpciones').click(); })
+			.on('keydown', '#txtNotaProducto, .ag-nota', function (e) { if (e.which === 13) $('#btnConfirmarOpciones').click(); })
 			.on('hidden.bs.modal', function () { $('#buscarProducto').focus(); });
 
 		// Cambiar la lista de precios: la pública se usa directo; otra pide la clave de administración (Configuraciones).
@@ -1401,7 +1415,8 @@
 		function fmtCant(c) { return String(Math.round(c * 1000) / 1000).replace('.', ','); }
 
 		// cantidad: la del ingreso rápido "cantidad*código"; sin ella se agrega 1
-		function agregar(id, agregados, nota, cantidad) {
+		function agregar(id, agregados, nota, cantidad, notasAg) {
+			notasAg = notasAg || {};
 			var p = producto(id);
 			if (!p) return;
 			// 18-11-2026: un delivery guardado se cobra tal como se pidió
@@ -1417,16 +1432,17 @@
 			agregados = agregados.slice().sort(function (a, b) { return a - b; });
 			// Solo se suma a una línea existente si tiene exactamente las mismas opciones
 			var l = $.grep(carro, function (x) {
-				return !x.enviada && x.id_producto === id && x.nota === nota && x.agregados.join(',') === agregados.join(',');
+				return !x.enviada && x.id_producto === id && x.nota === nota && x.agregados.join(',') === agregados.join(',')
+					&& JSON.stringify(x.notas_agregados || {}) === JSON.stringify(notasAg);
 			})[0];
 			// El cursor se queda en el buscador para seguir ingresando (la cantidad se cambia en la línea o con cantidad*código).
 			// Un pesable ya agregado no suma 1 kg a ciegas: solo suma si se indicó la cantidad.
 			if (dada > 0) {
 				if (l) l.cantidad = ajustarCantidad(id, l.cantidad + dada);
-				else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: dada, agregados: agregados, nota: nota });
+				else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: dada, agregados: agregados, nota: nota, notas_agregados: notasAg });
 			} else if (l) {
 				if (!esFraccion(id)) l.cantidad += 1;
-			} else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: 1, agregados: agregados, nota: nota });
+			} else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: 1, agregados: agregados, nota: nota, notas_agregados: notasAg });
 			renderCarro();
 		}
 
@@ -1509,7 +1525,10 @@
 				var fraccion = esFraccion(l.id_producto);
 				// Un producto pesado cuenta como 1 ítem, no como 0,35
 				unidades += fraccion ? 1 : l.cantidad;
-				var detalle = $.map(l.agregados, function (id) { var a = agregado(id); return a ? '+ ' + esc(a.nombre) : null; });
+				var detalle = $.map(l.agregados, function (id) {
+					var a = agregado(id), na = l.notas_agregados && l.notas_agregados[id];
+					return a ? '+ ' + esc(a.nombre) + (na ? ' <i>» ' + esc(na) + '</i>' : '') : null;
+				});
 				if (l.nota) detalle.push('<i>' + esc(l.nota) + '</i>');
 				var nombre = tieneOpciones(l.id_producto) ? '<a href="#" class="editar" title="Cambiar agregados / indicaciones">' + esc(l.nombre) + '</a>' : esc(l.nombre);
 				// Mensaje para la comanda: disponible en cualquier producto, tenga o no mensajes predefinidos
@@ -2564,7 +2583,7 @@
 				id_delivery: modoDelivery && modoDelivery.id ? modoDelivery.id : 0,
 				// Factura: razón social, giro, dirección, comuna y solicitante elegidos en la ventana Datos de la factura
 				factura: documentoActual().es_factura && cliente && datosFactura && datosFactura.id_cliente === cliente.id_cliente ? datosFactura : null,
-				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota }; }),
+				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {} }; }),
 				pagos: $.map(pagos, function (p) { return p.monto > 0 ? { id_fpago: p.id_fpago, monto: p.monto } : null; }),
 				token: tokenCobro
 			};
@@ -3114,16 +3133,42 @@
 				if (editandoPlano) return;   // no pisar lo que se está moviendo
 				mesasLista = r.mesas;
 				sectoresLista = r.sectores || [];
+				pintarFiltroTipoMesa(r.tipos_mesa || []);
 				renderMesas();
 			});
 		}
 		function nombreMesa(id) {
 			var m = $.grep(mesasLista, function (x) { return x.id_mesa === id; })[0];
-			return m && m.nombre ? m.nombre : 'Mesa ' + id;
+			// 19-11-2026: sin nombre propio, el del tipo de mesa (ej. "Mesa D1")
+			return m && m.nombre ? m.nombre : (m && m.nombre_tipo ? m.nombre_tipo : 'Mesa ' + id);
 		}
 		function mesasDelSector() {
 			return $.grep(mesasLista, function (m) { return m.id_recinto === sectorActual; });
 		}
+		// 19-11-2026: filtro por tipo de mesa ('' = todas, 0 = sin tipo). También al organizar el plano (pedido del usuario):
+		// se mueven solo las de ese tipo; las demás quedan donde estaban.
+		var tipoMesaFiltro = '';
+		try { tipoMesaFiltro = localStorage.getItem('cajaWeb.tipoMesa') || ''; } catch (e) {}
+		function pintarFiltroTipoMesa(tipos) {
+			var $f = $('#filtroTipoMesa');
+			if (!tipos.length) { tipoMesaFiltro = ''; $f.hide(); return; }
+			var sinTipo = $.grep(mesasLista, function (m) { return !m.id_tipo_mesa; }).length > 0;
+			$f.empty().append($('<option>').val('').text('Todos los tipos de mesa'));
+			$.each(tipos, function (i, t) { $f.append($('<option>').val(String(t.id)).text(t.nombre)); });
+			if (sinTipo) $f.append($('<option>').val('0').text('Sin tipo'));
+			if (!$f.find('option').filter(function () { return this.value === tipoMesaFiltro; }).length) tipoMesaFiltro = '';
+			$f.val(tipoMesaFiltro).show();
+		}
+		function mesasVisibles(lista) {
+			if (tipoMesaFiltro === '') return lista;
+			var id = Number(tipoMesaFiltro);
+			return $.grep(lista, function (m) { return (m.id_tipo_mesa || 0) === id; });
+		}
+		$('#filtroTipoMesa').on('change', function () {
+			tipoMesaFiltro = String($(this).val() || '');
+			try { localStorage.setItem('cajaWeb.tipoMesa', tipoMesaFiltro); } catch (e) {}
+			renderMesas();
+		});
 		function renderSectores() {
 			var sectores = [], vistos = {};
 			var agregar = function (id, nombre) { vistos[id] = { id: id, nombre: nombre, ocupadas: 0 }; sectores.push(vistos[id]); };
@@ -3154,13 +3199,15 @@
 		}
 		function renderMesas() {
 			renderSectores();
-			var $g = $('#mesasGrilla').addClass('mesas-plano').empty(), ahora = Date.now(), lista = mesasDelSector();
-			posicionarPorDefecto(lista);
-			if (!lista.length) $g.append('<div class="mesas-vacio">Este sector aún no tiene mesas. Asígnalas en <a href="<?php echo base_url(); ?>index.php/MesasPorRecinto">Mesas por recinto</a>.</div>');
+			var $g = $('#mesasGrilla').addClass('mesas-plano').empty(), ahora = Date.now(), todas = mesasDelSector();
+			posicionarPorDefecto(todas);   // con todas: filtrar por tipo no mueve las mesas en el plano
+			var lista = mesasVisibles(todas);
+			if (todas.length && !lista.length) $g.append('<div class="mesas-vacio">Este sector no tiene mesas de este tipo. Elige otro tipo arriba o <b>Todos los tipos de mesa</b>.</div>');
+			else if (!lista.length) $g.append('<div class="mesas-vacio">Este sector aún no tiene mesas. Asígnalas en <a href="<?php echo base_url(); ?>index.php/MesasPorRecinto">Mesas por recinto</a>.</div>');
 			$.each(lista, function (i, m) {
 				var $c = $('<button type="button" class="mesa-card">').addClass(m.estado).toggleClass('con-pedido', !!m.con_pedido).toggleClass('actual', !!mesa && mesa.id_mesa === m.id_mesa)
 					.attr('data-id', m.id_mesa).attr('data-estado', m.estado).css({ left: m.x, top: m.y })
-					.append($('<div class="num">').toggleClass('largo', !!m.nombre && m.nombre.length > 9).text(nombreMesa(m.id_mesa)).attr('title', nombreMesa(m.id_mesa)));
+					.append($('<div class="num">').toggleClass('largo', nombreMesa(m.id_mesa).length > 9).text(nombreMesa(m.id_mesa)).attr('title', nombreMesa(m.id_mesa)));
 				if (m.con_pedido) {
 					$c.append($('<div class="total">').text(fmt(m.total)))
 						.append($('<div class="tiempo">').attr('data-inicio', ahora - m.segundos * 1000).text(fmtTiempo(m.segundos * 1000)))
@@ -3171,12 +3218,13 @@
 				}
 				$g.append($c);
 			});
-			ajustarAltoPlano(lista);
+			ajustarAltoPlano(todas);
 		}
 		function renombrarMesa(id) {
 			var m = $.grep(mesasLista, function (x) { return x.id_mesa === id; })[0];
 			if (!m) return;
-			swal({ title: 'Nombre de la mesa ' + id, text: 'Ej: Terraza 2, Barra 1. Déjalo vacío para usar "Mesa ' + id + '".', type: 'input', inputValue: m.nombre || '', inputPlaceholder: 'Mesa ' + id, showCancelButton: true, confirmButtonText: 'Usar este nombre', cancelButtonText: 'Cancelar' }, function (v) {
+			var porDefecto = m.nombre_tipo || ('Mesa ' + id);
+			swal({ title: 'Nombre de la mesa ' + id, text: 'Ej: Terraza 2, Barra 1. Déjalo vacío para usar "' + porDefecto + '".', type: 'input', inputValue: m.nombre || '', inputPlaceholder: porDefecto, showCancelButton: true, confirmButtonText: 'Usar este nombre', cancelButtonText: 'Cancelar' }, function (v) {
 				if (v === false) return;
 				m.nombre = $.trim(v).substring(0, 40);
 				renderMesas();
@@ -3317,7 +3365,11 @@
 		function aplicarDetalleMesa(d) {
 			cobroParcial = null;
 			dcCobro = null;
-			mesa = { id_mesa: d.id_mesa, id_cotizacion: d.id_cotizacion, id_garzon: d.id_garzon || 0, inicio: d.id_cotizacion ? Date.now() - d.segundos * 1000 : 0 };
+			// 19-11-2026: mensaje general de la mesa; en una mesa sin pedido se conserva el que se escribió antes de enviar
+			var mensajePrevio = mesa && mesa.id_mesa === d.id_mesa && !d.id_cotizacion ? (mesa.mensaje || '') : '';
+			mesa = { id_mesa: d.id_mesa, id_cotizacion: d.id_cotizacion, id_garzon: d.id_garzon || 0, inicio: d.id_cotizacion ? Date.now() - d.segundos * 1000 : 0,
+				mensaje: d.id_cotizacion ? (d.mensaje || '') : mensajePrevio };
+			pintarMensajeMesa();
 			carro = $.map(d.lineas, function (l) {
 				return { enviada: true, id_detalle: l.id_detalle, id_producto: l.id_producto, nombre: l.nombre, precio: l.unitario, bruto: l.bruto, bruto_exacto: l.bruto_exacto,
 					cantidad: l.cantidad, agregados: [], agregado: l.agregado, nota: l.nota, exento: l.exento, hora: l.hora };
@@ -3486,10 +3538,10 @@
 		function enviarAMesa(luegoCobrar) {
 			if (enviando || !mesa) return;
 			var idMesa = mesa.id_mesa, enviadas = pendientesMesa();
-			var detalle = $.map(enviadas, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota }; });
+			var detalle = $.map(enviadas, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {} }; });
 			enviando = true;
 			$('#btnEnviarMesa, #btnEnviarMesaBarra, #btnCobrar').prop('disabled', true);
-			postJson('enviarMesa', { id_mesa: idMesa, id_lprecio: Number($('#cboLista').val()), detalle: detalle }).done(function (r) {
+			postJson('enviarMesa', { id_mesa: idMesa, id_lprecio: Number($('#cboLista').val()), detalle: detalle, observacion: mesa.mensaje || '' }).done(function (r) {
 				if (imprimeComanda()) imprimirComandaBloqueando(r.comanda_id, 'Comanda');
 				// Se conserva lo que se agregó mientras se enviaba
 				carro = $.grep(carro, function (l) { return !l.enviada && $.inArray(l, enviadas) < 0; });
@@ -3508,6 +3560,36 @@
 			});
 		}
 		function anularLineaMesa(l) { abrirMesaProductos('anular', [l]); }
+
+		// 19-11-2026: mensaje general de la mesa (ej. "Alérgico al maní", "Traer todo junto"). Sale impreso en cada comanda de
+		// la mesa (envíos y reenvíos). Con pedido se guarda al tiro; sin pedido, se guarda con el primer envío.
+		function pintarMensajeMesa() {
+			var t = mesa && mesa.mensaje ? mesa.mensaje : '';
+			$('#btnMensajeMesa').toggleClass('con-mensaje', !!t).attr('title', t ? 'Mensaje de la mesa: ' + t + ' (clic para cambiarlo)' : 'Mensaje para toda la mesa: sale en cada comanda');
+			$('#bannerMesaMensaje').text(t ? t : 'Mensaje a la mesa');
+		}
+		$('#btnMensajeMesa').on('click', function () {
+			if (!mesa) return;
+			var idMesa = mesa.id_mesa;
+			swal({ title: 'Mensaje para ' + nombreMesa(idMesa), text: 'Sale impreso en cada comanda de la mesa (cocina, barra…). Déjalo vacío para quitarlo.', type: 'input',
+				inputValue: mesa.mensaje || '', inputPlaceholder: 'Ej: alérgico al maní, traer todo junto', showCancelButton: true,
+				confirmButtonText: 'Guardar', cancelButtonText: 'Cancelar', closeOnConfirm: true }, function (v) {
+				if (v === false || !mesa || mesa.id_mesa !== idMesa) return;
+				var t = $.trim(v).replace(/\s+/g, ' ').slice(0, 200);
+				if (!mesa.id_cotizacion) {
+					mesa.mensaje = t;
+					pintarMensajeMesa();
+					if (t) toastr.info('El mensaje sale en la comanda al enviar los productos');
+					return;
+				}
+				postJson('guardarMensajeMesa', { id_mesa: idMesa, mensaje: t }).done(function (r) {
+					if (!mesa || mesa.id_mesa !== idMesa) return;
+					mesa.mensaje = r.mensaje || '';
+					pintarMensajeMesa();
+					toastr.success(r.mensaje ? 'Mensaje de la mesa guardado: sale en las próximas comandas' : 'Mensaje de la mesa quitado');
+				}).fail(error);
+			});
+		});
 
 		// ---- ventana de productos de la mesa: mover/dividir, cobrar una parte, anular parte de un producto ----
 		var mp = null;   // {modo, lineas}
@@ -4264,6 +4346,9 @@
 				var $t = $('#tablaVentas tbody').empty();
 				if (!r.ventas.length) $t.append('<tr><td colspan="7" class="text-center text-muted">Aún no hay ventas en esta caja</td></tr>');
 				$.each(r.ventas, function (i, v) {
+					// 19-11-2026: "Anular Boleta electronica", "Anular Comprobante"...: el botón dice qué documento anula
+					var docNombre = String(v.nombre_tdocumento || 'documento').toLowerCase();
+					var anularTxt = 'Anular ' + docNombre.charAt(0).toUpperCase() + docNombre.slice(1);
 					var acciones = '<a class="btn btn-xs btn-default" target="_blank" href="' + base + 'ticket/' + v.id_venta + '?imprimir=1" title="Ticket"><i class="fa fa-print"></i></a> '
 						+ '<a class="btn btn-xs btn-default" target="_blank" href="' + base + 'pdf/' + v.id_venta + '" title="PDF"><i class="fa fa-file-pdf-o"></i></a> '
 						+ (v.anulada ? '<span class="label label-danger">Anulada</span>'
@@ -4271,12 +4356,12 @@
 								? '<button class="btn btn-xs btn-info reenviar" data-id="' + v.id_venta + '" title="Reintentar la emisión ante el SII"><i class="fa fa-refresh"></i> Reenviar</button> ' : '')
 							+ (!v.es_nc && !v.cortesia && v.total > 0 && !v.pendiente_dte
 								? (v.electronico
-									? '<button class="btn btn-xs btn-danger devolver" data-id="' + v.id_venta + '" data-anular="1" title="Anula con nota de crédito electrónica (todo o algunos productos)"><i class="fa fa-ban"></i> Anular</button> '
+									? '<button class="btn btn-xs btn-danger devolver" data-id="' + v.id_venta + '" data-anular="1" title="Anula con nota de crédito electrónica (todo o algunos productos)"><i class="fa fa-ban"></i> ' + esc(anularTxt) + '</button> '
 									: '<button class="btn btn-xs btn-warning devolver" data-id="' + v.id_venta + '" title="Devolver productos"><i class="fa fa-undo"></i> Devolver</button> ') : '')
 							// Un documento electrónico ya emitido no se anula: se devuelve con nota de crédito
 							+ (v.electronico && !v.pendiente_dte
 								? (v.es_nc ? '<span class="label label-success" title="Emitida ante el SII: no se anula">Emitida</span>' : '')
-								: '<button class="btn btn-xs btn-danger anular" data-id="' + v.id_venta + '" data-folio="' + v.folio + '">Anular</button>'));
+								: '<button class="btn btn-xs btn-danger anular" data-id="' + v.id_venta + '" data-folio="' + v.folio + '" title="Anula el documento completo"><i class="fa fa-ban"></i> ' + esc(anularTxt) + '</button>'));
 					$t.append('<tr class="' + (v.anulada ? 'anulada' : '') + (v.es_nc ? ' nc' : '') + '">'
 						+ '<td>' + esc(v.hora) + '</td><td>' + esc(v.nombre_tdocumento) + (v.cortesia ? ' <span class="label label-warning">Cortesía</span>' : '')
 						+ (v.es_nc && v.referencia ? '<br><small class="text-muted">Ref. ' + esc(v.referencia) + '</small>' : '')
@@ -4714,9 +4799,19 @@
 		}
 		$(document).on('click', '#btnAbrirGaveta', function () {
 			var $b = $(this).prop('disabled', true);
+			// 19-11-2026: con la impresión en este equipo, la gaveta la abre el agente local (el servidor no llega a la impresora)
+			var local = impresionLocalActiva() && !!window.ImpresionLocal;
 			enviarConAutorizacion(function (aut) {
-				return $.ajax({ url: base + 'abrirGaveta', type: 'POST', dataType: 'json', data: { autorizacion: aut } });
-			}, function () {
+				return $.ajax({ url: base + 'abrirGaveta', type: 'POST', dataType: 'json', data: { autorizacion: aut, local: local ? 1 : 0 } });
+			}, function (r) {
+				if (r && r.local && r.destino) {
+					ImpresionLocal.imprimir(r.destino, [{ accion: 'abrir_gaveta', valor: '' }], { tiempo: 15000 }).then(function () {
+						toastr.success('Gaveta abierta', '', { timeOut: 2000 });
+					}, function (e) {
+						toastr.error(textoPlano(ImpresionLocal.mensaje(e)), 'No se pudo abrir la gaveta', { timeOut: 12000, closeButton: true });
+					}).then(function () { $b.prop('disabled', false); });
+					return;
+				}
 				toastr.success('Gaveta abierta', '', { timeOut: 2000 });
 				$b.prop('disabled', false);
 			}, function () { $b.prop('disabled', false); });
@@ -4918,7 +5013,7 @@
 			return $.map(lista, function (l) {
 				if (l.enviada) return null;
 				return { id_producto: l.id_producto, nombre: l.nombre, precio: l.precio, cantidad: l.cantidad, agregados: (l.agregados || []).slice(),
-					nota: l.nota || '', opciones: $.map(l.agregados || [], function (id) { var a = agregado(id); return a ? a.nombre : null; }).join(', ') };
+					nota: l.nota || '', notas_agregados: l.notas_agregados || {}, opciones: $.map(l.agregados || [], function (id) { var a = agregado(id); return a ? a.nombre : null; }).join(', ') };
 			});
 		}
 		// La venta directa en curso: la que está en pantalla, o la que quedó guardada mientras se atiende una mesa
@@ -5093,7 +5188,8 @@
 		}
 		function aplicarVentaEspera(d) {
 			carro = $.map(d.lineas || [], function (l) {
-				return { id_producto: l.id_producto, nombre: l.nombre, precio: l.precio, cantidad: l.cantidad, agregados: (l.agregados || []).slice(), nota: l.nota || '' };
+				return { id_producto: l.id_producto, nombre: l.nombre, precio: l.precio, cantidad: l.cantidad, agregados: (l.agregados || []).slice(), nota: l.nota || '',
+					notas_agregados: l.notas_agregados && typeof l.notas_agregados === 'object' ? l.notas_agregados : {} };
 			});
 			cliente = d.cliente && d.cliente.id_cliente ? d.cliente : null;
 			$('#txtCliente').val(cliente ? (d.txt_cliente || cliente.nombre_cliente) : '');

@@ -366,10 +366,24 @@ class Mventasespera extends CI_Model
 				'opciones' => $this->texto($l['opciones'] ?? '', 200),
 				// La nota se guarda tal cual (la pantalla junta líneas iguales comparando la nota)
 				'nota' => mb_substr(is_scalar($l['nota'] ?? '') ? (string)($l['nota'] ?? '') : '', 0, 200),
+				// 19-11-2026: mensaje de cada agregado para la comanda {id_agregado: texto}
+				'notas_agregados' => $this->notasAgregados($l['notas_agregados'] ?? null, $agregados),
 			);
 			$unidades += $cant;
 		}
 		return array('lineas' => $res, 'unidades' => round($unidades, 3));
+	}
+
+	private function notasAgregados($notas, $agregados)
+	{
+		$res = array();
+		if (!is_array($notas)) return (object)$res;
+		foreach ($notas as $id => $t) {
+			if (!in_array((int)$id, $agregados, true) || !is_scalar($t)) continue;
+			$t = $this->texto($t, 60);
+			if ($t !== '') $res[(string)(int)$id] = $t;
+		}
+		return (object)$res;   // objeto: en JSON sale {} y no [] aunque esté vacío
 	}
 
 	private function texto($s, $largo)

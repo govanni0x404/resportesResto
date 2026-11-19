@@ -382,7 +382,7 @@ class Caja extends CI_Controller
 			$this->cajaRequerida();
 			$res = array();
 			foreach ($this->Mcaja->tomarComandasApp() as $p) {
-				$id = $this->guardarComanda($p['lineas'], array('id_mesa' => $p['id_mesa'],
+				$id = $this->guardarComanda($p['lineas'], array('id_mesa' => $p['id_mesa'], 'atiende' => $p['garzon'],
 					'observacion' => 'Pedido de la app' . ($p['garzon'] !== '' ? ' - ' . $p['garzon'] : '')));
 				if ($id) $res[] = array('comanda_id' => $id, 'id_mesa' => $p['id_mesa'], 'mesa' => $this->Mcaja->etiquetaMesa($p['id_mesa']));
 			}
@@ -396,10 +396,28 @@ class Caja extends CI_Controller
 			$b = $this->cuerpoJson();
 			unset($b['desde_app']);   // marca reservada a ApiMovil/pedidoMesa
 			$r = $this->Mcaja->enviarMesa($this->cajaRequerida(), $this->idUsuario(), $b, $this->idRol());
-			$r['comanda_id'] = $this->guardarComanda($r['comanda'], array('id_mesa' => (int)($b['id_mesa'] ?? 0)));
+			// 19-11-2026: el mensaje general de la mesa sale en cada comanda de la mesa
+			$r['comanda_id'] = $this->guardarComanda($r['comanda'], array('id_mesa' => (int)($b['id_mesa'] ?? 0),
+				'observacion' => $this->observacionMesa($r['mensaje_mesa'] ?? '')));
 			unset($r['comanda']);
 			return $r;
 		}, true);
+	}
+
+	/** 19-11-2026: guarda o borra el mensaje general de la mesa (sale en sus comandas). */
+	public function guardarMensajeMesa()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			$this->cajaRequerida();
+			return $this->Mcaja->guardarMensajeMesa((int)($b['id_mesa'] ?? 0), $b['mensaje'] ?? '');
+		}, true);
+	}
+
+	private function observacionMesa($mensaje)
+	{
+		$mensaje = trim((string)$mensaje);
+		return $mensaje === '' ? '' : 'MENSAJE DE LA MESA: ' . $mensaje;
 	}
 
 	// ---------------- Dividir cuenta guardado en la base (models/Mdivisioncuenta.php) ----------------
@@ -502,7 +520,8 @@ class Caja extends CI_Controller
 			$ids = isset($b['ids_detalle']) && is_array($b['ids_detalle']) ? $b['ids_detalle'] : array();
 			$lineas = $this->Mcaja->comandaReenvio($idMesa, $ids);
 			if (!$lineas) throw new Exception('No hay productos enviados para volver a mandar', 400);
-			return array('comanda_id' => $this->guardarComanda($lineas, array('id_mesa' => $idMesa, 'reenvio' => true)));
+			return array('comanda_id' => $this->guardarComanda($lineas, array('id_mesa' => $idMesa, 'reenvio' => true,
+				'observacion' => $this->observacionMesa($this->Mcaja->mensajeMesa($idMesa)))));
 		}, true);
 	}
 
@@ -523,6 +542,12 @@ class Caja extends CI_Controller
 		$todas = array_filter($todas, function ($c) { return isset($c['t']) && $c['t'] > time() - 900; });
 		$todas = array_slice($todas, -29, null, true);
 		$id = bin2hex(random_bytes(8));
+		// 19-11-2026: quién atiende (sale en la comanda); por defecto el usuario de la Caja
+		if (!isset($meta['atiende'])) $meta['atiende'] = (string)$this->session->userdata('nombre_usuario');
+		if (!isset($meta['caja'])) {
+			$caja = $this->Mcaja->cajaAbierta($this->idUsuario());
+			$meta['caja'] = $caja ? (int)$caja->id_caja : 0;
+		}
 		$todas[$id] = array('t' => time(), 'lineas' => array_values($lineas)) + $meta;
 		$this->session->set_userdata(self::SESION_COMANDAS, $todas);
 		return $id;
@@ -761,6 +786,15 @@ class Caja extends CI_Controller
 		$this->ejecutar(function () {
 			$caja = $this->cajaRequerida();
 			$this->Mcaja->autorizarGaveta($this->idUsuario(), $this->idRol(), $this->input->post('autorizacion'));
+			// 19-11-2026: con la impresión en el equipo de la caja (agente local), el servidor no llega a la impresora (en
+			// Linux daba "El servidor no es Windows"): aquí solo se autoriza y se anota, y la pantalla la abre por el agente.
+			if ($this->input->post('local')) {
+				$destino = $this->Mcaja->destinoCaja();
+				if (!$destino) throw new Exception('No hay impresora de la caja: elígela en Configuraciones (la gaveta va conectada a ella)', 409);
+				$this->load->model('Mventasespera');
+				$this->Mventasespera->gaveta($caja, $this->idUsuario());
+				return array('ok' => true, 'local' => true, 'destino' => $destino);
+			}
 			$this->load->library('Ticket_impresion');
 			$r = $this->enviarAImpresora($this->Mcaja->destinoCaja(), Ticket_impresion::gaveta());
 			if (!$r['ok']) throw new Exception('No se pudo abrir la gaveta: ' . $r['detalle'], 409);
@@ -979,13 +1013,36 @@ class Caja extends CI_Controller
 		return array(
 			'grupos' => $grupos,
 			'venta' => $doc ? $doc['venta'] : null,
-			'observacion' => $texto(isset($datos['observacion']) ? $datos['observacion'] : '', 200),
+			'observacion' => $texto(isset($datos['observacion']) ? $datos['observacion'] : '', 230),   // 230: cabe el prefijo del mensaje de la mesa
 			// 18-11-2026: el delivery va con su número y nombre en grande, donde va la mesa
 			'mesa' => !empty($datos['id_mesa']) ? $this->Mcaja->etiquetaMesa((int)$datos['id_mesa'])
 				: (!empty($datos['delivery']) ? $texto($datos['delivery'], 60) : ''),
 			'aviso' => $this->avisoComanda($datos),
 			'entrega' => $this->entregaComanda($datos, $texto),
+			'atiende' => $texto(isset($datos['atiende']) ? $datos['atiende'] : '', 60),
+			'info' => $this->infoComanda($datos, $doc, $texto),
 		);
+	}
+
+	/**
+	 * 19-11-2026 (pedido del usuario: "más información, que el papel sea más largo"): filas de datos de la comanda,
+	 * [[etiqueta, valor], ...]: fecha, hora, recinto, N° de pedido, caja y quién atiende.
+	 */
+	private function infoComanda($datos, $doc, $texto)
+	{
+		$t = isset($datos['t']) ? (int)$datos['t'] : time();
+		$info = array(array('Fecha', date('d/m/Y', $t)), array('Hora', date('H:i:s', $t)));
+		if (!empty($datos['id_mesa'])) {
+			$m = $this->Mcaja->infoComandaMesa((int)$datos['id_mesa']);
+			if ($m['recinto'] !== '') $info[] = array('Recinto', $texto($m['recinto'], 40));
+			if ($m['pedido'] > 0) $info[] = array('Pedido N°', (string)$m['pedido']);
+		} elseif ($doc && !empty($doc['venta']->folio)) {
+			$info[] = array('Documento', $texto($doc['venta']->nombre_tdocumento . ' N° ' . $doc['venta']->folio, 40));
+		}
+		if (!empty($datos['caja'])) $info[] = array('Caja N°', (string)(int)$datos['caja']);
+		$atiende = $doc && !empty($doc['venta']->nombre_usuario) ? $doc['venta']->nombre_usuario : (isset($datos['atiende']) ? $datos['atiende'] : '');
+		if (trim((string)$atiende) !== '') $info[] = array('Atiende', $texto($atiende, 40));
+		return $info;
 	}
 
 	/**
@@ -1096,7 +1153,7 @@ class Caja extends CI_Controller
 					'nombre' => $g['nombre'],
 					'id' => (int)$d['id'],
 					'destino' => array('nombre' => $d['nombre'], 'ip' => $d['ip'], 'puerto' => $d['puerto'], 'ruta_windows' => $d['ruta_windows']),
-					'operaciones' => $this->comanda_local->operaciones($g, $c['venta'], $c['observacion'], $c['mesa'], $c['aviso'], $c['entrega']),
+					'operaciones' => $this->comanda_local->operaciones($g, $c['venta'], $c['observacion'], $c['mesa'], $c['aviso'], $c['entrega'], $c['atiende'], $c['info']),
 				);
 			}
 			return array('comandas' => $res);

@@ -65,6 +65,8 @@
                             <thead>
                                 <tr>
                                     <th class="text text-center">ID</th>
+                                    <th class="text text-center">NOMBRE EN LA CAJA</th>
+                                    <th class="text text-center">TIPO DE MESA</th>
                                     <th class="text text-center">DISPONIBLE</th>
                                     <th class="text text-center">VIGENTE</th>
                                 </tr>

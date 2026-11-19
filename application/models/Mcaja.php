@@ -1873,15 +1873,27 @@ class Mcaja extends CI_Model
 			}
 
 			$nota = trim(isset($it['nota']) ? (string)$it['nota'] : '');
+			// 19-11-2026: mensaje de cada agregado (ej. Palta: sin sal), sale en la comanda junto al agregado
+			$notasAg = array();
+			foreach ((isset($it['notas_agregados']) && is_array($it['notas_agregados']) ? $it['notas_agregados'] : array()) as $idAg => $t) {
+				$t = is_scalar($t) ? mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)$t)), 0, 60) : '';
+				if ($t !== '') $notasAg[(int)$idAg] = $t;
+			}
+			$notaDe = function ($a) use ($notasAg) {
+				return isset($notasAg[(int)$a->id_agregado]) ? $notasAg[(int)$a->id_agregado] : '';
+			};
 			$nombres = array();
-			foreach ($elegidos as $a) $nombres[] = '+' . $a->nombre_producto;
+			foreach ($elegidos as $a) $nombres[] = '+' . $a->nombre_producto . ($notaDe($a) !== '' ? ' (' . $notaDe($a) . ')' : '');
 			if ($nota !== '' || $nombres) {
 				$notas[] = $prod->nombre_producto . ($nombres ? ' ' . implode(' ', $nombres) : '') . ($nota !== '' ? ': ' . $nota : '');
 			}
 
 			$comanda[] = array('id_producto' => $id, 'nombre' => $prod->nombre_producto, 'cantidad' => $cantidad, 'nota' => $nota,
-				'agregados' => array_map(function ($a) { return $a->nombre_producto; }, $elegidos));
+				'agregados' => array_map(function ($a) use ($notaDe) { return $a->nombre_producto . ($notaDe($a) !== '' ? ' » ' . $notaDe($a) : ''); }, $elegidos));
 			$primero = $elegidos ? array_shift($elegidos) : null;
+			// El primer agregado va en la misma fila del producto: su mensaje se guarda junto al del producto
+			$notaFila = $nota;
+			if ($primero && $notaDe($primero) !== '') $notaFila = trim($nota . ($nota !== '' ? ' | ' : '') . $primero->nombre_producto . ': ' . $notaDe($primero));
 			$unitario = (int)round((float)$prod->precio) + ($primero ? (int)$primero->valor : 0);
 			$bruto = (int)round($unitario * $cantidad);
 			$subtotal += $bruto;
@@ -1892,14 +1904,14 @@ class Mcaja extends CI_Model
 			$lineas[] = array(
 				'id_producto' => $id, 'nombre' => $prod->nombre_producto, 'cantidad' => $cantidad,
 				'unitario' => $unitario, 'bruto' => $bruto, 'id_agregado' => $primero ? (int)$primero->id_producto : 0,
-				'nota' => $nota, 'segun_stock' => $segunStock, 'recetas' => $recetas, 'exento' => $exento,
+				'nota' => $notaFila, 'segun_stock' => $segunStock, 'recetas' => $recetas, 'exento' => $exento,
 			);
 			foreach ($elegidos as $a) {
 				$bruto = (int)round((int)$a->valor * $cantidad);
 				$subtotal += $bruto;
 				$lineas[] = array(
 					'id_producto' => (int)$a->id_producto, 'nombre' => $a->nombre_producto, 'cantidad' => $cantidad,
-					'unitario' => (int)$a->valor, 'bruto' => $bruto, 'id_agregado' => 0, 'nota' => '',
+					'unitario' => (int)$a->valor, 'bruto' => $bruto, 'id_agregado' => 0, 'nota' => $notaDe($a),
 					'segun_stock' => $segunStock, 'recetas' => array(array((int)$a->id_receta, !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : (int)$a->id_bodega)),
 					'exento' => $exento,
 				);
@@ -3021,6 +3033,12 @@ class Mcaja extends CI_Model
 				'agregados' => array_values(array_map('intval', isset($it['agregados']) && is_array($it['agregados']) ? $it['agregados'] : array())),
 				'nota' => mb_substr(trim((string)(isset($it['nota']) && is_scalar($it['nota']) ? $it['nota'] : '')), 0, 200),
 			);
+			// 19-11-2026: mensaje de cada agregado {id_agregado: texto}
+			$na = array();
+			foreach (isset($it['notas_agregados']) && is_array($it['notas_agregados']) ? $it['notas_agregados'] : array() as $k => $t) {
+				if (is_scalar($t) && trim((string)$t) !== '' && count($na) < 20) $na[(string)(int)$k] = mb_substr(trim((string)$t), 0, 60);
+			}
+			if ($na) $res[count($res) - 1]['notas_agregados'] = $na;
 			if (count($res) >= 200) break;
 		}
 		return $res;
@@ -3359,6 +3377,11 @@ class Mcaja extends CI_Model
 		$conPlano = isset($plano['mesa_plano']);
 		$selPlano = $conPlano ? 'pl.x, pl.y, ' . (isset($plano['mesa_plano']['nombre']) ? 'pl.nombre' : 'NULL AS nombre') : 'NULL AS x, NULL AS y, NULL AS nombre';
 		$joinPlano = $conPlano ? 'LEFT JOIN mesa_plano pl ON pl.id_mesa = m.id_mesa' : '';
+		// 19-11-2026: nombre según el tipo de mesa (Mantención > Recintos > Tipos de mesa, ej. "Mesa D1")
+		$this->load->model('Mtipomesa');
+		$joinPlano .= ' ' . $this->Mtipomesa->joinSql('m', 'tmw');
+		$selPlano .= ', ' . $this->Mtipomesa->nombreSql('m', 'tmw') . ' AS nombre_tipo, '
+			. ($this->Mtipomesa->conMesa() ? 'COALESCE(m.id_tipo_mesa_web, 0)' : '0') . ' AS id_tipo_mesa';
 		$rows = $this->q($db, "SELECT $selPlano, m.id_mesa, m.disponible, m.bloqueo_caja, m.bloqueo_pedido, COALESCE(m.id_cotizacion, 0) AS ref_cotizacion,
 				COALESCE(r.id_recinto, 0) AS id_recinto, COALESCE(r.nombre_recinto, 'Sin recinto') AS recinto,
 				c.id_cotizacion, c.total, u.nombre_usuario AS atiende,
@@ -3367,13 +3390,20 @@ class Mcaja extends CI_Model
 			LEFT JOIN recinto r ON r.id_recinto = m.id_recinto
 			-- 14-11-2026: si la mesa no apunta a un pedido (la app de garzones la dejó en 0), el último pedido abierto con
 			-- productos de esa mesa, igual que cotizacionDeMesa() y verificarMesaNuevo.php de la app
-			LEFT JOIN LATERAL (SELECT cc.* FROM cotizacion cc
-				WHERE cc.pagado IS NOT TRUE AND cc.vigente IS NOT FALSE AND cc.eseliminado IS NOT TRUE AND cc.esanulado IS NOT TRUE
-					AND ((m.id_cotizacion > 0 AND cc.id_cotizacion = m.id_cotizacion)
-						OR (COALESCE(m.id_cotizacion, 0) = 0 AND cc.id_mesa = m.id_mesa AND COALESCE(cc.id_divpedido, 0) = 0
-							AND EXISTS (SELECT 1 FROM detalle_cotizacion d WHERE d.id_cotizacion = cc.id_cotizacion
-								AND d.vigente IS NOT FALSE AND d.esanulado IS NOT TRUE AND d.eseliminado IS NOT TRUE)))
-				ORDER BY cc.id_cotizacion DESC LIMIT 1) c ON true
+			-- 19-11-2026: en dos partes (antes un OR): con el OR la base recorría todas las cotizaciones por cada mesa (~3 s al
+			-- entrar a Mesas). Así la primera va por la clave y la segunda por ix_cotizacion_abierta_mesa (migración 20261119120000).
+			LEFT JOIN LATERAL (
+				(SELECT cc.* FROM cotizacion cc
+					WHERE m.id_cotizacion > 0 AND cc.id_cotizacion = m.id_cotizacion
+						AND cc.pagado IS NOT TRUE AND cc.vigente IS NOT FALSE AND cc.eseliminado IS NOT TRUE AND cc.esanulado IS NOT TRUE)
+				UNION ALL
+				(SELECT cc.* FROM cotizacion cc
+					WHERE COALESCE(m.id_cotizacion, 0) = 0 AND cc.id_mesa = m.id_mesa AND COALESCE(cc.id_divpedido, 0) = 0
+						AND cc.pagado IS NOT TRUE AND cc.vigente IS NOT FALSE AND cc.eseliminado IS NOT TRUE AND cc.esanulado IS NOT TRUE
+						AND EXISTS (SELECT 1 FROM detalle_cotizacion d WHERE d.id_cotizacion = cc.id_cotizacion
+							AND d.vigente IS NOT FALSE AND d.esanulado IS NOT TRUE AND d.eseliminado IS NOT TRUE)
+					ORDER BY cc.id_cotizacion DESC LIMIT 1)
+				LIMIT 1) c ON true
 			LEFT JOIN usuario u ON u.id_usuario = c.id_usuario
 			$joinPlano
 			WHERE m.vigente IS NOT FALSE AND r.vigente IS NOT FALSE AND m.id_mesa <> ?
@@ -3389,7 +3419,16 @@ class Mcaja extends CI_Model
 				'con_pedido' => (bool)$m->id_cotizacion,
 				'x' => $m->x === null ? null : (int)$m->x, 'y' => $m->y === null ? null : (int)$m->y,
 				'nombre' => trim((string)$m->nombre),
+				'nombre_tipo' => (string)$m->nombre_tipo,   // sin nombre propio en el plano, el del tipo de mesa
+				'id_tipo_mesa' => (int)$m->id_tipo_mesa,
 			);
+		}
+		// 19-11-2026: filtro "Tipo de mesa" arriba de las mesas: los tipos vigentes y los que tenga alguna mesa
+		$usados = array();
+		foreach ($res as $m) $usados[$m['id_tipo_mesa']] = true;
+		$tiposMesa = array();
+		foreach ($this->Mtipomesa->opciones() as $t) {
+			if ($t['vigente'] || isset($usados[$t['id']])) $tiposMesa[] = array('id' => $t['id'], 'nombre' => $t['nombre']);
 		}
 		// Modo venta directa con pedidos de antes: solo esas mesas (para cobrarlas o anularlas), sin mesas libres
 		// ni recintos vacíos. Abrir pedidos nuevos ya lo impide enviarMesa.
@@ -3404,16 +3443,22 @@ class Mcaja extends CI_Model
 			if ($modo === 'directa' && !isset($conMesas[(int)$r->id_recinto])) continue;
 			$sectores[] = array('id' => (int)$r->id_recinto, 'nombre' => $r->nombre_recinto);
 		}
-		return array('habilitado' => true, 'mesas' => $res, 'sectores' => $sectores, 'modo' => $modo, 'solo_pendientes' => $modo === 'directa');
+		return array('habilitado' => true, 'mesas' => $res, 'sectores' => $sectores, 'modo' => $modo, 'solo_pendientes' => $modo === 'directa',
+			'tipos_mesa' => $tiposMesa);
 	}
 
-	/** Nombre visible de una mesa (ej: "Terraza 2"); sin nombre propio, "Mesa N". */
+	/** Nombre visible de una mesa (ej: "Terraza 2"); sin nombre propio, el de su tipo ("Mesa D1") o "Mesa N". */
 	public function etiquetaMesa($idMesa)
 	{
 		$db = $this->conexion();
 		$c = $this->columnas($db, array('mesa_plano'));
 		$r = isset($c['mesa_plano']['nombre']) ? $this->q($db, 'SELECT nombre FROM mesa_plano WHERE id_mesa = ?', array((int)$idMesa))->row() : null;
-		return $r && trim((string)$r->nombre) !== '' ? trim($r->nombre) : 'Mesa ' . (int)$idMesa;
+		if ($r && trim((string)$r->nombre) !== '') return trim($r->nombre);
+		// 19-11-2026: sin nombre propio, según el tipo de mesa (ej. "Mesa D1")
+		$this->load->model('Mtipomesa');
+		$t = $this->q($db, 'SELECT ' . $this->Mtipomesa->nombreSql('m', 'tmw') . ' AS nombre FROM mesa m ' . $this->Mtipomesa->joinSql('m', 'tmw')
+			. ' WHERE m.id_mesa = ?', array((int)$idMesa))->row();
+		return $t && $t->nombre !== '' ? $t->nombre : 'Mesa ' . (int)$idMesa;
 	}
 
 	/** Guarda dónde va cada mesa en el plano de su sector y su nombre visible: [{id_mesa, x, y, nombre}] (x, y en píxeles). */
@@ -3457,8 +3502,57 @@ class Mcaja extends CI_Model
 		if (!$c) return array('id_mesa' => (int)$idMesa, 'id_cotizacion' => 0, 'id_lprecio' => 0, 'segundos' => 0, 'lineas' => array());
 		$t = $this->q($db, 'SELECT EXTRACT(EPOCH FROM (now() - fecha_transaccion))::bigint AS s FROM cotizacion WHERE id_cotizacion = ?', array((int)$c->id_cotizacion))->row();
 		return array('id_mesa' => (int)$idMesa, 'id_cotizacion' => (int)$c->id_cotizacion, 'id_lprecio' => (int)$c->id_lprecio,
-			'id_garzon' => (int)$c->id_usuario,
+			'id_garzon' => (int)$c->id_usuario, 'mensaje' => $this->mensajeDeCotizacion($db, (int)$c->id_cotizacion),
 			'segundos' => (int)$t->s, 'lineas' => $this->lineasDeCotizacion($db, (int)$c->id_cotizacion));
+	}
+
+	/**
+	 * 19-11-2026: mensaje general de la mesa (cotizacion.observaciones_generales, la misma columna del POS de escritorio).
+	 * Sale impreso en cada comanda de la mesa (envíos y reenvíos). '' si no hay o la base no tiene la columna.
+	 */
+	private function mensajeDeCotizacion($db, $idCot)
+	{
+		$c = $this->columnas($db, array('cotizacion'));
+		if (!isset($c['cotizacion']['observaciones_generales']) || $idCot <= 0) return '';
+		$r = $this->q($db, 'SELECT COALESCE(observaciones_generales, \'\') AS m FROM cotizacion WHERE id_cotizacion = ?', array((int)$idCot))->row();
+		return $r ? trim((string)$r->m) : '';
+	}
+
+	/** 19-11-2026: datos de la mesa para la comanda: recinto y N° del pedido abierto (0 si ya no hay). */
+	public function infoComandaMesa($idMesa)
+	{
+		$db = $this->conexion();
+		$r = $this->q($db, "SELECT COALESCE(r.nombre_recinto, '') AS recinto FROM mesa m LEFT JOIN recinto r ON r.id_recinto = m.id_recinto
+			WHERE m.id_mesa = ?", array((int)$idMesa))->row();
+		$c = $this->cotizacionDeMesa($db, (int)$idMesa);
+		return array('recinto' => $r ? trim((string)$r->recinto) : '', 'pedido' => $c ? (int)$c->id_cotizacion : 0);
+	}
+
+	/** El mensaje general del pedido abierto de la mesa (para la comanda). */
+	public function mensajeMesa($idMesa)
+	{
+		$db = $this->conexion();
+		$c = $this->cotizacionDeMesa($db, (int)$idMesa);
+		return $c ? $this->mensajeDeCotizacion($db, (int)$c->id_cotizacion) : '';
+	}
+
+	/** Guarda (o borra, con '') el mensaje general del pedido abierto de la mesa. */
+	public function guardarMensajeMesa($idMesa, $texto)
+	{
+		$db = $this->conexion();
+		if (!$this->tieneMesas($db)) throw new Exception('Este cliente no tiene mesas', 400);
+		$c = $this->columnas($db, array('cotizacion'));
+		if (!isset($c['cotizacion']['observaciones_generales'])) throw new Exception('Esta base no tiene dónde guardar el mensaje de la mesa', 409);
+		$cot = $this->cotizacionDeMesa($db, (int)$idMesa);
+		if (!$cot) throw new Exception('La mesa no tiene un pedido abierto: el mensaje se guarda al enviar los productos', 400);
+		$texto = self::textoMensajeMesa($texto);
+		$this->q($db, 'UPDATE cotizacion SET observaciones_generales = ? WHERE id_cotizacion = ?', array($texto === '' ? null : $texto, (int)$cot->id_cotizacion));
+		return array('mensaje' => $texto);
+	}
+
+	public static function textoMensajeMesa($t)
+	{
+		return mb_substr(trim(preg_replace('/\s+/u', ' ', preg_replace('/[\x00-\x1F\x7F]+/u', ' ', is_scalar($t) ? (string)$t : ''))), 0, 200);
 	}
 
 	/** Opciones de la mesa > Cambiar garzón: usuarios vigentes, los marcados como garzón primero. */
@@ -3585,13 +3679,19 @@ class Mcaja extends CI_Model
 					'id_dimpresion' => isset($destinos[$l['id_producto']]) ? $destinos[$l['id_producto']]['id'] : 0,
 				), null);
 			}
+			// 19-11-2026: mensaje general de la mesa (si la pantalla lo manda; '' lo borra)
+			if (array_key_exists('observacion', $p) && isset($cols['cotizacion']['observaciones_generales'])) {
+				$obs = self::textoMensajeMesa($p['observacion']);
+				$this->q($db, 'UPDATE cotizacion SET observaciones_generales = ? WHERE id_cotizacion = ?', array($obs === '' ? null : $obs, $idCot));
+			}
 			$this->recalcularCotizacion($db, $idCot);
 			$db->trans_commit();
 		} catch (Exception $e) {
 			$db->trans_rollback();
 			throw $e;
 		}
-		return array('id_cotizacion' => $idCot, 'detalle' => $this->detalleMesa($idMesa, false), 'comanda' => $comandaMesa);
+		return array('id_cotizacion' => $idCot, 'detalle' => $this->detalleMesa($idMesa, false), 'comanda' => $comandaMesa,
+			'mensaje_mesa' => $this->mensajeDeCotizacion($db, $idCot));
 	}
 
 	/**

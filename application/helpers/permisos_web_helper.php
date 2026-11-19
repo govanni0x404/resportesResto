@@ -48,6 +48,7 @@ function permisos_web_catalogo()
 		'Mantención › Recintos' => array(
 			'Recintos' => 'Recintos',
 			'MesasPorRecinto' => 'Mesas por recinto',
+			'TipoMesa' => 'Tipos de mesa',
 		),
 		'Mantención' => array(
 			'Agregados' => 'Agregados',

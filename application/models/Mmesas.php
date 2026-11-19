@@ -16,9 +16,15 @@ class Mmesas extends CI_Model
     //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     $this->load->helper('tenant'); $this->db = get_tenant_db($this);
       
+    // 19-11-2026: el tipo de mesa y el nombre con que sale en la Caja (Mtipomesa; sin la migración, "Mesa N")
+    $this->load->model('Mtipomesa');
+    $conTipo = $this->Mtipomesa->conMesa();
     $q = "SELECT m.id_mesa, m.disponible, m.bloqueo_caja, m.id_cotizacion, 
-                 m.bloqueo_pedido, m.id_garzon, m.id_recinto, m.vigente
+                 m.bloqueo_pedido, m.id_garzon, m.id_recinto, m.vigente,
+                 " . ($conTipo ? "COALESCE(m.id_tipo_mesa_web, 0) AS id_tipo_mesa, COALESCE(tm.nombre, '') AS tipo_mesa"
+                    : "0 AS id_tipo_mesa, '' AS tipo_mesa") . ", " . $this->Mtipomesa->nombreSql('m', 'tm') . " AS nombre_caja
           FROM mesa m
+          " . $this->Mtipomesa->joinSql('m', 'tm') . "
           ORDER BY m.id_mesa ASC";
 
     $consulta = $this->db->query($q);
@@ -35,6 +41,9 @@ class Mmesas extends CI_Model
         "id_garzon" => $key->id_garzon,
         "id_recinto" => $key->id_recinto,
         "vigente" => $key->vigente,
+        "id_tipo_mesa" => (int)$key->id_tipo_mesa,
+        "tipo_mesa" => (string)$key->tipo_mesa,
+        "nombre_caja" => (string)$key->nombre_caja,
       ));
     }
     

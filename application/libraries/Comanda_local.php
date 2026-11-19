@@ -17,7 +17,7 @@ class Comanda_local
 	 * $grupo = ['nombre' =>, 'destino' => [...], 'lineas' => [...]] (Caja::datosComanda); $mesa: nombre visible de la mesa
 	 * o '' en venta directa; $aviso: null o ['tipo' => 'anulacion' | 'traslado' | 'reenvio', ...] (igual que Comanda_impresion).
 	 */
-	public function operaciones($grupo, $venta, $observacion, $mesa = '', $aviso = null, $entrega = array())
+	public function operaciones($grupo, $venta, $observacion, $mesa = '', $aviso = null, $entrega = array(), $atiende = '', $info = array())
 	{
 		$this->ops = array();
 		$papel = self::papel(isset($grupo['destino']) ? $grupo['destino'] : array());
@@ -62,9 +62,27 @@ class Comanda_local
 			foreach ($entrega as $t) foreach ($this->lineasTexto($t, $W) as $f) $this->texto($f);
 			$this->op('textaling', 'center');
 		}
-		$this->texto($venta && !empty($venta->fecha_texto) ? $venta->fecha_texto : date('d/m/Y H:i'));
-		if ($venta && !empty($venta->nombre_usuario)) $this->texto('Atiende: ' . $venta->nombre_usuario);
 		$this->op('textaling', 'left');
+		// 19-11-2026: datos de la comanda (fecha, hora, recinto, pedido, caja, quién atiende), etiqueta a la izquierda y valor
+		// a la derecha, como la comanda de la página
+		if ($info) {
+			$this->linea($W);
+			foreach ($info as $f) {
+				$etq = $f[0] . ':';
+				$val = (string)$f[1];
+				$hueco = $W - mb_strlen($etq) - mb_strlen($val);
+				$this->texto($hueco >= 1 ? $etq . str_repeat(' ', $hueco) . $val : $etq . ' ' . $val);
+			}
+		} else {
+			$this->texto($venta && !empty($venta->fecha_texto) ? $venta->fecha_texto : date('d/m/Y H:i'));
+			if ($venta && !empty($venta->nombre_usuario)) $this->texto('Atiende: ' . $venta->nombre_usuario);
+			elseif ($atiende !== '') $this->texto('Atiende: ' . $atiende);
+		}
+		// 19-11-2026: la observación / mensaje de la mesa arriba, antes de los productos, en texto normal (grande se veía mal)
+		if ($observacion !== '') {
+			$this->linea($W, '=');
+			foreach ($this->lineasTexto($observacion, $W) as $f) $this->texto($f);
+		}
 		$this->linea($W, '=');
 
 		// Productos (destacados para leerlos de lejos), agregados y nota del garzón
@@ -73,22 +91,18 @@ class Comanda_local
 		foreach ($grupo['lineas'] as $i => $l) {
 			$total += (float)$l['cantidad'];
 			$cant = rtrim(rtrim(number_format((float)$l['cantidad'], 3, ',', ''), '0'), ',');
+			// 19-11-2026: productos grandes, agregados y nota en texto normal (como la comanda de la página), sin negrita
 			$this->grande($cant . ' x ' . mb_strtoupper($l['nombre']), $W2);
-			$agregados = array();
-			foreach ($l['agregados'] as $a) $agregados = array_merge($agregados, $this->lineasTexto('   + ' . $a, $W));
-			$this->negrita($agregados);
-			if ($l['nota'] !== '') $this->negrita($this->lineasTexto(' >> ' . mb_strtoupper($l['nota']), $W));
+			foreach ($l['agregados'] as $a) foreach ($this->lineasTexto('   + ' . $a, $W) as $f) $this->texto($f);
+			if ($l['nota'] !== '') foreach ($this->lineasTexto(' >> ' . mb_strtoupper($l['nota']), $W) as $f) $this->texto($f);
 			if ($i < $n - 1) $this->linea($W);
 		}
 		$this->linea($W, '=');
 		$cantTxt = rtrim(rtrim(number_format($total, 3, ',', ''), '0'), ',');
-		$this->negrita(array(($anula ? 'ANULADO: ' : ($tipo === 'traslado' ? 'CAMBIAN DE MESA: ' : 'TOTAL: ')) . $cantTxt . ($total == 1 ? ' producto' : ' productos')));
-		if ($anula && $aviso['motivo'] !== '') $this->negrita($this->lineasTexto('Motivo: ' . $aviso['motivo'], $W));
-		if ($observacion !== '') {
-			$this->op('feed', 1);
-			$this->negrita(array('OBSERVACION'));
-			$this->grande($observacion, $W2);
-		}
+		$this->texto(($anula ? 'ANULADO: ' : ($tipo === 'traslado' ? 'CAMBIAN DE MESA: ' : 'TOTAL: ')) . $cantTxt . ($total == 1 ? ' producto' : ' productos'));
+		if ($anula && $aviso['motivo'] !== '') foreach ($this->lineasTexto('Motivo: ' . $aviso['motivo'], $W) as $f) $this->texto($f);
+		$this->op('textaling', 'center');
+		$this->texto('Impresa el ' . date('d/m/Y H:i:s'));
 		$this->op('feed', 4);
 		$this->op('cut', '');
 		return $this->ops;
@@ -126,21 +140,17 @@ class Comanda_local
 		$this->op('texto', $s);
 	}
 
+	/** 19-11-2026: los títulos ya no van en negrita (el usuario la encontraba gruesa en la térmica): texto normal */
 	private function negrita($lineas)
 	{
-		if (!$lineas) return;
-		$this->op('fontbold', true);
 		foreach ((array)$lineas as $l) $this->texto($l);
-		$this->op('fontbold', false);
 	}
 
-	/** Texto destacado (fontsize 2, negrita), cortado a la mitad del ancho */
+	/** Texto destacado (fontsize 2, sin negrita desde el 19-11-2026), cortado a la mitad del ancho */
 	private function grande($s, $W2)
 	{
 		$this->op('fontsize', 2);
-		$this->op('fontbold', true);
 		foreach ($this->lineasTexto($s, $W2) as $l) $this->texto($l);
-		$this->op('fontbold', false);
 		$this->op('fontsize', 1);
 	}
 

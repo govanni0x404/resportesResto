@@ -95,7 +95,8 @@
 	.mesas-sectores button:disabled { opacity: .55; }
 	.mesas-sectores .cuenta { margin-left: 6px; padding: 0 7px; border-radius: 10px; background: rgba(58, 42, 34, .12); font-size: 12px; }
 	.mesas-sectores button.activo .cuenta { background: rgba(255, 255, 255, .25); }
-	.mesas-herramientas { display: flex; gap: 6px; }
+	.mesas-herramientas { display: flex; flex-wrap: wrap; gap: 6px; }
+	#filtroTipoMesa { width: auto; min-width: 170px; height: 30px; }
 	/* Fondo: hexágonos tenues en verde, distinto de los puntos del modo Organizar */
 	.mesas-plano { position: relative; min-height: 340px; overflow: auto; border: 1px solid var(--t-borde, #EADFD2); border-radius: 12px;
 		background-color: #F4F6EF;
@@ -153,6 +154,10 @@
 	.mesa-card.actual { box-shadow: 0 0 0 3px var(--t-acento, #D9A441); }
 	.caja-banner-mesa { display: flex; align-items: center; gap: 14px; padding: 10px 18px; background: var(--t-primario, #B4432E); color: #fff; }
 	.caja-banner-mesa .nombre { font-size: 17px; font-weight: 700; }
+	.caja-banner-mesa .caja-mensaje-mesa { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.caja-banner-mesa .caja-mensaje-mesa.con-mensaje { background: #FFF6D6; border-color: #E8C95A; color: #5C4400; font-weight: 600; }
+	/* 19-11-2026: mensaje de cada agregado en la ventana de opciones del producto */
+	.opcion-lista .ag-item .ag-nota { margin: -2px 0 8px 30px; width: calc(100% - 30px); }
 	.caja-banner-mesa .tiempo { font-variant-numeric: tabular-nums; margin-right: auto; }
 	.caja-linea.enviada { background: var(--t-fondo-alt, #FBF8F3); }
 	.caja-linea.enviada .nombre .fa { font-size: 12px; margin-right: 4px; color: var(--t-texto-tenue, #A89A8C); }
@@ -160,7 +165,9 @@
 	.caja-linea.enviada .hora { font-size: 12px; color: var(--t-texto-tenue, #A89A8C); }
 	.caja-linea.enviada .reenviar-linea { margin-left: 8px; font-size: 12px; color: var(--t-texto-suave, #7A6A5E); text-decoration: underline; }
 	.mesa-card .num { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.mesa-card .num.largo { font-size: 16px; }
+	/* 19-11-2026: los nombres largos (ej. "Mesa Delivery 1") van en dos líneas en vez de cortarse con "…" */
+	.mesa-card .num.largo { font-size: 15px; line-height: 1.15; text-align: center; white-space: normal; overflow-wrap: anywhere;
+		display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 	.caja-linea-cab { display: flex; align-items: center; gap: 10px; padding: 10px 18px; background: var(--t-fondo-alt, #FBF8F3); border-bottom: 1px solid var(--t-borde-suave, #F0E8DD);
 		font-size: 13px; font-weight: 700; color: var(--t-texto-suave, #7A6A5E); text-transform: uppercase; letter-spacing: .3px; }
 	.caja-lineas { flex: 1; min-height: 160px; max-height: 45vh; overflow-y: auto; }
@@ -628,6 +635,7 @@
 	   En modo "solo mesas" sin mesa elegida no se ve la venta (ni su panel), y ahí quedan visibles arriba (js.php). */
 	.caja-tabs > li.caja-tab-opcion:not(.active) { display: none; }
 	.caja-tabs.mostrar-opciones > li.caja-tab-opcion { display: block; }
+	html body .caja-tabs > li.caja-tab-oculta { display: none !important; }
 
 	/* Paneles laterales de la venta: selector Pagar / Opciones; se ve un panel a la vez y entra deslizándose */
 	.caja-venta-lateral { overflow-x: hidden; }
@@ -1133,7 +1141,9 @@
 					<li class="caja-tab-opcion"><a href="#tabVentas" data-toggle="tab" id="lnkVentas"><i class="pe-7s-note2"></i> Ventas</a></li>
 					<li class="caja-tab-opcion"><a href="#tabMovimientos" data-toggle="tab" id="lnkMovimientos"><i class="pe-7s-cash"></i> Ingresos / Retiros</a></li>
 					<li class="caja-tab-opcion"><a href="#tabCreditos" data-toggle="tab" id="lnkCreditos"><i class="pe-7s-credit"></i> Créditos</a></li>
-					<li class="caja-tab-opcion"><a href="#tabCierre" data-toggle="tab" id="lnkCierre"><i class="pe-7s-lock"></i> Cierre</a></li>
+					<!-- 19-11-2026: sin pestaña "Cierre" (pedido del usuario): se entra con el botón rojo "Cerrar caja" de la derecha.
+					     El enlace queda oculto porque lo usa el botón para mostrar el cierre. -->
+					<li class="caja-tab-opcion caja-tab-oculta"><a href="#tabCierre" data-toggle="tab" id="lnkCierre"><i class="pe-7s-lock"></i> Cierre</a></li>
 				</ul>
 				<div class="caja-estado">
 					<button type="button" class="btn btn-danger btn-sm caja-btn-cierre" id="btnIrCierre" title="Contar el dinero y cerrar la caja"><i class="fa fa-lock"></i> Cerrar caja</button>
@@ -1164,6 +1174,8 @@
 									<span class="nombre"><i class="fa fa-th"></i> <b id="bannerMesaNum"></b></span>
 									<span class="tiempo"><i class="fa fa-clock-o"></i> <span id="bannerMesaTiempo">Sin enviar</span></span>
 									<span class="caja-cobro-parcial" id="avisoCobroParcial" style="display:none"><i class="fa fa-scissors"></i> <span id="avisoCobroParcialTexto">Cobrando una parte</span> <a href="#" id="btnCancelarParcial">Cancelar</a></span>
+									<!-- 19-11-2026: mensaje general de la mesa, sale impreso en cada comanda de la mesa -->
+									<button type="button" class="btn btn-default btn-sm caja-mensaje-mesa" id="btnMensajeMesa" title="Mensaje para toda la mesa: sale en cada comanda"><i class="fa fa-commenting-o"></i> <span id="bannerMesaMensaje">Mensaje a la mesa</span></button>
 									<!-- Precuenta (abajo, en Pagar) y las opciones de la mesa (panel Opciones) ya no van en esta franja -->
 									<button type="button" class="btn btn-default btn-sm" id="btnSalirMesa"><i class="fa fa-arrow-left"></i> Volver a mesas</button>
 								</div>
@@ -1336,6 +1348,8 @@
 						<div class="mesas-barra">
 							<div class="mesas-sectores" id="mesasSectores"></div>
 							<div class="mesas-herramientas">
+								<!-- 19-11-2026: ver todas las mesas o solo las de un tipo (Mantención > Recintos > Tipos de mesa) -->
+								<select class="form-control input-sm" id="filtroTipoMesa" title="Ver las mesas de un tipo" style="display:none"></select>
 								<!-- 14-11-2026: recargar al tiro (pedidos que llegan de la app de garzones u otra caja) -->
 								<button type="button" class="btn btn-default btn-sm" id="btnActualizarMesas" title="Volver a cargar las mesas"><i class="fa fa-refresh"></i> Actualizar</button>
 								<button type="button" class="btn btn-default btn-sm" id="btnOrganizarMesas"><i class="fa fa-arrows"></i> Organizar mesas</button>
@@ -1374,8 +1388,8 @@
 					<div class="panel panel-success lobidisable">
 						<div class="panel-heading">
 							<div class="panel-title"><h4><i class="pe-7s-note2"></i>Ventas de la caja<small class="caja-tab-ayuda">Reimprime, reenvía al SII, devuelve o anula las ventas de este turno</small></h4></div>
-							<button class="btn btn-default btn-sm caja-btn-titulo" id="btnDevolucionBuscar" title="Devolver productos de una venta de cualquier caja">
-								<i class="fa fa-undo"></i> Devolución
+							<button class="btn btn-default btn-sm caja-btn-titulo" id="btnDevolucionBuscar" title="Anular (todo o algunos productos) un documento de cualquier caja, con nota de crédito">
+								<i class="fa fa-ban"></i> Anular documento
 							</button>
 						</div>
 						<div class="panel-body table-responsive">
@@ -2116,8 +2130,9 @@
 					<div class="opcion-lista" id="listaMensajes"></div>
 				</div>
 				<div class="form-group" style="margin-top:8px">
-					<label for="txtNotaProducto">Nota</label>
-					<input type="text" class="form-control" id="txtNotaProducto" maxlength="100" placeholder="Ej: sin cebolla, bien cocido">
+					<!-- 19-11-2026: se aclara que la nota es el mensaje del producto (sale en la comanda) -->
+					<label for="txtNotaProducto">Nota <small class="text-muted" style="font-weight:400">· mensaje del producto, sale impreso en la comanda</small></label>
+					<input type="text" class="form-control" id="txtNotaProducto" maxlength="100" placeholder="Mensaje del producto. Ej: sin cebolla, bien cocido">
 				</div>
 			</div>
 			<div class="modal-footer">
@@ -2209,7 +2224,7 @@
 		<div class="modal-content">
 			<div class="modal-header btn-success">
 				<button type="button" class="close" data-dismiss="modal">&times;</button>
-				<h4 class="modal-title"><i class="fa fa-undo"></i> Devolución · Nota de crédito interna</h4>
+				<h4 class="modal-title"><i class="fa fa-ban"></i> Anular documento · Nota de crédito</h4>
 			</div>
 			<div class="modal-body">
 				<form id="devBusqueda" class="row">

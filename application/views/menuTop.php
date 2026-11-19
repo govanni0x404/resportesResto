@@ -902,7 +902,8 @@
                         $__showProductos = menu_visible('Productos');
                         $__showRecintos = menu_visible('Recintos');
                         $__showMesasPorRecinto = menu_visible('MesasPorRecinto');
-                        $__showRecintosGrupo = $__showRecintos || $__showMesasPorRecinto;
+                        $__showTipoMesa = menu_visible('TipoMesa');   // 19-11-2026: tipos de mesa
+                        $__showRecintosGrupo = $__showRecintos || $__showMesasPorRecinto || $__showTipoMesa;
 
                         // 11-11-2026: Mantención = las tablas (CRUD) y Recintos; Lista de Precios, Clientes, Proveedor, Carta, Insumos y Recetas van en la raíz
                         $__showMantencion = $__showTablas || $__showRecintosGrupo;
@@ -1021,6 +1022,9 @@
                                                     <?php endif; ?>
                                                     <?php if ($__showMesasPorRecinto) : ?>
                                                         <li class="active"><a href="<?php echo base_url() ?>index.php/MesasPorRecinto"><i class="fa fa-th"></i>Mesas Por Recinto</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showTipoMesa) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/TipoMesa"><i class="fa fa-tags"></i>Tipos De Mesa</a></li>
                                                     <?php endif; ?>
                                                 </ul>
                                             </li>

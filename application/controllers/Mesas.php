@@ -35,6 +35,17 @@ class Mesas extends CI_Controller
     echo json_encode($this->Mmesas->ListadoDeMesas());
   }
 
+  /** 19-11-2026: los tipos de mesa para el select del formulario (Mantención > Recintos > Tipos de mesa) */
+  public function tiposMesa()
+  {
+    $this->output->set_content_type('application/json', 'utf-8');
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+      return $this->output->set_status_header(401)->set_output(json_encode(array('error' => 'Sesión expirada, vuelve a ingresar')));
+    }
+    $this->load->model('Mtipomesa');
+    $this->output->set_output(json_encode(array('tipos' => $this->Mtipomesa->opciones(), 'disponible' => $this->Mtipomesa->conMesa())));
+  }
+
   public function crearMultiplesMesas()
   {
     if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
@@ -82,6 +93,16 @@ class Mesas extends CI_Controller
       $miData = array(
         'vigente' => $vigente_bool
       );
+      // 19-11-2026: tipo de mesa (0 = sin tipo, el nombre de siempre)
+      $this->load->model('Mtipomesa');
+      if (array_key_exists('id_tipo_mesa', $d) && $this->Mtipomesa->conMesa()) {
+          $idTipo = intval($d['id_tipo_mesa']);
+          if ($idTipo > 0 && !$this->Mtipomesa->existe($idTipo)) {
+              echo json_encode(array('error' => 'El tipo de mesa no existe'));
+              return;
+          }
+          $miData['id_tipo_mesa_web'] = $idTipo > 0 ? $idTipo : null;
+      }
       
       $r = $this->Mmesas->editarMesa($id, $miData);
       echo json_encode($r);

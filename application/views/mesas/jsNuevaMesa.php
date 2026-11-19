@@ -27,6 +27,11 @@
                                 <label for="cantidadMesas">CANTIDAD DE MESAS A CREAR *</label>
                                 <input type="number" class="form-control input-sm" name="cantidadMesas" id="cantidadMesas" requerido="si" value="1" min="1" placeholder="Ingrese cantidad de mesas" />
                             </div>
+                            <div class="col-md-12" id="divTipoMesa" style="display:none;">
+                                <label for="tipoMesa">TIPO DE MESA</label>
+                                <select class="form-control input-sm" name="tipoMesa" id="tipoMesa"></select>
+                                <p class="help-block" style="font-size:12px;margin:4px 0 0">Así sale en la Caja: <b id="tipoMesaVista"></b>. Los tipos se crean en Mantención &rsaquo; Recintos &rsaquo; Tipos de mesa.</p>
+                            </div>
                             <div class="col-md-12" id="divVigente" style="display:none;">
                                 <label for="vigente">VIGENTE *</label>
                                 <select class="form-control input-sm" name="vigente" id="vigente" requerido="si">
@@ -54,6 +59,35 @@
 
 <script>
     var modoEdicion = false;
+    var tiposMesa = [];
+
+    // 19-11-2026: tipos de mesa (Mantención > Recintos > Tipos de mesa). El nombre igual que Mtipomesa::nombre
+    function nombreMesaTipo(id, tipo) {
+        var p = tipo ? $.trim(String(tipo.prefijo || '')) : '';
+        return 'Mesa ' + (p ? p + (tipo.espacio ? ' ' : '') : '') + id;
+    }
+    function vistaTipoMesa() {
+        var id = Number($('#tipoMesa').val()) || 0;
+        var t = $.grep(tiposMesa, function (x) { return x.id === id; })[0] || null;
+        $('#tipoMesaVista').text(nombreMesaTipo($('#idMesa').val(), t));
+    }
+    $(document).on('change', '#tipoMesa', vistaTipoMesa);
+    function cargarTiposMesa(actual) {
+        $('#divTipoMesa').hide();
+        $.ajax({ url: base_url + 'index.php/Mesas/tiposMesa', dataType: 'json', cache: false }).done(function (r) {
+            if (!r || !r.disponible) return;
+            tiposMesa = r.tipos || [];
+            var $s = $('#tipoMesa').empty().append($('<option>').val(0).text('Sin tipo (Mesa N, como siempre)'));
+            $.each(tiposMesa, function (i, t) {
+                if (!t.vigente && t.id !== actual) return;
+                $s.append($('<option>').val(t.id).text(t.nombre + ' · ' + t.ejemplo + (t.vigente ? '' : ' (no vigente)')));
+            });
+            $s.val(actual || 0);
+            if ($s.val() === null) $s.val(0);
+            vistaTipoMesa();
+            $('#divTipoMesa').show();
+        });
+    }
 
     function AbrirModalNuevaMesa() {
         modoEdicion = false;
@@ -65,6 +99,7 @@
         $('#divCantidadMesas').show();
         $('#divIdMesa').hide();
         $('#divVigente').hide();
+        $('#divTipoMesa').hide();
         
         $('#tituloModalMesa h4').text('CREAR NUEVAS MESAS');
         
@@ -93,6 +128,7 @@
                 'id_mesa': idMesa,
                 'vigente': vigenteSeleccionado
             };
+            if ($('#divTipoMesa').is(':visible')) miJson.id_tipo_mesa = Number($('#tipoMesa').val()) || 0;
 
             console.log('Datos a enviar:', miJson);
             

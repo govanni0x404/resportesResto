@@ -78,6 +78,18 @@ function ListadoDeMesas() {
                 className: "text-center"
             },
             {
+                mData: "nombre_caja",
+                className: "text-center",
+                render: function(data) { return $('<b>').text(data || '').prop('outerHTML'); }
+            },
+            {
+                mData: "tipo_mesa",
+                className: "text-center",
+                render: function(data) {
+                    return data ? $('<span class="label label-info">').text(data).prop('outerHTML') : '<span class="text-muted">Sin tipo</span>';
+                }
+            },
+            {
                 mData: "disponible",
                 className: "text-center",
                 render: function(data) {
@@ -125,8 +137,8 @@ function ListadoDeMesas() {
             var vigenteValue = rowData[0].vigente === true || rowData[0].vigente === 't' || rowData[0].vigente === 'true' ? 'true' : 'false';
             $("#vigente").val(vigenteValue);
             
-            console.log('Vigente original:', rowData[0].vigente);
-            console.log('Vigente convertido:', vigenteValue);
+            // 19-11-2026: tipo de mesa
+            cargarTiposMesa(Number(rowData[0].id_tipo_mesa) || 0);
             
             // Mostrar campos de edición y ocultar cantidad
             $('#divCantidadMesas').hide();
