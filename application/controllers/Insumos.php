@@ -119,6 +119,14 @@ class Insumos extends CI_Controller
 			return;
 		}
 		$miData['umedida_receta'] = $umr;
+		// v1.19.1: código de barras repetido = aviso claro (antes: error de la base "insumo_cbarra_key")
+		$this->load->helper('tenant');
+		$dup = get_tenant_db($this)->query('SELECT nombre_insumo FROM insumo WHERE trim(cbarra) = trim(?) AND id_insumo <> ? LIMIT 1',
+			array((string)$miData['cbarra'], $id))->row();
+		if ($dup) {
+			echo json_encode(array('success' => false, 'status' => 'error', 'msg' => 'El código ' . $miData['cbarra'] . ' ya lo usa el insumo "' . $dup->nombre_insumo . '"'));
+			return;
+		}
 		$r = $this->Minsumos->grabarInsumo($id, $miData);
 		// Una sola respuesta JSON: antes se imprimían dos objetos seguidos (JSON inválido). El modelo devuelve
 		// un arreglo de filas ([{id_insumo}]), por eso el id se lee de la primera fila.

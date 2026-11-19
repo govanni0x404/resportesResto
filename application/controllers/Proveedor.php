@@ -69,6 +69,15 @@ class Proveedor extends CI_Controller
     if ($miData['mail'] !== '' && !filter_var($miData['mail'], FILTER_VALIDATE_EMAIL)) {
       echo json_encode(array('error' => 'El correo del proveedor no es válido')); return;
     }
+    // v1.19.1: texto más largo que la columna = aviso claro (antes: error de la base "demasiado largo para varchar(20)")
+    $etiquetas = array('nombre_proveedor' => 'El nombre', 'direccion' => 'La dirección', 'telefono' => 'El teléfono', 'mail' => 'El correo', 'giro' => 'El giro');
+    foreach ($db->query("SELECT column_name, character_maximum_length AS n FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'proveedor' AND character_maximum_length IS NOT NULL")->result() as $col) {
+      $campo = $col->column_name;
+      if (isset($etiquetas[$campo]) && mb_strlen((string)$miData[$campo], 'UTF-8') > (int)$col->n) {
+        echo json_encode(array('error' => $etiquetas[$campo] . ' del proveedor puede tener máximo ' . (int)$col->n . ' letras')); return;
+      }
+    }
     $r = $this->Mproveedor->grabarNuevoProveedor($id, $miData);
     if ($r && isset($r['id_proveedor'])) {
         echo json_encode(array(

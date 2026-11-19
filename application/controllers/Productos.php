@@ -305,8 +305,10 @@ class Productos extends CI_Controller
 			return;
 		}
 		//$this->db = $this->load->database($this->session->userdata('rut_cliente'), TRUE);
+		// v1.19.1: $this->db no existe en este controlador (no hay conexión por defecto); se usa la base de la empresa.
+		$this->load->helper('tenant');
 		$q = "SELECT * from obtenerean13() as ean13";
-		$consulta = $this->db->query($q);
+		$consulta = get_tenant_db($this)->query($q);
 		$sampleData = $consulta->result();
 		$ean13 = "";
 		foreach ($sampleData as $key) {

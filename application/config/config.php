@@ -591,7 +591,10 @@ if (!function_exists('_resto_env_raw')) {
 }
 
 // --- AppWebLogin -----------------------------------------------------------
-$config['app_web_login_url']    = (string)_resto_env_raw('MIPDV_APP_WEB_LOGIN_URL', 'https://datamaule.cl/miIntranet/index.php/api/AppWebLogin/index');
+// MODO LOCAL (v1.19.0): sin intranet remota. Para volver a usarla, quita el comentario de la línea de abajo
+// y borra la línea con ''.
+// $config['app_web_login_url']    = (string)_resto_env_raw('MIPDV_APP_WEB_LOGIN_URL', 'https://datamaule.cl/miIntranet/index.php/api/AppWebLogin/index');
+$config['app_web_login_url']    = '';
 $config['app_web_login_apikey'] = (string)_resto_env_raw('MIPDV_APP_WEB_LOGIN_APIKEY', '');
 $config['app_web_login_require_apikey'] = true;
 $config['app_web_login_require_hmac']   = true;
@@ -603,8 +606,11 @@ $config['app_web_login_refresh_margin_seconds'] = 900;
 
 // --- validarCliente: servidor y base de cada empresa --------------------------
 // Principal: API de la intranet. Respaldo: la legacy validarPagos (solo si la intranet no contesta).
-$config['validar_cliente_url']          = (string)_resto_env_raw('MIPDV_VALIDAR_CLIENTE_URL', 'https://datamaule.cl/miIntranet/index.php/api/validarCliente');
-$config['validar_cliente_url_respaldo'] = (string)_resto_env_raw('MIPDV_VALIDAR_CLIENTE_URL_RESPALDO', 'https://datamaule.cl/validarPagos/validarCliente.php');
+// MODO LOCAL (v1.19.0): sin intranet remota.
+// $config['validar_cliente_url']          = (string)_resto_env_raw('MIPDV_VALIDAR_CLIENTE_URL', 'https://datamaule.cl/miIntranet/index.php/api/validarCliente');
+// $config['validar_cliente_url_respaldo'] = (string)_resto_env_raw('MIPDV_VALIDAR_CLIENTE_URL_RESPALDO', 'https://datamaule.cl/validarPagos/validarCliente.php');
+$config['validar_cliente_url']          = '';
+$config['validar_cliente_url_respaldo'] = '';
 // Firma HMAC opcional: el mismo valor que validar_cliente_hmac_secret de la intranet ('' = sin firma).
 // Hoy la intranet tiene validar_cliente_require_hmac = false, así que se deja vacía (igual que mipdv_web).
 $config['validar_cliente_hmac_secret']  = (string)_resto_env_raw('MIPDV_VALIDAR_CLIENTE_HMAC_SECRET', '');

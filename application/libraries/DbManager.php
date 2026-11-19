@@ -36,10 +36,15 @@ class DbManager
   protected $servers = [
     'localhost' => [
       'dbdriver'     => 'postgre',
-      'hostname'     => '',      // <-- MIPDV_DB_LOCALHOST_HOSTNAME
-      'port'         => null,    // <-- MIPDV_DB_LOCALHOST_PORT   (null = default 5432)
-      'username'     => '',      // <-- MIPDV_DB_LOCALHOST_USERNAME
-      'password'     => '',      // <-- MIPDV_DB_LOCALHOST_PASSWORD
+      // MODO LOCAL (v1.19.0): antes estos valores venían vacíos y el .env los apuntaba al VPS (datamaule.cl:5432).
+      // Ahora apuntan al PostgreSQL 12 de este computador. La clave va en .env.php (MIPDV_DB_LOCALHOST_PASSWORD).
+      // 'hostname'     => '',      // <-- MIPDV_DB_LOCALHOST_HOSTNAME
+      // 'port'         => null,    // <-- MIPDV_DB_LOCALHOST_PORT   (null = default 5432)
+      // 'username'     => '',      // <-- MIPDV_DB_LOCALHOST_USERNAME
+      'hostname'     => '127.0.0.1',
+      'port'         => 5432,
+      'username'     => 'postgres',
+      'password'     => '',      // <-- MIPDV_DB_LOCALHOST_PASSWORD (en .env.php)
       'pconnect'     => false,
       'char_set'     => 'utf8',
       'dbcollat'     => 'utf8_general_ci', // (Postgre no usa, CI no se muere)

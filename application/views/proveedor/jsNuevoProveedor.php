@@ -81,7 +81,7 @@
 
 							<div class="col-md-6 ">
 								<label for="CorreoProveedor">CORREO</label>
-								<input type="text" class="form-control input-sm input-sm" maxlength='20' onkeypress="return sololetrasyNumerosCorreo(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="CorreoProveedor" id="CorreoProveedor" requerido="si" value="" placeholder="Correo Proveedor" />
+								<input type="text" class="form-control input-sm input-sm" maxlength='100' onkeypress="return sololetrasyNumerosCorreo(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="CorreoProveedor" id="CorreoProveedor" requerido="si" value="" placeholder="Correo Proveedor" />
 							</div>
 						</fieldset>
 						<fieldset>

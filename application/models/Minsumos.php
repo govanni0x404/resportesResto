@@ -108,7 +108,13 @@ class Minsumos extends CI_Model
 		}
 
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$consulta = $this->db->query("SELECT last_value + 1 as id_insumo from insumo_id_insumo_seq");
+		// v1.19.1: antes "last_value + 1". En una base nueva la secuencia no se ha usado (is_called = false): el primer
+		// insumo recibía el id 1 pero el código 2, y el segundo volvía a sugerir 2 -> "llave duplicada insumo_cbarra_key".
+		// Ahora: el próximo id real de la secuencia, y nunca un código numérico que ya exista.
+		$consulta = $this->db->query("SELECT GREATEST(
+				(SELECT CASE WHEN is_called THEN last_value + 1 ELSE last_value END FROM insumo_id_insumo_seq),
+				COALESCE((SELECT max(cbarra::bigint) FROM insumo WHERE cbarra ~ '^[0-9]{1,15}$'), 0) + 1
+			) AS id_insumo");
 		return $consulta->result();
 	}
 
