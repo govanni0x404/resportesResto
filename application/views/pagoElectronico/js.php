@@ -2,7 +2,7 @@
 	// Mantención > Pago electrónico (19-11-2026)
 	(function () {
 		var base = "<?php echo base_url(); ?>index.php/PagoElectronico/";
-		var datos = { maquinas: [], modelos: [], formas_pago: [], formas_sugeridas: [], credenciales: {} };
+		var datos = { maquinas: [], modelos: [], tarjetas: [], credenciales: {} };
 		var editando = null;
 		if (window.toastr) toastr.options.escapeHtml = true;
 
@@ -33,7 +33,7 @@
 			var c = datos.credenciales || {};
 			$('#avisoCredenciales').toggle(!c.usuario_api || !c.clave_api);
 			if (!datos.maquinas.length) {
-				$('#cuerpoPagoElectronico').html('<tr><td colspan="6" class="pe-vacio"><i class="fa fa-credit-card"></i>Aún no hay máquinas.<br>Pulsa <b>Nueva máquina</b> para agregar la primera.</td></tr>');
+				$('#cuerpoPagoElectronico').html('<tr><td colspan="5" class="pe-vacio"><i class="fa fa-credit-card"></i>Aún no hay máquinas.<br>Pulsa <b>Nueva máquina</b> para agregar la primera.</td></tr>');
 				return;
 			}
 			var h = '';
@@ -42,7 +42,6 @@
 					'<td><span class="pe-nombre">' + esc(m.nombre) + '</span>' + (m.tiene_api_key ? '<span class="pe-sub"><i class="fa fa-key"></i> Con API key</span>' : '') + '</td>' +
 					'<td>' + esc(m.id_sucursal_pos) + ' / ' + esc(m.nombre_caja_pos) + '</td>' +
 					'<td>' + esc(m.terminal_id) + '</td>' +
-					'<td>' + $.map(m.formas_nombres, function (n) { return '<span class="pe-chip fp">' + esc(n) + '</span>'; }).join('') + '</td>' +
 					'<td class="text-center">' + m.cajas + '</td>' +
 					'<td class="text-center"><span class="pe-chip ' + (m.vigente ? 'si">Sí' : 'no">No') + '</span></td>' +
 					'</tr>';
@@ -57,7 +56,7 @@
 				$.each(datos.modelos, function (i, x) { $m.append($('<option>').val(x.id).text(x.nombre)); });
 				pintar();
 			}).fail(function (xhr) {
-				$('#cuerpoPagoElectronico').html('<tr><td colspan="6" class="pe-vacio"><i class="fa fa-exclamation-triangle"></i>' +
+				$('#cuerpoPagoElectronico').html('<tr><td colspan="5" class="pe-vacio"><i class="fa fa-exclamation-triangle"></i>' +
 					esc((xhr.responseJSON && xhr.responseJSON.error) || 'No se pudieron cargar las máquinas.') + '</td></tr>');
 				if (xhr.status === 401) error(xhr);
 			});
@@ -88,13 +87,6 @@
 			$('#peApiKey').val('').attr('placeholder', m && m.tiene_api_key ? '•••••• (guardada; escribe otra para cambiarla)' : '');
 			$('#btnBorrarApiKey').toggle(!!(m && m.tiene_api_key)).data('borrar', false);
 			$('#peVigente').prop('checked', m ? m.vigente : true);
-			var marcadas = m ? m.formas_pago : datos.formas_sugeridas;
-			var $f = $('#peFormas').empty();
-			$.each(datos.formas_pago, function (i, f) {
-				$f.append($('<label>').append($('<input type="checkbox" name="formas_pago[]">').val(f.id_fpago).prop('checked', marcadas.indexOf(f.id_fpago) >= 0))
-					.append(document.createTextNode(f.nombre)));
-			});
-			if (!datos.formas_pago.length) $f.html('<span class="text-muted">No hay formas de pago (Mantención &rsaquo; Formas de pago).</span>');
 			aplicarModelo();
 			$('#modalPagoElectronico').modal('show');
 		}

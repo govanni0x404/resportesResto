@@ -7,7 +7,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
  *
  * - Mantención > Pago electrónico (tabla pago_electronico_web): cada máquina se elige de una lista de modelos (MODELOS;
  *   del modelo sale el tipo que va en la petición) con los datos de la petición: id de sucursal, nombre de caja,
- *   terminal ID, API key (Mercado Pago y TUU), tiempo de espera y las formas de pago que se cobran en ella. El
+ *   terminal ID, API key (Mercado Pago y TUU) y tiempo de espera. Se cobran en ella las tarjetas de débito y crédito
+ *   (formasTarjeta, por el nombre de la forma de pago). El
  *   programa compara esos datos con los de su panel: si alguno no es igual, responde cuál y la Caja lo muestra.
  * - Configuraciones > General: el usuario y la clave de la API del programa (los mismos para todas las cajas).
  * - Herramientas > Control de cajas (control_caja.id_pago_electronico_web): la máquina que usa cada caja (sin máquina, la
@@ -110,7 +111,7 @@ class Mpagoelectronico extends CI_Model
 		$modelos = array();
 		foreach (self::MODELOS as $k => $v) $modelos[] = array('id' => $k, 'tipo' => $v[0], 'nombre' => $v[1]);
 		// El usuario y la clave van a esta pantalla (módulo sensible) solo para "Probar conexión"
-		return array('maquinas' => $maquinas, 'modelos' => $modelos, 'formas_pago' => $formas, 'formas_sugeridas' => $this->formasSugeridas($formas),
+		return array('maquinas' => $maquinas, 'modelos' => $modelos, 'tarjetas' => $this->formasTarjeta(),
 			'credenciales' => $this->credenciales());
 	}
 
@@ -130,8 +131,11 @@ class Mpagoelectronico extends CI_Model
 		if ($terminal === '') throw new Exception('Escribe el terminal ID (el mismo del panel del programa)', 400);
 		$timeout = (int)($d['timeout_seg'] ?? 120);
 		if ($timeout < 30 || $timeout > 300) throw new Exception('El tiempo de espera debe estar entre 30 y 300 segundos', 400);
-		$formas = $this->idsFormas($d['formas_pago'] ?? array());
-		if (!$formas) throw new Exception('Marca al menos una forma de pago que se cobre en la máquina (ej. tarjeta de débito y de crédito)', 400);
+		// Las formas de pago no se eligen: son las de tarjeta (formasTarjeta). La columna queda como registro.
+		$formas = $this->formasTarjeta();
+		if (!$formas) {
+			throw new Exception('No hay formas de pago de tarjeta: crea "TARJETA DEBITO" y "TARJETA CREDITO" en Mantención > Formas De Pago', 400);
+		}
 		$apiKey = trim((string)($d['api_key'] ?? ''));
 		if (strlen($apiKey) > 300) throw new Exception('La API key es demasiado larga', 400);
 		$usaKey = in_array($tipo, array('MERCADOPAGO', 'HAULMER'), true);
@@ -271,7 +275,7 @@ class Mpagoelectronico extends CI_Model
 			'modelo' => (string)$f->modelo, 'url_servicio' => (string)$f->url_servicio !== '' ? $f->url_servicio : self::URL_PROGRAMA,
 			'id_sucursal_pos' => $f->id_sucursal_pos, 'nombre_caja_pos' => $f->nombre_caja_pos, 'terminal_id' => $f->terminal_id,
 			'timeout_seg' => (int)$f->timeout_seg,
-			'formas_pago' => array_values(array_filter(array_map('intval', explode(',', (string)$f->formas_pago)))),
+			'formas_pago' => $this->formasTarjeta(),   // siempre las de tarjeta (también las creadas después)
 			'vigente' => $this->bool($f->vigente),
 			'tiene_api_key' => (string)$f->api_key !== '',
 		);
@@ -303,30 +307,29 @@ class Mpagoelectronico extends CI_Model
 		return $res;
 	}
 
-	/** Las que se llaman tarjeta / débito / crédito (sin ser el crédito de confianza): marcadas al crear una máquina. */
-	private function formasSugeridas($formas)
+	/**
+	 * 19-11-2026 (pedido del usuario): el pago electrónico es solo para tarjetas de débito y crédito, y esas formas de
+	 * pago se reconocen solas por el nombre: "TARJETA ..." o "...DEBITO...". El crédito a clientes (fiado, "CREDITO DE
+	 * CONFIANZA" o la forma de crédito de Configuraciones) no es tarjeta. Las cortesías ya vienen fuera (formasPago).
+	 * @return int[] id_fpago
+	 */
+	private $tarjetas = null;
+	public function formasTarjeta()
 	{
+		if ($this->tarjetas !== null) return $this->tarjetas;
+		$fiado = 0;
+		if ($this->q("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'configuracion'
+				AND column_name = 'id_fpago_creditodirecto'")->row()) {
+			$c = $this->q('SELECT COALESCE(id_fpago_creditodirecto, 0) AS id FROM configuracion LIMIT 1')->row();
+			$fiado = $c ? (int)$c->id : 0;
+		}
 		$res = array();
-		foreach ($formas as $f) {
+		foreach ($this->formasPago() as $f) {
 			$n = strtoupper(strtr($f['nombre'], array('É' => 'E', 'é' => 'E', 'Í' => 'I', 'í' => 'I')));
-			if (strpos($n, 'TARJETA') !== false || strpos($n, 'DEBITO') !== false || (strpos($n, 'CREDITO') !== false && strpos($n, 'CONFIANZA') === false && strpos($n, 'CLIENTE') === false)) {
-				$res[] = $f['id_fpago'];
-			}
+			if ($f['id_fpago'] === $fiado || strpos($n, 'CONFIANZA') !== false) continue;
+			if (strpos($n, 'TARJETA') !== false || strpos($n, 'DEBITO') !== false) $res[] = $f['id_fpago'];
 		}
-		return $res;
-	}
-
-	private function idsFormas($ids)
-	{
-		if (!is_array($ids)) $ids = explode(',', (string)$ids);
-		$validos = array();
-		foreach ($this->formasPago() as $f) $validos[$f['id_fpago']] = true;
-		$res = array();
-		foreach ($ids as $id) {
-			$id = (int)$id;
-			if ($id > 0 && isset($validos[$id]) && !in_array($id, $res, true)) $res[] = $id;
-		}
-		return $res;
+		return $this->tarjetas = $res;
 	}
 
 	private function texto($d, $campo, $largo)

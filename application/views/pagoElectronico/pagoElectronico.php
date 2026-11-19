@@ -77,7 +77,7 @@
                 <p class="pe-ayuda"><i class="fa fa-info-circle"></i>
                     Cada máquina tiene los datos que la Caja envía al programa de pago del equipo de la caja. El programa los compara con los de su
                     panel (<code>localhost:5005/panel</code>): si alguno no es igual, la Caja muestra cuál. Después, en <b>Herramientas &rsaquo; Control de cajas</b>, elige qué
-                    máquina usa cada caja. Haz clic en una fila para editarla.
+                    máquina usa cada caja. En la Caja se cobran en la máquina solo las formas de pago de <b>tarjeta de débito y crédito</b>. Haz clic en una fila para editarla.
                 </p>
                 <div class="alert alert-warning" id="avisoCredenciales" style="display:none;margin:12px 18px 0">
                     <i class="fa fa-key"></i> Falta el <b>usuario</b> o la <b>clave de la API</b> del programa de pago. Configúralos en
@@ -90,13 +90,12 @@
                                 <th>Máquina</th>
                                 <th>Sucursal / Caja</th>
                                 <th>Terminal ID</th>
-                                <th>Formas de pago</th>
                                 <th class="text-center">Cajas</th>
                                 <th class="text-center">Vigente</th>
                             </tr>
                         </thead>
                         <tbody id="cuerpoPagoElectronico">
-                            <tr><td colspan="6" class="pe-vacio"><i class="fa fa-spinner fa-spin"></i> Cargando…</td></tr>
+                            <tr><td colspan="5" class="pe-vacio"><i class="fa fa-spinner fa-spin"></i> Cargando…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -154,10 +153,6 @@
                             <p class="help-block" id="ayudaApiKey"></p>
                         </div>
                     </fieldset>
-
-                    <div class="pe-titulo">Formas de pago que se cobran en esta máquina</div>
-                    <div class="pe-formas" id="peFormas"></div>
-                    <p class="help-block">Al cobrar en la Caja con una de estas formas (botón <b>Pago exacto</b> o <b>Confirmar</b>), el monto se envía a la máquina.</p>
 
                     <div class="pe-titulo">Estado</div>
                     <div class="pe-formas">
