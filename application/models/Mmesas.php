@@ -19,12 +19,16 @@ class Mmesas extends CI_Model
     // 19-11-2026: el tipo de mesa y el nombre con que sale en la Caja (Mtipomesa; sin la migración, "Mesa N")
     $this->load->model('Mtipomesa');
     $conTipo = $this->Mtipomesa->conMesa();
+    // 19-11-2026 (auditoría): el nombre propio del plano de la Caja manda sobre el del tipo, como en la Caja
+    $conPlano = (bool)$this->db->query("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public'
+      AND table_name = 'mesa_plano' AND column_name = 'nombre'")->row();
     $q = "SELECT m.id_mesa, m.disponible, m.bloqueo_caja, m.id_cotizacion, 
                  m.bloqueo_pedido, m.id_garzon, m.id_recinto, m.vigente,
                  " . ($conTipo ? "COALESCE(m.id_tipo_mesa_web, 0) AS id_tipo_mesa, COALESCE(tm.nombre, '') AS tipo_mesa"
-                    : "0 AS id_tipo_mesa, '' AS tipo_mesa") . ", " . $this->Mtipomesa->nombreSql('m', 'tm') . " AS nombre_caja
+                    : "0 AS id_tipo_mesa, '' AS tipo_mesa") . ", " . ($conPlano ? "COALESCE(NULLIF(trim(pl.nombre), ''), " . $this->Mtipomesa->nombreSql('m', 'tm') . ")" : $this->Mtipomesa->nombreSql('m', 'tm')) . " AS nombre_caja
           FROM mesa m
           " . $this->Mtipomesa->joinSql('m', 'tm') . "
+          " . ($conPlano ? 'LEFT JOIN mesa_plano pl ON pl.id_mesa = m.id_mesa' : '') . "
           ORDER BY m.id_mesa ASC";
 
     $consulta = $this->db->query($q);

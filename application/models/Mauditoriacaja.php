@@ -41,7 +41,10 @@ class Mauditoriacaja extends CI_Model
 		$c = $this->columnasDe('caja');
 		$enNc = $this->sqlNc();
 		$anulada = "COALESCE(v.mensaje_pedido, '') LIKE 'ANULADA%'";
-		$cortesia = isset($this->columnasDe('venta')['es_cortesia']) ? 'v.es_cortesia IS TRUE' : 'false';
+		// 19-11-2026 (auditoría): también la cortesía hecha con la forma de pago de cortesía (así la marca el POS de
+		// escritorio), no solo la marcada es_cortesia; igual que el detalle de la caja
+		$porFpago = "EXISTS (SELECT 1 FROM pago_venta pvc JOIN fpago fpc ON fpc.id_fpago = pvc.id_fpago WHERE pvc.id_venta = v.id_venta AND fpc.escortesia IS TRUE)";
+		$cortesia = isset($this->columnasDe('venta')['es_cortesia']) ? "(v.es_cortesia IS TRUE OR $porFpago)" : $porFpago;
 		$diferencia = isset($c['diferencia']) ? 'COALESCE(c.diferencia, 0)' : '0';
 		$rendicion = isset($c['fecha_rendicion']) ? "to_char(c.fecha_rendicion, 'DD/MM/YYYY HH24:MI')" : "''";
 		$aud = $this->hayAuditoria();

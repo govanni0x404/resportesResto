@@ -235,7 +235,7 @@ class Mcaja extends CI_Model
 			), 'id_psistema');
 			$this->q($db, 'INSERT INTO pusuario (id_rol, id_psistema, autoriza) SELECT id_rol, ?, true FROM rol', array($id));
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			log_message('error', 'Mcaja registrarModulo: ' . $e->getMessage());
 		}
@@ -952,7 +952,7 @@ class Mcaja extends CI_Model
 			if ($otro) throw new Exception('La ' . $elegible['nombre'] . ' ya está abierta por ' . $otro->usuario . '. Elige otra caja.', 409);
 			$id = $this->insertarCaja($db, $cols, $idUsuario, $fondo, $ahora, $r, $idControlCaja);
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -1038,7 +1038,7 @@ class Mcaja extends CI_Model
 				egresos = (SELECT COALESCE(sum(egreso), 0) FROM detalle_caja WHERE id_caja = ?) WHERE id_caja = ?',
 				array((int)$caja->id_caja, (int)$caja->id_caja, (int)$caja->id_caja));
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -1294,7 +1294,7 @@ class Mcaja extends CI_Model
 				$this->q($db, 'UPDATE ctacte_cliente SET pagado = monto WHERE id_ctacte_cliente = ?', array((int)$f->id_ctacte_cliente));
 			}
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -1775,7 +1775,7 @@ class Mcaja extends CI_Model
 			}
 
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -2074,7 +2074,7 @@ class Mcaja extends CI_Model
 				), null);
 			}
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -2149,7 +2149,16 @@ class Mcaja extends CI_Model
 		$db->trans_begin();
 		try {
 			$c = $this->q($db, 'SELECT cerrada FROM caja WHERE id_caja = ? FOR UPDATE', array((int)$caja->id_caja))->row();
+			if (!$c) throw new Exception('La caja no existe', 404);
 			if ($c->cerrada === 't' || $c->cerrada === true) throw new Exception('La caja ya está cerrada', 409);
+			// 19-11-2026 (auditoría): los totales se calcularon antes de bloquear la caja. Si justo entró una venta, un pago o
+			// un movimiento (otra pestaña o equipo), no se cierra con números viejos: se pide revisar y volver a cerrar.
+			$ahoraRes = $this->resumenCaja($caja);
+			foreach (array('ventas', 'cantidad_ventas', 'devoluciones', 'ingresos', 'egresos', 'propinas', 'pagos_credito') as $k) {
+				if ((isset($ahoraRes[$k]) ? $ahoraRes[$k] : null) != (isset($res[$k]) ? $res[$k] : null)) {
+					throw new Exception('Mientras cerrabas se registró otra venta o movimiento en esta caja. Revisa el cierre y vuelve a cerrar.', 409);
+				}
+			}
 			$this->actualizar($db, $cols, 'caja', array(
 				'cerrada' => true,
 				'fecha_rendicion' => $ahora,
@@ -2188,7 +2197,7 @@ class Mcaja extends CI_Model
 			// El inventario contado reemplaza al stock del sistema; va en la misma transacción que el cierre
 			$resInventario = $this->aplicarInventarioCierre($db, (int)$caja->id_caja, $filasInventario, $contados);
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -2719,7 +2728,7 @@ class Mcaja extends CI_Model
 
 			$db->trans_commit();
 			log_message('info', 'Caja web: devolución ' . $v['documento'] . ' ' . $v['folio'] . ' por $' . $total . ' (usuario ' . (int)$idUsuario . ')');
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -3124,7 +3133,7 @@ class Mcaja extends CI_Model
 				'costo_envio' => $costoEnvio, 'total' => $total, 'cobrar_al_entregar' => true, 'id_venta' => null));
 			$this->guardarDescuentoDelivery($db, $id, $descuento);
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -3258,7 +3267,7 @@ class Mcaja extends CI_Model
 				WHERE id_delivery = ?',
 				array($estado, $estado, $idRepartidor !== null ? 't' : 'f', (int)$idRepartidor, $estado, $motivo, (int)$idDelivery));
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -3503,7 +3512,7 @@ class Mcaja extends CI_Model
 					array($id, max(0, min(5000, (int)($pos['x'] ?? 0))), max(0, min(5000, (int)($pos['y'] ?? 0))), $nombre === '' ? null : $nombre));
 			}
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -3615,7 +3624,7 @@ class Mcaja extends CI_Model
 			$this->q($db, 'UPDATE cotizacion SET id_usuario = ? WHERE id_cotizacion = ?', array($idGarzon, (int)$cot->id_cotizacion));
 			$this->q($db, 'UPDATE mesa SET id_garzon = ? WHERE id_mesa = ?', array($idGarzon, $idMesa));
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -3710,7 +3719,7 @@ class Mcaja extends CI_Model
 			}
 			$this->recalcularCotizacion($db, $idCot);
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -3765,7 +3774,7 @@ class Mcaja extends CI_Model
 			$set = 'impreso = true' . (isset($cols['detalle_cotizacion']['fecha_hora_impresion']) ? ', fecha_hora_impresion = now()' : '');
 			$this->q($db, 'UPDATE detalle_cotizacion SET ' . $set . ' WHERE id_detalle_cotizacion ' . $this->sqlEn($ids));
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -3851,6 +3860,9 @@ class Mcaja extends CI_Model
 		$c = array_merge($c, array('id_mesa' => (int)$idMesa, 'id_divpedido' => (int)$idDivpedido, 'subtotal' => 0, 'total' => 0,
 			'descuento' => 0, 'neto' => 0, 'iva' => 0, 'pagado' => false, 'id_venta' => 0, 'vigente' => true, 'esanulado' => false,
 			'eseliminado' => false, 'precuenta_impresa' => false, 'nombre_computador' => self::COMPUTADOR));
+		// 19-11-2026 (auditoría): el mensaje general es de la mesa de origen: pasar productos a OTRA mesa no se lo lleva
+		// (en el cobro de una parte, misma mesa, sí se conserva)
+		if (array_key_exists('observaciones_generales', $c) && (int)$idMesa !== (int)$cot->id_mesa) $c['observaciones_generales'] = null;
 		return $this->insertar($db, $cols, 'cotizacion', $c, 'id_cotizacion');
 	}
 
@@ -3911,7 +3923,7 @@ class Mcaja extends CI_Model
 				}
 			}
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -4065,7 +4077,7 @@ class Mcaja extends CI_Model
 				$this->desocuparMesa($db, $idMesa);
 			}
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -4093,7 +4105,7 @@ class Mcaja extends CI_Model
 			$this->q($db, 'UPDATE cotizacion SET vigente = false, esanulado = true, motivo_anulacion = ? WHERE id_cotizacion = ?', array($motivo, (int)$cot->id_cotizacion));
 			$this->desocuparMesa($db, $idMesa);
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
@@ -4140,7 +4152,7 @@ class Mcaja extends CI_Model
 			}
 			$this->desocuparMesa($db, $idMesa);
 			$db->trans_commit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}

@@ -58,23 +58,32 @@ function ListadoDeFamiliascboMsubFamilia(objSelected) {
     });
 }
 
-function ListadoDeSubFamilias(objSelected, idSel) {
+// 19-11-2026 (auditoría): solo las subfamilias de la familia elegida (antes salían las de todas y se podía grabar la
+// familia X con una subfamilia de la familia Y). Se guardan todas y se filtran al cambiar la familia.
+var subfamiliasTodas = [];
+function pintarSubFamilias(objSelected, idSel, idFamilia) {
+    var fam = Number(idFamilia || $("#cboFamilia").val()) || 0;
+    var tbl = '<option selected disabled value="0">Seleccione La SubFamilia</option>';
+    $.each(subfamiliasTodas, function(index, v) {
+        if (fam > 0 && Number(v.id_familia) !== fam) return;
+        var elegida = idSel != null && idSel !== '' ? String(v.id_subfamilia) === String(idSel) : (objSelected && v.nombre_subfamilia == objSelected);
+        tbl += '<option ' + (elegida ? 'selected ' : '') + 'value="' + v.id_subfamilia + '">' + escaparHtml(v.nombre_subfamilia) + '</option>';
+    });
+    $("#cboSubFamilia").html(tbl);
+    $("#cboSubFamilia").select2();
+}
+function ListadoDeSubFamilias(objSelected, idSel, idFamilia) {
     $.post(base_url + "index.php/Productos/ListadoDeSubFamilias", {
         id: ""
     }, function(datos) {
-        var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
-        tbl = '<option selected disabled value="0">Seleccione La SubFamilia</option>';
-        $.each(obj, function(index, v) { // recorro el array
-            if (idSel != null && idSel !== '' ? String(v.id_subfamilia) === String(idSel) : v.nombre_subfamilia == objSelected) {
-                tbl = tbl + '<option selected value="' + v.id_subfamilia + '">' + escaparHtml(v.nombre_subfamilia) + '</option>';
-            } else {
-                tbl = tbl + '<option value="' + v.id_subfamilia + '">' + escaparHtml(v.nombre_subfamilia) + '</option>';
-            }
-        }); //fin each
-        $("#cboSubFamilia").html(tbl);
-        $("#cboSubFamilia").select2();
+        subfamiliasTodas = jQuery.parseJSON(datos) || [];
+        pintarSubFamilias(objSelected, idSel, idFamilia);
     });
 }
+$(document).on('change', '#cboFamilia', function () {
+    var actual = $("#cboSubFamilia").val();
+    if (subfamiliasTodas.length) pintarSubFamilias('', actual, $(this).val());
+});
 /*
 function respuestaNuevaComuna(id_comuna, id_ciudad) {
         var idCiudadModal = $("#CboCiudadComuna").val();

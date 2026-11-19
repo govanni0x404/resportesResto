@@ -3162,7 +3162,9 @@
 		// 19-11-2026: filtro por tipo de mesa ('' = todas, 0 = sin tipo). También al organizar el plano (pedido del usuario):
 		// se mueven solo las de ese tipo; las demás quedan donde estaban.
 		var tipoMesaFiltro = '';
-		try { tipoMesaFiltro = localStorage.getItem('cajaWeb.tipoMesa') || ''; } catch (e) {}
+		// 19-11-2026 (auditoría): se recuerda solo mientras esté abierta la pestaña (sessionStorage); al día siguiente la
+		// Caja parte mostrando todas las mesas y no esconde las de otros tipos ocupadas desde la app
+		try { tipoMesaFiltro = sessionStorage.getItem('cajaWeb.tipoMesa') || ''; localStorage.removeItem('cajaWeb.tipoMesa'); } catch (e) {}
 		function pintarFiltroTipoMesa(tipos) {
 			var $f = $('#filtroTipoMesa');
 			if (!tipos.length) { tipoMesaFiltro = ''; $f.hide(); return; }
@@ -3180,7 +3182,7 @@
 		}
 		$('#filtroTipoMesa').on('change', function () {
 			tipoMesaFiltro = String($(this).val() || '');
-			try { localStorage.setItem('cajaWeb.tipoMesa', tipoMesaFiltro); } catch (e) {}
+			try { sessionStorage.setItem('cajaWeb.tipoMesa', tipoMesaFiltro); } catch (e) {}
 			renderMesas();
 		});
 		function renderSectores() {

@@ -26,9 +26,9 @@ class McierresDeCaja extends CI_Model
          $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT c.id_caja, c.cerrada, to_char(c.fecha, 'DD-MM-YYYY') as fecha_apertura, COALESCE(to_char(c.fecha_rendicion, 'DD-MM-YYYY'),'0') as fecha_rendicion, fondo_fijo, 
 			/*coalesce(c.ventas, 0) as total_sistema,*/ c.descuento, coalesce(c.ventas, 0) as ventas, c.cortesia, c.ventas_local, c.ingresos, c.egresos, 
-			c.efectivo_fpago as subtotal, c.efectivo_fpago as efectivo, c.efectivo_entregado, c.diferencia, c.propina, u.nombre_usuario as cajero, sum(fondo_fijo+c.ventas_local) as total_sistema
+			c.efectivo_fpago as subtotal, c.efectivo_fpago as efectivo, c.efectivo_entregado, c.diferencia, c.propina, COALESCE(u.nombre_usuario, '(usuario borrado)') as cajero, sum(fondo_fijo+c.ventas_local) as total_sistema
 			from caja c
-			join usuario u on c.id_usuario = u.id_usuario
+			left join usuario u on c.id_usuario = u.id_usuario   -- 19-11-2026: también cajas de usuarios borrados
 			where c.fecha between ? and ?
             group by c.id_caja, u.nombre_usuario
 			order by c.id_caja desc";

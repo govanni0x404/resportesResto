@@ -218,8 +218,15 @@ class CierresDeCaja extends CI_Controller
         $pdf->Cell(50, 5, number_format($datosCaja[0]->sencillo_cierre), 1, 0, 'R');
         $pdf->Ln();
         $nfpago = "";
+        // 19-11-2026 (auditoría): el efectivo se reconoce por su nombre (antes era siempre la forma de pago N° 1: en una
+        // base nueva con otros números, "EFECTIVO A RENDIR" quedaba en la línea de otra forma de pago). Si ninguna dice
+        // EFECTIVO, se usa la N° 1 como antes.
+        $idEfectivo = 1;
         foreach ($datosFormaPago as $row) {
-            if ($row->id_fpago == 1) {
+            if (stripos((string)$row->nombre_fpago, 'EFECTIVO') !== false) { $idEfectivo = (int)$row->id_fpago; break; }
+        }
+        foreach ($datosFormaPago as $row) {
+            if ((int)$row->id_fpago === $idEfectivo) {
                 $nfpago = "EFECTIVO A RENDIR";
                 $pdf->Cell(60, 5, mb_convert_encoding((string)($nfpago), 'ISO-8859-1', 'UTF-8'), 1);
                 $pdf->SetX(70);

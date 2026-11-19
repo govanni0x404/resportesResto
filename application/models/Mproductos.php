@@ -167,7 +167,7 @@ class Mproductos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$q = "SELECT id_subfamilia, nombre_subfamilia from subfamilia order by nombre_subfamilia asc";
+		$q = "SELECT id_subfamilia, nombre_subfamilia, COALESCE(id_familia, 0) AS id_familia from subfamilia order by nombre_subfamilia asc";
 		$query = $this->db->query($q)->result();
 		return $query;
 	}

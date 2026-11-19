@@ -659,12 +659,14 @@ class Mdashboard extends CI_Model
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
-        $q = "SELECT td.id_tdocumento, td.nombre_tdocumento as nombre_tdocumento, count(v.id_tdocumento) as cantidad, round(sum(v.subtotal)) as total, 
+        // 19-11-2026 (auditoría): con total (con descuento) y sin cortesías, como el resto del Dashboard
+        $q = "SELECT td.id_tdocumento, td.nombre_tdocumento as nombre_tdocumento, count(v.id_tdocumento) as cantidad, round(sum(v.total)) as total, 
 			round(sum(v.neto)) as neto, round(sum(v.iva)) as iva
 			from venta v
 			join tdocumento td on v.id_tdocumento = td.id_tdocumento
 			join caja c on v.id_caja = c.id_caja
-		   where COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and c.fecha between ? and ?";
+		   where COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and c.fecha between ? and ?
+		   and EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false)";
         if ($idCaja > 0) {
             $q = $q . " and c.id_caja = " . (int)$idCaja . "
 			group by td.id_tdocumento, nombre_tdocumento";
@@ -761,7 +763,8 @@ class Mdashboard extends CI_Model
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         //$q = " SELECT sum(v.total) as monto_total_ventas from venta v";
-        $q = "SELECT coalesce(round(sum(v.subtotal)), 0) as monto_total_ventas
+        // 19-11-2026 (auditoría): total (con descuento), igual que "Total ventas" de la pantalla del Dashboard
+        $q = "SELECT coalesce(round(sum(v.total)), 0) as monto_total_ventas
 			from venta v
 			join caja c on v.id_caja = c.id_caja
 			where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and c.fecha between ? and ?";

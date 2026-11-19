@@ -116,9 +116,15 @@ class Mconfiguraciones extends CI_Model {
                     WHERE nombre_cliente ILIKE '%HABITUAL%' OR rut::text IN ('6666666', '66666666')
                     ORDER BY (nombre_cliente ILIKE '%HABITUAL%') DESC, id_cliente LIMIT 1"),
                 'id_lpreciopublico' => array('lprecio', "SELECT id_lprecio FROM lprecio ORDER BY (nombre_lprecio ILIKE '%P_BLICO%') DESC, id_lprecio LIMIT 1"),
-                'id_docventa_defecto' => array('tdocumento', "SELECT id_tdocumento FROM tdocumento
+                // 19-11-2026 (auditoría): sin facturación electrónica, el documento por defecto es el comprobante interno (antes
+                // quedaba la boleta electrónica, que la Caja no ofrece sin facturación)
+                'id_docventa_defecto' => !empty($fila['habilitar_facturacion_electronica']) && $fila['habilitar_facturacion_electronica'] !== 'f'
+                    ? array('tdocumento', "SELECT id_tdocumento FROM tdocumento
                     WHERE COALESCE(cod_sii, 0) = 39 OR nombre_tdocumento ILIKE 'BOLETA%'
-                    ORDER BY (COALESCE(cod_sii, 0) = 39) DESC, (nombre_tdocumento ILIKE '%EXENTA%'), id_tdocumento LIMIT 1"),
+                    ORDER BY (COALESCE(cod_sii, 0) = 39) DESC, (nombre_tdocumento ILIKE '%EXENTA%'), id_tdocumento LIMIT 1")
+                    : array('tdocumento', "SELECT id_tdocumento FROM tdocumento
+                    WHERE nombre_tdocumento ILIKE '%COMPROBANTE%' AND nombre_tdocumento NOT ILIKE '%NOTA%'
+                    ORDER BY (nombre_tdocumento ILIKE '%INTERNO%') DESC, id_tdocumento LIMIT 1"),
                 'id_fpago_defecto' => $efectivo,
                 'vueltofpago' => $efectivo,
                 'id_tdocumento_ticket' => array('tdocumento', "SELECT id_tdocumento FROM tdocumento

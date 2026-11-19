@@ -199,7 +199,7 @@ function ListadoCartaDeProductos() {
         
         // 19-11-2026 (auditoría): cada lista se elige por su número (con nombres repetidos se elegía otro)
         ListadoDeFamiliasMantenedor(rowData[0].nombre_familia, rowData[0].id_familia);
-        ListadoDeSubFamilias(rowData[0].subfamilia, rowData[0].id_subfamilia);
+        ListadoDeSubFamilias(rowData[0].subfamilia, rowData[0].id_subfamilia, rowData[0].id_familia);
         ListadoDeUmedida(rowData[0].nombre_umedida, rowData[0].id_umedida);
         ListadoDestinoDeImpresion(rowData[0].nombre_dimpresion, rowData[0].id_dimpresion);
         ListadoDeBodega(rowData[0].nombre_bodega, rowData[0].id_bodega);
@@ -371,7 +371,7 @@ function ObtenerUltimoIdProducto(objSelected) {
                 
                 tbl += "<tr>";
                 tbl += "<td style='display:none'>" + v.id_detalle_lprecio + "</td>";
-                tbl += "<td style='width:40%'>" + v.nombre_lprecio + "</td>";
+                tbl += "<td style='width:40%'>" + escaparHtml(v.nombre_lprecio) + "</td>";
                 
                 // Input de precio
                 tbl += '<td style="width:30%" class="text-right">';
@@ -599,7 +599,14 @@ function grabarPreciosYProducto() {
         }
         
         precios.push(precioData);
+        // 19-11-2026 (auditoría): la lista pública en 0 deja el producto fuera de la Caja (no se vende sin precio)
+        if (/P[UÚ]BLIC/i.test($(this).find("td").eq(1).text()) && precio <= 0) tienePrecio = 'publica0';
     });
+    if (tienePrecio === 'publica0' && datosProductoPendiente.permitir_venta_sin_precio != 1
+        && !window.confirm('El precio de la LISTA PÚBLICA quedó en $0: el producto NO aparecerá en la Caja hasta que tenga precio '
+            + '(o hasta marcar "Permitir venta sin precio").\n\n¿Grabar igual?')) {
+        return;
+    }
     
     $.ajax({
         url: base_url + "index.php/Productos/grabarProductoConPrecios",

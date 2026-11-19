@@ -60,8 +60,14 @@ p {
 </head>
 <body>
 	<div id="container">
+		<?php if (defined('ENVIRONMENT') && ENVIRONMENT === 'production') : ?>
+			<?php // 19-11-2026 (auditoría): en producción no se muestra el SQL ni el mensaje de PostgreSQL (queda en el log) ?>
+			<h1>No se pudo completar la operación</h1>
+			<p>Ocurrió un error en la base de datos. Vuelve a intentarlo y, si se repite, avisa al administrador.</p>
+		<?php else : ?>
 		<h1><?php echo $heading; ?></h1>
 		<?php echo $message; ?>
+		<?php endif; ?>
 	</div>
 </body>
 </html>
