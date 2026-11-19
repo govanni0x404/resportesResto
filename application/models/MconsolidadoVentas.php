@@ -73,7 +73,7 @@ class MconsolidadoVentas extends CI_Model
 		join producto p on dv.id_producto = p.id_producto
 		join familia f on p.id_familia = f.id_familia
 		join caja ca on v.id_caja = ca.id_caja
-		where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false AND fp.vigente = true) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?
+		where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?
 		group by f.id_familia";
         $query = $this->db->query($q, array($de, $a))->result();
         return $query;
@@ -99,7 +99,7 @@ class MconsolidadoVentas extends CI_Model
 		from venta v
 		join detalle_venta dv on v.id_venta = dv.id_venta
 		join canal_venta cv on v.id_canal_venta = cv.id_canal_venta
-		where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false AND fp.vigente = true) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?
+		where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?
 		group by cv.nombre_canal_venta";
 
         $query = $this->db->query($q, array($de, $a))->result();
@@ -166,7 +166,7 @@ class MconsolidadoVentas extends CI_Model
 		from venta v
 		join detalle_venta dv on v.id_venta = dv.id_venta
 		join canal_venta cv on v.id_canal_venta = cv.id_canal_venta
-		where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false AND fp.vigente = true) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?
+		where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and v.fecha between ? and ?
 		group by cv.nombre_canal_venta";
         $query = $this->db->query($q, array($de, $a))->result();
         return $query;

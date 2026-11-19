@@ -37,6 +37,10 @@ class MventasMensualesTotalizadas extends CI_Model
             venta v
         WHERE 
             v.fecha BETWEEN ? AND ?
+            -- 19-11-2026 (auditoría): sin anuladas ni cortesías, igual que los Top 10 de esta misma pantalla
+            AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%'
+            AND EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago
+                WHERE pv.id_venta = v.id_venta AND fp.escortesia = false)
         GROUP BY 
             DATE(v.fecha)
         ORDER BY 

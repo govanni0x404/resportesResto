@@ -27,11 +27,16 @@ class MdetalleOperaciones extends CI_Model
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         // 14-11-2026: una fila por venta. Antes el JOIN con pago_venta repetía la venta (con su total completo)
         // por cada forma de pago de un pago dividido. Las formas de pago se muestran juntas ("EFECTIVO + DEBITO").
-        $q = "SELECT v.id_venta, u.nombre_usuario, co.id_mesa, count(index_comensal) AS comensales, to_char(co.fecha_transaccion, 'DD/MM/YYYY HH24:MI:SS') AS fecha_inicio, 
-				to_char(date_trunc('second',sum(v.fecha_transaccion-co.fecha_transaccion)), 'HH24:MI:SS') as tiempo_atencion, co.mensaje as observacion, pg.nombre_fpago, round(v.total) as total
+        // 19-11-2026 (auditoría): LEFT JOIN cotizacion. La venta directa de la Caja web no tiene cotización (solo las de mesa)
+        // y con JOIN no aparecía aquí (tampoco se le podía cambiar la forma de pago). Sin cotización: usuario de la venta,
+        // mesa 0 y sin tiempo de atención.
+        $q = "SELECT v.id_venta, COALESCE(u.nombre_usuario, '') AS nombre_usuario, COALESCE(co.id_mesa, 0) AS id_mesa, count(co.index_comensal) AS comensales,
+				to_char(COALESCE(co.fecha_transaccion, v.fecha_transaccion), 'DD/MM/YYYY HH24:MI:SS') AS fecha_inicio,
+				COALESCE(to_char(date_trunc('second',sum(v.fecha_transaccion-co.fecha_transaccion)), 'HH24:MI:SS'), '00:00:00') as tiempo_atencion,
+				co.mensaje as observacion, pg.nombre_fpago, round(v.total) as total
 			from venta v
-			join cotizacion co on v.id_venta = co.id_venta
-			join usuario u on co.id_usuario = u.id_usuario
+			left join cotizacion co on v.id_venta = co.id_venta
+			left join usuario u on u.id_usuario = COALESCE(co.id_usuario, v.id_usuario)
 			join lateral (SELECT string_agg(fp.nombre_fpago, ' + ' ORDER BY pv.id_pventa) AS nombre_fpago
 				FROM pago_venta pv JOIN fpago fp ON pv.id_fpago = fp.id_fpago WHERE pv.id_venta = v.id_venta) pg on pg.nombre_fpago IS NOT NULL
 			where v.fecha between ? and ?";
@@ -52,7 +57,7 @@ class MdetalleOperaciones extends CI_Model
             array_push($data, array(
                 // "btn_compras" => '<button onclick="resumenComprasPDF(' . $key->id_compra . ')" type="submit" class="btn btn-danger"><i class="fa fa-file-text-o"></i></button>',
                 "id_venta" => $key->id_venta,
-                "nombre_usuario" => $key->nombre_usuario . ' / ' . $key->id_mesa,
+                "nombre_usuario" => $key->nombre_usuario . ' / ' . ((int)$key->id_mesa > 0 ? $key->id_mesa : 'Venta directa'),
                 "comensales" => $key->comensales,
                 'fecha_inicio' => $key->fecha_inicio . ' / ' . $key->tiempo_atencion,
                 'observacion' => $key->observacion == null ? '-' : $key->observacion,

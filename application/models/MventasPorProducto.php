@@ -34,7 +34,9 @@ class MventasPorProducto extends CI_Model
         join detalle_venta dv on p.id_producto = dv.id_producto
         -- sin join a detalle_lprecio: no se usaba y con más de una lista de precios duplicaba cantidades y totales
         join venta v on dv.id_venta = v.id_venta
-        where dv.total_bruto_con_descuento>0 and  v.fecha between ? and ?
+        -- 19-11-2026 (auditoría): sin el filtro > 0 (dejaba fuera las devoluciones / notas de crédito, que restan) y sin
+        -- cortesías (como Consolidado de ventas)
+        where v.fecha between ? and ? and EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false)
         group by p.nombre_producto
         order by p.nombre_producto";
 
@@ -77,11 +79,11 @@ class MventasPorProducto extends CI_Model
             (select sum(dve.cantidad) 
             from detalle_venta dve 
             join venta ve on dve.id_venta = ve.id_venta 
-            where ve.fecha between ? and ?))*100),3) as porcentaje
+            where ve.fecha between ? and ? and EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = ve.id_venta AND fp.escortesia = false)))*100),3) as porcentaje
         from producto p
         join detalle_venta dv on p.id_producto = dv.id_producto
         join venta v on dv.id_venta = v.id_venta
-		where v.fecha between ? and ?
+		where v.fecha between ? and ? and EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false)
         group by p.nombre_producto";
 
 

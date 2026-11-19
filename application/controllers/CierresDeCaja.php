@@ -262,7 +262,7 @@ class CierresDeCaja extends CI_Controller
         $pdf->SetFont('Arial', '', 11);
         $pdf->SetTextColor(0, 0, 0);
         foreach ($datosCortesias as $row) {
-            if ($row->monto > 0 && $row->escortesia == 'f' and $row->vigente == 't') {
+            if ($row->monto > 0 && $row->escortesia == 'f') {   // 19-11-2026: también formas de pago ya desactivadas (la venta se hizo con ellas)
                 $pdf->Ln();
                 $pdf->Cell(60, 5, mb_convert_encoding((string)($row->nombre_fpago), 'ISO-8859-1', 'UTF-8'), 1);
                 $pdf->SetX(70);
@@ -281,7 +281,7 @@ class CierresDeCaja extends CI_Controller
         $pdf->SetFont('Arial', '', 11);
         $pdf->SetTextColor(0, 0, 0);
         foreach ($datosCortesias as $row) {
-            if ($row->monto > 0 && $row->escortesia == 't' and $row->vigente == 't') {
+            if ($row->monto > 0 && $row->escortesia == 't') {
                 $pdf->Ln();
                 $pdf->Cell(60, 5, mb_convert_encoding((string)($row->nombre_fpago), 'ISO-8859-1', 'UTF-8'), 1);
                 $pdf->Cell(20, 5, mb_convert_encoding((string)('$'), 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');

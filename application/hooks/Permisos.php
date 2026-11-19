@@ -25,7 +25,9 @@ class Permisos
 	private static $publicos = array('login', 'welcome', 'apimovil', 'agenteimpresion', 'imagenimpresion');
 
 	/** Métodos públicos que actúan sobre la sesión del usuario (cambiar empresa, descargar el instalador del agente). */
-	private static $publicosConSesion = array('login/relogin' => true, 'login/postloginwarmup' => true, 'agenteimpresion/instalador' => true);
+	// 19-11-2026 (auditoría): crear y revocar equipos de impresión también piden la clave anti-CSRF
+	private static $publicosConSesion = array('login/relogin' => true, 'login/postloginwarmup' => true, 'agenteimpresion/instalador' => true,
+		'agenteimpresion/crear' => true, 'agenteimpresion/revocar' => true);
 
 	/** Cualquier usuario con sesión (trabaja solo sobre el propio usuario). */
 	private static $libres = array('perfildeusuario');
@@ -54,6 +56,18 @@ class Permisos
 		'cierresdecaja/cierrecajapdf' => array('CierresDeCaja', 'Caja'),
 		'insumos/grabarinsumo' => array('Insumos', 'Productos'),
 		'recetas/grabarreceta' => array('Recetas', 'Productos'),
+	);
+
+	/**
+	 * 19-11-2026 (auditoría): datos de personas y costos. Sus consultas de apoyo (listados, búsquedas) ya no las ve cualquier
+	 * rol: hay que tener alguno de los módulos de la lista (los que de verdad usan esos listados). Antes un garzón podía pedir
+	 * Cliente/ListadoDeClientes o Proveedor/ListadoDeProveedores (RUT, teléfono, dirección) sin tener esos módulos.
+	 */
+	private static $consultaPrivada = array(
+		'cliente' => array('Cliente', 'ListadoDeClientes'),
+		'proveedor' => array('Proveedor', 'Compras', 'ResumenDeCompras'),
+		'insumos' => array('Insumos', 'Compras', 'EntradaBodega', 'SalidaBodega', 'Inventario', 'Productos', 'Recetas', 'InsumosPorBodega'),
+		'compras' => array('Compras', 'ResumenDeCompras'),
 	);
 
 	/** Consultas de apoyo: listados y búsquedas de solo lectura. */
@@ -93,7 +107,11 @@ class Permisos
 		}
 
 		$sensible = in_array($clase, self::$sensibles, true);
-		if (!$sensible && !in_array($clase, self::$reportes, true) && preg_match(self::CONSULTA, $metodo)) return;
+		if (!$sensible && !in_array($clase, self::$reportes, true) && preg_match(self::CONSULTA, $metodo)) {
+			if (!isset(self::$consultaPrivada[$clase])) return;
+			foreach (self::$consultaPrivada[$clase] as $m) if ($this->permitido($CI, $idRol, $m, false)) return;
+			$this->negar($CI, 403);
+		}
 
 		$modulo = isset(self::$modulo[$clase]) ? self::$modulo[$clase] : $CI->router->fetch_class();
 		if (!$this->permitido($CI, $idRol, $modulo, $sensible)) {

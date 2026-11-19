@@ -227,11 +227,18 @@ class Caja extends CI_Controller
 					log_message('error', 'Caja::vender: no se marcó registrado el cobro ' . $txPago . ': ' . $e->getMessage());
 				}
 			}
-			// Venta directa: la comanda la arma el servidor con lo vendido; la pantalla solo recibe su número
-			$r['comanda_id'] = $this->guardarComanda($r['comanda'], array('id_venta' => (int)$r['id_venta'], 'directa' => true,
-				'observacion' => $r['observacion'], 'retira' => isset($r['retira']) ? $r['retira'] : '',
-				'delivery' => !empty($r['id_delivery']) ? $this->etiquetaDelivery($r['id_delivery'], $r['delivery_nombre']) : '',
-				'entrega' => !empty($r['delivery_entrega']) ? $r['delivery_entrega'] : null));
+			// Venta directa: la comanda la arma el servidor con lo vendido; la pantalla solo recibe su número.
+			// 19-11-2026 (auditoría): la venta ya quedó guardada; si armar la comanda falla, se responde igual la venta (sin
+			// comanda) en vez de un error 500 que hacía creer que no se cobró
+			try {
+				$r['comanda_id'] = $this->guardarComanda($r['comanda'], array('id_venta' => (int)$r['id_venta'], 'directa' => true,
+					'observacion' => $r['observacion'], 'retira' => isset($r['retira']) ? $r['retira'] : '',
+					'delivery' => !empty($r['id_delivery']) ? $this->etiquetaDelivery($r['id_delivery'], $r['delivery_nombre']) : '',
+					'entrega' => !empty($r['delivery_entrega']) ? $r['delivery_entrega'] : null));
+			} catch (Throwable $e) {
+				log_message('error', 'Caja::vender: venta ' . (int)$r['id_venta'] . ' guardada, pero no se armó la comanda: ' . $e->getMessage());
+				$r['comanda_id'] = null;
+			}
 			unset($r['comanda'], $r['observacion'], $r['retira'], $r['delivery_nombre'], $r['delivery_entrega']);
 			return $r;
 		}, true);
@@ -824,6 +831,14 @@ class Caja extends CI_Controller
 	private function enviarAImpresora($destino, $bytes)
 	{
 		if (!$destino) return array('ok' => false, 'navegador' => true, 'detalle' => 'No hay impresora de caja en Configuraciones');
+		// 19-11-2026 (auditoría): con la impresión en el equipo de la caja (la pantalla manda local=1) el servidor no imprime:
+		// devuelve las operaciones y la pantalla las manda al agente local (cierre, informe X, anulación, pago de crédito)
+		if ($this->input->post('local')) {
+			$this->load->library('Escpos_operaciones');
+			return array('ok' => false, 'local' => true, 'navegador' => false, 'detalle' => '',
+				'destino' => array('nombre' => $destino['nombre'], 'ip' => $destino['ip'], 'puerto' => $destino['puerto'], 'ruta_windows' => $destino['ruta_windows']),
+				'operaciones' => Escpos_operaciones::convertir($bytes, $this->papelTicket() == 58 ? 28 : 40));
+		}
 		$this->load->library('Comanda_impresion');
 		$this->load->model('Mcola_impresion');
 		$this->Mcola_impresion->conectar(null, false);

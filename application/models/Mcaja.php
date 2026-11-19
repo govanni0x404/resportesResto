@@ -533,7 +533,8 @@ class Mcaja extends CI_Model
 				$efectivoPropinas += (int)$r->propina;
 			}
 			$propinas += (int)$r->propina;
-			if ($this->esCredito($config, $r->id_fpago, $r->nombre_fpago)) $creditos += (int)$r->monto;
+			$esCredito = $this->esCredito($config, $r->id_fpago, $r->nombre_fpago);
+			if ($esCredito) $creditos += (int)$r->monto;
 			$porFpago[] = array(
 				'id_fpago' => (int)$r->id_fpago,
 				'nombre' => $r->nombre_fpago,
@@ -541,6 +542,8 @@ class Mcaja extends CI_Model
 				'propina' => (int)$r->propina,
 				'efectivo' => $efectivo,
 				'cortesia' => $cortesia,
+				// 19-11-2026 (auditoría): lo fiado no tiene vouchers que contar: en el cierre lo pone el sistema
+				'credito' => $esCredito,
 			);
 		}
 
@@ -2116,6 +2119,9 @@ class Mcaja extends CI_Model
 			if ($f['efectivo']) {
 				$rendido[$f['id_fpago']] = $efectivoAsignado ? 0 : $entregado;
 				$efectivoAsignado = true;
+			} elseif (!empty($f['credito'])) {
+				// 19-11-2026 (auditoría): lo fiado no se declara (no hay comprobantes): se rinde lo del sistema, sin faltante falso
+				$rendido[$f['id_fpago']] = $f['monto'] + $f['propina'];
 			} else {
 				$rendido[$f['id_fpago']] = isset($declarado[$f['id_fpago']]) ? (int)$declarado[$f['id_fpago']] : $f['monto'] + $f['propina'];
 			}
@@ -2508,6 +2514,14 @@ class Mcaja extends CI_Model
 				: null;
 			if ($fpagos[$idFpago]['credito'] && !$ctacte) {
 				throw new Exception('La venta no se hizo a crédito: elige otra forma de devolver el dinero', 400);
+			}
+			// 19-11-2026 (auditoría): una venta fiada que el cliente aún debe no se devuelve en efectivo/tarjeta (salía plata de
+			// la caja y la deuda quedaba igual): se devuelve "a crédito", que baja la deuda. Ya pagada, se devuelve como cualquier otra.
+			if ($ctacte && !$fpagos[$idFpago]['credito'] && (int)$ctacte->monto - (int)$ctacte->pagado > 0) {
+				$nombresCredito = array();
+				foreach ($fpagos as $fp) if (!empty($fp['credito'])) $nombresCredito[] = $fp['nombre'];
+				throw new Exception('Esta venta se hizo a crédito y el cliente aún debe $' . number_format((int)$ctacte->monto - (int)$ctacte->pagado, 0, ',', '.')
+					. ': devuélvela con ' . ($nombresCredito ? implode(' o ', array_unique($nombresCredito)) : 'la forma de pago de crédito') . ' (así baja su deuda)', 409);
 			}
 
 			$lineas = array();
@@ -3679,10 +3693,13 @@ class Mcaja extends CI_Model
 					'id_dimpresion' => isset($destinos[$l['id_producto']]) ? $destinos[$l['id_producto']]['id'] : 0,
 				), null);
 			}
-			// 19-11-2026: mensaje general de la mesa (si la pantalla lo manda; '' lo borra)
-			if (array_key_exists('observacion', $p) && isset($cols['cotizacion']['observaciones_generales'])) {
-				$obs = self::textoMensajeMesa($p['observacion']);
-				$this->q($db, 'UPDATE cotizacion SET observaciones_generales = ? WHERE id_cotizacion = ?', array($obs === '' ? null : $obs, $idCot));
+			// 19-11-2026: mensaje general de la mesa escrito ANTES del primer envío (mesa sin pedido). Con el pedido ya abierto el
+			// mensaje se cambia solo con guardarMensajeMesa: aquí no se pisa (auditoría: otra caja o el POS de escritorio pudo
+			// escribir una alergia mientras esta pantalla tenía la mesa abierta, y el envío la borraba).
+			$obs = isset($p['observacion']) ? self::textoMensajeMesa($p['observacion']) : '';
+			if ($obs !== '' && isset($cols['cotizacion']['observaciones_generales'])) {
+				$this->q($db, "UPDATE cotizacion SET observaciones_generales = ? WHERE id_cotizacion = ? AND COALESCE(trim(observaciones_generales), '') = ''",
+					array($obs, $idCot));
 			}
 			$this->recalcularCotizacion($db, $idCot);
 			$db->trans_commit();

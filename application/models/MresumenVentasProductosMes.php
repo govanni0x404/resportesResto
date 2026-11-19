@@ -42,6 +42,9 @@ class MresumenVentasProductosMes extends CI_Model
             JOIN venta v ON d.id_venta = v.id_venta
             WHERE v.fecha >= ?
               AND v.fecha <= ?
+              -- 19-11-2026 (auditoría): sin cortesías (como Consolidado de ventas)
+              AND EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago
+                  WHERE pv.id_venta = v.id_venta AND fp.escortesia = false)
             GROUP BY
                 date_trunc('month', v.fecha),
                 p.id_producto,
@@ -150,6 +153,9 @@ class MresumenVentasProductosMes extends CI_Model
             JOIN venta v ON d.id_venta = v.id_venta
             WHERE v.fecha >= ?
               AND v.fecha <= ?
+              -- 19-11-2026 (auditoría): sin cortesías (como Consolidado de ventas)
+              AND EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago
+                  WHERE pv.id_venta = v.id_venta AND fp.escortesia = false)
             GROUP BY
                 date_trunc('month', v.fecha),
                 p.nombre_producto,

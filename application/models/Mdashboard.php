@@ -414,7 +414,7 @@ class Mdashboard extends CI_Model
 			join producto p on dv.id_producto = p.id_producto
 			join familia f on p.id_familia = f.id_familia
 			join caja ca on v.id_caja = ca.id_caja
-			where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false AND fp.vigente = true) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and ca.fecha between ? and ?";
+			where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and ca.fecha between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and ca.id_caja = " . (int)$id_caja . "
 			group by f.id_familia";
@@ -472,7 +472,7 @@ class Mdashboard extends CI_Model
         join detalle_venta dv on p.id_producto = dv.id_producto
         join venta v on dv.id_venta = v.id_venta
         join caja ca on v.id_caja = ca.id_caja
-        where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false AND fp.vigente = true) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and ca.fecha between ? and ? and f.id_familia = " . (int)$id_familia;
+        where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and ca.fecha between ? and ? and f.id_familia = " . (int)$id_familia;
         if ($id_caja > 0) {
             $q = $q . " and ca.id_caja = " . (int)$id_caja . "
                 group by p.nombre_producto";
@@ -525,7 +525,7 @@ class Mdashboard extends CI_Model
             round(sum(v.total)) as monto_total
             from venta v
 			join caja c on v.id_caja = c.id_caja
-			where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false AND fp.vigente = true) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and c.fecha between ? and ?";
+			where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and c.fecha between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and c.id_caja = " . (int)$id_caja . "
 				group by v.id_mesa

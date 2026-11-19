@@ -158,8 +158,13 @@ if (!function_exists('cfg_opciones')) {
                                             <div class="panel-body">
                                                 <div class="form-group">
                                                     <label>Clave de administrador</label>
-                                                    <input type="password" id="txtclaveAdmin" class="form-control" name="txtclaveAdmin" value="<?php echo html_escape((string)($config['pass_admin'] ?? '')); ?>">
+                                                    <!-- 19-11-2026: la clave guardada no se manda a la página; vacía = se mantiene -->
+                                                    <input type="password" id="txtclaveAdmin" class="form-control" name="txtclaveAdmin" value="" autocomplete="new-password"
+                                                        placeholder="<?php echo !empty($tiene_clave_admin) ? '•••••• (guardada; escribe otra para cambiarla)' : 'Sin clave: escribe una para crearla'; ?>">
                                                 </div>
+                                                <?php if (!empty($tiene_clave_admin)) : ?>
+                                                <label><input type="checkbox" name="borrar_clave_admin" value="1"> Quitar la clave guardada</label>
+                                                <?php endif; ?>
                                                 <label><input type="checkbox" id="chkMostrarClaveAdmin" onchange="toggleMostrarClaveAdmin()" name="mostrar_clave_admin" value="1" <?php echo ($config['mostrar_clave_admin'] ?? false) ? 'checked' : ''; ?>> Mostrar clave</label>
                                                 <label><input type="checkbox" name="admin_anulacion_eliminacion" value="1" <?php echo ($config['admin_anulacion_eliminacion'] ?? false) ? 'checked' : ''; ?>> Requerir clave admin para anulacion</label>
                                             </div>

@@ -1904,6 +1904,9 @@
 
 		function limpiarVenta() {
 			var eraMesa = !!mesa;
+			// 19-11-2026 (auditoría): venta nueva = token de cobro nuevo (antes quedaba el de un cobro que sí se registró pero
+			// cuya respuesta no llegó, y todas las ventas siguientes daban "Este cobro ya se registró" hasta recargar)
+			tokenCobro = null;
 			carro = [];
 			mesa = null;
 			cobroParcial = null;
@@ -2605,7 +2608,18 @@
 			var terminar = function () { enviando = false; actualizarResumenPago(); };
 			enviarConAutorizacion(function (aut) {
 				venta.autorizacion = aut;
-				return $.ajax({ url: base + 'vender', type: 'POST', contentType: 'application/json', data: JSON.stringify(venta), dataType: 'json' });
+				return $.ajax({ url: base + 'vender', type: 'POST', contentType: 'application/json', data: JSON.stringify(venta), dataType: 'json' })
+					.fail(function (x) {
+						// 19-11-2026 (auditoría): "Este cobro ya se registró" = la venta SÍ quedó guardada (se cortó la respuesta y se
+						// reintentó). Se cierra el cobro y se limpia la pantalla para no volver a cobrarla; el aviso dice qué venta es.
+						var msg = x && x.responseJSON && x.responseJSON.error ? String(x.responseJSON.error) : '';
+						if (x && x.status === 409 && /ya se registr/i.test(msg) && !ctx.replay) {
+							$('#modalPago').modal('hide');
+							limpiarVenta();
+							cargarEstado();
+							if ($('#mesasGrilla').is(':visible') || ctx.idMesa) cargarMesas();
+						}
+					});
 			}, function (r) {
 				terminar();
 				ventaRegistrada(r, ctx);
@@ -3541,7 +3555,9 @@
 			var detalle = $.map(enviadas, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {} }; });
 			enviando = true;
 			$('#btnEnviarMesa, #btnEnviarMesaBarra, #btnCobrar').prop('disabled', true);
-			postJson('enviarMesa', { id_mesa: idMesa, id_lprecio: Number($('#cboLista').val()), detalle: detalle, observacion: mesa.mensaje || '' }).done(function (r) {
+			postJson('enviarMesa', { id_mesa: idMesa, id_lprecio: Number($('#cboLista').val()), detalle: detalle,
+				// 19-11-2026: el mensaje viaja solo en el primer envío (mesa sin pedido); después se guarda con su botón
+				observacion: mesa.id_cotizacion ? '' : (mesa.mensaje || '') }).done(function (r) {
 				if (imprimeComanda()) imprimirComandaBloqueando(r.comanda_id, 'Comanda');
 				// Se conserva lo que se agregó mientras se enviaba
 				carro = $.grep(carro, function (l) { return !l.enviada && $.inArray(l, enviadas) < 0; });
@@ -4398,10 +4414,12 @@
 				if ($.trim(motivo) === '') { swal.showInputError('Debes indicar el motivo'); return false; }
 				swal.close();
 				enviarConAutorizacion(function (aut) {
-					return $.ajax({ url: base + 'anular', type: 'POST', dataType: 'json', data: { id_venta: id, motivo: motivo, autorizacion: aut } });
+					return $.ajax({ url: base + 'anular', type: 'POST', dataType: 'json', data: { id_venta: id, motivo: motivo, autorizacion: aut, local: comprobanteLocal() } });
 				}, function (r) {
 					toastr.success('Venta folio ' + folio + ' anulada');
-					if (r && r.impresion) {
+					if (r && r.impresion && imprimirComprobanteLocal(r.impresion, 'Comprobante de anulación')) {
+						// sale por el agente de este equipo
+					} else if (r && r.impresion) {
 						if (r.impresion.ok) toastr.success('Comprobante de anulación enviado a la impresora', '', { timeOut: 2500 });
 						else toastr.error('Comprobante de anulación: ' + r.impresion.detalle, '', { timeOut: 9000 });
 					}
@@ -4522,7 +4540,8 @@
 				$(this).find('i').toggleClass('fa-caret-right fa-caret-down');
 			})
 			.on('click', '.cred-reimprimir', function () {
-				post('reimprimirPagoCredito', { id_pago: $(this).data('id') }).done(function (r) {
+				post('reimprimirPagoCredito', { id_pago: $(this).data('id'), local: comprobanteLocal() }).done(function (r) {
+					if (imprimirComprobanteLocal(r, 'Comprobante')) return;
 					if (r.ok) toastr.success('Comprobante enviado a la impresora', '', { timeOut: 2500 });
 					else toastr.error('Comprobante: ' + r.detalle, '', { timeOut: 9000 });
 				});
@@ -4533,7 +4552,7 @@
 				var total = 0;
 				$.each(elegidos, function (i, v) { total += v.saldo; });
 				var $fp = $('#credFpago option:selected');
-				var datos = { id_cliente: cred.cliente.id_cliente, id_fpago: $fp.val(), paga_con: Number($('#credPagaCon').val()) || 0, observacion: $('#credObs').val() };
+				var datos = { id_cliente: cred.cliente.id_cliente, id_fpago: $fp.val(), paga_con: Number($('#credPagaCon').val()) || 0, observacion: $('#credObs').val(), local: comprobanteLocal() };
 				$.each(elegidos, function (i, v) { datos['ids[' + i + ']'] = v.id_ctacte; });
 				swal({
 					title: '¿Registrar el pago?',
@@ -4546,7 +4565,7 @@
 					post('pagarCredito', datos).done(function (r) {
 						var p = r.pago;
 						toastr.success('Pago registrado: ' + fmt(p.monto) + (p.vuelto ? '. Vuelto ' + fmt(p.vuelto) : ''), '', { timeOut: 5000 });
-						if (r.impresion && !r.impresion.ok) toastr.error('Comprobante: ' + r.impresion.detalle, '', { timeOut: 9000 });
+						if (!imprimirComprobanteLocal(r.impresion, 'Comprobante de pago') && r.impresion && !r.impresion.ok) toastr.error('Comprobante: ' + r.impresion.detalle, '', { timeOut: 9000 });
 						cargarClientesCredito();
 						cargarCreditosCliente(cred.cliente.id_cliente);
 						cargarEstado();
@@ -4747,6 +4766,8 @@
 				html += '<tr><th colspan="2">Recaudado por forma de pago</th></tr>';
 				$.each(r.por_forma_pago, function (i, f) {
 					if (f.efectivo) { html += '<tr><td>' + esc(f.nombre) + '</td><td class="caja-num text-muted">Se cuenta en caja</td></tr>'; return; }
+					// 19-11-2026: lo fiado lo pone el sistema (no hay comprobantes que contar)
+					if (f.credito) { html += '<tr><td>' + esc(f.nombre) + ' (a crédito, lo pone el sistema)</td><td class="caja-num">' + fmt(f.monto + f.propina) + '</td></tr>'; return; }
 					// Si Configuraciones no rellena las formas no efectivo, tampoco se muestra su monto: el cajero lo declara abajo
 					if (!f.cortesia && catalogo && catalogo.config.llenar_no_efectivo === false) { html += '<tr><td>' + esc(f.nombre) + '</td><td class="caja-num text-muted">Se declara abajo</td></tr>'; return; }
 					html += '<tr><td>' + esc(f.nombre) + (f.cortesia ? ' (no se rinde)' : '') + '</td><td class="caja-num">' + fmt(f.monto)
@@ -4756,11 +4777,11 @@
 
 				var $d = $('#declaradoOtros').empty();
 				$.each(r.por_forma_pago, function (i, f) {
-					if (f.efectivo || f.cortesia) return;
+					if (f.efectivo || f.cortesia || f.credito) return;
 					// Configuraciones > Llenar forma de pago no efectivo: marcada, viene con lo del sistema; si no, el cajero lo escribe
 					var llenar = !catalogo || catalogo.config.llenar_no_efectivo !== false;
 					$d.append('<div class="form-group"><label>' + esc(f.nombre) + ' (vouchers / comprobantes' + (f.propina ? ', con propina' : '') + ')</label>'
-						+ '<input type="number" min="0" step="1" class="form-control declarado" data-id="' + f.id_fpago + '" value="' + (llenar ? (f.monto + f.propina) : '') + '" placeholder="Escribe el total de los comprobantes"></div>');
+						+ '<input type="number" step="1" class="form-control declarado" data-id="' + f.id_fpago + '" value="' + (llenar ? (f.monto + f.propina) : '') + '" placeholder="Escribe el total de los comprobantes"></div>');
 				});
 				$('#efectivoContado').val('');   // lo escribe el cajero (cierre ciego)
 				$('#fondoSiguiente').val(r.fondo);
@@ -4785,10 +4806,24 @@
 			if (drawerMesaAbierto()) { toastr.info('Cierra primero el panel de la mesa'); return; }
 			if ($('#tabCierre').hasClass('active')) cargarCierre(); else $('#lnkCierre').tab('show');
 		});
+		// 19-11-2026 (auditoría): ¿mandar los comprobantes (cierre, informe X, anulación, pago de crédito) por el agente de
+		// este equipo? Entonces el servidor responde {local, destino, operaciones} y aquí se imprimen.
+		function comprobanteLocal() { return impresionLocalActiva() && !!window.ImpresionLocal ? 1 : 0; }
+		/** imp = respuesta de impresión del servidor. Si es local la imprime por el agente; devuelve true si se encargó. */
+		function imprimirComprobanteLocal(imp, que) {
+			if (!imp || !imp.local || !imp.destino) return false;
+			ImpresionLocal.imprimir(imp.destino, imp.operaciones || []).then(function (res) {
+				toastr.success(que + ' enviado a la impresora (' + res.impresora + ')', '', { timeOut: 2500 });
+			}, function (e) {
+				toastr.error(textoPlano(ImpresionLocal.mensaje(e)), que + ' sin imprimir', { timeOut: 12000, closeButton: true });
+			});
+			return true;
+		}
 		// Cierre / informe X a la impresora del cierre (Configuraciones > Impresora para cierre de caja); si no se puede, en pantalla
 		function imprimirCierre(idCaja) {
-			$.ajax({ url: base + 'imprimirCierre', type: 'POST', dataType: 'json', data: { id_caja: idCaja } })
+			$.ajax({ url: base + 'imprimirCierre', type: 'POST', dataType: 'json', data: { id_caja: idCaja, local: comprobanteLocal() } })
 				.done(function (r) {
+					if (imprimirComprobanteLocal(r, 'Cierre')) return;
 					if (r.ok) toastr.success('Cierre enviado a la impresora', '', { timeOut: 2500 });
 					else {
 						if (r.detalle && !r.navegador) toastr.error('Cierre: ' + r.detalle, '', { timeOut: 9000 });
@@ -4922,8 +4957,9 @@
 			var fondoSig = $('#fondoSiguiente').val();
 			if (fondoSig === '' || Number(fondoSig) < 0) { swal('Atención', 'Ingresa el fondo que queda para el próximo turno', 'warning'); return; }
 			if (Number(fondoSig) > Number(efectivo)) { swal('Atención', 'El fondo para el próximo turno no puede superar el efectivo contado', 'warning'); return; }
-			// Cierre ciego: cada forma de pago se declara (0 si no hubo); en blanco no se da por cero
-			var $sinDeclarar = $('.declarado').filter(function () { return $(this).val() === '' || Number($(this).val()) < 0; }).first();
+			// Cierre ciego: cada forma de pago se declara (0 si no hubo); en blanco no se da por cero.
+			// 19-11-2026 (auditoría): se acepta un total negativo (ej. una devolución con tarjeta mayor que lo vendido con ella)
+			var $sinDeclarar = $('.declarado').filter(function () { return $.trim($(this).val()) === '' || isNaN(Number($(this).val())); }).first();
 			if ($sinDeclarar.length) {
 				swal('Atención', 'Ingresa el total de ' + $.trim($sinDeclarar.closest('.form-group').find('label').text().replace(/\s*\(.*$/, '')) + ' (0 si no hubo)', 'warning');
 				return;

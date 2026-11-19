@@ -527,9 +527,11 @@ function grabarProductoExistente(datosProducto) {
                 return;
             }
             
-            // Si es venta directa, crear/actualizar insumo
+            // Si es venta directa, crear/actualizar insumo.
+            // 19-11-2026 (auditoría): con los datos de ESTE producto (antes leía datosProductoPendiente, que al editar es
+            // null: error de JavaScript y el modal no se cerraba aunque el producto sí se grababa)
             if (datosProducto.venta_uno_a_uno == 1) {
-                GrabarNuevoInsumo();
+                try { GrabarNuevoInsumo(datosProducto); } catch (e) { console.warn('Insumo del producto:', e); }
             }
             
             // Cerrar modal
@@ -686,13 +688,15 @@ $(document).ready(function() {
     console.log("✓ Sistema de precios inicializado");
 });
 
-function GrabarNuevoInsumo() {
+function GrabarNuevoInsumo(datos) {
+    datos = datos || datosProductoPendiente;
+    if (!datos) return;
     var miJson = {
         'id_insumo': "",
-        'cbarra': datosProductoPendiente.cbarra,
-        'nombre_insumo': datosProductoPendiente.nombre_producto,
+        'cbarra': datos.cbarra,
+        'nombre_insumo': datos.nombre_producto,
         'id_grupo_insumo': 1,
-        'id_impto_iva': datosProductoPendiente.impto_iva,
+        'id_impto_iva': datos.impto_iva,
         'id_impto_adicional': 1,
         'umedida_inventario': 1,
         'id_umedida_inventario': 1,

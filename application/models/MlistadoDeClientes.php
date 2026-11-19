@@ -14,8 +14,9 @@ class MlistadoDeClientes extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $q = "SELECT c.id_cliente, c.rut, c.dv, c.nombre_cliente, c.giro, c.direccion, co.nombre_comuna, c.telefono  from cliente c 
-        join comuna co on c.id_comuna=co.id_comuna
+        // 19-11-2026 (auditoría): LEFT JOIN: un cliente sin comuna (id_comuna NULL, se permite al crearlo) no salía en el listado
+        $q = "SELECT c.id_cliente, c.rut, c.dv, c.nombre_cliente, c.giro, c.direccion, COALESCE(co.nombre_comuna, '') AS nombre_comuna, c.telefono  from cliente c 
+        left join comuna co on c.id_comuna=co.id_comuna
         order by c.nombre_cliente";
 
         $consulta = $this->db->query($q);

@@ -33,6 +33,9 @@ class Configuraciones extends CI_Controller {
         // 19-11-2026: la clave de la API del programa de pago no se muestra; solo si hay una guardada
         $data['pago_electronico_tiene_clave'] = (string)($data['config']['pago_electronico_clave_api'] ?? '') !== '';
         unset($data['config']['pago_electronico_clave_api']);
+        // 19-11-2026 (auditoría): la clave de administrador tampoco va en la página (se veía con "ver código fuente")
+        $data['tiene_clave_admin'] = (string)($data['config']['pass_admin'] ?? '') !== '';
+        unset($data['config']['pass_admin']);
         $data['documentos_dte'] = $this->Mconfiguraciones->get_documentos_dte();
         $data['empresa'] = $this->Mconfiguraciones->get_empresa();
         $data['bodegas'] = $this->Mconfiguraciones->get_bodegas();
@@ -224,7 +227,10 @@ class Configuraciones extends CI_Controller {
         }
 
         // Campo especial para clave admin
-        if (isset($post['txtclaveAdmin'])) {
+        // 19-11-2026: vacía = se mantiene la guardada (la página ya no la muestra); "Quitar la clave" la borra
+        if (!empty($post['borrar_clave_admin'])) {
+            $update_config['pass_admin'] = '';
+        } elseif (isset($post['txtclaveAdmin']) && (string)$post['txtclaveAdmin'] !== '') {
             $update_config['pass_admin'] = $post['txtclaveAdmin'];
         }
 

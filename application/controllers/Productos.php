@@ -252,6 +252,10 @@ class Productos extends CI_Controller
 			$miData['favorito'] = ((string)$producto['favorito'] === '1') ? 'true' : 'false';
 		}
 		
+		// 19-11-2026 (auditoría): el formulario no tiene ILA (siempre mandaba 1 = exento). Al editar se conserva el ILA que
+		// tenga el producto (ej. un licor creado en el POS de escritorio con ILA 20,5%); los precios se calculan con él.
+		if ($id > 0) unset($miData['impto_ila'], $miData['valor_ila']);
+
 		// Grabar producto
 		$resultadoProducto = $this->Mproductos->grabarNuevoProducto($id, $miData);
 		
