@@ -22,7 +22,7 @@
 			swal('Error', msg, 'error');
 		}
 		function vacio(html) {
-			$('#cuerpoControlCaja').html('<tr><td colspan="9" class="cc-vacio">' + html + '</td></tr>');
+			$('#cuerpoControlCaja').html('<tr><td colspan="10" class="cc-vacio">' + html + '</td></tr>');
 		}
 
 		function opcionesLista(sel) {
@@ -36,6 +36,16 @@
 			var h = '<option value="0">Según cada producto</option>';
 			$.each(datos.bodegas, function (i, b) {
 				h += '<option value="' + b.id_bodega + '"' + (+b.id_bodega === sel ? ' selected' : '') + '>' + esc(b.nombre_bodega) + '</option>';
+			});
+			return h;
+		}
+
+		// 19-11-2026: máquina de pago electrónico (Mantención > Pago electrónico); "No usa" = la caja cobra como antes
+		function opcionesPago(sel) {
+			var h = '<option value="0">No usa</option>';
+			$.each(datos.maquinas_pago || [], function (i, m) {
+				if (!m.vigente && m.id !== sel) return;
+				h += '<option value="' + m.id + '"' + (m.id === sel ? ' selected' : '') + '>' + esc(m.nombre + (m.caja ? ' · ' + m.caja : '') + (m.terminal ? ' · ' + m.terminal : '') + (m.vigente ? '' : ' · no vigente')) + '</option>';
 			});
 			return h;
 		}
@@ -81,6 +91,7 @@
 
 		function pintar() {
 			pintarFiltros();
+			$('#tablaControlCaja').toggleClass('cc-sin-pago', !datos.pago_electronico);
 			if (!datos.cajas.length) {
 				var emp = porSucursal() ? empresaElegida() : null;
 				if (porSucursal() && emp && !emp.sucursales.length) {
@@ -113,6 +124,7 @@
 					'<td><select class="form-control cc-bodega">' + opcionesBodega(c.id_bodega) + '</select></td>' +
 					'<td class="text-center"><label class="cc-switch"><input type="checkbox" class="cc-permitir"' + (c.permitir_cambio_lprecio ? ' checked' : '') + '> ' +
 						'<span>' + (c.permitir_cambio_lprecio ? 'Sí' : 'No') + '</span></label></td>' +
+					'<td class="cc-col-pago"><select class="form-control cc-pago">' + opcionesPago(c.id_pago_electronico) + '</select></td>' +
 					'<td class="text-center"><span class="cc-chip ' + (c.vigente ? 'si">Sí' : 'no">No') + '</span></td>' +
 					'<td>' + uso + '</td>' +
 					'</tr>';
@@ -153,17 +165,20 @@
 				id_bodega: +tr.find('.cc-bodega').val() || 0,
 				permitir_cambio_lprecio: tr.find('.cc-permitir').is(':checked') ? 1 : 0
 			};
+			if (datos.pago_electronico) nuevo.id_pago_electronico = +tr.find('.cc-pago').val() || 0;
 			tr.find('.cc-permitir').next('span').text(nuevo.permitir_cambio_lprecio ? 'Sí' : 'No');
 			tr.addClass('cc-guardando').find('select, input').prop('disabled', true);
 			$.ajax({ url: base + 'guardar', type: 'POST', dataType: 'json', data: nuevo }).done(function () {
 				c.id_lprecio = nuevo.id_lprecio;
 				c.id_bodega = nuevo.id_bodega;
 				c.permitir_cambio_lprecio = !!nuevo.permitir_cambio_lprecio;
+				if ('id_pago_electronico' in nuevo) c.id_pago_electronico = nuevo.id_pago_electronico;
 				toastr.success('Cambios guardados en ' + (c.nombre || 'la caja'));
 			}).fail(function (xhr) {
 				tr.find('.cc-lista').val(String(c.id_lprecio));
 				tr.find('.cc-bodega').val(String(c.id_bodega));
 				tr.find('.cc-permitir').prop('checked', c.permitir_cambio_lprecio).next('span').text(c.permitir_cambio_lprecio ? 'Sí' : 'No');
+				tr.find('.cc-pago').val(String(c.id_pago_electronico || 0));
 				error(xhr, 'No se pudieron guardar los cambios');
 			}).always(function () {
 				tr.removeClass('cc-guardando').find('select, input').prop('disabled', false);

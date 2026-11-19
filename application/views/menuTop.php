@@ -880,6 +880,7 @@
                         $__showFamiliasInsumos = menu_visible('FamiliasInsumos');
                         $__showFamiliasReceta = menu_visible('FamiliasReceta');
                         $__showFormasDePago = menu_visible('FormasDePago');
+                        $__showPagoElectronico = menu_visible('PagoElectronico');   // 19-11-2026: máquinas POS
                         $__showDocumentosTributarios = menu_visible('DocumentosTributarios');
                         $__showImpuestos = menu_visible('Impuestos');
                         $__showMensajesPorProductos = menu_visible('MensajesPorProductos');
@@ -894,7 +895,7 @@
                         $__showTablasDelivery = $__showDelivery;
                         $__showTablasEventos = $__showGastoEventos || $__showIngresoEventos || $__showTipoEvento;
                         $__showTablasGruposFamilias = $__showFamilias || $__showFamiliasInsumos || $__showFamiliasReceta;
-                        $__showTablas = $__showAgregados || $__showBodegas || $__showCanalDeventa || $__showCentroCosto || $__showComuna || $__showTablasDelivery || $__showDestinoDeImpresion || $__showTablasEventos || $__showTablasGruposFamilias || $__showFormasDePago || $__showDocumentosTributarios || $__showImpuestos || $__showMensajesPorProductos || $__showMoneda || $__showProvincias || $__showSubFamilias || $__showTurnos || $__showUmedida || $__showItemGastosMensuales || $__showUsuario;
+                        $__showTablas = $__showAgregados || $__showBodegas || $__showCanalDeventa || $__showCentroCosto || $__showComuna || $__showTablasDelivery || $__showDestinoDeImpresion || $__showTablasEventos || $__showTablasGruposFamilias || $__showFormasDePago || $__showPagoElectronico || $__showDocumentosTributarios || $__showImpuestos || $__showMensajesPorProductos || $__showMoneda || $__showProvincias || $__showSubFamilias || $__showTurnos || $__showUmedida || $__showItemGastosMensuales || $__showUsuario;
 
                         $__showInsumos = menu_visible('Insumos');
                         $__showRecetas = menu_visible('Recetas');
@@ -1044,6 +1045,9 @@
                                                     <?php endif; ?>
                                                     <?php if ($__showFormasDePago) : ?>
                                                         <li class="active"><a href="<?php echo base_url() ?>index.php/FormasDePago"><i class="fa fa-credit-card"></i>Formas De Pago</a></li>
+                                                    <?php endif; ?>
+                                                    <?php if ($__showPagoElectronico) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/PagoElectronico"><i class="fa fa-calculator"></i>Pago Electronico</a></li>
                                                     <?php endif; ?>
                                                     <?php if ($__showDocumentosTributarios) : ?>
                                                         <li class="active"><a href="<?php echo base_url() ?>index.php/DocumentosTributarios"><i class="fa fa-file-text-o"></i>Documentos Tributarios</a></li>

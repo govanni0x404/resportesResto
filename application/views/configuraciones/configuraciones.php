@@ -220,6 +220,28 @@ if (!function_exists('cfg_opciones')) {
                                                 <label><input type="checkbox" name="boton_apertura_caja_solo_admin" value="1" <?php echo ($config['boton_apertura_caja_solo_admin'] ?? false) ? 'checked' : ''; ?>> Apertura de gaveta</label>
                                             </div>
                                         </div>
+
+                                        <!-- 19-11-2026: usuario y clave de la API del programa de pago (máquinas POS de Mantención > Pago electrónico) -->
+                                        <?php if (array_key_exists('pago_electronico_usuario_api', $config)) : ?>
+                                        <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"><i class="fa fa-credit-card"></i>Pago electrónico</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <p class="help-block" style="margin-top:0">Usuario y clave de la API del programa de pago de las cajas. Van en cada cobro a la máquina POS (Mantención &rsaquo; Pago electrónico).</p>
+                                                <div class="form-group">
+                                                    <label>Usuario API</label>
+                                                    <input type="text" class="form-control" name="pago_electronico_usuario_api" maxlength="60" autocomplete="off" placeholder="DATAMAULE"
+                                                        value="<?php echo htmlspecialchars((string)($config['pago_electronico_usuario_api'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                                                </div>
+                                                <div class="form-group" style="margin-bottom:0">
+                                                    <label>Clave API</label>
+                                                    <input type="password" class="form-control" name="pago_electronico_clave_api" maxlength="200" autocomplete="new-password"
+                                                        placeholder="<?php echo !empty($pago_electronico_tiene_clave) ? '•••••• (guardada; vacía = se mantiene)' : ''; ?>">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
                                 </div>
                             </div>
 

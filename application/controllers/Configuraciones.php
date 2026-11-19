@@ -30,6 +30,9 @@ class Configuraciones extends CI_Controller {
             'etiquetas' => dte_auth_etiquetas(),
         );
         unset($data['config']['token_dte_enc']);
+        // 19-11-2026: la clave de la API del programa de pago no se muestra; solo si hay una guardada
+        $data['pago_electronico_tiene_clave'] = (string)($data['config']['pago_electronico_clave_api'] ?? '') !== '';
+        unset($data['config']['pago_electronico_clave_api']);
         $data['documentos_dte'] = $this->Mconfiguraciones->get_documentos_dte();
         $data['empresa'] = $this->Mconfiguraciones->get_empresa();
         $data['bodegas'] = $this->Mconfiguraciones->get_bodegas();
@@ -194,7 +197,8 @@ class Configuraciones extends CI_Controller {
             'terminal_dte',
             'ruta_api_get_pdf',
             'ruta_api_get_qr',
-            'url_consulta_folio_dte'
+            'url_consulta_folio_dte',
+            'pago_electronico_usuario_api'   // 19-11-2026: usuario de la API del programa de pago (migración 20261119100000)
         ];
 
         foreach ($text_fields as $f) {
@@ -209,6 +213,14 @@ class Configuraciones extends CI_Controller {
         }
         if (isset($post['modo_caja_web']) && in_array($post['modo_caja_web'], array('directa', 'mesas', 'ambos'), true)) {
             $update_config['modo_caja_web'] = $post['modo_caja_web'];
+        }
+
+        if (isset($update_config['pago_electronico_usuario_api'])) {
+            $update_config['pago_electronico_usuario_api'] = mb_substr(trim((string)$update_config['pago_electronico_usuario_api']), 0, 60);
+        }
+        // 19-11-2026: clave de la API del programa de pago: vacía = se mantiene la guardada
+        if (isset($post['pago_electronico_clave_api']) && (string)$post['pago_electronico_clave_api'] !== '') {
+            $update_config['pago_electronico_clave_api'] = mb_substr((string)$post['pago_electronico_clave_api'], 0, 200);
         }
 
         // Campo especial para clave admin

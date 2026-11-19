@@ -47,7 +47,8 @@ class ControlCaja extends CI_Controller
 				isset($p['id']) ? $p['id'] : 0,
 				isset($p['id_lprecio']) ? $p['id_lprecio'] : 0,
 				isset($p['id_bodega']) ? $p['id_bodega'] : 0,
-				!empty($p['permitir_cambio_lprecio']) && $p['permitir_cambio_lprecio'] !== 'false' && $p['permitir_cambio_lprecio'] !== '0'
+				!empty($p['permitir_cambio_lprecio']) && $p['permitir_cambio_lprecio'] !== 'false' && $p['permitir_cambio_lprecio'] !== '0',
+				isset($p['id_pago_electronico']) ? (int)$p['id_pago_electronico'] : null   // 19-11-2026
 			);
 		}, true);
 	}

@@ -170,7 +170,11 @@ class Mcontrolcaja extends CI_Model
 		$conSucursal = (bool)$this->q("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'empresa_sucursal'
 			AND column_name = 'id_sucursal_intranet'")->row();
 		$suc = $this->sucursalSql('cc');
-		foreach ($this->q("SELECT cc.id_control_caja, COALESCE(cc.id_control_caja_web, 0) AS id_web, COALESCE($suc, 0) AS id_sucursal,
+		// 19-11-2026: la máquina de pago electrónico de cada caja (migración 20261119100000); sin ella, ninguna
+		$this->load->model('Mpagoelectronico');
+		$conPago = $this->Mpagoelectronico->conControlCaja();
+		foreach ($this->q("SELECT cc.id_control_caja, COALESCE(cc.id_control_caja_web, 0) AS id_web,
+				" . ($conPago ? 'COALESCE(cc.id_pago_electronico_web, 0)' : '0') . " AS id_pago_electronico, COALESCE($suc, 0) AS id_sucursal,
 				" . ($conSucursal ? "COALESCE((SELECT es.nombre_sucursal FROM empresa_sucursal es WHERE es.id_sucursal_intranet = $suc
 					ORDER BY es.id_empresa_sucursal LIMIT 1), '')" : "''") . " AS nombre_sucursal,
 				COALESCE(cc.caja_n, 0) AS caja_n, COALESCE(cc.nombre_caja, '') AS nombre_caja, COALESCE(cc.terminal, '') AS terminal,
@@ -192,14 +196,17 @@ class Mcontrolcaja extends CI_Model
 				'caja_n' => (int)$f->caja_n, 'nombre' => $f->nombre_caja, 'terminal' => $f->terminal,
 				'vigente' => $this->bool($f->vigente), 'administrador' => $this->bool($f->caja_administrador),
 				'id_lprecio' => (int)$f->id_lprecio, 'id_bodega' => (int)$f->id_bodega, 'permitir_cambio_lprecio' => $this->bool($f->permitir_cambio_lprecio),
+				'id_pago_electronico' => (int)$f->id_pago_electronico,
 				'sincronizada' => (string)$f->sincronizada,
 				'turno' => $f->turno ? array('id_caja' => (int)$f->turno, 'usuario' => $f->turno_usuario, 'desde' => $f->turno_desde) : null,
 			);
 		}
-		return array('cajas' => $cajas, 'listas' => $this->listas(), 'bodegas' => $this->bodegas(), 'lista_publica' => $this->listaPublica());
+		return array('cajas' => $cajas, 'listas' => $this->listas(), 'bodegas' => $this->bodegas(), 'lista_publica' => $this->listaPublica(),
+			'pago_electronico' => $conPago, 'maquinas_pago' => $this->Mpagoelectronico->opciones());
 	}
 
-	public function guardar($id, $idLprecio, $idBodega, $permitir)
+	/** @param int|null $idPagoElectronico 19-11-2026: máquina de pago electrónico (0 = no usa; null = no se cambia) */
+	public function guardar($id, $idLprecio, $idBodega, $permitir, $idPagoElectronico = null)
 	{
 		$this->exigir();
 		$id = (int)$id;
@@ -210,6 +217,14 @@ class Mcontrolcaja extends CI_Model
 		if ($idBodega > 0 && !$this->q('SELECT 1 FROM bodega WHERE id_bodega = ?', array($idBodega))->row()) throw new Exception('La bodega no existe', 400);
 		$this->q('UPDATE control_caja SET id_lprecio = ?, id_bodega = ?, permitir_cambio_lprecio_caja = ? WHERE id_control_caja = ?',
 			array($idLprecio, $idBodega, $permitir ? 't' : 'f', $id));
+		if ($idPagoElectronico !== null) {
+			$this->load->model('Mpagoelectronico');
+			if ($this->Mpagoelectronico->conControlCaja()) {
+				$idPago = (int)$idPagoElectronico;
+				if ($idPago > 0 && !$this->Mpagoelectronico->existe($idPago)) throw new Exception('La máquina de pago electrónico no existe', 400);
+				$this->q('UPDATE control_caja SET id_pago_electronico_web = ? WHERE id_control_caja = ?', array($idPago > 0 ? $idPago : null, $id));
+			}
+		}
 		return array('ok' => true);
 	}
 

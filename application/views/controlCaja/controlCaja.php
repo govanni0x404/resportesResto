@@ -27,6 +27,7 @@
     .cc-filtro { flex: 1 1 280px; max-width: 460px; }
     .cc-filtro label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave); margin-bottom: 5px; }
     .cc-por-sucursal .cc-col-sucursal { display: none; }
+    .cc-sin-pago .cc-col-pago { display: none; }   /* sin la migración del pago electrónico */
     @media (max-width: 767px) {
         .cc-panel .cc-acciones, .cc-panel .cc-acciones .btn { width: 100%; }
         .cc-tabla { padding: 10px; }
@@ -73,6 +74,7 @@
                 <p class="cc-ayuda"><i class="fa fa-info-circle"></i>
                     <span id="ayudaControlCaja">Las cajas, su número, nombre y terminal vienen de la intranet.</span> Aquí se elige la lista de precios y la bodega de cada caja;
                     los cambios se guardan al instante. Al abrir la Caja, el cajero elige una de las cajas vigentes y se usan su lista y su bodega.
+                    En <b>Pago electrónico</b> se elige la máquina POS de la caja (Mantención &rsaquo; Pago electrónico): con una máquina, la Caja cobra las tarjetas en ella.
                 </p>
                 <div class="table-responsive cc-tabla">
                     <table class="table table-hover" id="tablaControlCaja">
@@ -85,12 +87,13 @@
                                 <th>Lista de precios</th>
                                 <th>Bodega</th>
                                 <th class="text-center">Cambiar lista en caja</th>
+                                <th class="cc-col-pago">Pago electrónico</th>
                                 <th class="text-center">Vigente</th>
                                 <th>En uso</th>
                             </tr>
                         </thead>
                         <tbody id="cuerpoControlCaja">
-                            <tr><td colspan="9" class="cc-vacio"><i class="fa fa-spinner fa-spin"></i> Cargando…</td></tr>
+                            <tr><td colspan="10" class="cc-vacio"><i class="fa fa-spinner fa-spin"></i> Cargando…</td></tr>
                         </tbody>
                     </table>
                 </div>

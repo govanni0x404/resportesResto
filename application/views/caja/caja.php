@@ -1043,6 +1043,39 @@
 	#bloqueoImpresion .bloqueo-sub { margin-top: 4px; font-size: 13px; color: #7A6A5E; }
 	@keyframes bloqueoGiro { to { transform: rotate(360deg); } }
 	@media (prefers-reduced-motion: reduce) { #bloqueoImpresion .bloqueo-giro { animation-duration: 2.4s; } }
+
+	/* 19-11-2026: pago electrónico (js.php, sección pago electrónico). Pantalla "Cobrando en la máquina": tapa todo y solo
+	   deja cancelar. Barra de cobros sin terminar: arriba de Venta directa / Mesas y recintos / Delivery. */
+	#bloqueoPos { position: fixed; inset: 0; z-index: 20010; display: flex; align-items: center; justify-content: center; padding: 16px;
+		background: rgba(42, 29, 23, .55); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+		opacity: 0; visibility: hidden; transition: opacity .15s ease, visibility 0s linear .15s; }
+	#bloqueoPos.visible { opacity: 1; visibility: visible; transition: opacity .15s ease; }
+	#bloqueoPos .bloqueo-caja { width: 360px; max-width: 100%; padding: 26px 24px 22px; border-radius: 16px; background: #fff; text-align: center;
+		box-shadow: 0 20px 50px rgba(42, 29, 23, .35); }
+	#bloqueoPos .bloqueo-icono { position: relative; width: 76px; height: 76px; margin: 0 auto 14px; border-radius: 50%; background: #e8f0fb;
+		color: #1f5fa8; font-size: 30px; line-height: 76px; }
+	#bloqueoPos .bloqueo-giro { position: absolute; inset: -5px; border-radius: 50%; border: 4px solid transparent; border-top-color: #1f5fa8;
+		border-right-color: rgba(31, 95, 168, .35); animation: bloqueoGiro .8s linear infinite; }
+	#bloqueoPos .pos-monto { font-size: 30px; font-weight: 800; color: #2A1D17; line-height: 1.1; }
+	#bloqueoPos .bloqueo-texto { margin-top: 4px; font-size: 16px; font-weight: 700; color: #2A1D17; }
+	#bloqueoPos .bloqueo-sub { margin-top: 6px; font-size: 13px; color: #7A6A5E; }
+	#bloqueoPos .pos-tiempo { margin-top: 8px; font-size: 12px; color: #9a8b80; font-variant-numeric: tabular-nums; }
+	#bloqueoPos .pos-botones { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+	#bloqueoPos .pos-botones .btn { width: 100%; }
+	@media (prefers-reduced-motion: reduce) { #bloqueoPos .bloqueo-giro { animation-duration: 2.4s; } }
+
+	.pe-pendientes { margin: 0 0 10px; }
+	.pe-pendiente { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; padding: 10px 14px; margin-bottom: 6px; border-radius: 10px;
+		background: #fff7e0; border: 1px solid #f0dc9c; color: #5c4300; }
+	.pe-pendiente.aprobado { background: #e7f6ec; border-color: #b7e2c4; color: #14532d; }
+	.pe-pendiente .pe-ico { font-size: 22px; }
+	.pe-pendiente .pe-info { flex: 1 1 260px; min-width: 0; line-height: 1.35; }
+	.pe-pendiente .pe-info b { font-size: 15px; }
+	.pe-pendiente .pe-info small { display: block; opacity: .85; }
+	.pe-pendiente .pe-monto { font-size: 20px; font-weight: 800; white-space: nowrap; }
+	.pe-pendiente .pe-acc { display: flex; flex-wrap: wrap; gap: 6px; }
+	.pe-pendiente .pe-acc .btn i { margin-right: 4px; }
+	@media (max-width: 767px) { .pe-pendiente .pe-acc { width: 100%; } .pe-pendiente .pe-acc .btn { flex: 1 1 auto; } }
 </style>
 
 <div class="row caja">
@@ -1089,6 +1122,8 @@
 				<span><i class="pe-7s-cart"></i> Ver venta (<span id="barraItems">0</span>)</span>
 				<span id="barraTotal">$0</span>
 			</div>
+			<!-- 19-11-2026: cobros con tarjeta sin terminar (pago electrónico): cancelar, volver a enviar o aprobar -->
+			<div class="pe-pendientes" id="pePendientes" style="display:none" aria-live="polite"></div>
 			<div class="caja-barra">
 				<ul class="nav nav-tabs caja-tabs">
 					<li class="active"><a href="#tabVenta" data-toggle="tab" id="lnkVenta"><i class="pe-7s-cart"></i> Venta directa</a></li>

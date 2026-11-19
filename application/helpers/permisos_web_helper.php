@@ -57,6 +57,7 @@ function permisos_web_catalogo()
 			'Comuna' => 'Comunas',
 			'DestinoDeImpresion' => 'Destinos de impresión',
 			'FormasDePago' => 'Formas de pago',
+			'PagoElectronico' => 'Pago electrónico (máquinas POS)',
 			'DocumentosTributarios' => 'Documentos tributarios',
 			'Impuestos' => 'Impuestos',
 			'MensajesPorProductos' => 'Mensajes por producto',
@@ -103,7 +104,7 @@ function permisos_web_catalogo()
 /** Módulos que con la regla antigua exigían permiso explícito. */
 function permisos_web_sensibles()
 {
-	return array('usuario', 'privilegiosusuario', 'configuraciones', 'controlcaja');
+	return array('usuario', 'privilegiosusuario', 'configuraciones', 'controlcaja', 'pagoelectronico');
 }
 
 /** nombre en minúsculas => true, de todos los módulos del catálogo. */

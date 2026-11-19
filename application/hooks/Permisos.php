@@ -31,7 +31,8 @@ class Permisos
 	private static $libres = array('perfildeusuario');
 
 	/** Solo gerencia o un rol autorizado explícitamente en Privilegios de Usuario. */
-	private static $sensibles = array('usuario', 'privilegiosusuario', 'configuraciones', 'controlcaja');
+	// pagoelectronico (19-11-2026): tiene la clave del programa de pago de las cajas
+	private static $sensibles = array('usuario', 'privilegiosusuario', 'configuraciones', 'controlcaja', 'pagoelectronico');
 
 	/** Reportes: sin excepción para las consultas, muestran ventas, cajas y propinas. */
 	private static $reportes = array('dashboard', 'cierresdecaja', 'consolidadoventas', 'detalleoperaciones',

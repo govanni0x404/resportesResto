@@ -44,6 +44,7 @@ class Caja extends CI_Controller
 			'clave' => (string)$this->config->item('impresion_local_clave', 'impresion_local'),
 			'firma_imagen' => $firma,
 		) : null));
+		$this->load->view('pagoElectronico/cliente.php');   // 19-11-2026: cobro en la máquina POS
 		$this->load->view('caja/js.php');
 	}
 
@@ -208,7 +209,24 @@ class Caja extends CI_Controller
 		$this->ejecutar(function () {
 			$body = json_decode($this->input->raw_input_stream, true);
 			if (!is_array($body)) throw new Exception('Datos de venta inválidos', 400);
-			$r = $this->Mcaja->registrarVenta($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $body);
+			$caja = $this->cajaRequerida();
+			// 19-11-2026: venta cobrada en la máquina POS: solo con el cobro aprobado, y una sola vez
+			$txPago = isset($body['pago_electronico_tx']) ? (string)$body['pago_electronico_tx'] : '';
+			unset($body['pago_electronico_tx']);
+			if ($txPago !== '') {
+				$this->load->model('Mpagoelectronico');
+				$tx = $this->Mpagoelectronico->txDeCaja($caja, $txPago);
+				if ($tx['estado'] === 'registrada') throw new Exception('Esa venta ya quedó registrada', 409);
+				if ($tx['estado'] !== 'aprobado') throw new Exception('El pago en la máquina no está aprobado: no se puede registrar la venta', 409);
+			}
+			$r = $this->Mcaja->registrarVenta($caja, $this->idUsuario(), $this->idRol(), $body);
+			if ($txPago !== '') {
+				try {
+					$this->Mpagoelectronico->marcarRegistrada($caja, $txPago, (int)$r['id_venta']);
+				} catch (Exception $e) {
+					log_message('error', 'Caja::vender: no se marcó registrado el cobro ' . $txPago . ': ' . $e->getMessage());
+				}
+			}
 			// Venta directa: la comanda la arma el servidor con lo vendido; la pantalla solo recibe su número
 			$r['comanda_id'] = $this->guardarComanda($r['comanda'], array('id_venta' => (int)$r['id_venta'], 'directa' => true,
 				'observacion' => $r['observacion'], 'retira' => isset($r['retira']) ? $r['retira'] : '',
@@ -217,6 +235,54 @@ class Caja extends CI_Controller
 			unset($r['comanda'], $r['observacion'], $r['retira'], $r['delivery_nombre'], $r['delivery_entrega']);
 			return $r;
 		}, true);
+	}
+
+	// ---------------- pago electrónico (19-11-2026) ----------------
+	// La máquina POS de la caja (Herramientas > Control de cajas) y sus cobros sin terminar. El navegador llama al
+	// programa ApiPagoElectronico del equipo; aquí solo queda el registro de cada cobro (Mpagoelectronico).
+
+	/** La máquina de esta caja (null = cobra como antes) y los cobros sin terminar (la barra de arriba). */
+	public function pagoElectronico()
+	{
+		$this->ejecutar(function () {
+			$caja = $this->Mcaja->cajaAbierta($this->idUsuario());
+			$this->load->model('Mpagoelectronico');
+			$idControl = $caja && isset($caja->id_control_caja) ? (int)$caja->id_control_caja : 0;
+			return array('maquina' => $this->Mpagoelectronico->paraCaja($idControl), 'pendientes' => $this->Mpagoelectronico->pendientes($idControl),
+				'usuario' => (string)$this->session->userdata('nombre_usuario'));
+		});
+	}
+
+	/** Antes de mandar el cobro a la máquina: se registra con la venta, para no perderla si algo se corta. */
+	public function pagoElectronicoIniciar()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			$this->load->model('Mpagoelectronico');
+			return $this->Mpagoelectronico->crearTx($this->cajaRequerida(), $this->idUsuario(), isset($b['monto']) ? $b['monto'] : 0,
+				isset($b['descripcion']) ? $b['descripcion'] : '', isset($b['venta']) ? $b['venta'] : null);
+		}, true);
+	}
+
+	/** Lo que respondió la máquina (o lo que decidió el cajero en la barra de pendientes). */
+	public function pagoElectronicoActualizar()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			$this->load->model('Mpagoelectronico');
+			return $this->Mpagoelectronico->actualizarTx($this->cajaRequerida(), isset($b['tx_id']) ? $b['tx_id'] : '', isset($b['estado']) ? (string)$b['estado'] : '',
+				isset($b['mensaje']) ? (string)$b['mensaje'] : '', isset($b['respuesta']) && is_array($b['respuesta']) ? $b['respuesta'] : null,
+				isset($b['codigo']) ? (string)$b['codigo'] : '');
+		}, true);
+	}
+
+	/** El cobro con su venta guardada: para volver a enviarlo o registrarlo desde la barra de pendientes. */
+	public function pagoElectronicoVenta()
+	{
+		$this->ejecutar(function () {
+			$this->load->model('Mpagoelectronico');
+			return $this->Mpagoelectronico->txDeCaja($this->cajaRequerida(), (string)$this->input->get('tx_id'));
+		});
 	}
 
 	// ---------------- delivery (18-11-2026) ----------------
