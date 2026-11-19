@@ -46,6 +46,17 @@ class FormasDePago extends CI_Controller
         	return;
         }
         $id = intval($d['id_fpago']);
+		// 19-11-2026 (auditoría): nombre repetido = aviso claro (antes un error genérico de la base, o se grababa repetido)
+		$this->load->helper('tenant');
+		$dbDup = get_tenant_db($this);
+		$nombreDup = trim((string)$d['nombre_fpago']);
+		if ($nombreDup === '') { set_status_header(400); echo json_encode(array('error' => 'Escribe el nombre')); return; }
+		if ($dbDup->query('SELECT 1 FROM fpago WHERE upper(trim(nombre_fpago)) = upper(trim(?)) AND id_fpago <> ? LIMIT 1',
+			array($nombreDup, (int)$id))->row()) {
+			set_status_header(409);
+			echo json_encode(array('error' => 'Ya existe una forma de pago llamada "' . $nombreDup . '"'));
+			return;
+		}
         $miData = array(
             'nombre_fpago' => $d['nombre_fpago'],
             'escortesia' => $d['escortesia'],

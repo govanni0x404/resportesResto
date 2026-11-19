@@ -197,14 +197,15 @@ function ListadoCartaDeProductos() {
         $("#txtCbarra").val(rowData[0].cbarra);
         $("#txtNombre").val(rowData[0].nombre_producto);
         
-        ListadoDeFamiliasMantenedor(rowData[0].nombre_familia);
-        ListadoDeSubFamilias(rowData[0].subfamilia);
-        ListadoDeUmedida(rowData[0].nombre_umedida);
-        ListadoDestinoDeImpresion(rowData[0].nombre_dimpresion);
-        ListadoDeBodega(rowData[0].nombre_bodega);
-        ListadoDeImpuestosIva(rowData[0].iva);
-        ListadoDeMenu(rowData[0].menu);
-        ListadoDeReceta(rowData[0].receta);
+        // 19-11-2026 (auditoría): cada lista se elige por su número (con nombres repetidos se elegía otro)
+        ListadoDeFamiliasMantenedor(rowData[0].nombre_familia, rowData[0].id_familia);
+        ListadoDeSubFamilias(rowData[0].subfamilia, rowData[0].id_subfamilia);
+        ListadoDeUmedida(rowData[0].nombre_umedida, rowData[0].id_umedida);
+        ListadoDestinoDeImpresion(rowData[0].nombre_dimpresion, rowData[0].id_dimpresion);
+        ListadoDeBodega(rowData[0].nombre_bodega, rowData[0].id_bodega);
+        ListadoDeImpuestosIva(rowData[0].iva, rowData[0].impto_iva);
+        ListadoDeMenu(rowData[0].id_menu || rowData[0].menu);
+        ListadoDeReceta(rowData[0].receta, rowData[0].id_receta);
         
         $("#extras").removeClass('hidden');
 

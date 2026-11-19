@@ -38,7 +38,10 @@ class Mproductos extends CI_Model
 		// Favoritos de la Caja (migración 20261110190000): sin la columna el listado sigue igual, sin estrellas
 		$tieneFavorito = $this->tieneColumnaFavorito();
 
-		$q = "SELECT p.id_producto, p.cbarra, p.nombre_producto, f.nombre_familia, u.nombre_umedida, i.nombre_impuesto as iva, ii.nombre_impuesto as impto_adicional,
+		// 19-11-2026 (auditoría): también los id, para que al editar cada lista se elija por número y no por nombre
+		$q = "SELECT p.id_producto, p.cbarra, p.nombre_producto, f.nombre_familia,
+        p.id_familia, COALESCE(p.id_subfamilia, 0) AS id_subfamilia, p.id_umedida, p.id_dimpresion, p.id_bodega, p.impto_iva,
+        COALESCE(p.id_menu, 0) AS id_menu, COALESCE(p.id_receta, 0) AS id_receta, u.nombre_umedida, i.nombre_impuesto as iva, ii.nombre_impuesto as impto_adicional,
         d.nombre_dimpresion, b.nombre_bodega, p.pponderado,
         (select nombre_menu from menu m where m.id_menu=p.id_menu) as menu,
         (select nombre_subfamilia from subfamilia sf where sf.id_subfamilia=p.id_subfamilia) as subfamilia,
@@ -88,7 +91,10 @@ class Mproductos extends CI_Model
 				'pedir_cantidad_en_venta' => ($key->pedir_cantidad_en_venta == 't' ? 'SI' : 'NO'),
 				'ver_en_dispositivos_moviles' => ($key->ver_en_dispositivos_moviles == 't' ? 'SI' : 'NO'),
 				'permite_cortesia' => ($key->permite_cortesia == 't' ? 'SI' : 'NO'),
-				'favorito' => (($key->favorito === 't' || $key->favorito === true) ? 'SI' : 'NO')
+				'favorito' => (($key->favorito === 't' || $key->favorito === true) ? 'SI' : 'NO'),
+				'id_familia' => (int)$key->id_familia, 'id_subfamilia' => (int)$key->id_subfamilia, 'id_umedida' => (int)$key->id_umedida,
+				'id_dimpresion' => (int)$key->id_dimpresion, 'id_bodega' => (int)$key->id_bodega, 'impto_iva' => (int)$key->impto_iva,
+				'id_menu' => (int)$key->id_menu, 'id_receta' => (int)$key->id_receta
 			)
 			);
 		}

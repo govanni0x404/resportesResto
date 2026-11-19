@@ -427,7 +427,17 @@ class Productos extends CI_Controller
 			return;
 		}
 		$d = $this->input->post('prod');
+		if (!is_array($d)) { echo json_encode(['error' => 'Datos incompletos']); return; }
 		$id = intval($d['id_agregado']);
+		// 19-11-2026 (auditoría): el mismo agregado dos veces en un producto = aviso claro (antes un error de la base)
+		$this->load->helper('tenant');
+		$dbDup = get_tenant_db($this);
+		if ($dbDup->query('SELECT 1 FROM agregados WHERE id_producto_maestro = ? AND id_producto = ? AND id_agregado <> ? AND eliminado IS NOT TRUE LIMIT 1',
+			array((int)$d['id_producto_maestro'], (int)$d['id_producto'], $id))->row()) {
+			set_status_header(409);
+			echo json_encode(['error' => 'Este producto ya está agregado. Si no lo ves en la lista, recarga la página.']);
+			return;
+		}
 		$miData = array(
 			'id_producto' => $d['id_producto'],
 			'cantidad' => $d['cantidad'],

@@ -575,7 +575,7 @@
 
             tbl += "<tr onclick='CargarDetalleParaEditar(" + idDetalle + ")' style='cursor:pointer'>";
             tbl += "<td>" + (idDetalle > 0 ? idDetalle : '') + "</td>";
-            tbl += "<td>" + v.nombre_producto + "</td>";
+            tbl += "<td>" + escaparHtml(v.nombre_producto) + "</td>";
             tbl += "<td class='text-right'>" + (v.costo_receta || 0) + "</td>";
             tbl += "<td class='text-right'>" + (v.costo_adicional_venta || 0) + "</td>";
             tbl += "<td class='text-center'>" + (v.permite_cambio == 't' || v.permite_cambio == true ? 'SÍ' : 'NO') + "</td>";

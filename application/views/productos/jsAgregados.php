@@ -49,8 +49,8 @@ function ObtenerAgregadosDelProducto(idProducto) {
                 // AGREGAR data-id-producto para validación de duplicados
                 tbl += '<tr data-id-producto="' + v.id_producto + '">';
                 tbl += "<td>" + v.id_agregado + "</td>";
-                tbl += "<td>" + v.producto_maestro + "</td>";
-                tbl += "<td>" + v.nombre_producto + "</td>";
+                tbl += "<td>" + escaparHtml(v.producto_maestro) + "</td>";
+                tbl += "<td>" + escaparHtml(v.nombre_producto) + "</td>";
                 tbl += '<td style="width:15%" class="text-right">';
                 tbl += '<input id="maxCantidadAgregado_' + v.id_agregado + '" ';
                 tbl += 'class="text-right form-control cantidad-agregado-input" ';
@@ -223,8 +223,11 @@ function GrabarNuevoAgregados() {
         error: function(xhr, status, error) {
             console.error("✗ Error completo:", xhr.responseText);
             
-            // Detectar error de duplicado
-            if (xhr.responseText.indexOf('llave duplicada') > -1 || 
+            // 19-11-2026: el aviso del servidor (ej. agregado repetido)
+            var msgSrv = ''; try { msgSrv = (xhr.responseJSON && xhr.responseJSON.error) || JSON.parse(xhr.responseText).error || ''; } catch (e) {}
+            if (msgSrv) {
+                showAppAlert('error', msgSrv, { duration: 6000, image: base_url + 'assets/img/errorGif.gif' });
+            } else if (xhr.responseText.indexOf('llave duplicada') > -1 || 
                 xhr.responseText.indexOf('duplicate key') > -1) {
                 showAppAlert('error', "Este producto ya está agregado. Si no lo ves en la lista, recarga la página.", {
                     duration: 6000,

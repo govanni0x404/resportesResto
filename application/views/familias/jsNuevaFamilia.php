@@ -148,8 +148,10 @@
 					ListadoDeFamilias();
 				}
 			})
-			.fail(function() {
-				showAppAlert('error',"Se produjo un error al realizar el proceso, favor contacte a su administrador!", {
+			.fail(function(x) {
+				// 19-11-2026: el aviso del servidor (ej. nombre repetido) en vez del error genérico
+				var msgSrv = ''; try { msgSrv = (x.responseJSON && x.responseJSON.error) || JSON.parse(x.responseText).error || ''; } catch (e) {}
+				showAppAlert('error', msgSrv || "Se produjo un error al realizar el proceso, favor contacte a su administrador!", {
                		duration: 5000,
            	 		image: base_url+ 'assets/img/errorGif.gif'
            		});

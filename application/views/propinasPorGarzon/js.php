@@ -246,7 +246,7 @@
             var totalPropina = 0;
             $.each(obj, function (index, v) {
                 tbl += "<tr>";
-                tbl += "<td class='text-center' style= 'height:10px' >" + v.nombre_usuario + "</td>";
+                tbl += "<td class='text-center' style= 'height:10px' >" + escaparHtml(v.nombre_usuario) + "</td>";
                 tbl += "<td class='text-center' style= 'height:10px'>" + commaSeparateNumber(v.total_propina) + "</td>";
                 tbl += "</tr>";
                 totalPropina += parseInt(v.total_propina);

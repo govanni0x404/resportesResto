@@ -1875,7 +1875,9 @@ class Mcaja extends CI_Model
 				throw new Exception('Máximo ' . $config['max_agregados'] . ' agregado(s) por producto', 400);
 			}
 
-			$nota = trim(isset($it['nota']) ? (string)$it['nota'] : '');
+			// 19-11-2026: la nota del producto llega hasta 150 caracteres, para que en la misma fila quepa el mensaje de su
+			// primer agregado (detalle_cotizacion.mensaje es de 250; antes se cortaba a 200 y en el reenvío se perdía)
+			$nota = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', isset($it['nota']) ? (string)$it['nota'] : '')), 0, 150);
 			// 19-11-2026: mensaje de cada agregado (ej. Palta: sin sal), sale en la comanda junto al agregado
 			$notasAg = array();
 			foreach ((isset($it['notas_agregados']) && is_array($it['notas_agregados']) ? $it['notas_agregados'] : array()) as $idAg => $t) {
@@ -1896,7 +1898,12 @@ class Mcaja extends CI_Model
 			$primero = $elegidos ? array_shift($elegidos) : null;
 			// El primer agregado va en la misma fila del producto: su mensaje se guarda junto al del producto
 			$notaFila = $nota;
-			if ($primero && $notaDe($primero) !== '') $notaFila = trim($nota . ($nota !== '' ? ' | ' : '') . $primero->nombre_producto . ': ' . $notaDe($primero));
+			if ($primero && $notaDe($primero) !== '') {
+				// El mensaje del agregado siempre cabe entero: si no alcanza, se acorta la nota del producto (250 = la columna)
+				$sufijo = $primero->nombre_producto . ': ' . $notaDe($primero);
+				$cabe = max(0, 250 - mb_strlen($sufijo) - 3);
+				$notaFila = $nota !== '' ? mb_substr($nota, 0, $cabe) . ' | ' . $sufijo : mb_substr($sufijo, 0, 250);
+			}
 			$unitario = (int)round((float)$prod->precio) + ($primero ? (int)$primero->valor : 0);
 			$bruto = (int)round($unitario * $cantidad);
 			$subtotal += $bruto;
@@ -3685,7 +3692,7 @@ class Mcaja extends CI_Model
 				$this->insertar($db, $cols, 'detalle_cotizacion', array(
 					'id_cotizacion' => $idCot, 'id_producto' => $l['id_producto'], 'cantidad' => $l['cantidad'],
 					'bruto_un' => $l['unitario'], 'subtotal' => 0, 'descuento' => 0, 'descuento_porcentual' => 0, 'total_bruto' => $l['bruto'],
-					'poriva' => 0, 'id_agregado' => $l['id_agregado'], 'mensaje' => mb_substr($l['nota'], 0, 200),
+					'poriva' => 0, 'id_agregado' => $l['id_agregado'], 'mensaje' => mb_substr($l['nota'], 0, 250),
 					'vigente' => true, 'impreso' => true, 'imprimir' => true, 'fecha_hora_impresion' => $ahora,
 					// 14-11-2026: los pedidos que llegan de la app móvil (ApiMovil/pedidoMesa) quedan marcados
 					'desde_android' => !empty($p['desde_app']),

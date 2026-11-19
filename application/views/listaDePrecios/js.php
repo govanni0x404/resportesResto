@@ -335,7 +335,7 @@
 
             tbl += "<tr>";
             tbl += "<td style='display:none'>" + v.id_detalle_lprecio + "</td>";
-            tbl += "<td>" + v.nombre_lprecio + "</td>";
+            tbl += "<td>" + escaparHtml(v.nombre_lprecio) + "</td>";
 
             // PRECIO
             tbl += `

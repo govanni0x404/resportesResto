@@ -40,7 +40,7 @@ $(document).ready(function () {
                     if (!row.id_recinto || row.id_recinto == 0) {
                         return '<span class="label label-warning">SIN ASIGNAR</span>';
                     }
-                    return '<span class="label label-info">' + data + '</span>';
+                    return '<span class="label label-info">' + escaparHtml(data) + '</span>';
                 }
             }
         ],
@@ -156,7 +156,7 @@ function hideTableLoader() {
 //                     if (!row.id_recinto || row.id_recinto == 0) {
 //                         return '<span class="label label-warning">SIN ASIGNAR</span>';
 //                     }
-//                     return '<span class="label label-info">' + data + '</span>';
+//                     return '<span class="label label-info">' + escaparHtml(data) + '</span>';
 //                 }
 //             }
 //         ],

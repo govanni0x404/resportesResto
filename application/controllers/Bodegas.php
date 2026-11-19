@@ -46,6 +46,17 @@ class Bodegas extends CI_Controller
     	return;
     }
     $id = intval($d['id_bodega']);
+		// 19-11-2026 (auditoría): nombre repetido = aviso claro (antes un error genérico de la base, o se grababa repetido)
+		$this->load->helper('tenant');
+		$dbDup = get_tenant_db($this);
+		$nombreDup = trim((string)$d['nombre_bodega']);
+		if ($nombreDup === '') { set_status_header(400); echo json_encode(array('error' => 'Escribe el nombre')); return; }
+		if ($dbDup->query('SELECT 1 FROM bodega WHERE upper(trim(nombre_bodega)) = upper(trim(?)) AND id_bodega <> ? LIMIT 1',
+			array($nombreDup, (int)$id))->row()) {
+			set_status_header(409);
+			echo json_encode(array('error' => 'Ya existe una bodega llamada "' . $nombreDup . '"'));
+			return;
+		}
     $miData = array(
       'nombre_bodega' => $d['nombre_bodega'],
     );

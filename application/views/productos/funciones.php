@@ -18,18 +18,20 @@ function ListadoDeFamilias(objSelected) {
     });
 }
 
-function ListadoDeFamiliasMantenedor(objSelected) {
+function ListadoDeFamiliasMantenedor(objSelected, idSel) {
+    // 19-11-2026 (auditoría): con idSel se elige por número (con nombres repetidos, ej. dos bodegas "AA", el nombre
+    // elegía la última y el producto se cambiaba solo al grabar)
     $.post(base_url + "index.php/ListaDePrecios/ListadoDeFamilias", {
         id: ""
     }, function(datos) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione La Familia</option>';
         $.each(obj, function(index, v) { // recorro el array
-            if (v.nombre_familia == objSelected) {
-                tbl = tbl + '<option selected value="' + v.id_familia + '">' + v.nombre_familia +
+            if (idSel != null && idSel !== '' ? String(v.id_familia) === String(idSel) : v.nombre_familia == objSelected) {
+                tbl = tbl + '<option selected value="' + v.id_familia + '">' + escaparHtml(v.nombre_familia) +
                     '</option>';
             } else {
-                tbl = tbl + '<option value="' + v.id_familia + '">' + v.nombre_familia + '</option>';
+                tbl = tbl + '<option value="' + v.id_familia + '">' + escaparHtml(v.nombre_familia) + '</option>';
             }
         }); //fin each
         $("#cboFamilia").html(tbl);
@@ -56,17 +58,17 @@ function ListadoDeFamiliascboMsubFamilia(objSelected) {
     });
 }
 
-function ListadoDeSubFamilias(objSelected) {
+function ListadoDeSubFamilias(objSelected, idSel) {
     $.post(base_url + "index.php/Productos/ListadoDeSubFamilias", {
         id: ""
     }, function(datos) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione La SubFamilia</option>';
         $.each(obj, function(index, v) { // recorro el array
-            if (v.nombre_subfamilia == objSelected) {
-                tbl = tbl + '<option selected value="' + v.id_subfamilia + '">' + v.nombre_subfamilia + '</option>';
+            if (idSel != null && idSel !== '' ? String(v.id_subfamilia) === String(idSel) : v.nombre_subfamilia == objSelected) {
+                tbl = tbl + '<option selected value="' + v.id_subfamilia + '">' + escaparHtml(v.nombre_subfamilia) + '</option>';
             } else {
-                tbl = tbl + '<option value="' + v.id_subfamilia + '">' + v.nombre_subfamilia + '</option>';
+                tbl = tbl + '<option value="' + v.id_subfamilia + '">' + escaparHtml(v.nombre_subfamilia) + '</option>';
             }
         }); //fin each
         $("#cboSubFamilia").html(tbl);
@@ -112,18 +114,20 @@ function respuestaNuevaComuna(id_comuna, id_ciudad) {
         ListadoDeSubFamilias("", data.id);
     });*/
 
-function ListadoDeUmedida(objSelected) {
+function ListadoDeUmedida(objSelected, idSel) {
+    // 19-11-2026 (auditoría): con idSel se elige por número (con nombres repetidos, ej. dos bodegas "AA", el nombre
+    // elegía la última y el producto se cambiaba solo al grabar)
     $.post(base_url + "index.php/Productos/ListadoDeUmedida", {
         id: ""
     }, function(datos) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione La Unidad De Medida</option>';
         $.each(obj, function(index, v) { // recorro el array
-            if (v.nombre_umedida == objSelected) {
-                tbl = tbl + '<option selected value="' + v.id_umedida + '">' + v.nombre_umedida +
+            if (idSel != null && idSel !== '' ? String(v.id_umedida) === String(idSel) : v.nombre_umedida == objSelected) {
+                tbl = tbl + '<option selected value="' + v.id_umedida + '">' + escaparHtml(v.nombre_umedida) +
                     '</option>';
             } else {
-                tbl = tbl + '<option value="' + v.id_umedida + '">' + v.nombre_umedida + '</option>';
+                tbl = tbl + '<option value="' + v.id_umedida + '">' + escaparHtml(v.nombre_umedida) + '</option>';
             }
         }); //fin each
         $("#cboUmedida").html(tbl);
@@ -131,7 +135,9 @@ function ListadoDeUmedida(objSelected) {
     });
 }
 
-function ListadoDestinoDeImpresion(objSelected) {
+function ListadoDestinoDeImpresion(objSelected, idSel) {
+    // 19-11-2026 (auditoría): con idSel se elige por número (con nombres repetidos, ej. dos bodegas "AA", el nombre
+    // elegía la última y el producto se cambiaba solo al grabar)
     $.post(base_url + "index.php/Productos/ListadoDestinoDeImpresion", {
         id: ""
     }, function(datos) {
@@ -139,12 +145,12 @@ function ListadoDestinoDeImpresion(objSelected) {
         var encontrado = false;
         tbl = '<option disabled value="0">Seleccione El Destino De Impresion</option>';
         $.each(obj, function(index, v) { // recorro el array
-            if (v.nombre_dimpresion == objSelected) {
+            if (idSel != null && idSel !== '' ? String(v.id_dimpresion) === String(idSel) : v.nombre_dimpresion == objSelected) {
                 encontrado = true;
-                tbl = tbl + '<option selected value="' + v.id_dimpresion + '">' + v.nombre_dimpresion +
+                tbl = tbl + '<option selected value="' + v.id_dimpresion + '">' + escaparHtml(v.nombre_dimpresion) +
                     '</option>';
             } else {
-                tbl = tbl + '<option value="' + v.id_dimpresion + '">' + v.nombre_dimpresion +
+                tbl = tbl + '<option value="' + v.id_dimpresion + '">' + escaparHtml(v.nombre_dimpresion) +
                     '</option>';
             }
         }); //fin each
@@ -157,18 +163,20 @@ function ListadoDestinoDeImpresion(objSelected) {
     });
 }
 
-function ListadoDeBodega(objSelected) {
+function ListadoDeBodega(objSelected, idSel) {
+    // 19-11-2026 (auditoría): con idSel se elige por número (con nombres repetidos, ej. dos bodegas "AA", el nombre
+    // elegía la última y el producto se cambiaba solo al grabar)
     $.post(base_url + "index.php/Productos/ListadoDeBodega", {
         id: ""
     }, function(datos) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione La Bodega</option>';
         $.each(obj, function(index, v) { // recorro el array
-            if (v.nombre_bodega == objSelected) {
-                tbl = tbl + '<option selected value="' + v.id_bodega + '">' + v.nombre_bodega +
+            if (idSel != null && idSel !== '' ? String(v.id_bodega) === String(idSel) : v.nombre_bodega == objSelected) {
+                tbl = tbl + '<option selected value="' + v.id_bodega + '">' + escaparHtml(v.nombre_bodega) +
                     '</option>';
             } else {
-                tbl = tbl + '<option value="' + v.id_bodega + '">' + v.nombre_bodega + '</option>';
+                tbl = tbl + '<option value="' + v.id_bodega + '">' + escaparHtml(v.nombre_bodega) + '</option>';
             }
         }); //fin each
         $("#cboBodega").html(tbl);
@@ -176,18 +184,20 @@ function ListadoDeBodega(objSelected) {
     });
 }
 
-function ListadoDeImpuestosIva(objSelected) {
+function ListadoDeImpuestosIva(objSelected, idSel) {
+    // 19-11-2026 (auditoría): con idSel se elige por número (con nombres repetidos, ej. dos bodegas "AA", el nombre
+    // elegía la última y el producto se cambiaba solo al grabar)
     $.post(base_url + "index.php/Productos/ListadoDeImpuestos", {
         id: ""
     }, function(datos) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione El Impuesto Iva</option>';
         $.each(obj, function(index, v) { // recorro el array
-            if (v.nombre_impuesto == objSelected) {
-                tbl = tbl + '<option selected value="' + v.id_impuesto + '">' + v.nombre_impuesto +
+            if (idSel != null && idSel !== '' ? String(v.id_impuesto) === String(idSel) : v.nombre_impuesto == objSelected) {
+                tbl = tbl + '<option selected value="' + v.id_impuesto + '">' + escaparHtml(v.nombre_impuesto) +
                     '</option>';
             } else {
-                tbl = tbl + '<option value="' + v.id_impuesto + '">' + v.nombre_impuesto + '</option>';
+                tbl = tbl + '<option value="' + v.id_impuesto + '">' + escaparHtml(v.nombre_impuesto) + '</option>';
             }
         }); //fin each
         $("#cboImpuestoIva").html(tbl);
@@ -232,18 +242,20 @@ function ListadoDeMenu(objSelected) {
     });
 }
 
-function ListadoDeReceta(objSelected) {
+function ListadoDeReceta(objSelected, idSel) {
+    // 19-11-2026 (auditoría): con idSel se elige por número (con nombres repetidos, ej. dos bodegas "AA", el nombre
+    // elegía la última y el producto se cambiaba solo al grabar)
     $.post(base_url + "index.php/Productos/ListadoDeReceta", {
         id: ""
     }, function(datos) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione La Receta</option>';
         $.each(obj, function(index, v) { // recorro el array
-            if (v.nombre_receta == objSelected) {
-                tbl = tbl + '<option selected value="' + v.id_receta + '">' + v.nombre_receta +
+            if (idSel != null && idSel !== '' ? String(v.id_receta) === String(idSel) : v.nombre_receta == objSelected) {
+                tbl = tbl + '<option selected value="' + v.id_receta + '">' + escaparHtml(v.nombre_receta) +
                     '</option>';
             } else {
-                tbl = tbl + '<option value="' + v.id_receta + '">' + v.nombre_receta + '</option>';
+                tbl = tbl + '<option value="' + v.id_receta + '">' + escaparHtml(v.nombre_receta) + '</option>';
             }
         }); //fin each
         $("#cboReceta").html(tbl);
