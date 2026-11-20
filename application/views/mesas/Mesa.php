@@ -50,6 +50,13 @@
     .tv-mesa:hover { border-color: var(--t-primario-borde); }
     .tv-mesa.marcada { border-color: var(--t-primario); background: var(--t-primario-suave); }
     .tv-mesa input { accent-color: var(--t-primario); }
+    /* v1.23.1: mesa de venta directa (Configuraciones > Otros del restaurante) */
+    #tablaMesas tbody tr.mesa-vd > td { background: #FFF7E6 !important; }
+    #tablaMesas tbody tr.mesa-vd > td:first-child { box-shadow: inset 4px 0 0 #D97706; }
+    .mesa-vd-etiqueta { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;
+        letter-spacing: .3px; white-space: nowrap; background: #FDE7C2; color: #92400E; border: 1px solid #F5C77E; vertical-align: middle; }
+    .mesa-vd-etiqueta i { margin-right: 3px; }
+    .tv-mesa.vd { border-style: dashed; border-color: #D97706; }
     @media (max-width: 480px) { .tv-lista { grid-template-columns: repeat(2, 1fr); } }
 </style>
 <div class="content-header">

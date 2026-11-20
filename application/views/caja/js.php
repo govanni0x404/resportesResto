@@ -2116,6 +2116,10 @@
 		function propinaMaxima() {
 			return Math.floor(totales().total * (catalogo.config.propina_max_pct || 15) / 100);
 		}
+		/** v1.23.0: ¿esta venta lleva propina? Mesa: "Propina en mesas"; venta directa: "Propina en venta directa" (las dos con "Usar propina") */
+		function conPropinaAqui() {
+			return mesa ? !!catalogo.config.propina_mesas : !!catalogo.config.propina;
+		}
 		function propinaSugerida() {
 			return Math.min(Math.round(totales().total * catalogo.config.por_propina / 100), propinaMaxima());
 		}
@@ -2134,7 +2138,8 @@
 			if (!validarCobro()) return;
 			// Factura: primero sus datos (giro, dirección, quién la solicita); después la propina y el pago
 			if (conFactura !== true && documentoActual().es_factura && cliente) { pedirDatosFactura(function () { abrirPago(true); }); return; }
-			if (!mesa) { mostrarPago(0); return; }   // la propina es solo para las mesas
+			// v1.23.0: la propina se pregunta solo donde Configuraciones la habilita (Usar propina + en mesas / en venta directa)
+			if (!conPropinaAqui()) { mostrarPago(0); return; }
 			var sugerida = propinaSugerida();
 			$('#propinaPregunta').text(fmt(totales().total));
 			$('#propinaPorcentaje').text((cfg.por_propina > 0 ? 'Sugerida: ' + cfg.por_propina + '% (' + fmt(sugerida) + ')' : 'Escribe el monto de la propina')
@@ -2362,7 +2367,7 @@
 			$('#grupoRetira').toggle(!mesa);   // quien retira: solo venta directa
 			// Propina sugerida (Configuraciones: propina en venta directa / calcular valor de propina)
 			var cfg = catalogo.config;
-			var conPropina = !!mesa;   // venta directa sin propina: solo se cobra propina en las mesas
+			var conPropina = conPropinaAqui();   // v1.23.0: según Configuraciones (antes solo en mesas)
 			$('#bloquePropina').toggle(conPropina);
 			$('#lblPorPropina').text(cfg.por_propina > 0 ? '(sugerida ' + cfg.por_propina + '%)' : '');
 			propina = propinaElegida !== null ? propinaElegida : (conPropina && (cfg.calcular_propina || mesa) ? propinaSugerida() : 0);
@@ -2646,6 +2651,24 @@
 			});
 		}
 
+		// v1.23.0: vuelto en grande (pago en efectivo). Recibido = total + propina + vuelto. Se cierra con Listo o Enter.
+		function mostrarVuelto(r) {
+			$('#vueltoMonto').text(fmt(r.vuelto));
+			$('#vueltoTotal').text(fmt((r.total || 0) + (r.propina || 0)));
+			$('#vueltoRecibido').text(fmt((r.total || 0) + (r.propina || 0) + r.vuelto));
+			$('#vueltoImprimiendo').removeClass('listo').html('<i class="fa fa-print"></i> Imprimiendo el documento…').toggle(imprimeTicket());
+			$('body').addClass('vuelto-abierto');
+			$('#modalVuelto').modal('show');
+		}
+		$('#modalVuelto').on('hidden.bs.modal', function () {
+			$('body').removeClass('vuelto-abierto');
+			if (!$('.modal.in:visible').length) $('#buscarProducto:visible').focus();
+		});
+		function vueltoImpreso() {
+			$('#vueltoImprimiendo').addClass('listo').html('<i class="fa fa-check"></i> Documento enviado a la impresora');
+		}
+		$('#modalVuelto').on('shown.bs.modal', function () { $('#btnVueltoListo').focus(); });
+
 		function ventaRegistrada(r, ctx) {
 			if (ctx.replay) { ventaPendienteRegistrada(r, ctx); return; }
 			var t = ctx.t, idMesa = ctx.idMesa, dcEnCobro = ctx.dcEnCobro;
@@ -2669,8 +2692,8 @@
 			// recibió el documento o este equipo no imprime, se muestra la ventana como antes.
 			var sinVentana = impresionLocalActiva() && imprimeTicket() && !(r.dte && !r.dte.ok);
 			if (sinVentana) {
-				// toastr de la caja escapa el HTML: el vuelto va en el título (en negrita)
-				if (r.vuelto > 0) toastr.success('Venta registrada · ' + $('#ventaOkDoc').text(), 'Vuelto: ' + fmt(r.vuelto), { timeOut: 8000 });
+				// v1.23.0: con vuelto, ventana grande con el vuelto mientras se imprime el documento (antes era un aviso chico)
+				if (r.vuelto > 0) mostrarVuelto(r);
 				else toastr.success($('#ventaOkDoc').text(), 'Venta registrada', { timeOut: 3500 });
 			} else {
 				$('#modalVentaOk').modal('show');
@@ -2689,6 +2712,8 @@
 			var listoVenta = (imprimeTicket() || comandaVenta)
 				? bloquearImpresion(imprimeTicket() ? 'Imprimiendo ' + (r.documento ? r.documento.toLowerCase() : 'documento') + '…' : 'Imprimiendo comanda…')
 				: function () {};
+			// v1.23.0: con la ventana del vuelto abierta, ella misma avisa cuando terminó de imprimir
+			if (sinVentana && r.vuelto > 0) { var listoSinVuelto = listoVenta; listoVenta = function () { listoSinVuelto(); vueltoImpreso(); }; }
 			var conComanda = function () {
 				if (comandaVenta) {
 					if (imprimeTicket()) $bloqueo.find('.bloqueo-texto').text('Imprimiendo comanda…');
@@ -3596,17 +3621,17 @@
 		}
 		function anularLineaMesa(l) { abrirMesaProductos('anular', [l]); }
 
-		// 19-11-2026: mensaje general de la mesa (ej. "Alérgico al maní", "Traer todo junto"). Sale impreso en cada comanda de
-		// la mesa (envíos y reenvíos). Con pedido se guarda al tiro; sin pedido, se guarda con el primer envío.
+		// 19-11-2026: mensaje general de la mesa (ej. "Alérgico al maní", "Traer todo junto"). v1.22.1: sale impreso una vez, en
+		// la primera comanda después de escribirlo (Mcaja::mensajeParaComanda); en los reenvíos sale siempre. Con pedido se guarda al tiro; sin pedido, se guarda con el primer envío.
 		function pintarMensajeMesa() {
 			var t = mesa && mesa.mensaje ? mesa.mensaje : '';
-			$('#btnMensajeMesa').toggleClass('con-mensaje', !!t).attr('title', t ? 'Mensaje de la mesa: ' + t + ' (clic para cambiarlo)' : 'Mensaje para toda la mesa: sale en cada comanda');
+			$('#btnMensajeMesa').toggleClass('con-mensaje', !!t).attr('title', t ? 'Mensaje de la mesa: ' + t + ' (clic para cambiarlo)' : 'Mensaje para toda la mesa: sale una vez, en la próxima comanda');
 			$('#bannerMesaMensaje').text(t ? t : 'Mensaje a la mesa');
 		}
 		$('#btnMensajeMesa').on('click', function () {
 			if (!mesa) return;
 			var idMesa = mesa.id_mesa;
-			swal({ title: 'Mensaje para ' + nombreMesa(idMesa), text: 'Sale impreso en cada comanda de la mesa (cocina, barra…). Déjalo vacío para quitarlo.', type: 'input',
+			swal({ title: 'Mensaje para ' + nombreMesa(idMesa), text: 'Sale impreso una vez, en la próxima comanda de la mesa (cocina, barra…). Los productos que agregues después van sin él. Déjalo vacío para quitarlo.', type: 'input',
 				inputValue: mesa.mensaje || '', inputPlaceholder: 'Ej: alérgico al maní, traer todo junto', showCancelButton: true,
 				confirmButtonText: 'Guardar', cancelButtonText: 'Cancelar', closeOnConfirm: true }, function (v) {
 				if (v === false || !mesa || mesa.id_mesa !== idMesa) return;
@@ -3621,7 +3646,7 @@
 					if (!mesa || mesa.id_mesa !== idMesa) return;
 					mesa.mensaje = r.mensaje || '';
 					pintarMensajeMesa();
-					toastr.success(r.mensaje ? 'Mensaje de la mesa guardado: sale en las próximas comandas' : 'Mensaje de la mesa quitado');
+					toastr.success(r.mensaje ? 'Mensaje de la mesa guardado: sale en la próxima comanda' : 'Mensaje de la mesa quitado');
 				}).fail(error);
 			});
 		});
@@ -4233,7 +4258,7 @@
 			if (!id) return;
 			(function esperar() {
 				if (mesa && mesa.id_mesa === id && mesa.id_cotizacion && drawerMesaAbierto() && !$('.modal.in').length) { abrirDividir(); return; }
-				if (++intentos < 30) setTimeout(esperar, 200);
+				if (++intentos < 300) setTimeout(esperar, 200);   // v1.23.0: hasta 1 minuto (la ventana del vuelto puede seguir abierta)
 			})();
 		});
 

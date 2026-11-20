@@ -16,7 +16,7 @@ $sii = isset($sii) ? $sii : null;
 $copias = !empty($cedible) ? array('', 'CEDIBLE') : array('');
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-CL" translate="no">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">

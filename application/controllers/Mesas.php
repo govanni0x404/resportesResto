@@ -66,7 +66,14 @@ class Mesas extends CI_Controller
       return;
     }
 
-    $r = $this->Mmesas->crearMultiplesMesas($cantidad);
+    // v1.23.1: el tipo de las mesas nuevas se elige al crearlas (0 = el por defecto, "General")
+    $idTipo = (is_array($d) && isset($d['id_tipo_mesa'])) ? intval($d['id_tipo_mesa']) : 0;
+    $this->load->model('Mtipomesa');
+    if ($idTipo > 0 && !$this->Mtipomesa->existe($idTipo)) {
+      echo json_encode(array('error' => 'El tipo de mesa no existe'));
+      return;
+    }
+    $r = $this->Mmesas->crearMultiplesMesas($cantidad, $idTipo);
     echo json_encode($r);
   }
 

@@ -1522,6 +1522,7 @@ class Mcaja extends CI_Model
 
 		$propina = max(0, (int)(isset($p['propina']) ? $p['propina'] : 0));
 		if ($propina > 0 && !$config['propina'] && !$idMesa) throw new Exception('La propina en venta directa no está habilitada en Configuraciones', 400);
+		if ($propina > 0 && !$config['propina_mesas'] && $idMesa) throw new Exception('La propina en mesas no está habilitada en Configuraciones', 400);   // v1.23.0
 		if ($propina > 0 && $esCortesia) throw new Exception('Una cortesía no lleva propina', 400);
 		$propinaMax = (int)floor($total * self::PROPINA_MAX_PCT / 100);
 		if ($propina > $propinaMax) {
@@ -3572,6 +3573,21 @@ class Mcaja extends CI_Model
 		return $r ? trim((string)$r->m) : '';
 	}
 
+	/**
+	 * v1.22.1: el mensaje general de la mesa sale en la comanda UNA vez. Si ya salió impreso (cotizacion.mensaje_impreso_web
+	 * es igual al de ahora), los productos que se agregan después van solo con su nota o su agregado. Si el mensaje cambió,
+	 * sale el nuevo en el próximo envío. Sin la migración 20261120130000 sale en cada envío, como antes.
+	 */
+	private function mensajeParaComanda($db, $cols, $idCot)
+	{
+		$mensaje = $this->mensajeDeCotizacion($db, $idCot);
+		if (!isset($cols['cotizacion']['mensaje_impreso_web'])) return $mensaje;
+		$ya = $this->q($db, "SELECT COALESCE(mensaje_impreso_web, '') AS m FROM cotizacion WHERE id_cotizacion = ?", array((int)$idCot))->row();
+		if ($ya && trim((string)$ya->m) === $mensaje) return '';
+		$this->q($db, 'UPDATE cotizacion SET mensaje_impreso_web = ? WHERE id_cotizacion = ?', array($mensaje === '' ? null : $mensaje, (int)$idCot));
+		return $mensaje;
+	}
+
 	/** 19-11-2026: datos de la mesa para la comanda: recinto y N° del pedido abierto (0 si ya no hay). */
 	public function infoComandaMesa($idMesa)
 	{
@@ -3745,13 +3761,14 @@ class Mcaja extends CI_Model
 					array($obs, $idCot));
 			}
 			$this->recalcularCotizacion($db, $idCot);
+			$mensajeComanda = $this->mensajeParaComanda($db, $cols, $idCot);
 			$db->trans_commit();
 		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
 		}
 		return array('id_cotizacion' => $idCot, 'detalle' => $this->detalleMesa($idMesa, false), 'comanda' => $comandaMesa,
-			'mensaje_mesa' => $this->mensajeDeCotizacion($db, $idCot));
+			'mensaje_mesa' => $mensajeComanda);
 	}
 
 	/**
@@ -3997,7 +4014,12 @@ class Mcaja extends CI_Model
 		return array(
 			'id_mesa' => (int)$idMesa, 'nombre_mesa' => $this->etiquetaMesa($idMesa), 'desde' => $t ? $t->desde : '', 'lineas' => $lineas,
 			'partes' => !$seleccion && (int)$partes >= 2 ? $this->partesIguales($lineas, (int)$partes) : array(),
-			'por_propina' => (float)$config['por_propina'],
+			// v1.23.0: la propina sugerida sale en la precuenta solo con "Propina en mesas" y "Mostrar propina en la
+			// precuenta" (Configuraciones > Propinas; antes esa casilla no se respetaba y la propina salía siempre)
+			'por_propina' => $config['propina_mesas'] && $config['calcular_propina'] ? (float)$config['por_propina'] : 0,
+			'con_propina' => $config['propina_mesas'] && $config['calcular_propina'],
+			// v1.23.0: el mensaje general de la mesa también sale en la precuenta
+			'mensaje' => $this->mensajeDeCotizacion($db, (int)$cot->id_cotizacion),
 			'empresa' => $this->empresaPrecuenta($db),
 		);
 	}
@@ -4217,6 +4239,9 @@ class Mcaja extends CI_Model
 		$flags = array(
 			'propina_en_venta_directa' => 'propina',
 			'calcular_valor_propina' => 'calcular_propina',
+			// v1.23.0: usar propina (si no, no sale en nada) y propina en mesas (migración 20261120140000)
+			'usar_propina_web' => 'usar_propina',
+			'propina_mesas_web' => 'propina_mesas',
 			'requerir_usuario_admin_descuento' => 'admin_descuento',
 			'requerir_admin_descuento' => 'admin_descuento_clave',
 			'requerir_usuario_admin_cortesia' => 'admin_cortesia',
@@ -4249,7 +4274,7 @@ class Mcaja extends CI_Model
 		);
 		// Si la base no tiene la columna, se mantiene lo que la caja hacía antes de existir la opción
 		$siFalta = array('inventario_cierre', 'llenar_no_efectivo', 'cierre_detallado', 'cierre_ingresos', 'cierre_creditos',
-			'cierre_cortesias', 'cierre_anulaciones', 'retiro_fondo', 'imprimir_documento');
+			'cierre_cortesias', 'cierre_anulaciones', 'retiro_fondo', 'imprimir_documento', 'usar_propina', 'propina_mesas');
 		$config = array_fill_keys(array_values($mapa), 0) + array_fill_keys(array_values($flags), false)
 			+ array_fill_keys(array_values($textos), '');
 		$config['por_iva'] = 19;
@@ -4280,6 +4305,9 @@ class Mcaja extends CI_Model
 			if ($iva && (float)$iva->valor > 0) $config['por_iva'] = (float)$iva->valor;
 		}
 		$config['copias_documento'] = max(1, min(5, (int)$config['copias_documento']));
+		// v1.23.0: sin "Usar propina" no hay propina en ninguna parte (venta directa, mesas, precuenta)
+		$config['propina'] = $config['usar_propina'] && $config['propina'];
+		$config['propina_mesas'] = $config['usar_propina'] && $config['propina_mesas'];
 		// Documentos de la caja directo al agente de impresión del equipo (impresionWeb.exe, localhost:5050), como mipdv_web.
 		// 18-11-2026 (usuario: "todos usan el .exe"): siempre encendida. Se quitó la casilla de Configuraciones; la columna
 		// impresion_local_caja queda en la base pero ya no se lee.

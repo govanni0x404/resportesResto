@@ -74,6 +74,14 @@
             });
     });
 
+    // v1.23.0: sin "Usar propina" las demás opciones de propina no aplican: se ven apagadas
+    function pintarOpcionesPropina() {
+        var usar = $('#chkUsarPropina').is(':checked');
+        $('#opcionesPropina').css('opacity', usar ? 1 : .45).find('input').prop('disabled', !usar);
+    }
+    $(document).on('change', '#chkUsarPropina', pintarOpcionesPropina);
+    $(pintarOpcionesPropina);
+
     function toggleMostrarClaveAdmin() {
         var input = document.getElementById('txtclaveAdmin');
         var chk = document.getElementById('chkMostrarClaveAdmin');
@@ -203,7 +211,7 @@
                 url: $(this).attr('action'),
                 // 14-11-2026: se mandan los nombres de todas las casillas del formulario. El servidor apaga solo las que
                 // están aquí y llegaron sin marcar; una casilla que no vino en el envío queda como estaba.
-                data: $(this).serialize() + '&_casillas=' + encodeURIComponent($(this).find('input[type="checkbox"][name]').map(function () { return this.name; }).get().join(',')),
+                data: $(this).serialize() + '&_casillas=' + encodeURIComponent($(this).find('input[type="checkbox"][name]:not(:disabled)').map(function () { return this.name; }).get().join(',')),
                 dataType: 'json',
                 success: function(response) {
                     if (response.status === 'success') {

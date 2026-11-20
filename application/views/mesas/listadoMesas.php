@@ -80,7 +80,11 @@ function ListadoDeMesas() {
             {
                 mData: "nombre_caja",
                 className: "text-center",
-                render: function(data) { return $('<b>').text(data || '').prop('outerHTML'); }
+                // v1.23.1: la mesa de venta directa lleva su etiqueta
+                render: function(data, type, row) {
+                    return $('<b>').text(data || '').prop('outerHTML')
+                        + (row.venta_directa ? ' <span class="mesa-vd-etiqueta" title="Mesa asignada a la venta directa en Configuraciones"><i class="fa fa-shopping-bag"></i> VENTA DIRECTA</span>' : '');
+                }
             },
             {
                 mData: "tipo_mesa",
@@ -111,6 +115,8 @@ function ListadoDeMesas() {
                 }
             }
         ],
+        // v1.23.1: fila de la mesa de venta directa con otro color
+        "createdRow": function(row, data) { if (data.venta_directa) $(row).addClass('mesa-vd'); },
         'language': {
             url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
             select: {

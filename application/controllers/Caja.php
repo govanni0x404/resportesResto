@@ -403,7 +403,8 @@ class Caja extends CI_Controller
 			$b = $this->cuerpoJson();
 			unset($b['desde_app']);   // marca reservada a ApiMovil/pedidoMesa
 			$r = $this->Mcaja->enviarMesa($this->cajaRequerida(), $this->idUsuario(), $b, $this->idRol());
-			// 19-11-2026: el mensaje general de la mesa sale en cada comanda de la mesa
+			// v1.22.1: el mensaje general de la mesa sale solo en la primera comanda después de escribirlo o cambiarlo
+			// (Mcaja::mensajeParaComanda); los productos agregados después van solo con su nota o agregado
 			$r['comanda_id'] = $this->guardarComanda($r['comanda'], array('id_mesa' => (int)($b['id_mesa'] ?? 0),
 				'observacion' => $this->observacionMesa($r['mensaje_mesa'] ?? '')));
 			unset($r['comanda']);

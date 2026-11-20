@@ -71,7 +71,8 @@
     function vistaTipoMesa() {
         var id = Number($('#tipoMesa').val()) || 0;
         var t = $.grep(tiposMesa, function (x) { return x.id === id; })[0] || null;
-        $('#tipoMesaVista').text(nombreMesaTipo($('#idMesa').val(), t));
+        // v1.23.1: al crear aún no hay número: se muestra con "N"
+        $('#tipoMesaVista').text(nombreMesaTipo($('#idMesa').val() || 'N', t));
     }
     $(document).on('change', '#tipoMesa', vistaTipoMesa);
     /** v1.22.0: el tipo por defecto ("General") de la lista; null si la base aún no lo tiene */
@@ -107,7 +108,8 @@
         $('#divCantidadMesas').show();
         $('#divIdMesa').hide();
         $('#divVigente').hide();
-        $('#divTipoMesa').hide();
+        // v1.23.1: el tipo también se elige al crear (antes las mesas nuevas quedaban siempre en el tipo por defecto)
+        cargarTiposMesa(0);
         
         $('#tituloModalMesa h4').text('CREAR NUEVAS MESAS');
         
@@ -181,6 +183,7 @@
             var miJson = {
                 'cantidad': cantidad
             };
+            if ($('#divTipoMesa').is(':visible')) miJson.id_tipo_mesa = Number($('#tipoMesa').val()) || 0;   // v1.23.1
 
             console.log(miJson);
             $.post(base_url + "index.php/Mesas/crearMultiplesMesas", {
@@ -312,10 +315,10 @@
                 var mesas = tablaMesas.rows().data().toArray().sort(function (a, b) { return Number(a.id_mesa) - Number(b.id_mesa); });
                 $.each(mesas, function (i, m) {
                     var vig = (m.vigente === true || m.vigente === 't' || m.vigente === 'true' || m.vigente === 1);
-                    $l.append($('<label class="tv-mesa">').attr('data-tipo', Number(m.id_tipo_mesa) || 0).attr('data-id', Number(m.id_mesa))
+                    $l.append($('<label class="tv-mesa">').toggleClass('vd', !!m.venta_directa).attr('title', m.venta_directa ? 'Mesa de venta directa' : '').attr('data-tipo', Number(m.id_tipo_mesa) || 0).attr('data-id', Number(m.id_mesa))
                         .append($('<input type="checkbox">').val(m.id_mesa))
                         .append($('<span>').text(m.nombre_caja || ('Mesa ' + m.id_mesa))
-                            .append($('<small>').text('N° ' + m.id_mesa + ' · ' + nombreTipo(Number(m.id_tipo_mesa) || 0) + (vig ? '' : ' · inactiva')))));
+                            .append($('<small>').text('N° ' + m.id_mesa + ' · ' + nombreTipo(Number(m.id_tipo_mesa) || 0) + (m.venta_directa ? ' · venta directa' : '') + (vig ? '' : ' · inactiva')))));
                 });
                 if (!mesas.length) $l.append($('<p class="text-muted" style="margin:6px">No hay mesas creadas.</p>'));
                 $('#tvDesde, #tvHasta').val('');

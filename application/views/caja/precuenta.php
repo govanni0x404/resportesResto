@@ -31,7 +31,7 @@ if (!empty($partes) && $descuento > 0) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-CL" translate="no">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -90,6 +90,11 @@ if (!empty($partes) && $descuento > 0) {
 				<?php if ($l['agregado'] !== '') : ?><tr class="det"><td colspan="2">+ <?php echo $h($l['agregado']); ?></td></tr><?php endif; ?>
 			<?php endforeach; ?>
 		</table>
+		<?php if (!empty($mensaje)) : ?>
+			<?php /* v1.23.0: mensaje general de la mesa */ ?>
+			<hr>
+			<div class="b">MENSAJE DE LA MESA: <?php echo $h($mensaje); ?></div>
+		<?php endif; ?>
 		<hr>
 		<table>
 			<?php if ($descuento) : ?>
@@ -115,7 +120,7 @@ if (!empty($partes) && $descuento > 0) {
 				<?php endforeach; ?>
 			</table>
 		<?php endif; ?>
-		<div class="nota c">La propina es voluntaria.<br>Este documento no es válido como boleta.</div>
+		<div class="nota c"><?php if (!isset($con_propina) || $con_propina) : ?>La propina es voluntaria.<br><?php endif; ?>Este documento no es válido como boleta.</div>
 	</div>
 	<script>
 		if (/[?&]imprimir=1/.test(location.search)) {

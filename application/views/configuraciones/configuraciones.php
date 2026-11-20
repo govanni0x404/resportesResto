@@ -109,8 +109,19 @@ if (!function_exists('cfg_opciones')) {
                                                 <h3 class="panel-title"><i class="fa fa-money"></i>Propinas</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <label><input type="checkbox" name="calcular_valor_propina" value="1" <?php echo ($config['calcular_valor_propina'] ?? false) ? 'checked' : ''; ?>> Mostar valor de propína en precuenta</label>
+                                                <?php /* v1.23.0: Usar propina (apagada = no sale en nada) y Propina en mesas (migración 20261120140000) */ ?>
+                                                <?php $conColPropina = array_key_exists('usar_propina_web', $config); ?>
+                                                <?php if ($conColPropina) : ?>
+                                                <label><input type="checkbox" name="usar_propina_web" id="chkUsarPropina" value="1" <?php echo ($config['usar_propina_web'] ?? true) !== false ? 'checked' : ''; ?>> <b>Usar propina</b></label>
+                                                <p class="help-block" style="margin:-4px 0 8px 22px">Si la empresa no trabaja con propina, desmárcala: no se pregunta al cobrar ni sale en la precuenta ni en ningún documento.</p>
+                                                <div id="opcionesPropina" style="margin-left:22px">
+                                                <label><input type="checkbox" name="propina_mesas_web" value="1" <?php echo ($config['propina_mesas_web'] ?? true) !== false ? 'checked' : ''; ?>> Propina en mesas</label>
+                                                <?php endif; ?>
+                                                <label><input type="checkbox" name="calcular_valor_propina" value="1" <?php echo ($config['calcular_valor_propina'] ?? false) ? 'checked' : ''; ?>> Mostrar la propina sugerida en la precuenta</label>
                                                 <label><input type="checkbox" name="propina_en_venta_directa" value="1" <?php echo ($config['propina_en_venta_directa'] ?? false) ? 'checked' : ''; ?>> Propina en venta directa</label>
+                                                <?php if ($conColPropina) : ?>
+                                                </div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
 

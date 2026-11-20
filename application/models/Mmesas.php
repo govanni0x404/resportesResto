@@ -33,6 +33,13 @@ class Mmesas extends CI_Model
 
     $consulta = $this->db->query($q);
     $sampleData = $consulta->result();
+    // v1.23.1: la mesa de venta directa (Configuraciones > Otros del restaurante) se destaca en el listado
+    $idDirecta = 0;
+    if ($this->db->query("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public'
+      AND table_name = 'configuracion' AND column_name = 'id_mesa_venta_directa'")->row()) {
+      $c = $this->db->query('SELECT COALESCE(id_mesa_venta_directa, 0) AS id FROM configuracion LIMIT 1')->row();
+      $idDirecta = $c ? (int)$c->id : 0;
+    }
     $data = array();
 
     foreach ($sampleData as $key) {
@@ -48,6 +55,7 @@ class Mmesas extends CI_Model
         "id_tipo_mesa" => (int)$key->id_tipo_mesa,
         "tipo_mesa" => (string)$key->tipo_mesa,
         "nombre_caja" => (string)$key->nombre_caja,
+        "venta_directa" => $idDirecta > 0 && (int)$key->id_mesa === $idDirecta,   // v1.23.1
       ));
     }
     
@@ -64,7 +72,7 @@ class Mmesas extends CI_Model
   const MAX_POR_VEZ = 50;
   const MAX_MESAS = 300;
 
-  public function crearMultiplesMesas($cantidad)
+  public function crearMultiplesMesas($cantidad, $idTipoElegido = 0)
   {
     if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
       redirect(base_url());
@@ -85,7 +93,7 @@ class Mmesas extends CI_Model
     }
 
     $this->load->model('Mtipomesa');
-    $idTipo = $this->Mtipomesa->conMesa() ? $this->Mtipomesa->idParaGrabar(0) : null;
+    $idTipo = $this->Mtipomesa->conMesa() ? $this->Mtipomesa->idParaGrabar($idTipoElegido) : null;   // v1.23.1: el elegido o el por defecto
     for ($i = 0; $i < $cantidad; $i++) {
       $data = array(
         'disponible' => true,

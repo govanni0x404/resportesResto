@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es-CL" translate="no">
 
 <head>
 	<meta charset="utf-8">
+    <!-- v1.23.0: la página está en español (antes decía "en" y el traductor del navegador cambiaba "$6.000" por "6.000 dólares") -->
+    <meta name="google" content="notranslate">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->

@@ -470,6 +470,19 @@
 	.venta-ok-doc { font-size: 16px; font-weight: 600; color: var(--t-texto-suave, #7A6A5E); margin-bottom: 16px; }
 	.venta-ok-vuelto { background: var(--t-primario-suave, #FBEEE8); border: 1px solid var(--t-primario-borde, #EFD2C6); border-radius: 10px; padding: 12px; margin-bottom: 16px; font-size: 26px; font-weight: 800; color: var(--t-ok, #5E7F3A); }
 	.venta-ok-vuelto:empty { display: none; }
+	/* v1.23.0: modal del vuelto */
+	.vuelto-modal { border: 0; border-radius: 14px; padding: 26px 24px 18px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+	.vuelto-icono { width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); font-size: 30px; line-height: 64px; }
+	.vuelto-etiqueta { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--t-texto-suave, #4B5563); }
+	.vuelto-monto { font-size: 46px; font-weight: 800; line-height: 1.1; margin: 4px 0 14px; color: var(--t-primario-osc, #116632); }
+	.vuelto-detalle { display: flex; gap: 8px; margin-bottom: 12px; }
+	.vuelto-detalle > div { flex: 1; padding: 8px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; background: var(--t-fondo-alt, #F3F4F6); }
+	.vuelto-detalle span { display: block; font-size: 12px; color: var(--t-texto-tenue, #6B7280); }
+	.vuelto-detalle b { font-size: 17px; color: var(--t-texto-fuerte, #111827); }
+	.vuelto-imprimiendo { font-size: 13px; color: var(--t-texto-tenue, #6B7280); margin-bottom: 12px; }
+	.vuelto-imprimiendo.listo { color: var(--t-primario, #15803D); }
+	/* Con el vuelto en pantalla no se tapa con "Imprimiendo…": la ventana del vuelto ya lo dice */
+	body.vuelto-abierto #bloqueoImpresion { display: none; }
 	.venta-ok-acciones { display: flex; gap: 10px; margin-bottom: 10px; }
 	.venta-ok-acciones .btn { flex: 1; padding: 10px; font-weight: 700; border-radius: 8px; border-color: var(--t-borde, #EADFD2); color: #3A2A22; }
 	.venta-ok-acciones .btn:hover { border-color: var(--t-primario, #B4432E); color: var(--t-primario, #B4432E); background: #fff; }
@@ -2214,6 +2227,24 @@
 				<a class="btn btn-default" id="ventaOkPdf" target="_blank"><i class="fa fa-file-pdf-o"></i> Ver PDF</a>
 			</div>
 			<button class="btn btn-success btn-lg btn-block" data-dismiss="modal" id="btnNuevaVenta">Nueva venta</button>
+			<div class="venta-ok-ayuda">Enter para continuar</div>
+		</div>
+	</div>
+</div>
+
+<!-- v1.23.0: vuelto en grande mientras se imprime el documento (pago en efectivo con vuelto) -->
+<div class="modal fade" id="modalVuelto" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-sm" role="document">
+		<div class="modal-content vuelto-modal">
+			<div class="vuelto-icono"><i class="fa fa-money"></i></div>
+			<div class="vuelto-etiqueta">Vuelto a entregar</div>
+			<div class="vuelto-monto" id="vueltoMonto">$0</div>
+			<div class="vuelto-detalle">
+				<div><span>Total</span><b id="vueltoTotal">$0</b></div>
+				<div><span>Recibido</span><b id="vueltoRecibido">$0</b></div>
+			</div>
+			<div class="vuelto-imprimiendo" id="vueltoImprimiendo"><i class="fa fa-print"></i> Imprimiendo el documento…</div>
+			<button type="button" class="btn btn-success btn-lg btn-block" data-dismiss="modal" id="btnVueltoListo">Listo</button>
 			<div class="venta-ok-ayuda">Enter para continuar</div>
 		</div>
 	</div>

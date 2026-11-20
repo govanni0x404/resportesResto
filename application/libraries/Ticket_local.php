@@ -210,6 +210,11 @@ class Ticket_local
 			$this->fila($cant($l['cantidad']) . ' x ' . $l['nombre'], $m($l['bruto']), $W);
 			if (isset($l['agregado']) && $l['agregado'] !== '') $this->lineas('   + ' . $l['agregado'], $W);
 		}
+		// v1.23.0: mensaje general de la mesa
+		if (!empty($d['mensaje'])) {
+			$this->linea($W);
+			$this->negrita($this->lineasTexto('MENSAJE DE LA MESA: ' . $d['mensaje'], $W));
+		}
 		$this->linea($W);
 		if ($descuento) {
 			$this->fila('Subtotal', $m($subtotal), $W);
@@ -253,7 +258,7 @@ class Ticket_local
 		}
 		$this->op('feed', 1);
 		$this->op('textaling', 'center');
-		$this->texto('La propina es voluntaria.');
+		if (!isset($d['con_propina']) || $d['con_propina']) $this->texto('La propina es voluntaria.');   // v1.23.0
 		$this->texto('Este documento no es valido como boleta.');
 		$this->op('textaling', 'left');
 		$this->op('feed', 4);

@@ -26,7 +26,7 @@ $titulos = array('anulacion' => array('ANULACIÓN', 'NO PREPARAR'), 'traslado' =
 	'reenvio' => array('REENVÍO', 'YA SE HABÍA PEDIDO'));
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-CL" translate="no">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
