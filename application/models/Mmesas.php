@@ -147,4 +147,21 @@ class Mmesas extends CI_Model
       $consulta = $this->db->query("SELECT " . (int)$id . " as id_mesa");
       return $consulta->result();
   }
+
+  /** v1.21.0: pone el mismo tipo de mesa (0 = sin tipo) a varias mesas, todo o nada. */
+  public function cambiarTipo(array $ids, $idTipo)
+  {
+    $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+    $ids = array_map('intval', $ids);
+    $this->db->trans_begin();
+    $this->db->where_in('id_mesa', $ids);
+    $this->db->update('mesa', array('id_tipo_mesa_web' => (int)$idTipo > 0 ? (int)$idTipo : null));
+    $n = $this->db->affected_rows();
+    if ($this->db->trans_status() === FALSE) {
+      $this->db->trans_rollback();
+      return array('error' => 'No se pudieron cambiar las mesas');
+    }
+    $this->db->trans_commit();
+    return array('ok' => true, 'cambiadas' => (int)$n);
+  }
 }

@@ -107,4 +107,36 @@ class Mesas extends CI_Controller
       $r = $this->Mmesas->editarMesa($id, $miData);
       echo json_encode($r);
   }
+
+  /**
+   * v1.21.0: cambia de una vez el tipo de varias mesas (botón "Cambiar varias mesas a otro tipo").
+   * POST ids[] (id_mesa) e id_tipo_mesa (0 = sin tipo). Responde {ok, cambiadas} o {error}.
+   */
+  public function cambiarTipoMesas()
+  {
+    $this->output->set_content_type('application/json', 'utf-8');
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+      return $this->output->set_status_header(401)->set_output(json_encode(array('error' => 'Sesión expirada, vuelve a ingresar')));
+    }
+    if ($this->input->method() !== 'post') {
+      return $this->output->set_status_header(405)->set_output(json_encode(array('error' => 'Método no permitido')));
+    }
+    $this->load->model('Mtipomesa');
+    if (!$this->Mtipomesa->conMesa()) {
+      return $this->output->set_output(json_encode(array('error' => 'Los tipos de mesa no están disponibles en esta base')));
+    }
+    $ids = $this->input->post('ids');
+    $ids = is_array($ids) ? array_values(array_unique(array_filter(array_map('intval', $ids), function ($n) { return $n > 0; }))) : array();
+    if (!$ids) {
+      return $this->output->set_output(json_encode(array('error' => 'Marca al menos una mesa')));
+    }
+    if (count($ids) > Mmesas::MAX_MESAS) {
+      return $this->output->set_output(json_encode(array('error' => 'Se pueden cambiar hasta ' . Mmesas::MAX_MESAS . ' mesas por vez')));
+    }
+    $idTipo = (int)$this->input->post('id_tipo_mesa');
+    if ($idTipo > 0 && !$this->Mtipomesa->existe($idTipo)) {
+      return $this->output->set_output(json_encode(array('error' => 'El tipo de mesa no existe')));
+    }
+    $this->output->set_output(json_encode($this->Mmesas->cambiarTipo($ids, $idTipo)));
+  }
 }

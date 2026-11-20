@@ -40,6 +40,12 @@ class Configuraciones extends CI_Controller {
         $data['empresa'] = $this->Mconfiguraciones->get_empresa();
         $data['bodegas'] = $this->Mconfiguraciones->get_bodegas();
         $data['opciones'] = $this->Mconfiguraciones->get_opciones($data['config']);
+        // v1.21.0: "Probar gaveta" la abre por el agente de impresión de este equipo (config/impresion_local.php)
+        $this->config->load('impresion_local', true);
+        $data['impresion_local'] = array(
+            'url' => (string)$this->config->item('impresion_local_url', 'impresion_local'),
+            'clave' => (string)$this->config->item('impresion_local_clave', 'impresion_local'),
+        );
         $this->load->view('menuTop.php', $data);
         $this->load->view('configuraciones/configuraciones', $data);
         $this->load->view('menuFooter.php');
@@ -330,6 +336,25 @@ class Configuraciones extends CI_Controller {
         list($ok, $detalle) = $this->correo_resto->enviar($this, get_tenant_db($this), 'Prueba de correo - DataRestoWeb',
             '<p>Este es un correo de prueba de <b>DataRestoWeb</b>.</p><p>Si lo recibiste, los informes por correo (cierre de caja y anulaciones) llegarán a esta dirección.</p>', $correos);
         echo json_encode(array('ok' => $ok, 'detalle' => $detalle), JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * v1.21.0: botón "Probar gaveta". Devuelve la impresora donde va conectada la gaveta: la elegida en "Impresora para
+     * cierre de caja" (aunque no esté grabada) o, si es "LA DE LA CAJA", la de la caja. La pantalla le manda el pulso al
+     * agente de impresión de este equipo, igual que el botón "Abrir gaveta" de la Caja.
+     */
+    public function destinoGaveta() {
+        $this->responderJson(function () {
+            if ((int)$this->session->userdata('id_rol') !== 1) throw new Exception('Solo un administrador puede probar la gaveta', 403);
+            $this->load->model('Mcaja');
+            $nombre = trim((string)$this->input->post('impresora'));
+            $d = $nombre !== '' ? $this->Mcaja->destinoPorNombre($nombre) : $this->Mcaja->destinoCaja();
+            if (!$d) {
+                throw new Exception($nombre !== '' ? 'La impresora "' . $nombre . '" no existe en Destinos de impresión'
+                    : 'La caja no tiene impresora asignada: elige una impresora arriba o asígnale una a la caja', 409);
+            }
+            return array('ok' => true, 'destino' => array('nombre' => $d['nombre'], 'ip' => $d['ip'], 'puerto' => (int)$d['puerto'], 'ruta_windows' => $d['ruta_windows']));
+        }, true);
     }
 
     // ==================== EMPRESAS Y SUCURSALES (11-11-2026, ver Mempresas) ====================

@@ -136,6 +136,9 @@ if (!function_exists('cfg_opciones')) {
                                                         <?php endif; ?>
                                                     </select>
                                                     <p class="help-block">Destino de impresión donde sale el cierre y el informe X, y donde la caja imprime las boletas, facturas y comprobantes (directo al agente de impresión del equipo).</p>
+                                                    <!-- v1.21.0: probar la gaveta de dinero (va conectada a la impresora) sin ir a la Caja -->
+                                                    <button type="button" class="btn btn-orange" id="btnProbarGaveta"><i class="fa fa-inbox"></i> Probar gaveta</button>
+                                                    <p class="help-block">Abre la gaveta de dinero conectada a la impresora de arriba (con "LA DE LA CAJA", la impresora de la caja). Hazlo desde el computador de la caja, con el agente de impresión abierto.</p>
                                                 </div>
                                                 <!-- 18-11-2026: se quitaron "Imprimir documentos en el equipo de la caja" y "con el diseño de la página":
                                                      todos los locales imprimen por el agente (impresionWeb.exe) y como imagen, siempre encendidas -->

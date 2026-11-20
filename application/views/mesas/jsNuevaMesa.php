@@ -201,3 +201,137 @@
         }
     }
 </script>
+<!-- v1.21.0: MODAL CAMBIAR VARIAS MESAS A OTRO TIPO -->
+<div id="ModalTipoVarias" class="modal fade t-form-modal" role="dialog" style="overflow-y: scroll;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header btn-success">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title text text-center">CAMBIAR VARIAS MESAS A OTRO TIPO</h4>
+            </div>
+            <div class="modal-body">
+                <fieldset>
+                    <div class="col-md-12">
+                        <label for="tvTipoNuevo">NUEVO TIPO PARA LAS MESAS MARCADAS *</label>
+                        <select class="form-control input-sm" id="tvTipoNuevo"></select>
+                    </div>
+                    <div class="col-md-12">
+                        <label>MESAS A CAMBIAR</label>
+                        <div class="tv-herramientas">
+                            <div>
+                                <label for="tvDesde">Desde la mesa</label>
+                                <input type="number" min="1" class="form-control input-sm" id="tvDesde">
+                            </div>
+                            <div>
+                                <label for="tvHasta">Hasta la mesa</label>
+                                <input type="number" min="1" class="form-control input-sm" id="tvHasta">
+                            </div>
+                            <button type="button" class="btn btn-default btn-sm" id="tvMarcarRango"><i class="fa fa-check-square-o"></i> Marcar ese rango</button>
+                            <div>
+                                <label for="tvFiltroTipo">Ver solo</label>
+                                <select class="form-control input-sm" id="tvFiltroTipo" style="width:auto"></select>
+                            </div>
+                            <button type="button" class="btn btn-default btn-sm" id="tvTodas">Marcar las que se ven</button>
+                            <button type="button" class="btn btn-default btn-sm" id="tvNinguna">Desmarcar todas</button>
+                        </div>
+                        <div class="tv-lista" id="tvLista"></div>
+                        <p class="tv-contador" id="tvContador"></p>
+                        <p class="help-block" style="font-size:12px;margin:4px 0 0">Si a una mesa le pusieron un nombre propio en el plano de la Caja, en la Caja sigue saliendo ese nombre.</p>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="tvGrabar"><i class="fa fa-check"></i> Cambiar mesas marcadas</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // v1.21.0: cambiar el tipo de muchas mesas de una vez. Las mesas salen de la tabla ya cargada (tablaMesas)
+    (function () {
+        var tipos = [];
+        function tipoPorId(id) { return $.grep(tipos, function (x) { return x.id === id; })[0] || null; }
+        function nombreTipo(id) { var t = tipoPorId(id); return t ? t.nombre : 'Sin tipo'; }
+        function contar() {
+            var n = $('#tvLista input:checked').length;
+            $('#tvContador').text(n === 0 ? 'No hay mesas marcadas' : (n === 1 ? '1 mesa marcada' : n + ' mesas marcadas'));
+            $('#tvLista .tv-mesa').each(function () { $(this).toggleClass('marcada', $(this).find('input').prop('checked')); });
+        }
+        function filtrar() {
+            var f = $('#tvFiltroTipo').val();
+            $('#tvLista .tv-mesa').each(function () { $(this).toggle(f === 'todas' || String($(this).data('tipo')) === f); });
+        }
+        function cargarTipos(listo) {
+            $.ajax({ url: base_url + 'index.php/Mesas/tiposMesa', dataType: 'json', cache: false }).done(function (r) {
+                tipos = (r && r.tipos) || [];
+                $('#btnTipoVarias').toggle(!!(r && r.disponible));
+                if (listo) listo(r);
+            });
+        }
+        cargarTipos();
+
+        window.AbrirModalTipoVarias = function () {
+            cargarTipos(function (r) {
+                if (!r || !r.disponible) return;
+                var $n = $('#tvTipoNuevo').empty().append($('<option>').val(0).text('Sin tipo (Mesa N, como siempre)'));
+                var $f = $('#tvFiltroTipo').empty().append($('<option>').val('todas').text('Todas las mesas')).append($('<option>').val(0).text('Sin tipo'));
+                $.each(tipos, function (i, t) {
+                    if (t.vigente) $n.append($('<option>').val(t.id).text(t.nombre + ' · ' + t.ejemplo));
+                    $f.append($('<option>').val(t.id).text(t.nombre));
+                });
+                var $l = $('#tvLista').empty();
+                var mesas = tablaMesas.rows().data().toArray().sort(function (a, b) { return Number(a.id_mesa) - Number(b.id_mesa); });
+                $.each(mesas, function (i, m) {
+                    var vig = (m.vigente === true || m.vigente === 't' || m.vigente === 'true' || m.vigente === 1);
+                    $l.append($('<label class="tv-mesa">').attr('data-tipo', Number(m.id_tipo_mesa) || 0).attr('data-id', Number(m.id_mesa))
+                        .append($('<input type="checkbox">').val(m.id_mesa))
+                        .append($('<span>').text(m.nombre_caja || ('Mesa ' + m.id_mesa))
+                            .append($('<small>').text('N° ' + m.id_mesa + ' · ' + nombreTipo(Number(m.id_tipo_mesa) || 0) + (vig ? '' : ' · inactiva')))));
+                });
+                if (!mesas.length) $l.append($('<p class="text-muted" style="margin:6px">No hay mesas creadas.</p>'));
+                $('#tvDesde, #tvHasta').val('');
+                $('#tvFiltroTipo').val('todas');
+                contar();
+                $('#ModalTipoVarias').modal('show');
+            });
+        };
+
+        $(document).on('change', '#tvLista input', contar);
+        $(document).on('change', '#tvFiltroTipo', filtrar);
+        $(document).on('click', '#tvTodas', function () { $('#tvLista .tv-mesa:visible input').prop('checked', true); contar(); });
+        $(document).on('click', '#tvNinguna', function () { $('#tvLista input').prop('checked', false); contar(); });
+        $(document).on('click', '#tvMarcarRango', function () {
+            var d = parseInt($('#tvDesde').val(), 10), h = parseInt($('#tvHasta').val(), 10);
+            if (isNaN(d) && isNaN(h)) { showAppAlert('error', 'Escribe desde qué mesa y hasta qué mesa', { duration: 4000, image: base_url + 'assets/img/errorGif.gif' }); return; }
+            if (isNaN(d)) d = h; if (isNaN(h)) h = d;
+            if (d > h) { var x = d; d = h; h = x; }
+            var n = 0;
+            $('#tvLista .tv-mesa').each(function () {
+                var id = Number($(this).data('id'));
+                if (id >= d && id <= h) { $(this).find('input').prop('checked', true); n++; }
+            });
+            contar();
+            if (!n) showAppAlert('error', 'No hay mesas del ' + d + ' al ' + h, { duration: 4000, image: base_url + 'assets/img/errorGif.gif' });
+        });
+
+        $(document).on('click', '#tvGrabar', function () {
+            var ids = $('#tvLista input:checked').map(function () { return Number(this.value); }).get();
+            if (!ids.length) { showAppAlert('error', 'Marca al menos una mesa', { duration: 4000, image: base_url + 'assets/img/errorGif.gif' }); return; }
+            var idTipo = Number($('#tvTipoNuevo').val()) || 0, $b = $(this), html = $b.html();
+            $b.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Cambiando…');
+            $.ajax({ url: base_url + 'index.php/Mesas/cambiarTipoMesas', type: 'POST', dataType: 'json', data: { ids: ids, id_tipo_mesa: idTipo } })
+                .done(function (r) {
+                    if (!r || r.error) { showAppAlert('error', (r && r.error) || 'No se pudieron cambiar las mesas', { duration: 6000, image: base_url + 'assets/img/errorGif.gif' }); return; }
+                    showAppAlert('success', (r.cambiadas === 1 ? 'Se cambió 1 mesa' : 'Se cambiaron ' + r.cambiadas + ' mesas') + ' a "' + nombreTipo(idTipo) + '"', { duration: 4000, image: base_url + 'assets/img/success.gif' });
+                    $('#ModalTipoVarias').modal('hide');
+                    tablaMesas.ajax.reload();
+                })
+                .fail(function (x) {
+                    showAppAlert('error', (x.responseJSON && x.responseJSON.error) || 'Se produjo un error al cambiar las mesas', { duration: 6000, image: base_url + 'assets/img/errorGif.gif' });
+                })
+                .always(function () { $b.prop('disabled', false).html(html); });
+        });
+    })();
+</script>

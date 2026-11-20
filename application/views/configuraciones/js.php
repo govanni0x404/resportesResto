@@ -1,3 +1,11 @@
+<?php /* v1.21.0: cliente del agente de impresión de este equipo, para "Probar gaveta" */ ?>
+<script>
+    window.LOCAL_PRINT_CONFIG = Object.assign({}, window.LOCAL_PRINT_CONFIG || {},
+        <?php echo json_encode(array('baseUrl' => $impresion_local['url'] ?? 'http://localhost:5050', 'apiKey' => $impresion_local['clave'] ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
+</script>
+<script src="<?php echo base_url() ?>assets/js/impresion-local/LocalPrintClient.js?v=1"></script>
+<script src="<?php echo base_url() ?>assets/js/impresion-local/printerJob.js?v=1"></script>
+<script src="<?php echo base_url() ?>assets/js/impresion-local/impresionLocal.js?v=1"></script>
 <script>
     var base_url = "<?php echo base_url(); ?>";
 
@@ -41,6 +49,29 @@
             .done(function (r) { swal(r.ok ? 'Correo enviado' : 'No se pudo enviar', r.detalle, r.ok ? 'success' : 'error'); })
             .fail(function (x) { swal('No se pudo enviar', (x.responseJSON && x.responseJSON.detalle) || 'Error al enviar el correo', 'error'); })
             .always(function () { $b.prop('disabled', false).text('Probar envío'); });
+    });
+
+    // v1.21.0: Probar gaveta. Pide al servidor la impresora (la elegida arriba, aunque no esté grabada, o la de la caja)
+    // y le manda el pulso de apertura al agente de impresión de este equipo, como el botón "Abrir gaveta" de la Caja.
+    $(document).on('click', '#btnProbarGaveta', function () {
+        var $b = $(this), html = $b.html();
+        if (!window.ImpresionLocal) { swal('No se pudo probar', 'No se cargó el cliente de impresión local. Recarga la página.', 'error'); return; }
+        var plano = function (t) { return $('<div>').html(String(t == null ? '' : t)).text(); };
+        var listo = function () { $b.prop('disabled', false).html(html); };
+        $b.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Abriendo…');
+        $.ajax({ url: base_url + 'index.php/Configuraciones/destinoGaveta', type: 'POST', dataType: 'json',
+                 data: { impresora: $('select[name="nombre_impresora_cierre"]').val() || '' } })
+            .done(function (r) {
+                ImpresionLocal.imprimir(r.destino, [{ accion: 'abrir_gaveta', valor: '' }], { tiempo: 15000 }).then(function () {
+                    swal('Gaveta abierta', 'Se mandó la orden a ' + r.destino.nombre + '. Si la gaveta no se abrió, revisa que el cable esté conectado a esa impresora.', 'success');
+                }, function (e) {
+                    swal('No se pudo abrir la gaveta', plano(ImpresionLocal.mensaje(e)), 'error');
+                }).then(listo);
+            })
+            .fail(function (x) {
+                swal('No se pudo abrir la gaveta', (x.responseJSON && x.responseJSON.error) || 'Error al buscar la impresora', 'error');
+                listo();
+            });
     });
 
     function toggleMostrarClaveAdmin() {

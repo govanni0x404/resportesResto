@@ -706,15 +706,20 @@ class Mcaja extends CI_Model
 	 */
 	public function destinoCierre()
 	{
-		$nombre = $this->opciones()['impresora_cierre'];
-		if ($nombre !== '') {
-			$db = $this->conexion();
-			$r = $this->q($db, 'SELECT id_dimpresion, nombre_dimpresion, ip, puerto, ruta_windows FROM dimpresion
-				WHERE upper(trim(nombre_dimpresion)) = upper(?) ORDER BY id_dimpresion LIMIT 1', array($nombre))->row();
-			if ($r) return array('id' => (int)$r->id_dimpresion, 'nombre' => (string)$r->nombre_dimpresion,
-				'ip' => (string)$r->ip, 'puerto' => (string)$r->puerto, 'ruta_windows' => (string)$r->ruta_windows);
-		}
-		return $this->destinoCaja();
+		$d = $this->destinoPorNombre($this->opciones()['impresora_cierre']);
+		return $d ?: $this->destinoCaja();
+	}
+
+	/** v1.21.0: destino de impresión por su nombre (sin distinguir mayúsculas); null si no hay o no existe. */
+	public function destinoPorNombre($nombre)
+	{
+		$nombre = trim((string)$nombre);
+		if ($nombre === '') return null;
+		$r = $this->q($this->conexion(), 'SELECT id_dimpresion, nombre_dimpresion, ip, puerto, ruta_windows FROM dimpresion
+			WHERE upper(trim(nombre_dimpresion)) = upper(?) ORDER BY id_dimpresion LIMIT 1', array($nombre))->row();
+		if (!$r) return null;
+		return array('id' => (int)$r->id_dimpresion, 'nombre' => (string)$r->nombre_dimpresion,
+			'ip' => (string)$r->ip, 'puerto' => (string)$r->puerto, 'ruta_windows' => (string)$r->ruta_windows);
 	}
 
 	/**
