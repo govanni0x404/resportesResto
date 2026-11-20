@@ -573,7 +573,7 @@
             let idDetalle = v.id_detalle_categoria_menu;
             detallesCargados[idDetalle] = v;
 
-            tbl += "<tr onclick='CargarDetalleParaEditar(" + idDetalle + ")' style='cursor:pointer'>";
+            tbl += "<tr data-id='" + idDetalle + "' onclick='CargarDetalleParaEditar(" + idDetalle + ")'>";
             tbl += "<td>" + (idDetalle > 0 ? idDetalle : '') + "</td>";
             tbl += "<td>" + escaparHtml(v.nombre_producto) + "</td>";
             tbl += "<td class='text-right'>" + (v.costo_receta || 0) + "</td>";
@@ -586,6 +586,8 @@
             cantItems++;
         });
 
+        // v1.24.10: categoría vacía con un aviso
+        if (!cantItems) tbl = "<tr class='pc-sin'><td colspan='6'><div class='pc-vacio'><i class='fa fa-cutlery'></i>Aún no hay productos en esta categoría.<br>Elige uno a la izquierda y presiona <b>Añadir</b>.</div></td></tr>";
         $("#DetalleCategoria").html(tbl);
         $("#lblCantProductosCategoria").text(cantItems);
     }
@@ -621,13 +623,9 @@
         if(!v) return;
         
         // Resaltado visual
-        $("#tableDetalleCategoria tbody tr").removeClass('selected');
-        $("#tableDetalleCategoria tbody tr").each(function() {
-            let tdText = $(this).find('td:eq(0)').text();
-            if(tdText == idDetalle || (idDetalle < 0 && tdText === '')) {
-                $(this).addClass('selected');
-            }
-        });
+        // v1.24.10: por su id (antes, al tocar uno nuevo sin grabar se resaltaban todos los nuevos)
+        $("#tableDetalleCategoria tbody tr").removeClass('selected')
+            .filter(function () { return String($(this).data('id')) === String(idDetalle); }).addClass('selected');
 
         if ($('#cboSelectorProductosFinal').find("option[value='" + v.id_producto + "']").length) {
             $('#cboSelectorProductosFinal').val(v.id_producto).trigger('change');

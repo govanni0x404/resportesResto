@@ -1148,129 +1148,146 @@
     </div>
 </div>
 
-<div id="ModalAgregarProductosAcategorias" class="modal fade" role="dialog" style="overflow-y: scroll;">
-    <div class="modal-dialog modal-lg" style="width: 95%;">
+<!-- v1.24.10: productos de una categoría del menú, rediseñado y centrado (mismos id: los usa jsMenu.php) -->
+<style>
+#ModalAgregarProductosAcategorias.in { display: flex !important; align-items: center; justify-content: center; }
+#ModalAgregarProductosAcategorias .modal-dialog { width: 1100px; max-width: calc(100vw - 32px); margin: 16px auto; }
+#ModalAgregarProductosAcategorias .modal-content { border: 0; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 60px rgba(17, 24, 39, .28); }
+.pc-cab { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--t-borde, #E5E7EB); background: #fff; }
+.pc-cab-icono { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); font-size: 18px; }
+.pc-cab h4 { margin: 0; font-size: 18px; font-weight: 800; color: var(--t-texto-fuerte, #111827); }
+.pc-ruta { display: inline-block; margin-top: 3px; padding: 2px 10px; border-radius: 20px; background: var(--t-fondo-alt, #F3F4F6); color: var(--t-texto-suave, #4B5563); font-size: 12px; font-weight: 700; letter-spacing: .3px; }
+.pc-cab .close { margin-left: auto; font-size: 26px; }
+.pc-cuerpo { padding: 18px 20px; background: var(--t-fondo, #F5F6F8); }
+.pc-cols { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; }
+.pc-tarjeta { background: #fff; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 12px; padding: 16px; }
+.pc-tarjeta-titulo { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--t-texto-suave, #4B5563); }
+.pc-tarjeta-titulo i { margin-right: 6px; color: var(--t-primario, #15803D); }
+.pc-campo { margin-bottom: 12px; }
+.pc-campo label { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #4B5563); }
+.pc-campo .form-control { height: 38px; border-radius: 8px; }
+.pc-par { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pc-receta { padding: 1px 8px; border-radius: 10px; font-size: 10px; letter-spacing: .3px; background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario-osc, #116632); border: 1px solid var(--t-primario-borde, #BBE3C9); }
+.pc-opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.pc-opcion { display: flex; align-items: center; gap: 8px; margin: 0; padding: 9px 10px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 9px; cursor: pointer; font-weight: 600; color: var(--t-texto, #1F2937); }
+.pc-opcion input { margin: 0; accent-color: var(--t-primario, #15803D); }
+.pc-opcion:has(input:checked) { border-color: var(--t-primario, #15803D); background: var(--t-primario-suave, #E8F5EC); }
+.pc-botones .btn { height: 42px; border-radius: 9px; font-weight: 700; }
+.pc-botones .btn i { margin-right: 5px; }
+.pc-botones-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.pc-lista { height: 320px; overflow-y: auto; border: 1px solid var(--t-borde-suave, #EEF0F3); border-radius: 10px; }
+#tableDetalleCategoria { margin: 0; }
+#tableDetalleCategoria thead th { position: sticky; top: 0; z-index: 1; background: var(--t-fondo-alt, #F3F4F6); font-size: 11px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #4B5563); border-bottom: 1px solid var(--t-borde, #E5E7EB); white-space: nowrap; }
+#tableDetalleCategoria td { vertical-align: middle; border-color: var(--t-borde-suave, #EEF0F3); }
+#tableDetalleCategoria tr:not(.pc-sin) > td:first-child, #tableDetalleCategoria th:first-child { display: none; }
+#tableDetalleCategoria tr.pc-sin, #tableDetalleCategoria tr.pc-sin td { cursor: default; background: #fff !important; }
+#tableDetalleCategoria tbody tr { cursor: pointer; }
+#tableDetalleCategoria tbody tr:hover td { background: var(--t-tinte, #F7FBF8); }
+#tableDetalleCategoria tbody tr.selected td { background: var(--t-primario-suave, #E8F5EC) !important; color: var(--t-primario-osc, #116632); font-weight: 700; }
+.pc-vacio { padding: 40px 10px; text-align: center; color: var(--t-texto-tenue, #6B7280); }
+.pc-vacio i { display: block; margin-bottom: 8px; font-size: 28px; }
+.pc-contador { min-width: 26px; padding: 2px 9px; border-radius: 12px; background: var(--t-primario, #15803D); color: #fff; font-size: 12px; text-align: center; letter-spacing: 0; }
+.pc-pie { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 16px; margin-top: 16px; }
+.pc-reglas { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; }
+.pc-reglas .pc-campo { margin: 0; }
+.pc-reglas input[type=number] { width: 90px; height: 38px; border-radius: 8px; text-align: center; font-weight: 700; }
+.pc-reglas .pc-opcion { height: 38px; }
+.pc-ayuda { flex: 1 1 260px; margin: 0; font-size: 12px; color: var(--t-texto-tenue, #6B7280); }
+.pc-promedio { display: flex; flex-direction: column; justify-content: center; text-align: center; }
+.pc-promedio small { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--t-texto-suave, #4B5563); }
+.pc-promedio b { font-size: 28px; color: var(--t-primario-osc, #116632); }
+#ModalAgregarProductosAcategorias .modal-footer { padding: 12px 20px; background: #fff; border-top: 1px solid var(--t-borde, #E5E7EB); }
+#ModalAgregarProductosAcategorias .modal-footer .btn { min-width: 120px; height: 40px; border-radius: 9px; font-weight: 700; }
+@media (max-width: 900px) { .pc-cols, .pc-pie { grid-template-columns: 1fr; } }
+</style>
+<div id="ModalAgregarProductosAcategorias" class="modal fade" role="dialog" tabindex="-1">
+    <div class="modal-dialog">
         <div class="modal-content">
-            <!-- TITULO  MODAL  -->
-            <div class="modal-header btn-success" style="border-bottom: 2px solid #B4432E; padding: 15px; background-color: #B4432E !important; height: 50px;">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 1; margin-top: -5px;"><span aria-hidden="true">&times;</span></button>
+            <div class="pc-cab">
+                <div class="pc-cab-icono"><i class="fa fa-cutlery"></i></div>
+                <div>
+                    <h4>Productos de la categoría</h4>
+                    <!-- Se llena vía JS: MENU -> CATEGORIA (y data-id-categoria) -->
+                    <span class="pc-ruta" id="labelMenuCategoriaDestacado"></span>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
             </div>
-            <!-- FIN TITULO  MODAL  -->
 
-            <!-- CONTENIDO  MODAL  -->
-            <div class="modal-body" style="padding: 20px; background-color: #fff;">
-                <div class="row">
-                    <div class="col-md-12">
-                         <div id="labelMenuCategoriaDestacado" style="background-color: #B4432E; color: white; padding: 12px 20px; font-weight: bold; font-size: 18px; margin-bottom: 20px; border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);">
-                             <!-- Se llena via JS: MENU -> CATEGORIA -->
-                         </div>
-                    </div>
-                </div>
-
-                <div class="row" style="background-color: var(--t-fondo-alt, #FBF8F3); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--t-borde, #EADFD2);">
-                    <div class="col-md-1" style="display:none" data-id-auto="1">
-                        <label style="color: #B4432E;">ID</label>
-                        <input type="text" disabled class="form-control input-sm" id="IdDetalleCategoria" style="background-color: var(--t-fondo-alt, #FBF8F3); border: 1px solid var(--t-borde, #EADFD2); font-weight: bold; text-align: center;">
+            <div class="pc-cuerpo">
+                <div class="pc-cols">
+                    <!-- Agregar o editar un producto -->
+                    <div class="pc-tarjeta">
+                        <div class="pc-tarjeta-titulo"><span><i class="fa fa-plus-circle"></i>Agregar producto</span></div>
+                        <input type="hidden" id="IdDetalleCategoria">
                         <input type="hidden" id="IdDetalleCategoriaReal" value="">
-                    </div>
-                    <div class="col-md-7">
-                        <label style="color: #B4432E;">Producto <span id="labelRecetaProducto" style="font-weight: bold; color: var(--t-primario, #B4432E); margin-left: 15px; background: var(--t-primario-suave, #FBEEE8); padding: 2px 8px; border-radius: 10px; border: 1px solid var(--t-primario-borde, #EFD2C6); font-size: 10px;">SIN RECETA</span></label>
-                        <select id="cboSelectorProductosFinal" class="form-control input-sm" style="border: 1px solid var(--t-borde, #EADFD2);"></select>
-                    </div>
-                    <div class="col-md-2">
-                        <label style="color: #B4432E;">Costo</label>
-                        <input type="number" class="form-control input-sm text-right" id="CostoCategoriaMenu" value="0" style="border: 1px solid var(--t-borde, #EADFD2); font-weight: bold;">
-                    </div>
-                    <div class="col-md-3">
-                        <label style="color: #B4432E;">$ Adicional Vta</label>
-                        <input type="number" class="form-control input-sm text-right" id="AdicionalCategoriaMenu" value="0" style="border: 1px solid var(--t-borde, #EADFD2); font-weight: bold;">
-                    </div>
-                </div>
-
-                <div class="row" style="background-color: var(--t-fondo-alt, #FBF8F3); padding: 10px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--t-borde, #EADFD2); display: flex; align-items: center; gap: 20px;">
-                    <div style="margin-left: 15px;">
-                        <label style="cursor: pointer; color: var(--t-texto, #3A2A22); font-weight: bold;">
-                            <input type="checkbox" id="ckPermiteCambio" style="transform: scale(1.3); vertical-align: middle;"> &nbsp;Permitir Cambio
-                        </label>
-                    </div>
-                    <div>
-                        <label style="cursor: pointer; color: var(--t-texto, #3A2A22); font-weight: bold;">
-                            <input type="checkbox" id="ckImprimir" style="transform: scale(1.3); vertical-align: middle;"> &nbsp;Imprimir
-                        </label>
-                    </div>
-                </div>
-
-                <div class="row">
-                     <div class="col-md-10">
-                         <div class="panel panel-default" style="margin-bottom: 0; border: 1px solid var(--t-borde, #EADFD2); box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
-                            <div class="table-responsive" style="height: 380px; overflow-y: auto;">
-                                <table id="tableDetalleCategoria" class="table table-bordered table-condensed table-hover" style="margin-bottom: 0;">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 50px;">ID</th>
-                                            <th>Nombre del Producto</th>
-                                            <th class="text-right" style="width: 120px;">Costo Receta</th>
-                                            <th class="text-right" style="width: 120px;">Costo A/Venta</th>
-                                            <th class="text-center" style="width: 100px;">Permite Ca</th>
-                                            <th class="text-center" style="width: 80px;">Imp</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="DetalleCategoria">
-                                        <!-- Se llena via JS -->
-                                    </tbody>
-                                </table>
+                        <div class="pc-campo">
+                            <label for="cboSelectorProductosFinal">Producto <span class="pc-receta" id="labelRecetaProducto">SIN RECETA</span></label>
+                            <select id="cboSelectorProductosFinal" class="form-control input-sm" style="width:100%"></select>
+                        </div>
+                        <div class="pc-par">
+                            <div class="pc-campo">
+                                <label for="CostoCategoriaMenu">Costo receta</label>
+                                <input type="number" min="0" class="form-control text-right" id="CostoCategoriaMenu" value="0">
+                            </div>
+                            <div class="pc-campo">
+                                <label for="AdicionalCategoriaMenu">$ Adicional venta</label>
+                                <input type="number" min="0" class="form-control text-right" id="AdicionalCategoriaMenu" value="0" title="Lo que se suma al precio del menú si el cliente elige este producto">
                             </div>
                         </div>
-                        <style>
-                            #tableDetalleCategoria tbody tr.selected {
-                                background-color: var(--t-primario-suave, #FBEEE8) !important;
-                                color: var(--t-primario-osc, #933524) !important;
-                                font-weight: bold;
-                            }
-                        </style>
-                     </div>
-                     <div class="col-md-2 text-center">
-                         <div style="background-color: var(--t-fondo-alt, #FBF8F3); padding: 20px 10px; border-radius: 10px; border: 1px solid var(--t-borde, #EADFD2); height: 380px; display: flex; flex-direction: column; justify-content: center; gap: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                             <button onclick="GrabarDetalleCategoriaMenu()" type="button" class="btn btn-warning btn-block" style="height: 75px; font-weight: bold; font-size: 15px; line-height: 1.3; border-radius: 8px;">
-                                 <i class="fa fa-plus-circle" style="font-size: 20px;"></i><br>AÑADIR /<br>ACTUALIZAR
-                             </button>
-                             
-                             <button onclick="NuevoDetalleProducto()" type="button" class="btn btn-default btn-block" style="height: 50px; font-weight: bold; border: 1px solid var(--t-borde, #EADFD2); box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-radius: 8px;">
-                                 <i class="fa fa-eraser"></i> Limpiar / Nuevo
-                             </button>
-                             
-                             <button onclick="QuitarProductoDeCategoria()" type="button" class="btn btn-danger btn-block" style="height: 50px; font-weight: bold; box-shadow: 0 4px 8px rgba(217,83,79,0.2); border-radius: 8px;">
-                                 <i class="fa fa-trash"></i> Quitar
-                             </button>
-                         </div>
-                     </div>
-                </div>
-
-                <div class="row" style="margin-top: 20px; background-color: var(--t-fondo-alt, #FBF8F3); padding: 15px; border-radius: 8px; border: 1px solid var(--t-borde, #EADFD2);">
-                    <div class="col-md-2" style="font-weight: bold; font-size: 15px; padding-top: 10px; color: var(--t-texto, #3A2A22);">
-                        Ítems: <span id="lblCantProductosCategoria" class="badge" style="background-color: var(--t-primario, #B4432E); font-size: 14px;">0</span>
-                    </div>
-                    <div class="col-md-6 text-center">
-                        <div style="border: 2px dashed var(--t-primario-borde, #EFD2C6); padding: 8px 15px; display: inline-block; border-radius: 12px; background-color: white;">
-                            <span style="font-weight: bold; color: var(--t-texto, #3A2A22); margin-right: 15px; font-size: 13px;"><i class="fa fa-sliders"></i> LÍMITES DE SELECCIÓN</span>
-                            Mínima <input type="number" id="CantMinima" style="width: 55px; background-color: var(--t-primario-suave, #FBEEE8); color: var(--t-primario, #B4432E); border: 1px solid var(--t-primario-borde, #EFD2C6); text-align: center; border-radius: 4px; font-weight: bold; height: 28px; margin: 0 5px;" value="0">
-                            &nbsp;
-                            Máxima <input type="number" id="CantMaxima" style="width: 55px; background-color: var(--t-primario-suave, #FBEEE8); color: var(--t-primario, #B4432E); border: 1px solid var(--t-primario-borde, #EFD2C6); text-align: center; border-radius: 4px; font-weight: bold; height: 28px; margin: 0 5px;" value="5">
-                            &nbsp;
-                            <label style="cursor: pointer; margin-left: 10px; color: var(--t-texto, #3A2A22);"><input type="checkbox" id="ckEstricto" style="transform: scale(1.2); vertical-align: middle;"> &nbsp;Estricto</label>
+                        <div class="pc-opciones">
+                            <label class="pc-opcion"><input type="checkbox" id="ckPermiteCambio"> Permitir cambio</label>
+                            <label class="pc-opcion" title="Sale en la comanda de cocina / barra"><input type="checkbox" id="ckImprimir"> Imprimir</label>
+                        </div>
+                        <div class="pc-botones">
+                            <button onclick="GrabarDetalleCategoriaMenu()" type="button" class="btn btn-success btn-block"><i class="fa fa-plus-circle"></i> Añadir / actualizar</button>
+                            <div class="pc-botones-fila">
+                                <button onclick="NuevoDetalleProducto()" type="button" class="btn btn-default"><i class="fa fa-eraser"></i> Nuevo</button>
+                                <button onclick="QuitarProductoDeCategoria()" type="button" class="btn btn-danger"><i class="fa fa-trash"></i> Quitar</button>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-4 text-right">
-                        <div style="display: inline-block; vertical-align: middle; font-weight: bold; font-size: 15px; color: var(--t-texto, #3A2A22); text-transform: uppercase; letter-spacing: 1px;">Costo Promedio</div>
-                        <div id="lblCostoPromedioCategoria" style="display: inline-block; background-color: var(--t-primario-suave, #FBEEE8); color: var(--t-primario, #B4432E); padding: 10px 25px; font-weight: bold; font-size: 22px; margin-left: 15px; border-radius: 6px; box-shadow: none; border: 1px solid var(--t-primario-borde, #EFD2C6); min-width: 80px; text-align: center;">0</div>
+
+                    <!-- Lo que ya tiene la categoría -->
+                    <div class="pc-tarjeta">
+                        <div class="pc-tarjeta-titulo"><span><i class="fa fa-list"></i>En esta categoría</span><span class="pc-contador" id="lblCantProductosCategoria">0</span></div>
+                        <div class="pc-lista">
+                            <table id="tableDetalleCategoria" class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Producto</th>
+                                        <th class="text-right">Costo receta</th>
+                                        <th class="text-right">Adicional</th>
+                                        <th class="text-center">Cambio</th>
+                                        <th class="text-center">Imprime</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="DetalleCategoria"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pc-pie">
+                    <div class="pc-tarjeta">
+                        <div class="pc-tarjeta-titulo"><span><i class="fa fa-sliders"></i>Reglas de selección</span></div>
+                        <div class="pc-reglas">
+                            <div class="pc-campo"><label for="CantMinima">Mínima</label><input type="number" min="0" max="50" class="form-control" id="CantMinima" value="0"></div>
+                            <div class="pc-campo"><label for="CantMaxima">Máxima</label><input type="number" min="0" max="50" class="form-control" id="CantMaxima" value="5"></div>
+                            <label class="pc-opcion"><input type="checkbox" id="ckEstricto"> Estricto (obligatorio)</label>
+                            <p class="pc-ayuda">Cuántos productos de esta categoría elige el cliente en la Caja. Máxima 0 = sin límite. Con "Estricto" no se puede agregar el menú sin elegir la mínima.</p>
+                        </div>
+                    </div>
+                    <div class="pc-tarjeta pc-promedio">
+                        <small>Costo promedio</small>
+                        <b id="lblCostoPromedioCategoria">0</b>
                     </div>
                 </div>
             </div>
+
             <div class="modal-footer">
-                <button onclick="GrabarConfiguracionCategoriaMenu()" type="button" class="btn btn-primary" style="font-weight: bold; width: 120px;">
-                    GRABAR
-                </button>
-                <button type="button" class="btn btn-default" data-dismiss="modal" style="font-weight: bold; width: 120px;">Salir</button>                
+                <button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
+                <button onclick="GrabarConfiguracionCategoriaMenu()" type="button" class="btn btn-success"><i class="fa fa-check"></i> Grabar</button>
             </div>
         </div>
     </div>
