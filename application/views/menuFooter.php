@@ -235,53 +235,37 @@
            * @param {string} [opts.paletteClass] Clase de color alternativa (ej: "alert7") para usar tu paleta
            */
           function showAppAlert(type, body, opts){
+            // v1.24.5: todos los avisos del sistema con el mismo diseño de la Caja (toastr: tarjeta blanca, franja e ícono
+            // del color del tipo). Antes era un cuadro verde o rojo con un GIF (#appAlert). Se mantiene la misma firma:
+            // type success / error (también warning e info), body con HTML simple o saltos de línea, opts.title y
+            // opts.duration (ms; 0 = queda hasta cerrarlo). opts.image y opts.position ya no se usan.
             opts = opts || {};
-            var $box   = $('#appAlert');
-            var $title = $('#appAlertTitle');
-            var $body  = $('#appAlertBody');
-            var $img   = $('#appAlertImg');
-
-            // limpiar clases de estado y de posición
-            var states = 'alert--success alert--error alert1 alert2 alert3 alert4 alert5 alert6 alert7 alert8 alert9';
-            var positions = 'kode-alert-top-right kode-alert-top-left kode-alert-bottom-right kode-alert-bottom-left kode-alert-top kode-alert-bottom';
-
-            $box.removeClass(states + ' ' + positions);
-
-            // posición
-            var posMap = {
-              'top-right':'kode-alert-top-right',
-              'top-left':'kode-alert-top-left',
-              'bottom-right':'kode-alert-bottom-right',
-              'bottom-left':'kode-alert-bottom-left',
-              'top':'kode-alert-top',
-              'bottom':'kode-alert-bottom'
-            };
-            var posClass = posMap[opts.position || 'top-right'] || 'kode-alert-top-right';
-            $box.addClass(posClass);
-
-            // color / estado
-            var stateClass = opts.paletteClass ? opts.paletteClass :
-                             (type === 'success' ? 'alert--success' : 'alert--error');
-            $box.addClass(stateClass);
-
-            // contenido
-            $title.text(opts.title || (type === 'success' ? 'Operación exitosa' : 'Ocurrió un error'));
-            $body.html(body || '');
-
-            // imagen opcional
-            if (opts.image){ $img.attr('src', opts.image).show(); } else { $img.hide(); }
-
-            // mostrar
-            $box.stop(true,true).fadeIn(200);
-
-            // autocerrar
-            var duration = (typeof opts.duration === 'number') ? opts.duration : 4000;
-            if (duration > 0){
-              clearTimeout($box.data('hideTimer'));
-              var t = setTimeout(function(){ $box.fadeOut(200); }, duration);
-              $box.data('hideTimer', t);
-            }
+            var tipo = { success: 'success', error: 'error', warning: 'warning', info: 'info' }[type] || (type === 'ok' ? 'success' : 'error');
+            var titulos = { success: 'Operación exitosa', error: 'Ocurrió un error', warning: 'Atención', info: 'Información' };
+            var texto = String(body == null ? '' : body).replace(/^\s+|\s+$/g, '').replace(/\r?\n/g, '<br>');
+            var duracion = (typeof opts.duration === 'number') ? opts.duration : (tipo === 'error' ? 7000 : 4000);
+            if (!window.toastr) { if (texto) window.console && console.log(tipo, texto); return; }
+            toastr[tipo](texto, opts.title || titulos[tipo], {
+              escapeHtml: false,   // los mensajes de las pantallas traen HTML simple (<b>, <br>)
+              timeOut: duracion, extendedTimeOut: duracion > 0 ? 2000 : 0,
+              closeButton: true, progressBar: duracion > 0, newestOnTop: true,
+              preventDuplicates: false
+            });
           }
+          window.showAppAlert = showAppAlert;
+
+          // v1.24.5: los alert() del navegador (ventana gris que bloquea la pantalla) salen como aviso del sistema
+          (function () {
+            var nativo = window.alert;
+            window.alert = function (msg) {
+              if (!window.toastr) return nativo.apply(window, arguments);
+              var t = String(msg == null ? '' : msg);
+              var esError = /error|no se pudo|fall|inv[aá]lid/i.test(t);
+              var limpio = $('<div>').text(t).html().replace(/\r?\n/g, '<br>');
+              toastr[esError ? 'error' : 'warning'](limpio, esError ? 'Ocurrió un error' : 'Atención',
+                { escapeHtml: false, timeOut: 6000, extendedTimeOut: 2000, closeButton: true, progressBar: true });
+            };
+          })();
 
           // Opcional: cerrar al presionar ESC
           $(document).on('keyup', function(e){

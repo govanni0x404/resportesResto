@@ -1,4 +1,30 @@
 <style>
+/* v1.24.5: agregar agregados de a uno o varios a la vez */
+.ag-modo { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 12px; border-radius: 10px; background: var(--t-fondo-alt, #F3F4F6); border: 1px solid var(--t-borde, #E5E7EB); }
+.ag-modo-btn { border: 0; background: transparent; padding: 7px 14px; border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--t-texto-suave, #4B5563); }
+.ag-modo-btn i { margin-right: 5px; }
+.ag-modo-btn:hover { color: var(--t-texto-fuerte, #111827); }
+.ag-modo-btn.activo { background: #fff; color: var(--t-primario, #15803D); box-shadow: 0 1px 3px rgba(17, 24, 39, .12); }
+.ag-varios { border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; overflow: hidden; background: #fff; }
+.ag-varios-barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px; background: var(--t-tinte, #F7FBF8); border-bottom: 1px solid var(--t-borde, #E5E7EB); }
+.ag-buscar { position: relative; flex: 1 1 200px; }
+.ag-buscar i { position: absolute; left: 10px; top: 50%; margin-top: -7px; color: var(--t-texto-tenue, #6B7280); }
+.ag-buscar input { padding-left: 30px; }
+.ag-varios-barra .btn i { margin-right: 4px; }
+.ag-varios-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px; max-height: 260px; overflow-y: auto; padding: 10px; }
+.ag-op { display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 10px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 8px;
+    cursor: pointer; font-size: 13px; font-weight: 600; color: var(--t-texto, #1F2937); text-transform: none !important; letter-spacing: 0 !important; transition: border-color .12s, background .12s; }
+.ag-op:hover { border-color: var(--t-primario-borde, #BBE3C9); }
+.ag-op input { margin: 0; accent-color: var(--t-primario, #15803D); }
+.ag-op span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ag-op.elegido { border-color: var(--t-primario, #15803D); background: var(--t-primario-suave, #E8F5EC); }
+.ag-op.ya-esta { opacity: .55; cursor: default; background: var(--t-fondo-alt, #F3F4F6); }
+.ag-op.ya-esta small { font-weight: 600; color: var(--t-texto-tenue, #6B7280); }
+.ag-varios-vacio { grid-column: 1 / -1; padding: 18px; text-align: center; color: var(--t-texto-tenue, #6B7280); }
+.ag-varios-pie { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; justify-content: space-between; padding: 8px 12px; border-top: 1px solid var(--t-borde, #E5E7EB); background: var(--t-fondo-alt, #F3F4F6); }
+.ag-varios-pie span { font-weight: 700; color: var(--t-primario-osc, #116632); }
+.ag-varios-pie small { color: var(--t-texto-tenue, #6B7280); }
+
 /* Modales de productos (solo estilos) */
 .t-modal-form .modal-header { border-top: 3px solid var(--t-primario, #B4432E); }
 .t-modal-form .modal-title { text-align: left; }
@@ -672,18 +698,29 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
-                            <!-- v1.24.2: elegir varios agregados de una vez (sin marcar, de uno en uno como siempre) -->
-                            <div class="col-md-12" style="margin-bottom:6px">
-                                <div class="checkbox checkbox-success" style="margin:0">
-                                    <input id="ckVariosAgregados" type="checkbox">
-                                    <label for="ckVariosAgregados">SELECCIONAR VARIOS A LA VEZ</label>
-                                </div>
-                            </div>
+                            <!-- v1.24.5: modo de agregar: de a uno (como siempre) o varios a la vez (lista con buscador) -->
                             <div class="col-md-12">
+                                <div class="ag-modo" role="tablist" aria-label="Cómo agregar">
+                                    <button type="button" class="ag-modo-btn activo" data-modo="uno" role="tab" aria-selected="true"><i class="fa fa-plus"></i> De a uno</button>
+                                    <button type="button" class="ag-modo-btn" data-modo="varios" role="tab" aria-selected="false"><i class="fa fa-th-list"></i> Varios a la vez</button>
+                                </div>
+                                <input id="ckVariosAgregados" type="checkbox" hidden>
+                            </div>
+                            <div class="col-md-12" id="bloqueUnAgregado">
                                 <label for="cboProductoAgregadoProductos" id="lblProductoAgregado">PRODUCTO DE AGREGADO</label>
                                 <select id="cboProductoAgregadoProductos" nombre="cboProductoAgregadoProductos"
                                     class="form-control input-sm" style="width:100%" requerido="si"></select>
-                                <p class="help-block" id="ayudaVariosAgregados" style="display:none;font-size:12px;margin:4px 0 0">Elige todos los productos que quieras: se agregan juntos con la cantidad, el valor adicional y las opciones de abajo. Los que ya están en la lista se saltan.</p>
+                            </div>
+                            <div class="col-md-12" id="bloqueVariosAgregados" style="display:none">
+                                <div class="ag-varios">
+                                    <div class="ag-varios-barra">
+                                        <div class="ag-buscar"><i class="fa fa-search"></i><input type="text" id="txtBuscarVariosAgregados" class="form-control input-sm" placeholder="Buscar producto…" autocomplete="off"></div>
+                                        <button type="button" class="btn btn-default btn-sm" id="btnMarcarVisiblesAg"><i class="fa fa-check-square-o"></i> Marcar los que se ven</button>
+                                        <button type="button" class="btn btn-default btn-sm" id="btnLimpiarAg"><i class="fa fa-eraser"></i> Limpiar</button>
+                                    </div>
+                                    <div class="ag-varios-lista" id="listaVariosAgregados"></div>
+                                    <div class="ag-varios-pie"><span id="lblElegidosAg">Ningún producto elegido</span><small>La cantidad, el valor adicional y las opciones de abajo se aplican a todos.</small></div>
+                                </div>
                             </div>
                         </fieldset>
                         <fieldset>

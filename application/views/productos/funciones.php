@@ -435,6 +435,7 @@ function ListadoDeAgregadosParaElProducto(objSelected, selectorId) {
             if ($.fn.select2) {
                 $(selectorId).select2();
             }
+            $(selectorId).trigger('opciones-cargadas');   // v1.24.5: la lista de "varios agregados" se arma con estas opciones
         },
         error: function(xhr, status, error) {
             console.error("Error detallado en la petición AJAX (FUNC):", {xhr: xhr, status: status, error: error});

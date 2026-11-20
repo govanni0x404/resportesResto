@@ -82,6 +82,7 @@ function ObtenerAgregadosDelProducto(idProducto) {
         
         $("#detalleAgregadosDelProducto").html(tbl);
         initValidacionesAgregados();
+        if ($('#ckVariosAgregados').is(':checked')) pintarVariosAgregados();   // v1.24.5
     }).fail(function(xhr, status, error) {
         console.error("Error al obtener agregados:", error);
         showAppAlert('error', "Error al cargar agregados: " + error, {
@@ -125,26 +126,69 @@ function initValidacionesAgregados() {
     });
 }
 
-// ---- v1.24.2: varios agregados a la vez ----
-// Con "Seleccionar varios a la vez" la lista pasa a ser de selección múltiple; sin marcar, de uno en uno (como siempre)
+// ---- v1.24.5: varios agregados a la vez (lista con buscador). "De a uno" funciona como siempre ----
+var agElegidos = {};   // id_producto => true
 function modoVariosAgregados(varios) {
-    var $s = $('#cboProductoAgregadoProductos');
-    if ($.fn.select2 && $s.hasClass('select2-hidden-accessible')) $s.select2('destroy');
-    $s.prop('multiple', !!varios);
-    // La opción "SELECCIONE EL PRODUCTO" (0) solo sirve de uno en uno
-    $s.find('option[value="0"]').prop('disabled', !!varios).prop('selected', !varios);
-    if (varios) $s.val([]);
-    if ($.fn.select2) $s.select2(varios ? { placeholder: 'Elige los productos agregados', closeOnSelect: false, width: '100%' } : { width: '100%' });
-    $('#lblProductoAgregado').text(varios ? 'PRODUCTOS DE AGREGADO (VARIOS)' : 'PRODUCTO DE AGREGADO');
-    $('#ayudaVariosAgregados').toggle(!!varios);
+    varios = !!varios;
+    $('#ckVariosAgregados').prop('checked', varios);
+    $('.ag-modo-btn').each(function () {
+        var on = ($(this).data('modo') === 'varios') === varios;
+        $(this).toggleClass('activo', on).attr('aria-selected', on ? 'true' : 'false');
+    });
+    $('#bloqueUnAgregado').toggle(!varios);
+    $('#bloqueVariosAgregados').toggle(varios);
     $('#btnGrabarAgregado').html('<i class="fa fa-check"></i> ' + (varios ? 'GRABAR AGREGADOS' : 'GRABAR AGREGADO'));
+    if (varios) { agElegidos = {}; $('#txtBuscarVariosAgregados').val(''); pintarVariosAgregados(); setTimeout(function () { $('#txtBuscarVariosAgregados').focus(); }, 50); }
 }
-$(document).on('change', '#ckVariosAgregados', function () { modoVariosAgregados(this.checked); });
+$(document).on('click', '.ag-modo-btn', function () { modoVariosAgregados($(this).data('modo') === 'varios'); });
+
+/** Productos que se pueden elegir: los de la lista "producto de agregado" (sin el mismo producto) */
+function productosParaAgregar() {
+    var maestro = String($('#txtID').val());
+    return $('#cboProductoAgregadoProductos option').map(function () {
+        var id = String(this.value);
+        return id && id !== '0' && id !== maestro ? { id: id, nombre: $(this).text() } : null;
+    }).get();
+}
+function idsYaAgregados() {
+    var ya = {};
+    $('#detalleAgregadosDelProducto tr[data-id-producto]').each(function () { ya[String($(this).data('id-producto'))] = true; });
+    return ya;
+}
+function pintarVariosAgregados() {
+    var texto = $.trim($('#txtBuscarVariosAgregados').val()).toLowerCase(), ya = idsYaAgregados();
+    var todos = productosParaAgregar();
+    if (!todos.length) { $('#listaVariosAgregados').html('<div class="ag-varios-vacio"><i class="fa fa-spinner fa-spin"></i> Cargando productos…</div>'); contarVariosAgregados(); return; }
+    var lista = $.grep(todos, function (p) { return !texto || p.nombre.toLowerCase().indexOf(texto) >= 0; });
+    var esc = function (t) { return $('<div>').text(t).html(); };
+    $('#listaVariosAgregados').html(lista.length ? $.map(lista, function (p) {
+        if (ya[p.id]) return '<label class="ag-op ya-esta" title="Ya es agregado de este producto"><input type="checkbox" disabled checked><span>' + esc(p.nombre) + '</span><small>Ya está</small></label>';
+        return '<label class="ag-op' + (agElegidos[p.id] ? ' elegido' : '') + '" data-id="' + esc(p.id) + '"><input type="checkbox"' + (agElegidos[p.id] ? ' checked' : '') + '><span title="' + esc(p.nombre) + '">' + esc(p.nombre) + '</span></label>';
+    }).join('') : '<div class="ag-varios-vacio">No hay productos con ese nombre</div>');
+    contarVariosAgregados();
+}
+function contarVariosAgregados() {
+    var n = Object.keys(agElegidos).length;
+    $('#lblElegidosAg').text(n === 0 ? 'Ningún producto elegido' : (n === 1 ? '1 producto elegido' : n + ' productos elegidos'));
+}
+$(document).on('input', '#txtBuscarVariosAgregados', pintarVariosAgregados);
+$(document).on('opciones-cargadas', '#cboProductoAgregadoProductos', function () { if ($('#ckVariosAgregados').is(':checked')) pintarVariosAgregados(); });
+$(document).on('change', '#listaVariosAgregados .ag-op[data-id] input', function () {
+    var $op = $(this).closest('.ag-op'), id = String($op.data('id'));
+    if (this.checked) agElegidos[id] = true; else delete agElegidos[id];
+    $op.toggleClass('elegido', this.checked);
+    contarVariosAgregados();
+});
+$(document).on('click', '#btnMarcarVisiblesAg', function () {
+    $('#listaVariosAgregados .ag-op[data-id]').each(function () { agElegidos[String($(this).data('id'))] = true; });
+    pintarVariosAgregados();
+});
+$(document).on('click', '#btnLimpiarAg', function () { agElegidos = {}; pintarVariosAgregados(); });
 
 /** Graba los agregados elegidos uno tras otro (mismo grabado que de a uno) y avisa cuántos quedaron */
 function grabarVariosAgregados() {
     var productoMaestro = $('#txtID').val();
-    var elegidos = ($('#cboProductoAgregadoProductos').val() || []).filter(function (v) { return v && v !== '0'; });
+    var elegidos = Object.keys(agElegidos);   // v1.24.5: los marcados en la lista
     var cantidad = $('#cantidadAgregado').val();
     var valor = $('#valorAdicionalAgregado').val();
     if (!elegidos.length) {
@@ -190,8 +234,8 @@ function grabarVariosAgregados() {
                 + (saltados.length ? '. Se saltaron: ' + saltados.join(', ') : '')
                 + (errores.length ? '. No se pudieron grabar: ' + errores.join(', ') : '');
             showAppAlert(errores.length && !ok ? 'error' : 'success', texto, { duration: 6000, image: base_url + 'assets/img/' + (errores.length && !ok ? 'errorGif.gif' : 'success.gif') });
-            $('#cboProductoAgregadoProductos').val([]).trigger('change');
-            ObtenerAgregadosDelProducto(productoMaestro);
+            agElegidos = {};
+            ObtenerAgregadosDelProducto(productoMaestro);   // al recargar, la lista de "varios" se vuelve a pintar
             return;
         }
         var id = pendientes[i];
