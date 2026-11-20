@@ -40,13 +40,16 @@
         letter-spacing: 0 !important; color: var(--t-texto) !important; font-size: 13px !important; }
     .tv-mesa input { margin: 3px 0 0; }
     .tv-mesa small { display: block; font-weight: 400; color: var(--t-texto-tenue); }
-    .tv-mesa.marcada { border-color: #B4432E; }
     .tv-contador { font-size: 13px; color: var(--t-texto-suave); margin: 8px 0 0; }
-    /* v1.21.1: "Crear tipo de mesa" al lado del título del select, y su modal encima de los otros */
-    .ntm-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
-    .ntm-cabecera label { margin: 0 !important; }
-    .ntm-cabecera .btn i { margin-right: 3px; }
-    #ModalCrearTipoMesa { z-index: 1060; }
+    /* v1.21.2: "Nuevo" junto al título del select, igual que en la carta de productos */
+    .t-form-modal label sup a { cursor: pointer; text-transform: none; font-weight: 600; margin-left: 4px; }
+    /* Herramientas para marcar mesas: una tarjeta como las del sistema */
+    .tv-herramientas { padding: 10px 12px; border: 1px solid var(--t-borde); border-radius: var(--t-radio-sm); background: var(--t-tinte, #F7FBF8); }
+    .tv-herramientas label { font-size: 11px !important; }
+    .tv-herramientas .btn i, #ModalTipoVarias .modal-title i { margin-right: 4px; }
+    .tv-mesa:hover { border-color: var(--t-primario-borde); }
+    .tv-mesa.marcada { border-color: var(--t-primario); background: var(--t-primario-suave); }
+    .tv-mesa input { accent-color: var(--t-primario); }
     @media (max-width: 480px) { .tv-lista { grid-template-columns: repeat(2, 1fr); } }
 </style>
 <div class="content-header">
@@ -79,7 +82,7 @@
                         <div class="t-acciones">
                             <button onclick="AbrirModalNuevaMesa()" type="button" class="btn btn-primary btn-crear-nuevo"><i class="fa fa-plus"></i> Crear Nueva Mesa</button>
                             <!-- v1.21.0: cambiar el tipo de muchas mesas de una vez (no una por una) -->
-                            <button onclick="AbrirModalTipoVarias()" type="button" class="btn btn-default" id="btnTipoVarias" style="display:none"><i class="fa fa-exchange"></i> Cambiar varias mesas a otro tipo</button>
+                            <button onclick="AbrirModalTipoVarias()" type="button" class="btn btn-info" id="btnTipoVarias" style="display:none"><i class="fa fa-exchange"></i> Cambiar varias mesas a otro tipo</button>
                         </div>
                     </div>
                     <p class="t-lista-ayuda"><i class="fa fa-hand-pointer-o"></i> Haga clic en una fila para ver o editar el registro.</p>

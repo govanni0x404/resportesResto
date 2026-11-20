@@ -24,6 +24,7 @@ class Mesas extends CI_Controller
     $this->load->view('menuFooter.php');
     $this->load->view('mesas/listadoMesas.php');
     $this->load->view('mesas/jsNuevaMesa.php');
+    $this->load->view('tipoMesa/modalTipoMesa.php');   // v1.21.2: crear tipo de mesa con el mismo modal de Tipos de mesa
     $this->load->view('funciones.php');
   }
 

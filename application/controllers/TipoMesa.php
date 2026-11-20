@@ -22,6 +22,7 @@ class TipoMesa extends CI_Controller
 		$this->load->view('menuTop.php', $data);
 		$this->load->view('tipoMesa/tipoMesa.php');
 		$this->load->view('menuFooter.php');
+		$this->load->view('tipoMesa/modalTipoMesa.php');   // v1.21.2: el mismo modal que usa Mesas
 		$this->load->view('tipoMesa/js.php');
 	}
 

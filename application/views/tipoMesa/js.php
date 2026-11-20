@@ -14,12 +14,6 @@
 			}
 			swal('Error', msg, 'error');
 		}
-		// Igual que Mtipomesa::nombre
-		function nombreMesa(n, prefijo, espacio) {
-			prefijo = $.trim(String(prefijo || '').replace(/\s+/g, ' '));
-			return 'Mesa ' + (prefijo ? prefijo + (espacio ? ' ' : '') : '') + n;
-		}
-
 		function pintar() {
 			if (!tipos.length) {
 				$('#cuerpoTipoMesa').html('<tr><td colspan="4" class="tm-vacio"><i class="fa fa-tags"></i>Aún no hay tipos de mesa.<br>Pulsa <b>Nuevo tipo</b> para agregar el primero.</td></tr>');
@@ -44,44 +38,14 @@
 			});
 		}
 
-		function vista() {
-			$('#tmVista').text(nombreMesa(1, $('#tmPrefijo').val(), $('#tmEspacio').is(':checked')));
-		}
-		$('#tmPrefijo').on('input', vista);
-		$('#tmEspacio').on('change', vista);
-
+		// v1.21.2: el modal es el compartido (tipoMesa/modalTipoMesa.php), el mismo que usa Mesas
 		function abrir(t) {
-			$('#tituloTipoMesa').text(t ? 'Editar tipo de mesa' : 'Nuevo tipo de mesa');
-			$('#tmId').val(t ? t.id : 0);
-			$('#tmNombre').val(t ? t.nombre : '');
-			$('#tmPrefijo').val(t ? t.prefijo : '');
-			$('#tmEspacio').prop('checked', t ? t.espacio : false);
-			$('#tmVigente').prop('checked', t ? t.vigente : true);
-			vista();
-			$('#modalTipoMesa').modal('show');
+			TipoMesaModal.abrir(t || null, function (r) { tipos = r.tipos || []; pintar(); });
 		}
-		$('#modalTipoMesa').on('shown.bs.modal', function () { $('#tmNombre').focus(); });
 		$('#btnNuevoTipo').on('click', function () { abrir(null); });
 		$('#cuerpoTipoMesa').on('click', 'tr[data-id]', function () {
 			var id = +$(this).data('id');
 			abrir($.grep(tipos, function (t) { return t.id === id; })[0]);
-		});
-
-		$('#frmTipoMesa').on('submit', function (e) {
-			e.preventDefault();
-			var d = {
-				id: $('#tmId').val(), nombre: $.trim($('#tmNombre').val()), prefijo: $.trim($('#tmPrefijo').val()),
-				espacio: $('#tmEspacio').is(':checked') ? 1 : 0, vigente: $('#tmVigente').is(':checked') ? 1 : 0
-			};
-			if (!d.nombre) { toastr.warning('Escribe el nombre del tipo de mesa'); $('#tmNombre').focus(); return; }
-			var $b = $('#btnGuardarTipo').prop('disabled', true);
-			$.ajax({ url: base + 'guardar', type: 'POST', dataType: 'json', data: d }).done(function (r) {
-				tipos = r.tipos || [];
-				pintar();
-				$('#modalTipoMesa').modal('hide');
-				toastr.success('Tipo de mesa guardado');
-			}).fail(function (xhr) { error(xhr, 'No se pudo guardar el tipo de mesa'); })
-				.always(function () { $b.prop('disabled', false); });
 		});
 
 		cargar();
