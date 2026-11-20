@@ -22,6 +22,11 @@ class Compras extends CI_Controller
     // La vista va antes del pie (como en Mesas o Productos) para quedar dentro del área de contenido
     $this->load->view('compras/compras.php');
     $this->load->view('menuFooter.php');
+    // v1.20.1: nuevo proveedor e insumos traen su JavaScript: van después del pie, donde ya está cargado jQuery
+    // (antes los cargaba compras.php antes del pie y el navegador daba "$ is not defined")
+    $this->load->view('proveedor/jsNuevoProveedor.php');
+    $this->load->view('insumos/js.php');
+    $this->load->view('insumos/modalInsumos.php');
     $this->load->view('compras/funciones.php');
     $this->load->view('compras/js.php', $data);
   }

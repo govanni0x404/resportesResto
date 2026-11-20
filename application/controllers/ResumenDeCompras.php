@@ -84,11 +84,30 @@ class ResumenDeCompras extends CI_Controller
 		$pdf->SetX(68);
 		$pdf->Cell(40, 5, number_format($resumenDeComprasPDF[0]->total), 0, 0, 'R');
 
+		// v1.20.1: detalle de lo comprado (antes el PDF traía solo el encabezado y el total)
+		$detalle = $this->MresumenDeCompras->detalleFacturas((int)$idCompra);
+		$filas = isset($detalle['aaData']) ? $detalle['aaData'] : array();
+		if ($filas) {
+			$pdf->Ln(10);
+			$pdf->SetFont('Arial', 'B', 9);
+			$pdf->Cell(95, 6, 'INSUMO', 1);
+			$pdf->Cell(25, 6, 'CANTIDAD', 1, 0, 'R');
+			$pdf->Cell(30, 6, 'P. UNITARIO', 1, 0, 'R');
+			$pdf->Cell(30, 6, 'TOTAL', 1, 1, 'R');
+			$pdf->SetFont('Arial', '', 9);
+			foreach ($filas as $f) {
+				$cant = rtrim(rtrim(number_format((float)$f['cantidad'], 3, ',', '.'), '0'), ',');
+				$pdf->Cell(95, 6, mb_convert_encoding(mb_substr((string)$f['nombre_insumo'], 0, 55), 'ISO-8859-1', 'UTF-8'), 1);
+				$pdf->Cell(25, 6, $cant, 1, 0, 'R');
+				$pdf->Cell(30, 6, '$ ' . number_format((float)$f['bruto_unitario'], 0, ',', '.'), 1, 0, 'R');
+				$pdf->Cell(30, 6, '$ ' . number_format((float)$f['total'], 0, ',', '.'), 1, 1, 'R');
+			}
+		}
 
-		$pdf->SetTitle("Cierre de Caja Consolidado");
+		$pdf->SetTitle('Resumen de compra');
 
 		ob_start();
-		$pdf->Output('I', 'Cierre de Caja Consolidado.pdf');
+		$pdf->Output('I', 'Resumen de compra.pdf');
 		ob_end_flush();
 	}
 }

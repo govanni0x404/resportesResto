@@ -152,6 +152,7 @@ class Configuraciones extends CI_Controller {
         // NUMÉRICOS (nombres exactos según la BD)
         $numeric_fields = [
             'por_maximodescuento',
+            'cant_agregados',   // v1.20.1: máximo de agregados por producto en la Caja (1 a 20)
             'seg_bloqueo_seleccion_mesa',
             'copias_dte',
             'timeout',
@@ -188,6 +189,7 @@ class Configuraciones extends CI_Controller {
         }
         // 18-11-2026: el costo de envío no puede ser negativo
         if (isset($update_config['delivery_costo_envio'])) $update_config['delivery_costo_envio'] = max(0, $update_config['delivery_costo_envio']);
+        if (isset($update_config['cant_agregados'])) $update_config['cant_agregados'] = max(1, min(20, $update_config['cant_agregados']));
 
         // TEXTO / OTROS (nombres exactos según la BD)
         $text_fields = [

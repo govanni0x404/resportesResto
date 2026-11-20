@@ -95,6 +95,7 @@ class Ticket_local
 			if ((int)$v->descuento_mostrar > 0) $this->fila('Descuento', '-' . $m($v->descuento_mostrar), $W);
 			$this->fila('Monto neto', $m($v->neto), $W);
 			$this->fila('IVA (19%)', $m($v->iva), $W);
+			if ((int)abs((int)($v->ila ?? 0)) > 0) $this->fila('ILA', $m($v->ila), $W);   // v1.20.1
 			if ($v->monto_exento > 0) $this->fila('Monto exento', $m($v->monto_exento), $W);
 			$this->op('fontsize', 2);
 			$this->op('fontbold', true);

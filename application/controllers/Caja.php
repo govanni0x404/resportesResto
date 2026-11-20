@@ -1415,6 +1415,7 @@ class Caja extends CI_Controller
 			if ((int)$v->descuento_mostrar > 0) $totales[] = array('Descuento', -$v->descuento_mostrar);
 			$totales[] = array('Monto neto', $v->neto);
 			$totales[] = array('IVA (19%)', $v->iva);
+			if ((int)abs((int)($v->ila ?? 0)) > 0) $totales[] = array('Impuesto adicional (ILA)', $v->ila);   // v1.20.1
 			if ($v->monto_exento > 0) $totales[] = array('Monto exento', $v->monto_exento);
 			$totales[] = array('TOTAL', $v->total);
 			$propina = isset($v->valor_propina) ? (int)$v->valor_propina : 0;

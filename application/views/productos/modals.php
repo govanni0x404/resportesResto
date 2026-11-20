@@ -43,6 +43,18 @@
     .t-prod-modal .h-panel > .row > [class*="col-md-"] { display: flex; flex-direction: column; }
     .t-prod-modal .h-panel > .row > [class*="col-md-"] > .tab-pane { flex: 1; }
 }
+/* v1.20.1: modales de productos centrados en la pantalla. La regla general (theme.css) los deja a 90 px de arriba y el de
+   la Carta, más alto que la ventana, quedaba muy abajo y cortado. Con margin:auto dentro de un flex se centran si caben y,
+   si no, parten arriba sin cortarse. El de la Carta además nunca pasa del alto de la ventana: título y botones Grabar /
+   Salir siempre a la vista y el formulario se desliza por dentro. */
+@media (min-width: 768px) {
+    .t-modal-form.in { display: flex !important; }
+    .t-modal-form .modal-dialog { margin: auto !important; padding: 16px 0; }
+    .t-prod-modal .modal-dialog { width: calc(100% - 48px); }
+    .t-prod-modal .modal-content { max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
+    .t-prod-modal .modal-header, .t-prod-modal .modal-footer { flex: 0 0 auto; }
+    .t-prod-modal .modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+}
 @media (max-width: 480px) {
     .t-modal-form .modal-footer { display: flex; flex-direction: column-reverse; gap: 8px; }
     .t-modal-form .modal-footer .btn { width: 100%; margin: 0 !important; }

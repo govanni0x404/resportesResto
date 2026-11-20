@@ -75,6 +75,7 @@ class Ticket_impresion
 			if ((int)$v->descuento_mostrar > 0) $b .= $this->fila('Descuento', '-' . $m($v->descuento_mostrar), $W);
 			$b .= $this->fila('Monto neto', $m($v->neto), $W);
 			$b .= $this->fila('IVA (19%)', $m($v->iva), $W);
+			if ((int)abs((int)($v->ila ?? 0)) > 0) $b .= $this->fila('ILA', $m($v->ila), $W);   // v1.20.1
 			if ($v->monto_exento > 0) $b .= $this->fila('Monto exento', $m($v->monto_exento), $W);
 			$b .= $neg . $alto . $this->fila($nc ? 'TOTAL DEVUELTO' : 'TOTAL', $m($v->total), $W) . $normal;
 			$propina = isset($v->valor_propina) ? (int)$v->valor_propina : 0;

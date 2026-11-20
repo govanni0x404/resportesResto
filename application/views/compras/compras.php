@@ -233,6 +233,3 @@ $fechaActual = date('Y-m-d');
     }
 </style>
 
-<?php $this->load->view('proveedor/jsNuevoProveedor.php'); ?>
-<?php $this->load->view('insumos/js.php'); ?>
-<?php $this->load->view('insumos/modalInsumos.php'); ?>

@@ -120,9 +120,7 @@ class ConsolidadoVentas extends CI_Controller
             if ($validacion->desglozar_monto_neto_iva_total_en_reportes == 't') {
                 $pdf->Ln(10);
                 $pdf->Cell(0, 5, mb_convert_encoding((string)('CANTIDAD DE VENTAS'), 'ISO-8859-1', 'UTF-8'));
-                $pdf->SetX(70);
-                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
-                $pdf->SetX(70);
+                $pdf->SetX(70);   // v1.20.1: sin "$" (es una cantidad, no plata)
                 $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->cantidad_ventas), 0, 0, 'R');
                 $pdf->Ln();
                 $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL NETO'), 'ISO-8859-1', 'UTF-8'));
@@ -137,6 +135,15 @@ class ConsolidadoVentas extends CI_Controller
                 $pdf->SetX(70);
                 $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->total_iva), 0, 0, 'R');
                 $pdf->Ln();
+                // v1.20.1: impuesto adicional (ILA), para que neto + IVA + ILA cuadre con el total
+                if ((int)($detalleConsolidado[0]->total_ila ?? 0) !== 0) {
+                    $pdf->Cell(0, 5, 'TOTAL ILA');
+                    $pdf->SetX(70);
+                    $pdf->Cell(0, 5, '$   ');
+                    $pdf->SetX(70);
+                    $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->total_ila), 0, 0, 'R');
+                    $pdf->Ln();
+                }
                 $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL VENTAS '), 'ISO-8859-1', 'UTF-8'));
                 $pdf->SetX(70);
                 $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
@@ -165,9 +172,7 @@ class ConsolidadoVentas extends CI_Controller
             } else {
                 $pdf->Ln(10);
                 $pdf->Cell(0, 5, mb_convert_encoding((string)('CANTIDAD DE VENTAS'), 'ISO-8859-1', 'UTF-8'));
-                $pdf->SetX(70);
-                $pdf->Cell(0, 5, mb_convert_encoding((string)('$   '), 'ISO-8859-1', 'UTF-8'));
-                $pdf->SetX(70);
+                $pdf->SetX(70);   // v1.20.1: sin "$" (es una cantidad, no plata)
                 $pdf->Cell(40, 5, number_format($detalleConsolidado[0]->cantidad_ventas), 0, 0, 'R');
                 $pdf->Ln();
                 $pdf->Cell(0, 5, mb_convert_encoding((string)('TOTAL VENTAS '), 'ISO-8859-1', 'UTF-8'));
