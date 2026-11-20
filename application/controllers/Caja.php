@@ -832,12 +832,14 @@ class Caja extends CI_Controller
 	private function enviarAImpresora($destino, $bytes)
 	{
 		if (!$destino) return array('ok' => false, 'navegador' => true, 'detalle' => 'No hay impresora de caja en Configuraciones');
+		// v1.23.2: destino "sin impresión" (casilla, o nombre / ruta de Windows "SIN IMPRESION"): no se imprime y no es error
+		if (!empty($destino['sin_impresion'])) return array('ok' => true, 'sin_impresion' => true, 'navegador' => false, 'detalle' => 'destino sin impresión');
 		// 19-11-2026 (auditoría): con la impresión en el equipo de la caja (la pantalla manda local=1) el servidor no imprime:
 		// devuelve las operaciones y la pantalla las manda al agente local (cierre, informe X, anulación, pago de crédito)
 		if ($this->input->post('local')) {
 			$this->load->library('Escpos_operaciones');
 			return array('ok' => false, 'local' => true, 'navegador' => false, 'detalle' => '',
-				'destino' => array('nombre' => $destino['nombre'], 'ip' => $destino['ip'], 'puerto' => $destino['puerto'], 'ruta_windows' => $destino['ruta_windows']),
+				'destino' => array('nombre' => $destino['nombre'], 'ip' => $destino['ip'], 'puerto' => $destino['puerto'], 'ruta_windows' => $destino['ruta_windows'], 'sin_impresion' => !empty($destino['sin_impresion'])),
 				'operaciones' => Escpos_operaciones::convertir($bytes, $this->papelTicket() == 58 ? 28 : 40));
 		}
 		$this->load->library('Comanda_impresion');
@@ -1168,7 +1170,7 @@ class Caja extends CI_Controller
 				$res[] = array(
 					'nombre' => $g['nombre'],
 					'id' => (int)$d['id'],
-					'destino' => array('nombre' => $d['nombre'], 'ip' => $d['ip'], 'puerto' => $d['puerto'], 'ruta_windows' => $d['ruta_windows']),
+					'destino' => array('nombre' => $d['nombre'], 'ip' => $d['ip'], 'puerto' => $d['puerto'], 'ruta_windows' => $d['ruta_windows'], 'sin_impresion' => !empty($d['sin_impresion'])),
 					'operaciones' => $this->comanda_local->operaciones($g, $c['venta'], $c['observacion'], $c['mesa'], $c['aviso'], $c['entrega'], $c['atiende'], $c['info']),
 				);
 			}
@@ -1231,7 +1233,7 @@ class Caja extends CI_Controller
 			$copias = (int)$this->Mcaja->opciones()['copias_documento'];
 			for ($i = 0; $i < $copias; $i++) $todas = array_merge($todas, $ops);
 			return array(
-				'destino' => array('nombre' => $destino['nombre'], 'ip' => $destino['ip'], 'puerto' => $destino['puerto'], 'ruta_windows' => $destino['ruta_windows']),
+				'destino' => array('nombre' => $destino['nombre'], 'ip' => $destino['ip'], 'puerto' => $destino['puerto'], 'ruta_windows' => $destino['ruta_windows'], 'sin_impresion' => !empty($destino['sin_impresion'])),
 				'operaciones' => $todas,
 				'copias' => max(1, $copias),   // 17-11-2026: para la boleta como imagen (imagenDocumento.js)
 			);
@@ -1279,7 +1281,7 @@ class Caja extends CI_Controller
 			if (!$destino) throw new Exception('No hay impresora elegida en Configuraciones > Impresora para cierre de caja', 409);
 			$this->load->library('Ticket_local');
 			return array(
-				'destino' => array('nombre' => $destino['nombre'], 'ip' => $destino['ip'], 'puerto' => $destino['puerto'], 'ruta_windows' => $destino['ruta_windows']),
+				'destino' => array('nombre' => $destino['nombre'], 'ip' => $destino['ip'], 'puerto' => $destino['puerto'], 'ruta_windows' => $destino['ruta_windows'], 'sin_impresion' => !empty($destino['sin_impresion'])),
 				'operaciones' => $this->ticket_local->precuenta($d, $this->papelTicket()),
 			);
 		}, true);

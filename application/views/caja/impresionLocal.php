@@ -12,7 +12,7 @@
 </script>
 <script src="<?php echo base_url() ?>assets/js/impresion-local/LocalPrintClient.js?v=1"></script>
 <script src="<?php echo base_url() ?>assets/js/impresion-local/printerJob.js?v=1"></script>
-<script src="<?php echo base_url() ?>assets/js/impresion-local/impresionLocal.js?v=1"></script>
+<script src="<?php echo base_url() ?>assets/js/impresion-local/impresionLocal.js?v=2"></script>
 <?php /* 17-11-2026: boletas, precuentas y comandas con el diseño de la página, como imagen por el agente.
    18-11-2026: firma para subir esas imágenes sin la sesión (libraries/Imagen_impresion::firma) */ ?>
 <script>

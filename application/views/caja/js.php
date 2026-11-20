@@ -135,6 +135,8 @@
 			if (window.console) console.log('Tiempos impresión', que, t);
 		}
 		function imprimirComoImagen(urlPagina, destino, copias, porAgente, preparada) {
+			// v1.23.2: destino "sin impresión": no se espera la imagen ni se manda nada (tampoco es un error)
+			if (ImpresionLocal.sinImpresion && ImpresionLocal.sinImpresion(destino)) return ImpresionLocal.imprimir(destino, []);
 			return (preparada || prepararImagen(urlPagina)).then(function (urls) {
 				return ImagenDocumento.enviar(urls, destino, copias || 1);
 			}).then(function (res) {

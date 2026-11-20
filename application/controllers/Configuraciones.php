@@ -355,7 +355,7 @@ class Configuraciones extends CI_Controller {
                 throw new Exception($nombre !== '' ? 'La impresora "' . $nombre . '" no existe en Destinos de impresión'
                     : 'La caja no tiene impresora asignada: elige una impresora arriba o asígnale una a la caja', 409);
             }
-            return array('ok' => true, 'destino' => array('nombre' => $d['nombre'], 'ip' => $d['ip'], 'puerto' => (int)$d['puerto'], 'ruta_windows' => $d['ruta_windows']));
+            return array('ok' => true, 'destino' => array('nombre' => $d['nombre'], 'ip' => $d['ip'], 'puerto' => (int)$d['puerto'], 'ruta_windows' => $d['ruta_windows'], 'sin_impresion' => !empty($d['sin_impresion'])));
         }, true);
     }
 

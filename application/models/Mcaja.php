@@ -677,20 +677,39 @@ class Mcaja extends CI_Model
 		$cols = $this->columnas($db, array('producto', 'familia', 'dimpresion'));
 		if (!isset($cols['dimpresion']) || !isset($cols['producto']['id_dimpresion'])) return array();
 		$famDest = isset($cols['familia']['id_dimpresion']) ? 'NULLIF(f.id_dimpresion, 0)' : 'NULL';
-		$sinImp = isset($cols['dimpresion']['sin_impresion']) ? 'COALESCE(d.sin_impresion, false)' : 'false';
+		$sinImp = $this->sqlSinImpresion($db, 'd');   // v1.23.2: también la ruta de Windows "SIN IMPRESION"
 		$rows = $this->q($db, "SELECT p.id_producto, d.id_dimpresion, d.nombre_dimpresion, d.ip, d.puerto, d.ruta_windows
 			FROM producto p
 			LEFT JOIN familia f ON f.id_familia = p.id_familia
 			JOIN dimpresion d ON d.id_dimpresion = COALESCE(NULLIF(p.id_dimpresion, 0), $famDest)
 			WHERE p.id_producto IN ?
-				AND NOT $sinImp
-				AND upper(trim(COALESCE(d.nombre_dimpresion, ''))) NOT LIKE 'SIN IMPRES%'", array($ids))->result();
+				AND NOT $sinImp", array($ids))->result();
 		$res = array();
 		foreach ($rows as $r) {
 			$res[(int)$r->id_producto] = array('id' => (int)$r->id_dimpresion, 'nombre' => (string)$r->nombre_dimpresion,
 				'ip' => (string)$r->ip, 'puerto' => (string)$r->puerto, 'ruta_windows' => (string)$r->ruta_windows);
 		}
 		return $res;
+	}
+
+	/**
+	 * v1.23.2: SQL que dice si un destino de impresión NO imprime: la casilla "sin impresión", o el nombre o la ruta de
+	 * Windows que empiezan con "SIN IMPRES" (ej. un destino "SIN IMPRESION" para lo que no debe salir en papel).
+	 */
+	private function sqlSinImpresion($db, $d = 'd')
+	{
+		$cols = $this->columnas($db, array('dimpresion'));
+		$flag = isset($cols['dimpresion']['sin_impresion']) ? "COALESCE($d.sin_impresion, false)" : 'false';
+		return "($flag OR upper(trim(COALESCE($d.nombre_dimpresion, ''))) LIKE 'SIN IMPRES%'"
+			. " OR upper(trim(COALESCE($d.ruta_windows, ''))) LIKE 'SIN IMPRES%')";
+	}
+
+	/** v1.23.2: el destino como lo usan la Caja y el agente, con la marca sin_impresion. */
+	private function filaDestino($r)
+	{
+		return array('id' => (int)$r->id_dimpresion, 'nombre' => (string)$r->nombre_dimpresion,
+			'ip' => (string)$r->ip, 'puerto' => (string)$r->puerto, 'ruta_windows' => (string)$r->ruta_windows,
+			'sin_impresion' => $r->sin_impresion === true || $r->sin_impresion === 't');
 	}
 
 	/** Impresora de la caja (configuracion.id_dimpresion_caja) con la forma de destinosComanda(); null si no está definida. */
@@ -715,11 +734,10 @@ class Mcaja extends CI_Model
 	{
 		$nombre = trim((string)$nombre);
 		if ($nombre === '') return null;
-		$r = $this->q($this->conexion(), 'SELECT id_dimpresion, nombre_dimpresion, ip, puerto, ruta_windows FROM dimpresion
-			WHERE upper(trim(nombre_dimpresion)) = upper(?) ORDER BY id_dimpresion LIMIT 1', array($nombre))->row();
-		if (!$r) return null;
-		return array('id' => (int)$r->id_dimpresion, 'nombre' => (string)$r->nombre_dimpresion,
-			'ip' => (string)$r->ip, 'puerto' => (string)$r->puerto, 'ruta_windows' => (string)$r->ruta_windows);
+		$db = $this->conexion();
+		$r = $this->q($db, 'SELECT d.id_dimpresion, d.nombre_dimpresion, d.ip, d.puerto, d.ruta_windows, ' . $this->sqlSinImpresion($db, 'd') . ' AS sin_impresion
+			FROM dimpresion d WHERE upper(trim(d.nombre_dimpresion)) = upper(?) ORDER BY d.id_dimpresion LIMIT 1', array($nombre))->row();
+		return $r ? $this->filaDestino($r) : null;
 	}
 
 	/**
@@ -733,7 +751,8 @@ class Mcaja extends CI_Model
 		// Solo si algún agente de impresión tiene esa impresora: si no (ej. //127.0.0.1/caja cuando la impresora se llama
 		// pos80), el trabajo quedaba pendiente para siempre y la boleta no salía. Entonces va a la impresora de la caja.
 		if ($ruta !== '' && (strpos($ruta, '//') === 0 || strpos($ruta, '\\') === 0) && $this->agenteTieneImpresora($ruta)) {
-			return array('id' => $d ? $d['id'] : 0, 'nombre' => $d ? $d['nombre'] : 'DOCUMENTOS', 'ip' => '', 'puerto' => '', 'ruta_windows' => $ruta);
+			return array('id' => $d ? $d['id'] : 0, 'nombre' => $d ? $d['nombre'] : 'DOCUMENTOS', 'ip' => '', 'puerto' => '', 'ruta_windows' => $ruta,
+				'sin_impresion' => stripos(trim($ruta), 'SIN IMPRES') === 0);
 		}
 		return $d;
 	}
@@ -776,11 +795,9 @@ class Mcaja extends CI_Model
 		$db = $this->conexion();
 		$c = $this->columnas($db, array('configuracion', 'dimpresion'));
 		if (!isset($c['configuracion']['id_dimpresion_caja']) || !isset($c['dimpresion'])) return null;
-		$r = $this->q($db, 'SELECT d.id_dimpresion, d.nombre_dimpresion, d.ip, d.puerto, d.ruta_windows
+		$r = $this->q($db, 'SELECT d.id_dimpresion, d.nombre_dimpresion, d.ip, d.puerto, d.ruta_windows, ' . $this->sqlSinImpresion($db, 'd') . ' AS sin_impresion
 			FROM configuracion c JOIN dimpresion d ON d.id_dimpresion = c.id_dimpresion_caja LIMIT 1')->row();
-		if (!$r) return null;
-		return array('id' => (int)$r->id_dimpresion, 'nombre' => (string)$r->nombre_dimpresion,
-			'ip' => (string)$r->ip, 'puerto' => (string)$r->puerto, 'ruta_windows' => (string)$r->ruta_windows);
+		return $r ? $this->filaDestino($r) : null;
 	}
 
 	/** Cabecera, detalle y pagos para imprimir un documento. */

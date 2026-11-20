@@ -5,7 +5,7 @@
 </script>
 <script src="<?php echo base_url() ?>assets/js/impresion-local/LocalPrintClient.js?v=1"></script>
 <script src="<?php echo base_url() ?>assets/js/impresion-local/printerJob.js?v=1"></script>
-<script src="<?php echo base_url() ?>assets/js/impresion-local/impresionLocal.js?v=1"></script>
+<script src="<?php echo base_url() ?>assets/js/impresion-local/impresionLocal.js?v=2"></script>
 <script>
     var base_url = "<?php echo base_url(); ?>";
 

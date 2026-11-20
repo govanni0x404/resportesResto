@@ -108,8 +108,19 @@
 	}
 
 	/** Envía las operaciones al destino. opciones.raster_max_width (si no, según el nombre de la impresora). */
+	/**
+	 * v1.23.2: destino que NO imprime (casilla "sin impresión" de Destinos de impresión, o nombre / ruta de Windows que
+	 * empiezan con "SIN IMPRES"): no se llama al agente y no es un error.
+	 */
+	function sinImpresion(destino) {
+		if (!destino) return false;
+		var es = function (t) { return /^\s*sin\s*impres/i.test(String(t || '')); };
+		return destino.sin_impresion === true || es(destino.ruta_windows) || es(destino.nombre);
+	}
+
 	function imprimir(destino, operaciones, opciones) {
 		opciones = opciones || {};
+		if (sinImpresion(destino)) return Promise.resolve({ impresora: (destino.nombre || 'destino') + ' (sin impresión)', sin_impresion: true });
 		return conexion(destino).then(function (con) {
 			var raster = opciones.raster_max_width || (String(con.nombre).toLowerCase().indexOf('pos80') >= 0 || anchoMm(con.nombre) === 58 ? 384 : 576);
 			var trabajo = Object.assign({ raster_max_width: raster, operaciones: operaciones }, con.job);
@@ -132,5 +143,5 @@
 		return 'No se pudo imprimir: ' + esc(e && e.message ? e.message : e);
 	}
 
-	global.ImpresionLocal = { imprimir: imprimir, conexion: conexion, mensaje: mensaje, nombreImpresora: nombreImpresora, esIp: esIp, anchoMm: anchoMm, url: urlAgente };
+	global.ImpresionLocal = { imprimir: imprimir, sinImpresion: sinImpresion, conexion: conexion, mensaje: mensaje, nombreImpresora: nombreImpresora, esIp: esIp, anchoMm: anchoMm, url: urlAgente };
 })(window);
