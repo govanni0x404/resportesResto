@@ -1263,6 +1263,7 @@
 								<div class="fila con-descuento" id="filaConDescuento" style="display:none"><span>Total con descuento</span><span id="lblConDescuento">$0</span></div>
 								<div class="fila"><span>Neto</span><span id="lblNeto">$0</span></div>
 								<div class="fila"><span>IVA (19%)</span><span id="lblIva">$0</span></div>
+								<div class="fila" id="filaIla" style="display:none"><span>Impuesto adicional (ILA)</span><span id="lblIla">$0</span></div>
 								<div class="fila" id="filaExento" style="display:none"><span>Exento</span><span id="lblExento">$0</span></div>
 								<div class="caja-acciones">
 									<button class="btn btn-default btn-lg" id="btnLimpiar" title="Vaciar venta"><i class="fa fa-trash"></i></button>

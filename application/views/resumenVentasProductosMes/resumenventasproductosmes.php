@@ -59,7 +59,7 @@ $fechaActual = date('d-m-Y');
                                 <th class="text text-center">Mes</th>
                                 <th class="text text-center">Cantidad</th>
                                 <th class="text text-center">Total</th>
-                                <!-- <th class="text text-center">Acciones</th> -->
+                                <th class="text text-center">Acciones</th>
                                 <th class="text text-center"></th>
                             </tr>
                         </thead>
@@ -72,7 +72,7 @@ $fechaActual = date('d-m-Y');
                                 <th></th>
                                 <th></th>
                                 <th></th>
-                                <!-- <th></th> -->
+                                <th></th>
                             </tr>
                         </tfoot>
                     </table>
@@ -101,7 +101,7 @@ $fechaActual = date('d-m-Y');
                                     <table id="tableDetalleProducto" class="display responsive" style="width: 100%">
                                         <thead>
                                             <tr>
-                                                <th class="text text-center">N° Venta</th>
+                                                <th class="text text-center">Documento</th>
                                                 <th class="text text-center">Fecha</th>
                                                 <th class="text text-left">Cliente</th>
                                                 <th class="text text-center">Cantidad</th>

@@ -7,7 +7,7 @@
 	<div class="container">
 		<!-- 18-11-2026: margen a la derecha para que el botón verde de "subir" (abajo a la derecha) no tape la versión -->
 		<div class="pull-right hidden-xs" style="margin-right:70px"> <b>Version</b>
-        <?php echo app_version_short(); ?>
+        <?php echo app_version_short(); ?><?php if (defined('RESTO_MODO_LOCAL') && RESTO_MODO_LOCAL): ?> <span class="label label-warning" title="RESTO_CONEXION=2: base de este computador, sin intranet">LOCAL</span><?php endif; ?>
   </div>
 		<strong>Copyright &copy; <a href="https://datamaule.cl/">DAT@MAULE</a>.</strong> All rights reserved. <i class="fa fa-heart color-green"></i>
 	</div>

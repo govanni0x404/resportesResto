@@ -58,7 +58,7 @@ class Mproduccion extends CI_Model
         
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         
-        $q = "SELECT saldo as stock_actual 
+        $q = "SELECT round(saldo::numeric, 3) as stock_actual 
               FROM stock_insumo 
               WHERE id_insumo = " . intval($id_insumo) . " 
               AND id_bodega = " . intval($id_bodega) . ($bloquear ? " FOR UPDATE" : "");

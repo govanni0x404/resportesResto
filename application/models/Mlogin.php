@@ -66,10 +66,10 @@ class Mlogin extends CI_Model
 			'curl_timeout'   => (int) $this->config->item('app_web_login_curl_timeout') ?: 15,
 			'curl_ctimeout'  => (int) $this->config->item('app_web_login_curl_connect_tm') ?: 5,
 		);
-		// MODO LOCAL (v1.19.0): sin dirección de respaldo a la intranet remota.
-		// if ($cfg['url'] === '') {
-		// 	$cfg['url'] = 'https://datamaule.cl/miIntranet/index.php/api/AppWebLogin/index';
-		// }
+		// v1.20.0: en modo local (RESTO_CONEXION=2) no hay dirección de respaldo a la intranet
+		if ($cfg['url'] === '' && !RESTO_MODO_LOCAL) {
+			$cfg['url'] = 'https://datamaule.cl/miIntranet/index.php/api/AppWebLogin/index';
+		}
 		return $cfg;
 	}
 
@@ -140,7 +140,7 @@ class Mlogin extends CI_Model
 		$t0 = microtime(true);
 		$salida = array('http_code' => 0, 'curl_errno' => 0, 'curl_error' => '', 'decoded' => null, 'dur_ms' => 0, 'body_head' => '');
 
-		// MODO LOCAL (v1.19.0): sin URL de intranet no se sale a internet; cuenta como "sin conexión".
+		// Modo local (RESTO_CONEXION=2): sin URL de intranet no se sale a internet; cuenta como "sin conexión".
 		if (trim((string)$url) === '' || strpos((string)$url, '/') === 0) {
 			$salida['curl_errno'] = -901;
 			$salida['curl_error'] = 'intranet_desactivada_modo_local';

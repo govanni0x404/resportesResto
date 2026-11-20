@@ -209,8 +209,14 @@ class Mdte extends CI_Model
 		$esBoleta = in_array($cod, array(39, 41));
 		$esNc = $cod === self::COD_NC;
 
+		// v1.20.0: ILA de la línea (la tasa con que se vendió) y su código SII (impuesto.codigo_sii): el del impuesto del
+		// producto si es esa misma tasa; si no (se cambió después), el primero con esa tasa y código
 		$q = $db->query("SELECT COALESCE(p.nombre_producto, 'Producto') || COALESCE(' + ' || pa.nombre_producto, '') AS nombre,
-				abs(dv.cantidad) AS cantidad, abs(dv.subtotal) AS subtotal, (COALESCE(dv.poriva, 1) = 0) AS exento
+				abs(dv.cantidad) AS cantidad, abs(dv.subtotal) AS subtotal, (COALESCE(dv.poriva, 1) = 0) AS exento,
+				COALESCE(dv.porila, 0) AS porila,
+				COALESCE(NULLIF((SELECT i.codigo_sii FROM impuesto i WHERE i.id_impuesto = p.impto_ila AND i.valor = dv.porila), 0),
+					(SELECT i.codigo_sii FROM impuesto i WHERE i.valor = dv.porila AND COALESCE(i.codigo_sii, 0) > 0 ORDER BY i.id_impuesto LIMIT 1),
+					0) AS cod_ila
 			FROM detalle_venta dv
 			LEFT JOIN producto p ON p.id_producto = dv.id_producto
 			LEFT JOIN producto pa ON pa.id_producto = dv.id_agregado AND dv.id_agregado > 0
@@ -227,6 +233,9 @@ class Mdte extends CI_Model
 		// Lo exento por producto (Monto Exento) queda fuera del IVA; el resto es el monto afecto
 		$montoExento = $exento ? $total : min($total, (int)round(abs((float)$v->monto_exento)));
 		$afecto = $total - $montoExento;
+		// v1.20.0: ILA (impuesto adicional) de la factura / NC. En boletas va incluido en el precio, como el IVA: el SII no lo
+		// pide desglosado en la boleta (sus totales son neto + IVA + exento).
+		$ila = ($exento || $brutos) ? 0 : min($afecto, (int)abs((int)$v->ila));
 		if ($exento) {
 			$neto = $total;
 			$iva = 0;
@@ -235,15 +244,16 @@ class Mdte extends CI_Model
 			$iva = $afecto - $neto;
 		} else {
 			// Factura / NC: el neto guardado al vender (montos() en Mcaja) ya cumple IVA = round(Neto x 19%).
-			// Ventas anteriores a ese cálculo: se busca el neto que cuadre con el monto afecto.
+			// Ventas anteriores a ese cálculo: se busca el neto que cuadre con el monto afecto (sin el ILA).
+			$afectoIva = $afecto - $ila;
 			$neto = (int)round(abs((float)$v->neto));
-			if ($neto + (int)round($neto * $tasa / 100) !== $afecto) {
-				$neto = (int)round($afecto / $factor);
+			if ($neto + (int)round($neto * $tasa / 100) !== $afectoIva) {
+				$neto = (int)round($afectoIva / $factor);
 				foreach (array(0, -1, 1, -2, 2) as $d) {
-					if (($neto + $d) + (int)round(($neto + $d) * $tasa / 100) === $afecto) { $neto += $d; break; }
+					if (($neto + $d) + (int)round(($neto + $d) * $tasa / 100) === $afectoIva) { $neto += $d; break; }
 				}
 			}
-			$iva = $afecto - $neto;
+			$iva = $afectoIva - $neto;
 		}
 
 		// Detalle bruto (boletas y exentos) o neto (facturas y NC); las líneas exentas van con su monto
@@ -252,11 +262,37 @@ class Mdte extends CI_Model
 		$detalle = array();
 		$sumaAfecto = 0;
 		$sumaExento = 0;
+		$ilaGrupos = array();   // v1.20.0: código SII => ['tasa', 'base' (neto de sus líneas)]
 		foreach ($lineas as $i => $l) {
 			$lineaExenta = !$exento && ($l->exento === 't' || $l->exento === true);
-			$monto = ($exento || $brutos || $lineaExenta) ? (int)round((float)$l->subtotal) : (int)round((float)$l->subtotal / $factor);
+			$porIla = ($ila > 0 && !$lineaExenta) ? max(0.0, (float)$l->porila) : 0.0;
+			$monto = ($exento || $brutos || $lineaExenta) ? (int)round((float)$l->subtotal)
+				: (int)round((float)$l->subtotal / (1 + ($tasa + $porIla) / 100));
 			if ($lineaExenta) $sumaExento += $monto; else $sumaAfecto += $monto;
-			$detalle[] = array('cantidad' => (float)$l->cantidad, 'monto' => $monto, 'nombre' => $l->nombre, 'exento' => $lineaExenta);
+			$codIla = 0;
+			if ($porIla > 0) {
+				$codIla = (int)$l->cod_ila;
+				if ($codIla <= 0) {
+					throw new Exception('El impuesto adicional de ' . $porIla . '% de "' . $l->nombre . '" no tiene código SII (Impuestos > código SII)');
+				}
+				if (!isset($ilaGrupos[$codIla])) $ilaGrupos[$codIla] = array('tasa' => $porIla, 'base' => 0);
+				$ilaGrupos[$codIla]['base'] += $monto;
+			}
+			$detalle[] = array('cantidad' => (float)$l->cantidad, 'monto' => $monto, 'nombre' => $l->nombre, 'exento' => $lineaExenta, 'cod_ila' => $codIla);
+		}
+		// El ILA del documento (el de la venta) repartido por código según el ILA de sus líneas; el último lleva el resto
+		$imptoReten = array();
+		if ($ila > 0 && $ilaGrupos) {
+			$peso = 0;
+			foreach ($ilaGrupos as $g) $peso += $g['base'] * $g['tasa'];
+			$restoIla = $ila;
+			$codigos = array_keys($ilaGrupos);
+			$ultimoCod = end($codigos);
+			foreach ($ilaGrupos as $codImp => $g) {   // $codImp: $cod es el tipo de documento
+				$m = $codImp === $ultimoCod ? $restoIla : ($peso > 0 ? (int)round($ila * $g['base'] * $g['tasa'] / $peso) : 0);
+				$restoIla -= $m;
+				$imptoReten[] = array('TipoImp' => (string)$codImp, 'TasaImp' => $this->numero($g['tasa']), 'MontoImp' => $m);
+			}
 		}
 		// El descuento que tocó a lo exento se aplica sobre las mismas líneas exentas, desde la última
 		$descExento = $exento ? 0 : $sumaExento - $montoExento;
@@ -289,6 +325,7 @@ class Mdte extends CI_Model
 				'DscItem' => '',
 			);
 			if ($d['exento']) $linea['IndExe'] = '1';
+			if (!empty($d['cod_ila'])) $linea['CodImpAdic'] = (string)$d['cod_ila'];   // v1.20.0
 			$det[] = $linea;
 		}
 
@@ -348,7 +385,7 @@ class Mdte extends CI_Model
 				'Emisor' => $this->emisorDeSucursal($db, $v, $cfg['emisor']),
 				'Receptor' => $receptor,
 			),
-			'Totales' => $this->totalesDte($exento, $total, $neto, $iva, $montoExento, $tasa),
+			'Totales' => $this->totalesDte($exento, $total, $neto, $iva, $montoExento, $tasa, $imptoReten),
 			'Detalle' => $det,
 			'DescuentoRecargo' => array(
 				'NroLinDR' => '1',
@@ -396,7 +433,7 @@ class Mdte extends CI_Model
 	}
 
 	/** Bloque Totales: Monto Neto e IVA solo si hay monto afecto; Monto Exento solo si hay exento. */
-	private function totalesDte($docExento, $total, $neto, $iva, $montoExento, $tasa)
+	private function totalesDte($docExento, $total, $neto, $iva, $montoExento, $tasa, $imptoReten = array())
 	{
 		if ($docExento) return array('MntNeto' => $total, 'TasaIVA' => '0', 'Iva' => 0, 'MntExe' => $total, 'MntTotal' => $total);
 		$t = array();
@@ -404,6 +441,8 @@ class Mdte extends CI_Model
 			$t['MntNeto'] = $neto;
 			$t['TasaIVA'] = $this->numero($tasa);
 			$t['Iva'] = $iva;
+			// v1.20.0: impuestos adicionales (ILA) de la factura / NC: MntTotal = Neto + IVA + ILA + Exento
+			if ($imptoReten) $t['ImptoReten'] = $imptoReten;
 		}
 		if ($montoExento > 0) $t['MntExe'] = $montoExento;
 		$t['MntTotal'] = $total;

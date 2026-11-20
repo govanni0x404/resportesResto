@@ -144,11 +144,12 @@ function resumenVentasProductos(desde, hasta) {
                 className: "text-center",
                 render: $.fn.dataTable.render.number(',', '.', 0, '$')
             },
-            // {
-            //     mData: "btnVerDetalle",
-            //     "width": "10%",
-            //     className: "text-center"
-            // },
+            {
+                mData: "btnVerDetalle",   // v1.20.0: detalle por producto y mes
+                "width": "10%",
+                className: "text-center",
+                orderable: false
+            },
             {
                 mData: "test",
                 "width": "1%",

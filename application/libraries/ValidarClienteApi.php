@@ -69,9 +69,9 @@ class ValidarClienteApi
 		$urlPrincipal = trim((string)$this->CI->config->item('validar_cliente_url'));
 		$urlRespaldo = trim((string)$this->CI->config->item('validar_cliente_url_respaldo'));
 		if ($urlPrincipal === '') {
-			// MODO LOCAL (v1.19.0): sin respaldo a la intranet remota.
-			// $urlPrincipal = $urlRespaldo !== '' ? $urlRespaldo : 'https://datamaule.cl/validarPagos/validarCliente.php';
-			$urlPrincipal = $urlRespaldo;
+			// v1.20.0: en modo local (RESTO_CONEXION=2) sin respaldo a la intranet
+			$urlPrincipal = $urlRespaldo !== '' ? $urlRespaldo
+				: (RESTO_MODO_LOCAL ? '' : 'https://datamaule.cl/validarPagos/validarCliente.php');
 		}
 		$principalEsLegacy = $this->_esLegacy($urlPrincipal) || ($urlRespaldo !== '' && $urlPrincipal === $urlRespaldo);
 		$intentos = [];
@@ -169,7 +169,7 @@ class ValidarClienteApi
 	private function _curl($url, $postFields, $timeout)
 	{
 		$t0 = microtime(true);
-		// MODO LOCAL (v1.19.0): sin URL de intranet no se sale a internet; cuenta como "sin conexión".
+		// Modo local (RESTO_CONEXION=2): sin URL de intranet no se sale a internet; cuenta como "sin conexión".
 		if (trim((string)$url) === '') {
 			return ['body' => '', 'http' => 0, 'errno' => -901, 'error' => 'intranet_desactivada_modo_local',
 				'url' => '', 'dur_ms' => 0, 'version' => ''];

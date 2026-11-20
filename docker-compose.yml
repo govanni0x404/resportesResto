@@ -1,16 +1,35 @@
+# v1.20.0: DataRestoWeb en Docker.
+#   1) docker compose up -d --build        2) abrir http://localhost:8082
+# La configuración (base, claves, RESTO_CONEXION) sale del .env.php del proyecto, igual que sin Docker. Lo de abajo solo
+# corrige lo que cambia dentro del contenedor: la dirección del sitio y que "este computador" es host.docker.internal.
 services:
   web:
-    image: php:7.4-apache
-    container_name: mi_proyecto_web
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: dataresto_web
     ports:
       - "8082:80"
     volumes:
       - .:/var/www/html
-      # 18-11-2026: Apache lee los .htaccess y no deja ver .git, respaldos ni scripts SQL (docker/apache-seguridad.conf)
+      # Apache lee los .htaccess y no deja ver .git, respaldos ni scripts SQL (docker/apache-seguridad.conf)
       - ./docker/apache-seguridad.conf:/etc/apache2/conf-enabled/zz-seguridad.conf:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    command: >
-      sh -c "apt-get update && apt-get install -y libpq-dev 
-      && docker-php-ext-install pgsql pdo_pgsql
-      && apache2-foreground"
+    environment:
+      # Dirección del sitio (sin esto base_url apuntaba a localhost:8001 y fallaban enlaces, estilos y AJAX)
+      RESTO_BASE_URL: "http://localhost:8082/"
+      # El PostgreSQL de este computador, visto desde el contenedor
+      MIPDV_DB_LOCALHOST_HOSTNAME: "host.docker.internal"
+      # El navegador llega al contenedor desde la puerta de enlace de esta red: el login local (/login/dev) la acepta
+      RESTO_DEV_IPS: "172.28.0.1"
+    networks:
+      - dataresto
+    restart: unless-stopped
+
+networks:
+  dataresto:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1

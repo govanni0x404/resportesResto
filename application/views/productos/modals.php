@@ -144,6 +144,11 @@
                                         <select id="cboImpuestoIva" class="form-control input-sm" style="width:100%"
                                             requerido="si"></select>
                                     </div>
+                                    <div class="col-md-6">
+                                        <!-- v1.20.0: impuesto adicional (ILA): bebidas, cervezas, vinos y licores -->
+                                        <label for="cboImpuestoIla">Impuesto adicional (ILA)</label>
+                                        <select id="cboImpuestoIla" class="form-control input-sm" style="width:100%"></select>
+                                    </div>
                                 </fieldset>
                                 <br>
                                 <fieldset>

@@ -235,7 +235,13 @@ $config['allow_get_array'] = TRUE;
 | your log files will fill up very fast.
 |
 */
-$config['log_threshold'] = 4;
+// v1.20.0: en producción solo errores (1). Con 4 el log guardaba todo, también consultas con datos de clientes.
+// RESTO_LOG_NIVEL (0-4) en el .env.php lo cambia si hace falta revisar algo puntual.
+$config['log_threshold'] = (function () {
+	$n = getenv('RESTO_LOG_NIVEL');
+	if (is_string($n) && preg_match('/^[0-4]$/', $n)) return (int)$n;
+	return (defined('ENVIRONMENT') && ENVIRONMENT === 'production') ? 1 : 4;
+})();
 
 /*
 |--------------------------------------------------------------------------
@@ -336,7 +342,12 @@ $config['cache_query_string'] = FALSE;
 | https://codeigniter.com/userguide3/libraries/encryption.html
 |
 */
-$config['encryption_key'] = '';
+// v1.20.0: RESTO_ENCRYPTION_KEY (64 hexadecimales) en el .env.php; vacía si no está (como antes). La API Key de
+// facturación NO usa esta: usa RESTO_DTE_TOKEN_KEY (helpers/dte_auth_helper.php).
+$config['encryption_key'] = (function () {
+	$hex = trim((string)getenv('RESTO_ENCRYPTION_KEY'));
+	return preg_match('/^[0-9a-fA-F]{64}$/', $hex) ? hex2bin($hex) : '';
+})();
 
 /*
 |--------------------------------------------------------------------------
@@ -591,10 +602,9 @@ if (!function_exists('_resto_env_raw')) {
 }
 
 // --- AppWebLogin -----------------------------------------------------------
-// MODO LOCAL (v1.19.0): sin intranet remota. Para volver a usarla, quita el comentario de la línea de abajo
-// y borra la línea con ''.
-// $config['app_web_login_url']    = (string)_resto_env_raw('MIPDV_APP_WEB_LOGIN_URL', 'https://datamaule.cl/miIntranet/index.php/api/AppWebLogin/index');
-$config['app_web_login_url']    = '';
+// v1.20.0: RESTO_CONEXION=2 (local, constants.php) = sin intranet: URL vacía y Mlogin no sale a internet.
+$config['app_web_login_url']    = RESTO_MODO_LOCAL ? ''
+	: (string)_resto_env_raw('MIPDV_APP_WEB_LOGIN_URL', 'https://datamaule.cl/miIntranet/index.php/api/AppWebLogin/index');
 $config['app_web_login_apikey'] = (string)_resto_env_raw('MIPDV_APP_WEB_LOGIN_APIKEY', '');
 $config['app_web_login_require_apikey'] = true;
 $config['app_web_login_require_hmac']   = true;
@@ -606,11 +616,11 @@ $config['app_web_login_refresh_margin_seconds'] = 900;
 
 // --- validarCliente: servidor y base de cada empresa --------------------------
 // Principal: API de la intranet. Respaldo: la legacy validarPagos (solo si la intranet no contesta).
-// MODO LOCAL (v1.19.0): sin intranet remota.
-// $config['validar_cliente_url']          = (string)_resto_env_raw('MIPDV_VALIDAR_CLIENTE_URL', 'https://datamaule.cl/miIntranet/index.php/api/validarCliente');
-// $config['validar_cliente_url_respaldo'] = (string)_resto_env_raw('MIPDV_VALIDAR_CLIENTE_URL_RESPALDO', 'https://datamaule.cl/validarPagos/validarCliente.php');
-$config['validar_cliente_url']          = '';
-$config['validar_cliente_url_respaldo'] = '';
+// v1.20.0: en modo local (RESTO_CONEXION=2) sin intranet.
+$config['validar_cliente_url']          = RESTO_MODO_LOCAL ? ''
+	: (string)_resto_env_raw('MIPDV_VALIDAR_CLIENTE_URL', 'https://datamaule.cl/miIntranet/index.php/api/validarCliente');
+$config['validar_cliente_url_respaldo'] = RESTO_MODO_LOCAL ? ''
+	: (string)_resto_env_raw('MIPDV_VALIDAR_CLIENTE_URL_RESPALDO', 'https://datamaule.cl/validarPagos/validarCliente.php');
 // Firma HMAC opcional: el mismo valor que validar_cliente_hmac_secret de la intranet ('' = sin firma).
 // Hoy la intranet tiene validar_cliente_require_hmac = false, así que se deja vacía (igual que mipdv_web).
 $config['validar_cliente_hmac_secret']  = (string)_resto_env_raw('MIPDV_VALIDAR_CLIENTE_HMAC_SECRET', '');

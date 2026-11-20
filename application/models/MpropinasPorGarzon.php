@@ -14,15 +14,11 @@ class MpropinasPorGarzon extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$jsDateTS = strtotime($desde);
-		if ($jsDateTS !== false) {
-			$de = date('Y-m-d', $jsDateTS);
-		}
+		$jsDateTS = strtotime((string)$desde);
+		$de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-		$jsDateTS = strtotime($hasta);
-		if ($jsDateTS !== false) {
-			$a = date('Y-m-d', $jsDateTS);
-		}
+		$jsDateTS = strtotime((string)$hasta);
+		$a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT v.id_caja, to_char(v.fecha, 'DD/MM/YYYY') as fecha, sum(v.valor_propina) as total_propina, u.nombre_usuario, fp.nombre_fpago from venta v
@@ -61,15 +57,11 @@ class MpropinasPorGarzon extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$jsDateTS = strtotime($desde);
-		if ($jsDateTS !== false) {
-			$de = date('Y-m-d', $jsDateTS);
-		}
+		$jsDateTS = strtotime((string)$desde);
+		$de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-		$jsDateTS = strtotime($hasta);
-		if ($jsDateTS !== false) {
-			$a = date('Y-m-d', $jsDateTS);
-		}
+		$jsDateTS = strtotime((string)$hasta);
+		$a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT u.nombre_usuario, sum(v.valor_propina) as total_propina from venta v
@@ -87,15 +79,11 @@ class MpropinasPorGarzon extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-		$jsDateTS = strtotime($desde);
-		if ($jsDateTS !== false) {
-			$de = date('Y-m-d', $jsDateTS);
-		}
+		$jsDateTS = strtotime((string)$desde);
+		$de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-		$jsDateTS = strtotime($hasta);
-		if ($jsDateTS !== false) {
-			$a = date('Y-m-d', $jsDateTS);
-		}
+		$jsDateTS = strtotime((string)$hasta);
+		$a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		$q = "SELECT fp.nombre_fpago, sum(v.valor_propina) as total_propina from venta v

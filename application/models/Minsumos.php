@@ -169,7 +169,7 @@ class Minsumos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$q = "SELECT si.id_insumo, b.nombre_bodega, si.saldo, um.nombre_umedida
+		$q = "SELECT si.id_insumo, b.nombre_bodega, round(si.saldo::numeric, 3) AS saldo, um.nombre_umedida
 			from stock_insumo si
 			join bodega b on si.id_bodega = b.id_bodega
 			join insumo i on si.id_insumo = i.id_insumo

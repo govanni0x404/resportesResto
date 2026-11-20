@@ -14,14 +14,10 @@ class McierresDeCaja extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
          $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT c.id_caja, c.cerrada, to_char(c.fecha, 'DD-MM-YYYY') as fecha_apertura, COALESCE(to_char(c.fecha_rendicion, 'DD-MM-YYYY'),'0') as fecha_rendicion, fondo_fijo, 

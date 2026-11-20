@@ -1452,52 +1452,68 @@
 			var res = [];
 			$.each(carro, function (i, l) {
 				if (l.enviada) {
-					if (!cobroParcial) { res.push({ bruto: l.bruto, exento: l.exento || documentoExento() }); return; }
+					var exEnv = l.exento || documentoExento(), ilaEnv = exEnv ? 0 : Number(l.ila) || 0;
+					if (!cobroParcial) { res.push({ bruto: l.bruto, exento: exEnv, ila: ilaEnv }); return; }
 					var q = cobroParcial[l.id_detalle] || 0;
 					// Misma proporción que Mcaja::seleccionDeLineas()
-					if (q > 0) res.push({ bruto: q >= l.cantidad ? l.bruto : Math.round(l.bruto_exacto * q / l.cantidad), exento: l.exento || documentoExento() });
+					if (q > 0) res.push({ bruto: q >= l.cantidad ? l.bruto : Math.round(l.bruto_exacto * q / l.cantidad), exento: exEnv, ila: ilaEnv });
 					return;
 				}
 				if (cobroParcial) return;
 				var p = producto(l.id_producto), exento = !!(p && p.exento) || documentoExento();
+				// v1.20.0: ILA del producto (los agregados llevan el de su producto, como el exento: Mcaja::conIla)
+				var ila = exento ? 0 : Number(p && p.ila) || 0;
 				var primero = l.agregados.length ? agregado(l.agregados[0]) : null;
-				res.push({ bruto: Math.round((l.precio + (primero ? primero.valor : 0)) * l.cantidad), exento: exento });
+				res.push({ bruto: Math.round((l.precio + (primero ? primero.valor : 0)) * l.cantidad), exento: exento, ila: ila });
 				$.each(l.agregados.slice(1), function (j, id) {
 					var a = agregado(id);
-					if (a) res.push({ bruto: Math.round(a.valor * l.cantidad), exento: exento });
+					if (a) res.push({ bruto: Math.round(a.valor * l.cantidad), exento: exento, ila: ila });
 				});
 			});
 			// 18-11-2026: delivery: el envío es una línea más de la boleta (Mcaja::lineaEnvio)
 			var envio = envioDelivery();
-			if (envio > 0 && carro.length) res.push({ bruto: envio, exento: !!(catalogo.delivery.envio && catalogo.delivery.envio.exento) || documentoExento() });
+			if (envio > 0 && carro.length) {
+				var e = catalogo.delivery.envio, exE = !!(e && e.exento) || documentoExento();
+				res.push({ bruto: envio, exento: exE, ila: exE ? 0 : Number(e && e.ila) || 0 });
+			}
 			return res;
 		}
 
 		// Mismo cálculo que Mcaja::montos() (el servidor valida el pago contra su total):
 		// - lo exento queda fuera del IVA (Monto Exento)
-		// - factura: neto por línea, Neto = suma - descuento neto, IVA = round(Neto x 19%), Total = Neto + IVA + Exento
-		// - boleta / interno: Neto = round(Afecto / 1,19), IVA = Afecto - Neto, Total = suma de precios - descuento
+		// - v1.20.0: lo afecto se agrupa por tasa de ILA; cada grupo usa el factor 1 + (IVA + ILA) / 100 y su ILA = round(Neto x ILA)
+		// - factura: neto por línea, Neto = suma - descuento neto, IVA = round(Neto x 19%), Total = Neto + IVA + ILA + Exento
+		// - boleta / interno: Neto = round(Afecto / factor), IVA = Afecto - Neto - ILA, Total = suma de precios - descuento
 		function totales() {
 			var lineas = lineasBrutas(), subtotal = 0, subAfecto = 0;
-			$.each(lineas, function (i, l) { subtotal += l.bruto; if (!l.exento) subAfecto += l.bruto; });
+			var tasa = catalogo ? catalogo.config.por_iva : 19;
+			var grupos = {}, orden = [];
+			$.each(lineas, function (i, l) {
+				subtotal += l.bruto;
+				if (l.exento) return;
+				subAfecto += l.bruto;
+				var r = Math.max(0, Number(l.ila) || 0), k = 'r' + r.toFixed(2);
+				if (!grupos[k]) { grupos[k] = { tasa: r, bruto: 0, netoLineas: 0 }; orden.push(k); }
+				grupos[k].bruto += l.bruto;
+				grupos[k].netoLineas += Math.round(l.bruto / (1 + (tasa + r) / 100));
+			});
 			var valor = Math.max(0, Number($('#txtDescuento').val()) || 0);
 			var descuento = tipoDesc === 'porc' ? Math.round(subtotal * Math.min(valor, 100) / 100) : Math.round(valor);
 			descuento = Math.min(descuento, subtotal);
-			var tasa = catalogo ? catalogo.config.por_iva : 19, factor = 1 + tasa / 100;
 			var descAfecto = subtotal > 0 ? Math.round(descuento * subAfecto / subtotal) : 0;
 			var exento = (subtotal - subAfecto) - (descuento - descAfecto);
-			var d = catalogo ? documentoActual() : null, neto, iva;
-			if (d && d.es_factura) {
-				var netoLineas = 0;
-				$.each(lineas, function (i, l) { if (!l.exento) netoLineas += Math.round(l.bruto / factor); });
-				neto = subAfecto > 0 ? netoLineas - Math.round(descAfecto / factor) : 0;
-				iva = Math.round(neto * tasa / 100);
-			} else {
-				var afecto = subAfecto - descAfecto;
-				neto = Math.round(afecto / factor);
-				iva = afecto - neto;
-			}
-			return { subtotal: subtotal, descuento: descuento, exento: exento, neto: neto, iva: iva, total: neto + iva + exento };
+			var d = catalogo ? documentoActual() : null, esFactura = !!(d && d.es_factura), neto = 0, ila = 0, iva;
+			var resto = descAfecto;
+			$.each(orden, function (i, k) {
+				var g = grupos[k], f = 1 + (tasa + g.tasa) / 100;
+				var desc = i === orden.length - 1 ? resto : (subAfecto > 0 ? Math.round(descAfecto * g.bruto / subAfecto) : 0);
+				resto -= desc;
+				var ng = esFactura ? g.netoLineas - Math.round(desc / f) : Math.round((g.bruto - desc) / f);
+				neto += ng;
+				ila += Math.round(ng * g.tasa / 100);
+			});
+			iva = esFactura ? Math.round(neto * tasa / 100) : (subAfecto - descAfecto) - neto - ila;
+			return { subtotal: subtotal, descuento: descuento, exento: exento, neto: neto, iva: iva, ila: ila, total: neto + iva + ila + exento };
 		}
 
 		function renderCarro() {
@@ -1559,6 +1575,7 @@
 			$('#filaConDescuento').toggle(t.descuento > 0);
 			$('#lblNeto').text(fmt(t.neto));
 			$('#lblIva').text(fmt(t.iva));
+			$("#lblIla").text(fmt(t.ila || 0)); $("#filaIla").toggle((t.ila || 0) > 0);   // v1.20.0
 			$('#lblExento').text(fmt(t.exento));
 			$('#filaExento').toggle(t.exento > 0);
 			$('#lblTotal').text(fmt(t.total));
@@ -3388,7 +3405,7 @@
 			pintarMensajeMesa();
 			carro = $.map(d.lineas, function (l) {
 				return { enviada: true, id_detalle: l.id_detalle, id_producto: l.id_producto, nombre: l.nombre, precio: l.unitario, bruto: l.bruto, bruto_exacto: l.bruto_exacto,
-					cantidad: l.cantidad, agregados: [], agregado: l.agregado, nota: l.nota, exento: l.exento, hora: l.hora };
+					cantidad: l.cantidad, agregados: [], agregado: l.agregado, nota: l.nota, exento: l.exento, ila: l.ila || 0, hora: l.hora };
 			}).concat(pendientesMesa());
 			actualizarModoMesa();
 			renderCarro();

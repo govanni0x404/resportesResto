@@ -64,19 +64,19 @@
 						<fieldset>
 							<div class="col-md-12 ">
 								<label for="nombreProveedor">NOMBRE PROVEEDOR *</label>
-								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreProveedor" id="nombreProveedor" requerido="si" value="" placeholder="Nombre Proveedor" />
+								<input type="text" class="form-control input-sm input-sm" maxlength='200' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreProveedor" id="nombreProveedor" requerido="si" value="" placeholder="Nombre Proveedor" />
 							</div>
 						</fieldset>
 						<fieldset>
 							<div class="col-md-12 ">
 								<label for="DireccionProveedor">DIRECCION *</label>
-								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="DireccionProveedor" id="DireccionProveedor" requerido="si" value="" placeholder="Direccion Proveedor" />
+								<input type="text" class="form-control input-sm input-sm" maxlength='100' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="DireccionProveedor" id="DireccionProveedor" requerido="si" value="" placeholder="Direccion Proveedor" />
 							</div>
 						</fieldset>
 						<fieldset>
 							<div class="col-md-6 ">
 								<label for="TelefonoProveedor">TELEFONO</label>
-								<input min="0" type="text" class="form-control input-sm input-sm" maxlength='20' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="TelefonoProveedor" id="TelefonoProveedor" requerido="si" value="" placeholder="Telefono Proveedor" />
+								<input min="0" type="text" class="form-control input-sm input-sm" maxlength='30' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="TelefonoProveedor" id="TelefonoProveedor" requerido="si" value="" placeholder="Telefono Proveedor" />
 							</div>
 
 							<div class="col-md-6 ">
@@ -87,7 +87,7 @@
 						<fieldset>
 							<div class="col-md-12">
 								<label for="GiroProveedor">GIRO *</label>
-								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="GiroProveedor" id="GiroProveedor" requerido="si" value="" placeholder="Giro Proveedor" />
+								<input type="text" class="form-control input-sm input-sm" maxlength='200' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="GiroProveedor" id="GiroProveedor" requerido="si" value="" placeholder="Giro Proveedor" />
 							</div>
 						</fieldset>
 						<!-- FIN CAMPOS DE REGISTRO  -->

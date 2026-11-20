@@ -13,7 +13,7 @@ class MentradaBodega extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-    $q = "SELECT s.saldo, u.nombre_umedida from stock_insumo s 
+    $q = "SELECT round(s.saldo::numeric, 3) AS saldo, u.nombre_umedida from stock_insumo s 
     join insumo i on s.id_insumo=i.id_insumo
     join umedida u on i.id_umedida_inventario=u.id_umedida
     where s.id_insumo=? and s.id_bodega=?" ;

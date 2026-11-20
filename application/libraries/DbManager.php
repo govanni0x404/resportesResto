@@ -36,15 +36,11 @@ class DbManager
   protected $servers = [
     'localhost' => [
       'dbdriver'     => 'postgre',
-      // MODO LOCAL (v1.19.0): antes estos valores venían vacíos y el .env los apuntaba al VPS (datamaule.cl:5432).
-      // Ahora apuntan al PostgreSQL 12 de este computador. La clave va en .env.php (MIPDV_DB_LOCALHOST_PASSWORD).
-      // 'hostname'     => '',      // <-- MIPDV_DB_LOCALHOST_HOSTNAME
-      // 'port'         => null,    // <-- MIPDV_DB_LOCALHOST_PORT   (null = default 5432)
-      // 'username'     => '',      // <-- MIPDV_DB_LOCALHOST_USERNAME
-      'hostname'     => '127.0.0.1',
-      'port'         => 5432,
-      'username'     => 'postgres',
-      'password'     => '',      // <-- MIPDV_DB_LOCALHOST_PASSWORD (en .env.php)
+      // v1.20.0: en modo local (RESTO_CONEXION=2) el constructor pone 127.0.0.1:5432 / postgres si el .env no dice otra cosa
+      'hostname'     => '',      // <-- MIPDV_DB_LOCALHOST_HOSTNAME
+      'port'         => null,    // <-- MIPDV_DB_LOCALHOST_PORT   (null = default 5432)
+      'username'     => '',      // <-- MIPDV_DB_LOCALHOST_USERNAME
+      'password'     => '',      // <-- MIPDV_DB_LOCALHOST_PASSWORD
       'pconnect'     => false,
       'char_set'     => 'utf8',
       'dbcollat'     => 'utf8_general_ci', // (Postgre no usa, CI no se muere)
@@ -139,6 +135,15 @@ class DbManager
       $this->_applyEnvOverridesToServers();
     } catch (\Throwable $e) {
       log_message('error', 'DbManager: _applyEnvOverridesToServers falló: ' . $e->getMessage());
+    }
+
+    // 3) v1.20.0: modo local (RESTO_CONEXION=2): "localhost" es de verdad este computador si el .env no dijo otra cosa
+    if (defined('RESTO_MODO_LOCAL') && RESTO_MODO_LOCAL) {
+      $l =& $this->servers['localhost'];
+      if (trim((string)$l['hostname']) === '') $l['hostname'] = '127.0.0.1';
+      if (empty($l['port'])) $l['port'] = 5432;
+      if (trim((string)$l['username']) === '') $l['username'] = 'postgres';
+      unset($l);
     }
   }
 

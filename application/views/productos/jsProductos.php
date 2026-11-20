@@ -204,6 +204,7 @@ function ListadoCartaDeProductos() {
         ListadoDestinoDeImpresion(rowData[0].nombre_dimpresion, rowData[0].id_dimpresion);
         ListadoDeBodega(rowData[0].nombre_bodega, rowData[0].id_bodega);
         ListadoDeImpuestosIva(rowData[0].iva, rowData[0].impto_iva);
+        ListadoDeImpuestosAdicional(rowData[0].impto_ila);   // v1.20.0
         ListadoDeMenu(rowData[0].id_menu || rowData[0].menu);
         ListadoDeReceta(rowData[0].receta, rowData[0].id_receta);
         
@@ -251,6 +252,7 @@ function crearNuevoProducto() {
     ListadoDestinoDeImpresion("CAJA");
     ListadoDeBodega("BODEGA PRINCIPAL");
     ListadoDeImpuestosIva("IVA 19%");
+    ListadoDeImpuestosAdicional(null);   // v1.20.0: producto nuevo, sin ILA
     ListadoDeMenu("");
     ListadoDeReceta("");
     
@@ -439,7 +441,8 @@ function GrabarProducto() {
         'cbarra': $('#txtCbarra').val(),
         'cbarra_auto': cbarraSugerido !== null && $.trim($('#txtCbarra').val()) === cbarraSugerido ? 1 : 0,
         'impto_iva': $('#cboImpuestoIva').val(),
-        'impto_ila': 1,
+        'impto_ila': $('#cboImpuestoIla').val() || 0,   // v1.20.0: el ILA elegido (antes siempre 1 = exento)
+        'ila_en_formulario': 1,
         'id_familia': $('#cboFamilia').val(),
         'id_umedida': $('#cboUmedida').val(),
         'precio_bruto': 0,

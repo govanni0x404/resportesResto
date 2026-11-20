@@ -252,9 +252,30 @@ class Productos extends CI_Controller
 			$miData['favorito'] = ((string)$producto['favorito'] === '1') ? 'true' : 'false';
 		}
 		
-		// 19-11-2026 (auditoría): el formulario no tiene ILA (siempre mandaba 1 = exento). Al editar se conserva el ILA que
-		// tenga el producto (ej. un licor creado en el POS de escritorio con ILA 20,5%); los precios se calculan con él.
-		if ($id > 0) unset($miData['impto_ila'], $miData['valor_ila']);
+		// v1.20.0: el formulario ya tiene el ILA (Impuesto adicional). Se graba el elegido, con su tasa en valor_ila; sin
+		// elegir o 0 = el impuesto "sin ILA" (valor 0). Los precios (detalle_lprecio) se recalculan con él más abajo.
+		// Un envío sin el campo (pantalla antigua en caché) conserva el ILA del producto al editar, como antes.
+		if (!empty($producto['ila_en_formulario'])) {
+			$this->load->helper('tenant');
+			$dbIla = get_tenant_db($this);
+			$idIla = (int)$producto['impto_ila'];
+			$imp = $idIla > 0 ? $dbIla->query('SELECT id_impuesto, COALESCE(valor, 0) AS valor, nombre_impuesto FROM impuesto WHERE id_impuesto = ?', array($idIla))->row() : null;
+			if (!$imp) {
+				$imp = $dbIla->query("SELECT id_impuesto, 0 AS valor FROM impuesto WHERE COALESCE(valor, 0) = 0 ORDER BY (nombre_impuesto ILIKE '%EXENTO%') DESC, id_impuesto LIMIT 1")->row();
+			} elseif ((float)$imp->valor > 0 && stripos((string)$imp->nombre_impuesto, 'ILA') !== 0) {
+				echo json_encode(['success' => false, 'error' => 'El impuesto adicional elegido no es un ILA']);
+				return;
+			}
+			if (!$imp) {
+				echo json_encode(['success' => false, 'error' => 'No hay un impuesto "sin ILA" (valor 0) en la tabla de impuestos']);
+				return;
+			}
+			$miData['impto_ila'] = (int)$imp->id_impuesto;
+			$miData['valor_ila'] = (float)$imp->valor;
+		} elseif ($id > 0) {
+			unset($miData['impto_ila'], $miData['valor_ila']);
+		}
+		unset($producto['ila_en_formulario']);
 
 		// Grabar producto
 		$resultadoProducto = $this->Mproductos->grabarNuevoProducto($id, $miData);
@@ -266,6 +287,8 @@ class Productos extends CI_Controller
 		
 		$idProducto = $resultadoProducto[0]->id_producto;
 		log_message('debug', 'Producto grabado con ID: ' . $idProducto);
+		// v1.20.0: con el IVA / ILA del producto ya grabados, el neto, IVA e ILA de todos sus precios quedan al día
+		if ($id > 0) $this->Mproductos->recalcularImpuestosPrecios((int)$idProducto);
 		
 		$preciosGrabados = array();
 		if (!empty($precios) && is_array($precios)) {

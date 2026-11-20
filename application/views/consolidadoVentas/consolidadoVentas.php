@@ -82,6 +82,7 @@ $fechaActual = date('d-m-Y');
 											<div class="statistic-box statistic-filled-6 btn-primary ocultarTotalIva">
 												<h2>$<span class="count-number1" id="totalIva">0</span><span class="slight"><i class=" fa-rotate-90 c-white"> </i></span></h2>
 												<div class="small">Total Iva</div>
+												<div class="small" id="totalIlaTxt" style="display:none"></div><!-- v1.20.0: ILA -->
 												<i class="pe-7s-cash statistic_icon c-white"></i>
 											</div>
 										</div>

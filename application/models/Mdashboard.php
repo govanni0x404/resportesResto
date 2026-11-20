@@ -26,15 +26,11 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -55,15 +51,11 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -95,15 +87,11 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -129,15 +117,11 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -165,15 +149,11 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -293,15 +273,11 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -350,15 +326,11 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -394,15 +366,11 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -454,15 +422,11 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -509,15 +473,11 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -565,15 +525,11 @@ class Mdashboard extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -604,14 +560,10 @@ class Mdashboard extends CI_Model
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
         /*
         $q = "SELECT sum(c.fondo_fijo) as fondo_fijo, sum(c.descuento) as descuento, sum(c.propina) as propina,
         sum(c.ingresos) as ingresos, sum(c.egresos) as egresos, to_char(c.fecha,'dd-mm-yyyy') as fecha
@@ -647,14 +599,10 @@ class Mdashboard extends CI_Model
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -683,14 +631,10 @@ class Mdashboard extends CI_Model
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -717,14 +661,10 @@ class Mdashboard extends CI_Model
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -750,14 +690,10 @@ class Mdashboard extends CI_Model
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -782,14 +718,10 @@ class Mdashboard extends CI_Model
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -812,14 +744,10 @@ class Mdashboard extends CI_Model
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -845,14 +773,10 @@ class Mdashboard extends CI_Model
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -877,14 +801,10 @@ class Mdashboard extends CI_Model
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         //$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);

@@ -14,15 +14,11 @@ class MdetalleOperaciones extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         // 14-11-2026: una fila por venta. Antes el JOIN con pago_venta repetía la venta (con su total completo)

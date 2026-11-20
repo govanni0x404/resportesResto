@@ -13,15 +13,11 @@ class MresumenAnulaciones extends CI_Model
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT dc.id_cotizacion, p.nombre_producto, dc.cantidad, dc.total_bruto,

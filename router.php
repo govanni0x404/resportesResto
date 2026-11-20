@@ -27,7 +27,7 @@ $prohibido = array(
 	// Respaldos del usuario
 	'#(^|/)_respaldos[^/]*(/|$)#i',
 	// Código, scripts de la base, instaladores (se descargan por la app) y configuración de docker
-	'#^/(application|system|instaladores|sql|docker)(/|$)#i',
+	'#^/(application|system|instaladores|sql|docker|tests)(/|$)#i',
 	// Archivos del proyecto en la raíz
 	'#^/(docker-compose\.ya?ml|composer\.(json|lock)|readme\.rst|license\.txt|c\.txt|router\.php)$#i',
 	// Tipos que nunca son parte de la página

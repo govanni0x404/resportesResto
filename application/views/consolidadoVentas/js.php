@@ -146,6 +146,9 @@
 				} else {
 					$('#totalIva').text(0);
 				}
+				// v1.20.0: impuesto adicional (ILA), aparte del IVA
+				var ilaC = parseInt(v.total_ila || 0, 10);
+				$('#totalIlaTxt').text('+ ILA $' + commaSeparateNumber(ilaC)).toggle(ilaC !== 0);
 				if (v.total_descuento > 0) {
 					$('#totalDescuentos').text(commaSeparateNumber(v.total_descuento));
 					// $('#totalDescuentos').counterUp({

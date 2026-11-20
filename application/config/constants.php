@@ -96,3 +96,19 @@ defined('EXIT__AUTO_MAX')      OR define('EXIT__AUTO_MAX', 125); // highest auto
 |
 */
 defined('RESTO_ID_SOFTWARE') OR define('RESTO_ID_SOFTWARE', 24);
+
+/*
+|--------------------------------------------------------------------------
+| Dónde se conecta el sistema (v1.20.0): RESTO_CONEXION en .env.php
+|--------------------------------------------------------------------------
+|
+|   RESTO_CONEXION=1  -> VPS: login por la intranet (datamaule.cl) y base de cada empresa por validarCliente.
+|   RESTO_CONEXION=2  -> LOCAL: sin intranet. Base RESTO_DEV_BASE del PostgreSQL de este computador y login
+|                        eligiendo un usuario (/login/dev, solo desde este computador o RESTO_DEV_IPS).
+|
+| Sin la variable (o con cualquier otro valor) queda en 1: un servidor al que se le olvide el .env.php nunca
+| queda en modo local.
+|
+*/
+defined('RESTO_CONEXION') OR define('RESTO_CONEXION', ((string)getenv('RESTO_CONEXION') === '2') ? 2 : 1);
+defined('RESTO_MODO_LOCAL') OR define('RESTO_MODO_LOCAL', RESTO_CONEXION === 2);

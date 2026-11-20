@@ -75,7 +75,7 @@ class Minventario extends CI_Model {
         if (ctype_digit($texto)) { $filtro .= ' OR i.id_insumo = ?'; $params[] = (int)$texto; }
         $q = "SELECT i.id_insumo, i.nombre_insumo, COALESCE(i.cbarra, '') AS cbarra,
                 COALESCE(u.nombre_umedida, '') AS umedida, COALESCE(i.costo_neto_ppp, 0) AS costo,
-                COALESCE((SELECT sum(s.saldo) FROM stock_insumo s WHERE s.id_insumo = i.id_insumo AND s.id_bodega = ?), 0) AS stock
+                round(COALESCE((SELECT sum(s.saldo) FROM stock_insumo s WHERE s.id_insumo = i.id_insumo AND s.id_bodega = ?), 0)::numeric, 3) AS stock
             FROM insumo i
             LEFT JOIN umedida u ON u.id_umedida = i.id_umedida_inventario
             WHERE i.vigente IS TRUE AND ($filtro)

@@ -214,22 +214,22 @@ function ListadoDeImpuestosIva(objSelected, idSel) {
     });
 }
 
-function ListadoDeImpuestosAdicional(objSelected) {
+// v1.20.0: ILA del producto (bebidas, cervezas, vinos, licores). idSel = impto_ila del producto; sin él, "sin ILA".
+function ListadoDeImpuestosAdicional(idSel) {
     $.post(base_url + "index.php/Productos/ListadoDeImpuestosAdicionales", {
         id: ""
     }, function(datos) {
-        var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
-        tbl = '<option selected disabled value="0">Seleccione El Impuesto Adicional</option>';
-        $.each(obj, function(index, v) { // recorro el array
-            if (v.nombre_impuesto == objSelected) {
-                tbl = tbl + '<option selected value="' + v.id_impuesto + '">' + v.nombre_impuesto +
-                    '</option>';
-            } else {
-                tbl = tbl + '<option value="' + v.id_impuesto + '">' + v.nombre_impuesto + '</option>';
-            }
-        }); //fin each
-        $("#cboImpuestoAdicional").html(tbl);
-        $("#cboImpuestoAdicional").select2();
+        var obj = jQuery.parseJSON(datos);
+        var tbl = '', hayElegido = false;
+        $.each(obj, function(index, v) {
+            var sinIla = Number(v.valor) === 0;
+            var texto = sinIla ? 'Sin impuesto adicional' : v.nombre_impuesto + (v.observacion ? ' (' + v.observacion + ')' : '');
+            var elegido = idSel != null && idSel !== '' ? String(v.id_impuesto) === String(idSel) : (sinIla && !hayElegido);
+            if (elegido) hayElegido = true;
+            tbl += '<option value="' + v.id_impuesto + '"' + (elegido ? ' selected' : '') + '>' + escaparHtml(texto) + '</option>';
+        });
+        $("#cboImpuestoIla").html(tbl);
+        $("#cboImpuestoIla").select2();
     });
 }
 

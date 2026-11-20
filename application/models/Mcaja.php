@@ -81,7 +81,7 @@ class Mcaja extends CI_Model
 		$usaUm = isset($tiene['producto']['id_umedida']) && isset($tieneUm['umedida']['nombre_umedida']);
 		$q = "SELECT p.id_producto, p.nombre_producto, COALESCE(p.cbarra, '') AS cbarra,
 				COALESCE(p.id_familia, 0) AS id_familia,
-				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, " . $this->sqlExento($db, 'p') . " AS exento,
+				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, " . $this->sqlExento($db, 'p') . " AS exento, " . $this->sqlIla($db, 'p') . " AS ila,
 				$colFraccion AS fraccion, $colPedir AS pedir_cantidad, $colFavorito AS favorito, " . ($usaUm ? "COALESCE(um.nombre_umedida, '')" : "''") . " AS umedida
 			FROM producto p
 			LEFT JOIN detalle_lprecio dl ON dl.id_producto = p.id_producto AND dl.id_lprecio = ?
@@ -104,6 +104,7 @@ class Mcaja extends CI_Model
 				'id_familia' => (int)$p->id_familia,
 				'precio' => (int)round((float)$p->precio),
 				'exento' => $p->exento === 't' || $p->exento === true,
+				'ila' => ($p->exento === 't' || $p->exento === true) ? 0 : (float)$p->ila,   // v1.20.0
 				'fraccion' => $p->fraccion === 't' || $p->fraccion === true,
 				'pedir_cantidad' => $p->pedir_cantidad === 't' || $p->pedir_cantidad === true,
 				'favorito' => $p->favorito === 't' || $p->favorito === true,
@@ -794,7 +795,7 @@ class Mcaja extends CI_Model
 
 		$detalle = $this->q($db, "SELECT COALESCE(p.nombre_producto, 'Producto ' || dv.id_producto)
 					|| COALESCE(' + ' || pa.nombre_producto, '') AS nombre,
-				dv.cantidad, dv.bruto_un, dv.subtotal, (COALESCE(dv.poriva, 1) = 0) AS exento
+				dv.cantidad, dv.bruto_un, dv.subtotal, (COALESCE(dv.poriva, 1) = 0) AS exento, COALESCE(dv.porila, 0) AS porila
 			FROM detalle_venta dv
 			LEFT JOIN producto p ON p.id_producto = dv.id_producto
 			LEFT JOIN producto pa ON pa.id_producto = dv.id_agregado AND dv.id_agregado > 0
@@ -863,8 +864,8 @@ class Mcaja extends CI_Model
 		foreach ($detalle as $d) {
 			$d->exento = $d->exento === 't' || $d->exento === true;
 			$neto = $enNeto && !$d->exento;
-			$d->precio_mostrar = $neto ? $d->bruto_un / $factor : (float)$d->bruto_un;
-			$d->monto_mostrar = $neto ? (int)round($d->subtotal / $factor) : (int)round($d->subtotal);
+			$d->precio_mostrar = $neto ? $d->bruto_un / ($factor + max(0, (float)$d->porila) / 100) : (float)$d->bruto_un;
+			$d->monto_mostrar = $neto ? (int)round($d->subtotal / ($factor + max(0, (float)$d->porila) / 100)) : (int)round($d->subtotal);
 			$sumaLineas += $d->monto_mostrar;
 		}
 		$v->en_neto = $enNeto;
@@ -1473,10 +1474,12 @@ class Mcaja extends CI_Model
 		if (in_array($doc['cod_sii'], array(34, 41))) {
 			foreach ($lineas as $i => $l) $lineas[$i]['exento'] = true;
 		}
+		$lineas = $this->conIla($db, $lineas);   // v1.20.0: ILA de cada producto
 		$m = $this->montos($lineas, $descuento, $doc['es_factura'], $config['por_iva']);
 		$total = $m['total'];
 		$neto = $m['neto'];
 		$iva = $m['iva'];
+		$ila = $m['ila'];
 		$exento = $m['exento'];
 		// Boleta (39) y factura (33) afectas necesitan monto neto: solo exentos va en boleta / factura exenta
 		if ($doc['electronico'] && in_array($doc['cod_sii'], array(33, 39)) && $exento > 0 && $neto < 5) {
@@ -1614,7 +1617,7 @@ class Mcaja extends CI_Model
 				'descuento' => $descuento,
 				'neto' => $neto,
 				'iva' => $iva,
-				'ila' => 0,
+				'ila' => $ila,
 				'total' => $total,
 				'id_caja' => (int)$caja->id_caja,
 				'folio' => $folio,
@@ -1673,18 +1676,19 @@ class Mcaja extends CI_Model
 					'bruto_un' => $l['unitario'],
 					'bruto_un_lista' => $l['unitario'],
 					'precio_unitario_bruto' => $l['unitario'],
-					'precio_unitario_neto' => $ml['exento'] ? $l['unitario'] : $l['unitario'] / $factor,
-					'neto_un' => $ml['exento'] ? $l['unitario'] : $l['unitario'] / $factor,
-					'neto_unitario' => $ml['exento'] ? $l['unitario'] : $l['unitario'] / $factor,
+					// v1.20.0: factor de la línea = 1 + (IVA + ILA del producto) / 100
+					'precio_unitario_neto' => $l['unitario'] / $ml['factor'],
+					'neto_un' => $l['unitario'] / $ml['factor'],
+					'neto_unitario' => $l['unitario'] / $ml['factor'],
 					'subtotal' => $l['bruto'],
 					'descuento' => 0,
 					'descuento_porcentual' => 0,
 					'total_bruto' => $l['bruto'],
 					'neto' => $netoLinea,
-					'iva' => (int)round($l['bruto'] - $netoLinea),
-					'ila' => 0,
+					'iva' => (int)round($l['bruto'] - $netoLinea - $ml['ila']),
+					'ila' => (int)round($ml['ila']),
 					'poriva' => $ml['exento'] ? 0 : $config['por_iva'],
-					'porila' => 0,
+					'porila' => $ml['porila'],
 					'espack' => false,
 					'es_merma' => false,
 					'esmerma' => false,
@@ -1699,10 +1703,10 @@ class Mcaja extends CI_Model
 					'monto_descuento_global' => $descLinea,
 					'porcentaje_descuento_global' => $porDescuento,
 					'descuento_global_prorrateado_bruto' => $descLinea,
-					'descuento_global_prorrateado_neto' => $ml['exento'] ? $descLinea : $descLinea / $factor,
+					'descuento_global_prorrateado_neto' => $descLinea / $ml['factor'],
 					'subtotal_neto_con_descuento' => $netoConDesc,
-					'monto_iva' => $conDesc - $netoConDesc,
-					'monto_ila' => 0,
+					'monto_iva' => $conDesc - $netoConDesc - $ml['ila_con_descuento'],
+					'monto_ila' => $ml['ila_con_descuento'],
 					'total_bruto_con_descuento' => $conDesc,
 					'monto_exento' => $ml['exento'] ? $conDesc : 0,
 				// Bodega de la caja (Control de cajas), si detalle_venta tiene la columna; sin bodega en la caja no se informa (como antes)
@@ -1924,6 +1928,7 @@ class Mcaja extends CI_Model
 					'unitario' => (int)$a->valor, 'bruto' => $bruto, 'id_agregado' => 0, 'nota' => $notaDe($a),
 					'segun_stock' => $segunStock, 'recetas' => array(array((int)$a->id_receta, !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : (int)$a->id_bodega)),
 					'exento' => $exento,
+					'ila_de' => $id,   // v1.20.0: el agregado lleva el ILA de su producto, igual que el exento
 				);
 			}
 		}
@@ -2397,7 +2402,7 @@ class Mcaja extends CI_Model
 
 		$lineas =$this->q($db, "SELECT dv.id_detalle_venta, dv.id_producto, COALESCE(dv.id_agregado, 0) AS id_agregado,
 				COALESCE(p.nombre_producto, 'Producto ' || dv.id_producto) || COALESCE(' + ' || pa.nombre_producto, '') AS nombre,
-				dv.cantidad, dv.bruto_un, dv.subtotal, (COALESCE(dv.poriva, 1) = 0) AS exento
+				dv.cantidad, dv.bruto_un, dv.subtotal, (COALESCE(dv.poriva, 1) = 0) AS exento, COALESCE(dv.porila, 0) AS porila
 			FROM detalle_venta dv
 			LEFT JOIN producto p ON p.id_producto = dv.id_producto
 			LEFT JOIN producto pa ON pa.id_producto = dv.id_agregado AND dv.id_agregado > 0
@@ -2435,6 +2440,7 @@ class Mcaja extends CI_Model
 				'disponible' => round((float)$l->cantidad - $ya, 3),
 				'bruto_un' => (int)$l->bruto_un,
 				'exento' => $l->exento === 't' || $l->exento === true,
+				'ila' => max(0.0, (float)$l->porila),   // v1.20.0: el ILA con que se vendió (la NC devuelve el mismo)
 			);
 		}
 
@@ -2572,8 +2578,11 @@ class Mcaja extends CI_Model
 				$exento = $total;
 				foreach ($lineas as $i => $l) $lineas[$i]['exento'] = true;
 			}
-			$neto = $this->netoDesdeAfecto($total - $exento, $config['por_iva'], $v['es_factura']);
-			$iva = $total - $exento - $neto;
+			// v1.20.0: con ILA el afecto se reparte entre IVA e ILA según las líneas devueltas (sin ILA, como siempre)
+			$des = $this->desgloseAfecto($lineas, $total - $exento, $config['por_iva'], $v['es_factura']);
+			$neto = $des['neto'];
+			$iva = $des['iva'];
+			$ila = $des['ila'];
 			$m = $this->montos($lineas, $descuento, false, $config['por_iva']);
 
 			// La NC electrónica toma su folio de Cloud Apps al emitirse
@@ -2593,7 +2602,7 @@ class Mcaja extends CI_Model
 				'descuento' => -$descuento,
 				'neto' => -$neto,
 				'iva' => -$iva,
-				'ila' => 0,
+				'ila' => -$ila,
 				'total' => -$total,
 				'id_caja' => (int)$caja->id_caja,
 				'folio' => $folio,
@@ -2659,18 +2668,18 @@ class Mcaja extends CI_Model
 					'bruto_un' => $l['bruto_un'],
 					'bruto_un_lista' => $l['bruto_un'],
 					'precio_unitario_bruto' => $l['bruto_un'],
-					'precio_unitario_neto' => $ml['exento'] ? $l['bruto_un'] : $l['bruto_un'] / $factorIva,
-					'neto_un' => $ml['exento'] ? $l['bruto_un'] : $l['bruto_un'] / $factorIva,
-					'neto_unitario' => $ml['exento'] ? $l['bruto_un'] : $l['bruto_un'] / $factorIva,
+					'precio_unitario_neto' => $l['bruto_un'] / $ml['factor'],
+					'neto_un' => $l['bruto_un'] / $ml['factor'],
+					'neto_unitario' => $l['bruto_un'] / $ml['factor'],
 					'subtotal' => -$l['bruto'],
 					'descuento' => 0,
 					'descuento_porcentual' => 0,
 					'total_bruto' => -$l['bruto'],
 					'neto' => -$netoLinea,
-					'iva' => -(int)round($l['bruto'] - $netoLinea),
-					'ila' => 0,
+					'iva' => -(int)round($l['bruto'] - $netoLinea - $ml['ila']),
+					'ila' => -(int)round($ml['ila']),
 					'poriva' => $ml['exento'] ? 0 : $config['por_iva'],
-					'porila' => 0,
+					'porila' => $ml['porila'],
 					'espack' => false,
 					'es_merma' => false,
 					'esmerma' => false,
@@ -2685,10 +2694,10 @@ class Mcaja extends CI_Model
 					'monto_descuento_global' => -$descLinea,
 					'porcentaje_descuento_global' => $v['por_descuento'],
 					'descuento_global_prorrateado_bruto' => -$descLinea,
-					'descuento_global_prorrateado_neto' => -($ml['exento'] ? $descLinea : $descLinea / $factorIva),
+					'descuento_global_prorrateado_neto' => -($descLinea / $ml['factor']),
 					'subtotal_neto_con_descuento' => -$netoConDesc,
-					'monto_iva' => -($conDesc - $netoConDesc),
-					'monto_ila' => 0,
+					'monto_iva' => -($conDesc - $netoConDesc - $ml['ila_con_descuento']),
+					'monto_ila' => -$ml['ila_con_descuento'],
 					'total_bruto_con_descuento' => -$conDesc,
 					'monto_exento' => $ml['exento'] ? -$conDesc : 0,
 				) + ($bodegaNc > 0 ? array('id_bodega' => $bodegaNc) : array()), null);
@@ -3002,7 +3011,10 @@ class Mcaja extends CI_Model
 		$envio = null;
 		try {
 			$l = $this->lineaEnvio($db, $config);
-			if ($l) $envio = array('id_producto' => $l['id_producto'], 'nombre' => $l['nombre'], 'monto' => $l['bruto'], 'exento' => $l['exento']);
+			if ($l) {
+				$l = $this->conIla($db, array($l))[0];   // v1.20.0: la pantalla calcula el envío con su ILA, como el servidor
+				$envio = array('id_producto' => $l['id_producto'], 'nombre' => $l['nombre'], 'monto' => $l['bruto'], 'exento' => $l['exento'], 'ila' => $l['ila']);
+			}
 		} catch (Exception $e) {
 			$envio = null;   // producto del envío borrado: sin envío (al cobrar se avisa)
 		}
@@ -3364,7 +3376,7 @@ class Mcaja extends CI_Model
 	{
 		$rows = $this->q($db, "SELECT d.id_detalle_cotizacion, d.id_producto, COALESCE(p.nombre_producto, 'Producto ' || d.id_producto) AS nombre,
 				pa.nombre_producto AS agregado, d.cantidad, COALESCE(d.bruto_un, 0) AS bruto_un, COALESCE(d.total_bruto, 0) AS total_bruto,
-				COALESCE(d.id_agregado, 0) AS id_agregado, COALESCE(d.mensaje, '') AS nota, " . $this->sqlExento($db, 'p') . " AS exento,
+				COALESCE(d.id_agregado, 0) AS id_agregado, COALESCE(d.mensaje, '') AS nota, " . $this->sqlExento($db, 'p') . " AS exento, " . $this->sqlIla($db, 'p') . " AS ila,
 				to_char(d.fecha_movimiento, 'HH24:MI') AS hora
 			FROM detalle_cotizacion d
 			LEFT JOIN producto p ON p.id_producto = d.id_producto
@@ -3382,6 +3394,7 @@ class Mcaja extends CI_Model
 				'bruto_exacto' => (float)$r->total_bruto > 0 ? (float)$r->total_bruto : (float)$r->bruto_un * $cantidad,
 				'id_agregado' => (int)$r->id_agregado, 'nota' => $r->nota, 'hora' => $r->hora, 'segun_stock' => false, 'recetas' => array(),
 				'exento' => $r->exento === 't' || $r->exento === true,
+				'ila' => ($r->exento === 't' || $r->exento === true) ? 0 : (float)$r->ila,   // v1.20.0
 			);
 		}
 		return $lineas;
@@ -3543,8 +3556,14 @@ class Mcaja extends CI_Model
 	private function mensajeDeCotizacion($db, $idCot)
 	{
 		$c = $this->columnas($db, array('cotizacion'));
-		if (!isset($c['cotizacion']['observaciones_generales']) || $idCot <= 0) return '';
-		$r = $this->q($db, 'SELECT COALESCE(observaciones_generales, \'\') AS m FROM cotizacion WHERE id_cotizacion = ?', array((int)$idCot))->row();
+		if ($idCot <= 0) return '';
+		// v1.20.0: la app de garzones (DataRestoAPI, recibirNuevaCotizacion) deja el mensaje general en cotizacion.mensaje; la
+		// web, en observaciones_generales. Se muestra el de la web y, si no hay, el que mandó el celular.
+		$cols = array();
+		if (isset($c['cotizacion']['observaciones_generales'])) $cols[] = "NULLIF(trim(observaciones_generales), '')";
+		if (isset($c['cotizacion']['mensaje'])) $cols[] = "NULLIF(trim(mensaje), '')";
+		if (!$cols) return '';
+		$r = $this->q($db, 'SELECT COALESCE(' . implode(', ', $cols) . ', \'\') AS m FROM cotizacion WHERE id_cotizacion = ?', array((int)$idCot))->row();
 		return $r ? trim((string)$r->m) : '';
 	}
 
@@ -3591,7 +3610,10 @@ class Mcaja extends CI_Model
 		$db = $this->conexion();
 		$c = $this->columnas($db, array('usuario'));
 		$u = isset($c['usuario']) ? $c['usuario'] : array();
-		$esGarzon = isset($u['esgarzon']) ? '(esgarzon IS TRUE)' : 'false';
+		// v1.20.0: garzón = marcado en el POS (esgarzon) o con rol GARZON. Los usuarios creados en la web solo tienen el rol
+		// (la pantalla de Usuarios no marca esgarzon) y salían mezclados con los cajeros.
+		$porRol = isset($u['id_rol']) ? "EXISTS (SELECT 1 FROM rol r WHERE r.id_rol = usuario.id_rol AND r.nombre_rol ILIKE 'GARZ%')" : 'false';
+		$esGarzon = isset($u['esgarzon']) ? "(esgarzon IS TRUE OR $porRol)" : $porRol;
 		$vigente = isset($u['vigente']) ? 'WHERE vigente IS NOT FALSE' : '';
 		$res = array();
 		foreach ($this->q($db, "SELECT id_usuario, COALESCE(nombre_usuario, '') AS nombre, $esGarzon AS garzon FROM usuario $vigente
@@ -4513,12 +4535,21 @@ class Mcaja extends CI_Model
 	 */
 	private function montos($lineas, $descuento, $esFactura, $porIva)
 	{
-		$factor = 1 + $porIva / 100;
 		$subtotal = 0;
 		$subAfecto = 0;
+		// v1.20.0: lo afecto se agrupa por tasa de ILA (impuesto adicional del producto, 0 = sin ILA). La base del ILA es
+		// la misma del IVA (el neto): bruto = neto x (1 + (IVA + ILA) / 100). Sin productos con ILA hay un solo grupo
+		// (tasa 0) y los montos son exactamente los de antes.
+		$grupos = array();
 		foreach ($lineas as $l) {
 			$subtotal += $l['bruto'];
-			if (empty($l['exento'])) $subAfecto += $l['bruto'];
+			if (empty($l['exento'])) {
+				$subAfecto += $l['bruto'];
+				$k = $this->claveIla($l);
+				if (!isset($grupos[$k])) $grupos[$k] = array('tasa' => $this->tasaIlaLinea($l), 'bruto' => 0, 'neto_lineas' => 0);
+				$grupos[$k]['bruto'] += $l['bruto'];
+				$grupos[$k]['neto_lineas'] += (int)round($l['bruto'] / (1 + ($porIva + $grupos[$k]['tasa']) / 100));
+			}
 		}
 		$subExento = $subtotal - $subAfecto;
 		$descuento = min(max(0, (int)$descuento), $subtotal);
@@ -4526,17 +4557,34 @@ class Mcaja extends CI_Model
 		$descExento = $descuento - $descAfecto;
 		$exento = $subExento - $descExento;
 
-		if ($esFactura) {
-			$netoLineas = 0;
-			foreach ($lineas as $l) {
-				if (empty($l['exento'])) $netoLineas += (int)round($l['bruto'] / $factor);
+		// Descuento de lo afecto repartido entre los grupos según su monto (el último lleva el resto)
+		$resto = $descAfecto;
+		$claves = array_keys($grupos);
+		$ultimaClave = end($claves);
+		foreach ($grupos as $k => $g) {
+			$d = $k === $ultimaClave ? $resto : ($subAfecto > 0 ? (int)round($descAfecto * $g['bruto'] / $subAfecto) : 0);
+			$resto -= $d;
+			$grupos[$k]['descuento'] = $d;
+		}
+
+		$neto = 0;
+		$ila = 0;
+		foreach ($grupos as $k => $g) {
+			$f = 1 + ($porIva + $g['tasa']) / 100;
+			if ($esFactura) {
+				$ng = $g['neto_lineas'] - (int)round($g['descuento'] / $f);
+			} else {
+				$ng = (int)round(($g['bruto'] - $g['descuento']) / $f);
 			}
-			$neto = $subAfecto > 0 ? $netoLineas - (int)round($descAfecto / $factor) : 0;
+			$grupos[$k]['neto'] = $ng;
+			$grupos[$k]['ila'] = (int)round($ng * $g['tasa'] / 100);
+			$neto += $ng;
+			$ila += $grupos[$k]['ila'];
+		}
+		if ($esFactura) {
 			$iva = (int)round($neto * $porIva / 100);
 		} else {
-			$afecto = $subAfecto - $descAfecto;
-			$neto = (int)round($afecto / $factor);
-			$iva = $afecto - $neto;
+			$iva = ($subAfecto - $descAfecto) - $neto - $ila;
 		}
 
 		// Descuento por línea (dentro de su grupo, afecto o exento) y montos de cada línea para detalle_venta
@@ -4551,12 +4599,21 @@ class Mcaja extends CI_Model
 			$desc = $i === $ultimo[$g] ? $resto[$g] : ($base[$g] > 0 ? (int)round($total * $l['bruto'] / $base[$g]) : 0);
 			$resto[$g] -= $desc;
 			$conDesc = $l['bruto'] - $desc;
+			$tasaIla = $g === 'e' ? 0.0 : $this->tasaIlaLinea($l);
+			$factorLinea = 1 + ($porIva + $tasaIla) / 100;
+			$netoLinea = $g === 'e' ? $l['bruto'] : $l['bruto'] / $factorLinea;
+			$netoConDesc = $g === 'e' ? $conDesc : $conDesc / $factorLinea;
 			$detalle[] = array(
 				'descuento' => $desc,
 				'con_descuento' => $conDesc,
 				'exento' => $g === 'e',
-				'neto' => $g === 'e' ? $l['bruto'] : $l['bruto'] / $factor,
-				'neto_con_descuento' => $g === 'e' ? $conDesc : $conDesc / $factor,
+				'neto' => $netoLinea,
+				'neto_con_descuento' => $netoConDesc,
+				// v1.20.0: ILA de la línea (tasa y montos, sin y con descuento) y su factor bruto/neto
+				'porila' => $tasaIla,
+				'factor' => $g === 'e' ? 1 : $factorLinea,
+				'ila' => $netoLinea * $tasaIla / 100,
+				'ila_con_descuento' => $netoConDesc * $tasaIla / 100,
 			);
 		}
 
@@ -4566,9 +4623,91 @@ class Mcaja extends CI_Model
 			'exento' => $exento,
 			'neto' => $neto,
 			'iva' => $iva,
-			'total' => $neto + $iva + $exento,
+			'ila' => $ila,
+			'total' => $neto + $iva + $ila + $exento,
 			'lineas' => $detalle,
 		);
+	}
+
+	/** v1.20.0: tasa de ILA de una línea (0 si no tiene o es exenta). */
+	private function tasaIlaLinea($l)
+	{
+		return !empty($l['exento']) ? 0.0 : max(0.0, (float)(isset($l['ila']) ? $l['ila'] : 0));
+	}
+
+	/** v1.20.0: clave del grupo de ILA de una línea ('r0' = sin ILA). Texto, para que PHP no la convierta en índice. */
+	private function claveIla($l)
+	{
+		return 'r' . number_format($this->tasaIlaLinea($l), 2, '.', '');
+	}
+
+	/**
+	 * v1.20.0: agrega a cada línea la tasa de ILA de su producto ('ila', en %): producto.impto_ila -> impuesto.valor.
+	 * Lo exento no lleva ILA. Sin la columna impto_ila (otras versiones de la base) todo queda sin ILA, como antes.
+	 */
+	private function conIla($db, $lineas)
+	{
+		$c = $this->columnas($db, array('producto', 'impuesto'));
+		$ids = array();
+		$de = function ($l) { return (int)(isset($l['ila_de']) ? $l['ila_de'] : $l['id_producto']); };
+		foreach ($lineas as $l) if (empty($l['exento']) && $de($l) > 0) $ids[$de($l)] = true;
+		$tasas = array();
+		if ($ids && isset($c['producto']['impto_ila']) && isset($c['impuesto']['valor'])) {
+			foreach ($this->q($db, 'SELECT p.id_producto, COALESCE(i.valor, 0) AS tasa FROM producto p
+					LEFT JOIN impuesto i ON i.id_impuesto = p.impto_ila
+					WHERE p.id_producto IN (' . implode(',', array_keys($ids)) . ')')->result() as $r) {
+				$tasas[(int)$r->id_producto] = max(0.0, (float)$r->tasa);
+			}
+		}
+		foreach ($lineas as $i => $l) {
+			$lineas[$i]['ila'] = empty($l['exento']) && isset($tasas[$de($l)]) ? $tasas[$de($l)] : 0.0;
+		}
+		return $lineas;
+	}
+
+	/** v1.20.0: expresión SQL con la tasa de ILA del producto (0 si no tiene). Para el catálogo y las mesas de la Caja. */
+	private function sqlIla($db, $alias)
+	{
+		$c = $this->columnas($db, array('producto', 'impuesto'));
+		if (!isset($c['producto']['impto_ila']) || !isset($c['impuesto']['valor'])) return '0';
+		return "COALESCE((SELECT i.valor FROM impuesto i WHERE i.id_impuesto = $alias.impto_ila), 0)";
+	}
+
+	/**
+	 * v1.20.0: neto, IVA e ILA de un monto afecto ya fijado (una nota de crédito que devuelve lo pagado), repartido entre
+	 * las tasas de ILA de las líneas según su monto. Sin ILA es netoDesdeAfecto() de siempre.
+	 */
+	private function desgloseAfecto($lineas, $afecto, $porIva, $comoFactura)
+	{
+		$grupos = array();
+		$base = 0;
+		foreach ($lineas as $l) {
+			if (!empty($l['exento'])) continue;
+			$k = $this->claveIla($l);
+			if (!isset($grupos[$k])) $grupos[$k] = array('tasa' => $this->tasaIlaLinea($l), 'bruto' => 0);
+			$grupos[$k]['bruto'] += $l['bruto'];
+			$base += $l['bruto'];
+		}
+		if (!$grupos || $afecto <= 0) return array('neto' => 0, 'iva' => 0, 'ila' => 0);
+		$resto = $afecto;
+		$claves = array_keys($grupos);
+		$ultimaClave = end($claves);
+		$neto = 0;
+		$ila = 0;
+		foreach ($grupos as $k => $g) {
+			$af = $k === $ultimaClave ? $resto : ($base > 0 ? (int)round($afecto * $g['bruto'] / $base) : 0);
+			$resto -= $af;
+			if ($g['tasa'] <= 0) {
+				$ng = $this->netoDesdeAfecto($af, $porIva, $comoFactura && count($grupos) === 1);
+				$ig = 0;
+			} else {
+				$ng = (int)round($af / (1 + ($porIva + $g['tasa']) / 100));
+				$ig = (int)round($ng * $g['tasa'] / 100);
+			}
+			$neto += $ng;
+			$ila += $ig;
+		}
+		return array('neto' => $neto, 'iva' => $afecto - $neto - $ila, 'ila' => $ila);
 	}
 
 	/**

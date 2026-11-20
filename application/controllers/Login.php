@@ -1,12 +1,6 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-
-include(APPPATH . 'libraries/GroceryCrudEnterprise/autoload.php');
-
-use GroceryCrud\Core\GroceryCrud;
-
-
 class Login extends CI_Controller
 {
 
@@ -23,10 +17,12 @@ class Login extends CI_Controller
 		if ($this->session->userdata('nombre_usuario')) {
 			redirect(base_url() . 'index.php/Dashboard');
 		} else {
-			// MODO LOCAL (v1.19.0): el login con clave valida contra la intranet remota (datamaule.cl).
-			// Sin intranet se entra eligiendo un usuario de la base local dataRestoWeb.
-			// $this->load->view('login/login.php');
-			redirect(base_url() . 'index.php/login/dev');
+			// v1.20.0: modo local (RESTO_CONEXION=2) = sin intranet: se entra eligiendo un usuario de la base local
+			if (RESTO_MODO_LOCAL) {
+				redirect(base_url() . 'index.php/login/dev');
+				return;
+			}
+			$this->load->view('login/login.php');
 		}
 	}
 
@@ -50,14 +46,12 @@ class Login extends CI_Controller
 				$permitidas[] = $extra;
 			}
 		}
-		if (ENVIRONMENT !== 'development' || !in_array($ip, $permitidas, true)) {
+		// v1.20.0: abre en desarrollo o en modo local (RESTO_CONEXION=2), y siempre solo desde las IP permitidas
+		if ((ENVIRONMENT !== 'development' && !RESTO_MODO_LOCAL) || !in_array($ip, $permitidas, true)) {
 			show_404();
 			return;
 		}
 		$srv = getenv('RESTO_DEV_SERVIDOR') ?: 'localhost';
-		// MODO LOCAL (v1.19.0): base local dataRestoWeb (antes laToscana / 76193938-6).
-		// $bd = getenv('RESTO_DEV_BASE') ?: 'laToscana';
-		// $conexion = getenv('RESTO_DEV_CONEXION') ?: '76193938-6';
 		$bd = getenv('RESTO_DEV_BASE') ?: 'dataRestoWeb';
 		$conexion = getenv('RESTO_DEV_CONEXION') ?: '12963592-4';
 
@@ -137,10 +131,11 @@ class Login extends CI_Controller
 	 * Ninguna conexión a la base de la intranet.
 	 */
 	public function new_user(){
-		// MODO LOCAL (v1.19.0): este login llama a la intranet remota (AppWebLogin + validarCliente).
-		// Se manda al login local. Para volver a la intranet, borra estas dos líneas.
-		redirect(base_url() . 'index.php/login/dev');
-		return;
+		// v1.20.0: en modo local (RESTO_CONEXION=2) no hay intranet que valide la clave: al login local
+		if (RESTO_MODO_LOCAL) {
+			redirect(base_url() . 'index.php/login/dev');
+			return;
+		}
 
 		$username = trim((string)$this->input->post('username'));
 		$password = (string)$this->input->post('password');

@@ -36,7 +36,7 @@ class MinsumosPorBodega extends CI_Model
 
 		// Todas las bodegas: una fila por insumo con el stock total y cuántas bodegas lo tienen (el detalle por bodega
 		// se ve en el modal). Una bodega: solo sus filas.
-		$q = "SELECT i.id_insumo, i.nombre_insumo, u.nombre_umedida, round(sum(si.saldo)) as saldo, gi.nombre_grupo_insumo,
+		$q = "SELECT i.id_insumo, i.nombre_insumo, u.nombre_umedida, round(sum(si.saldo)::numeric, 3) as saldo, gi.nombre_grupo_insumo,
 				count(DISTINCT si.id_bodega) AS bodegas, min(b.nombre_bodega) AS nombre_bodega
 			from stock_insumo si
 			join insumo i on si.id_insumo = i.id_insumo
@@ -86,7 +86,7 @@ class MinsumosPorBodega extends CI_Model
 			redirect(base_url());//redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$q = "SELECT i.nombre_insumo, round(si.saldo) as saldo, b.nombre_bodega
+		$q = "SELECT i.nombre_insumo, round(si.saldo::numeric, 3) as saldo, b.nombre_bodega
 			from stock_insumo si
 			join insumo i on si.id_insumo = i.id_insumo
 			join bodega b on si.id_bodega = b.id_bodega

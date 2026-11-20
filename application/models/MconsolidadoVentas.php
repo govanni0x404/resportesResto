@@ -14,16 +14,12 @@ class MconsolidadoVentas extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $q = "SELECT count(v.id_venta) as cantidad_ventas, round(sum(v.neto)) as total_neto, round(sum(v.iva)) as total_iva, round(sum(v.monto_descuento)) as total_descuento, round(sum(v.total)) as total_ventas,
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $q = "SELECT count(v.id_venta) as cantidad_ventas, round(sum(v.neto)) as total_neto, round(sum(v.iva)) as total_iva, round(sum(COALESCE(v.ila, 0))) as total_ila, round(sum(v.monto_descuento)) as total_descuento, round(sum(v.total)) as total_ventas,
 		round(sum(v.total + v.monto_descuento)) as total_general
 		from venta v 
 		join canal_venta cv on v.id_canal_venta = cv.id_canal_venta
@@ -55,15 +51,11 @@ class MconsolidadoVentas extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 
         $q = "SELECT f.id_familia, f.nombre_familia, sum(dv.cantidad) as cantidad, 
 		COALESCE(sum(dv.total_bruto_con_descuento), 0) as monto_total, round(sum(dv.subtotal_neto_con_descuento)) as monto_neto, 
@@ -86,15 +78,11 @@ class MconsolidadoVentas extends CI_Model
         }
 
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT cv.nombre_canal_venta, round(sum(dv.subtotal_neto_con_descuento)) as total_neto, round(sum(dv.monto_iva)) as total_iva, round(sum(dv.total_bruto_con_descuento)) as total_ventas, count(DISTINCT v.id_venta) as cantidad_ventas
 		from venta v
 		join detalle_venta dv on v.id_venta = dv.id_venta
@@ -122,14 +110,10 @@ class MconsolidadoVentas extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());$this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT  f.nombre_familia, sum(dv.cantidad) as cantidad, 
 		COALESCE(sum(dv.total_bruto), 0) as monto_total, round(sum(dv.neto)) as monto_neto, 
 		round(sum(dv.iva)) as monto_iva
@@ -151,14 +135,10 @@ class MconsolidadoVentas extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
 
       $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $q = "SELECT cv.nombre_canal_venta, round(sum(dv.neto)) as total_neto, round(sum(dv.iva)) as total_iva, round(sum(dv.total_bruto)) as total_ventas, count(DISTINCT v.id_venta) as cantidad_ventas,
@@ -178,15 +158,11 @@ class MconsolidadoVentas extends CI_Model
             redirect(base_url()); //redireccionar al login
         }
 
-        $jsDateTS = strtotime($desde);
-        if ($jsDateTS !== false) {
-            $de = date('Y-m-d', $jsDateTS);
-        }
-        $jsDateTS = strtotime($hasta);
-        if ($jsDateTS !== false) {
-            $a = date('Y-m-d', $jsDateTS);
-        }$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-        $q = "SELECT count(v.id_venta) as cantidad_ventas, round(sum(v.neto)) as total_neto, round(sum(v.iva)) as total_iva, round(sum(v.monto_descuento)) as total_descuento, round(sum(v.total)) as total_ventas,
+        $jsDateTS = strtotime((string)$desde);
+        $de = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());
+        $jsDateTS = strtotime((string)$hasta);
+        $a = date('Y-m-d', $jsDateTS !== false ? $jsDateTS : time());$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $q = "SELECT count(v.id_venta) as cantidad_ventas, round(sum(v.neto)) as total_neto, round(sum(v.iva)) as total_iva, round(sum(COALESCE(v.ila, 0))) as total_ila, round(sum(v.monto_descuento)) as total_descuento, round(sum(v.total)) as total_ventas,
 		round(sum(v.total + v.monto_descuento)) as total_general
 		from venta v 
 		join canal_venta cv on v.id_canal_venta = cv.id_canal_venta

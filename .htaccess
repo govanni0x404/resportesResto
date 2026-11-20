@@ -12,7 +12,7 @@ Options -Indexes
     RedirectMatch 404 "(?i)(^|/)\.(?!well-known(/|$))"
     # Respaldos del usuario y scripts de la base
     RedirectMatch 404 "(?i)(^|/)_respaldos[^/]*(/|$)"
-    RedirectMatch 404 "(?i)(^|/)sql(/|$)"
+    RedirectMatch 404 "(?i)(^|/)(sql|tests)(/|$)"
     # Archivos de configuración y documentación del proyecto (en la raíz)
     RedirectMatch 404 "(?i)/(docker-compose\.ya?ml|composer\.(json|lock)|readme\.rst|license\.txt|c\.txt)$"
     # Tipos que nunca son parte de la página: volcados de base, respaldos, registros, scripts, claves

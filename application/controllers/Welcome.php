@@ -21,8 +21,11 @@ class Welcome extends CI_Controller
 	 */
 	public function index()
 	{
-		// MODO LOCAL (v1.19.0): sin intranet, se entra por el login local.
-		// $this->load->view('login/login.php');
-		redirect(base_url() . 'index.php/login');
+		// v1.20.0: modo local (RESTO_CONEXION=2): sin intranet, se entra por el login local
+		if (RESTO_MODO_LOCAL) {
+			redirect(base_url() . 'index.php/login');
+			return;
+		}
+		$this->load->view('login/login.php');
 	}
 }

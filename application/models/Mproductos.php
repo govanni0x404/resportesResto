@@ -40,7 +40,7 @@ class Mproductos extends CI_Model
 
 		// 19-11-2026 (auditoría): también los id, para que al editar cada lista se elija por número y no por nombre
 		$q = "SELECT p.id_producto, p.cbarra, p.nombre_producto, f.nombre_familia,
-        p.id_familia, COALESCE(p.id_subfamilia, 0) AS id_subfamilia, p.id_umedida, p.id_dimpresion, p.id_bodega, p.impto_iva,
+        p.id_familia, COALESCE(p.id_subfamilia, 0) AS id_subfamilia, p.id_umedida, p.id_dimpresion, p.id_bodega, p.impto_iva, p.impto_ila,
         COALESCE(p.id_menu, 0) AS id_menu, COALESCE(p.id_receta, 0) AS id_receta, u.nombre_umedida, i.nombre_impuesto as iva, ii.nombre_impuesto as impto_adicional,
         d.nombre_dimpresion, b.nombre_bodega, p.pponderado,
         (select nombre_menu from menu m where m.id_menu=p.id_menu) as menu,
@@ -224,8 +224,12 @@ class Mproductos extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$q = "SELECT id_impuesto, nombre_impuesto from impuesto
-        order by nombre_impuesto asc";
+		// v1.20.0: solo lo que va en el campo ILA del producto: sin impuesto adicional (valor 0) y los ILA. El IVA va en su
+		// campo, y el IVA anticipado de harina y carne (IHAR / ICAR) se paga al comprar, no al vender.
+		$q = "SELECT id_impuesto, nombre_impuesto, valor, COALESCE(observacion, '') AS observacion, COALESCE(codigo_sii, 0) AS codigo_sii
+			FROM impuesto
+			WHERE COALESCE(valor, 0) = 0 OR nombre_impuesto ILIKE 'ILA%'
+			ORDER BY COALESCE(valor, 0), nombre_impuesto";
 		$query = $this->db->query($q)->result();
 		return $query;
 	}
@@ -751,6 +755,25 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
         // 18-11-2026: el mismo correlativo que obtenerSiguienteCodigoBarra (antes era el mayor código + 1)
         return array((object)array('new_id' => $this->obtenerSiguienteCodigoBarra()));
     }
+
+	/**
+	 * v1.20.0: recalcula neto, IVA e ILA de todos los precios de un producto con sus impuestos actuales (al cambiarle el
+	 * IVA o el ILA). El total (lo que paga el cliente) no cambia. Mismo cálculo que grabarPrecioProducto().
+	 */
+	public function recalcularImpuestosPrecios($idProducto)
+	{
+		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
+		return $this->db->query("UPDATE detalle_lprecio d
+			SET neto = x.neto, iva = round(x.neto * x.piva / 100), ila = d.total - x.neto - round(x.neto * x.piva / 100)
+			FROM (SELECT d2.id_detalle_lprecio, COALESCE(iv.valor, 0) AS piva,
+					round(d2.total / (1 + (COALESCE(iv.valor, 0) + COALESCE(il.valor, 0)) / 100.0)) AS neto
+				FROM detalle_lprecio d2
+				JOIN producto p ON p.id_producto = d2.id_producto
+				LEFT JOIN impuesto iv ON iv.id_impuesto = p.impto_iva
+				LEFT JOIN impuesto il ON il.id_impuesto = p.impto_ila
+				WHERE d2.id_producto = ?) x
+			WHERE d.id_detalle_lprecio = x.id_detalle_lprecio", array((int)$idProducto));
+	}
 
 	public function grabarPrecioProducto($data, $idDetalle = null)
 	{

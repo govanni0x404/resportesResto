@@ -116,6 +116,9 @@ $copias = !empty($cedible) ? array('', 'CEDIBLE') : array('');
 			<?php endif; ?>
 			<tr><td>Monto neto</td><td class="r"><?php echo $m($v->neto); ?></td></tr>
 			<tr><td>IVA (19%)</td><td class="r"><?php echo $m($v->iva); ?></td></tr>
+			<?php if ((int)abs((int)$v->ila) > 0) : // v1.20.0 ?>
+				<tr><td>Impuesto adicional (ILA)</td><td class="r"><?php echo $m($v->ila); ?></td></tr>
+			<?php endif; ?>
 			<?php if ($v->monto_exento > 0) : ?>
 				<tr><td>Monto exento</td><td class="r"><?php echo $m($v->monto_exento); ?></td></tr>
 			<?php endif; ?>
