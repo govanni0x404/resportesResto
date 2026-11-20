@@ -28,7 +28,10 @@
                                 <input type="number" class="form-control input-sm" name="cantidadMesas" id="cantidadMesas" requerido="si" value="1" min="1" placeholder="Ingrese cantidad de mesas" />
                             </div>
                             <div class="col-md-12" id="divTipoMesa" style="display:none;">
-                                <label for="tipoMesa">TIPO DE MESA</label>
+                                <div class="ntm-cabecera">
+                                    <label for="tipoMesa">TIPO DE MESA</label>
+                                    <button type="button" class="btn btn-default btn-xs" onclick="AbrirCrearTipoMesa('editar')"><i class="fa fa-plus"></i> Crear tipo de mesa</button>
+                                </div>
                                 <select class="form-control input-sm" name="tipoMesa" id="tipoMesa"></select>
                                 <p class="help-block" style="font-size:12px;margin:4px 0 0">Así sale en la Caja: <b id="tipoMesaVista"></b>. Los tipos se crean en Mantención &rsaquo; Recintos &rsaquo; Tipos de mesa.</p>
                             </div>
@@ -212,7 +215,10 @@
             <div class="modal-body">
                 <fieldset>
                     <div class="col-md-12">
-                        <label for="tvTipoNuevo">NUEVO TIPO PARA LAS MESAS MARCADAS *</label>
+                        <div class="ntm-cabecera">
+                            <label for="tvTipoNuevo">NUEVO TIPO PARA LAS MESAS MARCADAS *</label>
+                            <button type="button" class="btn btn-default btn-xs" onclick="AbrirCrearTipoMesa('varias')"><i class="fa fa-plus"></i> Crear tipo de mesa</button>
+                        </div>
                         <select class="form-control input-sm" id="tvTipoNuevo"></select>
                     </div>
                     <div class="col-md-12">
@@ -272,15 +278,27 @@
         }
         cargarTipos();
 
+        /** Selects del modal: el tipo nuevo (queda elegido 'elegido') y el filtro "Ver solo" (mantiene lo que había). */
+        function llenarSelects(elegido) {
+            var filtro = $('#tvFiltroTipo').val() || 'todas';
+            var $n = $('#tvTipoNuevo').empty().append($('<option>').val(0).text('Sin tipo (Mesa N, como siempre)'));
+            var $f = $('#tvFiltroTipo').empty().append($('<option>').val('todas').text('Todas las mesas')).append($('<option>').val(0).text('Sin tipo'));
+            $.each(tipos, function (i, t) {
+                if (t.vigente) $n.append($('<option>').val(t.id).text(t.nombre + ' · ' + t.ejemplo));
+                $f.append($('<option>').val(t.id).text(t.nombre));
+            });
+            $n.val(elegido || 0);
+            if ($n.val() === null) $n.val(0);
+            $f.val(filtro);
+            if ($f.val() === null) $f.val('todas');
+        }
+        // v1.21.1: al crear un tipo desde "Crear tipo de mesa" queda elegido en el select
+        window.tipoMesaCreadoVarias = function (id) { cargarTipos(function () { llenarSelects(id); }); };
+
         window.AbrirModalTipoVarias = function () {
             cargarTipos(function (r) {
                 if (!r || !r.disponible) return;
-                var $n = $('#tvTipoNuevo').empty().append($('<option>').val(0).text('Sin tipo (Mesa N, como siempre)'));
-                var $f = $('#tvFiltroTipo').empty().append($('<option>').val('todas').text('Todas las mesas')).append($('<option>').val(0).text('Sin tipo'));
-                $.each(tipos, function (i, t) {
-                    if (t.vigente) $n.append($('<option>').val(t.id).text(t.nombre + ' · ' + t.ejemplo));
-                    $f.append($('<option>').val(t.id).text(t.nombre));
-                });
+                llenarSelects(0);
                 var $l = $('#tvLista').empty();
                 var mesas = tablaMesas.rows().data().toArray().sort(function (a, b) { return Number(a.id_mesa) - Number(b.id_mesa); });
                 $.each(mesas, function (i, m) {
@@ -324,7 +342,7 @@
             $.ajax({ url: base_url + 'index.php/Mesas/cambiarTipoMesas', type: 'POST', dataType: 'json', data: { ids: ids, id_tipo_mesa: idTipo } })
                 .done(function (r) {
                     if (!r || r.error) { showAppAlert('error', (r && r.error) || 'No se pudieron cambiar las mesas', { duration: 6000, image: base_url + 'assets/img/errorGif.gif' }); return; }
-                    showAppAlert('success', (r.cambiadas === 1 ? 'Se cambió 1 mesa' : 'Se cambiaron ' + r.cambiadas + ' mesas') + ' a "' + nombreTipo(idTipo) + '"', { duration: 4000, image: base_url + 'assets/img/success.gif' });
+                    showAppAlert('success', (r.cambiadas === 1 ? 'Se cambió 1 mesa' : 'Se cambiaron ' + r.cambiadas + ' mesas') + ' a "' + $('<div>').text(nombreTipo(idTipo)).html() + '"', { duration: 4000, image: base_url + 'assets/img/success.gif' });
                     $('#ModalTipoVarias').modal('hide');
                     tablaMesas.ajax.reload();
                 })
@@ -332,6 +350,93 @@
                     showAppAlert('error', (x.responseJSON && x.responseJSON.error) || 'Se produjo un error al cambiar las mesas', { duration: 6000, image: base_url + 'assets/img/errorGif.gif' });
                 })
                 .always(function () { $b.prop('disabled', false).html(html); });
+        });
+    })();
+</script>
+
+<!-- v1.21.1: CREAR TIPO DE MESA sin salir de Mesas (desde Editar mesa y desde Cambiar varias mesas) -->
+<div id="ModalCrearTipoMesa" class="modal fade t-form-modal" role="dialog" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <form id="frmCrearTipoMesa" autocomplete="off">
+                <div class="modal-header btn-success">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title text text-center">CREAR TIPO DE MESA</h4>
+                </div>
+                <div class="modal-body">
+                    <fieldset>
+                        <div class="col-md-12">
+                            <label for="ntmNombre">NOMBRE DEL TIPO *</label>
+                            <input type="text" class="form-control input-sm" id="ntmNombre" maxlength="40" placeholder="Ej: Delivery">
+                        </div>
+                        <div class="col-md-12">
+                            <label for="ntmPrefijo">TEXTO ANTES DEL NÚMERO</label>
+                            <input type="text" class="form-control input-sm" id="ntmPrefijo" maxlength="20" placeholder="Ej: D (vacío = Mesa 1)">
+                        </div>
+                        <div class="col-md-12">
+                            <div class="checkbox"><label><input type="checkbox" id="ntmEspacio"> Con espacio antes del número</label></div>
+                        </div>
+                        <div class="col-md-12">
+                            <p class="help-block" style="font-size:12px;margin:0">Así sale la mesa 1: <b id="ntmVista">Mesa 1</b></p>
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" id="ntmGrabar"><i class="fa fa-check"></i> Crear</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // v1.21.1: crea un tipo de mesa con el mismo guardado de Mantención > Recintos > Tipos de mesa (TipoMesa/guardar,
+    // con sus permisos y validaciones) y lo deja elegido en el select desde donde se abrió.
+    (function () {
+        var origen = null;
+        function vista() { $('#ntmVista').text(nombreMesaTipo(1, { prefijo: $('#ntmPrefijo').val(), espacio: $('#ntmEspacio').is(':checked') })); }
+        $('#ntmPrefijo').on('input', vista);
+        $('#ntmEspacio').on('change', vista);
+
+        window.AbrirCrearTipoMesa = function (desde) {
+            origen = desde;
+            $('#ntmNombre, #ntmPrefijo').val('');
+            $('#ntmEspacio').prop('checked', false);
+            vista();
+            $('#ModalCrearTipoMesa').modal('show');
+        };
+        $('#ModalCrearTipoMesa').on('shown.bs.modal', function () { $('#ntmNombre').focus(); });
+        // Modal sobre otro modal (Bootstrap 3): este y su fondo van encima, y al cerrarlo el de abajo sigue con scroll
+        $('#ModalCrearTipoMesa').on('show.bs.modal', function () {
+            setTimeout(function () { $('.modal-backdrop').last().css('z-index', 1055); }, 0);
+        }).on('hidden.bs.modal', function () {
+            if ($('.modal.in').length) $('body').addClass('modal-open');
+        });
+
+        $('#frmCrearTipoMesa').on('submit', function (e) {
+            e.preventDefault();
+            var d = { id: 0, nombre: $.trim($('#ntmNombre').val()), prefijo: $.trim($('#ntmPrefijo').val()),
+                      espacio: $('#ntmEspacio').is(':checked') ? 1 : 0, vigente: 1 };
+            if (!d.nombre) {
+                showAppAlert('error', 'Escribe el nombre del tipo de mesa', { duration: 4000, image: base_url + 'assets/img/errorGif.gif' });
+                $('#ntmNombre').focus();
+                return;
+            }
+            var $b = $('#ntmGrabar').prop('disabled', true);
+            $.ajax({ url: base_url + 'index.php/TipoMesa/guardar', type: 'POST', dataType: 'json', data: d })
+                .done(function (r) {
+                    var id = Number(r && r.id) || 0;
+                    $('#ModalCrearTipoMesa').modal('hide');
+                    showAppAlert('success', 'Tipo de mesa "' + $('<div>').text(d.nombre).html() + '" creado', { duration: 3000, image: base_url + 'assets/img/success.gif' });
+                    if (origen === 'editar') cargarTiposMesa(id);
+                    else if (origen === 'varias' && window.tipoMesaCreadoVarias) window.tipoMesaCreadoVarias(id);
+                })
+                .fail(function (x) {
+                    var msg = (x.responseJSON && x.responseJSON.error) || (x.status === 403 ? 'No tienes permiso para crear tipos de mesa' : 'No se pudo crear el tipo de mesa');
+                    showAppAlert('error', msg, { duration: 6000, image: base_url + 'assets/img/errorGif.gif' });
+                })
+                .always(function () { $b.prop('disabled', false); });
         });
     })();
 </script>

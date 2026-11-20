@@ -42,6 +42,11 @@
     .tv-mesa small { display: block; font-weight: 400; color: var(--t-texto-tenue); }
     .tv-mesa.marcada { border-color: #B4432E; }
     .tv-contador { font-size: 13px; color: var(--t-texto-suave); margin: 8px 0 0; }
+    /* v1.21.1: "Crear tipo de mesa" al lado del título del select, y su modal encima de los otros */
+    .ntm-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+    .ntm-cabecera label { margin: 0 !important; }
+    .ntm-cabecera .btn i { margin-right: 3px; }
+    #ModalCrearTipoMesa { z-index: 1060; }
     @media (max-width: 480px) { .tv-lista { grid-template-columns: repeat(2, 1fr); } }
 </style>
 <div class="content-header">
