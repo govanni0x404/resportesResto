@@ -156,8 +156,7 @@
 	.caja-banner-mesa .nombre { font-size: 17px; font-weight: 700; }
 	.caja-banner-mesa .caja-mensaje-mesa { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.caja-banner-mesa .caja-mensaje-mesa.con-mensaje { background: #FFF6D6; border-color: #E8C95A; color: #5C4400; font-weight: 600; }
-	/* 19-11-2026: mensaje de cada agregado en la ventana de opciones del producto */
-	.opcion-lista .ag-item .ag-nota { margin: -2px 0 8px 30px; width: calc(100% - 30px); }
+	/* 19-11-2026: mensaje de cada agregado en la ventana de opciones del producto (v1.24.9: dentro de su tarjeta, ver más abajo) */
 	.caja-banner-mesa .tiempo { font-variant-numeric: tabular-nums; margin-right: auto; }
 	.caja-linea.enviada { background: var(--t-fondo-alt, #FBF8F3); }
 	.caja-linea.enviada .nombre .fa { font-size: 12px; margin-right: 4px; color: var(--t-texto-tenue, #A89A8C); }
@@ -460,6 +459,21 @@
 	.opcion-lista .checkbox { margin: 6px 0; }
 	.opcion-lista .checkbox label { font-size: 14px; }
 	.opcion-lista .valor { color: var(--t-primario, #B4432E); font-weight: bold; }
+	/* v1.24.9: agregados e indicaciones en cuadrícula hacia el lado (antes una lista hacia abajo). Con muchos agregados o un
+	   menú la ventana se ensancha (clase opciones-ancho, js.php abrirOpciones) */
+	#modalOpciones.opciones-ancho .modal-dialog { width: 1080px; max-width: calc(100vw - 32px); }
+	#listaAgregados, #listaMensajes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+	#listaAgregados { max-height: 52vh; overflow-y: auto; padding: 2px; }
+	#listaAgregados .ag-item { display: flex; flex-direction: column; justify-content: center; min-height: 52px; padding: 6px 10px;
+		border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; background: #fff; transition: border-color .12s, background .12s; }
+	#listaAgregados .ag-item:hover { border-color: var(--t-primario-borde, #BBE3C9); }
+	#listaAgregados .ag-item.marcado { border-color: var(--t-primario, #15803D); background: var(--t-primario-suave, #E8F5EC); }
+	#listaAgregados .ag-item .checkbox { margin: 0; }
+	#listaAgregados .ag-item .checkbox label { display: flex; align-items: baseline; gap: 6px; width: 100%; font-weight: 600; line-height: 1.25; cursor: pointer; }
+	#listaAgregados .ag-item .valor { margin-left: auto; white-space: nowrap; font-size: 13px; }
+	.opcion-lista .ag-item .ag-nota, #listaAgregados .ag-item .ag-nota { margin: 6px 0 2px; width: 100%; height: 30px; font-size: 13px; }
+	#listaMensajes .checkbox { margin: 0; padding: 8px 10px 8px 34px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; background: #fff; }
+	#listaMensajes .checkbox:has(input:checked) { border-color: var(--t-primario, #15803D); background: var(--t-primario-suave, #E8F5EC); }
 	#modalAutorizacion { z-index: 1060; }
 
 	/* Venta registrada */

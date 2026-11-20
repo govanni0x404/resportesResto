@@ -1326,13 +1326,15 @@
 			var ags = agregadosDe(id);
 			// v1.24.3: sin límite de agregados por producto (pedido del usuario)
 			$('#opcionesAgregados').toggle(ags.length > 0);
+			// v1.24.9: con muchos agregados (o un menú) la ventana se ensancha y van en cuadrícula hacia el lado
+			$('#modalOpciones').toggleClass('opciones-ancho', ags.length > 4 || mensajesDe(id).length > 6 || !!opcionesMenu);
 			$('#opcionesMaxAgregados').text('');
 			$('#listaAgregados').html($.map(ags, function (a) {
 				var marcado = linea && $.inArray(a.id_agregado, linea.agregados) >= 0;
 				// 19-11-2026: cada agregado marcado puede llevar su propio mensaje para la comanda (ej. Palta: sin sal)
 				var notaAg = linea && linea.notas_agregados ? (linea.notas_agregados[a.id_agregado] || '') : '';
 				// Estructura del tema (checkbox-success): el input va antes del label
-				return '<div class="ag-item"><div class="checkbox checkbox-success"><input type="checkbox" class="chk-agregado" id="ag' + a.id_agregado + '" value="' + a.id_agregado + '"' + (marcado ? ' checked' : '') + '>'
+				return '<div class="ag-item' + (marcado ? ' marcado' : '') + '"><div class="checkbox checkbox-success"><input type="checkbox" class="chk-agregado" id="ag' + a.id_agregado + '" value="' + a.id_agregado + '"' + (marcado ? ' checked' : '') + '>'
 					+ '<label for="ag' + a.id_agregado + '">' + esc(a.nombre) + (a.valor ? ' <span class="valor">+' + fmt(a.valor) + '</span>' : '') + '</label></div>'
 					+ '<input type="text" class="form-control input-sm ag-nota" data-id="' + a.id_agregado + '" maxlength="60" placeholder="Mensaje para ' + esc(a.nombre) + ' (opcional)" value="' + esc(notaAg) + '"' + (marcado ? '' : ' style="display:none"') + '></div>';
 			}).join(''));
@@ -1428,9 +1430,14 @@
 			return res;
 		}
 
+		// v1.24.9: tocar cualquier parte de la tarjeta del agregado lo marca o desmarca (menos su mensaje)
+		$('#listaAgregados').on('click', '.ag-item', function (e) {
+			if ($(e.target).closest('input, label, .ag-nota').length) return;
+			$(this).find('.chk-agregado').trigger('click');
+		});
 		$('#listaAgregados').on('change', '.chk-agregado', function () {
 			// v1.24.3: sin límite de agregados por producto
-			$(this).closest('.ag-item').find('.ag-nota').toggle(this.checked);
+			$(this).closest('.ag-item').toggleClass('marcado', this.checked).find('.ag-nota').toggle(this.checked);
 			precioOpciones();
 		});
 
