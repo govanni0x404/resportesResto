@@ -1324,9 +1324,9 @@
 			pintarMenuOpciones();
 
 			var ags = agregadosDe(id);
-			var max = catalogo.config.max_agregados;
+			// v1.24.3: sin límite de agregados por producto (pedido del usuario)
 			$('#opcionesAgregados').toggle(ags.length > 0);
-			$('#opcionesMaxAgregados').text(max > 0 ? '(máximo ' + max + ')' : '');
+			$('#opcionesMaxAgregados').text('');
 			$('#listaAgregados').html($.map(ags, function (a) {
 				var marcado = linea && $.inArray(a.id_agregado, linea.agregados) >= 0;
 				// 19-11-2026: cada agregado marcado puede llevar su propio mensaje para la comanda (ej. Palta: sin sal)
@@ -1429,11 +1429,7 @@
 		}
 
 		$('#listaAgregados').on('change', '.chk-agregado', function () {
-			var max = catalogo.config.max_agregados;
-			if (this.checked && max > 0 && $('#listaAgregados .chk-agregado:checked').length > max) {
-				this.checked = false;
-				toastr.warning('Máximo ' + max + ' agregado(s) por producto');
-			}
+			// v1.24.3: sin límite de agregados por producto
 			$(this).closest('.ag-item').find('.ag-nota').toggle(this.checked);
 			precioOpciones();
 		});

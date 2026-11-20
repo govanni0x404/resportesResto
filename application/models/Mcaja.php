@@ -2054,9 +2054,9 @@ class Mcaja extends CI_Model
 				$elegidos[(int)$idAg] = $agregadosPorMaestro[$id][(int)$idAg];
 			}
 			$elegidos = array_values($elegidos);
-			if ($config['max_agregados'] > 0 && count($elegidos) > $config['max_agregados']) {
-				throw new Exception('Máximo ' . $config['max_agregados'] . ' agregado(s) por producto', 400);
-			}
+			// v1.24.3: sin límite de agregados por producto (pedido del usuario; antes Configuraciones > Máximo de agregados).
+			// Solo un tope técnico alto para que una venta armada a mano no traiga cientos.
+			if (count($elegidos) > 100) throw new Exception('Demasiados agregados en ' . $prod->nombre_producto, 400);
 
 			// 19-11-2026: la nota del producto llega hasta 150 caracteres, para que en la misma fila quepa el mensaje de su
 			// primer agregado (detalle_cotizacion.mensaje es de 250; antes se cortaba a 200 y en el reenvío se perdía)

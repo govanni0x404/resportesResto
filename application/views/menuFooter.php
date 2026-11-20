@@ -19,6 +19,33 @@
 <script src="<?php echo base_url() ?>assets/plugins/jquery-ui-1.12.1/jquery-ui.min.js"></script>
 <!-- Bootstrap js -->
 <script src="<?php echo base_url() ?>assets/bootstrap/js/bootstrap.js"></script>
+<!-- v1.24.3: ventana sobre ventana (ej. Precio de venta sobre la Carta). Bootstrap 3 no las apila: la nueva queda encima con
+     su propio fondo, y lo de atrás (la otra ventana) se ve oscuro y borroso, para no perder la noción de lo que se hace -->
+<style>
+  .modal-backdrop.modal-apilado.in { opacity: .35; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+</style>
+<script>
+  (function ($) {
+    if (!$) return;
+    $(document).on('show.bs.modal', '.modal', function (e) {
+      if (e.target !== this) return;   // eventos de tooltips / popovers dentro de la ventana
+      var $m = $(this), abiertas = $('.modal.in').not($m).filter(':visible').length;
+      if (!abiertas) return;
+      var z = 1050 + abiertas * 20;
+      $m.css('z-index', z);
+      // El fondo lo agrega Bootstrap justo después de este aviso: se toma el último
+      setTimeout(function () {
+        $('.modal-backdrop').not('.modal-apilado').last().css('z-index', z - 5).addClass('modal-apilado');
+      }, 0);
+    });
+    // Al cerrar la de encima, la de abajo sigue abierta: se mantiene el scroll propio de las ventanas
+    $(document).on('hidden.bs.modal', '.modal', function (e) {
+      if (e.target !== this) return;
+      $(this).css('z-index', '');
+      if ($('.modal.in:visible').length) $('body').addClass('modal-open');
+    });
+  })(window.jQuery);
+</script>
 <!-- lobipanel js -->
 <script src="<?php echo base_url() ?>assets/plugins/lobipanel/lobipanel.js"></script>
 <!-- animsition js -->

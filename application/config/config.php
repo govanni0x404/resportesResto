@@ -26,7 +26,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
 // Direcciones permitidas del sitio. La dirección se arma con el host de la petición SOLO si está en esta lista;
 // si llega otro host (falseado en la cabecera Host) se usa la primera. Al subir al VPS agrega aquí su dominio o IP,
 // ej. 'resto.datamaule.cl'. También se puede fijar con la variable de entorno RESTO_BASE_URL (gana sobre la lista).
-$hostsPermitidos = array('localhost:8001', '127.0.0.1:8001', '192.168.100.163:8001');
+// v1.24.4: el dominio del VPS va en la lista (red de seguridad): si a su .env.php le faltara RESTO_BASE_URL, la web no
+// arma los enlaces con localhost. Lo local sigue igual.
+$hostsPermitidos = array('localhost:8001', '127.0.0.1:8001', '192.168.100.163:8001', 'resto.datamaule.cl', 'www.resto.datamaule.cl');
 $esHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
 	|| (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
 $hostPedido = isset($_SERVER['HTTP_HOST']) ? strtolower($_SERVER['HTTP_HOST']) : '';

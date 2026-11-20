@@ -228,20 +228,7 @@ if (!function_exists('cfg_opciones')) {
                                             </div>
                                         </div>
 
-                                        <!-- v1.20.1: antes solo se cambiaba desde el POS de escritorio -->
-                                        <div class="config-card">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-plus-square"></i>Agregados</h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <div class="form-group">
-                                                    <label>Máximo de agregados por producto en la Caja</label>
-                                                    <input type="number" min="1" max="20" step="1" class="form-control" name="cant_agregados" value="<?php echo (int)($config['cant_agregados'] ?? 1) ?: 1; ?>">
-                                                    <small class="text-muted">Ej.: 3 = una pizza puede llevar hasta 3 agregados (extra queso, borde, etc.).</small>
-                                                </div>
-                                            </div>
-                                        </div>
-
+                                        <!-- v1.24.3: se quitó "Máximo de agregados por producto en la Caja": la Caja web ya no tiene límite -->
                                         <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title"><i class="fa fa-shield"></i>Requerir administrador para</h3>

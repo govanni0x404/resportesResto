@@ -24,7 +24,6 @@
     .tm-vista span { font-size: 12px; color: var(--t-texto-suave); text-transform: uppercase; letter-spacing: .3px; }
     .tm-vista b { font-size: 18px; color: var(--t-texto-fuerte); }
     #modalTipoMesa .modal-footer .btn i { margin-right: 4px; }
-    #modalTipoMesa { z-index: 1060; }
     #modalTipoMesa .modal-header { border-top: 3px solid var(--t-primario); }
 </style>
 <div class="modal fade" id="modalTipoMesa" tabindex="-1" role="dialog" aria-labelledby="tituloTipoMesa">
@@ -94,12 +93,7 @@
 
 		var $m = $('#modalTipoMesa');
 		$m.on('shown.bs.modal', function () { $('#tmNombre').focus(); });
-		// Encima de otro modal: su fondo también va arriba, y al cerrarlo el modal de abajo sigue con scroll
-		$m.on('show.bs.modal', function () {
-			if ($('.modal.in').not($m).length) setTimeout(function () { $('.modal-backdrop').last().css('z-index', 1055); }, 0);
-		}).on('hidden.bs.modal', function () {
-			if ($('.modal.in').length) $('body').addClass('modal-open');
-		});
+		// v1.24.3: encima de otra ventana lo resuelve menuFooter (ventana sobre ventana, fondo borroso)
 
 		window.TipoMesaModal = {
 			abrir: function (t, fn) {

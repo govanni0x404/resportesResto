@@ -161,7 +161,7 @@ class Configuraciones extends CI_Controller {
         // NUMÉRICOS (nombres exactos según la BD)
         $numeric_fields = [
             'por_maximodescuento',
-            'cant_agregados',   // v1.20.1: máximo de agregados por producto en la Caja (1 a 20)
+            // v1.24.3: 'cant_agregados' ya no se graba desde la web (la Caja web no tiene límite de agregados; la columna es del POS)
             'seg_bloqueo_seleccion_mesa',
             'copias_dte',
             'timeout',
