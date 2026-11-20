@@ -873,11 +873,32 @@
 		});
 
 		// ---------------- catálogo ----------------
+		// v1.24.11: la Caja se actualiza sola cuando en otra pestaña se graba algo del catálogo (productos, precios, agregados,
+		// menús...) o de las mesas (avisarCambioDatos en menuFooter). Si hay una ventana abierta (cobro, opciones de un
+		// producto...) espera a que se cierre, para no cambiar nada bajo los dedos del cajero. Al volver a esta pestaña
+		// después de un rato también se actualiza (cambios hechos desde otro computador).
+		var catalogoListo = 0, catalogoPendiente = false, mesasPendiente = false;
+		function refrescarDatosCaja() {
+			if (!catalogo) return;
+			if ($('.modal.in').length || enviando) { setTimeout(refrescarDatosCaja, 1500); return; }
+			if (catalogoPendiente) { catalogoPendiente = false; cargarCatalogo(listaActual, true); }
+			if (mesasPendiente) { mesasPendiente = false; if (typeof cargarMesas === 'function') cargarMesas(); }
+		}
+		if (window.alCambiarDatos) window.alCambiarDatos(function (m) {
+			if (m.tipo === 'mesas') mesasPendiente = true; else catalogoPendiente = true;
+			clearTimeout(refrescarDatosCaja.t);
+			refrescarDatosCaja.t = setTimeout(refrescarDatosCaja, 600);   // varias grabaciones seguidas = una sola actualización
+		});
+		document.addEventListener('visibilitychange', function () {
+			if (document.visibilityState !== 'visible' || !catalogo) return;
+			if (Date.now() - catalogoListo > 60000) { catalogoPendiente = true; refrescarDatosCaja(); }
+		});
 		var catalogoPedido = 0;
-		function cargarCatalogo(idLista) {
+		function cargarCatalogo(idLista, silencioso) {
 			var pedido = ++catalogoPedido;
 			return get('catalogo', { id_lprecio: idLista }).done(function (r) {
 				if (pedido !== catalogoPedido) return;   // llegó después de otro pedido más nuevo: se ignora
+				catalogoListo = Date.now();
 				modoCaja = r.modo_caja || 'ambos';
 				aplicarModoCaja();
 				var primeraVez = !catalogo;
@@ -914,6 +935,9 @@
 				renderFamilias();
 				renderProductos();
 				renderCarro();
+				if (favoritosVisible()) renderFavoritos();
+				// v1.24.11: la actualización automática no mueve el cursor (el cajero puede estar escribiendo)
+				if (silencioso) { toastr.info('Productos y precios actualizados', '', { timeOut: 2000 }); return; }
 				$('#buscarProducto').focus();
 			});
 		}

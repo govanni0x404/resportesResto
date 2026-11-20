@@ -254,6 +254,42 @@
           }
           window.showAppAlert = showAppAlert;
 
+          // v1.24.11: aviso entre pestañas. Cuando una pantalla graba algo que usa la Caja (productos, precios, agregados,
+          // menús, familias, mensajes, formas de pago, configuraciones, mesas...), las otras pestañas abiertas del mismo
+          // navegador se enteran y la Caja se actualiza sola, sin recargar la página.
+          (function () {
+            var CLAVE = 'dataresto.cambioDatos';
+            var canal = null;
+            try { canal = window.BroadcastChannel ? new BroadcastChannel('dataresto-web') : null; } catch (e) { canal = null; }
+            var oyentes = [];
+            var avisar = function (m) { $.each(oyentes, function (i, fn) { try { fn(m); } catch (e) {} }); };
+            if (canal) canal.onmessage = function (e) { if (e && e.data) avisar(e.data); };
+            else window.addEventListener('storage', function (e) {
+              if (e.key !== CLAVE || !e.newValue) return;
+              try { avisar(JSON.parse(e.newValue)); } catch (x) {}
+            });
+            /** Avisa a las otras pestañas. tipo: 'catalogo' o 'mesas' */
+            window.avisarCambioDatos = function (tipo) {
+              var m = { tipo: tipo || 'catalogo', t: Date.now() };
+              if (canal) { try { canal.postMessage(m); } catch (e) {} }
+              else { try { localStorage.setItem(CLAVE, JSON.stringify(m)); } catch (e) {} }
+            };
+            /** La pantalla que quiera enterarse (la Caja) se suscribe aquí */
+            window.alCambiarDatos = function (fn) { if (typeof fn === 'function') oyentes.push(fn); };
+
+            // Se detecta solo: toda grabación (POST) que salió bien en esas pantallas avisa. Las consultas no.
+            var CATALOGO = /index\.php\/(Productos|Agregados|ListaDePrecios|Familias|SubFamilias|MensajesPorProductos|FormasDePago|Impuestos|ImagenProducto|Umedida|Configuraciones)\//i;
+            var MESAS = /index\.php\/(Mesas|MesasPorRecinto|Recintos|TipoMesa)\//i;
+            var CONSULTA = /\/(listado|listar|obtener|buscar|busqueda|verificar|llenar|get|datos|tiposMesa|probar|destinoGaveta|empresas)/i;
+            $(document).ajaxSuccess(function (ev, xhr, opts) {
+              if (String(opts.type || opts.method || '').toUpperCase() !== 'POST') return;
+              var url = String(opts.url || '');
+              if (CONSULTA.test(url.replace(/^.*index\.php\/[^\/]+/, ''))) return;
+              if (CATALOGO.test(url)) window.avisarCambioDatos('catalogo');
+              else if (MESAS.test(url)) window.avisarCambioDatos('mesas');
+            });
+          })();
+
           // v1.24.5: los alert() del navegador (ventana gris que bloquea la pantalla) salen como aviso del sistema
           (function () {
             var nativo = window.alert;
