@@ -1,4 +1,24 @@
 <script>
+// v1.23.3: listas del modal de productos sin respuestas desordenadas. Con el servidor lejos (VPS) la lista pedida al abrir
+// un producto podía llegar DESPUÉS de la del siguiente y pisarla (ej. el destino COCINA se veía como CAJA). Cada pedido
+// tiene su turno: la respuesta de un turno viejo se ignora. Y si el usuario ya eligió algo antes de que llegara la lista,
+// se respeta su elección.
+var turnosLista = {};
+function turnoLista(sel) {
+    turnosLista[sel] = (turnosLista[sel] || 0) + 1;
+    $(sel).data('elegidoUsuario', null);
+    return turnosLista[sel];
+}
+function turnoVigente(sel, turno) { return turnosLista[sel] === turno; }
+function respetarEleccion(sel) {
+    var u = $(sel).data('elegidoUsuario');
+    if (u != null && u !== '' && $(sel).find('option').filter(function () { return this.value === String(u); }).length) {
+        $(sel).val(String(u)).trigger('change.select2');
+    }
+}
+$(document).on('select2:select', '#cboFamilia, #cboSubFamilia, #cboUmedida, #cboDestinoDeImpresion, #cboBodega, #cboImpuestoIva, #cboImpuestoIla, #cboMenu, #cboReceta', function () {
+    $(this).data('elegidoUsuario', $(this).val());
+});
 /////////////////////////////////Listado Cbos/////////////////////////////
 function ListadoDeFamilias(objSelected) {
     $.post(base_url + "index.php/ListaDePrecios/ListadoDeFamilias", {
@@ -19,11 +39,13 @@ function ListadoDeFamilias(objSelected) {
 }
 
 function ListadoDeFamiliasMantenedor(objSelected, idSel) {
+    var turno = turnoLista('#cboFamilia');   // v1.23.3
     // 19-11-2026 (auditoría): con idSel se elige por número (con nombres repetidos, ej. dos bodegas "AA", el nombre
     // elegía la última y el producto se cambiaba solo al grabar)
     $.post(base_url + "index.php/ListaDePrecios/ListadoDeFamilias", {
         id: ""
     }, function(datos) {
+        if (!turnoVigente('#cboFamilia', turno)) return;   // v1.23.3: respuesta vieja (llegó tarde)
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione La Familia</option>';
         $.each(obj, function(index, v) { // recorro el array
@@ -36,6 +58,7 @@ function ListadoDeFamiliasMantenedor(objSelected, idSel) {
         }); //fin each
         $("#cboFamilia").html(tbl);
         $("#cboFamilia").select2();
+        respetarEleccion('#cboFamilia');
     });
 }
 
@@ -73,11 +96,14 @@ function pintarSubFamilias(objSelected, idSel, idFamilia) {
     $("#cboSubFamilia").select2();
 }
 function ListadoDeSubFamilias(objSelected, idSel, idFamilia) {
+    var turno = turnoLista('#cboSubFamilia');   // v1.23.3
     $.post(base_url + "index.php/Productos/ListadoDeSubFamilias", {
         id: ""
     }, function(datos) {
+        if (!turnoVigente('#cboSubFamilia', turno)) return;   // v1.23.3: respuesta vieja (llegó tarde)
         subfamiliasTodas = jQuery.parseJSON(datos) || [];
         pintarSubFamilias(objSelected, idSel, idFamilia);
+        respetarEleccion('#cboSubFamilia');
     });
 }
 $(document).on('change', '#cboFamilia', function () {
@@ -124,11 +150,13 @@ function respuestaNuevaComuna(id_comuna, id_ciudad) {
     });*/
 
 function ListadoDeUmedida(objSelected, idSel) {
+    var turno = turnoLista('#cboUmedida');   // v1.23.3
     // 19-11-2026 (auditoría): con idSel se elige por número (con nombres repetidos, ej. dos bodegas "AA", el nombre
     // elegía la última y el producto se cambiaba solo al grabar)
     $.post(base_url + "index.php/Productos/ListadoDeUmedida", {
         id: ""
     }, function(datos) {
+        if (!turnoVigente('#cboUmedida', turno)) return;   // v1.23.3: respuesta vieja (llegó tarde)
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione La Unidad De Medida</option>';
         $.each(obj, function(index, v) { // recorro el array
@@ -141,15 +169,18 @@ function ListadoDeUmedida(objSelected, idSel) {
         }); //fin each
         $("#cboUmedida").html(tbl);
         $("#cboUmedida").select2();
+        respetarEleccion('#cboUmedida');
     });
 }
 
 function ListadoDestinoDeImpresion(objSelected, idSel) {
+    var turno = turnoLista('#cboDestinoDeImpresion');   // v1.23.3
     // 19-11-2026 (auditoría): con idSel se elige por número (con nombres repetidos, ej. dos bodegas "AA", el nombre
     // elegía la última y el producto se cambiaba solo al grabar)
     $.post(base_url + "index.php/Productos/ListadoDestinoDeImpresion", {
         id: ""
     }, function(datos) {
+        if (!turnoVigente('#cboDestinoDeImpresion', turno)) return;   // v1.23.3: respuesta vieja (llegó tarde)
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         var encontrado = false;
         tbl = '<option disabled value="0">Seleccione El Destino De Impresion</option>';
@@ -169,15 +200,18 @@ function ListadoDestinoDeImpresion(objSelected, idSel) {
             $("#cboDestinoDeImpresion").val(obj[0].id_dimpresion);
         }
         $("#cboDestinoDeImpresion").select2();
+        respetarEleccion('#cboDestinoDeImpresion');
     });
 }
 
 function ListadoDeBodega(objSelected, idSel) {
+    var turno = turnoLista('#cboBodega');   // v1.23.3
     // 19-11-2026 (auditoría): con idSel se elige por número (con nombres repetidos, ej. dos bodegas "AA", el nombre
     // elegía la última y el producto se cambiaba solo al grabar)
     $.post(base_url + "index.php/Productos/ListadoDeBodega", {
         id: ""
     }, function(datos) {
+        if (!turnoVigente('#cboBodega', turno)) return;   // v1.23.3: respuesta vieja (llegó tarde)
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione La Bodega</option>';
         $.each(obj, function(index, v) { // recorro el array
@@ -190,15 +224,18 @@ function ListadoDeBodega(objSelected, idSel) {
         }); //fin each
         $("#cboBodega").html(tbl);
         $("#cboBodega").select2();
+        respetarEleccion('#cboBodega');
     });
 }
 
 function ListadoDeImpuestosIva(objSelected, idSel) {
+    var turno = turnoLista('#cboImpuestoIva');   // v1.23.3
     // 19-11-2026 (auditoría): con idSel se elige por número (con nombres repetidos, ej. dos bodegas "AA", el nombre
     // elegía la última y el producto se cambiaba solo al grabar)
     $.post(base_url + "index.php/Productos/ListadoDeImpuestos", {
         id: ""
     }, function(datos) {
+        if (!turnoVigente('#cboImpuestoIva', turno)) return;   // v1.23.3: respuesta vieja (llegó tarde)
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione El Impuesto Iva</option>';
         $.each(obj, function(index, v) { // recorro el array
@@ -211,14 +248,17 @@ function ListadoDeImpuestosIva(objSelected, idSel) {
         }); //fin each
         $("#cboImpuestoIva").html(tbl);
         $("#cboImpuestoIva").select2();
+        respetarEleccion('#cboImpuestoIva');
     });
 }
 
 // v1.20.0: ILA del producto (bebidas, cervezas, vinos, licores). idSel = impto_ila del producto; sin él, "sin ILA".
 function ListadoDeImpuestosAdicional(idSel) {
+    var turno = turnoLista('#cboImpuestoIla');   // v1.23.3
     $.post(base_url + "index.php/Productos/ListadoDeImpuestosAdicionales", {
         id: ""
     }, function(datos) {
+        if (!turnoVigente('#cboImpuestoIla', turno)) return;   // v1.23.3: respuesta vieja (llegó tarde)
         var obj = jQuery.parseJSON(datos);
         var tbl = '', hayElegido = false;
         $.each(obj, function(index, v) {
@@ -230,13 +270,16 @@ function ListadoDeImpuestosAdicional(idSel) {
         });
         $("#cboImpuestoIla").html(tbl);
         $("#cboImpuestoIla").select2();
+        respetarEleccion('#cboImpuestoIla');
     });
 }
 
 function ListadoDeMenu(objSelected) {
+    var turno = turnoLista('#cboMenu');   // v1.23.3
     $.post(base_url + "index.php/Productos/ListadoDeMenu", {
         id: ""
     }, function(datos) {
+        if (!turnoVigente('#cboMenu', turno)) return;   // v1.23.3: respuesta vieja (llegó tarde)
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione El Menu</option>';
         $.each(obj, function(index, v) { // recorro el array
@@ -248,15 +291,18 @@ function ListadoDeMenu(objSelected) {
         }); //fin each
         $("#cboMenu").html(tbl);
         $("#cboMenu").select2();
+        respetarEleccion('#cboMenu');
     });
 }
 
 function ListadoDeReceta(objSelected, idSel) {
+    var turno = turnoLista('#cboReceta');   // v1.23.3
     // 19-11-2026 (auditoría): con idSel se elige por número (con nombres repetidos, ej. dos bodegas "AA", el nombre
     // elegía la última y el producto se cambiaba solo al grabar)
     $.post(base_url + "index.php/Productos/ListadoDeReceta", {
         id: ""
     }, function(datos) {
+        if (!turnoVigente('#cboReceta', turno)) return;   // v1.23.3: respuesta vieja (llegó tarde)
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = '<option selected disabled value="0">Seleccione La Receta</option>';
         $.each(obj, function(index, v) { // recorro el array
@@ -269,6 +315,7 @@ function ListadoDeReceta(objSelected, idSel) {
         }); //fin each
         $("#cboReceta").html(tbl);
         $("#cboReceta").select2();
+        respetarEleccion('#cboReceta');
     });
 }
 

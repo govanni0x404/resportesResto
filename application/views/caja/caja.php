@@ -470,6 +470,23 @@
 	.venta-ok-doc { font-size: 16px; font-weight: 600; color: var(--t-texto-suave, #7A6A5E); margin-bottom: 16px; }
 	.venta-ok-vuelto { background: var(--t-primario-suave, #FBEEE8); border: 1px solid var(--t-primario-borde, #EFD2C6); border-radius: 10px; padding: 12px; margin-bottom: 16px; font-size: 26px; font-weight: 800; color: var(--t-ok, #5E7F3A); }
 	.venta-ok-vuelto:empty { display: none; }
+	/* v1.24.0: armar el menú en la ventana de opciones */
+	.menu-cat { margin-bottom: 12px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; overflow: hidden; }
+	.menu-cat-titulo { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: var(--t-fondo-alt, #F3F4F6); font-weight: 700; }
+	.menu-cat-titulo small { font-weight: 600; color: var(--t-texto-tenue, #6B7280); }
+	.menu-cat.completa .menu-cat-titulo small { color: var(--t-primario, #15803D); }
+	.menu-cat.falta .menu-cat-titulo small { color: #B91C1C; }
+	.menu-op { display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-top: 1px solid var(--t-borde-suave, #EEF0F3); cursor: pointer; }
+	.menu-op .nombre { flex: 1; }
+	.menu-op .adicional { font-size: 12px; font-weight: 700; color: var(--t-primario-osc, #116632); }
+	.menu-op.elegida { background: var(--t-primario-suave, #E8F5EC); }
+	.menu-op .menu-cant { display: inline-flex; align-items: center; gap: 4px; }
+	.menu-op .menu-cant b { min-width: 18px; text-align: center; }
+	.menu-op .menu-cant .btn { padding: 1px 7px; }
+	.caja-linea .detalle-linea.del-menu { color: var(--t-texto-suave, #4B5563); }
+	.caja-linea.enviada.hijo-menu { padding-left: 22px; opacity: .85; }
+	.caja-linea.enviada.hijo-menu .nombre { font-weight: 500; }
+
 	/* v1.23.0: modal del vuelto */
 	.vuelto-modal { border: 0; border-radius: 14px; padding: 26px 24px 18px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
 	.vuelto-icono { width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); font-size: 30px; line-height: 64px; }
@@ -2134,6 +2151,11 @@
 				<h4 class="modal-title" id="opcionesTitulo"></h4>
 			</div>
 			<div class="modal-body">
+				<!-- v1.24.0: armar el menú (Productos > Menú): por cada categoría se eligen sus productos -->
+				<div id="opcionesMenu" style="display:none">
+					<div id="listaMenu"></div>
+					<hr>
+				</div>
 				<div id="opcionesAgregados" style="display:none">
 					<h5><b>Agregados</b> <small id="opcionesMaxAgregados" class="text-muted"></small></h5>
 					<div class="opcion-lista" id="listaAgregados"></div>

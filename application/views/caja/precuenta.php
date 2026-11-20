@@ -83,6 +83,12 @@ if (!empty($partes) && $descuento > 0) {
 		<hr>
 		<table>
 			<?php foreach ($lineas as $l) : ?>
+				<?php if (!empty($l['es_detalle_menu'])) : ?>
+					<?php /* v1.24.0: producto elegido del menú, debajo del menú; con precio solo si tiene costo adicional */ ?>
+					<tr class="det"><td>+ <?php echo $h(($cant($l['cantidad']) !== '1' ? $cant($l['cantidad']) . ' ' : '') . $l['nombre']); ?></td>
+						<td class="r"><?php echo (int)$l['bruto'] !== 0 ? $m($l['bruto']) : ''; ?></td></tr>
+					<?php continue; ?>
+				<?php endif; ?>
 				<tr>
 					<td><?php echo $h($cant($l['cantidad'])); ?> x <?php echo $h($l['nombre']); ?></td>
 					<td class="r"><?php echo $m($l['bruto']); ?></td>

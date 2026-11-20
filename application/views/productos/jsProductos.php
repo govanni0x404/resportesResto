@@ -58,9 +58,14 @@ $('#ckTodasLasFamilias').click(function() {
 });
 
 function ObtenerPreciosDeVenta(idProducto) {
+    // v1.23.3: los precios de un producto abierto antes podían llegar tarde y quedar como los de este; al grabar se
+    // guardaban en este producto. Ahora solo se usan si son del producto que está abierto y del último pedido.
+    var turno = turnoLista('precios');
+    preciosExistentes = [];
     $.post(base_url + "index.php/Productos/obtenerPreciosYComisiones", {
         id_producto: idProducto
     }, function(datos) {
+        if (!turnoVigente('precios', turno) || String($('#txtID').val()) !== String(idProducto)) return;
         var obj = $.parseJSON(datos);
         preciosExistentes = obj; // Guardar precios existentes
         console.log("Precios cargados:", preciosExistentes);
@@ -466,7 +471,7 @@ function GrabarProducto() {
         'valor1': 0,
         'valor2': 0,
         'id_bodega': $('#cboBodega').val(),
-        'es_menu': false,
+        'es_menu': (Number($('#cboMenu').val()) || 0) > 0,   // v1.24.0: con un menú elegido, el producto es un menú
         'id_menu': $('#cboMenu').val() || 0,
         'venta_segun_stock': $('#ckVentaPorStock').is(":checked") ? 1 : 0,
         'elaboracion_propia': $('#ckElaboracionLocal').is(":checked") ? 1 : 0,

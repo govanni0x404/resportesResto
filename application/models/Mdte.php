@@ -211,7 +211,10 @@ class Mdte extends CI_Model
 
 		// v1.20.0: ILA de la línea (la tasa con que se vendió) y su código SII (impuesto.codigo_sii): el del impuesto del
 		// producto si es esa misma tasa; si no (se cambió después), el primero con esa tasa y código
-		$q = $db->query("SELECT COALESCE(p.nombre_producto, 'Producto') || COALESCE(' + ' || pa.nombre_producto, '') AS nombre,
+		// v1.24.0: productos elegidos de un menú (es_detalle_menu)
+		$conMenu = (bool)$db->query("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'detalle_venta' AND column_name = 'es_detalle_menu'")->row();
+		$q = $db->query("SELECT " . ($conMenu ? '(dv.es_detalle_menu IS TRUE)' : 'false') . " AS del_menu,
+				COALESCE(p.nombre_producto, 'Producto') || COALESCE(' + ' || pa.nombre_producto, '') AS nombre,
 				abs(dv.cantidad) AS cantidad, abs(dv.subtotal) AS subtotal, (COALESCE(dv.poriva, 1) = 0) AS exento,
 				COALESCE(dv.porila, 0) AS porila,
 				COALESCE(NULLIF((SELECT i.codigo_sii FROM impuesto i WHERE i.id_impuesto = p.impto_ila AND i.valor = dv.porila), 0),
@@ -278,7 +281,16 @@ class Mdte extends CI_Model
 				if (!isset($ilaGrupos[$codIla])) $ilaGrupos[$codIla] = array('tasa' => $porIla, 'base' => 0);
 				$ilaGrupos[$codIla]['base'] += $monto;
 			}
-			$detalle[] = array('cantidad' => (float)$l->cantidad, 'monto' => $monto, 'nombre' => $l->nombre, 'exento' => $lineaExenta, 'cod_ila' => $codIla);
+			// v1.24.0: lo elegido de un menú sin costo adicional no va como línea en $0: va en la descripción del menú
+			$delMenu = $l->del_menu === true || $l->del_menu === 't';
+			if ($delMenu && $monto === 0 && $detalle) {
+				$u = count($detalle) - 1;
+				$detalle[$u]['desc'] = ($detalle[$u]['desc'] !== '' ? $detalle[$u]['desc'] . ', ' : '')
+					. ((float)$l->cantidad != 1 ? rtrim(rtrim(number_format((float)$l->cantidad, 3, '.', ''), '0'), '.') . ' ' : '') . $l->nombre;
+				continue;
+			}
+			$detalle[] = array('cantidad' => (float)$l->cantidad, 'monto' => $monto, 'nombre' => ($delMenu ? '+ ' : '') . $l->nombre,
+				'exento' => $lineaExenta, 'cod_ila' => $codIla, 'desc' => '');
 		}
 		// El ILA del documento (el de la venta) repartido por código según el ILA de sus líneas; el último lleva el resto
 		$imptoReten = array();
@@ -322,7 +334,7 @@ class Mdte extends CI_Model
 				'UnmdItem' => 'UN',
 				'PrcItem' => round($d['monto'] / $qty, 6),
 				'MontoItem' => $d['monto'],
-				'DscItem' => '',
+				'DscItem' => $this->texto($d['desc'], 1000),   // v1.24.0: lo elegido del menú
 			);
 			if ($d['exento']) $linea['IndExe'] = '1';
 			if (!empty($d['cod_ila'])) $linea['CodImpAdic'] = (string)$d['cod_ila'];   // v1.20.0

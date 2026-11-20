@@ -153,6 +153,21 @@ class Mcaja extends CI_Model
 			}
 		}
 
+		// v1.24.0: menús (producto-menú => categorías con sus productos), solo de productos que están en el catálogo
+		$menusCaja = array();
+		$enCatalogo = array();
+		foreach ($productos as $pc) $enCatalogo[$pc['id_producto']] = true;
+		foreach ($this->menus($db) as $idP => $mn) {
+			if (!isset($enCatalogo[$idP])) continue;
+			$cats = array();
+			foreach ($mn['categorias'] as $c) {
+				$ops = array();
+				foreach ($c['opciones'] as $o) $ops[] = array('id' => $o['id'], 'id_producto' => $o['id_producto'], 'nombre' => $o['nombre'], 'adicional' => $o['adicional']);
+				$cats[] = array('id' => $c['id'], 'nombre' => $c['nombre'], 'min' => $c['min'], 'max' => $c['max'], 'estricto' => $c['estricto'], 'opciones' => $ops);
+			}
+			$menusCaja[] = array('id_producto' => $idP, 'id_menu' => $mn['id_menu'], 'nombre' => $mn['nombre'], 'categorias' => $cats);
+		}
+
 		$config['es_admin'] = $this->esAdmin($db, $idUsuario, $idRol);
 		$config['tiene_clave_admin'] = $this->claveAdminGeneral($db) !== '';
 		$config['propina_max_pct'] = self::PROPINA_MAX_PCT;
@@ -177,6 +192,7 @@ class Mcaja extends CI_Model
 			'documentos' => $documentos,
 			'listas_precio' => $listas,
 			'agregados' => $agregados,
+			'menus' => $menusCaja,   // v1.24.0
 			'mensajes' => $mensajes,
 			'administradores' => $admins,
 			'config' => $config,
@@ -186,6 +202,91 @@ class Mcaja extends CI_Model
 			// 18-11-2026: pestaña Delivery (null = apagada en Configuraciones o sin la migración 20261118100000)
 			'delivery' => $this->datosDelivery($db, $config),
 		);
+	}
+
+	/**
+	 * v1.24.0: menús de la Carta (Productos > Menú) que se venden en la Caja: [id del producto-menú => menú].
+	 * Un producto es menú si tiene id_menu (menú vigente) con al menos una categoría vigente con productos vigentes.
+	 * Categoría: min / max = cuántos productos se eligen (max 0 = sin límite); estricto = hay que respetar el mínimo.
+	 * Opción: el producto, su costo adicional de venta (se suma al precio del menú) y si sale en la comanda.
+	 */
+	private $menusCache = null;
+	private function menus($db)
+	{
+		if ($this->menusCache !== null) return $this->menusCache;
+		$this->menusCache = array();
+		$t = $this->columnas($db, array('menu', 'categoria_menu', 'detalle_categoria_menu', 'producto'));
+		if (!isset($t['menu'], $t['categoria_menu'], $t['detalle_categoria_menu']) || !isset($t['producto']['id_menu'])) return array();
+		$cat = $t['categoria_menu'];
+		$det = $t['detalle_categoria_menu'];
+		$rows = $this->q($db, "SELECT p.id_producto AS id_menu_producto, m.id_menu, m.nombre_menu,
+				c.id_categoria_menu, c.nombre_categoria_menu,
+				" . (isset($cat['cantidad_minima']) ? 'COALESCE(c.cantidad_minima, 0)' : '0') . " AS minimo,
+				" . (isset($cat['cantidad_maxima']) ? 'COALESCE(c.cantidad_maxima, 0)' : '0') . " AS maximo,
+				" . (isset($cat['estricto']) ? '(c.estricto IS TRUE)' : 'false') . " AS estricto,
+				d.id_detalle_categoria_menu, d.id_producto, pd.nombre_producto,
+				" . (isset($det['costo_adicional_venta']) ? 'COALESCE(d.costo_adicional_venta, 0)' : '0') . " AS adicional,
+				" . (isset($det['imprimir']) ? '(d.imprimir IS NOT FALSE)' : 'true') . " AS imprimir,
+				COALESCE(pd.id_receta, 0) AS id_receta, COALESCE(pd.id_bodega, 0) AS id_bodega
+			FROM producto p
+			JOIN menu m ON m.id_menu = p.id_menu AND m.vigente IS NOT FALSE
+			JOIN categoria_menu c ON c.id_menu = m.id_menu" . (isset($cat['vigente']) ? ' AND c.vigente IS NOT FALSE' : '') . "
+			JOIN detalle_categoria_menu d ON d.id_categoria_menu = c.id_categoria_menu" . (isset($det['vigente']) ? ' AND d.vigente IS NOT FALSE' : '') . "
+			JOIN producto pd ON pd.id_producto = d.id_producto AND pd.vigente IS TRUE
+			WHERE p.vigente IS TRUE AND COALESCE(p.id_menu, 0) > 0
+			ORDER BY p.id_producto, " . (isset($cat['orden']) ? 'COALESCE(c.orden, 0), ' : '') . "c.id_categoria_menu, pd.nombre_producto")->result();   // categorías en el orden en que se crearon
+		$si = function ($v) { return $v === true || $v === 't'; };
+		foreach ($rows as $r) {
+			$idP = (int)$r->id_menu_producto;
+			if (!isset($this->menusCache[$idP])) {
+				$this->menusCache[$idP] = array('id_menu' => (int)$r->id_menu, 'nombre' => (string)$r->nombre_menu, 'categorias' => array());
+			}
+			$idC = (int)$r->id_categoria_menu;
+			$cats =& $this->menusCache[$idP]['categorias'];
+			if (!isset($cats[$idC])) {
+				$cats[$idC] = array('id' => $idC, 'nombre' => (string)$r->nombre_categoria_menu, 'min' => max(0, (int)$r->minimo),
+					'max' => max(0, (int)$r->maximo), 'estricto' => $si($r->estricto), 'opciones' => array());
+			}
+			$cats[$idC]['opciones'][(int)$r->id_detalle_categoria_menu] = array('id' => (int)$r->id_detalle_categoria_menu,
+				'id_producto' => (int)$r->id_producto, 'nombre' => (string)$r->nombre_producto, 'adicional' => max(0, (int)$r->adicional),
+				'imprimir' => $si($r->imprimir), 'id_receta' => (int)$r->id_receta, 'id_bodega' => (int)$r->id_bodega);
+			unset($cats);
+		}
+		return $this->menusCache;
+	}
+
+	/**
+	 * v1.24.0: valida lo elegido de un menú ([{id: id_detalle_categoria_menu, cantidad}], cantidad por cada menú) y
+	 * devuelve [[opción, cantidad], ...] en el orden de las categorías.
+	 */
+	private function eleccionMenu($menu, $eleccion, $nombreMenu)
+	{
+		$pedidas = array();
+		foreach ((is_array($eleccion) ? $eleccion : array()) as $e) {
+			$id = (int)(is_array($e) && isset($e['id']) ? $e['id'] : 0);
+			$q = (int)(is_array($e) && isset($e['cantidad']) ? $e['cantidad'] : 1);
+			if ($id <= 0 || $q <= 0) continue;
+			if ($q > 99) throw new Exception('Cantidad demasiado alta en ' . $nombreMenu, 400);
+			$pedidas[$id] = (isset($pedidas[$id]) ? $pedidas[$id] : 0) + $q;
+		}
+		$res = array();
+		foreach ($menu['categorias'] as $c) {
+			$n = 0;
+			foreach ($c['opciones'] as $o) {
+				if (!isset($pedidas[$o['id']])) continue;
+				$n += $pedidas[$o['id']];
+				$res[] = array($o, $pedidas[$o['id']]);
+				unset($pedidas[$o['id']]);
+			}
+			if ($c['max'] > 0 && $n > $c['max']) {
+				throw new Exception($nombreMenu . ': en ' . $c['nombre'] . ' se pueden elegir hasta ' . $c['max'], 400);
+			}
+			if ($c['estricto'] && $n < $c['min']) {
+				throw new Exception($nombreMenu . ': en ' . $c['nombre'] . ' hay que elegir ' . ($c['min'] === 1 ? '1 producto' : 'al menos ' . $c['min']), 400);
+			}
+		}
+		if ($pedidas) throw new Exception('Un producto elegido de ' . $nombreMenu . ' ya no está disponible en el menú', 400);
+		return $res;
 	}
 
 	/** Agregados vigentes (todos o de un producto maestro) con su producto. */
@@ -817,11 +918,14 @@ class Mcaja extends CI_Model
 
 		$detalle = $this->q($db, "SELECT COALESCE(p.nombre_producto, 'Producto ' || dv.id_producto)
 					|| COALESCE(' + ' || pa.nombre_producto, '') AS nombre,
-				dv.cantidad, dv.bruto_un, dv.subtotal, (COALESCE(dv.poriva, 1) = 0) AS exento, COALESCE(dv.porila, 0) AS porila
+				dv.cantidad, dv.bruto_un, dv.subtotal, (COALESCE(dv.poriva, 1) = 0) AS exento, COALESCE(dv.porila, 0) AS porila,
+				" . (isset($this->columnas($db, array('detalle_venta'))['detalle_venta']['es_detalle_menu']) ? '(dv.es_detalle_menu IS TRUE)' : 'false') . " AS del_menu
 			FROM detalle_venta dv
 			LEFT JOIN producto p ON p.id_producto = dv.id_producto
 			LEFT JOIN producto pa ON pa.id_producto = dv.id_agregado AND dv.id_agregado > 0
 			WHERE dv.id_venta = ? ORDER BY dv.id_detalle_venta", array((int)$idVenta))->result();
+		// v1.24.0: producto elegido de un menú (sale debajo del menú, con "+"; sin precio si no tiene costo adicional)
+		foreach ($detalle as $dd) $dd->del_menu = $dd->del_menu === true || $dd->del_menu === 't';
 		$pagos = $this->q($db, "SELECT pv.id_fpago, f.nombre_fpago, pv.monto_pagado, pv.vuelto, pv.paga_con
 			FROM pago_venta pv JOIN fpago f ON f.id_fpago = pv.id_fpago
 			WHERE pv.id_venta = ? ORDER BY pv.id_pventa", array((int)$idVenta))->result();
@@ -1716,6 +1820,9 @@ class Mcaja extends CI_Model
 					'es_merma' => false,
 					'esmerma' => false,
 					'id_agregado' => $l['id_agregado'],
+					// v1.24.0: menú y productos elegidos del menú (mismas columnas que usa el POS de escritorio)
+					'es_menu' => !empty($l['es_menu']), 'es_detalle_menu' => !empty($l['es_detalle_menu']),
+					'id_menu' => isset($l['id_menu']) ? (int)$l['id_menu'] : 0,
 					'id_lprecio' => $idLprecio,
 					'nombre_computador' => self::COMPUTADOR,
 					'fecha_transaccion' => $ahora,
@@ -1867,6 +1974,7 @@ class Mcaja extends CI_Model
 		$notas = array();
 		$comanda = array();   // lo que sale en cocina/barra: armado aquí con los nombres de la base, no los del navegador
 		$subtotal = 0;
+		$menus = $this->menus($db);   // v1.24.0
 		foreach ($items as $it) {
 			$id = (int)$it['id_producto'];
 			$cantidad = round((float)$it['cantidad'], 3);
@@ -1889,6 +1997,50 @@ class Mcaja extends CI_Model
 			$segunStock = $prod->segun_stock === 't' || $prod->segun_stock === true;
 			// Los agregados siguen al producto: si el producto es exento, su línea completa lo es
 			$exento = $prod->exento === 't' || $prod->exento === true;
+
+			// v1.24.0: MENÚ. La línea del menú (su precio) y una línea por cada producto elegido: en $0 o con su costo
+			// adicional de venta. Cada producto elegido sale en la comanda de su destino (cocina, barra…) con el nombre
+			// del menú; la línea del menú no sale en la comanda.
+			if (isset($menus[$id])) {
+				if (!empty($it['agregados'])) throw new Exception($prod->nombre_producto . ' es un menú: no lleva agregados', 400);
+				$elegidosMenu = $this->eleccionMenu($menus[$id], isset($it['menu']) ? $it['menu'] : array(), $prod->nombre_producto);
+				$nota = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', isset($it['nota']) ? (string)$it['nota'] : '')), 0, 150);
+				$bodega = !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : (int)$prod->id_bodega;
+				$unitario = (int)round((float)$prod->precio);
+				$bruto = (int)round($unitario * $cantidad);
+				$subtotal += $bruto;
+				$idxMenu = count($lineas);
+				$lineas[] = array(
+					'id_producto' => $id, 'nombre' => $prod->nombre_producto, 'cantidad' => $cantidad,
+					'unitario' => $unitario, 'bruto' => $bruto, 'id_agregado' => 0, 'nota' => $nota, 'segun_stock' => $segunStock,
+					'recetas' => array(array((int)$prod->id_receta, $bodega)), 'exento' => $exento,
+					'es_menu' => true, 'id_menu' => (int)$menus[$id]['id_menu'],
+				);
+				$etiqueta = 'Menú: ' . $prod->nombre_producto . ($nota !== '' ? ' · ' . $nota : '');
+				$nombresMenu = array();
+				foreach ($elegidosMenu as $par) {
+					list($o, $q) = $par;
+					$cantComp = round($cantidad * $q, 3);
+					$brutoComp = (int)round($o['adicional'] * $cantComp);
+					$subtotal += $brutoComp;
+					$lineas[] = array(
+						'id_producto' => $o['id_producto'], 'nombre' => $o['nombre'], 'cantidad' => $cantComp,
+						'unitario' => $o['adicional'], 'bruto' => $brutoComp, 'id_agregado' => 0, 'nota' => '',
+						'segun_stock' => false,
+						'recetas' => array(array($o['id_receta'], !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : $o['id_bodega'])),
+						'exento' => $exento, 'ila_de' => $id,
+						'es_detalle_menu' => true, 'id_menu' => (int)$menus[$id]['id_menu'], 'del_menu' => $idxMenu,
+						'imprimir' => $o['imprimir'],   // "Imprimir" del producto en el menú (no sale en comandas ni anulaciones)
+					);
+					$nombresMenu[] = ($q > 1 ? $q . ' ' : '') . $o['nombre'];
+					if ($o['imprimir']) {
+						$comanda[] = array('id_producto' => $o['id_producto'], 'nombre' => $o['nombre'], 'cantidad' => $cantComp,
+							'nota' => $etiqueta, 'agregados' => array());
+					}
+				}
+				$notas[] = $prod->nombre_producto . ($nombresMenu ? ': ' . implode(', ', $nombresMenu) : '') . ($nota !== '' ? ' (' . $nota . ')' : '');
+				continue;
+			}
 
 			$elegidos = array();
 			foreach ((isset($it['agregados']) && is_array($it['agregados']) ? $it['agregados'] : array()) as $idAg) {
@@ -3397,7 +3549,15 @@ class Mcaja extends CI_Model
 	/** Líneas vigentes de un pedido, con la misma forma que armarLineas(). El stock se descuenta al cobrar (trigger de venta). */
 	private function lineasDeCotizacion($db, $idCotizacion)
 	{
-		$rows = $this->q($db, "SELECT d.id_detalle_cotizacion, d.id_producto, COALESCE(p.nombre_producto, 'Producto ' || d.id_producto) AS nombre,
+		// v1.24.0: menús (es_menu / es_detalle_menu) y de qué menú es cada producto elegido
+		$cd = $this->columnas($db, array('detalle_cotizacion'));
+		$cd = isset($cd['detalle_cotizacion']) ? $cd['detalle_cotizacion'] : array();
+		$selMenu = (isset($cd['es_menu']) ? '(d.es_menu IS TRUE)' : 'false') . ' AS es_menu, '
+			. (isset($cd['es_detalle_menu']) ? '(d.es_detalle_menu IS TRUE)' : 'false') . ' AS es_detalle_menu, '
+			. (isset($cd['id_menu']) ? 'COALESCE(d.id_menu, 0)' : '0') . ' AS id_menu, '
+			. (isset($cd['id_detalle_menu_web']) ? 'COALESCE(d.id_detalle_menu_web, 0)' : '0') . ' AS menu_de, '
+			. (isset($cd['imprimir']) ? '(d.imprimir IS NOT FALSE)' : 'true') . ' AS imprimir, ';
+		$rows = $this->q($db, "SELECT $selMenu d.id_detalle_cotizacion, d.id_producto, COALESCE(p.nombre_producto, 'Producto ' || d.id_producto) AS nombre,
 				pa.nombre_producto AS agregado, d.cantidad, COALESCE(d.bruto_un, 0) AS bruto_un, COALESCE(d.total_bruto, 0) AS total_bruto,
 				COALESCE(d.id_agregado, 0) AS id_agregado, COALESCE(d.mensaje, '') AS nota, " . $this->sqlExento($db, 'p') . " AS exento, " . $this->sqlIla($db, 'p') . " AS ila,
 				to_char(d.fecha_movimiento, 'HH24:MI') AS hora
@@ -3407,10 +3567,27 @@ class Mcaja extends CI_Model
 			WHERE d.id_cotizacion = ? AND d.vigente IS NOT FALSE AND d.esanulado IS NOT TRUE AND d.eseliminado IS NOT TRUE
 			ORDER BY d.id_detalle_cotizacion", array((int)$idCotizacion))->result();
 		$lineas = array();
+		$si = function ($v) { return $v === true || $v === 't'; };
+		$ultimoMenu = 0;
+		$vigentes = array();
+		foreach ($rows as $r) $vigentes[(int)$r->id_detalle_cotizacion] = true;
 		foreach ($rows as $r) {
 			$cantidad = (float)$r->cantidad;
 			$bruto = (float)$r->total_bruto > 0 ? (int)round((float)$r->total_bruto) : (int)round((float)$r->bruto_un * $cantidad);
+			// v1.24.0: el menú de un producto elegido; sin la columna (o de otro sistema), el último menú anterior
+			$esMenu = $si($r->es_menu);
+			$esDetMenu = $si($r->es_detalle_menu);
+			if ($esMenu) $ultimoMenu = (int)$r->id_detalle_cotizacion;
+			$menuDe = 0;
+			if ($esDetMenu) {
+				$menuDe = (int)$r->menu_de > 0 ? (int)$r->menu_de : $ultimoMenu;
+				if (!isset($vigentes[$menuDe])) $menuDe = 0;   // su menú ya no está (anulado): queda suelto
+			} elseif (!$esMenu) {
+				$ultimoMenu = 0;
+			}
 			$lineas[] = array(
+				'es_menu' => $esMenu, 'es_detalle_menu' => $esDetMenu, 'id_menu' => (int)$r->id_menu, 'menu_de' => $menuDe,
+				'imprimir' => $si($r->imprimir),
 				'id_detalle' => (int)$r->id_detalle_cotizacion, 'id_producto' => (int)$r->id_producto, 'nombre' => $r->nombre,
 				'agregado' => (string)$r->agregado, 'cantidad' => $cantidad, 'unitario' => (int)round((float)$r->bruto_un), 'bruto' => $bruto,
 				// Monto sin redondear (el POS guarda decimales): las partes se calculan sobre él, igual en todos lados
@@ -3757,17 +3934,22 @@ class Mcaja extends CI_Model
 				), 'id_cotizacion');
 				$this->q($db, 'UPDATE mesa SET disponible = false, id_cotizacion = ?, id_garzon = ? WHERE id_mesa = ?', array($idCot, (int)$idUsuario, $idMesa));
 			}
-			foreach ($lineas as $l) {
-				$this->insertar($db, $cols, 'detalle_cotizacion', array(
+			$idsMenu = array();   // v1.24.0: índice de la línea del menú => su id_detalle_cotizacion
+			foreach ($lineas as $iLin => $l) {
+				$idsMenu[$iLin] = $this->insertar($db, $cols, 'detalle_cotizacion', array(
+					// v1.24.0: menú y productos elegidos del menú (cada uno apunta a la línea de su menú)
+					'es_menu' => !empty($l['es_menu']), 'es_detalle_menu' => !empty($l['es_detalle_menu']),
+					'id_menu' => isset($l['id_menu']) ? (int)$l['id_menu'] : 0,
+					'id_detalle_menu_web' => isset($l['del_menu'], $idsMenu[$l['del_menu']]) ? $idsMenu[$l['del_menu']] : null,
 					'id_cotizacion' => $idCot, 'id_producto' => $l['id_producto'], 'cantidad' => $l['cantidad'],
 					'bruto_un' => $l['unitario'], 'subtotal' => 0, 'descuento' => 0, 'descuento_porcentual' => 0, 'total_bruto' => $l['bruto'],
 					'poriva' => 0, 'id_agregado' => $l['id_agregado'], 'mensaje' => mb_substr($l['nota'], 0, 250),
-					'vigente' => true, 'impreso' => true, 'imprimir' => true, 'fecha_hora_impresion' => $ahora,
+					'vigente' => true, 'impreso' => true, 'imprimir' => !isset($l['imprimir']) || $l['imprimir'], 'fecha_hora_impresion' => $ahora,
 					// 14-11-2026: los pedidos que llegan de la app móvil (ApiMovil/pedidoMesa) quedan marcados
 					'desde_android' => !empty($p['desde_app']),
 					'id_garzon' => (int)$idUsuario, 'nombre_computador' => !empty($p['desde_app']) ? 'APP MOVIL' : self::COMPUTADOR,
 					'id_dimpresion' => isset($destinos[$l['id_producto']]) ? $destinos[$l['id_producto']]['id'] : 0,
-				), null);
+				), !empty($l['es_menu']) ? 'id_detalle_cotizacion' : null);
 			}
 			// 19-11-2026: mensaje general de la mesa escrito ANTES del primer envío (mesa sin pedido). Con el pedido ya abierto el
 			// mensaje se cambia solo con guardarMensajeMesa: aquí no se pisa (auditoría: otra caja o el POS de escritorio pudo
@@ -3884,7 +4066,65 @@ class Mcaja extends CI_Model
 			unset($porId[$id]);
 		}
 		if (!$res) throw new Exception('Elige al menos un producto', 400);
+		return $this->conProductosDelMenu($lineas, $res);
+	}
+
+	/**
+	 * v1.24.0: un menú y lo elegido en él no se separan. Por cada menú elegido se agregan sus productos (los que no
+	 * vinieron ya en la selección) en la misma proporción, justo después del menú; un producto de menú elegido sin su
+	 * menú se rechaza.
+	 */
+	private function conProductosDelMenu($lineas, $sel)
+	{
+		$hijos = array();
+		$cantMenu = array();
+		foreach ($lineas as $l) {
+			if (!empty($l['menu_de'])) $hijos[$l['menu_de']][] = $l;
+			if (!empty($l['es_menu'])) $cantMenu[$l['id_detalle']] = $l['cantidad'];
+		}
+		if (!$hijos) return $sel;
+		$elegidos = array();
+		foreach ($sel as $l) $elegidos[$l['id_detalle']] = $l;
+		$res = array();
+		foreach ($sel as $l) {
+			if (!empty($l['menu_de'])) {
+				if (!isset($elegidos[$l['menu_de']])) {
+					throw new Exception($l['nombre'] . ' es parte de un menú: elige el menú completo', 400);
+				}
+				continue;   // va junto a su menú, más abajo
+			}
+			$res[] = $l;
+			if (empty($l['es_menu']) || empty($hijos[$l['id_detalle']])) continue;
+			$total = isset($cantMenu[$l['id_detalle']]) ? $cantMenu[$l['id_detalle']] : $l['cantidad'];
+			$f = $total > 0 ? $l['cantidad'] / $total : 1;
+			foreach ($hijos[$l['id_detalle']] as $h) {
+				if (isset($elegidos[$h['id_detalle']])) { $res[] = $elegidos[$h['id_detalle']]; continue; }
+				if ($f < 0.9995) {
+					$q = round($h['cantidad'] * $f, 3);
+					if ($q <= 0) continue;
+					$h['bruto'] = (int)round($h['bruto_exacto'] * $q / $h['cantidad']);
+					$h['bruto_exacto'] = (float)$h['bruto'];
+					$h['cantidad'] = $q;
+				}
+				$res[] = $h;
+			}
+		}
 		return $res;
+	}
+
+	/**
+	 * v1.24.0: partirLinea() de toda una selección. La copia de un producto de menú apunta a la copia de su menú, para
+	 * que en el pedido de destino sigan juntos.
+	 */
+	private function partirSeleccion($db, $sel, $idCotDestino, $cambios = array())
+	{
+		$nuevos = array();
+		foreach ($sel as $l) {
+			$c = $cambios;
+			if (!empty($l['menu_de']) && isset($nuevos[$l['menu_de']])) $c['id_detalle_menu_web'] = $nuevos[$l['menu_de']];
+			$nuevos[$l['id_detalle']] = $this->partirLinea($db, $l['id_detalle'], $l['cantidad'], $idCotDestino, $c);
+		}
+		return $nuevos;
 	}
 
 	/**
@@ -3931,7 +4171,7 @@ class Mcaja extends CI_Model
 	private function dividirPedido($db, $cotMesa, $idMesa, $seleccion)
 	{
 		$idHijo = $this->copiarPedido($db, $cotMesa, $idMesa, (int)$cotMesa->id_cotizacion);
-		foreach ($seleccion as $l) $this->partirLinea($db, $l['id_detalle'], $l['cantidad'], $idHijo);
+		$this->partirSeleccion($db, $seleccion, $idHijo);   // v1.24.0: el menú y lo elegido van juntos
 		$this->recalcularCotizacion($db, $idHijo);
 		return $this->q($db, 'SELECT * FROM cotizacion WHERE id_cotizacion = ?', array($idHijo))->row();
 	}
@@ -3974,7 +4214,7 @@ class Mcaja extends CI_Model
 					$idCotDestino = $this->copiarPedido($db, $cot, $idDestino, 0);
 					$this->q($db, 'UPDATE mesa SET disponible = false, id_cotizacion = ?, id_garzon = ? WHERE id_mesa = ?', array($idCotDestino, (int)$idUsuario, $idDestino));
 				}
-				foreach ($sel as $l) $this->partirLinea($db, $l['id_detalle'], $l['cantidad'], $idCotDestino);
+				$this->partirSeleccion($db, $sel, $idCotDestino);   // v1.24.0: el menú y lo elegido van juntos
 				$this->recalcularCotizacion($db, $idCotDestino);
 				$this->recalcularCotizacion($db, (int)$cot->id_cotizacion);
 				if (!$this->lineasDeCotizacion($db, (int)$cot->id_cotizacion)) {
@@ -4131,7 +4371,8 @@ class Mcaja extends CI_Model
 			$cantidad = $cantTxt === '' ? 0 : (float)$cantTxt;
 			$anuladas = $this->seleccionDeLineas($this->lineasDeCotizacion($db, (int)$cot->id_cotizacion),
 				array(array('id_detalle' => $idDetalle, 'cantidad' => $cantidad > 0 ? $cantidad : null)));
-			$this->partirLinea($db, $idDetalle, $anuladas[0]['cantidad'], (int)$cot->id_cotizacion, array(
+			// v1.24.0: anular un menú anula también lo elegido en él (en la misma proporción)
+			$this->partirSeleccion($db, $anuladas, (int)$cot->id_cotizacion, array(
 				'vigente' => false, 'esanulado' => true, 'motivo_anulacion' => mb_substr($motivo, 0, 100), 'hora_anulacion' => date('Y-m-d H:i:s'),
 				'id_caja' => (int)$caja->id_caja, 'id_cajero' => (int)$idUsuario,
 			));
@@ -4188,17 +4429,36 @@ class Mcaja extends CI_Model
 		$lineas = $this->lineasDeCotizacion($db, (int)$cot->id_cotizacion);
 		if ($idsDetalle) {
 			$ids = array_map('intval', (array)$idsDetalle);
-			$lineas = array_values(array_filter($lineas, function ($l) use ($ids) { return in_array((int)$l['id_detalle'], $ids, true); }));
+			// v1.24.0: volver a enviar un menú manda lo elegido en él
+			$lineas = array_values(array_filter($lineas, function ($l) use ($ids) {
+				return in_array((int)$l['id_detalle'], $ids, true) || (!empty($l['menu_de']) && in_array((int)$l['menu_de'], $ids, true));
+			}));
 		}
 		return $this->lineasAnulacion($lineas);
 	}
 
+	/**
+	 * Líneas para la comanda (reenvío o anulación). v1.24.0: un menú con productos elegidos no sale (salen sus productos,
+	 * cada uno a su destino, con el nombre del menú).
+	 */
 	private function lineasAnulacion($lineas)
 	{
-		return array_map(function ($l) {
-			return array('id_producto' => $l['id_producto'], 'nombre' => $l['nombre'], 'cantidad' => $l['cantidad'],
-				'nota' => $l['nota'], 'agregados' => $l['agregado'] !== '' ? array($l['agregado']) : array());
-		}, $lineas);
+		$nombres = array();
+		$conHijos = array();
+		foreach ($lineas as $l) {
+			if (!empty($l['es_menu'])) $nombres[$l['id_detalle']] = $l['nombre'];
+			if (!empty($l['menu_de'])) $conHijos[$l['menu_de']] = true;
+		}
+		$res = array();
+		foreach ($lineas as $l) {
+			if (!empty($l['es_menu']) && isset($conHijos[$l['id_detalle']])) continue;
+			if (!empty($l['menu_de']) && isset($l['imprimir']) && !$l['imprimir']) continue;   // producto del menú que no se imprime
+			$nota = $l['nota'];
+			if (!empty($l['menu_de']) && isset($nombres[$l['menu_de']])) $nota = 'Menú: ' . $nombres[$l['menu_de']] . ($nota !== '' ? ' · ' . $nota : '');
+			$res[] = array('id_producto' => $l['id_producto'], 'nombre' => $l['nombre'], 'cantidad' => $l['cantidad'],
+				'nota' => $nota, 'agregados' => $l['agregado'] !== '' ? array($l['agregado']) : array());
+		}
+		return $res;
 	}
 
 	/** Libera una mesa bloqueada o marcada ocupada sin pedido abierto. Nunca toca una mesa con pedido abierto. */

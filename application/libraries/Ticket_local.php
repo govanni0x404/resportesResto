@@ -87,6 +87,12 @@ class Ticket_local
 			}
 			$this->linea($W);
 			foreach ($doc['detalle'] as $d) {
+				// v1.24.0: producto elegido de un menú: "+ nombre" debajo del menú; sin precio si no tiene costo adicional
+				if (!empty($d->del_menu)) {
+					$this->lineas('  + ' . ($cant($d->cantidad) !== '1' ? $cant($d->cantidad) . ' ' : '') . $d->nombre, $W);
+					if ((int)round((float)$d->monto_mostrar) !== 0) $this->fila('    adicional', $m($d->monto_mostrar), $W);
+					continue;
+				}
 				$this->lineas($d->nombre . ($d->exento ? ' (EXENTO)' : ''), $W);
 				$this->fila('  ' . $cant($d->cantidad) . ' x ' . $m($d->precio_mostrar), $m($d->monto_mostrar), $W);
 			}
@@ -207,6 +213,12 @@ class Ticket_local
 		$this->texto('Emitida: ' . date('d/m/Y H:i'));
 		$this->linea($W);
 		foreach ($lineas as $l) {
+			// v1.24.0: producto elegido de un menú, debajo del menú; con precio solo si tiene costo adicional
+			if (!empty($l['es_detalle_menu'])) {
+				$t = '   + ' . ($cant($l['cantidad']) !== '1' ? $cant($l['cantidad']) . ' ' : '') . $l['nombre'];
+				if ((int)$l['bruto'] !== 0) $this->fila($t, $m($l['bruto']), $W); else $this->lineas($t, $W);
+				continue;
+			}
 			$this->fila($cant($l['cantidad']) . ' x ' . $l['nombre'], $m($l['bruto']), $W);
 			if (isset($l['agregado']) && $l['agregado'] !== '') $this->lineas('   + ' . $l['agregado'], $W);
 		}

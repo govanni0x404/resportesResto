@@ -342,6 +342,19 @@ class Mventasespera extends CI_Model
 	}
 
 	/** Líneas del carro con tipos y largos acotados: {id_producto, nombre, precio, cantidad, agregados, opciones, nota}. */
+	/** v1.24.0: lo elegido de un menú, solo números (máximo 40 productos). */
+	private function eleccionMenu($m)
+	{
+		$res = array();
+		foreach (array_slice(is_array($m) ? $m : array(), 0, 40) as $e) {
+			if (!is_array($e)) continue;
+			$id = (int)($e['id'] ?? 0);
+			$q = (int)($e['cantidad'] ?? 0);
+			if ($id > 0 && $q > 0) $res[] = array('id' => $id, 'cantidad' => min($q, 99));
+		}
+		return $res;
+	}
+
 	private function limpiarLineas($lineas)
 	{
 		$res = array();
@@ -368,6 +381,8 @@ class Mventasespera extends CI_Model
 				'nota' => mb_substr(is_scalar($l['nota'] ?? '') ? (string)($l['nota'] ?? '') : '', 0, 200),
 				// 19-11-2026: mensaje de cada agregado para la comanda {id_agregado: texto}
 				'notas_agregados' => $this->notasAgregados($l['notas_agregados'] ?? null, $agregados),
+				// v1.24.0: lo elegido de un menú [{id: id_detalle_categoria_menu, cantidad}] (el servidor lo valida al cobrar)
+				'menu' => $this->eleccionMenu($l['menu'] ?? null),
 			);
 			$unidades += $cant;
 		}

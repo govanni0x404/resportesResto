@@ -234,8 +234,9 @@ class Productos extends CI_Controller
 			'valor1' => $producto['valor1'],
 			'valor2' => $producto['valor2'],
 			'id_bodega' => $producto['id_bodega'],
-			'es_menu' => $producto['es_menu'],
-			'id_menu' => $producto['id_menu'],
+			// v1.24.0: es menú si tiene un menú elegido (antes la pantalla mandaba siempre false)
+			'es_menu' => (int)($producto['id_menu'] ?? 0) > 0 ? 't' : 'f',
+			'id_menu' => max(0, (int)($producto['id_menu'] ?? 0)),
 			'venta_segun_stock' => $producto['venta_segun_stock'],
 			'elaboracion_propia' => $producto['elaboracion_propia'],
 			'permitir_venta_sin_precio' => $producto['permitir_venta_sin_precio'],
@@ -645,6 +646,21 @@ class Productos extends CI_Controller
 		echo json_encode($this->Mproductos->obtenerListadoMenu());
 	}
 
+	/** v1.24.0: error de validación de menús: código 400 y {error}, para que la pantalla lo muestre. */
+	private function errorMenu($mensaje)
+	{
+		set_status_header(400);
+		echo json_encode(array('error' => $mensaje));
+	}
+
+	/** v1.24.0: texto de un nombre de menú / categoría: sin espacios de más, en mayúsculas y hasta $max letras. */
+	private function nombreMenu($t, $max)
+	{
+		// sin < > (los nombres se muestran en tablas de la pantalla) ni caracteres de control
+		$t = preg_replace('/[<>\x00-\x1F\x7F]+/u', ' ', is_scalar($t) ? (string)$t : '');
+		return mb_substr(mb_strtoupper(trim(preg_replace('/\s+/u', ' ', $t))), 0, $max);
+	}
+
 	public function grabarNuevoMenu()
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
@@ -652,10 +668,20 @@ class Productos extends CI_Controller
 			return;
 		}
 		$d = $this->input->post('prod');
-		$id = intval($d['id_menu']);
+		if (!is_array($d)) return $this->errorMenu('Datos inválidos');
+		$id = intval($d['id_menu'] ?? 0);
+		// v1.24.0: nombre obligatorio y sin repetir
+		$nombre = $this->nombreMenu($d['nombre_menu'] ?? '', 50);
+		if ($nombre === '') return $this->errorMenu('Escribe el nombre del menú');
+		$this->load->helper('tenant');
+		$db = get_tenant_db($this);
+		if ($db->query('SELECT 1 FROM menu WHERE upper(trim(nombre_menu)) = ? AND id_menu <> ?', array($nombre, $id))->row()) {
+			return $this->errorMenu('Ya hay un menú llamado "' . $nombre . '"');
+		}
+		$vig = $d['vigente'] ?? 1;
 		$miData = array(
-			'nombre_menu' => $d['nombre_menu'],
-			'vigente' => $d['vigente']
+			'nombre_menu' => $nombre,
+			'vigente' => ($vig === true || $vig === 't' || (string)$vig === '1' || $vig === 'true') ? 't' : 'f'
 		);
 		$r = $this->Mproductos->grabarNuevoMenu($id, $miData);
 		echo json_encode($r);
@@ -679,8 +705,21 @@ class Productos extends CI_Controller
 			return;
 		}
 		$d = $this->input->post('prod');
-		$id = intval($d['id_categoria_menu']);
+		if (!is_array($d)) return $this->errorMenu('Datos inválidos');
+		$id = intval($d['id_categoria_menu'] ?? 0);
 		$vigente = isset($d['vigente']) ? ($d['vigente'] == 1 || $d['vigente'] === 't' ? 't' : 'f') : 't';
+		// v1.24.0: el menú debe existir; nombre obligatorio y sin repetir dentro del mismo menú
+		$idMenu = (int)($d['id_menu'] ?? 0);
+		$d['nombre_categoria_menu'] = $this->nombreMenu($d['nombre_categoria_menu'] ?? '', 50);
+		$d['id_menu'] = $idMenu;
+		if ($d['nombre_categoria_menu'] === '') return $this->errorMenu('Escribe el nombre de la categoría');
+		$this->load->helper('tenant');
+		$db = get_tenant_db($this);
+		if (!$db->query('SELECT 1 FROM menu WHERE id_menu = ?', array($idMenu))->row()) return $this->errorMenu('Elige un menú que exista');
+		if ($db->query('SELECT 1 FROM categoria_menu WHERE id_menu = ? AND upper(trim(nombre_categoria_menu)) = ? AND id_categoria_menu <> ?',
+			array($idMenu, $d['nombre_categoria_menu'], $id))->row()) {
+			return $this->errorMenu('Ese menú ya tiene una categoría "' . $d['nombre_categoria_menu'] . '"');
+		}
 		if ($id) {
 			// Edición: solo actualizar nombre, menú y vigente (preservar configuraciones existentes)
 			$miData = array(
@@ -732,11 +771,13 @@ class Productos extends CI_Controller
 			return;
 		}
 		$d = $this->input->post('detalle');
+		if (!is_array($d)) return $this->errorMenu('Datos inválidos');
 		$respuesta = array();
 		foreach ($d as $value) {
-			$idDetalleCategoriaMenu = $value['id_detalle_categoria_menu'];
+			if (!is_array($value)) continue;
+			$idDetalleCategoriaMenu = (int)($value['id_detalle_categoria_menu'] ?? 0);
 			$miData = array(
-				'costo_receta' => $value['costo_receta']
+				'costo_receta' => is_numeric($value['costo_receta'] ?? null) ? max(0, (float)$value['costo_receta']) : 0   // v1.24.0
 			);
 			$r = $this->Mproductos->actualizarCostoRecetaCategoriaMenu($idDetalleCategoriaMenu, $miData);
 			$respuesta[] = $r;
@@ -751,10 +792,12 @@ class Productos extends CI_Controller
 			return;
 		}
 		$d = $this->input->post('detalle');
+		if (!is_array($d)) return $this->errorMenu('Datos inválidos');
 		foreach ($d as $value) {
-			$idDetalleCategoriaMenu = $value['id_detalle_categoria_menu'];
+			if (!is_array($value)) continue;
+			$idDetalleCategoriaMenu = (int)($value['id_detalle_categoria_menu'] ?? 0);
 			$miData = array(
-				'costo_adicional_venta' => $value['costo_adicional_venta']
+				'costo_adicional_venta' => is_numeric($value['costo_adicional_venta'] ?? null) ? max(0, (int)round((float)$value['costo_adicional_venta'])) : 0   // v1.24.0
 			);
 			$this->Mproductos->actualizarCostoAdicionalVentaCategoriaMenu($idDetalleCategoriaMenu, $miData);
 		}
@@ -767,16 +810,33 @@ class Productos extends CI_Controller
 			return;
 		}
 		$d = $this->input->post('prod');
-		$id = intval($d['id_detalle_categoria_menu']);
+		if (!is_array($d)) return $this->errorMenu('Datos inválidos');
+		$id = intval($d['id_detalle_categoria_menu'] ?? 0);
+		$idCat = (int)($d['id_categoria_menu'] ?? 0);
+		$idProd = (int)($d['id_producto'] ?? 0);
+		// v1.24.0: la categoría y el producto deben existir; el producto no puede ser otro menú ni estar dos veces en la categoría
+		$this->load->helper('tenant');
+		$db = get_tenant_db($this);
+		if (!$db->query('SELECT 1 FROM categoria_menu WHERE id_categoria_menu = ?', array($idCat))->row()) return $this->errorMenu('La categoría ya no existe: recarga la página');
+		$prod = $db->query('SELECT nombre_producto, COALESCE(id_menu, 0) AS id_menu FROM producto WHERE id_producto = ?', array($idProd))->row();
+		if (!$prod) return $this->errorMenu('Elige un producto que exista');
+		if ((int)$prod->id_menu > 0) return $this->errorMenu($prod->nombre_producto . ' es un menú: no puede ir dentro de otro menú');
+		if ($db->query("SELECT 1 FROM detalle_categoria_menu WHERE id_categoria_menu = ? AND id_producto = ? AND vigente IS NOT FALSE AND id_detalle_categoria_menu <> ?",
+			array($idCat, $idProd, $id))->row()) {
+			return $this->errorMenu($prod->nombre_producto . ' ya está en esta categoría');
+		}
+		$numero = function ($v) { return is_numeric($v) ? max(0, (float)$v) : 0; };
+		$si = function ($v) { return ($v === true || $v === 't' || $v === 'true' || (string)$v === '1') ? 't' : 'f'; };
 		$miData = array(
-			'id_categoria_menu' => $d['id_categoria_menu'],
-			'id_producto' => $d['id_producto'],
-			'costo_receta' =>  $d['costo_receta'],
-			'costo_adicional_venta' =>  $d['costo_adicional_venta'],
-			'permite_cambio' =>  't',
-			'vigente' =>  't',
+			'id_categoria_menu' => $idCat,
+			'id_producto' => $idProd,
+			'costo_receta' => $numero($d['costo_receta'] ?? 0),
+			'costo_adicional_venta' => (int)round($numero($d['costo_adicional_venta'] ?? 0)),
+			// v1.24.0: antes se grababan siempre en "sí" (desmarcar "imprimir" no servía: igual salía en la comanda)
+			'permite_cambio' => $si($d['permite_cambio'] ?? true),
+			'vigente' => 't',
 			'alto_costo' => 'f',
-			'imprimir' => 't',
+			'imprimir' => $si($d['imprimir'] ?? true),
 		);
 		$r = $this->Mproductos->grabarDetalleCategoria($id, $miData);
 		echo json_encode($r);
@@ -799,14 +859,22 @@ class Productos extends CI_Controller
 			return;
 		}
 		$d = $this->input->post('detalle');
+		if (!is_array($d)) return $this->errorMenu('Datos inválidos');
 		$respuesta = array();
 		foreach ($d as $value) {
-			$idCategoriaMenu = $value['id_categoria_menu'];
+			if (!is_array($value)) continue;
+			$idCategoriaMenu = (int)($value['id_categoria_menu'] ?? 0);
+			// v1.24.0: mínimo y máximo enteros desde 0 (máximo 0 = sin límite) y el máximo no menor que el mínimo
+			$min = is_numeric($value['cantidad_minima'] ?? null) ? (int)$value['cantidad_minima'] : 0;
+			$max = is_numeric($value['cantidad_maxima'] ?? null) ? (int)$value['cantidad_maxima'] : 0;
+			if ($min < 0 || $max < 0 || $min > 50 || $max > 50) return $this->errorMenu('La cantidad mínima y máxima van de 0 a 50');
+			if ($max > 0 && $max < $min) return $this->errorMenu('La cantidad máxima no puede ser menor que la mínima');
+			$est = $value['estricto'] ?? false;
 			$miData = array(
-				'cantidad_minima' => $value['cantidad_minima'],
-				'cantidad_maxima' => $value['cantidad_maxima'],
-				'costo_promedio_receta' => $value['costo_promedio_receta'],
-				'estricto' => $value['estricto'],
+				'cantidad_minima' => $min,
+				'cantidad_maxima' => $max,
+				'costo_promedio_receta' => is_numeric($value['costo_promedio_receta'] ?? null) ? max(0, (float)$value['costo_promedio_receta']) : 0,
+				'estricto' => ($est === true || $est === 't' || $est === 'true' || (string)$est === '1') ? 't' : 'f',
 			);
 			$r = $this->Mproductos->actualizarConfiguracionCategoriaMenu($idCategoriaMenu, $miData);
 			$respuesta[] = $r;

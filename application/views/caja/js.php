@@ -519,7 +519,7 @@
 			var pedido = {
 				delivery: entregaPantalla(), id_lprecio: Number($('#cboLista').val()), id_cliente: cliente ? cliente.id_cliente : 0,
 				descuento: totales().descuento,
-				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {} }; })
+				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [] }; })
 			};
 			var terminar = function () { guardandoDelivery = false; renderCarro(); };
 			enviarConAutorizacion(function (aut) {
@@ -930,14 +930,29 @@
 		function mensajesDe(id) {
 			return $.grep(catalogo.mensajes, function (m) { return m.id_producto === id; });
 		}
-		function tieneOpciones(id) {
-			return agregadosDe(id).length > 0 || mensajesDe(id).length > 0;
+		// v1.24.0: menús (Productos > Menú). menuDe(id) = el menú del producto (categorías con sus productos) o null
+		function menuDe(id) {
+			return $.grep((catalogo && catalogo.menus) || [], function (m) { return m.id_producto === id; })[0] || null;
 		}
-		// Precio unitario con agregados
+		function opcionMenu(menu, idDet) {
+			var r = null;
+			$.each(menu ? menu.categorias : [], function (i, c) { $.each(c.opciones, function (j, o) { if (o.id === idDet) r = o; }); });
+			return r;
+		}
+		// Lo que se suma al precio del menú por lo elegido (costo adicional de venta), por cada menú
+		function adicionalMenu(l) {
+			var menu = l.menu && l.menu.length ? menuDe(l.id_producto) : null, t = 0;
+			$.each(menu ? l.menu : [], function (i, e) { var o = opcionMenu(menu, e.id); if (o) t += o.adicional * e.cantidad; });
+			return t;
+		}
+		function tieneOpciones(id) {
+			return agregadosDe(id).length > 0 || mensajesDe(id).length > 0 || !!menuDe(id);
+		}
+		// Precio unitario con agregados (v1.24.0: o con los adicionales del menú)
 		function precioLinea(l) {
 			var precio = l.precio;
 			$.each(l.agregados, function (i, id) { var a = agregado(id); if (a) precio += a.valor; });
-			return precio;
+			return precio + adicionalMenu(l);
 		}
 
 		function renderFamilias() {
@@ -1301,6 +1316,13 @@
 			$('#opcionesTitulo').text(p.nombre);
 			$('#btnConfirmarOpciones').text(linea ? 'Guardar' : 'Agregar');
 
+			// v1.24.0: menú: por cada categoría sus productos, con la cantidad elegida (lo de la línea al editarla)
+			opcionesMenu = menuDe(id);
+			$('#opcionesMenu').toggle(!!opcionesMenu);
+			menuElegido = {};
+			if (opcionesMenu && linea && linea.menu) $.each(linea.menu, function (i, e) { menuElegido[e.id] = e.cantidad; });
+			pintarMenuOpciones();
+
 			var ags = agregadosDe(id);
 			var max = catalogo.config.max_agregados;
 			$('#opcionesAgregados').toggle(ags.length > 0);
@@ -1334,7 +1356,76 @@
 			var p = producto(opcionEdicion.id_producto);
 			var precio = p.precio;
 			$('#listaAgregados .chk-agregado:checked').each(function () { precio += agregado(Number(this.value)).valor; });
+			// v1.24.0: adicionales de lo elegido del menú
+			if (opcionesMenu) $.each(menuElegido, function (idDet, q) { var o = opcionMenu(opcionesMenu, Number(idDet)); if (o) precio += o.adicional * q; });
 			$('#opcionesPrecio').text(fmt(precio));
+		}
+
+		// ---- v1.24.0: armar el menú ----
+		var opcionesMenu = null, menuElegido = {};   // menú del producto abierto en Opciones y {id_detalle: cantidad}
+		function reglaCategoria(c) {
+			if (c.max === 1) return 'Elige 1';
+			if (c.min > 0 && c.max > 0) return c.min === c.max ? 'Elige ' + c.max : 'Elige de ' + c.min + ' a ' + c.max;
+			if (c.max > 0) return 'Hasta ' + c.max;
+			if (c.min > 0) return 'Mínimo ' + c.min;
+			return 'Opcional';
+		}
+		function elegidosEn(c) {
+			var n = 0;
+			$.each(c.opciones, function (i, o) { n += menuElegido[o.id] || 0; });
+			return n;
+		}
+		function pintarMenuOpciones() {
+			if (!opcionesMenu) { $('#listaMenu').empty(); return; }
+			$('#listaMenu').html($.map(opcionesMenu.categorias, function (c) {
+				var n = elegidosEn(c), falta = c.estricto && n < c.min, completa = (c.max > 0 && n >= c.max) || (!c.max && n >= Math.max(1, c.min));
+				return '<div class="menu-cat' + (falta ? ' falta' : (completa ? ' completa' : '')) + '" data-cat="' + c.id + '">'
+					+ '<div class="menu-cat-titulo"><span>' + esc(c.nombre) + '</span><small>' + esc(reglaCategoria(c)) + (c.estricto ? ' (obligatorio)' : '') + ' · ' + n + (c.max ? '/' + c.max : '') + '</small></div>'
+					+ $.map(c.opciones, function (o) {
+						var q = menuElegido[o.id] || 0;
+						return '<div class="menu-op' + (q ? ' elegida' : '') + '" data-id="' + o.id + '" data-cat="' + c.id + '">'
+							+ '<span class="nombre">' + esc(o.nombre) + (o.adicional ? ' <span class="adicional">+' + fmt(o.adicional) + '</span>' : '') + '</span>'
+							+ (c.max === 1 ? '<i class="fa ' + (q ? 'fa-dot-circle-o' : 'fa-circle-o') + '"></i>'
+								: '<span class="menu-cant"><button type="button" class="btn btn-default btn-xs menu-menos"' + (q ? '' : ' disabled') + '><i class="fa fa-minus"></i></button><b>' + q + '</b>'
+									+ '<button type="button" class="btn btn-default btn-xs menu-mas"><i class="fa fa-plus"></i></button></span>')
+							+ '</div>';
+					}).join('') + '</div>';
+			}).join(''));
+			precioOpciones();
+		}
+		function categoriaMenu(idCat) {
+			return $.grep(opcionesMenu ? opcionesMenu.categorias : [], function (c) { return c.id === idCat; })[0];
+		}
+		// Elegir: en una categoría de "elige 1" se cambia la elección; en las demás se suma, sin pasar del máximo
+		$('#listaMenu').on('click', '.menu-op', function (e) {
+			var c = categoriaMenu(Number($(this).data('cat'))), id = Number($(this).data('id'));
+			if (!c) return;
+			var menos = $(e.target).closest('.menu-menos').length > 0;
+			if (c.max === 1) {
+				var ya = !!menuElegido[id];
+				$.each(c.opciones, function (i, o) { delete menuElegido[o.id]; });
+				if (!ya) menuElegido[id] = 1;
+			} else if (menos) {
+				if (menuElegido[id] > 1) menuElegido[id]--; else delete menuElegido[id];
+			} else {
+				if (c.max > 0 && elegidosEn(c) >= c.max) { toastr.warning('En ' + c.nombre + ' se pueden elegir hasta ' + c.max); return; }
+				menuElegido[id] = (menuElegido[id] || 0) + 1;
+			}
+			pintarMenuOpciones();
+		});
+		/** Lo elegido del menú [{id, cantidad}] en el orden del menú; null si falta algo obligatorio (avisa) */
+		function eleccionMenuOpciones() {
+			if (!opcionesMenu) return [];
+			var res = [], error = null;
+			$.each(opcionesMenu.categorias, function (i, c) {
+				var n = elegidosEn(c);
+				if (!error && c.estricto && n < c.min) error = 'En ' + c.nombre + ' hay que elegir ' + (c.min === 1 ? '1 producto' : 'al menos ' + c.min);
+				if (!error && c.max > 0 && n > c.max) error = 'En ' + c.nombre + ' se pueden elegir hasta ' + c.max;
+				$.each(c.opciones, function (j, o) { if (menuElegido[o.id]) res.push({ id: o.id, cantidad: menuElegido[o.id] }); });
+			});
+			if (error) { toastr.warning(error); return null; }
+			if (!res.length) { toastr.warning('Elige los productos del menú'); return null; }
+			return res;
 		}
 
 		$('#listaAgregados').on('change', '.chk-agregado', function () {
@@ -1349,6 +1440,8 @@
 
 		$('#btnConfirmarOpciones').on('click', function () {
 			var id = opcionEdicion.id_producto;
+			var menuSel = eleccionMenuOpciones();   // v1.24.0
+			if (menuSel === null) return;
 			var ags = $('#listaAgregados .chk-agregado:checked').map(function () { return Number(this.value); }).get();
 			var msgs = mensajesDe(id);
 			var partes = $('#listaMensajes .chk-mensaje:checked').map(function () { return msgs[$(this).data('i')].mensaje; }).get();
@@ -1361,11 +1454,12 @@
 				if (t) notasAg[this.value] = t.slice(0, 60);
 			});
 			if (opcionEdicion.indice === null) {
-				agregar(id, ags, nota, undefined, notasAg);
+				agregar(id, ags, nota, undefined, notasAg, menuSel);
 			} else {
 				carro[opcionEdicion.indice].agregados = ags;
 				carro[opcionEdicion.indice].nota = nota;
 				carro[opcionEdicion.indice].notas_agregados = notasAg;
+				carro[opcionEdicion.indice].menu = menuSel;
 				renderCarro();
 			}
 			$('#modalOpciones').modal('hide');
@@ -1417,8 +1511,9 @@
 		function fmtCant(c) { return String(Math.round(c * 1000) / 1000).replace('.', ','); }
 
 		// cantidad: la del ingreso rápido "cantidad*código"; sin ella se agrega 1
-		function agregar(id, agregados, nota, cantidad, notasAg) {
+		function agregar(id, agregados, nota, cantidad, notasAg, menuSel) {
 			notasAg = notasAg || {};
+			menuSel = menuSel || [];   // v1.24.0: lo elegido del menú [{id, cantidad}]
 			var p = producto(id);
 			if (!p) return;
 			// 18-11-2026: un delivery guardado se cobra tal como se pidió
@@ -1435,19 +1530,26 @@
 			// Solo se suma a una línea existente si tiene exactamente las mismas opciones
 			var l = $.grep(carro, function (x) {
 				return !x.enviada && x.id_producto === id && x.nota === nota && x.agregados.join(',') === agregados.join(',')
-					&& JSON.stringify(x.notas_agregados || {}) === JSON.stringify(notasAg);
+					&& JSON.stringify(x.notas_agregados || {}) === JSON.stringify(notasAg) && JSON.stringify(x.menu || []) === JSON.stringify(menuSel);
 			})[0];
 			// El cursor se queda en el buscador para seguir ingresando (la cantidad se cambia en la línea o con cantidad*código).
 			// Un pesable ya agregado no suma 1 kg a ciegas: solo suma si se indicó la cantidad.
 			if (dada > 0) {
 				if (l) l.cantidad = ajustarCantidad(id, l.cantidad + dada);
-				else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: dada, agregados: agregados, nota: nota, notas_agregados: notasAg });
+				else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: dada, agregados: agregados, nota: nota, notas_agregados: notasAg, menu: menuSel });
 			} else if (l) {
 				if (!esFraccion(id)) l.cantidad += 1;
-			} else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: 1, agregados: agregados, nota: nota, notas_agregados: notasAg });
+			} else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: 1, agregados: agregados, nota: nota, notas_agregados: notasAg, menu: menuSel });
 			renderCarro();
 		}
 
+		/** v1.24.0: cantidad de un producto del menú que acompaña a qPadre de su menú (igual que Mcaja::conProductosDelMenu) */
+		function cantidadHijoMenu(h, qPadre) {
+			var padre = $.grep(carro, function (x) { return x.enviada && x.id_detalle === h.menu_de; })[0];
+			if (!padre || !(padre.cantidad > 0)) return 0;
+			var f = qPadre / padre.cantidad;
+			return f >= 0.9995 ? h.cantidad : r3(h.cantidad * f);
+		}
 		// Líneas brutas como las guarda el servidor: el producto con su primer agregado, y cada agregado
 		// siguiente como línea propia; si el producto es exento, todas sus líneas lo son
 		function lineasBrutas() {
@@ -1457,8 +1559,10 @@
 					var exEnv = l.exento || documentoExento(), ilaEnv = exEnv ? 0 : Number(l.ila) || 0;
 					if (!cobroParcial) { res.push({ bruto: l.bruto, exento: exEnv, ila: ilaEnv }); return; }
 					var q = cobroParcial[l.id_detalle] || 0;
+					// v1.24.0: un producto del menú va en la proporción de su menú (Mcaja::conProductosDelMenu)
+					if (!q && l.menu_de && cobroParcial[l.menu_de]) q = cantidadHijoMenu(l, cobroParcial[l.menu_de]);
 					// Misma proporción que Mcaja::seleccionDeLineas()
-					if (q > 0) res.push({ bruto: q >= l.cantidad ? l.bruto : Math.round(l.bruto_exacto * q / l.cantidad), exento: exEnv, ila: ilaEnv });
+					if (q > 0) res.push({ bruto: q >= l.cantidad - 0.0005 ? l.bruto : Math.round(l.bruto_exacto * q / l.cantidad), exento: exEnv, ila: ilaEnv });
 					return;
 				}
 				if (cobroParcial) return;
@@ -1467,6 +1571,12 @@
 				var ila = exento ? 0 : Number(p && p.ila) || 0;
 				var primero = l.agregados.length ? agregado(l.agregados[0]) : null;
 				res.push({ bruto: Math.round((l.precio + (primero ? primero.valor : 0)) * l.cantidad), exento: exento, ila: ila });
+				// v1.24.0: cada producto del menú con costo adicional es una línea más (Mcaja::armarLineas)
+				var menuL = l.menu && l.menu.length ? menuDe(l.id_producto) : null;
+				$.each(menuL ? l.menu : [], function (j, e) {
+					var o = opcionMenu(menuL, e.id);
+					if (o && o.adicional) res.push({ bruto: Math.round(o.adicional * r3(l.cantidad * e.cantidad)), exento: exento, ila: ila });
+				});
 				$.each(l.agregados.slice(1), function (j, id) {
 					var a = agregado(id);
 					if (a) res.push({ bruto: Math.round(a.valor * l.cantidad), exento: exento, ila: ila });
@@ -1526,6 +1636,16 @@
 			var unidades = 0;
 			$.each(carro, function (i, l) {
 				if (l.enviada) {
+					// v1.24.0: producto elegido de un menú: va debajo de su menú, sin botones (se anula / cobra / mueve con el menú)
+					if (l.menu_de) {
+						var qCobro = cobroParcial ? (cobroParcial[l.id_detalle] || (cobroParcial[l.menu_de] ? cantidadHijoMenu(l, cobroParcial[l.menu_de]) : 0)) : null;
+						$t.append('<div class="caja-linea enviada hijo-menu' + (cobroParcial && !qCobro ? ' fuera-cobro' : '') + '" data-i="' + i + '"><div class="info">'
+							+ '<div class="nombre">+ ' + esc(l.nombre) + '</div>' + (l.nota ? '<div class="detalle-linea"><i>' + esc(l.nota) + '</i></div>' : '') + '</div>'
+							+ '<div class="precio">' + (l.bruto ? fmt(l.precio) : '') + '</div>'
+							+ '<div class="cantidad">' + fmtCant(l.cantidad) + '</div>'
+							+ '<div class="subtotal">' + (l.bruto ? fmt(l.bruto) : '') + '</div><span class="quitar-hueco" aria-hidden="true"></span></div>');
+						return;
+					}
 					unidades += l.cantidad === Math.round(l.cantidad) ? l.cantidad : 1;
 					var fuera = cobroParcial && !cobroParcial[l.id_detalle];
 					var parte = cobroParcial && cobroParcial[l.id_detalle] && cobroParcial[l.id_detalle] < l.cantidad ? ' · se cobran ' + fmtCant(cobroParcial[l.id_detalle]) : '';
@@ -1547,8 +1667,15 @@
 					var a = agregado(id), na = l.notas_agregados && l.notas_agregados[id];
 					return a ? '+ ' + esc(a.nombre) + (na ? ' <i>» ' + esc(na) + '</i>' : '') : null;
 				});
+				// v1.24.0: lo elegido del menú
+				var menuL = l.menu && l.menu.length ? menuDe(l.id_producto) : null;
+				$.each(menuL ? l.menu : [], function (j, e) {
+					var o = opcionMenu(menuL, e.id);
+					if (o) detalle.push('<span class="del-menu">+ ' + (e.cantidad > 1 ? e.cantidad + ' ' : '') + esc(o.nombre) + (o.adicional ? ' <b>+' + fmt(o.adicional * e.cantidad) + '</b>' : '') + '</span>');
+				});
+				if (menuDe(l.id_producto) && !(l.menu && l.menu.length)) detalle.push('<span class="text-danger">Falta elegir los productos del menú</span>');
 				if (l.nota) detalle.push('<i>' + esc(l.nota) + '</i>');
-				var nombre = tieneOpciones(l.id_producto) ? '<a href="#" class="editar" title="Cambiar agregados / indicaciones">' + esc(l.nombre) + '</a>' : esc(l.nombre);
+				var nombre = tieneOpciones(l.id_producto) ? '<a href="#" class="editar" title="' + (menuDe(l.id_producto) ? 'Cambiar lo elegido del menú' : 'Cambiar agregados / indicaciones') + '">' + esc(l.nombre) + '</a>' : esc(l.nombre);
 				// Mensaje para la comanda: disponible en cualquier producto, tenga o no mensajes predefinidos
 				nombre += ' <a href="#" class="editar caja-btn-mensaje' + (l.nota ? ' con-mensaje' : '') + '" title="' + (l.nota ? 'Editar mensaje para la comanda' : 'Agregar mensaje para la comanda') + '"><i class="fa fa-commenting-o"></i></a>';
 				var prod = producto(l.id_producto);
@@ -2610,7 +2737,7 @@
 				id_delivery: modoDelivery && modoDelivery.id ? modoDelivery.id : 0,
 				// Factura: razón social, giro, dirección, comuna y solicitante elegidos en la ventana Datos de la factura
 				factura: documentoActual().es_factura && cliente && datosFactura && datosFactura.id_cliente === cliente.id_cliente ? datosFactura : null,
-				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {} }; }),
+				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [] }; }),
 				pagos: $.map(pagos, function (p) { return p.monto > 0 ? { id_fpago: p.id_fpago, monto: p.monto } : null; }),
 				token: tokenCobro
 			};
@@ -3432,7 +3559,8 @@
 			pintarMensajeMesa();
 			carro = $.map(d.lineas, function (l) {
 				return { enviada: true, id_detalle: l.id_detalle, id_producto: l.id_producto, nombre: l.nombre, precio: l.unitario, bruto: l.bruto, bruto_exacto: l.bruto_exacto,
-					cantidad: l.cantidad, agregados: [], agregado: l.agregado, nota: l.nota, exento: l.exento, ila: l.ila || 0, hora: l.hora };
+					cantidad: l.cantidad, agregados: [], agregado: l.agregado, nota: l.nota, exento: l.exento, ila: l.ila || 0, hora: l.hora,
+					es_menu: !!l.es_menu, menu_de: l.menu_de || 0 };   // v1.24.0
 			}).concat(pendientesMesa());
 			actualizarModoMesa();
 			renderCarro();
@@ -3598,7 +3726,7 @@
 		function enviarAMesa(luegoCobrar) {
 			if (enviando || !mesa) return;
 			var idMesa = mesa.id_mesa, enviadas = pendientesMesa();
-			var detalle = $.map(enviadas, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {} }; });
+			var detalle = $.map(enviadas, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [] }; });
 			enviando = true;
 			$('#btnEnviarMesa, #btnEnviarMesaBarra, #btnCobrar').prop('disabled', true);
 			postJson('enviarMesa', { id_mesa: idMesa, id_lprecio: Number($('#cboLista').val()), detalle: detalle,
@@ -3663,7 +3791,7 @@
 		function abrirMesaProductos(modo, lineas) {
 			if (!mesa || !mesa.id_cotizacion) return;
 			if (modo !== 'anular' && pendientesMesa().length) { toastr.warning('Primero envía a la mesa los productos nuevos'); return; }
-			mp = { modo: modo, lineas: lineas || $.grep(carro, function (l) { return l.enviada; }), enviando: false };
+			mp = { modo: modo, lineas: lineas || $.grep(carro, function (l) { return l.enviada && !l.menu_de; }), enviando: false };   // v1.24.0: lo del menú va con su menú
 			var t = MP_TEXTOS[modo];
 			$('#mpTitulo').text(t.titulo + (modo === 'anular' ? '' : ' · ' + nombreMesa(mesa.id_mesa)));
 			$('#mpAyuda').text(t.ayuda);
@@ -3840,13 +3968,23 @@
 			} catch (x) {}
 		})();
 		function r3(x) { return Math.round(x * 1000) / 1000; }
-		function dcLineas() { return $.grep(carro, function (l) { return l.enviada; }); }
+		// v1.24.0: los productos de un menú no se reparten sueltos: van con su menú (dcMonto suma su parte)
+		function dcLineas() { return $.grep(carro, function (l) { return l.enviada && !l.menu_de; }); }
+		function dcLineasTodas() { return $.grep(carro, function (l) { return l.enviada; }); }
 		function dcLinea(id) { return $.grep(carro, function (l) { return l.enviada && l.id_detalle === id; })[0]; }
 		// Lo que se cobra de una línea: completa, a su monto; una parte, en proporción (igual que Mcaja::seleccionDeLineas)
 		function dcMontoLinea(l, q) { return q >= l.cantidad - 0.0005 ? l.bruto : Math.round(l.bruto_exacto * q / l.cantidad); }
 		function dcMonto(items) {
 			var t = 0;
-			$.each(items, function (id, q) { var l = dcLinea(Number(id)); if (l) t += dcMontoLinea(l, q); });
+			$.each(items, function (id, q) {
+				var l = dcLinea(Number(id));
+				if (!l) return;
+				t += dcMontoLinea(l, q);
+				// v1.24.0: lo elegido del menú que no viene aparte, en la proporción del menú
+				if (l.es_menu) $.each(carro, function (i, h) {
+					if (h.enviada && h.menu_de === l.id_detalle && items[h.id_detalle] === undefined) { var qh = cantidadHijoMenu(h, q); if (qh > 0) t += dcMontoLinea(h, qh); }
+				});
+			});
 			return t;
 		}
 		function dcClave(idCot) { return CLAVE_DIVISION + EMPRESA + '.' + idCot; }
@@ -4077,7 +4215,7 @@
 		function dcPintar() {
 			if (!dc || !mesa) return;
 			var lineas = dcLineas(), porCobrar = 0, cobrado = 0;
-			$.each(lineas, function (i, l) { porCobrar += l.bruto; });
+			$.each(dcLineasTodas(), function (i, l) { porCobrar += l.bruto; });   // v1.24.0: con lo elegido de los menús
 			$.each(dc.comensales, function (i, c) { if (c.pagado) cobrado += c.pagado.total; });
 			$.each(dc.pagadas, function (i, p) { cobrado += p.total; });
 			$('#dcResumen').html('Por cobrar en la mesa: <b>' + fmt(porCobrar) + '</b> · ' + esc(textoUnidades(contarUnidades(lineas)))
@@ -4089,7 +4227,7 @@
 			});
 			$('#modalDividir [data-dc-vista]').prop('hidden', true).filter('[data-dc-vista="' + dcModo + '"]').prop('hidden', false);
 			if (dcModo === 'comensal') dcPintarComensales(lineas);
-			if (dcModo === 'iguales') dcPintarIguales(lineas);
+			if (dcModo === 'iguales') dcPintarIguales(dcLineasTodas());   // v1.24.0: cada parte lleva su fracción de todo
 		}
 		function dcPintarComensales(lineas) {
 			var hay = dc.comensales.length > 0;
@@ -4351,7 +4489,7 @@
 			var j = Number($(this).closest('tr').data('j')), pagadas = dc.pagadas.length;
 			dcImprimirPrecuenta({ partes: dc.partes - pagadas, parte: j + 1, inicio: pagadas, titulo: 'Parte ' + (pagadas + j + 1) + ' de ' + dc.partes });
 		}).on('click', '.dc-parte-cobrar', function () {
-			var pagadas = dc.pagadas.length, partes = dcSimularPartes(dcLineas(), dc.partes - pagadas), k = pagadas + 1;
+			var pagadas = dc.pagadas.length, partes = dcSimularPartes(dcLineasTodas(), dc.partes - pagadas), k = pagadas + 1;
 			if (!partes.length) return;
 			dcIrACobrar('parte', k, 'Parte ' + k + ' de ' + dc.partes, partes[0].sel, partes[0].monto);
 			dcPaso.precuenta = { partes: dc.partes - pagadas, parte: 1, inicio: pagadas, titulo: 'Parte ' + k + ' de ' + dc.partes };
@@ -5094,8 +5232,11 @@
 		function lineasParaGuardar(lista) {
 			return $.map(lista, function (l) {
 				if (l.enviada) return null;
+				var menuL = l.menu && l.menu.length ? menuDe(l.id_producto) : null;   // v1.24.0
 				return { id_producto: l.id_producto, nombre: l.nombre, precio: l.precio, cantidad: l.cantidad, agregados: (l.agregados || []).slice(),
-					nota: l.nota || '', notas_agregados: l.notas_agregados || {}, opciones: $.map(l.agregados || [], function (id) { var a = agregado(id); return a ? a.nombre : null; }).join(', ') };
+					nota: l.nota || '', notas_agregados: l.notas_agregados || {}, menu: (l.menu || []).slice(),
+					opciones: $.map(l.agregados || [], function (id) { var a = agregado(id); return a ? a.nombre : null; })
+						.concat($.map(menuL ? l.menu : [], function (e) { var o = opcionMenu(menuL, e.id); return o ? o.nombre : null; })).join(', ') };
 			});
 		}
 		// La venta directa en curso: la que está en pantalla, o la que quedó guardada mientras se atiende una mesa
@@ -5271,7 +5412,8 @@
 		function aplicarVentaEspera(d) {
 			carro = $.map(d.lineas || [], function (l) {
 				return { id_producto: l.id_producto, nombre: l.nombre, precio: l.precio, cantidad: l.cantidad, agregados: (l.agregados || []).slice(), nota: l.nota || '',
-					notas_agregados: l.notas_agregados && typeof l.notas_agregados === 'object' ? l.notas_agregados : {} };
+					notas_agregados: l.notas_agregados && typeof l.notas_agregados === 'object' ? l.notas_agregados : {},
+					menu: $.isArray(l.menu) ? l.menu : [] };   // v1.24.0
 			});
 			cliente = d.cliente && d.cliente.id_cliente ? d.cliente : null;
 			$('#txtCliente').val(cliente ? (d.txt_cliente || cliente.nombre_cliente) : '');

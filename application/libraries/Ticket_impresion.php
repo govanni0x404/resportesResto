@@ -67,6 +67,12 @@ class Ticket_impresion
 			}
 			$b .= str_repeat('-', $W) . "\n";
 			foreach ($doc['detalle'] as $d) {
+				// v1.24.0: producto elegido de un menú: "+ nombre" debajo del menú; sin precio si no tiene costo adicional
+				if (!empty($d->del_menu)) {
+					$b .= $this->lineas('  + ' . ($cant($d->cantidad) !== '1' ? $cant($d->cantidad) . ' ' : '') . $d->nombre, $W);
+					if ((int)round((float)$d->monto_mostrar) !== 0) $b .= $this->fila('    adicional', $m($d->monto_mostrar), $W);
+					continue;
+				}
 				$b .= $this->lineas($d->nombre . ($d->exento ? ' (EXENTO)' : ''), $W);
 				$b .= $this->fila('  ' . $cant($d->cantidad) . ' x ' . $m($d->precio_mostrar), $m($d->monto_mostrar), $W);
 			}

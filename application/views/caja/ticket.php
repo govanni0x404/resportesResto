@@ -101,7 +101,12 @@ $copias = !empty($cedible) ? array('', 'CEDIBLE') : array('');
 		<hr>
 		<table>
 			<?php foreach ($detalle as $d) : ?>
-				<tr><td colspan="2"><?php echo $h($d->nombre); ?><?php echo $d->exento ? ' (EXENTO)' : ''; ?></td></tr>
+				<?php if (!empty($d->del_menu) && (int)round((float)$d->monto_mostrar) === 0) : ?>
+					<?php /* v1.24.0: producto elegido del menú, sin costo adicional */ ?>
+					<tr><td colspan="2">&nbsp;&nbsp;+ <?php echo $h(($cant($d->cantidad) !== '1' ? $cant($d->cantidad) . ' ' : '') . $d->nombre); ?></td></tr>
+					<?php continue; ?>
+				<?php endif; ?>
+				<tr><td colspan="2"><?php echo !empty($d->del_menu) ? '&nbsp;&nbsp;+ ' : ''; ?><?php echo $h($d->nombre); ?><?php echo $d->exento ? ' (EXENTO)' : ''; ?></td></tr>
 				<tr>
 					<td>&nbsp;&nbsp;<?php echo $cant($d->cantidad); ?> x <?php echo $m($d->precio_mostrar); ?></td>
 					<td class="r"><?php echo $m($d->monto_mostrar); ?></td>

@@ -1,4 +1,14 @@
 <script>
+    // v1.24.0: el aviso que manda el servidor ({error}, código 400) o uno general
+    function errorMenuServidor(xhr, porDefecto) {
+        var msg = '';
+        try { msg = (xhr.responseJSON && xhr.responseJSON.error) || JSON.parse(xhr.responseText).error || ''; } catch (e) {}
+        showAppAlert('error', msg || porDefecto || "- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
+            duration: 6000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+    }
+
     var base_url = "<?php echo base_url(); ?>";
     tableListadoMenu = $('#tableListadoMenu').DataTable();
 //     tableCategoriasMenuModal = $('#tableCategoriasMenuModal').DataTable();
@@ -299,12 +309,7 @@
                     image: base_url + 'assets/img/success.gif'
                 });
             })
-            .fail(function() {
-                showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
-                    duration: 5000,
-                    image: base_url+ 'assets/img/errorGif.gif'
-                });
-            });
+            .fail(function(xhr) { errorMenuServidor(xhr); });   // v1.24.0: el aviso del servidor (ej. nombre repetido)
     }
 
     //CATEGORIA MENU 
@@ -469,12 +474,7 @@
                     image: base_url + 'assets/img/success.gif'
                 });
             })
-            .fail(function() {
-                showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
-                    duration: 5000,
-                    image: base_url+ 'assets/img/errorGif.gif'
-                });
-            })
+            .fail(function(xhr) { errorMenuServidor(xhr); })   // v1.24.0: el aviso del servidor (ej. categoría repetida)
             .always(function() {});
     }
 
@@ -840,6 +840,17 @@
     // GRABAR: aplica TODOS los cambios pendientes (productos + configuración) al servidor
     function GrabarConfiguracionCategoriaMenu() {
         let id_categoria_menu = $("#labelMenuCategoriaDestacado").attr('data-id-categoria');
+        // v1.24.0: mínimo y máximo: enteros desde 0 (máximo 0 = sin límite) y el máximo no menor que el mínimo
+        var cMin = $.trim($('#CantMinima').val()), cMax = $.trim($('#CantMaxima').val());
+        var nMin = cMin === '' ? 0 : Number(cMin), nMax = cMax === '' ? 0 : Number(cMax);
+        if (!/^\d*$/.test(cMin) || !/^\d*$/.test(cMax) || nMin > 50 || nMax > 50) {
+            showAppAlert('error', 'La cantidad mínima y máxima son números enteros de 0 a 50', { duration: 5000, image: base_url + 'assets/img/errorGif.gif' });
+            return;
+        }
+        if (nMax > 0 && nMax < nMin) {
+            showAppAlert('error', 'La cantidad máxima no puede ser menor que la mínima (máximo 0 = sin límite)', { duration: 5000, image: base_url + 'assets/img/errorGif.gif' });
+            return;
+        }
 
         // 1. Calcular qué registros se eliminaron (estaban en original pero no están en actual)
         var idsOriginales = detallesCategoriaOriginal.map(function(i) { return String(i.id_detalle_categoria_menu); });
@@ -941,11 +952,6 @@
             ListadoCategoriaMenuModal($('#cboMenuModal').val());
             // Cerrar modal
             $('#ModalAgregarProductosAcategorias').modal('hide');
-        }).fail(function() {
-            showAppAlert('error', "Error al guardar los cambios. Intente nuevamente.", {
-                duration: 5000,
-                image: base_url + 'assets/img/errorGif.gif'
-            });
-        });
+        }).fail(function(xhr) { errorMenuServidor(xhr, "Error al guardar los cambios. Intente nuevamente."); });   // v1.24.0
     }
 </script>
