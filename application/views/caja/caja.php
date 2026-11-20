@@ -214,6 +214,41 @@
 	.caja-cliente { display: flex; gap: 6px; }
 	.caja-cliente input { flex: 1; min-width: 0; background: #fff !important; cursor: pointer; }
 	.caja-cliente .btn { flex: 0 0 38px; border-radius: 6px; }
+	.caja-cliente .btn[hidden] { display: none; }
+	/* v1.24.16: ventana Cliente más grande, con la edición a la vista */
+	#modalCliente .modal-dialog { width: 680px; max-width: calc(100vw - 24px); }
+	#modalCliente .modal-content { border: 0; border-radius: 14px; overflow: hidden; }
+	.cli-cab { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--t-borde, #E5E7EB); background: #fff; }
+	.cli-cab-icono { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); font-size: 18px; }
+	.cli-cab h4 { margin: 0; font-size: 18px; font-weight: 800; text-align: left; }
+	.cli-cab small { display: block; font-size: 12px; color: var(--t-texto-tenue, #6B7280); }
+	.cli-cab .close { margin-left: auto; font-size: 26px; }
+	#modalCliente .modal-body { padding: 14px 18px 18px; }
+	.cli-tabs > li > a { font-size: 15px; font-weight: 700; padding: 10px 16px; }
+	.cli-tabs > li > a i { margin-right: 5px; }
+	#modalCliente .tab-content { padding-top: 14px; }
+	.cli-buscar { position: relative; }
+	.cli-buscar i { position: absolute; left: 14px; top: 15px; color: var(--t-texto-tenue, #6B7280); }
+	.cli-buscar input { height: 46px; padding-left: 38px; font-size: 16px; border-radius: 10px; }
+	#resultadosCliente { max-height: 360px; overflow-y: auto; margin: 10px 0 0; }
+	#resultadosCliente .list-group-item { display: flex; align-items: center; gap: 10px; padding: 11px 14px; font-size: 15px; }
+	#resultadosCliente .cli-datos { flex: 1; min-width: 0; }
+	#resultadosCliente .cli-datos b { display: block; }
+	#resultadosCliente .cli-datos small { display: block; color: var(--t-texto-tenue, #6B7280); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.btn-editar-cliente { flex: 0 0 auto; height: 36px; padding: 0 14px; border-radius: 9px; font-weight: 700; border: 1px solid var(--t-borde, #D1D5DB); background: #fff; }
+	.btn-editar-cliente:hover { background: var(--t-primario, #15803D); border-color: var(--t-primario, #15803D); color: #fff; }
+	.btn-editar-cliente i { margin-right: 5px; }
+	.cli-publico { flex: 0 0 auto; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 10px; background: var(--t-fondo-alt, #F3F4F6); color: var(--t-texto-suave, #4B5563); }
+	#frmCliente label { font-size: 13px; font-weight: 700; }
+	#frmCliente .form-control { height: 44px; font-size: 15px; border-radius: 8px; }
+	#frmCliente .select2-container .select2-selection--single { height: 44px; border-radius: 8px; }
+	#frmCliente .select2-container .select2-selection--single .select2-selection__rendered { line-height: 42px; font-size: 15px; }
+	#frmCliente .select2-container .select2-selection--single .select2-selection__arrow { height: 42px; }
+	.cli-editando { margin-bottom: 14px; padding: 10px 14px; border-radius: 10px; background: #FFF6D6; border: 1px solid #F1DFA0; color: #5C4400; font-size: 14px; }
+	.cli-editando[hidden] { display: none; }
+	.cli-ayuda { color: var(--t-texto-tenue, #6B7280); font-size: 13px; }
+	.cli-acciones { display: flex; justify-content: flex-end; gap: 8px; }
+	.cli-acciones .btn { height: 44px; min-width: 130px; font-size: 15px; font-weight: 700; border-radius: 10px; }
 	.caja-resumen .fila { display: flex; justify-content: space-between; color: var(--t-texto, #3A2A22); font-size: 17px; line-height: 2; }
 	.caja-resumen .fila span:last-child { font-weight: 700; color: var(--t-texto-fuerte, #2A1D17); }
 	.caja-resumen .fila.descuento, .caja-resumen .fila.descuento span:last-child { color: var(--t-peligro, #C9372C); }
@@ -821,6 +856,30 @@
 	.mesa-drawer.sin-pedido { width: 590px; }
 	.mesa-drawer.redimensionando { transition: none; }
 	.mesa-drawer.redimensionando, .mesa-drawer.redimensionando * { cursor: col-resize !important; -webkit-user-select: none; user-select: none; }
+	/* v1.24.13: vista rápida de la mesa (mouse 0,6 s encima, v1.24.15) */
+	.vista-mesa { position: fixed; z-index: 1035; width: 340px; max-width: calc(100vw - 20px); background: #fff; border: 1px solid var(--t-borde, #E5E7EB);
+		border-radius: 14px; box-shadow: 0 18px 44px rgba(17, 24, 39, .22); overflow: hidden; opacity: 0; transform: translateY(4px); transition: opacity .15s ease, transform .15s ease; }
+	.vista-mesa.visible { opacity: 1; transform: none; }
+	.vista-mesa[hidden] { display: none; }
+	.vm-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; background: #2563EB; color: #fff; }
+	.vm-cab b { display: block; font-size: 17px; font-weight: 800; }
+	.vm-cab small { display: block; font-size: 12px; opacity: .9; }
+	.vm-ojo { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, .18); }
+	.vm-mensaje { padding: 8px 14px; background: #FFF6D6; border-bottom: 1px solid #F1DFA0; color: #5C4400; font-size: 13px; font-weight: 600; }
+	.vm-lista { max-height: 300px; overflow-y: auto; padding: 4px 0; }
+	.vm-lista table { width: 100%; border-collapse: collapse; }
+	.vm-lista td { padding: 6px 10px; border-bottom: 1px solid var(--t-borde-suave, #EEF0F3); vertical-align: top; font-size: 14px; }
+	.vm-lista td.cant { width: 34px; text-align: center; font-weight: 800; color: var(--t-texto-fuerte, #111827); }
+	.vm-lista td.prod { font-weight: 600; color: var(--t-texto, #1F2937); }
+	.vm-lista td.prod small { display: block; font-weight: 400; font-size: 12px; color: var(--t-texto-tenue, #6B7280); }
+	.vm-lista td.monto { width: 84px; text-align: right; white-space: nowrap; font-weight: 700; color: var(--t-texto-fuerte, #111827); }
+	.vm-lista tr.hijo td { padding-top: 2px; border-bottom-style: dashed; }
+	.vm-lista tr.hijo td.prod { padding-left: 16px; font-weight: 500; font-size: 13px; color: var(--t-texto-suave, #4B5563); }
+	.vm-vacio { padding: 18px 14px; text-align: center; color: var(--t-texto-tenue, #6B7280); }
+	.vm-pie { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--t-fondo-alt, #F3F4F6); border-top: 1px solid var(--t-borde, #E5E7EB); }
+	.vm-pie span { font-size: 13px; color: var(--t-texto-suave, #4B5563); font-weight: 600; }
+	.vm-pie b { font-size: 22px; font-weight: 800; color: var(--t-primario-osc, #116632); }
+
 	/* v1.24.6: el tirador se ve siempre (antes solo al pasar el mouse justo por el borde): manilla en el borde izquierdo */
 	.mesa-drawer-tirador { position: absolute; top: 0; bottom: 0; left: -8px; z-index: 2; width: 16px; cursor: col-resize; touch-action: none; }
 	.mesa-drawer-tirador::before { content: ''; position: absolute; top: 0; bottom: 0; left: 7px; width: 2px; background: transparent; transition: background .15s; }
@@ -1314,6 +1373,7 @@
 								<div class="caja-cliente">
 									<input type="text" id="txtCliente" class="form-control" readonly placeholder="Público general">
 									<button class="btn btn-default" id="btnBuscarCliente" title="Buscar o crear cliente"><i class="fa fa-search"></i></button>
+									<button class="btn btn-default" id="btnEditarCliente" title="Editar los datos de este cliente (dirección, giro, teléfono…)" hidden><i class="fa fa-pencil"></i></button>
 									<button class="btn btn-default" id="btnQuitarCliente" title="Quitar cliente"><i class="fa fa-times"></i></button>
 								</div>
 							</div>
@@ -2388,23 +2448,25 @@
 <div class="modal fade" id="modalCliente" tabindex="-1" role="dialog">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
-			<div class="modal-header btn-success">
-				<button type="button" class="close" data-dismiss="modal">&times;</button>
-				<h4 class="modal-title">Cliente</h4>
+			<div class="cli-cab">
+				<div class="cli-cab-icono"><i class="fa fa-user"></i></div>
+				<div><h4 class="modal-title">Cliente</h4><small>Busca un cliente, créalo o cambia sus datos</small></div>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">&times;</button>
 			</div>
 			<div class="modal-body">
-				<ul class="nav nav-tabs">
-					<li class="active"><a href="#tabBuscarCliente" data-toggle="tab">Buscar</a></li>
-					<li><a href="#tabNuevoCliente" data-toggle="tab" id="tabClienteForm">Nuevo</a></li>
+				<ul class="nav nav-tabs cli-tabs">
+					<li class="active"><a href="#tabBuscarCliente" data-toggle="tab"><i class="fa fa-search"></i> Buscar</a></li>
+					<li><a href="#tabNuevoCliente" data-toggle="tab" id="tabClienteForm"><i class="fa fa-plus"></i> Nuevo</a></li>
 				</ul>
-				<div class="tab-content" style="padding-top:12px">
+				<div class="tab-content">
 					<div class="tab-pane active" id="tabBuscarCliente">
-						<input type="text" class="form-control" id="txtBuscarCliente" placeholder="Nombre o RUT" autocomplete="off">
-						<div class="list-group" id="resultadosCliente" style="max-height:300px; overflow-y:auto; margin-top:8px"></div>
+						<div class="cli-buscar"><i class="fa fa-search"></i><input type="text" class="form-control" id="txtBuscarCliente" placeholder="Nombre o RUT" autocomplete="off"></div>
+						<div class="list-group" id="resultadosCliente"></div>
 					</div>
 					<div class="tab-pane" id="tabNuevoCliente">
 						<form id="frmCliente">
 							<input type="hidden" name="id_cliente" value="">
+							<div class="cli-editando" id="cliEditando" hidden><i class="fa fa-pencil"></i> Editando a <b id="cliEditandoNombre"></b>. Los cambios quedan guardados en la ficha del cliente.</div>
 							<div class="row">
 								<div class="col-sm-7 form-group"><label>Nombre / Razón social *</label><input name="nombre_cliente" class="form-control" maxlength="100" required></div>
 								<div class="col-sm-5 form-group"><label>RUT *</label><input name="rut" class="form-control" placeholder="12.345.678-9" maxlength="12" required></div>
@@ -2412,11 +2474,13 @@
 								<div class="col-sm-6 form-group"><label>Dirección</label><input name="direccion" class="form-control" maxlength="100"></div>
 								<div class="col-sm-6 form-group"><label for="cboComuna">Comuna</label><select name="id_comuna" id="cboComuna" class="form-control"></select></div>
 								<div class="col-sm-6 form-group"><label>Teléfono</label><input name="telefono" class="form-control" maxlength="30"></div>
-								<div class="col-sm-6 form-group"><label>Correo</label><input name="mail" type="email" class="form-control" maxlength="100"></div>
+								<div class="col-sm-12 form-group"><label>Correo</label><input name="mail" type="email" class="form-control" maxlength="100"></div>
 							</div>
-							<p class="text-muted">Para facturas el cliente necesita RUT, giro, dirección y comuna.</p>
-							<button type="submit" class="btn btn-primary">Guardar y usar</button>
-							<button type="button" class="btn btn-default" id="btnCancelarEdicion" style="display:none">Cancelar edición</button>
+							<p class="cli-ayuda"><i class="fa fa-info-circle"></i> Para facturas el cliente necesita RUT, giro, dirección y comuna.</p>
+							<div class="cli-acciones">
+								<button type="button" class="btn btn-default" id="btnCancelarEdicion" style="display:none">Cancelar</button>
+								<button type="submit" class="btn btn-success" id="btnGuardarCliente"><i class="fa fa-check"></i> Guardar y usar</button>
+							</div>
 						</form>
 					</div>
 				</div>

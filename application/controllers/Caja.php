@@ -177,6 +177,14 @@ class Caja extends CI_Controller
 		});
 	}
 
+	/** v1.24.16: ficha de un cliente para editarlo sin salir de la Caja. */
+	public function fichaCliente()
+	{
+		$this->ejecutar(function () {
+			return $this->Mcaja->fichaCliente((int)$this->input->get('id_cliente'));
+		});
+	}
+
 	/** Factura: la ficha del cliente y los giros / direcciones / solicitantes usados antes en sus facturas. */
 	public function receptorCliente()
 	{
@@ -375,6 +383,22 @@ class Caja extends CI_Controller
 			// 18-11-2026: solo lee la sesión: abrir una mesa ya no espera a que termine la lista de mesas
 			$this->soltarSesion();
 			return $this->Mcaja->detalleMesa((int)$this->input->get('id_mesa'));
+		});
+	}
+
+	/**
+	 * v1.24.13: vista rápida de una mesa (al dejar el mouse encima en la pestaña Mesas): solo mirar lo que lleva, sin abrirla
+	 * ni bloquearla (no valida si otra caja o el POS la tiene abierta).
+	 */
+	public function vistaMesa()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			$this->soltarSesion();
+			$id = (int)$this->input->get('id_mesa');
+			$d = $this->Mcaja->detalleMesa($id, false);
+			$d['nombre'] = $this->Mcaja->etiquetaMesa($id);
+			return $d;
 		});
 	}
 

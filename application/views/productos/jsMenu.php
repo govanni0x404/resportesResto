@@ -411,7 +411,7 @@
             "columns": [
                 {mData: "id_categoria_menu", className: "text-left"},
                 {mData: "id_menu", className: "text-left", visible: false},
-                {mData: "nombre_categoria_menu", className: "text-center"},
+                {mData: "nombre_categoria_menu", className: "text-left"},
                 {mData: "costo_promedio_receta", className: "text-center"},
                 {mData: "btnAgregarProductosCategoria", className: "text-center"},
             ],

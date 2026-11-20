@@ -633,4 +633,81 @@ function finalizarYCerrarAgregados() {
         $('#ModalAgregadosDelProducto').modal('hide');
     }
 }
+
+// ---- v1.24.17: copiar los agregados de este producto a otro o varios ----
+var caElegidos = {}, caOrigen = 0;
+function abrirCopiarAgregados() {
+    caOrigen = Number($('#txtID').val()) || 0;
+    var filas = $('#detalleAgregadosDelProducto tr[data-id-producto]');
+    if (!caOrigen || !filas.length) {
+        showAppAlert('warning', 'Este producto todavía no tiene agregados para copiar', { duration: 4000 });
+        return;
+    }
+    var esc = function (t) { return $('<div>').text(t).html(); };
+    $('#caChips').html(filas.map(function () {
+        var td = $(this).children('td');
+        var cant = $(this).find('.cantidad-agregado-input').val(), valor = Number($(this).find('.valor-agregado-input').val()) || 0;
+        return '<span class="ca-chip">' + esc(td.eq(2).text()) + ' <small>x' + esc(cant) + (valor ? ' · +$' + valor.toLocaleString('es-CL') : '') + '</small></span>';
+    }).get().join(''));
+    $('#caSubtitulo').text('De ' + ($('#txtNombre').val() || 'este producto') + ' a otro o varios productos');
+    caElegidos = {};
+    $('#txtBuscarCopiarAg').val('');
+    $('input[name=caModo][value=0]').prop('checked', true);
+    pintarCopiarAg();
+    $('#ModalCopiarAgregados').modal('show');
+    setTimeout(function () { $('#txtBuscarCopiarAg').focus(); }, 300);
+}
+function productosParaCopiar() {
+    return $('#cboProductoAgregadoProductos option').map(function () {
+        var id = Number(this.value);
+        return id && id !== caOrigen ? { id: id, nombre: $(this).text() } : null;
+    }).get();
+}
+function pintarCopiarAg() {
+    var texto = $.trim($('#txtBuscarCopiarAg').val()).toLowerCase();
+    var esc = function (t) { return $('<div>').text(t).html(); };
+    var lista = $.grep(productosParaCopiar(), function (p) { return !texto || p.nombre.toLowerCase().indexOf(texto) >= 0; });
+    $('#listaCopiarAg').html(lista.length ? $.map(lista, function (p) {
+        var on = !!caElegidos[p.id];
+        return '<label class="ag-op' + (on ? ' elegido' : '') + '" data-id="' + p.id + '"><input type="checkbox"' + (on ? ' checked' : '') + '><span>' + esc(p.nombre) + '</span></label>';
+    }).join('') : '<div class="ag-varios-vacio">No hay productos con ese nombre</div>');
+    contarCopiarAg();
+}
+function contarCopiarAg() {
+    var n = Object.keys(caElegidos).length;
+    $('#lblCaElegidos').text(n ? (n === 1 ? '1 producto elegido' : n + ' productos elegidos') : 'Ningún producto elegido');
+    $('#btnCaCopiar').prop('disabled', !n).html('<i class="fa fa-clone"></i> ' + (n ? 'Copiar a ' + (n === 1 ? '1 producto' : n + ' productos') : 'Copiar'));
+}
+$(document).on('input', '#txtBuscarCopiarAg', pintarCopiarAg);
+$(document).on('change', '#listaCopiarAg .ag-op input', function () {
+    var $l = $(this).closest('.ag-op'), id = String($l.data('id'));
+    if (this.checked) caElegidos[id] = true; else delete caElegidos[id];
+    $l.toggleClass('elegido', this.checked);
+    contarCopiarAg();
+});
+$(document).on('click', '#btnCaMarcar', function () {
+    $('#listaCopiarAg .ag-op[data-id]').each(function () { caElegidos[String($(this).data('id'))] = true; });
+    pintarCopiarAg();
+});
+$(document).on('click', '#btnCaLimpiar', function () { caElegidos = {}; pintarCopiarAg(); });
+$(document).on('click', '#btnCaCopiar', function () {
+    var ids = Object.keys(caElegidos);
+    if (!ids.length) return;
+    var $b = $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Copiando…');
+    $.ajax({ url: base_url + 'index.php/Productos/copiarAgregados', type: 'POST', dataType: 'json',
+        data: { id_origen: caOrigen, destinos: ids, actualizar: $('input[name=caModo]:checked').val() } })
+        .done(function (r) {
+            if (r && r.error) { showAppAlert('error', r.error, { duration: 5000 }); return; }
+            var partes = [r.nuevos + (r.nuevos === 1 ? ' agregado nuevo' : ' agregados nuevos')];
+            if (r.actualizados) partes.push(r.actualizados + (r.actualizados === 1 ? ' actualizado' : ' actualizados'));
+            showAppAlert('success', 'Copiados a ' + (r.productos === 1 ? '1 producto' : r.productos + ' productos') + ': ' + partes.join(', '), { duration: 5000 });
+            $('#ModalCopiarAgregados').modal('hide');
+            if (typeof tablaCartaProductos !== 'undefined' && tablaCartaProductos && tablaCartaProductos.ajax) tablaCartaProductos.ajax.reload(null, false);
+        })
+        .fail(function (xhr) {
+            var m = (xhr.responseJSON && xhr.responseJSON.error) || 'No se pudieron copiar los agregados';
+            showAppAlert('error', m, { duration: 5000 });
+        })
+        .always(function () { contarCopiarAg(); });
+});
 </script>

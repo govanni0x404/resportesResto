@@ -424,6 +424,50 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 		return $query;
 	}
 
+	/**
+	 * v1.24.17: copia los agregados de un producto a otros (pedido del usuario). Todo o nada (transacción) y NUNCA borra:
+	 * - los agregados que el destino no tiene se crean con la misma cantidad, valor, vigencia y destino de impresión;
+	 * - los que ya tiene: se dejan como están, o con $actualizar se les pone la cantidad y el valor del producto de origen;
+	 * - un producto no queda como agregado de sí mismo;
+	 * - el destino queda marcado "Con Agregado" (si no, el POS de escritorio no los ofrece).
+	 */
+	public function copiarAgregados($idOrigen, array $destinos, $actualizar)
+	{
+		$this->load->helper('tenant'); $db = get_tenant_db($this);
+		$idOrigen = (int)$idOrigen;
+		$destinos = array_values(array_unique(array_filter(array_map('intval', $destinos), function ($d) use ($idOrigen) { return $d > 0 && $d !== $idOrigen; })));
+		if (!$destinos) return array('error' => 'Elige al menos un producto donde copiar los agregados');
+		$n = $db->query('SELECT count(*) AS n FROM agregados WHERE id_producto_maestro = ? AND eliminado IS NOT TRUE', array($idOrigen))->row();
+		if (!$n || (int)$n->n === 0) return array('error' => 'Este producto no tiene agregados para copiar');
+		$en = 'ARRAY[' . implode(',', $destinos) . ']::int[]';   // solo enteros (intval arriba)
+
+		$db->trans_begin();
+		$actualizados = 0;
+		if ($actualizar) {
+			$ok = $db->query("UPDATE agregados d SET cantidad = o.cantidad, valor = o.valor
+				FROM agregados o
+				WHERE o.id_producto_maestro = ? AND o.eliminado IS NOT TRUE
+				  AND d.id_producto = o.id_producto AND d.id_producto_maestro = ANY($en) AND d.eliminado IS NOT TRUE", array($idOrigen));
+			if ($ok === false) { $db->trans_rollback(); return array('error' => 'No se pudieron actualizar los agregados que ya tenían'); }
+			$actualizados = $db->affected_rows();
+		}
+		$ok = $db->query("INSERT INTO agregados (id_producto, cantidad, vigente, id_producto_maestro, valor, usar_destino_impresion, eliminado,
+				id_dimpresion_maestro, id_dimpresion_agregado)
+			SELECT o.id_producto, o.cantidad, o.vigente, p.id_producto, o.valor, COALESCE(o.usar_destino_impresion, false), false, 0, 0
+			FROM agregados o JOIN producto p ON p.id_producto = ANY($en)
+			WHERE o.id_producto_maestro = ? AND o.eliminado IS NOT TRUE AND o.id_producto <> p.id_producto
+			  AND NOT EXISTS (SELECT 1 FROM agregados x WHERE x.id_producto_maestro = p.id_producto AND x.id_producto = o.id_producto
+				AND x.eliminado IS NOT TRUE)
+			ON CONFLICT DO NOTHING", array($idOrigen));
+		if ($ok === false) { $db->trans_rollback(); return array('error' => 'No se pudieron copiar los agregados'); }
+		$nuevos = $db->affected_rows();
+		$ok = $db->query("UPDATE producto p SET con_agregado = true WHERE p.id_producto = ANY($en) AND p.con_agregado IS NOT TRUE
+			AND EXISTS (SELECT 1 FROM agregados a WHERE a.id_producto_maestro = p.id_producto AND a.eliminado IS NOT TRUE)");
+		if ($ok === false || $db->trans_status() === false) { $db->trans_rollback(); return array('error' => 'No se pudieron copiar los agregados'); }
+		$db->trans_commit();
+		return array('ok' => true, 'productos' => count($destinos), 'nuevos' => (int)$nuevos, 'actualizados' => (int)$actualizados);
+	}
+
 	public function grabarAgregados($id, $data)
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
@@ -643,7 +687,8 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 				"nombre_categoria_menu" => $key->nombre_categoria_menu,
 				"costo_promedio_receta" => $key->costo_promedio_receta,
 				'vigente' => ($key->vigente == 't' ? 'SI' : 'NO'),
-				'btnAgregarProductosCategoria' => ("<button onclick='AbrirModalProductosAgregadosACategoria(" . $key->id_categoria_menu . ")' type='button' class='btn-block btn-warning text-center'>AGREGAR PRODUCTOS</button>"),
+				// v1.24.12: botón con el diseño del sistema (ver #ModalListadoMenus en productos/modals.php)
+				'btnAgregarProductosCategoria' => ("<button onclick='AbrirModalProductosAgregadosACategoria(" . (int)$key->id_categoria_menu . ")' type='button' class='lm-btn-productos'><i class='fa fa-cutlery'></i> Productos</button>"),
 			));
 		}
 		

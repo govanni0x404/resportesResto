@@ -454,7 +454,16 @@ class Mcaja extends CI_Model
 		throw new Exception('Para usar esta lista de precios cámbiala de nuevo en la Caja e ingresa la clave de administración', 403);
 	}
 
-	public function buscarClientes($texto)
+	/** v1.24.16: ficha de un cliente para editarlo desde la Caja (botón lápiz junto al cliente elegido). */
+	public function fichaCliente($idCliente)
+	{
+		$r = $this->buscarClientes('', (int)$idCliente);
+		if (!$r) throw new Exception('El cliente no existe', 404);
+		$r[0]['publico'] = (int)$r[0]['id_cliente'] === (int)$this->configuracion($this->conexion())['id_cliente_publico'];
+		return $r[0];
+	}
+
+	public function buscarClientes($texto, $idCliente = 0)
 	{
 		$db = $this->conexion();
 		$texto = trim((string)$texto);
@@ -465,7 +474,10 @@ class Mcaja extends CI_Model
 				COALESCE(cl.telefono, '') AS telefono, COALESCE(cl.mail, '') AS mail
 			FROM cliente cl LEFT JOIN comuna co ON co.id_comuna = cl.id_comuna
 			WHERE cl.nombre_cliente IS NOT NULL";
-		if ($texto !== '') {
+		if ($idCliente > 0) {
+			$q .= " AND cl.id_cliente = ?";
+			$binds[] = (int)$idCliente;
+		} elseif ($texto !== '') {
 			$q .= " AND (cl.nombre_cliente ILIKE ? OR cl.rut::text || '-' || COALESCE(cl.dv, '') ILIKE ?)";
 			$like = '%' . str_replace(array('.', '%', '_'), array('', '\%', '\_'), $texto) . '%';
 			$binds = array('%' . $texto . '%', $like);

@@ -38,6 +38,18 @@
 .t-modal-form .checkbox label { font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--t-texto, #3A2A22); }
 .t-modal-form .checkbox { margin: 0; }
 .t-modal-form label sup a { cursor: pointer; text-transform: none; font-weight: 600; margin-left: 4px; }
+/* v1.24.14: "Nuevo" / "Quitar" junto al título de cada lista: botones tipo pastilla, más grandes y fáciles de presionar */
+.t-modal-form label { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; min-height: 24px; }   /* mismo alto con o sin botón: campos alineados */
+.t-modal-form label sup { top: 0; line-height: 1; }
+.t-modal-form label sup a { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 10px; margin-left: 6px; border-radius: 12px;
+    border: 1px solid var(--t-primario-borde, #BBE3C9); background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario-osc, #116632) !important;
+    font-size: 12px; font-weight: 700; letter-spacing: 0; text-decoration: none !important; transition: background .12s, color .12s, border-color .12s; }
+.t-modal-form label sup a::before { content: "\f067"; font-family: 'FontAwesome'; font-size: 10px; }
+.t-modal-form label sup a:hover { background: var(--t-primario, #15803D); border-color: var(--t-primario, #15803D); color: #fff !important; }
+.t-modal-form label sup a[onclick^="Quitar"] { border-color: #F5C2C0; background: #FDECEC; color: #B42318 !important; }
+.t-modal-form label sup a[onclick^="Quitar"]::before { content: "\f00d"; }
+.t-modal-form label sup a[onclick^="Quitar"]:hover { background: #D92D20; border-color: #D92D20; color: #fff !important; }
+.t-modal-form .checkbox label { display: inline-block; }
 .t-modal-form .t-card-titulo { margin-top: 2px; }
 .t-modal-form .t-card-titulo i { color: var(--t-primario, #B4432E); margin-right: 4px; }
 .t-modal-form .modal-body .panel { box-shadow: none; }
@@ -69,6 +81,49 @@
     .t-prod-modal .h-panel > .row > [class*="col-md-"] { display: flex; flex-direction: column; }
     .t-prod-modal .h-panel > .row > [class*="col-md-"] > .tab-pane { flex: 1; }
 }
+/* v1.24.12: ficha del producto en secciones (Datos / Parámetros / Imagen), una a la vez y a todo el ancho, con letras y
+   campos más grandes (antes dos columnas y todo muy chico) */
+.prod-secciones { display: flex; gap: 6px; padding: 10px 18px 0; background: #fff; border-bottom: 1px solid var(--t-borde, #E5E7EB); overflow-x: auto; }
+.prod-sec-btn { flex: 0 0 auto; border: 0; border-bottom: 3px solid transparent; background: transparent; padding: 10px 16px 11px; font-size: 15px; font-weight: 700; color: var(--t-texto-suave, #4B5563); white-space: nowrap; }
+.prod-sec-btn i { margin-right: 6px; }
+.prod-sec-btn:hover { color: var(--t-texto-fuerte, #111827); }
+.prod-sec-btn.activo { color: var(--t-primario, #15803D); border-bottom-color: var(--t-primario, #15803D); }
+.t-prod-modal .prod-seccion { display: none !important; }
+.t-prod-modal .prod-seccion.activa { display: flex !important; flex-direction: column; }
+.t-prod-modal .modal-dialog { max-width: 1180px; }
+.t-prod-modal .modal-title { font-size: 19px; }
+.t-prod-modal .modal-body { padding: 18px 22px; }
+@media (min-width: 768px) { .t-prod-modal .modal-body { min-height: min(600px, calc(100vh - 230px)); } }   /* no salta de alto al cambiar de sección */
+.t-prod-modal .h-panel > .row > [class*="col-md-"] > .tab-pane { padding: 20px 24px 8px; }
+.t-prod-modal .t-card-titulo { font-size: 14px; margin-bottom: 12px; }
+.t-prod-modal .t-card-titulo small { text-transform: none; font-weight: 400; color: var(--t-texto-tenue, #6B7280); }
+.t-prod-modal label { font-size: 13px; }
+.t-prod-modal .form-control, .t-prod-modal .form-control.input-sm { height: 44px; font-size: 15px; border-radius: 8px; }
+.t-prod-modal .select2-container .select2-selection--single { height: 44px; border-radius: 8px; }
+.t-prod-modal .select2-container .select2-selection--single .select2-selection__rendered { line-height: 42px; font-size: 15px; padding-left: 12px; }
+.t-prod-modal .select2-container .select2-selection--single .select2-selection__arrow { height: 42px; }
+.t-prod-modal fieldset > [class*="col-"] { margin-bottom: 16px; }
+/* Datos: código y nombre lado a lado (cada uno su columna) */
+@media (min-width: 992px) {
+    .t-prod-modal [data-seccion="datos"] fieldset:has(#txtCbarra), .t-prod-modal [data-seccion="datos"] fieldset:has(#txtNombre) { width: 50%; float: left; margin: 0; }
+    .t-prod-modal [data-seccion="datos"] fieldset:has(#txtCbarra) > .col-sm-12, .t-prod-modal [data-seccion="datos"] fieldset:has(#txtNombre) > .col-md-12 { width: 100%; }
+}
+.t-prod-modal [data-seccion="datos"] .t-card-titulo { clear: both; }
+/* Parámetros: casillas grandes */
+.t-prod-modal #tabUnidadMedidaInsumo .btn-group { padding: 14px 16px; }
+.t-prod-modal #tabUnidadMedidaInsumo .checkbox label { font-size: 15px; font-weight: 600; }
+.t-prod-modal #extras .btn { height: 52px; font-size: 15px; font-weight: 700; border-radius: 10px; }
+/* Imagen: grande, en su tarjeta blanca como las otras secciones */
+.t-prod-modal #tabImagenProducto { background: #fff; border: 1px solid var(--t-borde, #E5E7EB); border-radius: var(--t-radio, 10px); box-shadow: var(--t-sombra); padding: 20px 24px 8px; }
+.t-prod-modal [data-seccion="imagen"] .prod-imagen { padding: 6px 0 14px; gap: 22px; }
+.t-prod-modal [data-seccion="imagen"] .prod-imagen-vista { flex-basis: 280px; width: 280px; height: 210px; }
+.t-prod-modal [data-seccion="imagen"] .prod-imagen-vacia { font-size: 14px; }
+.t-prod-modal [data-seccion="imagen"] .prod-imagen-vacia i { font-size: 44px; }
+.t-prod-modal [data-seccion="imagen"] .prod-imagen-acciones .btn { height: 42px; padding: 0 16px; font-size: 14px; }
+.t-prod-modal [data-seccion="imagen"] .prod-imagen-ayuda { font-size: 13px; }
+.t-prod-modal .modal-footer .btn { height: 44px; font-size: 15px; }
+@media (max-width: 600px) { .t-prod-modal [data-seccion="imagen"] .prod-imagen { flex-direction: column; align-items: flex-start; } }
+
 /* v1.20.1: modales de productos centrados en la pantalla. La regla general (theme.css) los deja a 90 px de arriba y el de
    la Carta, más alto que la ventana, quedaba muy abajo y cortado. Con margin:auto dentro de un flex se centran si caben y,
    si no, parten arriba sin cortarse. El de la Carta además nunca pasa del alto de la ventana: título y botones Grabar /
@@ -99,11 +154,16 @@
             <!-- FIN TITULO  MODAL  -->
 
             <!-- CONTENIDO  MODAL  -->
+                <!-- v1.24.12: secciones de la ficha del producto (antes todo en dos columnas, muy chico) -->
+                <div class="prod-secciones" role="tablist" aria-label="Secciones del producto">
+                    <button type="button" class="prod-sec-btn activo" data-seccion="datos" role="tab" aria-selected="true"><i class="fa fa-tag"></i> Datos del producto</button>
+                    <button type="button" class="prod-sec-btn" data-seccion="parametros" role="tab" aria-selected="false"><i class="fa fa-sliders"></i> Parámetros de venta</button>
+                    <button type="button" class="prod-sec-btn" data-seccion="imagen" role="tab" aria-selected="false"><i class="fa fa-picture-o"></i> Imagen</button>
+                </div>
                 <div class="modal-body">
                     <div class="h-panel">
                         <div class="row">
-                         <div class="col-md-5">
-                            <br>
+                         <div class="col-md-12 prod-seccion activa" data-seccion="datos">
                             <ul id="myTab" class="nav nav-tabs title font">
                                 <li class="active">
                                     <a href="#tabDatosInsumo" data-toggle="tab" id="tab1" class="text color1"></a>
@@ -210,8 +270,7 @@
                                 <!-- FIN CAMPOS DE REGISTRO  -->
                             </div>
                          </div>
-                         <div><br></div>
-                         <div class="col-md-7">
+                         <div class="col-md-12 prod-seccion" data-seccion="parametros">
                             <ul id="myTab2" class="nav nav-tabs title font">
                                 <li id="tabUmedida" class="active">
                                     <a href="#tabUnidadMedidaInsumo" data-toggle="tab" id="tab2"
@@ -381,8 +440,20 @@
 
                                 </fieldset>
                                 <br>
+
+                                </div>
+
+
+
+
+
+                            </div>
+
+                         </div>
+                         <div class="col-md-12 prod-seccion" data-seccion="imagen">
+                            <div class="tab-pane fade active in" id="tabImagenProducto">
                                 <!-- Imagen del producto (se ve en la Caja). La maneja productos/jsImagen.php -->
-                                <div class="t-card-titulo"><i class="fa fa-picture-o"></i> Imagen</div>
+                                <div class="t-card-titulo"><i class="fa fa-picture-o"></i> Imagen del producto <small>(se ve en la Caja)</small></div>
                                 <div class="prod-imagen prod-imagen-grande" id="prodImagen">
                                     <div class="prod-imagen-vista" id="prodImagenVista">
                                         <img id="prodImagenImg" alt="" style="display:none">
@@ -395,14 +466,7 @@
                                         <button type="button" class="btn btn-default btn-sm" id="btnProdImagenQuitar" style="display:none"><i class="fa fa-trash"></i> Quitar</button>
                                         <small class="prod-imagen-ayuda" id="prodImagenAyuda">JPG, PNG o WEBP de hasta 6 MB. Se guarda al elegirla.</small>
                                     </div>
-                                </div>
-
-
-
-
-
                             </div>
-
                          </div>
                         </div>
                     </div>
@@ -676,6 +740,74 @@
 </div>
 <!-- FIN  MODAL NUEVO REGISTRO  -->
 
+<!-- v1.24.17: copiar los agregados de un producto a otro o varios (la maneja productos/jsAgregados.php) -->
+<style>
+#ModalCopiarAgregados .modal-dialog { width: 760px; max-width: calc(100vw - 24px); }
+#ModalCopiarAgregados .modal-content { border: 0; border-radius: 14px; overflow: hidden; }
+.ca-cab { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--t-borde, #E5E7EB); background: #fff; }
+.ca-cab-icono { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); font-size: 18px; }
+.ca-cab h4 { margin: 0; font-size: 18px; font-weight: 800; text-align: left; }
+.ca-cab small { display: block; font-size: 12px; color: var(--t-texto-tenue, #6B7280); }
+.ca-cab .close { margin-left: auto; font-size: 26px; }
+#ModalCopiarAgregados .modal-body { padding: 16px 18px; background: var(--t-fondo, #F5F6F8); }
+.ca-origen { background: #fff; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+.ca-origen-tit { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #4B5563); margin-bottom: 8px; }
+.ca-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 88px; overflow-y: auto; }
+.ca-chip { padding: 4px 10px; border-radius: 14px; background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario-osc, #116632); font-size: 13px; font-weight: 600; }
+.ca-chip small { opacity: .75; font-weight: 500; }
+#ModalCopiarAgregados .ag-varios-lista { max-height: 300px; }
+#ModalCopiarAgregados .ag-op { font-size: 14px; padding: 9px 10px; }
+#ModalCopiarAgregados .ag-buscar input { height: 40px; font-size: 15px; }
+.ca-modo { background: #fff; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 12px; padding: 10px 14px; margin-top: 12px; }
+.ca-modo-tit { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.ca-modo label { display: flex; gap: 8px; align-items: flex-start; font-weight: 500; font-size: 14px; margin: 6px 0 0; cursor: pointer; }
+.ca-modo label input { margin-top: 3px; accent-color: var(--t-primario, #15803D); }
+.ca-modo small { display: block; color: var(--t-texto-tenue, #6B7280); font-size: 12px; }
+#ModalCopiarAgregados .modal-footer { background: #fff; }
+#ModalCopiarAgregados .modal-footer .btn { height: 42px; min-width: 120px; font-weight: 700; border-radius: 10px; }
+#btnCopiarAgregados { float: right; height: 40px; padding: 0 14px; border-radius: 10px; font-weight: 700; }
+#btnCopiarAgregados:hover { background: var(--t-primario, #15803D); border-color: var(--t-primario, #15803D); color: #fff; }
+@media (max-width: 600px) { #btnCopiarAgregados { float: none; display: block; width: 100%; margin-bottom: 10px; } }
+#ModalCopiarAgregados .ca-modo label, #ModalCopiarAgregados .ca-modo small { text-transform: none; letter-spacing: 0; }
+#ModalCopiarAgregados .ca-modo label { display: flex; }
+#btnCopiarAgregados i { margin-right: 5px; }
+</style>
+<div id="ModalCopiarAgregados" class="modal fade t-modal-form" role="dialog" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="ca-cab">
+                <div class="ca-cab-icono"><i class="fa fa-clone"></i></div>
+                <div><h4>Copiar agregados</h4><small id="caSubtitulo"></small></div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="ca-origen">
+                    <div class="ca-origen-tit"><i class="fa fa-plus-square"></i> Agregados que se copian</div>
+                    <div class="ca-chips" id="caChips"></div>
+                </div>
+                <div class="ag-varios">
+                    <div class="ag-varios-barra">
+                        <div class="ag-buscar"><i class="fa fa-search"></i><input type="text" id="txtBuscarCopiarAg" class="form-control" placeholder="Buscar producto donde copiarlos…" autocomplete="off"></div>
+                        <button type="button" class="btn btn-default btn-sm" id="btnCaMarcar"><i class="fa fa-check-square-o"></i> Marcar los que se ven</button>
+                        <button type="button" class="btn btn-default btn-sm" id="btnCaLimpiar"><i class="fa fa-eraser"></i> Limpiar</button>
+                    </div>
+                    <div class="ag-varios-lista" id="listaCopiarAg"></div>
+                    <div class="ag-varios-pie"><span id="lblCaElegidos">Ningún producto elegido</span><small>Ningún agregado se borra: solo se suman.</small></div>
+                </div>
+                <div class="ca-modo">
+                    <div class="ca-modo-tit">Si el producto ya tiene alguno de estos agregados:</div>
+                    <label><input type="radio" name="caModo" value="0" checked><span>Dejarlo como está<small>Solo se suman los agregados que le faltan.</small></span></label>
+                    <label><input type="radio" name="caModo" value="1"><span>Ponerle la cantidad y el valor de este producto<small>Así todos quedan iguales.</small></span></label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnCaCopiar" disabled><i class="fa fa-clone"></i> Copiar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="ModalAgregadosDelProducto" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -704,6 +836,8 @@
                                     <button type="button" class="ag-modo-btn activo" data-modo="uno" role="tab" aria-selected="true"><i class="fa fa-plus"></i> De a uno</button>
                                     <button type="button" class="ag-modo-btn" data-modo="varios" role="tab" aria-selected="false"><i class="fa fa-th-list"></i> Varios a la vez</button>
                                 </div>
+                                <!-- v1.24.17: copiar estos agregados a otro u otros productos -->
+                                <button type="button" class="btn btn-default" id="btnCopiarAgregados" onclick="abrirCopiarAgregados()" title="Copiar los agregados de este producto a otro o varios"><i class="fa fa-clone"></i> Copiar a otros productos</button>
                                 <input id="ckVariosAgregados" type="checkbox" hidden>
                             </div>
                             <div class="col-md-12" id="bloqueUnAgregado">
@@ -908,54 +1042,85 @@
 </div>
 
 
-<div id="ModalListadoMenus" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
+<!-- v1.24.12: menús y sus categorías, rediseñado (mismos id: los usa jsMenu.php) -->
+<style>
+#ModalListadoMenus .modal-dialog { width: 820px; max-width: calc(100vw - 32px); }
+#ModalListadoMenus .modal-content { border: 0; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 60px rgba(17, 24, 39, .28); }
+.lm-cab { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--t-borde, #E5E7EB); background: #fff; }
+.lm-cab-icono { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); font-size: 18px; }
+.lm-cab h4 { margin: 0; font-size: 18px; font-weight: 800; color: var(--t-texto-fuerte, #111827); }
+.lm-cab small { display: block; margin-top: 2px; font-size: 12px; color: var(--t-texto-tenue, #6B7280); }
+.lm-cab .close { margin-left: auto; font-size: 26px; }
+.lm-cuerpo { padding: 18px 20px; background: var(--t-fondo, #F5F6F8); }
+.lm-tarjeta { background: #fff; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 12px; padding: 16px; }
+.lm-tarjeta + .lm-tarjeta { margin-top: 14px; }
+.lm-titulo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.lm-titulo span { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--t-texto-suave, #4B5563); }
+.lm-titulo span i { margin-right: 6px; color: var(--t-primario, #15803D); }
+.lm-titulo .btn { height: 34px; border-radius: 8px; font-weight: 700; }
+.lm-titulo .btn i { margin-right: 5px; }
+#ModalListadoMenus .select2-container .select2-selection--single { height: 44px; border-radius: 8px; }
+#ModalListadoMenus .select2-container .select2-selection--single .select2-selection__rendered { line-height: 42px; font-size: 15px; font-weight: 600; padding-left: 12px; }
+#ModalListadoMenus .select2-container .select2-selection--single .select2-selection__arrow { height: 42px; }
+#tableCategoriasMenuModal { margin: 0 !important; border: 0; }
+#tableCategoriasMenuModal thead th { background: var(--t-fondo-alt, #F3F4F6); border: 0 !important; border-bottom: 1px solid var(--t-borde, #E5E7EB) !important;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #4B5563); padding: 9px 12px; }
+#tableCategoriasMenuModal tbody td { border: 0 !important; border-bottom: 1px solid var(--t-borde-suave, #EEF0F3) !important; padding: 10px 12px; vertical-align: middle; font-size: 14px; }
+#tableCategoriasMenuModal tbody td:nth-child(2) { font-weight: 700; color: var(--t-texto-fuerte, #111827); }
+#tableCategoriasMenuModal tbody tr:hover td { background: var(--t-tinte, #F7FBF8); }
+#tableCategoriasMenuModal_wrapper .dataTables_empty { padding: 30px 10px; color: var(--t-texto-tenue, #6B7280); }
+.lm-btn-productos { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--t-primario-borde, #BBE3C9);
+    background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario-osc, #116632); font-weight: 700; font-size: 13px; white-space: nowrap; }
+.lm-btn-productos:hover { background: var(--t-primario, #15803D); border-color: var(--t-primario, #15803D); color: #fff; }
+.lm-ayuda { margin: 10px 0 0; font-size: 12px; color: var(--t-texto-tenue, #6B7280); }
+#ModalListadoMenus .modal-footer { padding: 12px 20px; background: #fff; border-top: 1px solid var(--t-borde, #E5E7EB); }
+#ModalListadoMenus .modal-footer .btn { min-width: 120px; height: 40px; border-radius: 9px; font-weight: 700; }
+</style>
+<div id="ModalListadoMenus" class="modal fade t-modal-form" role="dialog" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <!-- TITULO MODAL -->
-            <div class="modal-header btn-success">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title text-center">Listado de Menus</h4>
-            </div>
-            <!-- CONTENIDO MODAL -->
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-12">
-                        <label>Seleccione el Menú</label>
-                        <div class="pull-right">
-                            <a href="#" onclick="AbrirModalNuevoMenu()">Crear</a>
-                        </div>
-                        <select id="cboMenuModal" class="form-control input" style="width: 100%;"></select>
-                    </div>
+            <div class="lm-cab">
+                <div class="lm-cab-icono"><i class="fa fa-book"></i></div>
+                <div>
+                    <h4>Menús</h4>
+                    <small>Elige un menú y arma sus categorías (Entrada, Fondo, Postre…)</small>
                 </div>
-                <br>
-                <div class="row">
-                    <div class="col-md-12 text-right">
-                        <a href="#" onclick="AbrirModalNuevaCategoriasMenu()">Crear categoria</a>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="lm-cuerpo">
+                <div class="lm-tarjeta">
+                    <div class="lm-titulo">
+                        <span><i class="fa fa-book"></i>Menú</span>
+                        <button type="button" class="btn btn-default btn-sm" onclick="AbrirModalNuevoMenu()"><i class="fa fa-plus"></i> Nuevo menú</button>
                     </div>
-                    <div class="col-md-12">
-                        <div class="panel panel-default">
-                            <div class="table-responsive">
-                                <table id="tableCategoriasMenuModal" class="table table-bordered table-condensed">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th style="display:none">MenuID</th>
-                                            <th>Nombre Categoria</th>
-                                            <th>Costo Prom.</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="bodyCategoriasMenuModal">
-                                        <!-- Se llena via JS -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                    <select id="cboMenuModal" class="form-control" style="width: 100%;"></select>
+                </div>
+                <div class="lm-tarjeta">
+                    <div class="lm-titulo">
+                        <span><i class="fa fa-th-list"></i>Categorías del menú</span>
+                        <button type="button" class="btn btn-success btn-sm" onclick="AbrirModalNuevaCategoriasMenu()"><i class="fa fa-plus"></i> Nueva categoría</button>
                     </div>
+                    <div class="table-responsive">
+                        <table id="tableCategoriasMenuModal" class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th style="display:none">MenuID</th>
+                                    <th>Categoría</th>
+                                    <th class="text-center">Costo prom.</th>
+                                    <th class="text-center">Productos</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyCategoriasMenuModal">
+                                <!-- Se llena via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="lm-ayuda"><i class="fa fa-info-circle"></i> En cada categoría, <b>Productos</b> abre lo que el cliente puede elegir y cuántos.</p>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal" style="width: 130px; font-weight: bold;">Salir (Esc)</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Salir</button>
             </div>
         </div>
     </div>

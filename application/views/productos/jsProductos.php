@@ -1,4 +1,16 @@
 <script>
+// v1.24.12: secciones de la ficha del producto (Datos / Parámetros / Imagen). Siempre abre en Datos.
+function mostrarSeccionProducto(nombre) {
+    $('.prod-sec-btn').each(function () {
+        var on = $(this).data('seccion') === nombre;
+        $(this).toggleClass('activo', on).attr('aria-selected', on ? 'true' : 'false');
+    });
+    $('#modalNuevoProducto .prod-seccion').each(function () { $(this).toggleClass('activa', $(this).data('seccion') === nombre); });
+    $('#modalNuevoProducto .modal-body').scrollTop(0);
+}
+$(document).on('click', '.prod-sec-btn', function () { mostrarSeccionProducto($(this).data('seccion')); });
+$(document).on('show.bs.modal', '#modalNuevoProducto', function (e) { if (e.target === this) mostrarSeccionProducto('datos'); });
+
 var base_url = "<?php echo base_url(); ?>";
 tablaCartaProductos = $('#tableCartaProductos').DataTable();
 var datosProductoPendiente = null; 
@@ -438,6 +450,7 @@ function GrabarProducto() {
     }
     
     if (msg.length) {
+        mostrarSeccionProducto('datos');   // v1.24.12: lo que falta está en Datos del producto
         showAppAlert('error',"- Falta Ingresar Los Siguiente(s) dato(s):\n" + msg, {
             duration: 5000,
             image: base_url+ 'assets/img/errorGif.gif'
@@ -446,6 +459,7 @@ function GrabarProducto() {
     }
 
     if ($('#txtCbarra').val().trim() === "" || $('#txtCbarra').val() == "0") {
+        mostrarSeccionProducto('datos');
         showAppAlert('error', "Debe ingresar o generar un código de barras válido", {
             duration: 5000,
             image: base_url + 'assets/img/errorGif.gif'

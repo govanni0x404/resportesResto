@@ -485,6 +485,20 @@ class Productos extends CI_Controller
 		echo json_encode($r);
 	}
 
+	/** v1.24.17: copia los agregados de este producto a otros (ventana Agregados > "Copiar a otros productos"). */
+	public function copiarAgregados()
+	{
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+			set_status_header(401);
+			echo json_encode(['error' => 'Sesión expirada']);
+			return;
+		}
+		$r = $this->Mproductos->copiarAgregados((int)$this->input->post('id_origen'), (array)$this->input->post('destinos'),
+			$this->input->post('actualizar') === '1');
+		if (isset($r['error'])) set_status_header(400);
+		echo json_encode($r);
+	}
+
 	public function actualizarCantidadProductoAgregado()
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {

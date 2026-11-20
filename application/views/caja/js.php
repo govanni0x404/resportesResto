@@ -564,7 +564,7 @@
 					// 18-11-2026: el cliente y el descuento puestos al tomar el pedido (antes había que ponerlos de nuevo)
 					if (d.cliente && Number(d.cliente.id_cliente)) {
 						cliente = $.extend({}, d.cliente, { id_cliente: Number(d.cliente.id_cliente), id_comuna: Number(d.cliente.id_comuna) || 0 });
-						$('#txtCliente').val(cliente.nombre_cliente);
+						ponerTxtCliente(cliente.nombre_cliente);
 					}
 					$('#txtDescuento').val(Number(d.descuento) || 0);
 					tipoDesc = 'monto';
@@ -2089,7 +2089,7 @@
 			actualizarModoMesa();
 			cliente = null;
 			datosFactura = null;
-			$('#txtCliente').val('');
+			ponerTxtCliente('');
 			$('#txtDescuento').val(0);
 			$('#txtObservacion').val('');
 			$('#txtRetira').val('');
@@ -2123,6 +2123,23 @@
 
 		// ---------------- cliente ----------------
 		var timerCliente = null;
+		// v1.24.16: el lápiz junto al cliente elegido abre su ficha para cambiarle datos sin salir de la Caja
+		function clienteEditable() {
+			var pub = catalogo && catalogo.config ? Number(catalogo.config.id_cliente_publico) : 0;
+			return !!(cliente && Number(cliente.id_cliente) && Number(cliente.id_cliente) !== pub);
+		}
+		function ponerTxtCliente(t) {
+			$('#txtCliente').val(t);
+			$('#btnEditarCliente').prop('hidden', !clienteEditable());
+		}
+		$('#btnEditarCliente').on('click', function () {
+			if (!clienteEditable()) return;
+			get('fichaCliente', { id_cliente: cliente.id_cliente }).done(function (c) {
+				formClienteNuevo();
+				$('#modalCliente').modal('show');
+				editarCliente(c);
+			});
+		});
 		$('#btnBuscarCliente').on('click', function () {
 			formClienteNuevo();
 			$('#modalCliente').modal('show');
@@ -2132,7 +2149,7 @@
 		$('#txtCliente').on('click', function () { $('#btnBuscarCliente').click(); });
 		$('#btnQuitarCliente').on('click', function () {
 			cliente = null;
-			$('#txtCliente').val('');
+			ponerTxtCliente('');
 		});
 		$('#txtBuscarCliente').on('input', function () {
 			clearTimeout(timerCliente);
@@ -2147,12 +2164,13 @@
 				$.each(r.clientes, function (i, c) {
 					var rut = c.rut ? c.rut + '-' + c.dv : '';
 					var publico = Number(c.id_cliente) === catalogo.config.id_cliente_publico;
+					var extra = $.grep([rut, c.giro, c.direccion, c.comuna], function (x) { return !!x; });
 					$r.append($('<a href="#" class="list-group-item">')
 						.data('cliente', { id_cliente: Number(c.id_cliente), nombre_cliente: c.nombre_cliente, rut: rut })
 						.data('ficha', c)
-						.html((publico ? '' : '<button type="button" class="btn btn-xs btn-default pull-right btn-editar-cliente" title="Editar"><i class="fa fa-pencil"></i></button>')
-							+ '<b>' + esc(c.nombre_cliente) + '</b> <small class="text-muted">' + esc(rut) + (c.giro ? ' · ' + esc(c.giro) : '')
-							+ (c.comuna ? ' · ' + esc(c.comuna) : '') + '</small>'));
+						.html('<span class="cli-datos"><b>' + esc(c.nombre_cliente) + '</b><small>' + esc(extra.join(' · ')) + '</small></span>'
+							+ (publico ? '<span class="cli-publico">Venta al público</span>'
+								: '<button type="button" class="btn btn-editar-cliente" title="Cambiar los datos de este cliente"><i class="fa fa-pencil"></i>Editar</button>')));
 				});
 			});
 		}
@@ -2160,7 +2178,7 @@
 		function usarCliente(c) {
 			if (!cliente || !c || cliente.id_cliente !== c.id_cliente) datosFactura = null;
 			cliente = c;
-			$('#txtCliente').val(c.nombre_cliente + (c.rut ? ' (' + c.rut + ')' : ''));
+			ponerTxtCliente(c.nombre_cliente + (c.rut ? ' (' + c.rut + ')' : ''));
 			$('#modalCliente').modal('hide');
 		}
 
@@ -2175,13 +2193,17 @@
 			$f[0].reset();
 			$f.find('[name=id_cliente]').val('');
 			$('#cboComuna').val('0').trigger('change');
-			$('#tabClienteForm').text('Nuevo');
+			$('#tabClienteForm').html('<i class="fa fa-plus"></i> Nuevo');
 			$('#btnCancelarEdicion').hide();
+			$('#cliEditando').prop('hidden', true);
+			$('#btnGuardarCliente').html('<i class="fa fa-check"></i> Guardar y usar');
 		}
 		$('#resultadosCliente').on('click', '.btn-editar-cliente', function (e) {
 			e.preventDefault();
 			e.stopPropagation();
-			var c = $(this).closest('a').data('ficha');
+			editarCliente($(this).closest('a').data('ficha'));
+		});
+		function editarCliente(c) {
 			var $f = $('#frmCliente');
 			$f.find('[name=id_cliente]').val(c.id_cliente);
 			$f.find('[name=nombre_cliente]').val(c.nombre_cliente);
@@ -2191,9 +2213,13 @@
 			$f.find('[name=telefono]').val(c.telefono);
 			$f.find('[name=mail]').val(c.mail);
 			$('#cboComuna').val(String(c.id_comuna || 0)).trigger('change');
-			$('#tabClienteForm').text('Editar').tab('show');
+			$('#tabClienteForm').html('<i class="fa fa-pencil"></i> Editar').tab('show');
 			$('#btnCancelarEdicion').show();
-		});
+			$('#cliEditandoNombre').text(c.nombre_cliente);
+			$('#cliEditando').prop('hidden', false);
+			$('#btnGuardarCliente').html('<i class="fa fa-check"></i> Guardar cambios');
+			setTimeout(function () { $f.find('[name=direccion]').focus(); }, 250);
+		}
 		$('#btnCancelarEdicion').on('click', function () {
 			formClienteNuevo();
 			$('#modalCliente a[href="#tabBuscarCliente"]').tab('show');
@@ -2206,7 +2232,10 @@
 			post('guardarCliente', $f.serialize()).done(function (r) {
 				formClienteNuevo();
 				toastr.success(editando ? 'Cliente actualizado' : 'Cliente creado');
-				usarCliente({ id_cliente: r.id_cliente, nombre_cliente: r.nombre_cliente, rut: r.rut });
+				// v1.24.16: si se editó el cliente de esta venta, los datos de factura se vuelven a tomar de la ficha nueva
+				if (editando && cliente && Number(cliente.id_cliente) === Number(r.id_cliente)) datosFactura = null;
+				usarCliente({ id_cliente: Number(r.id_cliente), nombre_cliente: r.nombre_cliente, rut: r.rut,
+					giro: r.giro, direccion: r.direccion, id_comuna: Number(r.id_comuna) || 0 });
 			});
 		});
 
@@ -3654,7 +3683,7 @@
 			carro = [];
 			cliente = null;
 			cobroParcial = null;
-			$('#txtCliente').val('');
+			ponerTxtCliente('');
 			$('#txtDescuento').val(0);
 			$('#txtObservacion').val('');
 		}
@@ -3665,7 +3694,7 @@
 			if (!v) return false;
 			carro = v.carro;
 			cliente = v.cliente;
-			$('#txtCliente').val(v.txtCliente);
+			ponerTxtCliente(v.txtCliente);
 			$('#txtDescuento').val(v.descuento);
 			tipoDesc = v.tipoDesc;
 			$('[data-tipo-desc]').each(function () { $(this).toggleClass('active', $(this).data('tipo-desc') === tipoDesc); });
@@ -3730,6 +3759,75 @@
 			if ($(e.target).is('input, select, textarea')) return;   // Esc en el buscador cierra sus resultados, no la mesa
 			$('#btnSalirMesa').click();
 		});
+
+		// ---- v1.24.13: vista rápida de la mesa ----
+		// Con el mouse 0,6 s sobre una mesa con pedido aparece al lado una tarjeta con lo que lleva (productos, cantidades,
+		// total). Solo para mirar: no abre ni bloquea la mesa. Se cierra al sacar el mouse (de la mesa y de la tarjeta) o con
+		// Esc. El clic en la mesa la abre como siempre. Sin mouse (pantallas táctiles) no aparece.
+		var vm = { timer: null, cerrar: null, id: 0, pedido: 0, cache: {} };
+		var $vm = $('<div class="vista-mesa" id="vistaMesa" role="dialog" aria-live="polite" hidden></div>').appendTo('body');
+		function cerrarVistaMesa() {
+			clearTimeout(vm.timer); clearTimeout(vm.cerrar);
+			vm.id = 0; vm.pedido++;
+			$vm.attr('hidden', true).removeClass('visible');
+		}
+		function ubicarVistaMesa($card) {
+			var r = $card[0].getBoundingClientRect(), w = $vm.outerWidth(), h = $vm.outerHeight(), m = 10;
+			var x = r.right + m;
+			if (x + w > window.innerWidth - m) x = r.left - w - m;   // no cabe a la derecha: a la izquierda
+			if (x < m) x = Math.max(m, Math.min(window.innerWidth - w - m, r.left));
+			var y = Math.max(m, Math.min(window.innerHeight - h - m, r.top + r.height / 2 - h / 2));
+			$vm.css({ left: x, top: y });
+		}
+		function pintarVistaMesa(d, $card) {
+			var m = $.grep(mesasLista, function (x) { return x.id_mesa === d.id_mesa; })[0] || {};
+			var total = 0, unidades = 0, filas = '';
+			$.each(d.lineas || [], function (i, l) {
+				total += Number(l.bruto) || 0;
+				var hijo = !!l.menu_de;
+				if (!hijo) unidades += l.cantidad === Math.round(l.cantidad) ? l.cantidad : 1;
+				var det = (l.agregado ? '<small>+ ' + esc(l.agregado) + '</small>' : '') + (l.nota ? '<small><i>' + esc(l.nota) + '</i></small>' : '');
+				filas += '<tr class="' + (hijo ? 'hijo' : '') + '"><td class="cant">' + (hijo ? '' : fmtCant(l.cantidad)) + '</td>'
+					+ '<td class="prod">' + (hijo ? '+ ' + (l.cantidad > 1 ? fmtCant(l.cantidad) + ' ' : '') : '') + esc(l.nombre) + det + '</td>'
+					+ '<td class="monto">' + (hijo && !l.bruto ? '' : fmt(l.bruto)) + '</td></tr>';
+			});
+			var info = $.grep([m.atiende ? 'Atiende ' + m.atiende : '', d.segundos ? fmtTiempo(d.segundos * 1000) : ''], function (x) { return !!x; }).join(' · ');
+			$vm.html('<div class="vm-cab"><div><b>' + esc(d.nombre || nombreMesa(d.id_mesa)) + '</b>' + (info ? '<small>' + esc(info) + '</small>' : '') + '</div>'
+					+ '<span class="vm-ojo" title="Solo para mirar: haz clic en la mesa para abrirla"><i class="fa fa-eye"></i></span></div>'
+				+ (d.mensaje ? '<div class="vm-mensaje"><i class="fa fa-commenting-o"></i> ' + esc(d.mensaje) + '</div>' : '')
+				+ (filas ? '<div class="vm-lista"><table>' + filas + '</table></div>' : '<div class="vm-vacio">La mesa no tiene productos</div>')
+				+ '<div class="vm-pie"><span>' + unidades + (unidades === 1 ? ' producto' : ' productos') + '</span><b>' + fmt(total) + '</b></div>');
+			$vm.removeAttr('hidden');
+			ubicarVistaMesa($card);
+			$vm.addClass('visible');
+		}
+		function pedirVistaMesa(id, $card) {
+			var pedido = ++vm.pedido, c = vm.cache[id];
+			if (c && Date.now() - c.t < 8000) { pintarVistaMesa(c.d, $card); return; }   // recién mirada: sin volver a pedir
+			$.ajax({ url: base + 'vistaMesa', data: { id_mesa: id }, dataType: 'json', cache: false, global: false }).done(function (d) {
+				if (pedido !== vm.pedido || vm.id !== id) return;   // el mouse ya se fue a otra parte
+				vm.cache[id] = { t: Date.now(), d: d };
+				pintarVistaMesa(d, $card);
+			});
+		}
+		$('#mesasGrilla').on('pointerenter', '.mesa-card', function (e) {
+			if (e.originalEvent && e.originalEvent.pointerType && e.originalEvent.pointerType !== 'mouse') return;
+			if (editandoPlano || !$(this).hasClass('con-pedido')) return;
+			var $c = $(this), id = Number($c.attr('data-id'));
+			clearTimeout(vm.cerrar);
+			if (vm.id === id && !$vm.attr('hidden')) return;   // ya se está mostrando esta
+			cerrarVistaMesa();
+			vm.id = id;
+			vm.timer = setTimeout(function () { pedirVistaMesa(id, $c); }, 600);   // v1.24.15: 0,6 s (antes 1,5: muy largo)
+		}).on('pointerleave', '.mesa-card', function () {
+			clearTimeout(vm.timer);
+			vm.cerrar = setTimeout(cerrarVistaMesa, 250);   // margen para pasar el mouse a la tarjeta
+		}).on('pointerdown', '.mesa-card', cerrarVistaMesa);
+		$vm.on('pointerenter', function () { clearTimeout(vm.cerrar); })
+			.on('pointerleave', function () { vm.cerrar = setTimeout(cerrarVistaMesa, 250); });
+		$(document).on('keydown', function (e) { if (e.which === 27 && !$vm.attr('hidden')) cerrarVistaMesa(); });
+		$(window).on('scroll resize', cerrarVistaMesa);
+		$('a[data-toggle="tab"]').on('show.bs.tab', cerrarVistaMesa);
 
 		$('#mesasGrilla').on('click', '.mesa-card', function () {
 			if (editandoPlano) return;
@@ -5447,7 +5545,7 @@
 					menu: $.isArray(l.menu) ? l.menu : [] };   // v1.24.0
 			});
 			cliente = d.cliente && d.cliente.id_cliente ? d.cliente : null;
-			$('#txtCliente').val(cliente ? (d.txt_cliente || cliente.nombre_cliente) : '');
+			ponerTxtCliente(cliente ? (d.txt_cliente || cliente.nombre_cliente) : '');
 			$('#txtDescuento').val(d.descuento || 0);
 			tipoDesc = d.tipo_desc === 'porc' ? 'porc' : 'monto';
 			$('[data-tipo-desc]').each(function () { $(this).toggleClass('active', $(this).data('tipo-desc') === tipoDesc); });
