@@ -1125,6 +1125,34 @@ class Mcaja extends CI_Model
 	}
 
 	/** Caja en que se hizo una venta, o null si la venta no existe. */
+	/**
+	 * v1.24.18: ¿se abre la gaveta con esta venta? (pedido del usuario: no se abría al pagar en efectivo).
+	 * Con "Abrir gaveta solo por pago en efectivo" (configuracion.abrir_gaveta_solo_por_pago_efectivo, la del POS de
+	 * escritorio; sin la columna o vacía = activa) solo si la venta tiene un pago en efectivo; apagada, con cualquier cobro.
+	 * Solo para una venta de ESTA caja y recién hecha (3 minutos): no sirve para abrir la gaveta sin venta y sin la clave
+	 * de administrador (para eso está el botón "Abrir gaveta").
+	 */
+	public function gavetaConVenta($idCaja, $idVenta)
+	{
+		$db = $this->conexion();
+		$v = $this->q($db, 'SELECT COALESCE(id_caja, 0) AS id_caja, fecha_transaccion FROM venta WHERE id_venta = ?', array((int)$idVenta))->row();
+		if (!$v || (int)$v->id_caja !== (int)$idCaja) throw new Exception('La venta no es de esta caja', 403);
+		$t = strtotime((string)$v->fecha_transaccion);
+		if ($t === false || abs(time() - $t) > 180) return false;
+		$soloEfectivo = true;
+		if (isset($this->columnas($db, array('configuracion'))['configuracion']['abrir_gaveta_solo_por_pago_efectivo'])) {
+			$f = $this->q($db, 'SELECT (abrir_gaveta_solo_por_pago_efectivo IS NOT FALSE) AS s FROM configuracion LIMIT 1')->row();
+			$soloEfectivo = !$f || $f->s === 't' || $f->s === true;
+		}
+		if (!$soloEfectivo) return true;
+		$config = $this->configuracion($db);
+		foreach ($this->q($db, 'SELECT pv.id_fpago, COALESCE(f.nombre_fpago, \'\') AS nombre_fpago FROM pago_venta pv
+				LEFT JOIN fpago f ON f.id_fpago = pv.id_fpago WHERE pv.id_venta = ?', array((int)$idVenta))->result() as $p) {
+			if ($this->esEfectivo($config, $p->id_fpago, $p->nombre_fpago)) return true;
+		}
+		return false;
+	}
+
 	public function cajaDeVenta($idVenta)
 	{
 		$r = $this->q($this->conexion(), 'SELECT COALESCE(id_caja, 0) AS id_caja FROM venta WHERE id_venta = ?', array((int)$idVenta))->row();

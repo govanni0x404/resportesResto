@@ -837,6 +837,26 @@ class Caja extends CI_Controller
 		}, true);
 	}
 
+	/**
+	 * v1.24.18: abre la gaveta después de cobrar (en efectivo, o con cualquier pago si la opción del POS está apagada).
+	 * Lo pide la pantalla con el número de la venta recién registrada; el servidor decide (Mcaja::gavetaConVenta). Sin clave
+	 * de administrador y sin anotarse como "gaveta abierta sin venta" (hay venta).
+	 */
+	public function gavetaVenta()
+	{
+		$this->ejecutar(function () {
+			$caja = $this->cajaRequerida();
+			if (!$this->Mcaja->gavetaConVenta($caja->id_caja, (int)$this->input->post('id_venta'))) return array('abrir' => false);
+			$destino = $this->Mcaja->destinoCaja();
+			if (!$destino) return array('abrir' => false, 'detalle' => 'No hay impresora de la caja en Configuraciones (la gaveta va conectada a ella)');
+			if (!empty($destino['sin_impresion'])) return array('abrir' => false, 'detalle' => 'La impresora de la caja es "sin impresión"');
+			if ($this->input->post('local')) return array('abrir' => true, 'local' => true, 'destino' => $destino);
+			$this->load->library('Ticket_impresion');
+			$r = $this->enviarAImpresora($destino, Ticket_impresion::gaveta());
+			return array('abrir' => true, 'ok' => $r['ok'], 'detalle' => $r['detalle']);
+		}, true);
+	}
+
 	/** Cierre de caja / informe X a la impresora del cierre (Configuraciones > Impresora para cierre de caja). */
 	public function imprimirCierre()
 	{

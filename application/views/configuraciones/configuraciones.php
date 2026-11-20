@@ -155,6 +155,11 @@ if (!function_exists('cfg_opciones')) {
                                                     <!-- v1.21.0: probar la gaveta de dinero (va conectada a la impresora) sin ir a la Caja -->
                                                     <button type="button" class="btn btn-orange" id="btnProbarGaveta"><i class="fa fa-inbox"></i> Probar gaveta</button>
                                                     <p class="help-block">Abre la gaveta de dinero conectada a la impresora de arriba (con "LA DE LA CAJA", la impresora de la caja). Hazlo desde el computador de la caja, con el agente de impresión abierto.</p>
+                                                    <?php if (array_key_exists('abrir_gaveta_solo_por_pago_efectivo', $config)) : ?>
+                                                    <!-- v1.24.18: la gaveta se abre sola al cobrar. Columna del POS de escritorio: vacía = activa -->
+                                                    <div class="checkbox"><label><input type="checkbox" name="abrir_gaveta_solo_por_pago_efectivo" value="1" <?php echo ($config['abrir_gaveta_solo_por_pago_efectivo'] === null || in_array($config['abrir_gaveta_solo_por_pago_efectivo'], array(true, 't', 1, '1'), true)) ? 'checked' : ''; ?>> Abrir la gaveta solo cuando pagan en efectivo</label></div>
+                                                    <p class="help-block">La gaveta se abre sola al cobrar. Marcada: solo si parte del pago es en efectivo. Desmarcada: en todos los cobros (tarjeta, transferencia…).</p>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <!-- 18-11-2026: se quitaron "Imprimir documentos en el equipo de la caja" y "con el diseño de la página":
                                                      todos los locales imprimen por el agente (impresionWeb.exe) y como imagen, siempre encendidas -->

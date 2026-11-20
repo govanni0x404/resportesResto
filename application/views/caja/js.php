@@ -2857,7 +2857,29 @@
 		}
 		$('#modalVuelto').on('shown.bs.modal', function () { $('#btnVueltoListo').focus(); });
 
+		// v1.24.18: la gaveta se abre sola al cobrar en efectivo (o con cualquier cobro si en Configuraciones está apagada
+		// "Abrir gaveta solo por pago en efectivo"). Lo decide el servidor; va antes de la boleta para que se abra al tiro.
+		function abrirGavetaVenta(idVenta) {
+			if (!idVenta) return;
+			var local = impresionLocalActiva() && !!window.ImpresionLocal;
+			$.ajax({ url: base + 'gavetaVenta', type: 'POST', dataType: 'json', global: false, data: { id_venta: idVenta, local: local ? 1 : 0 } })
+				.done(function (g) {
+					if (!g || !g.abrir) {
+						if (g && g.detalle) toastr.warning(g.detalle, 'No se abrió la gaveta', { timeOut: 8000 });
+						return;
+					}
+					if (g.local && g.destino) {
+						ImpresionLocal.imprimir(g.destino, [{ accion: 'abrir_gaveta', valor: '' }], { tiempo: 15000 }).then(null, function (e) {
+							toastr.error(textoPlano(ImpresionLocal.mensaje(e)), 'No se pudo abrir la gaveta', { timeOut: 10000, closeButton: true });
+						});
+					} else if (!g.ok && g.detalle) {
+						toastr.error(g.detalle, 'No se pudo abrir la gaveta', { timeOut: 10000, closeButton: true });
+					}
+				});
+		}
+
 		function ventaRegistrada(r, ctx) {
+			abrirGavetaVenta(r && r.id_venta);
 			if (ctx.replay) { ventaPendienteRegistrada(r, ctx); return; }
 			var t = ctx.t, idMesa = ctx.idMesa, dcEnCobro = ctx.dcEnCobro;
 			if (ctx.pagoElectronico) cargarPagoElectronico();   // el cobro con tarjeta ya no está pendiente

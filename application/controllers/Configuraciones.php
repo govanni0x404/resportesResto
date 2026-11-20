@@ -128,6 +128,7 @@ class Configuraciones extends CI_Controller {
             'requerir_usuario_admin_cortesia',
             'requerir_usuario_admin_descuento',
             'boton_apertura_caja_solo_admin',
+            'abrir_gaveta_solo_por_pago_efectivo',   // v1.24.18: la gaveta se abre sola al cobrar (en efectivo o en todos)
             'permitir_retiro_fondo_fijo',
             'inventario_cierre_caja',
             'habilitar_facturacion_electronica',
