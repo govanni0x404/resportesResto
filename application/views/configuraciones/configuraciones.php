@@ -78,6 +78,11 @@ if (!function_exists('cfg_opciones')) {
                                                     <option value="mesas" <?php echo $modoCaja === 'mesas' ? 'selected' : ''; ?>>Mesas (toda venta se hace en una mesa)</option>
                                                 </select>
                                                 <p class="help-block" style="margin-top:8px">En modo Mesas deja siempre una mesa libre para la venta rápida (por ejemplo "Mostrador").</p>
+                                                <?php if (array_key_exists('agrupar_productos_web', $config)) : ?>
+                                                <!-- v1.24.8: agrupar productos iguales (migración 20261120170000) -->
+                                                <label style="margin-top:6px"><input type="checkbox" name="agrupar_productos_web" value="1" <?php echo ($config['agrupar_productos_web'] ?? true) !== false ? 'checked' : ''; ?>> Agrupar productos iguales en la Caja</label>
+                                                <p class="help-block" style="margin:-4px 0 0 22px">Marcada: dos pizzas van en una fila con cantidad 2. Sin marcar: cada pizza va en su propia fila, para ponerle a cada una su propio mensaje.</p>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
 

@@ -141,6 +141,7 @@ class Configuraciones extends CI_Controller {
             'usar_propina_web',       // v1.23.0: sin propina en nada (migración 20261120140000)
             'propina_mesas_web',      // v1.23.0: propina al cobrar mesas
             'usar_comision_web',      // v1.24.1: comisión en el precio de los productos (migración 20261120160000)
+            'agrupar_productos_web',  // v1.24.8: agrupar productos iguales en la Caja (migración 20261120170000)
             'acepta',
             'acierto'
         ];

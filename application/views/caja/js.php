@@ -1523,8 +1523,10 @@
 				toastr.info('Se canceló el cobro de una parte: al cobrar se incluirá toda la mesa');
 			}
 			agregados = agregados.slice().sort(function (a, b) { return a - b; });
-			// Solo se suma a una línea existente si tiene exactamente las mismas opciones
-			var l = $.grep(carro, function (x) {
+			// Solo se suma a una línea existente si tiene exactamente las mismas opciones.
+			// v1.24.8: con "Agrupar productos iguales" apagado (Configuraciones) cada producto va en su propia fila
+			var agrupar = !(catalogo && catalogo.config && catalogo.config.agrupar_productos === false);
+			var l = !agrupar ? null : $.grep(carro, function (x) {
 				return !x.enviada && x.id_producto === id && x.nota === nota && x.agregados.join(',') === agregados.join(',')
 					&& JSON.stringify(x.notas_agregados || {}) === JSON.stringify(notasAg) && JSON.stringify(x.menu || []) === JSON.stringify(menuSel);
 			})[0];

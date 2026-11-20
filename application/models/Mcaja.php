@@ -4523,6 +4523,7 @@ class Mcaja extends CI_Model
 			// v1.23.0: usar propina (si no, no sale en nada) y propina en mesas (migración 20261120140000)
 			'usar_propina_web' => 'usar_propina',
 			'propina_mesas_web' => 'propina_mesas',
+			'agrupar_productos_web' => 'agrupar_productos',   // v1.24.8 (migración 20261120170000)
 			'requerir_usuario_admin_descuento' => 'admin_descuento',
 			'requerir_admin_descuento' => 'admin_descuento_clave',
 			'requerir_usuario_admin_cortesia' => 'admin_cortesia',
@@ -4555,7 +4556,7 @@ class Mcaja extends CI_Model
 		);
 		// Si la base no tiene la columna, se mantiene lo que la caja hacía antes de existir la opción
 		$siFalta = array('inventario_cierre', 'llenar_no_efectivo', 'cierre_detallado', 'cierre_ingresos', 'cierre_creditos',
-			'cierre_cortesias', 'cierre_anulaciones', 'retiro_fondo', 'imprimir_documento', 'usar_propina', 'propina_mesas');
+			'cierre_cortesias', 'cierre_anulaciones', 'retiro_fondo', 'imprimir_documento', 'usar_propina', 'propina_mesas', 'agrupar_productos');
 		$config = array_fill_keys(array_values($mapa), 0) + array_fill_keys(array_values($flags), false)
 			+ array_fill_keys(array_values($textos), '');
 		$config['por_iva'] = 19;
