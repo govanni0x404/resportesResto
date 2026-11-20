@@ -3645,7 +3645,8 @@
 		// ---- ancho del drawer de mesa ----
 		// Sin pedido va a la mitad (CSS .sin-pedido); con pedido, el de siempre. El borde izquierdo se arrastra (o se mueve con las
 		// flechas) para ajustarlo y queda guardado en este computador, por separado para cada caso. Doble clic: vuelve al de siempre.
-		var ANCHO_MESA = { sin: { clave: 'cajaWeb.anchoMesaSinPedido', min: 420 }, con: { clave: 'cajaWeb.anchoMesaConPedido', min: 760 } };
+		// v1.24.6: con pedido baja hasta 720 (el contenido se compacta solo, ver @container mesa en caja.php)
+		var ANCHO_MESA = { sin: { clave: 'cajaWeb.anchoMesaSinPedido', min: 420 }, con: { clave: 'cajaWeb.anchoMesaConPedido', min: 720 } };
 		function anchoMesaActual() { return $('#mesaDrawer').hasClass('sin-pedido') ? ANCHO_MESA.sin : ANCHO_MESA.con; }
 		function aplicarAnchoMesa() {
 			var d = document.getElementById('mesaDrawer');
@@ -3657,7 +3658,7 @@
 		}
 		function fijarAnchoMesa(w, guardar) {
 			var d = document.getElementById('mesaDrawer'), $d = $(d), suelto = !$d.hasClass('redimensionando');
-			w = Math.round(Math.max(anchoMesaActual().min, Math.min(window.innerWidth - 80, w)));
+			w = Math.round(Math.max(anchoMesaActual().min, Math.min(window.innerWidth - 24, w)));   // v1.24.6: hasta casi toda la pantalla
 			$d.addClass('redimensionando');   // sin animación: el ancho queda al tiro (y se puede medir)
 			d.style.width = w + 'px';
 			// Se guarda el ancho que de verdad quedó (el CSS no deja pasar del espacio disponible)

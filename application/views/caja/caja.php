@@ -798,7 +798,7 @@
 		opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s linear .2s; }
 	.mesa-drawer-fondo.abierto { opacity: 1; visibility: visible; transition: opacity .2s ease, visibility 0s; }
 	.mesa-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 1037; display: flex; flex-direction: column;
-		width: 1180px; max-width: calc(100vw - var(--t-sidebar, 220px) - 40px); background: var(--t-fondo, #F3ECE1);
+		width: 1180px; max-width: calc(100vw - 24px); background: var(--t-fondo, #F3ECE1);   /* v1.24.6: puede crecer sobre el menú */
 		box-shadow: -14px 0 40px rgba(42, 29, 23, .28); transform: translateX(105%); visibility: hidden;
 		transition: transform .25s ease, width .2s ease, visibility 0s linear .25s; }
 	.mesa-drawer.abierto { transform: none; visibility: visible; transition: transform .25s ease, width .2s ease, visibility 0s; }
@@ -807,10 +807,15 @@
 	.mesa-drawer.sin-pedido { width: 590px; }
 	.mesa-drawer.redimensionando { transition: none; }
 	.mesa-drawer.redimensionando, .mesa-drawer.redimensionando * { cursor: col-resize !important; -webkit-user-select: none; user-select: none; }
-	.mesa-drawer-tirador { position: absolute; top: 0; bottom: 0; left: -6px; z-index: 2; width: 12px; cursor: col-resize; touch-action: none; }
-	.mesa-drawer-tirador::after { content: ''; position: absolute; top: 50%; left: 4px; width: 4px; height: 56px; margin-top: -28px; border-radius: 2px;
-		background: rgba(42, 29, 23, .28); opacity: 0; transition: opacity .15s; }
-	.mesa-drawer:hover .mesa-drawer-tirador::after, .mesa-drawer.redimensionando .mesa-drawer-tirador::after, .mesa-drawer-tirador:focus-visible::after { opacity: 1; }
+	/* v1.24.6: el tirador se ve siempre (antes solo al pasar el mouse justo por el borde): manilla en el borde izquierdo */
+	.mesa-drawer-tirador { position: absolute; top: 0; bottom: 0; left: -8px; z-index: 2; width: 16px; cursor: col-resize; touch-action: none; }
+	.mesa-drawer-tirador::before { content: ''; position: absolute; top: 0; bottom: 0; left: 7px; width: 2px; background: transparent; transition: background .15s; }
+	.mesa-drawer-tirador::after { content: '\f142\00a0\f142'; font-family: 'FontAwesome'; position: absolute; top: 50%; left: -2px; width: 20px; height: 64px; margin-top: -32px;
+		display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #fff; border: 1px solid var(--t-borde, #E5E7EB);
+		box-shadow: 0 2px 8px rgba(17, 24, 39, .18); color: var(--t-texto-tenue, #6B7280); font-size: 11px; letter-spacing: -2px; transition: color .15s, border-color .15s, box-shadow .15s; }
+	.mesa-drawer-tirador:hover::before, .mesa-drawer.redimensionando .mesa-drawer-tirador::before { background: var(--t-primario, #15803D); }
+	.mesa-drawer-tirador:hover::after, .mesa-drawer.redimensionando .mesa-drawer-tirador::after, .mesa-drawer-tirador:focus-visible::after {
+		color: var(--t-primario, #15803D); border-color: var(--t-primario, #15803D); box-shadow: 0 2px 10px rgba(21, 128, 61, .28); }
 	.mesa-drawer-tirador:focus { outline: none; }
 	.mesa-drawer-cab { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px;
 		background: #fff; border-bottom: 1px solid var(--t-borde, #EADFD2); }
@@ -823,7 +828,37 @@
 	.mesa-drawer-cerrar:hover { background: var(--t-fondo-alt, #FBF8F3); color: var(--t-texto, #3A2A22); }
 	.mesa-drawer-cerrar:focus { outline: none; }
 	.mesa-drawer-cerrar:focus-visible { outline: 2px solid #2563EB; outline-offset: 2px; }
-	.mesa-drawer-cuerpo { flex: 1 1 auto; min-height: 0; padding: 14px 16px; overflow: hidden; }
+	.mesa-drawer-cuerpo { flex: 1 1 auto; min-height: 0; padding: 14px 16px; overflow: hidden; container-type: inline-size; container-name: mesa; }
+	/* v1.24.6: el contenido se acomoda al ancho del PANEL (que se arrastra), no al de la pantalla */
+	@container mesa (max-width: 1060px) {
+		.caja-venta { gap: 12px; }
+		.caja-venta-lateral { flex-basis: 34%; min-width: 300px; }
+		.caja-venta-lateral .caja-tarjeta { padding: 12px 14px; }
+		.caja-linea { gap: 8px; padding: 10px 12px; }
+		.caja-linea .precio, .caja-linea-cab .precio { display: none; }   /* el precio unitario va bajo el nombre */
+		.caja-linea .unitario { display: block; }
+		.caja-linea .cantidad, .caja-linea-cab .cantidad { width: 116px; flex-basis: 116px; }
+		.caja-linea .subtotal, .caja-linea-cab .subtotal { width: 96px; }
+		.caja-linea .nombre { font-size: 15px; }
+	}
+	@container mesa (max-width: 860px) {
+		.caja-venta-lateral { flex: 0 0 250px; min-width: 250px; }
+		.caja-venta-lateral .caja-tarjeta { padding: 10px 12px; }
+		.caja-venta-lateral .form-control, .caja-venta-lateral .input-group-btn .btn { height: 40px; font-size: 15px; }
+		.caja-linea .cbarra { display: none; }
+		.caja-linea { padding: 9px 10px; }
+		.caja-linea .nombre { font-size: 14px; }
+		.caja-linea .cantidad, .caja-linea-cab .cantidad { width: 100px; flex-basis: 100px; }
+		.caja-linea.enviada .cantidad, .caja-linea-cab .cantidad { width: 44px; flex-basis: 44px; }   /* lo enviado: solo el número */
+		.caja-linea .subtotal, .caja-linea-cab .subtotal { width: 80px; font-size: 15px; }
+		.caja-linea .hora { font-size: 11px; }
+		.caja-carro-pie { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+		.caja-carro-pie select { width: auto; flex: 1 1 150px; max-width: none; }
+		.caja-carro-pie .total { font-size: 15px; }
+		.caja-carro-pie .total b { font-size: 24px; }
+		.caja-acciones #btnCobrar { font-size: 16px; padding: 10px; }
+		.caja-busqueda { flex-wrap: wrap; }
+	}
 	.mesa-drawer-cuerpo > .caja-venta { height: 100%; }
 	/* En el drawer: el nombre ya va en la cabecera, la X reemplaza "Volver a mesas" y el selector Pagar / Opciones no aplica */
 	.mesa-drawer .caja-banner-mesa .nombre, .mesa-drawer #btnSalirMesa { display: none !important; }
