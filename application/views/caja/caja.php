@@ -533,6 +533,54 @@
 	.menu-op .menu-cant b { min-width: 18px; text-align: center; }
 	.menu-op .menu-cant .btn { padding: 1px 7px; }
 	.caja-linea .detalle-linea.del-menu { color: var(--t-texto-suave, #4B5563); }
+	/* v1.25.0: armar una promo de sushi (#modalSushi, js.php abrirSushi) */
+	#modalSushi .modal-dialog { width: 1080px; max-width: calc(100vw - 24px); }
+	#modalSushi .modal-body { background: var(--t-fondo, #F5F6F8); padding: 14px; }
+	.su-avance { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; background: #fff; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+	.su-cifra { display: flex; flex-direction: column; min-width: 92px; }
+	.su-cifra small { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-tenue, #6B7280); }
+	.su-cifra b { font-size: 22px; line-height: 1.1; }
+	.su-cifra.pendiente b { color: #B45309; }
+	.su-cifra.pendiente.listo b { color: var(--t-primario, #15803D); }
+	.su-barra { flex: 1 1 220px; }
+	.su-barra .progress { height: 14px; margin: 0; border-radius: 8px; background: var(--t-fondo-alt, #F3F4F6); }
+	.su-barra .progress-bar { background: var(--t-primario, #15803D); transition: width .2s; }
+	.su-barra small { display: block; margin-top: 4px; font-weight: 700; color: var(--t-texto-suave, #4B5563); }
+	.su-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 12px; align-items: start; }
+	@media (max-width: 860px) { .su-cols { grid-template-columns: 1fr; } }
+	.su-tarjeta { background: #fff; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 12px; padding: 12px; }
+	.su-tarjeta + .su-tarjeta { margin-top: 12px; }
+	.su-tit { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #4B5563); }
+	.su-grupos { display: flex; flex-direction: column; gap: 8px; max-height: 46vh; overflow-y: auto; }
+	.su-grupo { border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; padding: 8px 10px; }
+	.su-grupo.editando { border-color: var(--t-primario, #15803D); background: var(--t-primario-suave, #E8F5EC); }
+	.su-grupo-cab { display: flex; align-items: center; gap: 8px; }
+	.su-grupo-cab .su-pz { min-width: 52px; padding: 2px 8px; border-radius: 8px; background: var(--t-texto-fuerte, #111827); color: #fff; font-weight: 800; text-align: center; }
+	.su-grupo-cab .su-env { flex: 1; font-weight: 800; }
+	.su-grupo-cab .btn { padding: 3px 8px; }
+	.su-grupo-det { margin-top: 4px; font-size: 13px; color: var(--t-texto-suave, #4B5563); }
+	.su-grupo-det b { color: var(--t-primario-osc, #116632); }
+	.su-vacio { padding: 18px 8px; text-align: center; color: var(--t-texto-tenue, #6B7280); }
+	.su-sec { margin-bottom: 12px; }
+	.su-sec-tit { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 6px; }
+	.su-sec-tit small { font-weight: 600; color: var(--t-texto-tenue, #6B7280); }
+	.su-sec-tit small.falta { color: #B91C1C; }
+	.su-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+	.su-chip { border: 1px solid var(--t-borde, #E5E7EB); background: #fff; border-radius: 18px; padding: 6px 12px; font-weight: 600; cursor: pointer; user-select: none; }
+	.su-chip:hover { border-color: var(--t-primario-borde, #BBE3C9); }
+	.su-chip.on { border-color: var(--t-primario, #15803D); background: var(--t-primario, #15803D); color: #fff; }
+	.su-chip.off { opacity: .45; cursor: not-allowed; }
+	.su-chip small { font-weight: 700; opacity: .85; }
+	.su-piezas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+	.su-piezas input { width: 76px; height: 36px; text-align: center; font-size: 18px; font-weight: 800; }
+	.su-piezas .btn { height: 36px; min-width: 36px; font-weight: 700; }
+	.su-editor-pie { display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--t-borde-suave, #EEF0F3); padding-top: 10px; }
+	.su-extra { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--t-borde-suave, #EEF0F3); }
+	.su-extra:first-child { border-top: 0; }
+	.su-extra .nombre { flex: 1; font-weight: 600; }
+	.su-extra .btn { padding: 1px 8px; }
+	.su-extra b.q { min-width: 20px; text-align: center; }
+	.caja-linea .detalle-linea .del-sushi { display: block; color: var(--t-texto-suave, #4B5563); }
 	.caja-linea.enviada.hijo-menu { padding-left: 22px; opacity: .85; }
 	.caja-linea.enviada.hijo-menu .nombre { font-weight: 500; }
 
@@ -2284,6 +2332,67 @@
 				<span class="pull-left" style="font-size:16px; padding-top:6px">Precio: <b id="opcionesPrecio"></b></span>
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
 				<button type="button" class="btn btn-success" id="btnConfirmarOpciones">Agregar</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- v1.25.0: armar una promo de sushi (Productos > Promos Sushi). js.php abrirSushi -->
+<div class="modal fade" id="modalSushi" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header btn-success">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 class="modal-title" id="sushiTitulo"></h4>
+			</div>
+			<div class="modal-body">
+				<div class="su-avance">
+					<div class="su-cifra"><small>Total</small><b id="suTotal">0</b></div>
+					<div class="su-cifra"><small>Configuradas</small><b id="suConfiguradas">0</b></div>
+					<div class="su-cifra pendiente" id="suPendCifra"><small>Pendientes</small><b id="suPendientes">0</b></div>
+					<div class="su-barra"><div class="progress"><div class="progress-bar" id="suBarra" style="width:0%"></div></div><small id="suPorcentaje">0%</small></div>
+				</div>
+				<div class="su-cols">
+					<div>
+						<div class="su-tarjeta">
+							<div class="su-tit"><span><i class="fa fa-th-large"></i> Grupos de piezas</span>
+								<button type="button" class="btn btn-success btn-sm" id="btnSushiNuevo"><i class="fa fa-plus"></i> Agregar grupo</button></div>
+							<div class="su-grupos" id="suGrupos"></div>
+						</div>
+						<div class="su-tarjeta" id="suExtrasCaja" style="display:none">
+							<div class="su-tit"><span><i class="fa fa-tint"></i> Salsas y extras</span></div>
+							<div id="suExtras"></div>
+						</div>
+					</div>
+					<div class="su-tarjeta" id="suEditor">
+						<div class="su-tit"><span id="suEditorTit">Nuevo grupo</span></div>
+						<div class="su-sec">
+							<div class="su-sec-tit"><span>Piezas</span><small id="suPiezasAyuda"></small></div>
+							<div class="su-piezas">
+								<button type="button" class="btn btn-default" id="suMenos"><i class="fa fa-minus"></i></button>
+								<input type="text" inputmode="numeric" class="form-control" id="suPiezas" autocomplete="off">
+								<button type="button" class="btn btn-default" id="suMas"><i class="fa fa-plus"></i></button>
+								<span id="suAtajos"></span>
+							</div>
+						</div>
+						<div class="su-sec" id="suSecBase"><div class="su-sec-tit"><span>Base</span><small></small></div><div class="su-chips" data-tipo="base"></div></div>
+						<div class="su-sec" id="suSecRelleno"><div class="su-sec-tit"><span>Rellenos</span><small></small></div><div class="su-chips" data-tipo="relleno"></div></div>
+						<div class="su-sec" id="suSecEnvoltorio"><div class="su-sec-tit"><span>Envuelto en</span><small></small></div><div class="su-chips" data-tipo="envoltorio"></div></div>
+						<div class="su-editor-pie">
+							<button type="button" class="btn btn-default" id="btnSushiCancelarGrupo">Cancelar</button>
+							<button type="button" class="btn btn-success" id="btnSushiGuardarGrupo"><i class="fa fa-check"></i> Guardar grupo</button>
+						</div>
+					</div>
+				</div>
+				<div class="form-group" style="margin:12px 0 0">
+					<label for="txtNotaSushi">Nota <small class="text-muted" style="font-weight:400">· sale impresa en la comanda</small></label>
+					<input type="text" class="form-control" id="txtNotaSushi" maxlength="100" placeholder="Ej: sin sésamo, palillos extra">
+				</div>
+			</div>
+			<div class="modal-footer">
+				<span class="pull-left" style="font-size:16px; padding-top:6px">Precio: <b id="sushiPrecio"></b></span>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+				<button type="button" class="btn btn-success" id="btnConfirmarSushi">Agregar</button>
 			</div>
 		</div>
 	</div>

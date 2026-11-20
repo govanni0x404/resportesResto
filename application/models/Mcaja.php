@@ -168,6 +168,19 @@ class Mcaja extends CI_Model
 			$menusCaja[] = array('id_producto' => $idP, 'id_menu' => $mn['id_menu'], 'nombre' => $mn['nombre'], 'categorias' => $cats);
 		}
 
+		// v1.25.0: promos de sushi armables (Productos > Promos Sushi), solo de productos que están en el catálogo
+		$sushisCaja = array();
+		foreach ($this->sushis($db) as $idP => $sp) {
+			if (!isset($enCatalogo[$idP])) continue;
+			$ops = array();
+			foreach ($sp['opciones'] as $tipo => $lista) {
+				$ops[$tipo] = array();
+				foreach ($lista as $o) $ops[$tipo][] = array('id' => $o['id'], 'nombre' => $o['nombre'], 'valor' => $o['valor']);
+			}
+			$sushisCaja[] = array('id_producto' => $idP, 'piezas' => $sp['piezas'], 'paso' => $sp['paso'], 'max_rellenos' => $sp['max_rellenos'],
+				'bases' => $ops['base'], 'rellenos' => $ops['relleno'], 'envoltorios' => $ops['envoltorio'], 'extras' => $ops['extra']);
+		}
+
 		$config['es_admin'] = $this->esAdmin($db, $idUsuario, $idRol);
 		$config['tiene_clave_admin'] = $this->claveAdminGeneral($db) !== '';
 		$config['propina_max_pct'] = self::PROPINA_MAX_PCT;
@@ -193,6 +206,7 @@ class Mcaja extends CI_Model
 			'listas_precio' => $listas,
 			'agregados' => $agregados,
 			'menus' => $menusCaja,   // v1.24.0
+			'sushis' => $sushisCaja,   // v1.25.0
 			'mensajes' => $mensajes,
 			'administradores' => $admins,
 			'config' => $config,
@@ -286,6 +300,106 @@ class Mcaja extends CI_Model
 			}
 		}
 		if ($pedidas) throw new Exception('Un producto elegido de ' . $nombreMenu . ' ya no está disponible en el menú', 400);
+		return $res;
+	}
+
+	/**
+	 * v1.25.0: promos de sushi (migración 20261120180000): [id del producto-promo => promo]. Sin las tablas, ninguna.
+	 * Promo: piezas, paso (de a cuántas piezas va cada grupo), max_rellenos (0 = sin límite) y sus opciones por tipo
+	 * (base, relleno, envoltorio, extra), cada una con su producto vigente y su valor adicional.
+	 */
+	private $sushisCache = null;
+	private function sushis($db)
+	{
+		if ($this->sushisCache !== null) return $this->sushisCache;
+		$this->sushisCache = array();
+		$t = $this->columnas($db, array('promo_sushi_web', 'promo_sushi_opcion_web'));
+		if (!isset($t['promo_sushi_web'], $t['promo_sushi_opcion_web'])) return array();
+		foreach ($this->q($db, "SELECT s.id_producto, s.piezas, s.paso, s.max_rellenos FROM promo_sushi_web s
+			JOIN producto p ON p.id_producto = s.id_producto AND p.vigente IS TRUE WHERE s.vigente IS TRUE")->result() as $r) {
+			$this->sushisCache[(int)$r->id_producto] = array('piezas' => (int)$r->piezas, 'paso' => max(1, (int)$r->paso),
+				'max_rellenos' => max(0, (int)$r->max_rellenos),
+				'opciones' => array('base' => array(), 'relleno' => array(), 'envoltorio' => array(), 'extra' => array()));
+		}
+		if (!$this->sushisCache) return array();
+		foreach ($this->q($db, "SELECT o.id_opcion, o.id_producto_promo, o.tipo, o.id_producto, o.valor, p.nombre_producto,
+				COALESCE(p.id_receta, 0) AS id_receta, COALESCE(p.id_bodega, 0) AS id_bodega
+			FROM promo_sushi_opcion_web o JOIN producto p ON p.id_producto = o.id_producto AND p.vigente IS TRUE
+			ORDER BY o.id_producto_promo, o.tipo, o.orden, p.nombre_producto")->result() as $r) {
+			$idP = (int)$r->id_producto_promo;
+			if (!isset($this->sushisCache[$idP]['opciones'][$r->tipo])) continue;
+			$this->sushisCache[$idP]['opciones'][$r->tipo][(int)$r->id_opcion] = array('id' => (int)$r->id_opcion,
+				'id_producto' => (int)$r->id_producto, 'nombre' => (string)$r->nombre_producto, 'valor' => max(0, (int)$r->valor),
+				'id_receta' => (int)$r->id_receta, 'id_bodega' => (int)$r->id_bodega);
+		}
+		return $this->sushisCache;
+	}
+
+	/**
+	 * v1.25.0: valida lo armado de una promo de sushi (por cada promo) y lo devuelve con las opciones del servidor.
+	 * $sel = {grupos: [{piezas, base, envoltorio, rellenos: [id_opcion...]}], extras: [{id, cantidad}]}.
+	 * Reglas: cada grupo con piezas >= 1 y múltiplo del paso; la suma = las piezas de la promo; base y envoltorio
+	 * obligatorios si la promo los ofrece; al menos un relleno si los ofrece, sin repetir y hasta max_rellenos.
+	 */
+	private function eleccionSushi($promo, $sel, $nombre)
+	{
+		$sel = is_array($sel) ? $sel : array();
+		$grupos = isset($sel['grupos']) && is_array($sel['grupos']) ? array_values($sel['grupos']) : array();
+		if (!$grupos) throw new Exception($nombre . ': arma las piezas antes de agregarla', 400);
+		if (count($grupos) > $promo['piezas']) throw new Exception($nombre . ': demasiados grupos', 400);
+		$op = $promo['opciones'];
+		$opcion = function ($tipo, $id) use ($op, $nombre) {
+			$id = (int)$id;
+			if (!isset($op[$tipo][$id])) throw new Exception('Una opción de ' . $nombre . ' ya no está disponible: vuelve a armarla', 400);
+			return $op[$tipo][$id];
+		};
+		$res = array('grupos' => array(), 'extras' => array());
+		$total = 0;
+		foreach ($grupos as $n => $g) {
+			$g = is_array($g) ? $g : array();
+			$num = $n + 1;
+			$piezas = (int)(isset($g['piezas']) ? $g['piezas'] : 0);
+			if ($piezas < 1) throw new Exception($nombre . ', grupo ' . $num . ': la cantidad de piezas debe ser 1 o más', 400);
+			if ($piezas % $promo['paso'] !== 0) throw new Exception($nombre . ', grupo ' . $num . ': las piezas van de a ' . $promo['paso'], 400);
+			$total += $piezas;
+			$base = null;
+			if ($op['base']) {
+				if (empty($g['base'])) throw new Exception($nombre . ', grupo ' . $num . ': elige la base', 400);
+				$base = $opcion('base', $g['base']);
+			}
+			$env = null;
+			if ($op['envoltorio']) {
+				if (empty($g['envoltorio'])) throw new Exception($nombre . ', grupo ' . $num . ': elige el envoltorio', 400);
+				$env = $opcion('envoltorio', $g['envoltorio']);
+			}
+			$rellenos = array();
+			foreach (isset($g['rellenos']) && is_array($g['rellenos']) ? $g['rellenos'] : array() as $idR) {
+				$o = $opcion('relleno', $idR);
+				if (isset($rellenos[$o['id']])) throw new Exception($nombre . ', grupo ' . $num . ': ' . $o['nombre'] . ' está repetido', 400);
+				$rellenos[$o['id']] = $o;
+			}
+			if ($op['relleno'] && !$rellenos) throw new Exception($nombre . ', grupo ' . $num . ': elige al menos un relleno', 400);
+			if ($promo['max_rellenos'] > 0 && count($rellenos) > $promo['max_rellenos']) {
+				throw new Exception($nombre . ', grupo ' . $num . ': se pueden elegir hasta ' . $promo['max_rellenos'] . ' rellenos', 400);
+			}
+			if (!$base && !$env && !$rellenos) throw new Exception($nombre . ', grupo ' . $num . ': está vacío', 400);
+			$res['grupos'][] = array('piezas' => $piezas, 'base' => $base, 'envoltorio' => $env, 'rellenos' => array_values($rellenos));
+		}
+		if ($total !== $promo['piezas']) {
+			throw new Exception($nombre . ': hay ' . $total . ' de ' . $promo['piezas'] . ' piezas'
+				. ($total < $promo['piezas'] ? ', faltan ' . ($promo['piezas'] - $total) : ', sobran ' . ($total - $promo['piezas'])), 400);
+		}
+		$extras = array();
+		foreach (isset($sel['extras']) && is_array($sel['extras']) ? $sel['extras'] : array() as $e) {
+			$id = (int)(is_array($e) && isset($e['id']) ? $e['id'] : 0);
+			$q = (int)(is_array($e) && isset($e['cantidad']) ? $e['cantidad'] : 0);
+			if ($id <= 0 || $q <= 0) continue;
+			$o = $opcion('extra', $id);
+			$q += isset($extras[$id]) ? $extras[$id][1] : 0;
+			if ($q > 99) throw new Exception('Cantidad demasiado alta en los extras de ' . $nombre, 400);
+			$extras[$id] = array($o, $q);
+		}
+		$res['extras'] = array_values($extras);
 		return $res;
 	}
 
@@ -2017,6 +2131,7 @@ class Mcaja extends CI_Model
 		$comanda = array();   // lo que sale en cocina/barra: armado aquí con los nombres de la base, no los del navegador
 		$subtotal = 0;
 		$menus = $this->menus($db);   // v1.24.0
+		$sushis = $this->sushis($db);   // v1.25.0
 		foreach ($items as $it) {
 			$id = (int)$it['id_producto'];
 			$cantidad = round((float)$it['cantidad'], 3);
@@ -2045,6 +2160,65 @@ class Mcaja extends CI_Model
 			// del menú; la línea del menú no sale en la comanda.
 			// v1.24.1: un pedido que no trae "menu" (la app móvil actual no conoce los menús) vende el menú como un producto,
 			// igual que antes; la Caja web siempre lo manda (lo elegido) y ahí se valida
+			// v1.25.0: PROMO DE SUSHI. Igual que el menú: la línea de la promo (su precio, no sale en la comanda) y por cada
+			// grupo una línea por producto (envoltorio, base y rellenos) con cantidad = piezas y su valor adicional por pieza;
+			// los extras, una línea cada uno. Todas apuntan a la promo (es_detalle_menu), así mesas, cobros por partes y
+			// anulaciones las mueven juntas. A cocina va una línea por grupo ("10 x PANKO: Pollo, Palta..."), en la impresora
+			// de la promo. Un pedido sin "sushi" (app móvil, POS de escritorio) vende la promo como un producto, igual que antes.
+			if (isset($sushis[$id]) && array_key_exists('sushi', $it)) {
+				if (!empty($it['agregados'])) throw new Exception($prod->nombre_producto . ' es una promo de sushi: los extras se eligen dentro de la promo', 400);
+				$sel = $this->eleccionSushi($sushis[$id], $it['sushi'], $prod->nombre_producto);
+				$nota = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', isset($it['nota']) ? (string)$it['nota'] : '')), 0, 150);
+				$bodegaCaja = !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : 0;
+				$unitario = (int)round((float)$prod->precio);
+				$bruto = (int)round($unitario * $cantidad);
+				$subtotal += $bruto;
+				$idxPromo = count($lineas);
+				$lineas[] = array(
+					'id_producto' => $id, 'nombre' => $prod->nombre_producto, 'cantidad' => $cantidad,
+					'unitario' => $unitario, 'bruto' => $bruto, 'id_agregado' => 0, 'nota' => $nota, 'segun_stock' => $segunStock,
+					'recetas' => array(array((int)$prod->id_receta, $bodegaCaja ?: (int)$prod->id_bodega)), 'exento' => $exento,
+					'es_menu' => true, 'id_menu' => 0,
+				);
+				$hijo = function ($o, $cant, $notaLinea, $imprimir) use (&$lineas, &$subtotal, $exento, $id, $idxPromo, $bodegaCaja) {
+					$b = (int)round($o['valor'] * $cant);
+					$subtotal += $b;
+					$lineas[] = array(
+						'id_producto' => $o['id_producto'], 'nombre' => $o['nombre'], 'cantidad' => $cant,
+						'unitario' => $o['valor'], 'bruto' => $b, 'id_agregado' => 0, 'nota' => mb_substr($notaLinea, 0, 250),
+						'segun_stock' => false, 'recetas' => array(array($o['id_receta'], $bodegaCaja ?: $o['id_bodega'])),
+						'exento' => $exento, 'ila_de' => $id,
+						'es_detalle_menu' => true, 'id_menu' => 0, 'del_menu' => $idxPromo, 'imprimir' => $imprimir,
+					);
+				};
+				$resumen = array();
+				foreach ($sel['grupos'] as $g) {
+					$cantGrupo = round($cantidad * $g['piezas'], 3);
+					$nombresRellenos = array_map(function ($o) { return $o['nombre']; }, $g['rellenos']);
+					$titulo = $g['envoltorio'] ? $g['envoltorio']['nombre'] : ($g['base'] ? $g['base']['nombre'] : $nombresRellenos[0]);
+					$desc = ($nombresRellenos ? implode(', ', $nombresRellenos) : 'Sin relleno') . ($g['base'] ? ' · Base ' . $g['base']['nombre'] : '');
+					// La primera línea del grupo lleva la descripción completa y es la que sale en comandas, reenvíos y anulaciones
+					$partes = array();
+					if ($g['envoltorio']) $partes[] = $g['envoltorio'];
+					if ($g['base']) $partes[] = $g['base'];
+					foreach ($g['rellenos'] as $o) $partes[] = $o;
+					foreach ($partes as $k => $o) $hijo($o, $cantGrupo, $k === 0 ? $desc . ' (' . $prod->nombre_producto . ')' : '', $k === 0);
+					$comanda[] = array('id_producto' => $id, 'nombre' => $titulo, 'cantidad' => $cantGrupo,
+						'nota' => $desc . ' (' . $prod->nombre_producto . ($nota !== '' ? ' · ' . $nota : '') . ')', 'agregados' => array());
+					$resumen[] = $g['piezas'] . ' ' . $titulo . ' (' . $desc . ')';
+				}
+				foreach ($sel['extras'] as $par) {
+					list($o, $q) = $par;
+					$cantExtra = round($cantidad * $q, 3);
+					$hijo($o, $cantExtra, 'Extra de ' . $prod->nombre_producto, true);
+					$comanda[] = array('id_producto' => $id, 'nombre' => $o['nombre'], 'cantidad' => $cantExtra,
+						'nota' => 'Extra de ' . $prod->nombre_producto, 'agregados' => array());
+					$resumen[] = ($q > 1 ? $q . ' ' : '') . $o['nombre'];
+				}
+				$notas[] = $prod->nombre_producto . ': ' . implode('; ', $resumen) . ($nota !== '' ? ' (' . $nota . ')' : '');
+				continue;
+			}
+
 			if (isset($menus[$id]) && array_key_exists('menu', $it)) {
 				if (!empty($it['agregados'])) throw new Exception($prod->nombre_producto . ' es un menú: no lleva agregados', 400);
 				$elegidosMenu = $this->eleccionMenu($menus[$id], isset($it['menu']) ? $it['menu'] : array(), $prod->nombre_producto);
@@ -3300,6 +3474,8 @@ class Mcaja extends CI_Model
 				if (is_scalar($t) && trim((string)$t) !== '' && count($na) < 20) $na[(string)(int)$k] = mb_substr(trim((string)$t), 0, 60);
 			}
 			if ($na) $res[count($res) - 1]['notas_agregados'] = $na;
+			// v1.25.0: lo armado de una promo de sushi (armarLineas lo valida)
+			if (isset($it['sushi']) && is_array($it['sushi'])) $res[count($res) - 1]['sushi'] = $it['sushi'];
 			if (count($res) >= 200) break;
 		}
 		return $res;

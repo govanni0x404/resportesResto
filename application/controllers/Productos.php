@@ -32,6 +32,7 @@ class Productos extends CI_Controller
 				$this->load->view('productos/jsMenu.php');
 				$this->load->view('productos/jsReceta.php');
 				$this->load->view('productos/jsImagen.php');
+				$this->load->view('productos/promoSushi.php');   // v1.25.0
 				$this->load->view('recetas/jsNewFamiliaReceta.php');
 				$this->load->view('recetas/jsNewSeccion.php');
 	}
@@ -945,5 +946,72 @@ class Productos extends CI_Controller
 		}
 		$id = $this->input->post('id');
 		echo json_encode($this->Mproductos->DeshabilitarDetalleCategoria($id));
+	}
+
+	// ====================== v1.25.0: Promos de sushi (Mpromosushi) ======================
+
+	/** Respuesta JSON de las promos de sushi: sesión vencida = 401; un error del modelo = 400. */
+	private function respuestaSushi($fn)
+	{
+		header('Content-Type: application/json; charset=utf-8');
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+			set_status_header(401);
+			echo json_encode(['error' => 'Sesión expirada']);
+			return;
+		}
+		$this->load->model('Mpromosushi');
+		$r = $fn($this->Mpromosushi, $this->input);
+		if (isset($r['error'])) set_status_header(400);
+		echo json_encode($r);
+	}
+
+	public function obtenerPromosSushi()
+	{
+		$this->respuestaSushi(function ($m) { return $m->datos(); });
+	}
+
+	public function obtenerPromoSushi()
+	{
+		$this->respuestaSushi(function ($m, $in) { return $m->promo((int)$in->post('id_producto')); });
+	}
+
+	public function grabarPromoSushi()
+	{
+		$this->respuestaSushi(function ($m, $in) {
+			return $m->grabarPromo(array(
+				'id_producto' => $in->post('id_producto'), 'nombre' => $in->post('nombre'), 'piezas' => $in->post('piezas'),
+				'paso' => $in->post('paso'), 'max_rellenos' => $in->post('max_rellenos'), 'precio' => $in->post('precio'),
+				'id_familia' => $in->post('id_familia'), 'id_dimpresion' => $in->post('id_dimpresion'), 'vigente' => $in->post('vigente'),
+			));
+		});
+	}
+
+	public function agregarOpcionSushi()
+	{
+		$this->respuestaSushi(function ($m, $in) {
+			return $m->agregarOpcion((int)$in->post('id_promo'), (string)$in->post('tipo'), (int)$in->post('id_producto'), $in->post('valor'));
+		});
+	}
+
+	public function crearOpcionSushi()
+	{
+		$this->respuestaSushi(function ($m, $in) {
+			return $m->crearOpcion((int)$in->post('id_promo'), (string)$in->post('tipo'), (string)$in->post('nombre'), $in->post('valor'));
+		});
+	}
+
+	public function valorOpcionSushi()
+	{
+		$this->respuestaSushi(function ($m, $in) { return $m->valorOpcion((int)$in->post('id_opcion'), $in->post('valor')); });
+	}
+
+	public function quitarOpcionSushi()
+	{
+		$this->respuestaSushi(function ($m, $in) { return $m->quitarOpcion((int)$in->post('id_opcion')); });
+	}
+
+	public function copiarCatalogoSushi()
+	{
+		$this->respuestaSushi(function ($m, $in) { return $m->copiarCatalogo((int)$in->post('id_origen'), (int)$in->post('id_destino')); });
 	}
 }

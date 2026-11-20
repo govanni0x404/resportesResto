@@ -42,6 +42,10 @@ $fechaActual = date('Y-m-d');
 					<button onclick="crearNuevoProducto()" type="button" class="btn btn-primary">
 						<i class="fa fa-plus"></i> Crear Nuevo Producto
 					</button>
+					<!-- v1.25.0: promos de sushi armables (productos/promoSushi.php) -->
+					<button onclick="abrirPromosSushi()" type="button" class="btn btn-success">
+						<i class="fa fa-th"></i> Promos Sushi
+					</button>
 				</div>
 				<div class="panel-body">
 					<div class="table-responsive">

@@ -519,7 +519,7 @@
 			var pedido = {
 				delivery: entregaPantalla(), id_lprecio: Number($('#cboLista').val()), id_cliente: cliente ? cliente.id_cliente : 0,
 				descuento: totales().descuento,
-				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [] }; })
+				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [], sushi: l.sushi || null }; })
 			};
 			var terminar = function () { guardandoDelivery = false; renderCarro(); };
 			enviarConAutorizacion(function (aut) {
@@ -970,13 +970,44 @@
 			return t;
 		}
 		function tieneOpciones(id) {
-			return agregadosDe(id).length > 0 || mensajesDe(id).length > 0 || !!menuDe(id);
+			return agregadosDe(id).length > 0 || mensajesDe(id).length > 0 || !!menuDe(id) || !!sushiDe(id);
+		}
+		// v1.25.0: promos de sushi (Productos > Promos Sushi). sushiDe(id) = la promo (piezas, reglas y catálogo) o null
+		function sushiDe(id) {
+			return $.grep((catalogo && catalogo.sushis) || [], function (s) { return s.id_producto === id; })[0] || null;
+		}
+		var SU_LISTA = { base: 'bases', relleno: 'rellenos', envoltorio: 'envoltorios', extra: 'extras' };
+		function opcionSushi(promo, tipo, id) {
+			return $.grep(promo ? promo[SU_LISTA[tipo]] : [], function (o) { return o.id === id; })[0] || null;
+		}
+		/** Valor por pieza de un grupo (base + envoltorio + rellenos) */
+		function valorPiezaSushi(promo, g) {
+			var t = 0, o;
+			if (g.base && (o = opcionSushi(promo, 'base', g.base))) t += o.valor;
+			if (g.envoltorio && (o = opcionSushi(promo, 'envoltorio', g.envoltorio))) t += o.valor;
+			$.each(g.rellenos || [], function (i, id) { var r = opcionSushi(promo, 'relleno', id); if (r) t += r.valor; });
+			return t;
+		}
+		// Lo que se suma al precio de la promo por lo elegido, por cada promo (Mcaja::armarLineas)
+		function adicionalSushiSel(promo, sel) {
+			var t = 0;
+			if (!promo || !sel) return 0;
+			$.each(sel.grupos || [], function (i, g) { t += g.piezas * valorPiezaSushi(promo, g); });
+			$.each(sel.extras || [], function (i, e) { var o = opcionSushi(promo, 'extra', e.id); if (o) t += o.valor * e.cantidad; });
+			return t;
+		}
+		function adicionalSushi(l) { return l.sushi ? adicionalSushiSel(sushiDe(l.id_producto), l.sushi) : 0; }
+		/** Texto de un grupo: "10 PANKO · Pollo, Palta · Base Arroz" */
+		function textoGrupoSushi(promo, g) {
+			var env = g.envoltorio ? opcionSushi(promo, 'envoltorio', g.envoltorio) : null, base = g.base ? opcionSushi(promo, 'base', g.base) : null;
+			var rell = $.map(g.rellenos || [], function (id) { var r = opcionSushi(promo, 'relleno', id); return r ? r.nombre : null; });
+			return { titulo: env ? env.nombre : (base ? base.nombre : (rell[0] || '')), rellenos: rell.join(', '), base: base ? base.nombre : '' };
 		}
 		// Precio unitario con agregados (v1.24.0: o con los adicionales del menú)
 		function precioLinea(l) {
 			var precio = l.precio;
 			$.each(l.agregados, function (i, id) { var a = agregado(id); if (a) precio += a.valor; });
-			return precio + adicionalMenu(l);
+			return precio + adicionalMenu(l) + adicionalSushi(l);   // v1.25.0
 		}
 
 		function renderFamilias() {
@@ -1334,6 +1365,7 @@
 
 		// ---------------- agregados y mensajes ----------------
 		function abrirOpciones(id, indice) {
+			if (sushiDe(id)) { abrirSushi(id, indice); return; }   // v1.25.0
 			var p = producto(id);
 			var linea = indice === null ? null : carro[indice];
 			opcionEdicion = { id_producto: id, indice: indice };
@@ -1496,6 +1528,224 @@
 			.on('keydown', '#txtNotaProducto, .ag-nota', function (e) { if (e.which === 13) $('#btnConfirmarOpciones').click(); })
 			.on('hidden.bs.modal', function () { $('#buscarProducto').focus(); });
 
+		// ---------------- v1.25.0: armar una promo de sushi ----------------
+		// La promo tiene N piezas que se reparten en grupos; cada grupo = sus piezas + base + rellenos + envoltorio (todas
+		// sus piezas iguales). Las configuradas se calculan SIEMPRE sumando los grupos (no hay contador aparte). Los extras
+		// (salsas…) van aparte. El servidor vuelve a validar todo (Mcaja::eleccionSushi).
+		var su = null;   // { id_producto, promo, indice, grupos: [{piezas, base, envoltorio, rellenos}], extras: {id: cantidad}, ed: {idx, g} }
+		function suConfiguradas(excepto) {
+			var t = 0;
+			$.each(su.grupos, function (i, g) { if (i !== excepto) t += g.piezas; });
+			return t;
+		}
+		/** Máximo de piezas para el grupo que se edita (lo que queda + las suyas, si ya existía) */
+		function suMaxEditor() {
+			return su.promo.piezas - suConfiguradas(su.ed && su.ed.idx !== null ? su.ed.idx : -1);
+		}
+		function suGrupoNuevo(piezas) {
+			var p = su.promo;
+			return { piezas: piezas, base: p.bases.length === 1 ? p.bases[0].id : 0, envoltorio: p.envoltorios.length === 1 ? p.envoltorios[0].id : 0, rellenos: [] };
+		}
+		/** Piezas sugeridas para un grupo nuevo: un "roll" (el paso, o 10 si va de a 1) o lo que falte si es menos */
+		function suPiezasSugeridas() {
+			var falta = su.promo.piezas - suConfiguradas(-1), paso = su.promo.paso;
+			return Math.max(0, Math.min(paso > 1 ? paso : 10, falta));
+		}
+
+		function abrirSushi(id, indice) {
+			var promo = sushiDe(id), p = producto(id);
+			if (!promo || !p) return;
+			if (!promo.rellenos.length && !promo.envoltorios.length && !promo.bases.length) {
+				toastr.warning('Esta promo todavía no tiene bases, rellenos ni envoltorios: agrégalos en Productos > Promos Sushi');
+				return;
+			}
+			var linea = indice === null ? null : carro[indice];
+			su = { id_producto: id, promo: promo, indice: indice, grupos: [], extras: {}, ed: null };
+			if (linea && linea.sushi) {
+				su.grupos = $.map(linea.sushi.grupos, function (g) { return { piezas: g.piezas, base: g.base || 0, envoltorio: g.envoltorio || 0, rellenos: (g.rellenos || []).slice() }; });
+				$.each(linea.sushi.extras || [], function (i, e) { su.extras[e.id] = e.cantidad; });
+			}
+			$('#sushiTitulo').text(p.nombre + ' · ' + promo.piezas + ' piezas');
+			$('#txtNotaSushi').val(linea ? linea.nota || '' : '');
+			$('#btnConfirmarSushi').text(linea ? 'Guardar' : 'Agregar');
+			$('#suExtrasCaja').toggle(promo.extras.length > 0);
+			// Promo nueva: se abre directo el primer grupo para armar
+			if (!su.grupos.length) su.ed = { idx: null, g: suGrupoNuevo(suPiezasSugeridas()) };
+			pintarSushi();
+			$('#modalSushi').modal('show');
+		}
+
+		function pintarSushi() {
+			var promo = su.promo, total = promo.piezas, conf = suConfiguradas(-1), pend = total - conf;
+			var pct = total ? Math.round(conf * 100 / total) : 0;
+			$('#suTotal').text(total);
+			$('#suConfiguradas').text(conf);
+			$('#suPendientes').text(pend < 0 ? 0 : pend);
+			$('#suPendCifra').toggleClass('listo', pend === 0);
+			$('#suBarra').css('width', Math.min(100, pct) + '%');
+			$('#suPorcentaje').text(pct + '% configurado' + (pend === 0 ? ' · ¡listo!' : ''));
+
+			// Grupos
+			$('#suGrupos').html(su.grupos.length ? $.map(su.grupos, function (g, i) {
+				var tx = textoGrupoSushi(promo, g), v = g.piezas * valorPiezaSushi(promo, g);
+				var editando = su.ed && su.ed.idx === i;
+				return '<div class="su-grupo' + (editando ? ' editando' : '') + '" data-i="' + i + '"><div class="su-grupo-cab">'
+					+ '<span class="su-pz">' + g.piezas + ' pz</span><span class="su-env">' + esc(tx.titulo) + '</span>'
+					+ '<button type="button" class="btn btn-default btn-xs su-editar" title="Editar"><i class="fa fa-pencil"></i></button>'
+					+ '<button type="button" class="btn btn-default btn-xs su-duplicar" title="Duplicar"><i class="fa fa-clone"></i></button>'
+					+ '<button type="button" class="btn btn-default btn-xs su-eliminar" title="Eliminar"><i class="fa fa-trash text-danger"></i></button></div>'
+					+ '<div class="su-grupo-det">' + (tx.rellenos ? esc(tx.rellenos) : '<i>Sin relleno</i>') + (tx.base ? ' · Base ' + esc(tx.base) : '')
+					+ (v ? ' · <b>+' + fmt(v) + '</b>' : '') + '</div></div>';
+			}).join('') : '<div class="su-vacio">Todavía no hay grupos. Arma el primero a la derecha.</div>');
+			$('#btnSushiNuevo').prop('disabled', pend <= 0 || !!(su.ed && su.ed.idx === null));
+
+			// Extras
+			$('#suExtras').html($.map(promo.extras, function (o) {
+				var q = su.extras[o.id] || 0;
+				return '<div class="su-extra" data-id="' + o.id + '"><span class="nombre">' + esc(o.nombre) + (o.valor ? ' <small class="text-muted">+' + fmt(o.valor) + '</small>' : '') + '</span>'
+					+ '<button type="button" class="btn btn-default btn-xs su-ex-menos"' + (q ? '' : ' disabled') + '><i class="fa fa-minus"></i></button>'
+					+ '<b class="q">' + q + '</b><button type="button" class="btn btn-default btn-xs su-ex-mas"><i class="fa fa-plus"></i></button></div>';
+			}).join(''));
+
+			pintarEditorSushi();
+			var extras = $.map(su.extras, function (q, id) { return { id: Number(id), cantidad: q }; });
+			$('#sushiPrecio').text(fmt(producto(su.id_producto).precio + adicionalSushiSel(promo, { grupos: su.grupos, extras: extras })));
+			$('#btnConfirmarSushi').prop('disabled', pend !== 0 || !!su.ed);
+		}
+
+		function pintarEditorSushi() {
+			var promo = su.promo;
+			$('#suEditor').toggle(!!su.ed);
+			if (!su.ed) return;
+			var g = su.ed.g, max = suMaxEditor(), paso = promo.paso;
+			$('#suEditorTit').text(su.ed.idx === null ? 'Nuevo grupo' : 'Editando grupo ' + (su.ed.idx + 1));
+			if (!$('#suPiezas').is(':focus')) $('#suPiezas').val(g.piezas || '');
+			$('#suPiezasAyuda').text('Quedan ' + max + (paso > 1 ? ' · de a ' + paso : ''));
+			// Atajos: lo que queda y algunos tamaños de roll
+			var atajos = [];
+			if (paso > 1) { for (var k = paso; k <= max && atajos.length < 5; k += paso) atajos.push(k); }
+			else $.each([5, 8, 10], function (i, k) { if (k <= max) atajos.push(k); });
+			if (max > 0 && $.inArray(max, atajos) < 0) atajos.push(max);
+			$('#suAtajos').html($.map(atajos, function (k) {
+				return '<button type="button" class="btn btn-' + (k === g.piezas ? 'success' : 'default') + ' btn-sm su-atajo" data-n="' + k + '">' + (k === max ? 'Todas (' + k + ')' : k) + '</button>';
+			}).join(' '));
+			$('#suMenos').prop('disabled', g.piezas <= paso);
+			$('#suMas').prop('disabled', g.piezas + paso > max);
+
+			var secciones = [['base', 'Base', promo.bases], ['relleno', 'Rellenos', promo.rellenos], ['envoltorio', 'Envuelto en', promo.envoltorios]];
+			$.each(secciones, function (i, sc) {
+				var tipo = sc[0], lista = sc[2], $sec = $('#suSec' + tipo.charAt(0).toUpperCase() + tipo.slice(1));
+				$sec.toggle(lista.length > 0);
+				if (!lista.length) return;
+				var multiple = tipo === 'relleno', n = multiple ? g.rellenos.length : (g[tipo] ? 1 : 0);
+				var tope = multiple && promo.max_rellenos > 0 && n >= promo.max_rellenos;
+				var ayuda = multiple ? (promo.max_rellenos > 0 ? n + '/' + promo.max_rellenos : n + ' elegidos') : 'Elige 1';
+				$sec.find('.su-sec-tit small').text(ayuda).toggleClass('falta', n === 0);
+				$sec.find('.su-chips').html($.map(lista, function (o) {
+					var on = multiple ? $.inArray(o.id, g.rellenos) >= 0 : g[tipo] === o.id;
+					return '<span class="su-chip' + (on ? ' on' : (tope ? ' off' : '')) + '" data-id="' + o.id + '">' + esc(o.nombre)
+						+ (o.valor ? ' <small>+' + fmt(o.valor) + '/pz</small>' : '') + '</span>';
+				}).join(''));
+			});
+		}
+
+		function suPonerPiezas(n) {
+			if (!su || !su.ed) return;
+			var max = suMaxEditor(), paso = su.promo.paso;
+			n = Math.floor(Number(n) || 0);
+			if (paso > 1) n = Math.round(n / paso) * paso;
+			su.ed.g.piezas = Math.max(0, Math.min(n, max));
+			pintarSushi();
+		}
+		$('#suMenos').on('click', function () { suPonerPiezas(su.ed.g.piezas - su.promo.paso); });
+		$('#suMas').on('click', function () { suPonerPiezas(su.ed.g.piezas + su.promo.paso); });
+		$('#suAtajos').on('click', '.su-atajo', function () { suPonerPiezas($(this).data('n')); });
+		$('#suPiezas').on('input', function () {
+			this.value = this.value.replace(/\D/g, '').slice(0, 3);
+			var n = Number(this.value) || 0, max = suMaxEditor();
+			if (n > max) { this.value = max; n = max; toastr.info('Solo quedan ' + max + ' piezas'); }
+			su.ed.g.piezas = n;
+			pintarSushi();
+		}).on('blur', function () { if (su && su.ed) { suPonerPiezas(this.value); } });
+
+		$('#suEditor').on('click', '.su-chip', function () {
+			var tipo = $(this).closest('.su-chips').data('tipo'), id = Number($(this).data('id')), g = su.ed.g;
+			if (tipo === 'relleno') {
+				var k = $.inArray(id, g.rellenos);
+				if (k >= 0) g.rellenos.splice(k, 1);
+				else if (su.promo.max_rellenos > 0 && g.rellenos.length >= su.promo.max_rellenos) { toastr.warning('Máximo ' + su.promo.max_rellenos + ' rellenos por grupo'); return; }
+				else g.rellenos.push(id);   // no se puede repetir: se marca o se desmarca
+			} else {
+				g[tipo] = g[tipo] === id ? 0 : id;
+			}
+			pintarSushi();
+		});
+
+		$('#btnSushiNuevo').on('click', function () {
+			if (su.promo.piezas - suConfiguradas(-1) <= 0) { toastr.info('Ya están todas las piezas configuradas'); return; }
+			su.ed = { idx: null, g: suGrupoNuevo(suPiezasSugeridas()) };
+			pintarSushi();
+		});
+		$('#suGrupos').on('click', '.su-editar', function () {
+			var i = Number($(this).closest('.su-grupo').data('i')), g = su.grupos[i];
+			su.ed = { idx: i, g: { piezas: g.piezas, base: g.base, envoltorio: g.envoltorio, rellenos: g.rellenos.slice() } };
+			pintarSushi();
+		}).on('click', '.su-duplicar', function () {
+			// Copia base, rellenos y envoltorio en un grupo nuevo (independiente) con las piezas que alcancen
+			var g = su.grupos[Number($(this).closest('.su-grupo').data('i'))], falta = su.promo.piezas - suConfiguradas(-1);
+			if (falta <= 0) { toastr.warning('No quedan piezas: baja las piezas de otro grupo para duplicar este'); return; }
+			var paso = su.promo.paso, piezas = Math.min(g.piezas, falta);
+			if (paso > 1) piezas = Math.floor(piezas / paso) * paso;
+			if (piezas <= 0) { toastr.warning('No quedan piezas suficientes para duplicar este grupo'); return; }
+			su.ed = { idx: null, g: { piezas: piezas, base: g.base, envoltorio: g.envoltorio, rellenos: g.rellenos.slice() } };
+			pintarSushi();
+			toastr.info('Grupo duplicado: cambia lo que quieras y guárdalo');
+		}).on('click', '.su-eliminar', function () {
+			var i = Number($(this).closest('.su-grupo').data('i'));
+			su.grupos.splice(i, 1);   // sus piezas vuelven a quedar pendientes
+			if (su.ed && su.ed.idx !== null) su.ed = su.ed.idx === i ? null : { idx: su.ed.idx > i ? su.ed.idx - 1 : su.ed.idx, g: su.ed.g };
+			pintarSushi();
+		});
+		$('#btnSushiCancelarGrupo').on('click', function () { su.ed = null; pintarSushi(); });
+		$('#btnSushiGuardarGrupo').on('click', function () {
+			var g = su.ed.g, promo = su.promo, max = suMaxEditor();
+			if (g.piezas < 1) { toastr.warning('Indica cuántas piezas lleva el grupo'); return; }
+			if (g.piezas % promo.paso !== 0) { toastr.warning('Las piezas van de a ' + promo.paso); return; }
+			if (g.piezas > max) { toastr.warning('Solo quedan ' + max + ' piezas'); return; }
+			if (promo.bases.length && !g.base) { toastr.warning('Elige la base'); return; }
+			if (promo.rellenos.length && !g.rellenos.length) { toastr.warning('Elige al menos un relleno'); return; }
+			if (promo.envoltorios.length && !g.envoltorio) { toastr.warning('Elige con qué se envuelve'); return; }
+			var copia = { piezas: g.piezas, base: g.base, envoltorio: g.envoltorio, rellenos: g.rellenos.slice() };
+			if (su.ed.idx === null) su.grupos.push(copia); else su.grupos[su.ed.idx] = copia;
+			su.ed = null;
+			// Si aún faltan piezas se abre el siguiente grupo, para seguir rápido
+			if (promo.piezas - suConfiguradas(-1) > 0) su.ed = { idx: null, g: suGrupoNuevo(suPiezasSugeridas()) };
+			pintarSushi();
+		});
+		$('#suExtras').on('click', '.su-ex-mas, .su-ex-menos', function () {
+			var id = Number($(this).closest('.su-extra').data('id')), q = su.extras[id] || 0;
+			q += $(this).hasClass('su-ex-mas') ? 1 : -1;
+			if (q > 99) q = 99;
+			if (q > 0) su.extras[id] = q; else delete su.extras[id];
+			pintarSushi();
+		});
+
+		$('#btnConfirmarSushi').on('click', function () {
+			if (su.ed) { toastr.warning('Guarda o cancela el grupo que estás armando'); return; }
+			var pend = su.promo.piezas - suConfiguradas(-1);
+			if (pend !== 0) { toastr.warning(pend > 0 ? 'Faltan ' + pend + ' piezas por configurar' : 'Sobran ' + (-pend) + ' piezas'); return; }
+			var sel = {
+				grupos: $.map(su.grupos, function (g) { return { piezas: g.piezas, base: g.base || 0, envoltorio: g.envoltorio || 0, rellenos: g.rellenos.slice() }; }),
+				extras: $.map(su.promo.extras, function (o) { return su.extras[o.id] ? { id: o.id, cantidad: su.extras[o.id] } : null; })
+			};
+			var nota = $.trim($('#txtNotaSushi').val());
+			if (su.indice === null) agregar(su.id_producto, [], nota, undefined, {}, [], sel);
+			else { carro[su.indice].sushi = sel; carro[su.indice].nota = nota; renderCarro(); }
+			$('#modalSushi').modal('hide');
+		});
+		$('#modalSushi').on('hidden.bs.modal', function () { su = null; $('#buscarProducto').focus(); })
+			.on('keydown', '#txtNotaSushi', function (e) { if (e.which === 13) $('#btnConfirmarSushi').click(); });
+
 		// Cambiar la lista de precios: la pública se usa directo; otra pide la clave de administración (Configuraciones).
 		// Si se cancela o la clave no es válida, vuelve a la lista que estaba.
 		var listaActual = null;
@@ -1538,7 +1788,8 @@
 		function fmtCant(c) { return String(Math.round(c * 1000) / 1000).replace('.', ','); }
 
 		// cantidad: la del ingreso rápido "cantidad*código"; sin ella se agrega 1
-		function agregar(id, agregados, nota, cantidad, notasAg, menuSel) {
+		function agregar(id, agregados, nota, cantidad, notasAg, menuSel, sushiSel) {
+			sushiSel = sushiSel || null;   // v1.25.0: lo armado de una promo de sushi {grupos, extras}
 			notasAg = notasAg || {};
 			menuSel = menuSel || [];   // v1.24.0: lo elegido del menú [{id, cantidad}]
 			var p = producto(id);
@@ -1559,16 +1810,17 @@
 			var agrupar = !(catalogo && catalogo.config && catalogo.config.agrupar_productos === false);
 			var l = !agrupar ? null : $.grep(carro, function (x) {
 				return !x.enviada && x.id_producto === id && x.nota === nota && x.agregados.join(',') === agregados.join(',')
-					&& JSON.stringify(x.notas_agregados || {}) === JSON.stringify(notasAg) && JSON.stringify(x.menu || []) === JSON.stringify(menuSel);
+					&& JSON.stringify(x.notas_agregados || {}) === JSON.stringify(notasAg) && JSON.stringify(x.menu || []) === JSON.stringify(menuSel)
+					&& JSON.stringify(x.sushi || null) === JSON.stringify(sushiSel);
 			})[0];
 			// El cursor se queda en el buscador para seguir ingresando (la cantidad se cambia en la línea o con cantidad*código).
 			// Un pesable ya agregado no suma 1 kg a ciegas: solo suma si se indicó la cantidad.
 			if (dada > 0) {
 				if (l) l.cantidad = ajustarCantidad(id, l.cantidad + dada);
-				else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: dada, agregados: agregados, nota: nota, notas_agregados: notasAg, menu: menuSel });
+				else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: dada, agregados: agregados, nota: nota, notas_agregados: notasAg, menu: menuSel, sushi: sushiSel });
 			} else if (l) {
 				if (!esFraccion(id)) l.cantidad += 1;
-			} else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: 1, agregados: agregados, nota: nota, notas_agregados: notasAg, menu: menuSel });
+			} else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: 1, agregados: agregados, nota: nota, notas_agregados: notasAg, menu: menuSel, sushi: sushiSel });
 			renderCarro();
 		}
 
@@ -1605,6 +1857,19 @@
 				$.each(menuL ? l.menu : [], function (j, e) {
 					var o = opcionMenu(menuL, e.id);
 					if (o && o.adicional) res.push({ bruto: Math.round(o.adicional * r3(l.cantidad * e.cantidad)), exento: exento, ila: ila });
+				});
+				// v1.25.0: promo de sushi: cada producto de cada grupo (por pieza) y cada extra es una línea (Mcaja::armarLineas)
+				var suL = l.sushi ? sushiDe(l.id_producto) : null;
+				$.each(suL ? l.sushi.grupos : [], function (j, g) {
+					var q = r3(l.cantidad * g.piezas);
+					$.each([['envoltorio', g.envoltorio], ['base', g.base]].concat($.map(g.rellenos || [], function (id) { return [['relleno', id]]; })), function (k, par) {
+						var o = par[1] ? opcionSushi(suL, par[0], par[1]) : null;
+						if (o && o.valor) res.push({ bruto: Math.round(o.valor * q), exento: exento, ila: ila });
+					});
+				});
+				$.each(suL ? l.sushi.extras || [] : [], function (j, e) {
+					var o = opcionSushi(suL, 'extra', e.id);
+					if (o && o.valor) res.push({ bruto: Math.round(o.valor * r3(l.cantidad * e.cantidad)), exento: exento, ila: ila });
 				});
 				$.each(l.agregados.slice(1), function (j, id) {
 					var a = agregado(id);
@@ -1703,8 +1968,20 @@
 					if (o) detalle.push('<span class="del-menu">+ ' + (e.cantidad > 1 ? e.cantidad + ' ' : '') + esc(o.nombre) + (o.adicional ? ' <b>+' + fmt(o.adicional * e.cantidad) + '</b>' : '') + '</span>');
 				});
 				if (menuDe(l.id_producto) && !(l.menu && l.menu.length)) detalle.push('<span class="text-danger">Falta elegir los productos del menú</span>');
+				// v1.25.0: lo armado de la promo de sushi
+				var suD = sushiDe(l.id_producto);
+				if (suD && l.sushi) {
+					$.each(l.sushi.grupos, function (j, g) {
+						var tx = textoGrupoSushi(suD, g), v = g.piezas * valorPiezaSushi(suD, g);
+						detalle.push('<span class="del-sushi">' + g.piezas + ' pz <b>' + esc(tx.titulo) + '</b>' + (tx.rellenos ? ' · ' + esc(tx.rellenos) : '') + (tx.base ? ' · ' + esc(tx.base) : '') + (v ? ' <b>+' + fmt(v) + '</b>' : '') + '</span>');
+					});
+					$.each(l.sushi.extras || [], function (j, e) {
+						var o = opcionSushi(suD, 'extra', e.id);
+						if (o) detalle.push('<span class="del-sushi">+ ' + (e.cantidad > 1 ? e.cantidad + ' ' : '') + esc(o.nombre) + (o.valor ? ' <b>+' + fmt(o.valor * e.cantidad) + '</b>' : '') + '</span>');
+					});
+				} else if (suD) detalle.push('<span class="text-danger">Falta armar las piezas de la promo</span>');
 				if (l.nota) detalle.push('<i>' + esc(l.nota) + '</i>');
-				var nombre = tieneOpciones(l.id_producto) ? '<a href="#" class="editar" title="' + (menuDe(l.id_producto) ? 'Cambiar lo elegido del menú' : 'Cambiar agregados / indicaciones') + '">' + esc(l.nombre) + '</a>' : esc(l.nombre);
+				var nombre = tieneOpciones(l.id_producto) ? '<a href="#" class="editar" title="' + (sushiDe(l.id_producto) ? 'Cambiar las piezas de la promo' : menuDe(l.id_producto) ? 'Cambiar lo elegido del menú' : 'Cambiar agregados / indicaciones') + '">' + esc(l.nombre) + '</a>' : esc(l.nombre);
 				// Mensaje para la comanda: disponible en cualquier producto, tenga o no mensajes predefinidos
 				nombre += ' <a href="#" class="editar caja-btn-mensaje' + (l.nota ? ' con-mensaje' : '') + '" title="' + (l.nota ? 'Editar mensaje para la comanda' : 'Agregar mensaje para la comanda') + '"><i class="fa fa-commenting-o"></i></a>';
 				var prod = producto(l.id_producto);
@@ -2796,7 +3073,7 @@
 				id_delivery: modoDelivery && modoDelivery.id ? modoDelivery.id : 0,
 				// Factura: razón social, giro, dirección, comuna y solicitante elegidos en la ventana Datos de la factura
 				factura: documentoActual().es_factura && cliente && datosFactura && datosFactura.id_cliente === cliente.id_cliente ? datosFactura : null,
-				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [] }; }),
+				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [], sushi: l.sushi || null }; }),
 				pagos: $.map(pagos, function (p) { return p.monto > 0 ? { id_fpago: p.id_fpago, monto: p.monto } : null; }),
 				token: tokenCobro
 			};
@@ -3877,7 +4154,7 @@
 		function enviarAMesa(luegoCobrar) {
 			if (enviando || !mesa) return;
 			var idMesa = mesa.id_mesa, enviadas = pendientesMesa();
-			var detalle = $.map(enviadas, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [] }; });
+			var detalle = $.map(enviadas, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [], sushi: l.sushi || null }; });
 			enviando = true;
 			$('#btnEnviarMesa, #btnEnviarMesaBarra, #btnCobrar').prop('disabled', true);
 			postJson('enviarMesa', { id_mesa: idMesa, id_lprecio: Number($('#cboLista').val()), detalle: detalle,
@@ -5385,7 +5662,7 @@
 				if (l.enviada) return null;
 				var menuL = l.menu && l.menu.length ? menuDe(l.id_producto) : null;   // v1.24.0
 				return { id_producto: l.id_producto, nombre: l.nombre, precio: l.precio, cantidad: l.cantidad, agregados: (l.agregados || []).slice(),
-					nota: l.nota || '', notas_agregados: l.notas_agregados || {}, menu: (l.menu || []).slice(),
+					nota: l.nota || '', notas_agregados: l.notas_agregados || {}, menu: (l.menu || []).slice(), sushi: l.sushi || null,
 					opciones: $.map(l.agregados || [], function (id) { var a = agregado(id); return a ? a.nombre : null; })
 						.concat($.map(menuL ? l.menu : [], function (e) { var o = opcionMenu(menuL, e.id); return o ? o.nombre : null; })).join(', ') };
 			});
@@ -5564,7 +5841,7 @@
 			carro = $.map(d.lineas || [], function (l) {
 				return { id_producto: l.id_producto, nombre: l.nombre, precio: l.precio, cantidad: l.cantidad, agregados: (l.agregados || []).slice(), nota: l.nota || '',
 					notas_agregados: l.notas_agregados && typeof l.notas_agregados === 'object' ? l.notas_agregados : {},
-					menu: $.isArray(l.menu) ? l.menu : [] };   // v1.24.0
+					menu: $.isArray(l.menu) ? l.menu : [], sushi: l.sushi && $.isArray(l.sushi.grupos) ? l.sushi : null };   // v1.24.0 / v1.25.0
 			});
 			cliente = d.cliente && d.cliente.id_cliente ? d.cliente : null;
 			ponerTxtCliente(cliente ? (d.txt_cliente || cliente.nombre_cliente) : '');

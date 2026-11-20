@@ -355,6 +355,31 @@ class Mventasespera extends CI_Model
 		return $res;
 	}
 
+	/** v1.25.0: solo números y con topes; null si la línea no es una promo de sushi armada. */
+	private function eleccionSushi($s)
+	{
+		if (!is_array($s) || !isset($s['grupos']) || !is_array($s['grupos'])) return null;
+		$ids = function ($v, $max) {
+			$r = array();
+			foreach (array_slice(is_array($v) ? $v : array(), 0, $max) as $x) if ((int)$x > 0) $r[] = (int)$x;
+			return $r;
+		};
+		$grupos = array();
+		foreach (array_slice($s['grupos'], 0, 100) as $g) {
+			if (!is_array($g)) continue;
+			$grupos[] = array('piezas' => max(0, min(500, (int)($g['piezas'] ?? 0))), 'base' => max(0, (int)($g['base'] ?? 0)),
+				'envoltorio' => max(0, (int)($g['envoltorio'] ?? 0)), 'rellenos' => $ids($g['rellenos'] ?? null, 20));
+		}
+		$extras = array();
+		foreach (array_slice(isset($s['extras']) && is_array($s['extras']) ? $s['extras'] : array(), 0, 40) as $e) {
+			if (!is_array($e)) continue;
+			$id = (int)($e['id'] ?? 0);
+			$q = (int)($e['cantidad'] ?? 0);
+			if ($id > 0 && $q > 0) $extras[] = array('id' => $id, 'cantidad' => min($q, 99));
+		}
+		return array('grupos' => $grupos, 'extras' => $extras);
+	}
+
 	private function limpiarLineas($lineas)
 	{
 		$res = array();
@@ -383,6 +408,8 @@ class Mventasespera extends CI_Model
 				'notas_agregados' => $this->notasAgregados($l['notas_agregados'] ?? null, $agregados),
 				// v1.24.0: lo elegido de un menú [{id: id_detalle_categoria_menu, cantidad}] (el servidor lo valida al cobrar)
 				'menu' => $this->eleccionMenu($l['menu'] ?? null),
+				// v1.25.0: lo armado de una promo de sushi {grupos, extras} (el servidor lo valida al cobrar)
+				'sushi' => $this->eleccionSushi($l['sushi'] ?? null),
 			);
 			$unidades += $cant;
 		}
