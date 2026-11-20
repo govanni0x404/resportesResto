@@ -8,6 +8,30 @@ class Mproductos extends CI_Model
 		parent::__construct();
 	}
 
+	/**
+	 * v1.24.1: ¿se usa la comisión en el precio de los productos? (Configuraciones > Comisión en el precio de los
+	 * productos). Sin la columna de comisión, no; sin la opción (migración 20261120160000 pendiente), sí, como antes.
+	 */
+	public function comisionHabilitada()
+	{
+		$this->load->helper('tenant'); $db = get_tenant_db($this);
+		$c = function ($t, $col) use ($db) {
+			return (bool)$db->query("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = ? AND column_name = ?", array($t, $col))->row();
+		};
+		if (!$c('detalle_lprecio', 'monto_comision')) return false;
+		if (!$c('configuracion', 'usar_comision_web')) return true;
+		$r = $db->query('SELECT (usar_comision_web IS TRUE) AS ok FROM configuracion LIMIT 1')->row();
+		return $r && ($r->ok === true || $r->ok === 't');
+	}
+
+	/** v1.24.1: la comisión a grabar: 0 si la opción está apagada; si no, el valor escrito entre 0 y 100. */
+	public function comisionAGrabar($valor)
+	{
+		if (!$this->comisionHabilitada()) return 0;
+		$v = str_replace(',', '.', trim((string)(is_scalar($valor) ? $valor : '')));
+		return is_numeric($v) ? max(0, min(100, round((float)$v, 2))) : 0;
+	}
+
 	public function verificarColumnaExiste($tabla, $columna)
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
@@ -818,12 +842,9 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 			'ila' => $ila,
 		);
 		
-		// SOLO agregar comisión si la columna existe
-		if ($tieneComision && isset($data['monto_comision'])) {
-			$dataToSave['monto_comision'] = $data['monto_comision'];
-			log_message('debug', 'Agregando comisión: ' . $data['monto_comision']);
-		} else if (!$tieneComision && isset($data['monto_comision'])) {
-			log_message('warning', 'Columna monto_comision no existe - omitiendo valor');
+		// v1.24.1: con la columna, la comisión va siempre: 0 si la opción está apagada (o no vino), si no la escrita
+		if ($tieneComision) {
+			$dataToSave['monto_comision'] = $this->comisionAGrabar(isset($data['monto_comision']) ? $data['monto_comision'] : 0);
 		}
 		
 		if ($existe->num_rows() > 0) {

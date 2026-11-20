@@ -362,6 +362,11 @@ if (!function_exists('cfg_opciones')) {
 <?php cfg_opciones($opciones['lprecio'], $config['id_lpreciopublico'] ?? 0, 'LA PRIMERA LISTA (N° más bajo)'); ?>
 </select>
                                                 </div>
+                                                <?php if (array_key_exists('usar_comision_web', $config)) : ?>
+                                                <!-- v1.24.1: comisión opcional en el precio de los productos (Productos y Lista de Precios) -->
+                                                <label><input type="checkbox" name="usar_comision_web" value="1" <?php echo ($config['usar_comision_web'] ?? false) === true ? 'checked' : ''; ?>> Comisión en el precio de los productos</label>
+                                                <p class="help-block" style="margin:-4px 0 8px 22px">Sin marcar, el recuadro de comisión no aparece al grabar el precio de un producto ni en Lista de Precios, y la comisión se graba en 0.</p>
+                                                <?php endif; ?>
                                                 <div class="form-group">
                                                     <label>documento de venta</label>
                                                     <select class="form-control" name="id_docventa_defecto">

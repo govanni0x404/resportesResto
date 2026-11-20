@@ -173,8 +173,10 @@ class MlistaDePrecios extends CI_Model
             'iva' => $iva,
             'ila' => $total - $neto - $iva,
         );
-        if ($tieneComision && array_key_exists('monto_comision', $data)) {
-            $dataToSave['monto_comision'] = $data['monto_comision'];
+        // v1.24.1: la comisión con la regla de Configuraciones (apagada = 0; encendida = la escrita, entre 0 y 100)
+        if ($tieneComision) {
+            $this->load->model('Mproductos');
+            $dataToSave['monto_comision'] = $this->Mproductos->comisionAGrabar(array_key_exists('monto_comision', $data) ? $data['monto_comision'] : 0);
         }
 
         $idDetalleLprecio = (int)$idDetalleLprecio;

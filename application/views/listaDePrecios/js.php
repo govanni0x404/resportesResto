@@ -1,4 +1,11 @@
 <script>
+    // v1.24.1: Configuraciones > "Comisión en el precio de los productos" (apagada: sin columna ni recuadro; se graba 0)
+    var COMISION_HABILITADA = <?php echo !empty($comision_habilitada) ? 'true' : 'false'; ?>;
+    $(function () {
+        if (COMISION_HABILITADA) return;
+        $('th').filter(function () { return /comisi/i.test($(this).text()); }).hide();
+    });
+
     var base_url = "<?php echo base_url(); ?>";
     var tableResumenListaPrecios = null;
     $(document).ready(function() {
@@ -170,6 +177,7 @@
                 {
                     mData: "monto_comision",
                     className: "text-right",
+                    visible: COMISION_HABILITADA,   // v1.24.1
                     render: $.fn.dataTable.render.number(',', '.', 0, '$')
                 },
             ],
@@ -345,8 +353,8 @@
                 </td>
             `;
 
-            // COMISIÓN
-            tbl += `
+            // COMISIÓN (v1.24.1: solo con la opción encendida; sin el recuadro se graba 0)
+            if (COMISION_HABILITADA) tbl += `
                 <td class="text-right">
                     <input type="number" class="form-control text-right comision"
                         value="${v.monto_comision || 0}" min="0">

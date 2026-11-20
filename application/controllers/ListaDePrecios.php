@@ -21,7 +21,9 @@ class ListaDePrecios extends CI_Controller
         $this->load->view('menuTop.php', $data);
         $this->load->view('listaDePrecios/listaDePrecios.php');
         $this->load->view('menuFooter.php');
-        $this->load->view('listaDePrecios/js.php');
+        // v1.24.1: Configuraciones > Comisión en el precio de los productos
+        $this->load->model('Mproductos');
+        $this->load->view('listaDePrecios/js.php', array('comision_habilitada' => $this->Mproductos->comisionHabilitada()));
     }
 
 
@@ -81,12 +83,13 @@ class ListaDePrecios extends CI_Controller
         }
         $d = $this->input->post('detalle');
         $respuesta = array();
-        foreach ($d as $value) {
+        foreach (is_array($d) ? $d : array() as $value) {
+            if (!is_array($value)) continue;
             //$idProducto=$value['id_producto'];
-            $idDetalleLprecio = $value['id_detalle_lprecio'];
+            $idDetalleLprecio = (int)($value['id_detalle_lprecio'] ?? 0);
             $miData = array(
-                'total' => $value['total'],
-                'monto_comision' => $value['monto_comision']
+                'total' => $value['total'] ?? 0,
+                'monto_comision' => $value['monto_comision'] ?? 0   // v1.24.1: con la opción apagada se graba 0
             );
             $r = $this->MlistaDePrecios->grabarPrecios($idDetalleLprecio, $miData);
             $respuesta[] = $r;

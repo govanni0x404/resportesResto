@@ -171,13 +171,9 @@ class Mconfiguraciones extends CI_Model {
                 $marcado = $fila['defectos_web'] === 't' || $fila['defectos_web'] === true;
             }
             if ($hayMarca && !$marcado) {
-                foreach (array('permitir_retiro_fondo_fijo', 'inventario_cierre_caja', 'permitir_repetir_producto_menu') as $c) {
-                    if (array_key_exists($c, $fila)) $cambios[$c] = true;
-                }
-                // Informes por correo: apagados hasta que alguien los active y escriba los correos
-                foreach (array('usar_correo_electronico', 'informar_anulaciones_mail') as $c) {
-                    if (array_key_exists($c, $fila)) $cambios[$c] = false;
-                }
+                // v1.24.1 (pedido del usuario): al entrar ya NO se cambian casillas que el cliente tenga asignadas (antes
+                // la primera vez se encendían retiro de fondo, inventario al cierre y repetir producto en menú, y se
+                // apagaban los informes por correo: pisaba la configuración que traía la base del POS). Solo se marca.
                 $cambios['defectos_web'] = true;
             }
 

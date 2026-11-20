@@ -100,6 +100,9 @@ class Recetas extends CI_Controller
 
 			// 14-11-2026: rendimiento > 0. Con 0 el trigger f_addptocomprado (del POS) divide por cero al grabar
 			// CUALQUIER compra (hace update receta set costo_porcion=costo_insumos/rendimiento sin WHERE).
+			// v1.24.1: nombre obligatorio (antes se grababa una receta sin nombre)
+			$miData['nombre_receta'] = mb_substr(trim(preg_replace('/\s+/u', ' ', is_scalar($d['nombre_receta'] ?? '') ? (string)($d['nombre_receta'] ?? '') : '')), 0, 50);
+			if ($miData['nombre_receta'] === '') throw new Exception('Escribe el nombre de la receta');
 			$rend = $this->numero(isset($d['rendimiento']) ? $d['rendimiento'] : '');
 			if ($rend === null || $rend <= 0) {
 				throw new Exception('El rendimiento de la receta debe ser mayor que 0');

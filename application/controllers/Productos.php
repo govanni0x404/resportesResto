@@ -911,6 +911,7 @@ class Productos extends CI_Controller
 		
 		echo json_encode([
 			'existe' => $existe,
+			'habilitada' => $this->Mproductos->comisionHabilitada(),   // v1.24.1: Configuraciones
 			'tabla' => 'detalle_lprecio',
 			'columna' => 'monto_comision'
 		]);

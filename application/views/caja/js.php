@@ -2478,7 +2478,8 @@
 				return false;
 			}
 			var t = totales();
-			if (catalogo.config.por_maximo_descuento > 0 && t.subtotal > 0 && t.descuento * 100 / t.subtotal > catalogo.config.por_maximo_descuento) {
+			// v1.24.1: tope en pesos = el máximo % del subtotal redondeado (igual que el descuento en %): un 10% exacto pasa
+			if (catalogo.config.por_maximo_descuento > 0 && t.subtotal > 0 && t.descuento > Math.round(t.subtotal * catalogo.config.por_maximo_descuento / 100)) {
 				swal('Descuento', 'El descuento máximo permitido es ' + catalogo.config.por_maximo_descuento + '%', 'warning');
 				return false;
 			}

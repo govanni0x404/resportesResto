@@ -1591,7 +1591,9 @@ class Mcaja extends CI_Model
 		$descuento = max(0, (int)(isset($p['descuento']) ? $p['descuento'] : 0));
 		if ($descuento > $subtotal) throw new Exception('El descuento no puede superar el subtotal', 400);
 		$porDescuento = $subtotal > 0 ? round($descuento * 100 / $subtotal, 2) : 0;
-		if ($config['por_maximo_descuento'] > 0 && $porDescuento > $config['por_maximo_descuento']) {
+		// v1.24.1: tope en pesos = el máximo % del subtotal redondeado como la Caja (antes un 10% exacto de $1.005 = $101
+		// daba 10,05% y se rechazaba)
+		if ($config['por_maximo_descuento'] > 0 && $descuento > (int)round($subtotal * $config['por_maximo_descuento'] / 100)) {
 			throw new Exception('El descuento máximo permitido es ' . $config['por_maximo_descuento'] . '%', 400);
 		}
 		// El trigger f_adddescuentoproducto divide por el subtotal de la venta
@@ -2001,7 +2003,9 @@ class Mcaja extends CI_Model
 			// v1.24.0: MENÚ. La línea del menú (su precio) y una línea por cada producto elegido: en $0 o con su costo
 			// adicional de venta. Cada producto elegido sale en la comanda de su destino (cocina, barra…) con el nombre
 			// del menú; la línea del menú no sale en la comanda.
-			if (isset($menus[$id])) {
+			// v1.24.1: un pedido que no trae "menu" (la app móvil actual no conoce los menús) vende el menú como un producto,
+			// igual que antes; la Caja web siempre lo manda (lo elegido) y ahí se valida
+			if (isset($menus[$id]) && array_key_exists('menu', $it)) {
 				if (!empty($it['agregados'])) throw new Exception($prod->nombre_producto . ' es un menú: no lleva agregados', 400);
 				$elegidosMenu = $this->eleccionMenu($menus[$id], isset($it['menu']) ? $it['menu'] : array(), $prod->nombre_producto);
 				$nota = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', isset($it['nota']) ? (string)$it['nota'] : '')), 0, 150);
@@ -3302,7 +3306,7 @@ class Mcaja extends CI_Model
 			}
 			$bruto = $subtotal + $costoEnvio;
 			if ($descuento > $bruto) throw new Exception('El descuento no puede superar el subtotal', 400);
-			if ($config['por_maximo_descuento'] > 0 && round($descuento * 100 / $bruto, 2) > $config['por_maximo_descuento']) {
+			if ($config['por_maximo_descuento'] > 0 && $descuento > (int)round($bruto * $config['por_maximo_descuento'] / 100)) {   // v1.24.1
 				throw new Exception('El descuento máximo permitido es ' . $config['por_maximo_descuento'] . '%', 400);
 			}
 			if ($config['descuento_cliente'] && (!$idCliente || $idCliente === $config['id_cliente_publico'])) {

@@ -349,6 +349,20 @@ function ObtenerUltimoIdProducto(objSelected) {
     });
 }
 
+    // v1.24.1: Configuraciones > "Comisión en el precio de los productos". Apagada: sin recuadro de comisión (se graba 0)
+    var comisionHabilitada = true;
+    function pintarColumnaComision() {
+        $('#tablePrecios thead th:last').toggle(comisionHabilitada);
+        $('#modalPrecioVentaProducto .modal-title').text(comisionHabilitada ? 'PRECIO DE VENTA Y COMISIÓN' : 'PRECIO DE VENTA');
+        $('#btnGrabarPrecios').html('<i class="fa fa-check"></i> ' + (comisionHabilitada ? 'Grabar Precios y Comisiones' : 'Grabar Precios'));
+    }
+    $(function () {
+        $.post(base_url + "index.php/Productos/verificarColumnaComision", {}, function (datos) {
+            try { var r = typeof datos === 'string' ? JSON.parse(datos) : datos; comisionHabilitada = !!(r.existe && r.habilitada !== false); } catch (e) {}
+            pintarColumnaComision();
+        });
+    });
+
     function CargarListasDePreciosVacias() {
         $.post(base_url + "index.php/Productos/obtenerListasDePrecios", {
             id: ""
@@ -356,8 +370,9 @@ function ObtenerUltimoIdProducto(objSelected) {
             var obj = $.parseJSON(datos);
             var tbl = '';
             
-            // Siempre mostrar comisión si el sistema lo soporta
-            var tieneComision = true; 
+            // v1.24.1: según Configuraciones (antes siempre se mostraba)
+            var tieneComision = comisionHabilitada;
+            pintarColumnaComision();
             
             // Verificar si tenemos precios existentes cargados
             var hayPreciosExistentes = preciosExistentes && preciosExistentes.length > 0;
@@ -385,10 +400,12 @@ function ObtenerUltimoIdProducto(objSelected) {
                 tbl += '<input class="text-right form-control precio-input" type="number" min="0" max="1000000" value="' + precio + '">';
                 tbl += '</td>';
                 
-                // Input de comisión
-                tbl += '<td style="width:30%" class="text-right">';
-                tbl += '<input class="text-right form-control comision-input" type="number" min="0" max="100" step="0.01" value="' + comision + '" placeholder="0.00">';
-                tbl += '</td>';
+                // Input de comisión (solo con la opción encendida; sin él se graba 0)
+                if (tieneComision) {
+                    tbl += '<td style="width:30%" class="text-right">';
+                    tbl += '<input class="text-right form-control comision-input" type="number" min="0" max="100" step="0.01" value="' + comision + '" placeholder="0.00">';
+                    tbl += '</td>';
+                }
                 
                 tbl += "</tr>";
             });

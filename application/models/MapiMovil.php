@@ -243,6 +243,38 @@ class MapiMovil extends CI_Model
 			}
 		}
 
+		// v1.24.1: menús (Productos > Menú) para que la app pueda armarlos: por producto-menú sus categorías (min, max,
+		// estricto) y los productos de cada una con su costo adicional. En pedidoMesa van como detalle[].menu =
+		// [{id: id de la opción, cantidad}]. Una app que no los mande sigue vendiendo el menú como un producto (como antes).
+		$menus = array();
+		$cm = $this->columnas($db, array('menu', 'categoria_menu', 'detalle_categoria_menu'));
+		if (isset($cm['menu'], $cm['categoria_menu'], $cm['detalle_categoria_menu']) && $tiene('producto', 'id_menu')) {
+			$rows = $db->query("SELECT p.id_producto AS id_menu_producto, m.id_menu, m.nombre_menu, c.id_categoria_menu, c.nombre_categoria_menu,
+					COALESCE(c.cantidad_minima, 0) AS minimo, COALESCE(c.cantidad_maxima, 0) AS maximo, (c.estricto IS TRUE) AS estricto,
+					d.id_detalle_categoria_menu, d.id_producto, pd.nombre_producto, COALESCE(d.costo_adicional_venta, 0) AS adicional
+				FROM producto p
+				JOIN menu m ON m.id_menu = p.id_menu AND m.vigente IS NOT FALSE
+				JOIN categoria_menu c ON c.id_menu = m.id_menu AND c.vigente IS NOT FALSE
+				JOIN detalle_categoria_menu d ON d.id_categoria_menu = c.id_categoria_menu AND d.vigente IS NOT FALSE
+				JOIN producto pd ON pd.id_producto = d.id_producto AND pd.vigente IS TRUE
+				WHERE p.vigente IS TRUE AND COALESCE(p.id_menu, 0) > 0
+				ORDER BY p.id_producto, COALESCE(c.orden, 0), c.id_categoria_menu, pd.nombre_producto");
+			$porMenu = array();
+			foreach (($rows ? $rows->result() : array()) as $r) {
+				$idP = (int)$r->id_menu_producto;
+				if (!isset($idsProductos[$idP])) continue;
+				if (!isset($porMenu[$idP])) $porMenu[$idP] = array('id_producto' => $idP, 'id_menu' => (int)$r->id_menu, 'nombre' => $r->nombre_menu, 'categorias' => array());
+				$idC = (int)$r->id_categoria_menu;
+				if (!isset($porMenu[$idP]['categorias'][$idC])) {
+					$porMenu[$idP]['categorias'][$idC] = array('id' => $idC, 'nombre' => $r->nombre_categoria_menu, 'min' => max(0, (int)$r->minimo),
+						'max' => max(0, (int)$r->maximo), 'estricto' => $r->estricto === 't' || $r->estricto === true, 'opciones' => array());
+				}
+				$porMenu[$idP]['categorias'][$idC]['opciones'][] = array('id' => (int)$r->id_detalle_categoria_menu, 'id_producto' => (int)$r->id_producto,
+					'nombre' => $r->nombre_producto, 'adicional' => max(0, (int)$r->adicional));
+			}
+			foreach ($porMenu as $mn) { $mn['categorias'] = array_values($mn['categorias']); $menus[] = $mn; }
+		}
+
 		$db->close();
 		return array(
 			'familias' => $familias,
@@ -256,6 +288,7 @@ class MapiMovil extends CI_Model
 			'clientes' => $clientes,
 			'agregados' => $agregados,
 			'mensajes' => $mensajes,
+			'menus' => $menus,   // v1.24.1
 		);
 	}
 

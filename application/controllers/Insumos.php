@@ -119,6 +119,14 @@ class Insumos extends CI_Controller
 			return;
 		}
 		$miData['umedida_receta'] = $umr;
+		// v1.24.1: la unidad de inventario multiplica lo que descuenta cada venta (trigger f_addconsolidado): con 0 las
+		// ventas de productos con este insumo en su receta no bajaban el stock, sin ningún aviso
+		$umi = str_replace(',', '.', trim((string)($d['umedida_inventario'] ?? '')));
+		if (!is_numeric($umi) || (float)$umi <= 0) {
+			echo json_encode(array('success' => false, 'status' => 'error', 'msg' => 'La unidad de inventario debe ser mayor que 0'));
+			return;
+		}
+		$miData['umedida_inventario'] = $umi;
 		// v1.19.1: código de barras repetido = aviso claro (antes: error de la base "insumo_cbarra_key")
 		$this->load->helper('tenant');
 		$dup = get_tenant_db($this)->query('SELECT nombre_insumo FROM insumo WHERE trim(cbarra) = trim(?) AND id_insumo <> ? LIMIT 1',
