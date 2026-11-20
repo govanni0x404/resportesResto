@@ -672,10 +672,18 @@
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
                         <fieldset>
+                            <!-- v1.24.2: elegir varios agregados de una vez (sin marcar, de uno en uno como siempre) -->
+                            <div class="col-md-12" style="margin-bottom:6px">
+                                <div class="checkbox checkbox-success" style="margin:0">
+                                    <input id="ckVariosAgregados" type="checkbox">
+                                    <label for="ckVariosAgregados">SELECCIONAR VARIOS A LA VEZ</label>
+                                </div>
+                            </div>
                             <div class="col-md-12">
-                                <label for="cboProductoAgregadoProductos">PRODUCTO DE AGREGADO</label>
+                                <label for="cboProductoAgregadoProductos" id="lblProductoAgregado">PRODUCTO DE AGREGADO</label>
                                 <select id="cboProductoAgregadoProductos" nombre="cboProductoAgregadoProductos"
                                     class="form-control input-sm" style="width:100%" requerido="si"></select>
+                                <p class="help-block" id="ayudaVariosAgregados" style="display:none;font-size:12px;margin:4px 0 0">Elige todos los productos que quieras: se agregan juntos con la cantidad, el valor adicional y las opciones de abajo. Los que ya están en la lista se saltan.</p>
                             </div>
                         </fieldset>
                         <fieldset>
@@ -722,7 +730,7 @@
                         </fieldset>
                         <fieldset>
                             <div class="col-md-4">
-                                <button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-success"><i class="fa fa-check"></i> GRABAR AGREGADO</button>
+                                <button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-success" id="btnGrabarAgregado"><i class="fa fa-check"></i> GRABAR AGREGADO</button>
                             </div>
                             <!--<div class="col-md-4">
                                 <button type="button" class="btn btn-warning"><i class="fa fa-plus"></i>NUEVO AGREGADO</button>

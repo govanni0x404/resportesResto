@@ -455,6 +455,12 @@ class Productos extends CI_Controller
 		$d = $this->input->post('prod');
 		if (!is_array($d)) { echo json_encode(['error' => 'Datos incompletos']); return; }
 		$id = intval($d['id_agregado']);
+		// v1.24.2: un producto no puede ser agregado de sí mismo
+		if ((int)($d['id_producto'] ?? 0) <= 0 || (int)$d['id_producto'] === (int)($d['id_producto_maestro'] ?? 0)) {
+			set_status_header(400);
+			echo json_encode(['error' => 'Elige un producto distinto al que estás editando']);
+			return;
+		}
 		// 19-11-2026 (auditoría): el mismo agregado dos veces en un producto = aviso claro (antes un error de la base)
 		$this->load->helper('tenant');
 		$dbDup = get_tenant_db($this);

@@ -7,6 +7,9 @@ function AbrirModalAgregadosDelProducto(idProducto) {
     $('#valorAdicionalAgregado').val("0");
     $('#ckUsarDestinoDeImpresion').prop('checked', false);
     $('#ckVigenciaAgregado').prop('checked', true);
+    // v1.24.2: al abrir, de uno en uno (como siempre)
+    $('#ckVariosAgregados').prop('checked', false);
+    modoVariosAgregados(false);
     
     // Obtener ID del producto actual
     var idProductoActual = $('#txtID').val();
@@ -122,7 +125,89 @@ function initValidacionesAgregados() {
     });
 }
 
+// ---- v1.24.2: varios agregados a la vez ----
+// Con "Seleccionar varios a la vez" la lista pasa a ser de selección múltiple; sin marcar, de uno en uno (como siempre)
+function modoVariosAgregados(varios) {
+    var $s = $('#cboProductoAgregadoProductos');
+    if ($.fn.select2 && $s.hasClass('select2-hidden-accessible')) $s.select2('destroy');
+    $s.prop('multiple', !!varios);
+    // La opción "SELECCIONE EL PRODUCTO" (0) solo sirve de uno en uno
+    $s.find('option[value="0"]').prop('disabled', !!varios).prop('selected', !varios);
+    if (varios) $s.val([]);
+    if ($.fn.select2) $s.select2(varios ? { placeholder: 'Elige los productos agregados', closeOnSelect: false, width: '100%' } : { width: '100%' });
+    $('#lblProductoAgregado').text(varios ? 'PRODUCTOS DE AGREGADO (VARIOS)' : 'PRODUCTO DE AGREGADO');
+    $('#ayudaVariosAgregados').toggle(!!varios);
+    $('#btnGrabarAgregado').html('<i class="fa fa-check"></i> ' + (varios ? 'GRABAR AGREGADOS' : 'GRABAR AGREGADO'));
+}
+$(document).on('change', '#ckVariosAgregados', function () { modoVariosAgregados(this.checked); });
+
+/** Graba los agregados elegidos uno tras otro (mismo grabado que de a uno) y avisa cuántos quedaron */
+function grabarVariosAgregados() {
+    var productoMaestro = $('#txtID').val();
+    var elegidos = ($('#cboProductoAgregadoProductos').val() || []).filter(function (v) { return v && v !== '0'; });
+    var cantidad = $('#cantidadAgregado').val();
+    var valor = $('#valorAdicionalAgregado').val();
+    if (!elegidos.length) {
+        showAppAlert('error', "Elige al menos un producto agregado", { duration: 5000, image: base_url + 'assets/img/errorGif.gif' });
+        return;
+    }
+    if (!cantidad || Number(cantidad) <= 0) {
+        showAppAlert('error', "La cantidad del agregado debe ser mayor a 0", { duration: 5000, image: base_url + 'assets/img/errorGif.gif' });
+        return;
+    }
+    if (valor === '' || valor === null) { valor = 0; $('#valorAdicionalAgregado').val('0'); }
+    if (Number(valor) < 0) {
+        showAppAlert('error', "El valor adicional no puede ser negativo", { duration: 5000, image: base_url + 'assets/img/errorGif.gif' });
+        return;
+    }
+    // Se saltan los que ya están en la lista y el mismo producto
+    var yaEstan = {};
+    $('#detalleAgregadosDelProducto tr[data-id-producto]').each(function () { yaEstan[String($(this).data('id-producto'))] = true; });
+    var nombre = function (id) { return $('#cboProductoAgregadoProductos option[value="' + id + '"]').text(); };
+    var saltados = [];
+    var pendientes = elegidos.filter(function (id) {
+        if (String(id) === String(productoMaestro)) { saltados.push(nombre(id) + ' (es el mismo producto)'); return false; }
+        if (yaEstan[String(id)]) { saltados.push(nombre(id) + ' (ya estaba)'); return false; }
+        return true;
+    });
+    if (!pendientes.length) {
+        showAppAlert('error', "No hay agregados nuevos: " + saltados.join(', '), { duration: 6000, image: base_url + 'assets/img/errorGif.gif' });
+        return;
+    }
+    var $b = $('#btnGrabarAgregado').prop('disabled', true), ok = 0, errores = [];
+    var datos = {
+        'id_agregado': "",
+        'cantidad': cantidad,
+        'vigente': $('#ckVigenciaAgregado').is(":checked") ? 1 : 0,
+        'id_producto_maestro': productoMaestro,
+        'valor': valor || 0,
+        'usar_destino_impresion': $('#ckUsarDestinoDeImpresion').is(":checked") ? 1 : 0
+    };
+    (function siguiente(i) {
+        if (i >= pendientes.length) {
+            $b.prop('disabled', false);
+            var texto = ok + (ok === 1 ? ' agregado grabado' : ' agregados grabados')
+                + (saltados.length ? '. Se saltaron: ' + saltados.join(', ') : '')
+                + (errores.length ? '. No se pudieron grabar: ' + errores.join(', ') : '');
+            showAppAlert(errores.length && !ok ? 'error' : 'success', texto, { duration: 6000, image: base_url + 'assets/img/' + (errores.length && !ok ? 'errorGif.gif' : 'success.gif') });
+            $('#cboProductoAgregadoProductos').val([]).trigger('change');
+            ObtenerAgregadosDelProducto(productoMaestro);
+            return;
+        }
+        var id = pendientes[i];
+        $.ajax({ url: base_url + "index.php/Productos/grabarAgregados", type: "POST", dataType: "json",
+                 data: { prod: $.extend({}, datos, { 'id_producto': id }) } })
+            .done(function (r) { if (r && r.error) errores.push(nombre(id) + ': ' + r.error); else ok++; })
+            .fail(function (xhr) {
+                var m = ''; try { m = (xhr.responseJSON && xhr.responseJSON.error) || JSON.parse(xhr.responseText).error || ''; } catch (e) {}
+                errores.push(nombre(id) + (m ? ': ' + m : ''));
+            })
+            .always(function () { siguiente(i + 1); });
+    })(0);
+}
+
 function GrabarNuevoAgregados() {
+    if ($('#ckVariosAgregados').is(':checked')) { grabarVariosAgregados(); return; }   // v1.24.2
     var msg = "";
     
     // VALIDACIONES
