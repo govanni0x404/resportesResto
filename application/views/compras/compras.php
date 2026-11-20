@@ -144,7 +144,7 @@ $fechaActual = date('Y-m-d');
                         <div class="compras-total-row__input">
                             <div class="input-group">
                                 <span class="input-group-addon">$</span>
-                                <input type="number" disabled
+                                <input type="text" disabled
                                     class="text-right form-control input-sm"
                                     name="txtTotalCompra" id="txtTotalCompra"
                                     requerido="no" value="0">

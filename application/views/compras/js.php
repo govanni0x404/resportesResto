@@ -126,13 +126,16 @@ function registrarEventosCompras() {
                 }
             });
         })
+        // v1.24.19: cantidad o unitario → total; si se escribe el total (el de la factura) → unitario
         .off('click.compras', '#TotalBruto')
-        .on('click.compras', '#TotalBruto', function() {
-            calcularValores();
-        })
         .off('input.compras', '#CantidadComprada, #BrutoUnitario')
         .on('input.compras', '#CantidadComprada, #BrutoUnitario', function() {
             calcularValores();
+        })
+        .off('input.compras', '#TotalBruto')
+        .on('input.compras', '#TotalBruto', function() {
+            var cant = numCompra($('#CantidadComprada').val()), tot = numCompra($('#TotalBruto').val());
+            if (cant > 0 && tot > 0) $('#BrutoUnitario').val(redondear2(tot / cant));
         })
         .off('click.compras', '#btnAgregarALista')
         .on('click.compras', '#btnAgregarALista', function() {
@@ -222,25 +225,17 @@ function ValidarCompra(callback) {
         });
 }
 
-function calcularValores() {
-    var cantidadComprada = 0;
-    var precioBrutoUn = 0;
-    var totalBruto = 0;
+// v1.24.19: números de la compra. Los campos son type=number (punto decimal); en la grilla se muestran a la chilena
+// (1.234,5) y los valores reales van en data-* de cada fila (antes se volvían a leer desde el texto).
+function numCompra(v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? 0 : n; }
+function redondear2(n) { return Math.round(n * 100) / 100; }
+function fmtCompra(n, dec) {
+    return Number(n || 0).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: dec == null ? 2 : dec });
+}
 
-    cantidadComprada = $('#CantidadComprada').val();
-    if (cantidadComprada.length == 0) {
-        cantidadComprada = 0;
-    }
-    precioBrutoUn = $('#BrutoUnitario').val();
-    if (precioBrutoUn.length == 0) {
-        precioBrutoUn = 0;
-    }
-    if (cantidadComprada == 0 || precioBrutoUn == 0) {
-        $('#TotalBruto').val(0);
-    } else {
-        totalBruto = parseFloat(cantidadComprada) * parseFloat(precioBrutoUn);
-        $('#TotalBruto').val(totalBruto);
-    }
+function calcularValores() {
+    var cant = numCompra($('#CantidadComprada').val()), unit = numCompra($('#BrutoUnitario').val());
+    $('#TotalBruto').val(cant > 0 && unit > 0 ? redondear2(cant * unit) : 0);
 }
 
 function agregarProductoALaGrilla() {
@@ -348,16 +343,16 @@ function continuarAgregandoProducto() {
             $.each(obj, function(index, v) {
                 var rowId = 'detalleCompra_' + new Date().getTime() + '_' + index;
                 var unidadMedida = v.unidad_medida ? v.unidad_medida : $('#spanUnidadCantidad').text();
-
-                tbl = "<tr id='" + rowId + "'>";
-                tbl = tbl + "<td style='display:none;'>" + v.id_insumo + "</td>";
-                tbl = tbl + "<td class='text-center'>" + v.nombre_insumo + "</td>";
-                tbl = tbl + "<td class='text-center'>" + commaSeparateNumber($('#CantidadComprada').val()) + " " + unidadMedida + "</td>";
-                tbl = tbl + "<td class='text-center'>" + commaSeparateNumber($('#BrutoUnitario').val()) + "</td>";
-                tbl = tbl + "<td class='text-center TotalBRUTO'>" + commaSeparateNumber($('#TotalBruto').val()) + "</td>";
-                tbl = tbl + "<td class='text-center'><a onclick=\"removeRow('" + rowId + "')\" href='#' class='btn btn-danger btn-icon'><i class='fa fa-trash-o'></i></a></td>";
-                tbl = tbl + "</tr>";
-                $('#detalleCompra').append(tbl);
+                var esc = function (t) { return $('<div>').text(t == null ? '' : t).html(); };
+                var cant = redondear2(CantidadCompra), unit = redondear2(BrutoUn), tot = redondear2(BrutoTotal);
+                var $tr = $("<tr>").attr('id', rowId).attr({ 'data-id': v.id_insumo, 'data-cant': cant, 'data-unit': unit, 'data-total': tot });
+                $tr.html("<td style='display:none;'>" + esc(v.id_insumo) + "</td>"
+                    + "<td class='text-center'>" + esc(v.nombre_insumo) + "</td>"
+                    + "<td class='text-center'>" + fmtCompra(cant) + " " + esc(unidadMedida) + "</td>"
+                    + "<td class='text-center'>$" + fmtCompra(unit) + "</td>"
+                    + "<td class='text-center TotalBRUTO'>$" + fmtCompra(tot) + "</td>"
+                    + "<td class='text-center'><a onclick=\"removeRow('" + rowId + "')\" href='#' class='btn btn-danger btn-icon'><i class='fa fa-trash-o'></i></a></td>");
+                $('#detalleCompra').append($tr);
                 nuevoProducto();
             });
         }).done(function() {
@@ -388,15 +383,16 @@ function desbloquearCabecera() {
 
 function sumarTotalesTabla() {
     var totalCompra = 0;
-    $('.TotalBRUTO').each(function() {
-        totalCompra += parseFloat($(this).text().replace(/,/g, ''), 10);
+    $('#detalleCompra tr[data-total]').each(function() {
+        totalCompra += Number($(this).attr('data-total')) || 0;
     });
+    totalCompra = Math.round(totalCompra);
     if (totalCompra > 0) {
         $('#GrabaIngresoDeCompra').attr("disabled", false);
     } else {
         $('#GrabaIngresoDeCompra').attr("disabled", true);
     }
-    $('#txtTotalCompra').val(totalCompra.toFixed(0));
+    $('#txtTotalCompra').val(fmtCompra(totalCompra, 0));
 }
 
 function GrabarIngresoDeCompra() {
@@ -433,214 +429,34 @@ function GrabarIngresoDeCompra() {
         return;
     }
 
-    var detalleCompra = [];
-
-    // Recorre la tabla para armar el detalle de la compra
-    $("#detalleCompra tr").each(function(index) {
-        var idInsumo, Cantidad, PrecioBrutoUn, PrecioBrutoTotal;
-
-        $(this).children("td").each(function(index2) {
-            switch (index2) {
-                case 0:
-                    idInsumo = $(this).html();
-                    break;
-                case 1:
-                    // Saltar el nombre del producto
-                    break;
-                case 2:
-                    // Cantidad - eliminar unidad de medida y comas
-                    var textoCompleto = $(this).text().trim();
-                    // Extraer solo el número (antes del espacio si hay unidad)
-                    Cantidad = textoCompleto.split(' ')[0].replace(/,/g, '');
-                    break;
-                case 3:
-                    PrecioBrutoUn = $(this).text().replace(/,/g, '').trim();
-                    break;
-                case 4:
-                    PrecioBrutoTotal = $(this).text().replace(/,/g, '').trim();
-                    detalleCompra.push({
-                        'id_insumo': idInsumo,
-                        'cantidad': Cantidad,
-                        'bruto_unitario': PrecioBrutoUn,
-                        'bruto_total': PrecioBrutoTotal,
-                    });
-                    break;
-            }
-        });
-    });
-
-    // Validar que hay productos en el detalle
+    // v1.24.19: la compra completa en una sola petición (cabecera + líneas, todo o nada; el servidor calcula el total)
+    var detalleCompra = $('#detalleCompra tr[data-id]').map(function () {
+        return { id_insumo: $(this).attr('data-id'), cantidad: $(this).attr('data-cant'),
+            bruto_unitario: $(this).attr('data-unit'), bruto_total: $(this).attr('data-total') };
+    }).get();
     if (detalleCompra.length === 0) {
-        showAppAlert('error',"Debe agregar al menos un producto a la compra!", {
-            duration: 5000,
-            image: base_url+ 'assets/img/errorGif.gif'
-        });
+        showAppAlert('error', "Debe agregar al menos un producto a la compra!", { duration: 5000, image: base_url + 'assets/img/errorGif.gif' });
         return;
     }
-
-    var idProveedor = $('#cboProveedorCompra').val();
-    var idDocumentoCompra = $('#cboDocumentoCompra').val();
-    var FolioDocumento = $('#FolioDocumento').val();
-    var FechaCompra = $('#FechaCompra').val();
-    var TotalCompra = $('#txtTotalCompra').val();
-
-    console.log("Fecha original:", FechaCompra);
-
-    // Lógica para el formato de fecha - más robusta
-    if (FechaCompra.indexOf('/') > -1) {
-        // Formato DD/MM/YYYY o MM/DD/YYYY
-        var partes = FechaCompra.split('/');
-        FechaCompra = partes[2] + '-' + partes[1] + '-' + partes[0];
-    } else if (FechaCompra.indexOf('-') > -1) {
-        var partes = FechaCompra.split('-');
-        // Si el primer elemento tiene 2 dígitos, es DD-MM-YYYY
-        if (partes[0].length == 2) {
-            FechaCompra = partes[2] + '-' + partes[1] + '-' + partes[0];
-        }
-        // Si ya está en YYYY-MM-DD, no hacer nada
-    }
-    
-    console.log("Fecha convertida:", FechaCompra);
-
-    var miJson = {
-        'id_proveedor': idProveedor,
-        'fecha': FechaCompra,
-        'id_tdocumento': idDocumentoCompra,
-        'numero_documento': FolioDocumento,
-        'total': TotalCompra,
-    };
-
-    console.log("=== DATOS A ENVIAR ===");
-    console.log("Detalle a enviar:", detalleCompra);
-    console.log("JSON compra:", miJson);
-    console.log("Cantidad de items:", detalleCompra.length);
-
-    // Deshabilitar botón para evitar doble click
-    $('#GrabaIngresoDeCompra').attr("disabled", true);
-
-    // PASO 1: GRABAR CABECERA DE COMPRA Y OBTENER EL ID
-    $.post(base_url + "index.php/Compras/grabarCompra", {
-            el_json: miJson
-        }, function() {})
-        .done(function(datos) {
-            console.log("=== RESPUESTA GRABAR COMPRA ===");
-            console.log("Respuesta grabarCompra:", datos);
-            
-            try {
-                var obj = $.parseJSON(datos);
-                console.log("Objeto parseado:", obj);
-                
-                // Verificar si es un error de duplicado
-                if (obj.code === 'DUPLICATE') {
-                    showAppAlert('COMPRA DUPLICADA',obj.message + "\nFecha: " + obj.fecha, {
-                        duration: 5000,
-                        image: base_url+ 'assets/img/errorGif.gif'
-                    });
-                    $('#GrabaIngresoDeCompra').attr("disabled", false);
-                    return;
-                }
-                
-                // Verificar si hay un error general
-                if (obj.error) {
-                    showAppAlert('error', obj.error, {
-                        duration: 5000,
-                        image: base_url+ 'assets/img/errorGif.gif'
-                    });
-                    $('#GrabaIngresoDeCompra').attr("disabled", false);
-                    return;
-                }
-                
-                var idCompra = 0;
-
-                if (obj.id) { 
-                    idCompra = obj.id;
-                } else if (obj.id_compra) {
-                    idCompra = obj.id_compra;
-                } else {
-                    $.each(obj, function(index, ve) {
-                        if (ve.id) {
-                            idCompra = ve.id;
-                        } else if (ve.id_compra) {
-                            idCompra = ve.id_compra;
-                        }
-                    });
-                }
-                
-                console.log("ID Compra obtenido:", idCompra);
-
-                if (idCompra == 0) {
-                    showAppAlert('error',"No se pudo obtener el ID de la compra. La cabecera NO se grabó", {
-                        duration: 5000,
-                        image: base_url+ 'assets/img/errorGif.gif'
-                    });
-                    $('#GrabaIngresoDeCompra').attr("disabled", false);
-                    return;
-                }
-
-                // PASO 2: GRABAR DETALLE DE COMPRA
-                $.post(base_url + "index.php/Compras/grabarDetalleCompra", {
-                        id_compra: idCompra,
-                        detalle: detalleCompra
-                    }, function() {})
-                    .done(function(datos) {
-                        console.log("Respuesta grabarDetalleCompra:", datos);
-                        try {
-                             var detalleObj = $.parseJSON(datos);
-                             // 16-11-2026: el detalle se graba todo o nada; si falla, el servidor dice por qué y borra la cabecera
-                             if (detalleObj && !Array.isArray(detalleObj) && detalleObj.error) {
-                                showAppAlert('error', detalleObj.error, {
-                                    duration: 7000,
-                                    image: base_url+ 'assets/img/errorGif.gif'
-                                });
-                                $('#GrabaIngresoDeCompra').attr("disabled", false);
-                                return;
-                             }
-                             if (detalleObj.errors && detalleObj.errors.length > 0) {
-                                showAppAlert('error',"- Se grabó la cabecera, pero hubo errores al grabar algunos detalles.", {
-                                    duration: 5000,
-                                    image: base_url+ 'assets/img/errorGif.gif'
-                                });
-                             } else {
-                                nuevaCompra();
-                                showAppAlert('success', "El ingreso de la compra se ingresó con éxito!", {
-                                    duration: 4000,
-                                    image: base_url + 'assets/img/success.gif'
-                                });
-                             }
-                        } catch (e) {
-                            showAppAlert('success', "El ingreso de la compra se ingresó con éxito!", {
-                                duration: 4000,
-                                image: base_url + 'assets/img/success.gif'
-                            });
-                            nuevaCompra();
-                        }
-                    })
-                    .fail(function(jqXHR, textStatus, errorThrown) {
-                        console.error("Error en grabarDetalleCompra:", textStatus, errorThrown);
-                        showAppAlert('error',"- Se produjo un error al grabar el detalle de la compra (posiblemente la cabecera sí se grabó)", {
-                            duration: 5000,
-                            image: base_url+ 'assets/img/errorGif.gif'
-                        });
-                        $('#GrabaIngresoDeCompra').attr("disabled", false);
-                    });
-
-            } catch (e) {
-                let positionError = datos.search("ERROR:");
-                let errorMessage = datos.substr(positionError, 150);
-                showAppAlert('error',"- Se produjo un error al procesar la respuesta de la cabecera, favor reintente \n(" + e + ")\n" + errorMessage, {
-                    duration: 5000,
-                    image: base_url+ 'assets/img/errorGif.gif'
-                });
-                $('#GrabaIngresoDeCompra').attr("disabled", false);
+    var $btn = $('#GrabaIngresoDeCompra').attr("disabled", true);
+    $.ajax({ url: base_url + "index.php/Compras/grabarCompraCompleta", type: 'POST', dataType: 'json',
+        data: { compra: { id_proveedor: $('#cboProveedorCompra').val(), id_tdocumento: $('#cboDocumentoCompra').val(),
+            numero_documento: $('#FolioDocumento').val(), fecha: $('#FechaCompra').val() }, detalle: detalleCompra } })
+        .done(function (r) {
+            if (!r || !r.ok) {
+                showAppAlert('error', (r && r.error) || 'No se pudo grabar la compra', { duration: 7000, image: base_url + 'assets/img/errorGif.gif' });
+                $btn.attr("disabled", false);
+                return;
             }
+            nuevaCompra();
+            showAppAlert('success', "Compra grabada: " + r.lineas + (r.lineas === 1 ? " producto" : " productos") + " por $" + fmtCompra(r.total, 0) + ". El stock ya está sumado.", {
+                duration: 5000, image: base_url + 'assets/img/success.gif' });
         })
-        .fail(function(jqXHR, textStatus, errorThrown) {
-            console.error("Error en grabarCompra:", textStatus, errorThrown);
-            showAppAlert('error',"- Se produjo un error al grabar la cabecera de la compra. Favor contacte a su administrador", {
-                duration: 5000,
-                image: base_url+ 'assets/img/errorGif.gif'
-            });
-            $('#GrabaIngresoDeCompra').attr("disabled", false);
+        .fail(function (x) {
+            var m = (x.responseJSON && x.responseJSON.error) || "No se pudo grabar la compra. No se grabó nada: revisa la conexión y vuelve a intentarlo.";
+            showAppAlert(x.status === 409 && x.responseJSON && x.responseJSON.code === 'DUPLICATE' ? 'COMPRA DUPLICADA' : 'error', m, {
+                duration: 7000, image: base_url + 'assets/img/errorGif.gif' });
+            $btn.attr("disabled", false);
         });
 }
 

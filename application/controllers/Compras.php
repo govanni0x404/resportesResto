@@ -198,6 +198,68 @@ class Compras extends CI_Controller
     }
   }
 
+  /**
+   * v1.24.19: graba la compra completa (cabecera + líneas) en una sola petición y transacción (Mcompra::grabarCompraCompleta).
+   * POST: compra[id_proveedor, id_tdocumento, numero_documento, fecha (DD-MM-YYYY o YYYY-MM-DD)], detalle[] = {id_insumo,
+   * cantidad, bruto_unitario, bruto_total}. Responde {ok, id_compra, total} o {error}.
+   */
+  public function grabarCompraCompleta()
+  {
+    header('Content-Type: application/json');
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+      set_status_header(401);
+      echo json_encode(['error' => 'Tu sesión expiró: vuelve a entrar']);
+      return;
+    }
+    $err = function ($m, $codigo = 400) { set_status_header($codigo); echo json_encode(['error' => $m]); };
+    $c = $this->input->post('compra');
+    $d = $this->input->post('detalle');
+    if (!is_array($c) || !is_array($d) || !$d) { $err('Faltan datos de la compra o no tiene productos'); return; }
+
+    $this->load->helper('tenant');
+    $db = get_tenant_db($this);
+    $db->db_debug = FALSE;
+    $idProveedor = (int)($c['id_proveedor'] ?? 0);
+    if ($idProveedor <= 0 || !$db->query('SELECT 1 FROM proveedor WHERE id_proveedor = ?', array($idProveedor))->row()) { $err('Elige el proveedor'); return; }
+    $idDoc = (int)($c['id_tdocumento'] ?? 0);
+    if ($idDoc <= 0 || !$db->query('SELECT 1 FROM tdocumento WHERE id_tdocumento = ? AND para_compra IS TRUE', array($idDoc))->row()) { $err('Elige un documento de compra válido'); return; }
+    // Folio: número entero mayor que 0 (solo dígitos: "12.5" o "F-12" no son folios)
+    $folio = preg_replace('/\s+/', '', trim((string)($c['numero_documento'] ?? '')));
+    if (!preg_match('/^\d{1,15}$/', $folio) || (float)$folio <= 0) { $err('El folio debe ser un número entero mayor que 0'); return; }
+    $fecha = trim((string)($c['fecha'] ?? ''));
+    if (preg_match('/^(\d{2})[-\/](\d{2})[-\/](\d{4})$/', $fecha, $m)) $fecha = "$m[3]-$m[2]-$m[1]";
+    if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $fecha, $m) || !checkdate((int)$m[2], (int)$m[3], (int)$m[1])) { $err('La fecha de la compra no es válida'); return; }
+    if (strtotime($fecha) > strtotime('+1 day')) { $err('La fecha de la compra no puede ser futura'); return; }
+
+    $bloqueo = $this->recetasQueBloqueanCompras();
+    if ($bloqueo !== '') { $err($bloqueo, 409); return; }
+
+    $lineas = array();
+    foreach (array_values($d) as $n => $v) {
+      $fila = $n + 1;
+      $idInsumo = (int)($v['id_insumo'] ?? 0);
+      $cant = round($this->numeroDesdeTexto($v['cantidad'] ?? 0), 2);
+      $unit = round($this->numeroDesdeTexto($v['bruto_unitario'] ?? 0), 2);
+      $tot = round($this->numeroDesdeTexto($v['bruto_total'] ?? 0), 2);
+      if ($idInsumo <= 0 || !$db->query('SELECT 1 FROM insumo WHERE id_insumo = ?', array($idInsumo))->row()) { $err("Línea $fila: el insumo no existe"); return; }
+      if ($cant <= 0) { $err("Línea $fila: la cantidad debe ser mayor que 0"); return; }
+      if ($unit < 0 || $tot < 0) { $err("Línea $fila: el precio no puede ser negativo"); return; }
+      // El total de la línea manda (es el de la factura): sin total se calcula; si no calza con cantidad x unitario,
+      // el unitario se recalcula desde el total (3 x 333 = 999 con factura de $1.000 → unitario 333,33)
+      if ($tot <= 0) $tot = round($cant * $unit, 2);
+      elseif (abs($tot - round($cant * $unit, 2)) >= 0.01 && abs($tot - round($cant * round($tot / $cant, 2), 2)) < abs($tot - round($cant * $unit, 2))) $unit = round($tot / $cant, 2);
+      if ($cant >= 100000000 || $unit >= 100000000 || $tot >= 100000000) { $err("Línea $fila: el número es demasiado grande"); return; }
+      $lineas[] = array('id_insumo' => $idInsumo, 'cantidad' => $cant, 'bruto_unitario' => $unit, 'bruto_total' => $tot);
+    }
+
+    $nivel = error_reporting(0);   // un error de la base no sale como página HTML: se responde el mensaje
+    $r = $this->Mcompra->grabarCompraCompleta(array('id_proveedor' => $idProveedor, 'id_tdocumento' => $idDoc,
+      'numero_documento' => (float)$folio, 'fecha' => $fecha), $lineas, (int)$this->session->userdata('id_usuario'));
+    error_reporting($nivel);
+    if (isset($r['error'])) set_status_header(isset($r['code']) ? 409 : 400);
+    echo json_encode($r);
+  }
+
   /** La cabecera recién creada sin ninguna línea se borra (quedaba como compra vacía cuando fallaba el detalle). */
   private function borrarCompraVacia($db, $idCompra)
   {
