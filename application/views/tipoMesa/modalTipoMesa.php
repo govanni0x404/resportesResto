@@ -51,6 +51,7 @@
                                 <label><input type="checkbox" id="tmEspacio"> Con espacio antes del número</label>
                                 <label><input type="checkbox" id="tmVigente" checked> Vigente</label>
                             </div>
+                            <p class="help-block" id="tmAvisoDefecto" style="display:none"><i class="fa fa-star"></i> Es el tipo <b>por defecto</b>: las mesas nuevas y las que no tienen otro tipo son de él. Puedes cambiarle el nombre o el texto, pero no desactivarlo.</p>
                             <p class="help-block">Sin espacio: <b>Mesa D1</b>. Con espacio: <b>Mesa EVENT 1</b>. Un tipo no vigente no se puede elegir para mesas nuevas.</p>
                         </div>
                         <div class="col-sm-12">
@@ -108,7 +109,10 @@
 				$('#tmNombre').val(t ? t.nombre : '');
 				$('#tmPrefijo').val(t ? t.prefijo : '');
 				$('#tmEspacio').prop('checked', t ? !!t.espacio : false);
-				$('#tmVigente').prop('checked', t ? !!t.vigente : true);
+				// v1.22.0: el tipo por defecto no se desactiva
+				$('#tmVigente').prop('checked', t ? !!t.vigente : true).prop('disabled', !!(t && t.defecto))
+					.closest('label').attr('title', t && t.defecto ? 'El tipo por defecto siempre está vigente' : '');
+				$('#tmAvisoDefecto').toggle(!!(t && t.defecto));
 				vista();
 				$m.modal('show');
 			}

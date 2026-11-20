@@ -24,7 +24,7 @@ class Mmesas extends CI_Model
       AND table_name = 'mesa_plano' AND column_name = 'nombre'")->row();
     $q = "SELECT m.id_mesa, m.disponible, m.bloqueo_caja, m.id_cotizacion, 
                  m.bloqueo_pedido, m.id_garzon, m.id_recinto, m.vigente,
-                 " . ($conTipo ? "COALESCE(m.id_tipo_mesa_web, 0) AS id_tipo_mesa, COALESCE(tm.nombre, '') AS tipo_mesa"
+                 " . ($conTipo ? $this->Mtipomesa->idSql('m') . " AS id_tipo_mesa, COALESCE(tm.nombre, '') AS tipo_mesa"
                     : "0 AS id_tipo_mesa, '' AS tipo_mesa") . ", " . ($conPlano ? "COALESCE(NULLIF(trim(pl.nombre), ''), " . $this->Mtipomesa->nombreSql('m', 'tm') . ")" : $this->Mtipomesa->nombreSql('m', 'tm')) . " AS nombre_caja
           FROM mesa m
           " . $this->Mtipomesa->joinSql('m', 'tm') . "
@@ -84,6 +84,8 @@ class Mmesas extends CI_Model
       return array('error' => 'No se pueden tener más de ' . self::MAX_MESAS . ' mesas (hay ' . $hay . '). Reactiva mesas desactivadas en vez de crear nuevas.');
     }
 
+    $this->load->model('Mtipomesa');
+    $idTipo = $this->Mtipomesa->conMesa() ? $this->Mtipomesa->idParaGrabar(0) : null;
     for ($i = 0; $i < $cantidad; $i++) {
       $data = array(
         'disponible' => true,
@@ -94,6 +96,8 @@ class Mmesas extends CI_Model
         'id_recinto' => 0,
         'vigente' => true
       );
+      // v1.22.0: las mesas nuevas nacen con el tipo por defecto ("General")
+      if ($idTipo) $data['id_tipo_mesa_web'] = $idTipo;
       
       $this->db->insert('mesa', $data);
       $consulta = $this->db->query("SELECT CURRVAL('mesa_id_mesa_seq'::regclass) as id_mesa");
@@ -155,7 +159,8 @@ class Mmesas extends CI_Model
     $ids = array_map('intval', $ids);
     $this->db->trans_begin();
     $this->db->where_in('id_mesa', $ids);
-    $this->db->update('mesa', array('id_tipo_mesa_web' => (int)$idTipo > 0 ? (int)$idTipo : null));
+    $this->load->model('Mtipomesa');
+    $this->db->update('mesa', array('id_tipo_mesa_web' => $this->Mtipomesa->idParaGrabar($idTipo)));   // v1.22.0: 0 = el por defecto
     $n = $this->db->affected_rows();
     if ($this->db->trans_status() === FALSE) {
       $this->db->trans_rollback();

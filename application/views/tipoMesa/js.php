@@ -21,7 +21,7 @@
 			}
 			$('#cuerpoTipoMesa').html($.map(tipos, function (t) {
 				return '<tr data-id="' + t.id + '" class="' + (t.vigente ? '' : 'tm-no-vigente') + '">' +
-					'<td><span class="tm-nombre">' + esc(t.nombre) + '</span></td>' +
+					'<td><span class="tm-nombre">' + esc(t.nombre) + '</span>' + (t.defecto ? ' <span class="tm-chip si" title="Las mesas sin otro tipo son de este">Por defecto</span>' : '') + '</td>' +
 					'<td><span class="tm-ejemplo">' + esc(t.ejemplo) + '</span></td>' +
 					'<td class="text-center">' + t.mesas + '</td>' +
 					'<td class="text-center"><span class="tm-chip ' + (t.vigente ? 'si">Sí' : 'no">No') + '</span></td></tr>';

@@ -3429,7 +3429,7 @@ class Mcaja extends CI_Model
 		$this->load->model('Mtipomesa');
 		$joinPlano .= ' ' . $this->Mtipomesa->joinSql('m', 'tmw');
 		$selPlano .= ', ' . $this->Mtipomesa->nombreSql('m', 'tmw') . ' AS nombre_tipo, '
-			. ($this->Mtipomesa->conMesa() ? 'COALESCE(m.id_tipo_mesa_web, 0)' : '0') . ' AS id_tipo_mesa';
+			. $this->Mtipomesa->idSql('m') . ' AS id_tipo_mesa';   // v1.22.0: sin tipo = el por defecto
 		$rows = $this->q($db, "SELECT $selPlano, m.id_mesa, m.disponible, m.bloqueo_caja, m.bloqueo_pedido, COALESCE(m.id_cotizacion, 0) AS ref_cotizacion,
 				COALESCE(r.id_recinto, 0) AS id_recinto, COALESCE(r.nombre_recinto, 'Sin recinto') AS recinto,
 				c.id_cotizacion, c.total, u.nombre_usuario AS atiende,

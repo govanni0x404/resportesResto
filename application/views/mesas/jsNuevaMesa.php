@@ -74,18 +74,24 @@
         $('#tipoMesaVista').text(nombreMesaTipo($('#idMesa').val(), t));
     }
     $(document).on('change', '#tipoMesa', vistaTipoMesa);
+    /** v1.22.0: el tipo por defecto ("General") de la lista; null si la base aún no lo tiene */
+    function tipoMesaDefecto(lista) { return $.grep(lista || [], function (t) { return t.defecto; })[0] || null; }
+    function textoTipoMesa(t) { return t.nombre + ' · ' + t.ejemplo + (t.defecto ? ' (por defecto)' : '') + (t.vigente ? '' : ' (no vigente)'); }
     function cargarTiposMesa(actual) {
         $('#divTipoMesa').hide();
         $.ajax({ url: base_url + 'index.php/Mesas/tiposMesa', dataType: 'json', cache: false }).done(function (r) {
             if (!r || !r.disponible) return;
             tiposMesa = r.tipos || [];
-            var $s = $('#tipoMesa').empty().append($('<option>').val(0).text('Sin tipo (Mesa N, como siempre)'));
+            // v1.22.0: con tipo por defecto ("General") ya no hay "Sin tipo": las mesas sin tipo son de él
+            var def = tipoMesaDefecto(tiposMesa);
+            var $s = $('#tipoMesa').empty();
+            if (!def) $s.append($('<option>').val(0).text('Sin tipo (Mesa N, como siempre)'));
             $.each(tiposMesa, function (i, t) {
                 if (!t.vigente && t.id !== actual) return;
-                $s.append($('<option>').val(t.id).text(t.nombre + ' · ' + t.ejemplo + (t.vigente ? '' : ' (no vigente)')));
+                $s.append($('<option>').val(t.id).text(textoTipoMesa(t)));
             });
-            $s.val(actual || 0);
-            if ($s.val() === null) $s.val(0);
+            $s.val(actual || (def ? def.id : 0));
+            if ($s.val() === null) $s.val(def ? def.id : 0);
             vistaTipoMesa();
             $('#divTipoMesa').show();
         });
@@ -257,7 +263,7 @@
     (function () {
         var tipos = [];
         function tipoPorId(id) { return $.grep(tipos, function (x) { return x.id === id; })[0] || null; }
-        function nombreTipo(id) { var t = tipoPorId(id); return t ? t.nombre : 'Sin tipo'; }
+        function nombreTipo(id) { var t = tipoPorId(id) || (id ? null : tipoMesaDefecto(tipos)); return t ? t.nombre : 'Sin tipo'; }
         function contar() {
             var n = $('#tvLista input:checked').length;
             $('#tvContador').text(n === 0 ? 'No hay mesas marcadas' : (n === 1 ? '1 mesa marcada' : n + ' mesas marcadas'));
@@ -279,14 +285,19 @@
         /** Selects del modal: el tipo nuevo (queda elegido 'elegido') y el filtro "Ver solo" (mantiene lo que había). */
         function llenarSelects(elegido) {
             var filtro = $('#tvFiltroTipo').val() || 'todas';
-            var $n = $('#tvTipoNuevo').empty().append($('<option>').val(0).text('Sin tipo (Mesa N, como siempre)'));
-            var $f = $('#tvFiltroTipo').empty().append($('<option>').val('todas').text('Todas las mesas')).append($('<option>').val(0).text('Sin tipo'));
+            var def = tipoMesaDefecto(tipos);   // v1.22.0: con tipo por defecto no hay "Sin tipo"
+            var $n = $('#tvTipoNuevo').empty();
+            var $f = $('#tvFiltroTipo').empty().append($('<option>').val('todas').text('Todas las mesas'));
+            if (!def) {
+                $n.append($('<option>').val(0).text('Sin tipo (Mesa N, como siempre)'));
+                $f.append($('<option>').val(0).text('Sin tipo'));
+            }
             $.each(tipos, function (i, t) {
-                if (t.vigente) $n.append($('<option>').val(t.id).text(t.nombre + ' · ' + t.ejemplo));
+                if (t.vigente) $n.append($('<option>').val(t.id).text(textoTipoMesa(t)));
                 $f.append($('<option>').val(t.id).text(t.nombre));
             });
-            $n.val(elegido || 0);
-            if ($n.val() === null) $n.val(0);
+            $n.val(elegido || (def ? def.id : 0));
+            if ($n.val() === null) $n.val(def ? def.id : 0);
             $f.val(filtro);
             if ($f.val() === null) $f.val('todas');
         }

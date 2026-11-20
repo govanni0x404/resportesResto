@@ -102,7 +102,7 @@ class Mesas extends CI_Controller
               echo json_encode(array('error' => 'El tipo de mesa no existe'));
               return;
           }
-          $miData['id_tipo_mesa_web'] = $idTipo > 0 ? $idTipo : null;
+          $miData['id_tipo_mesa_web'] = $this->Mtipomesa->idParaGrabar($idTipo);   // v1.22.0: 0 = el por defecto
       }
       
       $r = $this->Mmesas->editarMesa($id, $miData);

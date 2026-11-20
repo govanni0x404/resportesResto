@@ -12,6 +12,8 @@ class Mtipomesa extends CI_Model
 	private $db2 = null;
 	private $hay = null;
 	private $hayMesa = null;
+	private $hayDefecto = null;
+	private $idDefecto = null;
 
 	/** ¿Está la tabla de la migración 20261119110000? */
 	public function disponible()
@@ -31,6 +33,46 @@ class Mtipomesa extends CI_Model
 				AND table_name = 'mesa' AND column_name = 'id_tipo_mesa_web'")->row();
 		}
 		return $this->hayMesa;
+	}
+
+	/** v1.22.0: ¿está la columna del tipo por defecto (migración 20261120120000)? */
+	public function conDefecto()
+	{
+		if ($this->hayDefecto === null) {
+			$this->hayDefecto = $this->disponible() && (bool)$this->q("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public'
+				AND table_name = 'tipo_mesa_web' AND column_name = 'por_defecto'")->row();
+		}
+		return $this->hayDefecto;
+	}
+
+	/** v1.22.0: id del tipo por defecto ("General"); 0 si no hay. */
+	public function idDefecto()
+	{
+		if ($this->idDefecto === null) {
+			$r = $this->conDefecto() ? $this->q('SELECT id_tipo_mesa_web FROM tipo_mesa_web WHERE por_defecto ORDER BY id_tipo_mesa_web LIMIT 1')->row() : null;
+			$this->idDefecto = $r ? (int)$r->id_tipo_mesa_web : 0;
+		}
+		return $this->idDefecto;
+	}
+
+	/**
+	 * v1.22.0: el tipo de la mesa en SQL. Una mesa sin tipo (ej. creada por el POS de escritorio) cuenta como del tipo
+	 * por defecto. Sin la migración, la columna tal cual.
+	 */
+	public function idSql($mesa = 'm')
+	{
+		if (!$this->conMesa()) return '0';
+		$d = $this->idDefecto();
+		return $d > 0 ? "COALESCE($mesa.id_tipo_mesa_web, $d)" : "COALESCE($mesa.id_tipo_mesa_web, 0)";
+	}
+
+	/** v1.22.0: el tipo que se graba en la mesa: el elegido, o el por defecto si viene 0. NULL si no hay ninguno. */
+	public function idParaGrabar($idTipo)
+	{
+		$idTipo = (int)$idTipo;
+		if ($idTipo > 0) return $idTipo;
+		$d = $this->idDefecto();
+		return $d > 0 ? $d : null;
 	}
 
 	private function exigir()
@@ -60,16 +102,18 @@ class Mtipomesa extends CI_Model
 
 	public function joinSql($mesa = 'm', $tipo = 'tm')
 	{
-		return $this->conMesa() ? "LEFT JOIN tipo_mesa_web $tipo ON $tipo.id_tipo_mesa_web = $mesa.id_tipo_mesa_web" : '';
+		return $this->conMesa() ? "LEFT JOIN tipo_mesa_web $tipo ON $tipo.id_tipo_mesa_web = " . $this->idSql($mesa) : '';
 	}
 
 	/** Pantalla de Mantención: los tipos con cuántas mesas tiene cada uno. */
 	public function listar()
 	{
 		$this->exigir();
-		$cuenta = $this->conMesa() ? '(SELECT count(*) FROM mesa m WHERE m.id_tipo_mesa_web = t.id_tipo_mesa_web AND m.vigente IS NOT FALSE)' : '0';
+		$cuenta = $this->conMesa() ? '(SELECT count(*) FROM mesa m WHERE ' . $this->idSql('m') . ' = t.id_tipo_mesa_web AND m.vigente IS NOT FALSE)' : '0';
 		$res = array();
-		foreach ($this->q("SELECT t.*, $cuenta AS mesas FROM tipo_mesa_web t ORDER BY t.vigente DESC, t.nombre, t.id_tipo_mesa_web")->result() as $f) {
+		// v1.22.0: el por defecto va primero
+		$orden = $this->conDefecto() ? 't.por_defecto DESC, ' : '';
+		foreach ($this->q("SELECT t.*, $cuenta AS mesas FROM tipo_mesa_web t ORDER BY {$orden}t.vigente DESC, t.nombre, t.id_tipo_mesa_web")->result() as $f) {
 			$res[] = $this->fila($f) + array('mesas' => (int)$f->mesas);
 		}
 		return array('tipos' => $res);
@@ -80,7 +124,8 @@ class Mtipomesa extends CI_Model
 	{
 		if (!$this->disponible()) return array();
 		$res = array();
-		foreach ($this->q('SELECT * FROM tipo_mesa_web ORDER BY nombre, id_tipo_mesa_web')->result() as $f) $res[] = $this->fila($f);
+		$orden = $this->conDefecto() ? 'por_defecto DESC, ' : '';
+		foreach ($this->q("SELECT * FROM tipo_mesa_web ORDER BY {$orden}nombre, id_tipo_mesa_web")->result() as $f) $res[] = $this->fila($f);
 		return $res;
 	}
 
@@ -107,6 +152,10 @@ class Mtipomesa extends CI_Model
 		$b = array($nombre, $prefijo, $espacio ? 't' : 'f', $vigente ? 't' : 'f');
 		if ($id > 0) {
 			if (!$this->existe($id)) throw new Exception('El tipo de mesa no existe', 404);
+			// v1.22.0: el tipo por defecto no se desactiva (las mesas sin tipo son de él)
+			if (!$vigente && $id === $this->idDefecto()) {
+				throw new Exception('El tipo por defecto no se puede desactivar: las mesas sin otro tipo son de él', 409);
+			}
 			$this->q('UPDATE tipo_mesa_web SET nombre = ?, prefijo = ?, espacio = ?, vigente = ?, fecha_modificacion = now() WHERE id_tipo_mesa_web = ?',
 				array_merge($b, array($id)));
 		} else {
@@ -120,6 +169,7 @@ class Mtipomesa extends CI_Model
 		return array(
 			'id' => (int)$f->id_tipo_mesa_web, 'nombre' => (string)$f->nombre, 'prefijo' => (string)$f->prefijo,
 			'espacio' => $this->si($f->espacio), 'vigente' => $this->si($f->vigente),
+			'defecto' => isset($f->por_defecto) && $this->si($f->por_defecto),   // v1.22.0
 			'ejemplo' => self::nombre(1, $f->prefijo, $this->si($f->espacio)),
 		);
 	}
