@@ -118,3 +118,20 @@ table.dataTable tbody tr.selected, .table > tbody > tr.selected { background: va
 
 /* ---------- Modales ---------- */
 .modal-content { border-radius: 12px; }
+
+/* ---------- v1.27.1: enlaces "Nuevo" / "Quitar" / "CAMBIAR" junto a una etiqueta (<sup><a onclick>) ----------
+   Antes eran un superíndice de 10px casi imposible de tocar. Ahora son un botoncito del mismo color del sistema. */
+label sup, label + sup, .form-group sup { top: 0; vertical-align: middle; font-size: inherit; }
+sup > a[onclick], sup[onclick] > a {
+    display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 3px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; line-height: 1.4; letter-spacing: .2px; text-transform: none; cursor: pointer;
+    color: var(--t-primario, #15803D) !important; background: var(--t-primario-suave, #E8F5EC);
+    border: 1px solid currentColor; text-decoration: none !important; white-space: nowrap; user-select: none;
+}
+sup > a[onclick]::before, sup[onclick] > a::before { content: "+"; font-size: 14px; line-height: 1; font-weight: 800; }
+sup > a[onclick]:hover, sup > a[onclick]:focus, sup[onclick] > a:hover {
+    color: #fff !important; background: var(--t-primario, #15803D); border-color: var(--t-primario, #15803D);
+}
+/* Quitar y Cambiar no llevan "+" */
+sup > a[onclick^="Quitar"]::before, sup[onclick] > a::before { content: none; }
+sup > a[onclick^="Quitar"] { color: var(--t-peligro, #b91c1c) !important; background: transparent; }

@@ -46,6 +46,8 @@ class Minsumos extends CI_Model
 				"precio_ucompra" => $key->precio_ucompra,
 				"inv_c_caja" => $key->inv_c_caja,
 				"observaciones" => $key->observaciones,
+				// v1.27.1: el stock mínimo (aviso de la Caja) se grababa pero no venía en la lista: al reabrir el insumo salía 0
+				"stock_minimo_web" => isset($key->stock_minimo_web) ? (float)$key->stock_minimo_web : 0,
 				"responsive" => ""
 			));
 		}
