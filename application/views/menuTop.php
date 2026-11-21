@@ -856,6 +856,8 @@
                         <?php
                         $__showDashboard = menu_visible('Dashboard');
                         $__showCaja = menu_visible('Caja');
+                        $__showCocina = menu_visible('Cocina');       // v1.28.0 (prueba): pantalla de cocina
+                        $__showReservas = menu_visible('Reservas');   // v1.28.0 (prueba): reservas de mesas
 
                         $__showEntradaBodega = menu_visible('EntradaBodega');
                         $__showSalidaBodega = menu_visible('SalidaBodega');
@@ -943,6 +945,12 @@
 
                             <?php if ($__showCaja) : ?>
                                 <li><a href="<?php echo base_url() ?>index.php/Caja"><i class="fa fa-shopping-cart"></i> Caja</a></li>
+                            <?php endif; ?>
+                            <?php if ($__showCocina) : ?>
+                                <li><a href="<?php echo base_url() ?>index.php/Cocina"><i class="fa fa-fire"></i> Cocina</a></li>
+                            <?php endif; ?>
+                            <?php if ($__showReservas) : ?>
+                                <li><a href="<?php echo base_url() ?>index.php/Reservas"><i class="fa fa-calendar-check-o"></i> Reservas</a></li>
                             <?php endif; ?>
 
                             <!-- Accesos directos (orden pedido 10-11-2026): Carta, Clientes, Proveedor, Compras, Lista de Precios; después los grupos -->

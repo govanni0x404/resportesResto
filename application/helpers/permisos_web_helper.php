@@ -31,6 +31,8 @@ function permisos_web_catalogo()
 			'Proveedor' => 'Proveedor',
 			'Compras' => 'Compras (también en Bodega)',
 			'ListaDePrecios' => 'Lista de precios',
+			'Cocina' => 'Pantalla de cocina (prueba v1.28.0)',
+			'Reservas' => 'Reservas de mesas (prueba v1.28.0)',
 		),
 		'Mantención › Delivery' => array(
 			'Delivery' => 'Sector',
