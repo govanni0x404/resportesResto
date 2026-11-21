@@ -88,6 +88,7 @@
 	.mesas-leyenda i.libre { background: #E4EFE3; border: 1px solid #5E8C5A; }
 	.mesas-leyenda i.ocupada { background: var(--t-primario, #B4432E); }
 	.mesas-leyenda i.bloqueada { background: #D9D2C9; }
+	.mesas-leyenda i.reservada { background: #eef2ff; border: 1px solid #6366f1; }   /* v1.29.0 (prueba) */
 	.mesas-barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 	.mesas-sectores { display: flex; flex-wrap: wrap; gap: 6px; }
 	.mesas-sectores button { padding: 8px 16px; border: 1px solid var(--t-borde, #EADFD2); border-radius: 20px; background: #fff; color: var(--t-texto, #3A2A22); font-weight: 600; font-size: 14px; }
@@ -1281,6 +1282,11 @@
 	.stock-bajo .sb-item.agotado { font-weight: 700; }
 	.stock-bajo .sb-cerrar { flex: 0 0 auto; border: 0; background: transparent; color: #8a1c10; font-size: 18px; line-height: 1; padding: 2px 4px; cursor: pointer; opacity: .7; }
 	.stock-bajo .sb-cerrar:hover, .stock-bajo .sb-cerrar:focus { opacity: 1; }
+
+	/* v1.29.0 (prueba): mesa libre bloqueada por una reserva */
+	.mesa-card.reservada { background: #eef2ff; border-color: #6366f1; color: #3730a3; }
+	.mesa-card.reservada .estado { font-weight: 800; color: #3730a3; }
+	.mesa-card.reservada .atiende { font-size: 11px; opacity: .9; }
 </style>
 
 <div class="row caja">
@@ -1564,6 +1570,7 @@
 							<span><i class="demora"></i> Más de 1 hora</span>
 							<span><i class="critica"></i> Más de 2 horas</span>
 							<span><i class="bloqueada"></i> Bloqueada</span>
+							<span class="leyenda-reserva" style="display:none" title="Mesa libre bloqueada por una reserva (Reservas)"><i class="reservada"></i> Reservada</span>
 							<span class="text-muted" id="mesasAyuda">Toca una mesa libre para tomar el pedido, o una con pedido para agregar productos, pedir la precuenta o cobrar.</span>
 						</div>
 						<div id="mesasGrilla"></div>

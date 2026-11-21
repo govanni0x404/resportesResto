@@ -856,6 +856,9 @@
                         <?php
                         $__showDashboard = menu_visible('Dashboard');
                         $__showCaja = menu_visible('Caja');
+                        // v1.29.0 (prueba): cocina y reservas, con permiso Y encendidas en Configuraciones
+                        $__showCocina = menu_visible('Cocina') && opcion_config_activa(get_instance(), 'usar_cocina_web');
+                        $__showReservas = menu_visible('Reservas') && opcion_config_activa(get_instance(), 'usar_reservas_web');
 
                         $__showEntradaBodega = menu_visible('EntradaBodega');
                         $__showSalidaBodega = menu_visible('SalidaBodega');
@@ -943,6 +946,12 @@
 
                             <?php if ($__showCaja) : ?>
                                 <li><a href="<?php echo base_url() ?>index.php/Caja"><i class="fa fa-shopping-cart"></i> Caja</a></li>
+                            <?php endif; ?>
+                            <?php if ($__showCocina) : ?>
+                                <li><a href="<?php echo base_url() ?>index.php/Cocina"><i class="fa fa-fire"></i> Cocina</a></li>
+                            <?php endif; ?>
+                            <?php if ($__showReservas) : ?>
+                                <li><a href="<?php echo base_url() ?>index.php/Reservas"><i class="fa fa-calendar-check-o"></i> Reservas</a></li>
                             <?php endif; ?>
 
                             <!-- Accesos directos (orden pedido 10-11-2026): Carta, Clientes, Proveedor, Compras, Lista de Precios; después los grupos -->

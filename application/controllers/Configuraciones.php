@@ -148,6 +148,8 @@ class Configuraciones extends CI_Controller {
             'propina_mesas_web',      // v1.23.0: propina al cobrar mesas
             'usar_comision_web',      // v1.24.1: comisión en el precio de los productos (migración 20261120160000)
             'agrupar_productos_web',  // v1.24.8: agrupar productos iguales en la Caja (migración 20261120170000)
+            'usar_cocina_web',        // v1.29.0 (prueba): pantalla de cocina (migración 20261121140000)
+            'usar_reservas_web',      // v1.29.0 (prueba): reservas de mesas
             'acepta',
             'acierto'
         ];
@@ -195,7 +197,8 @@ class Configuraciones extends CI_Controller {
             'id_pagocreditodirecto',
             'id_mesa_venta_directa',
             'delivery_id_producto_envio',   // 18-11-2026: producto con que va el costo de envío en la boleta
-            'delivery_costo_envio'          // 18-11-2026: costo de envío (el mismo para todos los delivery)
+            'delivery_costo_envio',         // 18-11-2026: costo de envío (el mismo para todos los delivery)
+            'minutos_bloqueo_reserva_web'   // v1.29.0 (prueba): minutos antes de la reserva en que se bloquea la mesa
         ];
 
         foreach ($numeric_fields as $f) {
@@ -205,6 +208,7 @@ class Configuraciones extends CI_Controller {
         }
         // 18-11-2026: el costo de envío no puede ser negativo
         if (isset($update_config['delivery_costo_envio'])) $update_config['delivery_costo_envio'] = max(0, $update_config['delivery_costo_envio']);
+        if (isset($update_config['minutos_bloqueo_reserva_web'])) $update_config['minutos_bloqueo_reserva_web'] = max(0, min(720, $update_config['minutos_bloqueo_reserva_web']));
         if (isset($update_config['cant_agregados'])) $update_config['cant_agregados'] = max(1, min(20, $update_config['cant_agregados']));
 
         // TEXTO / OTROS (nombres exactos según la BD)
