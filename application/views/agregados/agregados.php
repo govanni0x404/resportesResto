@@ -69,7 +69,7 @@
                   <th class="text text-right" style='height:10px'>CANTIDAD</th>
                   <th class="text text-right" style='height:10px'>VALOR</th>
                   <th class="text text-center" style='height:10px'>ACTIVO</th>
-                  <th class="text text-center" style='height:10px'>USAR DESTINO DE IMPRESION</th>
+                  <th class="text text-center" style='height:10px' title="Sale en la comanda del destino de impresión de su propio producto">SALE EN SU PROPIO DESTINO</th>
                 </tr>
               </thead>
             </table>

@@ -939,6 +939,61 @@ class Mcaja extends CI_Model
 	 * Incluye los datos de la impresora del destino (ip, puerto, ruta_windows).
 	 * Devuelve [id_producto => ['id' => id_dimpresion, 'nombre' => nombre_dimpresion]].
 	 */
+	/**
+	 * v1.30.0 (pedido del usuario): lo que sale en OTRA impresora además del destino normal del producto.
+	 * - segundo:   id_producto => destino. El producto tiene "Imprimir también en otro destino" (producto.id_dimpresion2_web).
+	 * - agregados: id_producto del maestro => [NOMBRE DEL AGREGADO EN MAYÚSCULAS => ['id_producto', 'destino']]. El agregado
+	 *              tiene marcado "Imprimir en su propio destino" (agregados.usar_destino_impresion): sale en el destino
+	 *              de su producto (ej. SALSA en BARRA) en vez de ir solo en la comanda del producto.
+	 * Una sola pasada por la base para toda la comanda; sin las columnas (migración pendiente) no cambia nada.
+	 */
+	public function rutasComanda($idsProducto)
+	{
+		$res = array('segundo' => array(), 'agregados' => array());
+		$ids = array_values(array_unique(array_filter(array_map('intval', (array)$idsProducto))));
+		if (!$ids) return $res;
+		$db = $this->conexion();
+		$cols = $this->columnas($db, array('producto', 'familia', 'dimpresion', 'agregados'));
+		if (!isset($cols['dimpresion'])) return $res;
+		$sinImp = $this->sqlSinImpresion($db, 'd');
+		$destino = function ($r) {
+			return array('id' => (int)$r->id_dimpresion, 'nombre' => (string)$r->nombre_dimpresion,
+				'ip' => (string)$r->ip, 'puerto' => (string)$r->puerto, 'ruta_windows' => (string)$r->ruta_windows);
+		};
+		if (isset($cols['producto']['id_dimpresion2_web'])) {
+			foreach ($this->q($db, "SELECT p.id_producto, d.id_dimpresion, d.nombre_dimpresion, d.ip, d.puerto, d.ruta_windows
+				FROM producto p JOIN dimpresion d ON d.id_dimpresion = p.id_dimpresion2_web
+				WHERE p.id_producto IN ? AND COALESCE(p.id_dimpresion2_web, 0) > 0 AND NOT $sinImp", array($ids))->result() as $r) {
+				$res['segundo'][(int)$r->id_producto] = $destino($r);
+			}
+		}
+		if (isset($cols['agregados']['usar_destino_impresion'], $cols['producto']['id_dimpresion'])) {
+			$famDest = isset($cols['familia']['id_dimpresion']) ? 'NULLIF(f.id_dimpresion, 0)' : 'NULL';
+			foreach ($this->q($db, "SELECT a.id_producto_maestro, pa.id_producto, pa.nombre_producto,
+					d.id_dimpresion, d.nombre_dimpresion, d.ip, d.puerto, d.ruta_windows
+				FROM agregados a
+				JOIN producto pa ON pa.id_producto = a.id_producto
+				LEFT JOIN familia f ON f.id_familia = pa.id_familia
+				JOIN dimpresion d ON d.id_dimpresion = COALESCE(NULLIF(pa.id_dimpresion, 0), $famDest)
+				WHERE a.id_producto_maestro IN ? AND a.usar_destino_impresion IS TRUE AND a.eliminado IS NOT TRUE AND NOT $sinImp",
+				array($ids))->result() as $r) {
+				$res['agregados'][(int)$r->id_producto_maestro][self::nombreAgregadoComanda($r->nombre_producto)] =
+					array('id_producto' => (int)$r->id_producto, 'destino' => $destino($r));
+			}
+		}
+		return $res;
+	}
+
+	/**
+	 * Nombre del agregado tal como viene en la comanda, sin su mensaje ("PALTA » sin sal", "PALTA: sin sal" o
+	 * "PALTA (sin sal)" => "PALTA"), en mayúsculas, para reconocerlo.
+	 */
+	public static function nombreAgregadoComanda($texto)
+	{
+		$t = preg_split('/\s*»\s*|:\s|\s\(/u', trim((string)$texto), 2);
+		return mb_strtoupper(trim(ltrim($t[0], '+')), 'UTF-8');
+	}
+
 	public function destinosComanda($idsProducto)
 	{
 		$ids = array_values(array_unique(array_filter(array_map('intval', (array)$idsProducto))));

@@ -225,6 +225,13 @@
                                         <select id="cboDestinoDeImpresion" nombre="cboDestinoDeImpresion"
                                             class="form-control input-sm" style="width:100%" requerido="si"></select>
                                     </div>
+                                    <!-- v1.30.0 (pedido del usuario): el mismo producto en dos comandas (ej. arroz en la cocina y carne en la parrilla) -->
+                                    <div class="col-md-12 destino2-fila">
+                                        <label class="destino2-check" title="El producto sale completo en su destino de impresión y también en este (ej. arroz con carne: el arroz en la cocina y la carne en la parrilla). Cada comanda dice dónde más salió.">
+                                            <input type="checkbox" id="ckDestino2"> Imprimir también en otro destino
+                                        </label>
+                                        <div id="cajaDestino2" style="display:none"><select id="cboDestino2" class="form-control input-sm" style="width:100%" aria-label="Segundo destino de impresión"></select></div>
+                                    </div>
 
                                 </fieldset>
                                 <br>
@@ -880,8 +887,9 @@
                                 <div class="btn-group" role="group" aria-label="...">
                                     <div class="checkbox checkbox-success checkbox-circle">
                                         <input id="ckUsarDestinoDeImpresion" type="checkbox">
-                                        <label for="ckUsarDestinoDeImpresion">
-                                            USAR DESTINO DE IMPRESION
+                                        <!-- v1.30.0: la Caja web ya usa esta casilla (antes solo el POS de escritorio) -->
+                                        <label for="ckUsarDestinoDeImpresion" title="El agregado sale en la comanda del destino de impresión de SU producto (ej. la SALSA en la BARRA), con el nombre del producto al que va. En la comanda del producto queda anotado dónde salió.">
+                                            IMPRIMIR EN SU PROPIO DESTINO
                                         </label>
                                     </div>
                                 </div>

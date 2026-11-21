@@ -201,8 +201,18 @@ function ListadoDestinoDeImpresion(objSelected, idSel) {
         }
         $("#cboDestinoDeImpresion").select2();
         respetarEleccion('#cboDestinoDeImpresion');
+        // v1.30.0: segundo destino (mismas impresoras). window.destino2Producto = el guardado del producto (0 = ninguno)
+        var d2 = Number(window.destino2Producto || 0), tbl2 = '';
+        $.each(obj, function (i, v) {
+            tbl2 += '<option value="' + v.id_dimpresion + '"' + (String(v.id_dimpresion) === String(d2) ? ' selected' : '') + '>' + escaparHtml(v.nombre_dimpresion) + '</option>';
+        });
+        $('#cboDestino2').html(tbl2).select2();   // mismo estilo que las demás listas de la ficha
+        $('#ckDestino2').prop('checked', d2 > 0);
+        $('#cajaDestino2').toggle(d2 > 0);
     });
 }
+// v1.30.0: la casilla muestra u oculta la lista del segundo destino
+$(document).on('change', '#ckDestino2', function () { $('#cajaDestino2').toggle(this.checked); });
 
 function ListadoDeBodega(objSelected, idSel) {
     var turno = turnoLista('#cboBodega');   // v1.23.3

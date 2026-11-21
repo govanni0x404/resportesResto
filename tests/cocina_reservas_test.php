@@ -83,8 +83,8 @@ if (!$prod || !$ef || !$doc) terminar('cocina y reservas');
 // Mesa libre
 list(, $b) = pedir(BASE . '/Caja/mesas');
 $mesa = 0;
-foreach ((json($b)['mesas'] ?? array()) as $m) if (!empty($m['disponible']) && $m['disponible'] !== 'f' && empty($m['venta_directa'])) { $mesa = (int)$m['id_mesa']; break; }
-if (!$mesa) $mesa = 3;
+foreach ((json($b)['mesas'] ?? array()) as $m) if ($m['estado'] === 'libre' && empty($m['con_pedido']) && empty($m['reserva'])) { $mesa = (int)$m['id_mesa']; break; }
+if (!$mesa) { echo "  (no quedan mesas libres en esta copia: vuelve a crear la copia para probar la cocina)\n"; terminar('cocina y reservas'); }
 list($c, $r, $b) = postJson(BASE . '/Caja/enviarMesa', array('id_mesa' => $mesa, 'id_lprecio' => 1, 'observacion' => '',
 	'detalle' => array(array('id_producto' => (int)$prod['id_producto'], 'cantidad' => 2, 'agregados' => array(), 'nota' => 'SIN SAL', 'menu' => array(), 'sushi' => null))));
 $idCot = (int)($r['id_cotizacion'] ?? 0);
@@ -101,7 +101,9 @@ $t = microtime(true);
 list($c, $coms) = pendientes();
 $ms = round((microtime(true) - $t) * 1000);
 revisar("Cocina/pendientes responde ($ms ms, máximo 800)", $c === 200 && is_array($coms) && $ms < 800, "código $c");
-$cm = buscar($coms, 'c:' . $idCot . ':');
+// La comanda de ESTE envío (la mesa pudo tener otras): la que trae la nota SIN SAL
+$cm = null;
+foreach ((array)$coms as $x) if (strpos($x['clave'], 'c:' . $idCot . ':') === 0) foreach ($x['lineas'] as $l) if ($l['nota'] === 'SIN SAL') $cm = $x;
 $cv = buscar($coms, 'v:' . $idVenta . ':');
 revisar('el pedido de la mesa aparece en la cocina', $cm !== null);
 revisar('con su cantidad, producto y nota', $cm && (float)$cm['lineas'][0]['cantidad'] === 2.0 && $cm['lineas'][0]['nota'] === 'SIN SAL', json_encode($cm));
@@ -112,22 +114,22 @@ if ($cm) {
 	// v1.29.0: tomar y soltar
 	list($c, $b) = pedir(BASE . '/Cocina/tomar', array('lineas' => $lineas));
 	list(, $coms) = pendientes();
-	$tm = buscar($coms, 'c:' . $idCot . ':');
+	$tm = buscar($coms, $cm['clave']);
 	revisar('"Tomar" deja la comanda "Siendo preparado por" el usuario', $c === 200 && $tm && $tm['tomado_por'] !== '', json_encode($tm['tomado_por'] ?? null));
 	list($c, $b) = pedir(BASE . '/Cocina/tomar', array('lineas' => $lineas, 'soltar' => '1'));
 	list(, $coms) = pendientes();
-	$tm = buscar($coms, 'c:' . $idCot . ':');
+	$tm = buscar($coms, $cm['clave']);
 	revisar('"Soltar" la deja libre', $c === 200 && $tm && $tm['tomado_por'] === '');
 	pedir(BASE . '/Cocina/tomar', array('lineas' => $lineas));
 	list($c, $b) = pedir(BASE . '/Cocina/listo', array('lineas' => $lineas));
 	revisar('"Listo" marca la comanda', $c === 200 && (int)(json($b)['marcadas'] ?? 0) === count($lineas), "código $c: $b");
 	list(, $coms) = pendientes();
-	revisar('y ya no aparece', buscar($coms, 'c:' . $idCot . ':') === null);
+	revisar('y ya no aparece', buscar($coms, $cm['clave']) === null);
 	list($c, $b) = pedir(BASE . '/Cocina/listo', array('lineas' => $lineas));
 	revisar('marcarla de nuevo no repite nada', $c === 200 && (int)(json($b)['marcadas'] ?? -1) === 0);
 	list($c, $b) = pedir(BASE . '/Cocina/deshacer', array('lineas' => $lineas));
 	list(, $coms) = pendientes();
-	revisar('"Deshacer" la devuelve a la pantalla', $c === 200 && buscar($coms, 'c:' . $idCot . ':') !== null);
+	revisar('"Deshacer" la devuelve a la pantalla', $c === 200 && buscar($coms, $cm['clave']) !== null);
 	pedir(BASE . '/Cocina/listo', array('lineas' => $lineas));
 }
 if ($cv) {

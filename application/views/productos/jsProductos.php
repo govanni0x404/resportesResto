@@ -218,6 +218,7 @@ function ListadoCartaDeProductos() {
         ListadoDeFamiliasMantenedor(rowData[0].nombre_familia, rowData[0].id_familia);
         ListadoDeSubFamilias(rowData[0].subfamilia, rowData[0].id_subfamilia, rowData[0].id_familia);
         ListadoDeUmedida(rowData[0].nombre_umedida, rowData[0].id_umedida);
+        window.destino2Producto = rowData[0].id_dimpresion2_web || 0;   // v1.30.0
         ListadoDestinoDeImpresion(rowData[0].nombre_dimpresion, rowData[0].id_dimpresion);
         ListadoDeBodega(rowData[0].nombre_bodega, rowData[0].id_bodega);
         ListadoDeImpuestosIva(rowData[0].iva, rowData[0].impto_iva);
@@ -266,6 +267,7 @@ function crearNuevoProducto() {
     ListadoDeFamiliasMantenedor("GENERAL");
     ListadoDeSubFamilias("");
     ListadoDeUmedida("UNIDAD");
+    window.destino2Producto = 0;   // v1.30.0: producto nuevo, sin segundo destino
     ListadoDestinoDeImpresion("CAJA");
     ListadoDeBodega("BODEGA PRINCIPAL");
     ListadoDeImpuestosIva("IVA 19%");
@@ -496,6 +498,7 @@ function GrabarProducto() {
         'permite_porcion': $('#ckPermitirFraccion').is(":checked") ? 1 : 0,
         'id_subfamilia': $('#cboSubFamilia').val() || 0,
         'id_dimpresion': $('#cboDestinoDeImpresion').val(),
+        'id_dimpresion2_web': $('#ckDestino2').is(':checked') ? ($('#cboDestino2').val() || 0) : 0,   // v1.30.0
         'id_receta': $('#cboReceta').val() || 0,
         'orden': 0,
         'permite_cambio': false,

@@ -55,8 +55,12 @@ class Mcocina extends CI_Model
 		$idDestino = (int)$idDestino;
 		$desde = date('Y-m-d H:i:s', time() - self::HORAS * 3600);
 		$destinoProducto = 'COALESCE(NULLIF(p.id_dimpresion, 0), NULLIF(f.id_dimpresion, 0), 0)';
-		$filtroC = $idDestino > 0 ? ' AND COALESCE(NULLIF(d.id_dimpresion, 0), ' . $destinoProducto . ') = ' . $idDestino : '';
-		$filtroV = $idDestino > 0 ? ' AND ' . $destinoProducto . ' = ' . $idDestino : '';
+		// v1.30.0: un producto con "Imprimir también en otro destino" se ve en los dos (ej. COCINA y PARRILLA)
+		$conDestino2 = $db->field_exists('id_dimpresion2_web', 'producto');
+		$o2 = $conDestino2 ? ' OR COALESCE(p.id_dimpresion2_web, 0) = ' . $idDestino : '';
+		$filtroC = $idDestino > 0 ? ' AND (COALESCE(NULLIF(d.id_dimpresion, 0), ' . $destinoProducto . ') = ' . $idDestino . $o2 . ')' : '';
+		$filtroV = $idDestino > 0 ? ' AND (' . $destinoProducto . ' = ' . $idDestino . $o2 . ')' : '';
+		$selD2 = $conDestino2 ? "COALESCE((SELECT nombre_dimpresion FROM dimpresion WHERE id_dimpresion = NULLIF(p.id_dimpresion2_web, 0)), '')" : "''";
 		// v1.29.0: el mismo nombre de mesa que la Caja (nombre propio del plano, o el del tipo de mesa, ej. "Mesa D 2")
 		$this->load->model('Mtipomesa');
 		$joinMesa = $this->Mtipomesa->joinSql('m', 'tmw');
@@ -69,7 +73,8 @@ class Mcocina extends CI_Model
 		// Mesas y delivery (pedido abierto o ya cobrado: igual hay que prepararlo)
 		$mesas = $db->query("SELECT 'c' AS origen, d.id_detalle_cotizacion AS id, d.id_cotizacion AS grupo,
 				to_char(d.fecha_hora_impresion, 'YYYY-MM-DD HH24:MI:SS') AS envio, d.cantidad, p.nombre_producto AS nombre,
-				COALESCE(d.mensaje, '') AS nota, COALESCE(dp.nombre_dimpresion, '') AS destino,
+				COALESCE(d.mensaje, '') AS nota, COALESCE(dp.nombre_dimpresion, '') AS destino, $selD2 AS destino2,
+				COALESCE((SELECT pa.nombre_producto FROM producto pa WHERE pa.id_producto = d.id_agregado AND d.id_agregado > 0), '') AS agregado,
 				COALESCE(c.id_mesa, 0) AS id_mesa, COALESCE(r.nombre_recinto, '') AS recinto, COALESCE($nombreMesa, '') AS nombre_mesa, COALESCE(c.esdelivery, false) AS delivery,
 				COALESCE(u.nombre_usuario, '') AS garzon, COALESCE(c.observaciones_generales, '') AS mensaje_mesa,
 				EXTRACT(EPOCH FROM (now() - d.fecha_hora_impresion))::bigint AS segundos,
@@ -95,7 +100,8 @@ class Mcocina extends CI_Model
 		// Venta directa (cada venta es una comanda)
 		$directas = $db->query("SELECT 'v' AS origen, dv.id_detalle_venta AS id, v.id_venta AS grupo,
 				to_char(v.fecha_transaccion, 'YYYY-MM-DD HH24:MI:SS') AS envio, dv.cantidad, p.nombre_producto AS nombre,
-				'' AS nota, COALESCE(dp.nombre_dimpresion, '') AS destino, v.folio, COALESCE(v.nombre_retira, '') AS retira,
+				'' AS nota, COALESCE(dp.nombre_dimpresion, '') AS destino, $selD2 AS destino2,
+				COALESCE((SELECT pa.nombre_producto FROM producto pa WHERE pa.id_producto = dv.id_agregado AND dv.id_agregado > 0), '') AS agregado, v.folio, COALESCE(v.nombre_retira, '') AS retira,
 				COALESCE(v.mensaje_pedido, '') AS mensaje_mesa,
 				EXTRACT(EPOCH FROM (now() - v.fecha_transaccion))::bigint AS segundos,
 				COALESCE(t.nombre, '') AS tomado_por, COALESCE(t.id_usuario, 0) AS tomado_id,
@@ -134,8 +140,11 @@ class Mcocina extends CI_Model
 				$comandas[$clave]['tomado_id'] = (int)$l->tomado_id;
 				$comandas[$clave]['tomado_seg'] = max(0, (int)$l->tomado_seg);
 			}
-			$comandas[$clave]['lineas'][] = array('id' => (int)$l->id, 'cantidad' => round((float)$l->cantidad, 3), 'nombre' => $l->nombre,
-				'nota' => trim((string)$l->nota), 'destino' => $l->destino);
+			// v1.30.0: el primer agregado va en la misma fila (antes no se veía su nombre) y "también en" el segundo destino
+			$destinoTxt = $l->destino . ($l->destino2 !== '' && $l->destino2 !== $l->destino ? ' + ' . $l->destino2 : '');
+			$comandas[$clave]['lineas'][] = array('id' => (int)$l->id, 'cantidad' => round((float)$l->cantidad, 3),
+				'nombre' => $l->nombre . ($l->agregado !== '' ? ' + ' . $l->agregado : ''),
+				'nota' => trim((string)$l->nota), 'destino' => $destinoTxt);
 		}
 		$lista = array_values($comandas);
 		usort($lista, function ($a, $b) { return $b['segundos'] - $a['segundos']; });

@@ -52,8 +52,8 @@
 								<div class="btn-group" role="group" aria-label="...">
 									<div class="checkbox checkbox-success checkbox-circle">
 										<input id="ckUsarDestinoDeImpresion" type="checkbox">
-										<label for="ckUsarDestinoDeImpresion">
-											USAR DESTINO DE IMPRESION
+										<label for="ckUsarDestinoDeImpresion" title="El agregado sale en la comanda del destino de impresión de SU producto (ej. la SALSA en la BARRA), con el nombre del producto al que va.">
+											IMPRIMIR EN SU PROPIO DESTINO
 										</label>
 									</div>
 								</div></div>

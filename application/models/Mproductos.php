@@ -61,6 +61,7 @@ class Mproductos extends CI_Model
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		// Favoritos de la Caja (migración 20261110190000): sin la columna el listado sigue igual, sin estrellas
 		$tieneFavorito = $this->tieneColumnaFavorito();
+		$tieneDestino2 = $this->db->field_exists('id_dimpresion2_web', 'producto');   // v1.30.0 (migración 20261121150000)
 
 		// 19-11-2026 (auditoría): también los id, para que al editar cada lista se elija por número y no por nombre
 		$q = "SELECT p.id_producto, p.cbarra, p.nombre_producto, f.nombre_familia,
@@ -72,7 +73,8 @@ class Mproductos extends CI_Model
         (select nombre_receta from receta r where r.id_receta=p.id_receta) as receta, 
         p.vigente, p.con_agregado, p.venta_publico, p.permite_porcion, p.venta_segun_stock, p.elaboracion_propia, p.permitir_venta_sin_precio, p.venta_uno_a_uno, p.pedir_cantidad_en_venta,
         p.ver_en_dispositivos_moviles,p.permite_cortesia,
-        " . ($tieneFavorito ? "(p.favorito IS TRUE)" : "false") . " AS favorito
+        " . ($tieneFavorito ? "(p.favorito IS TRUE)" : "false") . " AS favorito,
+        " . ($tieneDestino2 ? "COALESCE(p.id_dimpresion2_web, 0)" : "0") . " AS id_dimpresion2_web
         from producto p
         join familia f on p.id_familia=f.id_familia
         join umedida u on p.id_umedida=u.id_umedida
@@ -118,7 +120,8 @@ class Mproductos extends CI_Model
 				'favorito' => (($key->favorito === 't' || $key->favorito === true) ? 'SI' : 'NO'),
 				'id_familia' => (int)$key->id_familia, 'id_subfamilia' => (int)$key->id_subfamilia, 'id_umedida' => (int)$key->id_umedida,
 				'id_dimpresion' => (int)$key->id_dimpresion, 'id_bodega' => (int)$key->id_bodega, 'impto_iva' => (int)$key->impto_iva,
-				'id_menu' => (int)$key->id_menu, 'id_receta' => (int)$key->id_receta
+				'id_menu' => (int)$key->id_menu, 'id_receta' => (int)$key->id_receta,
+				'id_dimpresion2_web' => (int)$key->id_dimpresion2_web   // v1.30.0: segundo destino de impresión (0 = no)
 			)
 			);
 		}

@@ -249,6 +249,14 @@ class Productos extends CI_Controller
 			'ver_en_dispositivos_moviles' => $producto['ver_en_dispositivos_moviles'],
 			'permite_cortesia' => $producto['permite_cortesia']
 		);
+		// v1.30.0: "Imprimir también en otro destino" (0 = no). Solo si la pantalla lo mandó y la migración creó la columna
+		if (array_key_exists('id_dimpresion2_web', $producto)) {
+			$this->load->helper('tenant');
+			if (get_tenant_db($this)->field_exists('id_dimpresion2_web', 'producto')) {
+				$d2 = max(0, (int)$producto['id_dimpresion2_web']);
+				$miData['id_dimpresion2_web'] = $d2 === (int)$producto['id_dimpresion'] ? 0 : $d2;   // el mismo destino no se imprime dos veces
+			}
+		}
 		// Favorito de la Caja: solo si llegó del formulario y la base ya tiene la columna (migración 20261110190000)
 		if (isset($producto['favorito']) && $this->Mproductos->tieneColumnaFavorito()) {
 			$miData['favorito'] = ((string)$producto['favorito'] === '1') ? 'true' : 'false';

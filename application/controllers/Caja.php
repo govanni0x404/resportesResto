@@ -1083,11 +1083,42 @@ class Caja extends CI_Controller
 			$caja = $this->Mcaja->destinoCierre();
 		}
 		$grupos = array();
-		foreach ($lineas as $l) {
-			if (!isset($destinos[$l['id_producto']])) continue;
-			$d = $caja ? $caja : $destinos[$l['id_producto']];
+		$agregar = function ($d, $l) use (&$grupos) {
 			if (!isset($grupos[$d['id']])) $grupos[$d['id']] = array('nombre' => $d['nombre'], 'destino' => $d, 'lineas' => array());
 			$grupos[$d['id']]['lineas'][] = $l;
+		};
+		// v1.30.0 (pedido del usuario): un producto puede salir en DOS comandas (ej. arroz con carne: el arroz en la cocina y
+		// la carne en la parrilla) y un agregado puede salir en SU destino (ej. la salsa en la barra). Solo los productos y
+		// agregados marcados (Carta); los demás salen como siempre. Con una sola impresora (modo venta directa) no se separa.
+		$rutas = $caja ? array('segundo' => array(), 'agregados' => array()) : $this->Mcaja->rutasComanda(array_column($lineas, 'id_producto'));
+		foreach ($lineas as $l) {
+			$pid = $l['id_producto'];
+			$principal = isset($destinos[$pid]) ? ($caja ? $caja : $destinos[$pid]) : null;
+			$segundo = isset($rutas['segundo'][$pid]) ? $rutas['segundo'][$pid] : null;
+			if ($segundo && $principal && $segundo['id'] === $principal['id']) $segundo = null;
+			// Agregados con su propio destino: salen aparte; en la comanda del producto quedan con dónde salen
+			$propios = array();
+			$agregadosLinea = array();
+			foreach ($l['agregados'] as $a) {
+				$k = Mcaja::nombreAgregadoComanda($a);
+				$r = isset($rutas['agregados'][$pid][$k]) ? $rutas['agregados'][$pid][$k] : null;
+				$enOtro = $r && (!$principal || $r['destino']['id'] !== $principal['id']);
+				if ($enOtro) $propios[] = array($a, $r);
+				$agregadosLinea[] = $enOtro ? $a . ' (sale en ' . $r['destino']['nombre'] . ')' : $a;
+			}
+			$base = $l;
+			$base['agregados'] = $agregadosLinea;
+			$tambien = function ($d) use ($base, $texto) {
+				$x = $base;
+				$x['nota'] = $texto(trim($base['nota'] . ' (también sale en ' . $d['nombre'] . ')'), 200);
+				return $x;
+			};
+			if ($principal) $agregar($principal, $segundo ? $tambien($segundo) : $base);
+			if ($segundo) $agregar($segundo, $principal ? $tambien($principal) : $base);
+			foreach ($propios as $p) {
+				$agregar($p[1]['destino'], array('id_producto' => $p[1]['id_producto'], 'nombre' => $p[0], 'cantidad' => $l['cantidad'],
+					'agregados' => array(), 'nota' => $texto('Para: ' . $l['nombre'], 200)));
+			}
 		}
 		$idVenta = isset($datos['id_venta']) ? (int)$datos['id_venta'] : 0;
 		$doc = $idVenta ? $this->Mcaja->documento($idVenta) : null;
