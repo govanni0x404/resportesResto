@@ -24,7 +24,7 @@ function bajos()
 }
 function grabarInsumo($datos)
 {
-	$base = array('id_insumo' => 0, 'cbarra' => '', 'nombre_insumo' => '', 'id_grupo_insumo' => 0, 'id_impto_iva' => 1, 'id_impto_adicional' => 0,
+	$base = array('id_insumo' => 0, 'cbarra' => '', 'nombre_insumo' => '', 'id_grupo_insumo' => $GLOBALS['grupoPrueba'] ?? 0, 'id_impto_iva' => 1, 'id_impto_adicional' => 0,
 		'umedida_inventario' => 1, 'id_umedida_inventario' => 1, 'umedida_receta' => 1, 'id_umedida_receta' => 1, 'costo_neto_ppp' => 0,
 		'costo_bruto_ppp' => 0, 'precio_ucompra' => 0, 'observaciones' => '', 'inv_cierre' => 0);
 	list($c, $b) = pedir(BASE . '/Insumos/grabarInsumo', array('prod' => array_merge($base, $datos)));
@@ -36,6 +36,10 @@ function esta($lista, $id)
 	return null;
 }
 
+// La lista de Insumos solo muestra los que tienen familia: se usa la primera que exista
+list(, $b) = pedir(BASE . '/Insumos/llenarCboGrupoInsumo', array());
+$grupos = json($b);
+$GLOBALS['grupoPrueba'] = (int)($grupos[0]['id_grupo_insumo'] ?? 0);
 $codigo = 'PRB' . substr((string)time(), -6);
 $nombre = 'INSUMO PRUEBA ' . $codigo;
 list($c, $r, $b) = grabarInsumo(array('cbarra' => $codigo, 'nombre_insumo' => $nombre, 'stock_minimo' => '5'));
