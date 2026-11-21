@@ -20,6 +20,13 @@ class Mreservas extends CI_Model
 		return $this->db()->table_exists('reserva_web');
 	}
 
+	/** v1.29.0: ¿está encendida en Configuraciones > Cocina y reservas? */
+	public function activa()
+	{
+		$this->load->helper('permisos_web');
+		return opcion_config_activa($this, 'usar_reservas_web');
+	}
+
 	/** Reservas de un día (Y-m-d), por hora. */
 	public function delDia($fecha)
 	{

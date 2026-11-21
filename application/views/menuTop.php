@@ -856,8 +856,9 @@
                         <?php
                         $__showDashboard = menu_visible('Dashboard');
                         $__showCaja = menu_visible('Caja');
-                        $__showCocina = menu_visible('Cocina');       // v1.28.0 (prueba): pantalla de cocina
-                        $__showReservas = menu_visible('Reservas');   // v1.28.0 (prueba): reservas de mesas
+                        // v1.29.0 (prueba): cocina y reservas, con permiso Y encendidas en Configuraciones
+                        $__showCocina = menu_visible('Cocina') && opcion_config_activa(get_instance(), 'usar_cocina_web');
+                        $__showReservas = menu_visible('Reservas') && opcion_config_activa(get_instance(), 'usar_reservas_web');
 
                         $__showEntradaBodega = menu_visible('EntradaBodega');
                         $__showSalidaBodega = menu_visible('SalidaBodega');

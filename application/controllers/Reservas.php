@@ -16,7 +16,7 @@ class Reservas extends CI_Controller
 	public function index()
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) redirect(base_url());
-		$disp = $this->Mreservas->disponible();
+		$disp = $this->Mreservas->disponible() && $this->Mreservas->activa();
 		$this->load->view('menuTop.php', array('nombreUsuario' => $this->session->userdata('nombre_usuario')));
 		$this->load->view('reservas/reservas.php', array('disponible' => $disp, 'mesas' => $disp ? $this->Mreservas->mesas() : array()));
 		$this->load->view('menuFooter.php');
@@ -55,6 +55,7 @@ class Reservas extends CI_Controller
 		}
 		try {
 			if (!$this->Mreservas->disponible()) throw new Exception('Falta actualizar la base (migración de reservas). Recarga la página en un momento.', 409);
+			if (!$this->Mreservas->activa()) throw new Exception('Las reservas están desactivadas. Actívalas en Configuraciones > Cocina y reservas.', 409);
 			$this->output->set_output(json_encode($accion()));
 		} catch (Exception $e) {
 			$c = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;

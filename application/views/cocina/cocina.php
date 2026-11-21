@@ -39,12 +39,25 @@
 	.k-lineas li .k-nota { display: block; margin-left: 34px; font-size: 13px; color: var(--k-rojo); font-weight: 600; }
 	.k-lineas li .k-dest { float: right; font-size: 11px; color: var(--k-suave); text-transform: uppercase; margin-left: 6px; }
 	.k-lineas li.hecha { text-decoration: line-through; opacity: .45; }
-	.k-pie { padding: 0 14px 14px; margin-top: auto; }
-	.k-pie .btn { width: 100%; height: 48px; font-size: 17px; font-weight: 800; border-radius: 10px; background: var(--k-boton); border-color: var(--k-boton); color: #fff; }
+	.k-pie { padding: 0 14px 14px; margin-top: auto; display: flex; gap: 8px; }
+	.k-pie .btn { margin: 0; height: 48px; font-size: 16px; font-weight: 800; border-radius: 10px; }
+	.k-pie .k-listo { flex: 1 1 60%; background: var(--k-boton); border-color: var(--k-boton); color: #fff; }
+	.k-pie .k-tomar { flex: 1 1 40%; background: var(--k-tarjeta); border: 2px solid #1f5fa8; color: #1f5fa8; }
+	.k-pie .k-tomar.mia { border-color: var(--k-suave); color: var(--k-suave); }
+	/* v1.29.0: "Siendo preparado por" */
+	.k-prep { margin: 8px 14px 0; padding: 6px 10px; border-radius: 8px; background: #e8f0fb; color: #1f5fa8; font-weight: 700; font-size: 13px; }
+	body.k-oscuro .k-prep { background: #13294a; color: #93c5fd; }
+	.k-com.tomada { border-top-color: #1f5fa8; }
 	.k-deshacer { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 2000; display: none; align-items: center; gap: 14px;
 		padding: 12px 16px; border-radius: 12px; background: #2A1D17; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.3); max-width: calc(100% - 32px); }
 	.k-deshacer .btn { font-weight: 700; }
 	.k-barra .btn { margin: 0; }
+	/* v1.29.0: cocina sin el panel lateral (botón "Ocultar menú"): toda la pantalla para las comandas */
+	html body.k-sin-menu { --t-sidebar: 0px !important; }
+	html body.k-sin-menu nav.navbar.bootsnav, html body.k-sin-menu .main-header .top-nav, html body.k-sin-menu .main-header,
+	html body.k-sin-menu .main-footer { display: none !important; }
+	html body.k-sin-menu .content-wrapper { margin-left: 0 !important; padding-left: 0 !important; width: 100% !important; }
+	html body.k-sin-menu .content-wrapper > .content, html body.k-sin-menu .content { padding-top: 14px !important; }
 	@media (max-width: 600px) { .k-barra h1 { width: 100%; } .k-barra select.form-control { flex: 1 1 100%; min-width: 0; width: 100%; }
 		.k-barra .btn { flex: 1 1 0; width: auto; min-width: 0; padding: 6px 4px; font-size: 13px; } }
 	@media (prefers-reduced-motion: reduce) { .k-com.nueva { animation: none; } }
@@ -61,9 +74,13 @@
 	</select>
 	<button type="button" class="btn btn-default" id="kSonido" title="Sonido al llegar una comanda nueva"><i class="fa fa-volume-up"></i> Sonido</button>
 	<button type="button" class="btn btn-default" id="kOscuro" title="Colores para cocina con poca luz"><i class="fa fa-moon-o"></i> Oscuro</button>
+	<button type="button" class="btn btn-default" id="kMenu" title="Esconder o mostrar el menú de la izquierda"><i class="fa fa-columns"></i> <span>Ocultar menú</span></button>
 	<button type="button" class="btn btn-default" id="kCompleta" title="Pantalla completa"><i class="fa fa-arrows-alt"></i> Pantalla completa</button>
 </div>
 <div class="k-aviso" id="kAviso" role="alert"></div>
+<?php if ($disponible && !$activa) : ?>
+<div class="k-aviso" style="display:block">La pantalla de cocina está desactivada. Gerencia la activa en <b>Configuraciones &gt; General &gt; Cocina y reservas</b>.</div>
+<?php endif; ?>
 <?php if (!$disponible) : ?>
 <div class="k-aviso" style="display:block">Falta actualizar la base de esta empresa (migración de la pantalla de cocina). Recarga la página en un momento.</div>
 <?php endif; ?>
@@ -76,6 +93,8 @@
 	// jQuery se carga al final de la página (menuFooter): se espera a que termine de cargar
 	document.addEventListener('DOMContentLoaded', function () {
 		var URL = '<?php echo base_url() ?>index.php/Cocina/';
+		var YO = <?php echo (int)$yo; ?>;
+		var ACTIVA = <?php echo ($disponible && $activa) ? 'true' : 'false'; ?>;
 		var CLAVE = 'restoWeb.cocina.';
 		var guardar = function (k, v) { try { localStorage.setItem(CLAVE + k, v); } catch (e) { /* sin almacenamiento */ } };
 		var leer = function (k, d) { try { var v = localStorage.getItem(CLAVE + k); return v === null ? d : v; } catch (e) { return d; } };
@@ -116,9 +135,12 @@
 				var esNueva = !primera && !vistas[c.clave];
 				if (esNueva) nuevas++;
 				var color = c.segundos >= 1200 ? ' roja' : (c.segundos >= 600 ? ' amarilla' : '');
-				var $c = $('<article class="k-com' + color + (esNueva ? ' nueva' : '') + '">').data('c', c);
+				var mia = c.tomado_por && c.tomado_id === YO;
+				var $c = $('<article class="k-com' + color + (c.tomado_por ? ' tomada' : '') + (esNueva ? ' nueva' : '') + '">').data('c', c);
 				$c.append('<div class="k-cab"><div><b>' + esc(c.titulo) + '</b><small>' + esc(c.detalle) + '</small></div>'
 					+ '<div class="k-tiempo" title="Tiempo esperando">' + tiempo(c.segundos) + '</div></div>');
+				if (c.tomado_por) $c.append('<div class="k-prep"><i class="fa fa-user"></i> Siendo preparado por ' + esc(c.tomado_por)
+					+ ' · hace ' + tiempo(c.tomado_seg) + '</div>');
 				if (c.mensaje) $c.append('<div class="k-msg"><i class="fa fa-exclamation-circle"></i> ' + esc(c.mensaje) + '</div>');
 				var $ul = $('<ul class="k-lineas">');
 				$.each(c.lineas, function (j, l) {
@@ -129,7 +151,10 @@
 						+ (l.nota ? '<span class="k-nota">' + esc(l.nota) + '</span>' : '') + '</li>');
 				});
 				$c.append($ul);
-				$c.append('<div class="k-pie"><button type="button" class="btn k-listo"><i class="fa fa-check"></i> Listo</button></div>');
+				$c.append('<div class="k-pie">'
+					+ (mia ? '<button type="button" class="btn k-tomar mia" data-soltar="1" title="Dejarla libre para otro cocinero"><i class="fa fa-hand-paper-o"></i> Soltar</button>'
+						: '<button type="button" class="btn k-tomar" title="Avisar que la estoy preparando yo"><i class="fa fa-hand-rock-o"></i> Tomar</button>')
+					+ '<button type="button" class="btn k-listo"><i class="fa fa-check"></i> Listo</button></div>');
 				$g.append($c);
 			});
 			vistas = ahora;
@@ -138,7 +163,7 @@
 		}
 
 		function cargar() {
-			if (pidiendo) return;
+			if (pidiendo || !ACTIVA) return;
 			pidiendo = true;
 			$.ajax({ url: URL + 'pendientes', data: { destino: $('#kDestino').val() }, dataType: 'json', global: false })
 				.done(function (r) { $('#kAviso').hide(); pintar(r.comandas || []); })
@@ -172,6 +197,16 @@
 					$('#kAviso').text((x.responseJSON && x.responseJSON.error) || 'No se pudo marcar como lista').show();
 				});
 		});
+		// v1.29.0: tomar / soltar la comanda
+		$('#kGrilla').on('click', '.k-tomar', function () {
+			var $b = $(this), c = $b.closest('.k-com').data('c'), soltar = $b.data('soltar') ? '1' : '0';
+			if (soltar === '0' && c.tomado_por && c.tomado_id !== YO
+				&& !confirm(c.tomado_por + ' ya la está preparando. ¿La tomas tú?')) return;
+			$b.prop('disabled', true);
+			$.ajax({ url: URL + 'tomar', type: 'POST', data: { lineas: lineasDe(c), soltar: soltar }, dataType: 'json', global: false })
+				.always(function () { primera = true; vistas = {}; cargar(); })
+				.fail(function (x) { $('#kAviso').text((x.responseJSON && x.responseJSON.error) || 'No se pudo tomar la comanda').show(); });
+		});
 		$('#kDeshacer .btn').on('click', function () {
 			if (!ultimoListo) return;
 			$.ajax({ url: URL + 'deshacer', type: 'POST', data: { lineas: lineasDe(ultimoListo) }, dataType: 'json', global: false })
@@ -180,12 +215,21 @@
 		$('#kDestino').on('change', function () { guardar('destino', $(this).val()); primera = true; cargar(); });
 		$('#kSonido').on('click', function () { sonido = !sonido; guardar('sonido', sonido ? '1' : '0'); pintarSonido(); if (sonido) pitido(); });
 		$('#kOscuro').on('click', function () { $('body').toggleClass('k-oscuro'); guardar('oscuro', $('body').hasClass('k-oscuro') ? '1' : '0'); });
+		// v1.29.0: esconder del todo el menú de la izquierda (queda recordado en esta pantalla)
+		function sinMenu(si) {
+			$('body').toggleClass('k-sin-menu', si);
+			$('#kMenu span').text(si ? 'Mostrar menú' : 'Ocultar menú');
+			$(window).trigger('resize');
+		}
+		sinMenu(leer('sinMenu', '0') === '1');
+		$('#kMenu').on('click', function () { var si = !$('body').hasClass('k-sin-menu'); guardar('sinMenu', si ? '1' : '0'); sinMenu(si); });
 		$('#kCompleta').on('click', function () {
 			var d = document.documentElement;
-			if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen().catch(function () {});
-			else if (document.exitFullscreen) document.exitFullscreen();
+			if (!document.fullscreenElement && d.requestFullscreen) { d.requestFullscreen().catch(function () {}); sinMenu(true); }
+			else if (document.exitFullscreen) { document.exitFullscreen(); sinMenu(leer('sinMenu', '0') === '1'); }
 		});
 
+		if (!ACTIVA) { $('#kGrilla').empty(); return; }
 		cargar();
 		setInterval(cargar, 5000);
 	});

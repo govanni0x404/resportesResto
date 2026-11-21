@@ -20,7 +20,8 @@ class Cocina extends CI_Controller
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) redirect(base_url());
 		$this->load->view('menuTop.php', array('nombreUsuario' => $this->session->userdata('nombre_usuario')));
-		$this->load->view('cocina/cocina.php', array('disponible' => $this->Mcocina->disponible(), 'destinos' => $this->Mcocina->destinos()));
+		$this->load->view('cocina/cocina.php', array('disponible' => $this->Mcocina->disponible(), 'activa' => $this->Mcocina->activa(),
+			'destinos' => $this->Mcocina->destinos(), 'yo' => (int)$this->session->userdata('id_usuario')));
 		$this->load->view('menuFooter.php');
 	}
 
@@ -39,6 +40,16 @@ class Cocina extends CI_Controller
 		$this->json(function () {
 			$n = $this->Mcocina->marcarListo($this->input->post('lineas'), (int)$this->session->userdata('id_usuario'));
 			return array('ok' => true, 'marcadas' => $n);
+		}, true);
+	}
+
+	/** v1.29.0: el usuario de la sesión toma la comanda ("Siendo preparado por"). POST lineas[], soltar=1 para dejarla libre. */
+	public function tomar()
+	{
+		$this->json(function () {
+			$n = $this->Mcocina->tomar($this->input->post('lineas'), (int)$this->session->userdata('id_usuario'),
+				(string)$this->session->userdata('nombre_usuario'), (string)$this->input->post('soltar') === '1');
+			return array('ok' => true, 'lineas' => $n);
 		}, true);
 	}
 
@@ -63,6 +74,7 @@ class Cocina extends CI_Controller
 		}
 		try {
 			if (!$this->Mcocina->disponible()) throw new Exception('Falta actualizar la base (migración de la pantalla de cocina). Recarga la página en un momento.', 409);
+			if (!$this->Mcocina->activa()) throw new Exception('La pantalla de cocina está desactivada. Actívala en Configuraciones > Cocina y reservas.', 409);
 			$this->output->set_output(json_encode($accion()));
 		} catch (Exception $e) {
 			$c = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;

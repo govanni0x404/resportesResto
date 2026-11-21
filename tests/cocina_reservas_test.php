@@ -8,6 +8,8 @@
  * Cocina: un pedido enviado a una mesa y una venta directa aparecen en Cocina/pendientes; "Listo" los saca, "Deshacer"
  * los devuelve; el filtro por destino funciona; responde rápido.
  * Reservas: se crea, se rechaza una hora mala o la misma mesa a menos de 2 horas, se cambia el estado y se lista por día.
+ * v1.29.0: Configuraciones las enciende y apaga; "Tomar" deja "Siendo preparado por"; una reserva bloquea su mesa en la
+ * Caja desde los minutos configurados y se desbloquea cuando llega el cliente.
  */
 require __DIR__ . '/lib_pruebas.php';
 if (($argv[2] ?? '') !== 'COPIA') {
@@ -38,6 +40,25 @@ function buscar($comandas, $prefijo)
 	foreach ((array)$comandas as $c) if (strpos($c['clave'], $prefijo) === 0) return $c;
 	return null;
 }
+
+function configurar($datos)
+{
+	list($c, $b) = pedir(BASE . '/Configuraciones/guardar', $datos);
+	return $c;
+}
+
+echo "Encender y apagar en Configuraciones:\n";
+configurar(array('_casillas' => 'usar_cocina_web,usar_reservas_web'));   // las dos apagadas
+list($c, ) = pedir(BASE . '/Cocina/pendientes');
+revisar('con la cocina apagada, la pantalla no entrega comandas', $c === 409, "código $c");
+list($c, ) = pedir(BASE . '/Reservas/listado');
+revisar('con las reservas apagadas, no se listan', $c === 409, "código $c");
+list($c, $html) = pedir(BASE . '/Dashboard', null, false);
+revisar('y el menú no muestra Cocina ni Reservas', strpos($html, 'index.php/Cocina"') === false && strpos($html, 'index.php/Reservas"') === false);
+revisar('Configuraciones guarda las dos casillas y los minutos', configurar(array('usar_cocina_web' => '1', 'usar_reservas_web' => '1',
+	'minutos_bloqueo_reserva_web' => '60')) < 400);
+list($c, $html) = pedir(BASE . '/Dashboard', null, false);
+revisar('encendidas, el menú muestra Cocina y Reservas', strpos($html, 'index.php/Cocina"') !== false && strpos($html, 'index.php/Reservas"') !== false);
 
 echo "Pantalla de cocina:\n";
 list($c, $html) = pedir(BASE . '/Cocina', null, false);
@@ -88,6 +109,16 @@ revisar('la venta directa aparece en la cocina', $cv !== null && strpos($cv['det
 
 if ($cm) {
 	$lineas = array_map(function ($l) { return array('origen' => 'c', 'id' => $l['id']); }, $cm['lineas']);
+	// v1.29.0: tomar y soltar
+	list($c, $b) = pedir(BASE . '/Cocina/tomar', array('lineas' => $lineas));
+	list(, $coms) = pendientes();
+	$tm = buscar($coms, 'c:' . $idCot . ':');
+	revisar('"Tomar" deja la comanda "Siendo preparado por" el usuario', $c === 200 && $tm && $tm['tomado_por'] !== '', json_encode($tm['tomado_por'] ?? null));
+	list($c, $b) = pedir(BASE . '/Cocina/tomar', array('lineas' => $lineas, 'soltar' => '1'));
+	list(, $coms) = pendientes();
+	$tm = buscar($coms, 'c:' . $idCot . ':');
+	revisar('"Soltar" la deja libre', $c === 200 && $tm && $tm['tomado_por'] === '');
+	pedir(BASE . '/Cocina/tomar', array('lineas' => $lineas));
 	list($c, $b) = pedir(BASE . '/Cocina/listo', array('lineas' => $lineas));
 	revisar('"Listo" marca la comanda', $c === 200 && (int)(json($b)['marcadas'] ?? 0) === count($lineas), "código $c: $b");
 	list(, $coms) = pendientes();
@@ -138,5 +169,41 @@ $l = json($b);
 $nombres = array_column($l['reservas'] ?? array(), 'nombre');
 revisar('el listado del día las trae por hora', $c === 200 && array_slice($nombres, 0, 2) === array('Pérez', 'Soto'), implode(', ', $nombres));
 revisar('y el resumen del mes las cuenta', ($l['mes'][$dia]['reservas'] ?? 0) >= 2);
+
+
+echo "Bloqueo de la mesa por reserva (Caja):\n";
+list(, $b) = pedir(BASE . '/Caja/mesas');
+$libre = 0;
+foreach ((json($b)['mesas'] ?? array()) as $m) if ($m['estado'] === 'libre' && empty($m['con_pedido']) && empty($m['reserva'])) { $libre = (int)$m['id_mesa']; break; }
+revisar('hay una mesa libre para probar', $libre > 0);
+if ($libre) {
+	$en30 = time() + 1800;   // la reserva es en 30 minutos: con 60 de bloqueo ya está bloqueada
+	list($c, $r, $b) = $nueva(array('nombre' => 'Bloqueo', 'fecha' => date('Y-m-d', $en30), 'hora' => date('H:i', $en30), 'personas' => 3, 'id_mesa' => $libre));
+	$idBloq = (int)($r['reserva']['id'] ?? 0);
+	revisar('se reserva la mesa ' . $libre . ' para dentro de 30 minutos', $c === 200 && $idBloq > 0, substr($b, 0, 200));
+	$mesaEnCaja = function ($id) {
+		list(, $b) = pedir(BASE . '/Caja/mesas');
+		foreach ((json($b)['mesas'] ?? array()) as $m) if ((int)$m['id_mesa'] === $id) return $m;
+		return null;
+	};
+	$ms = $mesaEnCaja($libre);
+	revisar('en la Caja la mesa sale bloqueada por la reserva', $ms && (int)($ms['reserva']['id'] ?? 0) === $idBloq, json_encode($ms['reserva'] ?? null));
+	$pedido = array('id_mesa' => $libre, 'id_lprecio' => 1, 'observacion' => '',
+		'detalle' => array(array('id_producto' => (int)$prod['id_producto'], 'cantidad' => 1, 'agregados' => array(), 'nota' => '', 'menu' => array(), 'sushi' => null)));
+	list($c, $r, $b) = postJson(BASE . '/Caja/enviarMesa', $pedido);
+	revisar('no se puede enviar un pedido a la mesa reservada', $c === 409 && stripos((string)($r['error'] ?? ''), 'reserva') !== false, "código $c: " . substr($b, 0, 200));
+	configurar(array('minutos_bloqueo_reserva_web' => '10'));
+	$ms = $mesaEnCaja($libre);
+	revisar('con 10 minutos de bloqueo, una reserva en 30 minutos todavía no bloquea', $ms && empty($ms['reserva']));
+	configurar(array('minutos_bloqueo_reserva_web' => '60'));
+	list($c, $b) = pedir(BASE . '/Caja/reservaLlego', array('id_mesa' => $libre, 'id_reserva' => $idBloq));
+	revisar('"Llegó el cliente" desbloquea la mesa', $c === 200, "código $c: $b");
+	list($c, $r, $b) = postJson(BASE . '/Caja/enviarMesa', $pedido);
+	revisar('y ya se le pueden enviar pedidos', $c === 200, "código $c: " . substr($b, 0, 200));
+	list(, $b) = pedir(BASE . '/Reservas/listado?fecha=' . date('Y-m-d', $en30));
+	$est = '';
+	foreach ((json($b)['reservas'] ?? array()) as $x) if ((int)$x['id'] === $idBloq) $est = $x['estado'];
+	revisar('la reserva queda como "llegó"', $est === 'llego', $est);
+}
 
 terminar('cocina y reservas');

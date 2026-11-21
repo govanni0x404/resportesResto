@@ -227,3 +227,31 @@ function csrf_web_token($CI)
 	}
 	return $t;
 }
+
+/**
+ * v1.29.0: una opción de la tabla configuracion (ej. usar_cocina_web) para decidir qué se muestra en el menú.
+ * Se lee una vez por petición; si la columna todavía no existe (falta la migración) devuelve null, sin error.
+ */
+function opcion_config_web($CI, $columna)
+{
+	static $cache = array();
+	if (!array_key_exists($columna, $cache)) {
+		$cache[$columna] = null;
+		try {
+			$CI->load->helper('tenant');
+			$r = get_tenant_db($CI)->query('SELECT to_jsonb(c) ->> ? AS v FROM configuracion c LIMIT 1', array((string)$columna));
+			$f = $r ? $r->row() : null;
+			$cache[$columna] = $f ? $f->v : null;
+		} catch (Throwable $e) {
+			$cache[$columna] = null;
+		}
+	}
+	return $cache[$columna];
+}
+
+/** ¿Está encendida esa casilla de Configuraciones? (true / 't' / 'true') */
+function opcion_config_activa($CI, $columna)
+{
+	return in_array(strtolower((string)opcion_config_web($CI, $columna)), array('t', 'true', '1'), true);
+}
+

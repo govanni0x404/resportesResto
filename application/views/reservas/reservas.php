@@ -40,7 +40,7 @@
 	<button type="button" class="btn btn-success" id="rNueva"<?php echo $disponible ? '' : ' disabled'; ?>><i class="fa fa-plus"></i> Nueva reserva</button>
 </div>
 <?php if (!$disponible) : ?>
-<div class="alert alert-warning">Falta actualizar la base de esta empresa (migración de reservas). Recarga la página en un momento.</div>
+<div class="alert alert-warning">Las reservas no están disponibles: actívalas en <b>Configuraciones &gt; General &gt; Cocina y reservas</b> (si recién se actualizó el sistema, recarga la página en un momento).</div>
 <?php endif; ?>
 <p class="r-resumen" id="rResumen"></p>
 <div class="r-lista" id="rLista"><div class="r-vacio"><i class="fa fa-spinner fa-spin"></i> Cargando…</div></div>

@@ -28,6 +28,7 @@
 				$('#mesasOcupadas').text(ocupadas).toggle(ocupadas > 0);
 				if (editandoPlano) return;   // no pisar lo que se está moviendo
 				mesasLista = r.mesas;
+				$('.leyenda-reserva').toggle($.grep(r.mesas, function (m) { return !!m.reserva; }).length > 0);   // v1.29.0 (prueba)
 				sectoresLista = r.sectores || [];
 				pintarFiltroTipoMesa(r.tipos_mesa || []);
 				renderMesas();
@@ -111,6 +112,12 @@
 						.append($('<div class="tiempo">').attr('data-inicio', ahora - m.segundos * 1000).text(fmtTiempo(m.segundos * 1000)))
 						.toggleClass('demora', m.estado === 'ocupada' && m.segundos >= 3600 && m.segundos < 7200).toggleClass('critica', m.estado === 'ocupada' && m.segundos >= 7200)
 						.append($('<div class="atiende">').text(m.atiende));
+				} else if (m.reserva) {
+					// v1.29.0 (prueba): mesa libre bloqueada por una reserva (Reservas)
+					$c.addClass('reservada').attr('data-reserva', m.reserva.id)
+						.attr('title', 'Bloqueada por reserva: ' + m.reserva.nombre + ' a las ' + m.reserva.hora + ' (' + m.reserva.personas + ')')
+						.append($('<div class="estado">').text('Reservada ' + m.reserva.hora))
+						.append($('<div class="atiende">').text(m.reserva.nombre + ' · ' + m.reserva.personas + ' pers.'));
 				} else {
 					$c.append($('<div class="estado">').text(m.estado === 'libre' ? 'Libre' : 'Bloqueada'));
 				}
@@ -485,6 +492,20 @@
 			if (editandoPlano) return;
 			var id = Number($(this).attr('data-id'));
 			if ($(this).attr('data-estado') === 'bloqueada') { ofrecerLiberar(id); return; }
+			// v1.29.0 (prueba): mesa bloqueada por reserva: solo se abre si llegó el cliente
+			if ($(this).attr('data-reserva')) {
+				var mr = $.grep(mesasLista, function (x) { return x.id_mesa === id; })[0], rv = mr && mr.reserva;
+				if (!rv) return;
+				swal({ title: 'Mesa bloqueada por reserva', text: rv.nombre + ' reservó ' + nombreMesa(id) + ' a las ' + rv.hora + ' (' + rv.personas
+					+ (rv.personas === 1 ? ' persona' : ' personas') + ').\n¿Llegó el cliente?', type: 'info', showCancelButton: true,
+					confirmButtonText: 'Sí, llegó: abrir la mesa', cancelButtonText: 'No' }, function (ok) {
+					if (!ok) return;
+					$.ajax({ url: base + 'reservaLlego', type: 'POST', dataType: 'json', data: { id_mesa: id, id_reserva: rv.id } })
+						.done(function () { delete mr.reserva; abrirMesa(id, !!mesa); })
+						.fail(function (x) { toastr.error((x.responseJSON && x.responseJSON.error) || 'No se pudo marcar la llegada'); });
+				});
+				return;
+			}
 			if (mesa && mesa.id_mesa === id) { abrirDrawerMesa(); return; }
 			if (mesa && pendientesMesa().length) {
 				swal({ title: 'Hay productos sin enviar', text: 'Se perderán los que no enviaste a ' + nombreMesa(mesa.id_mesa) + '.', type: 'warning', showCancelButton: true, confirmButtonText: 'Continuar', cancelButtonText: 'Cancelar' },

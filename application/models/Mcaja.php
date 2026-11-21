@@ -3970,6 +3970,13 @@ class Mcaja extends CI_Model
 				'id_tipo_mesa' => (int)$m->id_tipo_mesa,
 			);
 		}
+		// v1.29.0 (prueba): mesas libres bloqueadas por una reserva
+		$reservas = $this->bloqueosReserva($db);
+		if ($reservas) {
+			foreach ($res as $i => $mm) {
+				if ($mm['estado'] === 'libre' && isset($reservas[$mm['id_mesa']])) $res[$i]['reserva'] = $reservas[$mm['id_mesa']];
+			}
+		}
 		// 19-11-2026: filtro "Tipo de mesa" arriba de las mesas: los tipos vigentes y los que tenga alguna mesa
 		$usados = array();
 		foreach ($res as $m) $usados[$m['id_tipo_mesa']] = true;
@@ -4175,6 +4182,50 @@ class Mcaja extends CI_Model
 	}
 
 	/** Rechaza mesas bloqueadas o que quedaron marcadas ocupadas sin un pedido abierto. */
+	/**
+	 * v1.29.0 (prueba): mesas libres bloqueadas por una reserva (Reservas). Una reserva "por llegar" bloquea su mesa desde
+	 * Configuraciones > minutos antes de la hora hasta 1 hora después, o hasta que se marque Llegó / No vino / Cancelada.
+	 * Con reservas apagadas, sin la tabla o con 0 minutos: nada. Devuelve id_mesa => [id, nombre, hora, personas].
+	 */
+	private function bloqueosReserva($db, $idMesa = 0)
+	{
+		$c = $this->columnas($db, array('reserva_web'));
+		if (!isset($c['reserva_web'])) return array();
+		$filtro = $idMesa > 0 ? ' AND r.id_mesa = ' . (int)$idMesa : ' AND r.id_mesa > 0';
+		$res = array();
+		foreach ($this->q($db, "SELECT DISTINCT ON (r.id_mesa) r.id_mesa, r.id_reserva, r.nombre, to_char(r.hora, 'HH24:MI') AS hora, r.personas
+				FROM reserva_web r,
+					(SELECT COALESCE((to_jsonb(c) ->> 'usar_reservas_web')::boolean, false) AS activa,
+						COALESCE((to_jsonb(c) ->> 'minutos_bloqueo_reserva_web')::int, 60) AS minutos FROM configuracion c LIMIT 1) k
+				WHERE k.activa AND k.minutos > 0 AND r.estado = 'pendiente' $filtro
+					AND (now() AT TIME ZONE ?) BETWEEN (r.fecha + r.hora) - k.minutos * interval '1 minute' AND (r.fecha + r.hora) + interval '60 minutes'
+				ORDER BY r.id_mesa, r.fecha, r.hora", array(self::TZ))->result() as $r) {
+			$res[(int)$r->id_mesa] = array('id' => (int)$r->id_reserva, 'nombre' => $r->nombre, 'hora' => $r->hora, 'personas' => (int)$r->personas);
+		}
+		return $res;
+	}
+
+	/** Lanza 409 si la mesa libre está bloqueada por una reserva (enviar pedidos, mover productos a ella). */
+	private function exigirSinReserva($db, $idMesa)
+	{
+		$b = $this->bloqueosReserva($db, $idMesa);
+		if (!isset($b[$idMesa])) return;
+		$r = $b[$idMesa];
+		throw new Exception('Mesa bloqueada por reserva: ' . $r['nombre'] . ' a las ' . $r['hora'] . ' (' . $r['personas']
+			. ($r['personas'] === 1 ? ' persona' : ' personas') . '). Si el cliente llegó, márcalo tocando la mesa.', 409);
+	}
+
+	/** v1.29.0 (prueba): el cliente de la reserva llegó (desde la mesa en la Caja): la mesa se desbloquea. */
+	public function reservaLlego($idMesa, $idReserva)
+	{
+		$db = $this->conexion();
+		$c = $this->columnas($db, array('reserva_web'));
+		if (!isset($c['reserva_web'])) throw new Exception('Este local no usa reservas', 400);
+		$this->q($db, "UPDATE reserva_web SET estado = 'llego' WHERE id_reserva = ? AND id_mesa = ? AND estado = 'pendiente'", array((int)$idReserva, (int)$idMesa));
+		if ($db->affected_rows() < 1) throw new Exception('La reserva ya no está pendiente en esa mesa', 409);
+		return array('ok' => true);
+	}
+
 	private function validarMesaUsable($m, $db)
 	{
 		if (!$m) throw new Exception('La mesa no existe o no está vigente', 404);
@@ -4215,6 +4266,7 @@ class Mcaja extends CI_Model
 			$this->validarMesaUsable($this->bloquearMesa($db, $idMesa), $db);
 			$this->validarStock($db, $lineas);
 			$cot = $this->cotizacionDeMesa($db, $idMesa);
+			if (!$cot) $this->exigirSinReserva($db, $idMesa);   // v1.29.0 (prueba): mesa libre bloqueada por reserva
 			if ($cot) {
 				$idCot = (int)$cot->id_cotizacion;
 			} else {
@@ -4507,6 +4559,7 @@ class Mcaja extends CI_Model
 				return true;
 			});
 			$destino = $this->cotizacionDeMesa($db, $idDestino);
+			if (!$destino) $this->exigirSinReserva($db, $idDestino);   // v1.29.0 (prueba): no se pasan productos a una mesa reservada
 			if ($todo && !$destino) {
 				$this->q($db, 'UPDATE cotizacion SET id_mesa = ? WHERE id_cotizacion = ?', array($idDestino, (int)$cot->id_cotizacion));
 				$this->q($db, 'UPDATE mesa SET disponible = false, id_cotizacion = ?, id_garzon = ? WHERE id_mesa = ?', array((int)$cot->id_cotizacion, (int)$idUsuario, $idDestino));

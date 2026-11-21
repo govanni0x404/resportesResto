@@ -89,6 +89,27 @@ if (!function_exists('cfg_opciones')) {
                                             </div>
                                         </div>
 
+                                        <?php if (array_key_exists('usar_cocina_web', $config)) :
+                                            $__activa = function ($k) use ($config) { return in_array($config[$k] ?? null, array(true, 't', 1, '1'), true); }; ?>
+                                        <!-- v1.29.0 (PRUEBA): pantalla de cocina y reservas (migración 20261121140000) -->
+                                        <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"><i class="fa fa-fire"></i>Cocina y reservas</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <label><input type="checkbox" name="usar_cocina_web" value="1" <?php echo $__activa('usar_cocina_web') ? 'checked' : ''; ?>> Usar la pantalla de cocina</label>
+                                                <p class="help-block" style="margin-top:0">Para una tablet o monitor en la cocina: las comandas se ven en pantalla, el cocinero las toma y las marca listas. Las comandas en papel siguen saliendo igual.</p>
+                                                <label><input type="checkbox" name="usar_reservas_web" value="1" <?php echo $__activa('usar_reservas_web') ? 'checked' : ''; ?>> Usar reservas de mesas</label>
+                                                <div class="form-group" style="margin-top:8px">
+                                                    <label for="minBloqueoReserva">Bloquear la mesa reservada desde (minutos antes de la hora)</label>
+                                                    <input type="number" min="0" max="720" step="5" class="form-control" id="minBloqueoReserva" name="minutos_bloqueo_reserva_web" value="<?php echo (int)($config['minutos_bloqueo_reserva_web'] ?? 60); ?>">
+                                                    <p class="help-block">Desde ese momento la mesa sale "Bloqueada por reserva" en la Caja y no acepta pedidos, hasta que se marque que el cliente llegó, no vino o se canceló (o pase 1 hora de la hora reservada). 0 = no bloquear.</p>
+                                                </div>
+                                                <p class="help-block">Quién las ve: gerencia siempre; los demás roles, en Privilegios de Usuario (Cocina / Reservas).</p>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+
                                         <?php if (array_key_exists('delivery_habilitado', $config)) : ?>
                                         <!-- 18-11-2026: Delivery en la Caja (migración 20261118100000; sin ella la tarjeta no aparece) -->
                                         <div class="config-card">
