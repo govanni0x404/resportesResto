@@ -449,8 +449,9 @@
                 var $tr = $('<tr>');
                 $tr.append($('<td>').text(fecha(x.fecha)).append(i === 0 ? ' <span class="label label-success">último</span>' : ''));
                 $tr.append($('<td class="text-right">').text(peso(x.bytes)));
+                // v1.27.1: con "download" el aviso de carga no se queda pegado (la página no cambia al descargar)
                 $tr.append($('<td class="text-right">').append($('<a class="btn btn-default btn-sm"><i class="fa fa-download"></i> Descargar</a>')
-                    .attr('href', URL + 'descargarRespaldo?archivo=' + encodeURIComponent(x.archivo))));
+                    .attr('href', URL + 'descargarRespaldo?archivo=' + encodeURIComponent(x.archivo)).attr('download', x.archivo)));
                 $t.append($tr);
             });
             $('#respaldoTotal').html('<i class="fa fa-hdd-o"></i> ' + r.respaldos.length + ' respaldo(s), en total ' + peso(r.total || 0) + '.');

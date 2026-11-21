@@ -77,7 +77,7 @@
 								<fieldset>
 									<div class="col-md-12">
 										<label for="cboGrupoInsumo">FAMILIA/GRUPO INSUMO *</label>
-										<sup style="color:#B4432E;" ><a onclick="AbrirModalNuevaFamiliaInsumo()">Nuevo</a></sup>
+										<sup><a onclick="AbrirModalNuevaFamiliaInsumo()">Nuevo</a></sup>
 										<select style="width:100%;" id="cboGrupoInsumo" nombre="cboGrupoInsumo" class="form-control input-sm" requerido="si">
 											<option value="">--Seleccione--</option>
 										</select>
@@ -135,7 +135,7 @@
 									</div>
 									<div class="col-md-6">
 										<label for="cboUnMedInventario">U. MEDIDA INVENTARIO/COMPRA *</label>
-										<sup style="color:#B4432E;" ><a onclick="AbrirModalNuevaUmedida('inventario')">Nuevo</a></sup>
+										<sup><a onclick="AbrirModalNuevaUmedida('inventario')">Nuevo</a></sup>
 										<select style="width:100%;" id="cboUnMedInventario" nombre="cboUnMedInventario" class="form-control input-sm" requerido="si">
 											<option value="">--Seleccione--</option>
 										</select>
@@ -148,7 +148,7 @@
 									</div>
 									<div class="col-md-6">
 										<label for="cboUnMedReceta">U. MEDIDA RECETA *</label>
-										<sup style="color:#B4432E;" ><a onclick="AbrirModalNuevaUmedida('receta')">Nuevo</a></sup>
+										<sup><a onclick="AbrirModalNuevaUmedida('receta')">Nuevo</a></sup>
 										<select style="width:100%;" id="cboUnMedReceta" nombre="cboUnMedReceta" class="form-control input-sm" requerido="si">
 											<option value="">--Seleccione--</option>
 										</select>
@@ -617,9 +617,15 @@
 		}, function(datos) {
 			var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
 			tblIva = "";
-			tblIva = '<option selected value="0">--SELECCIONE--</option>';
+			tblIva = '<option value="0">--SELECCIONE--</option>';
 			tblAdicional = "";
 			tblAdicional = '<option selected value="0">--SELECCIONE--</option>';
+			// v1.27.1: insumo nuevo (sin IVA elegido) = el IVA viene puesto (el primer impuesto que se llama IVA...). Se puede cambiar.
+			if (objSelectedIva === undefined) {
+				$.each(obj, function(index, v) {
+					if (/^\s*IVA\b/i.test(v.nombre_impuesto || '')) { objSelectedIva = v.nombre_impuesto; return false; }
+				});
+			}
 			$.each(obj, function(index, v) { // recorro el array
 				if (v.nombre_impuesto == objSelectedIva) {
 					tblIva = tblIva + '<option selected value="' + v.id_impuesto + '">' + v.nombre_impuesto + '</option>';

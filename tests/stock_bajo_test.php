@@ -52,6 +52,12 @@ $i = esta($lista, $id);
 revisar('el insumo sin stock aparece en el aviso', $i !== null);
 revisar('con su mínimo y su stock', $i && (float)$i['minimo'] === 5.0 && (float)$i['saldo'] <= 0, json_encode($i));
 
+// v1.27.1: al reabrir el insumo (la lista de Insumos) tiene que venir el mínimo grabado; antes salía 0
+list(, $b) = pedir(BASE . '/Insumos/ListadoInsumos', array());
+$fila = null;
+foreach ((json($b)['aaData'] ?? array()) as $f) if ((int)$f['id_insumo'] === $id) $fila = $f;
+revisar('al reabrir el insumo se ve el mínimo grabado (5)', $fila && (float)($fila['stock_minimo_web'] ?? -1) === 5.0, json_encode($fila));
+
 list($c, $r, $b) = grabarInsumo(array('id_insumo' => $id, 'cbarra' => $codigo, 'nombre_insumo' => $nombre));   // sin stock_minimo (otra pantalla)
 list(, $lista) = bajos();
 revisar('grabarlo sin el campo (desde otra pantalla) no le borra el mínimo', $c === 200 && esta($lista, $id) !== null, "código $c");
