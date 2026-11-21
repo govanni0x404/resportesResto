@@ -939,7 +939,6 @@ class Mcaja extends CI_Model
 			'sin_impresion' => $r->sin_impresion === true || $r->sin_impresion === 't');
 	}
 
-	/** Impresora de la caja (configuracion.id_dimpresion_caja) con la forma de destinosComanda(); null si no está definida. */
 	/** Opciones de Configuraciones que usa la Caja (ver configuracion()). */
 	public function opciones()
 	{
@@ -952,8 +951,7 @@ class Mcaja extends CI_Model
 	 */
 	public function destinoCierre()
 	{
-		$d = $this->destinoPorNombre($this->opciones()['impresora_cierre']);
-		return $d ?: $this->destinoCaja();
+		return $this->destinoCaja();   // v1.25.2: es la misma impresora de la caja
 	}
 
 	/** v1.21.0: destino de impresión por su nombre (sin distinguir mayúsculas); null si no hay o no existe. */
@@ -1017,7 +1015,20 @@ class Mcaja extends CI_Model
 		if ($this->configuracion($db)['admin_anulacion']) $this->exigirAutorizacion($db, 'anular una venta en espera', $idUsuario, $idRol, $aut);
 	}
 
+	/**
+	 * Impresora de la caja (boletas, comprobantes, cierre y gaveta). v1.25.2: la elegida en Configuraciones > Impresora de
+	 * la caja (nombre del destino de impresión). Solo si no hay ninguna elegida (o ya no existe), la que dejó el POS de
+	 * escritorio (configuracion.id_dimpresion_caja). Antes la gaveta y los comprobantes iban siempre a esta última, que la
+	 * web no deja elegir (en la base local es 0: no salían).
+	 */
 	public function destinoCaja()
+	{
+		$d = $this->destinoPorNombre($this->opciones()['impresora_cierre']);
+		return $d ?: $this->destinoCajaPos();
+	}
+
+	/** Impresora de la caja que deja el POS de escritorio (configuracion.id_dimpresion_caja); null si no hay. */
+	private function destinoCajaPos()
 	{
 		$db = $this->conexion();
 		$c = $this->columnas($db, array('configuracion', 'dimpresion'));

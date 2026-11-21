@@ -140,10 +140,12 @@ if (!function_exists('cfg_opciones')) {
                                                     <input type="text" class="form-control" name="id_mesa_venta_directa" value="<?php echo $config['id_mesa_venta_directa'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Impresora para cierre de caja</label>
+                                                    <label>Impresora de la caja</label>
                                                     <?php $impCierre = trim((string)($config['nombre_impresora_cierre'] ?? '')); ?>
                                                     <select class="form-control" name="nombre_impresora_cierre">
-                                                        <option value="">LA DE LA CAJA</option>
+                                                        <!-- v1.25.2: sin "LA DE LA CAJA" (era la impresora que deja el POS de escritorio, que la web no deja
+                                                             elegir y a veces no existe): la caja usa siempre la que se elige aquí -->
+                                                        <?php if ($impCierre === '') : ?><option value="" selected disabled>-- Elige la impresora --</option><?php endif; ?>
                                                         <?php foreach ($opciones['dimpresion'] as $nomImp) : ?>
                                                             <option value="<?php echo htmlspecialchars($nomImp, ENT_QUOTES, 'UTF-8'); ?>" <?php echo strcasecmp($nomImp, $impCierre) === 0 ? 'selected' : ''; ?>><?php echo htmlspecialchars($nomImp, ENT_QUOTES, 'UTF-8'); ?></option>
                                                         <?php endforeach; ?>
@@ -151,13 +153,13 @@ if (!function_exists('cfg_opciones')) {
                                                             <option value="<?php echo htmlspecialchars($impCierre, ENT_QUOTES, 'UTF-8'); ?>" selected><?php echo htmlspecialchars($impCierre, ENT_QUOTES, 'UTF-8'); ?> (no existe)</option>
                                                         <?php endif; ?>
                                                     </select>
-                                                    <p class="help-block">Destino de impresión donde sale el cierre y el informe X, y donde la caja imprime las boletas, facturas y comprobantes (directo al agente de impresión del equipo).</p>
+                                                    <p class="help-block">Destino de impresión de la caja: ahí salen las boletas, facturas, comprobantes (anulación, pago de créditos), el cierre y el informe X, y ahí va conectada la gaveta (directo al agente de impresión del equipo).</p>
                                                     <!-- v1.21.0: probar la gaveta de dinero (va conectada a la impresora) sin ir a la Caja -->
                                                     <button type="button" class="btn btn-orange" id="btnProbarGaveta"><i class="fa fa-inbox"></i> Probar gaveta</button>
-                                                    <p class="help-block">Abre la gaveta de dinero conectada a la impresora de arriba (con "LA DE LA CAJA", la impresora de la caja). Hazlo desde el computador de la caja, con el agente de impresión abierto.</p>
+                                                    <p class="help-block">Abre la gaveta de dinero conectada a la impresora de arriba. Hazlo desde el computador de la caja, con el agente de impresión abierto.</p>
                                                     <?php if (array_key_exists('abrir_gaveta_solo_por_pago_efectivo', $config)) : ?>
                                                     <!-- v1.24.18: la gaveta se abre sola al cobrar. Columna del POS de escritorio: vacía = activa -->
-                                                    <div class="checkbox"><label><input type="checkbox" name="abrir_gaveta_solo_por_pago_efectivo" value="1" <?php echo ($config['abrir_gaveta_solo_por_pago_efectivo'] === null || in_array($config['abrir_gaveta_solo_por_pago_efectivo'], array(true, 't', 1, '1'), true)) ? 'checked' : ''; ?>> Abrir la gaveta solo cuando pagan en efectivo</label></div>
+                                                    <label style="margin-top:8px"><input type="checkbox" name="abrir_gaveta_solo_por_pago_efectivo" value="1" <?php echo ($config['abrir_gaveta_solo_por_pago_efectivo'] === null || in_array($config['abrir_gaveta_solo_por_pago_efectivo'], array(true, 't', 1, '1'), true)) ? 'checked' : ''; ?>> Abrir la gaveta solo cuando pagan en efectivo</label>
                                                     <p class="help-block">La gaveta se abre sola al cobrar. Marcada: solo si parte del pago es en efectivo. Desmarcada: en todos los cobros (tarjeta, transferencia…).</p>
                                                     <?php endif; ?>
                                                 </div>
