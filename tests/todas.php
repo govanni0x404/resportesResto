@@ -15,10 +15,12 @@ $pruebas = array(
 	'consultas_sesion_test.php' => array($base),         // consultas con "?" y sesión vencida
 	'caja_js_test.php' => array($base),                  // la Caja dividida completa y el JavaScript de cada pantalla
 	'respaldo_test.php' => array($base),                 // respaldos de la base y fotos en webp
+	'navegador_test.mjs' => array($base),                // cada pantalla abre en un navegador sin errores de JavaScript (Node + Chrome)
 );
 if ($copia) {
 	$pruebas['venta_caja_test.php'] = array($base, 'COPIA');   // abrir, cobrar, anular y cerrar (graba)
 	$pruebas['stock_bajo_test.php'] = array($base, 'COPIA');   // aviso de stock bajo de la Caja (crea un insumo)
+	if (is_file(__DIR__ . '/cocina_reservas_test.php')) $pruebas['cocina_reservas_test.php'] = array($base, 'COPIA');   // pantalla de cocina y reservas (rama de prueba)
 }
 
 $php = escapeshellarg(PHP_BINARY);
@@ -26,7 +28,8 @@ $fallaron = array();
 foreach ($pruebas as $archivo => $args) {
 	if (!is_file(__DIR__ . '/' . $archivo)) continue;
 	echo "\n=== $archivo ===\n";
-	passthru($php . ' ' . escapeshellarg(__DIR__ . '/' . $archivo) . ' ' . implode(' ', array_map('escapeshellarg', $args)), $cod);
+	$programa = substr($archivo, -4) === '.mjs' ? 'node' : $php;   // las pruebas .mjs corren con Node.js
+	passthru($programa . ' ' . escapeshellarg(__DIR__ . '/' . $archivo) . ' ' . implode(' ', array_map('escapeshellarg', $args)), $cod);
 	if ($cod !== 0) $fallaron[] = $archivo;
 }
 echo "\n";
