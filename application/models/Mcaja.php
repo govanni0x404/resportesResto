@@ -178,6 +178,7 @@ class Mcaja extends CI_Model
 				foreach ($lista as $o) $ops[$tipo][] = array('id' => $o['id'], 'nombre' => $o['nombre'], 'valor' => $o['valor']);
 			}
 			$sushisCaja[] = array('id_producto' => $idP, 'piezas' => $sp['piezas'], 'paso' => $sp['paso'], 'max_rellenos' => $sp['max_rellenos'],
+				'modo' => $sp['modo'], 'piezas_rol' => $sp['piezas_rol'],   // v1.26.0
 				'bases' => $ops['base'], 'rellenos' => $ops['relleno'], 'envoltorios' => $ops['envoltorio'], 'extras' => $ops['extra']);
 		}
 
@@ -315,10 +316,17 @@ class Mcaja extends CI_Model
 		$this->sushisCache = array();
 		$t = $this->columnas($db, array('promo_sushi_web', 'promo_sushi_opcion_web'));
 		if (!isset($t['promo_sushi_web'], $t['promo_sushi_opcion_web'])) return array();
-		foreach ($this->q($db, "SELECT s.id_producto, s.piezas, s.paso, s.max_rellenos FROM promo_sushi_web s
+		// v1.26.0: modo pieza / rol (migración 20261121110000); sin las columnas, todas por pieza
+		$conRol = isset($t['promo_sushi_web']['modo'], $t['promo_sushi_web']['piezas_rol']);
+		$selRol = $conRol ? 's.modo, s.piezas_rol' : "'pieza' AS modo, 10 AS piezas_rol";
+		foreach ($this->q($db, "SELECT s.id_producto, s.piezas, s.paso, s.max_rellenos, $selRol FROM promo_sushi_web s
 			JOIN producto p ON p.id_producto = s.id_producto AND p.vigente IS TRUE WHERE s.vigente IS TRUE")->result() as $r) {
-			$this->sushisCache[(int)$r->id_producto] = array('piezas' => (int)$r->piezas, 'paso' => max(1, (int)$r->paso),
+			$rol = $r->modo === 'rol';
+			$pr = max(1, (int)$r->piezas_rol);
+			$this->sushisCache[(int)$r->id_producto] = array('piezas' => (int)$r->piezas, 'paso' => $rol ? $pr : max(1, (int)$r->paso),
 				'max_rellenos' => max(0, (int)$r->max_rellenos),
+				// v1.26.0: por roll, cada grupo va de a un roll (paso = piezas del roll) y lo elegido se cobra por roll
+				'modo' => $rol ? 'rol' : 'pieza', 'piezas_rol' => $pr,
 				'opciones' => array('base' => array(), 'relleno' => array(), 'envoltorio' => array(), 'extra' => array()));
 		}
 		if (!$this->sushisCache) return array();
@@ -345,7 +353,8 @@ class Mcaja extends CI_Model
 	{
 		$sel = is_array($sel) ? $sel : array();
 		$grupos = isset($sel['grupos']) && is_array($sel['grupos']) ? array_values($sel['grupos']) : array();
-		if (!$grupos) throw new Exception($nombre . ': arma las piezas antes de agregarla', 400);
+		$rol = isset($promo['modo']) && $promo['modo'] === 'rol';   // v1.26.0
+		if (!$grupos) throw new Exception($nombre . ': arma ' . ($rol ? 'los rolls' : 'las piezas') . ' antes de agregarla', 400);
 		if (count($grupos) > $promo['piezas']) throw new Exception($nombre . ': demasiados grupos', 400);
 		$op = $promo['opciones'];
 		$opcion = function ($tipo, $id) use ($op, $nombre) {
@@ -360,7 +369,9 @@ class Mcaja extends CI_Model
 			$num = $n + 1;
 			$piezas = (int)(isset($g['piezas']) ? $g['piezas'] : 0);
 			if ($piezas < 1) throw new Exception($nombre . ', grupo ' . $num . ': la cantidad de piezas debe ser 1 o más', 400);
-			if ($piezas % $promo['paso'] !== 0) throw new Exception($nombre . ', grupo ' . $num . ': las piezas van de a ' . $promo['paso'], 400);
+			if ($piezas % $promo['paso'] !== 0) {
+				throw new Exception($nombre . ', grupo ' . $num . ': ' . ($rol ? 'los rolls van completos (de ' . $promo['paso'] . ' piezas)' : 'las piezas van de a ' . $promo['paso']), 400);
+			}
 			$total += $piezas;
 			$base = null;
 			if ($op['base']) {
@@ -383,11 +394,17 @@ class Mcaja extends CI_Model
 				throw new Exception($nombre . ', grupo ' . $num . ': se pueden elegir hasta ' . $promo['max_rellenos'] . ' rellenos', 400);
 			}
 			if (!$base && !$env && !$rellenos) throw new Exception($nombre . ', grupo ' . $num . ': está vacío', 400);
-			$res['grupos'][] = array('piezas' => $piezas, 'base' => $base, 'envoltorio' => $env, 'rellenos' => array_values($rellenos));
+			// v1.26.0: rolls = piezas / piezas del roll (por roll); por pieza no se usa
+			$res['grupos'][] = array('piezas' => $piezas, 'rolls' => $rol ? intdiv($piezas, $promo['piezas_rol']) : 0,
+				'base' => $base, 'envoltorio' => $env, 'rellenos' => array_values($rellenos));
 		}
 		if ($total !== $promo['piezas']) {
-			throw new Exception($nombre . ': hay ' . $total . ' de ' . $promo['piezas'] . ' piezas'
-				. ($total < $promo['piezas'] ? ', faltan ' . ($promo['piezas'] - $total) : ', sobran ' . ($total - $promo['piezas'])), 400);
+			// v1.26.0: por roll, el aviso en rolls
+			$u = $rol ? $promo['piezas_rol'] : 1;
+			$dif = intdiv(abs($promo['piezas'] - $total), $u);
+			$cuanto = $dif . ($rol ? ($dif === 1 ? ' roll' : ' rolls') : ($dif === 1 ? ' pieza' : ' piezas'));
+			throw new Exception($nombre . ': hay ' . intdiv($total, $u) . ' de ' . intdiv($promo['piezas'], $u) . ($rol ? ' rolls' : ' piezas')
+				. ($total < $promo['piezas'] ? ', ' . ($dif === 1 ? 'falta ' : 'faltan ') . $cuanto : ', ' . ($dif === 1 ? 'sobra ' : 'sobran ') . $cuanto), 400);
 		}
 		$extras = array();
 		foreach (isset($sel['extras']) && is_array($sel['extras']) ? $sel['extras'] : array() as $e) {
@@ -2227,20 +2244,24 @@ class Mcaja extends CI_Model
 					);
 				};
 				$resumen = array();
+				// v1.26.0: promo por roll: cada línea del grupo va con la cantidad de rolls (no de piezas) y su valor por roll;
+				// en cocina sale "2 x ROLL PANKO" y el mensaje empieza con "Roll:" (también en anulaciones y reenvíos)
+				$porRol = $sushis[$id]['modo'] === 'rol';
 				foreach ($sel['grupos'] as $g) {
-					$cantGrupo = round($cantidad * $g['piezas'], 3);
+					$cantGrupo = round($cantidad * ($porRol ? $g['rolls'] : $g['piezas']), 3);
 					$nombresRellenos = array_map(function ($o) { return $o['nombre']; }, $g['rellenos']);
 					$titulo = $g['envoltorio'] ? $g['envoltorio']['nombre'] : ($g['base'] ? $g['base']['nombre'] : $nombresRellenos[0]);
-					$desc = ($nombresRellenos ? implode(', ', $nombresRellenos) : 'Sin relleno') . ($g['base'] ? ' · Base ' . $g['base']['nombre'] : '');
+					$desc = ($porRol ? 'Roll: ' : '') . ($nombresRellenos ? implode(', ', $nombresRellenos) : 'Sin relleno') . ($g['base'] ? ' · Base ' . $g['base']['nombre'] : '');
 					// La primera línea del grupo lleva la descripción completa y es la que sale en comandas, reenvíos y anulaciones
 					$partes = array();
 					if ($g['envoltorio']) $partes[] = $g['envoltorio'];
 					if ($g['base']) $partes[] = $g['base'];
 					foreach ($g['rellenos'] as $o) $partes[] = $o;
 					foreach ($partes as $k => $o) $hijo($o, $cantGrupo, $k === 0 ? $desc . ' (' . $prod->nombre_producto . ')' : '', $k === 0);
-					$comanda[] = array('id_producto' => $id, 'nombre' => $titulo, 'cantidad' => $cantGrupo,
-						'nota' => $desc . ' (' . $prod->nombre_producto . ($nota !== '' ? ' · ' . $nota : '') . ')', 'agregados' => array());
-					$resumen[] = $g['piezas'] . ' ' . $titulo . ' (' . $desc . ')';
+					$comanda[] = array('id_producto' => $id, 'nombre' => ($porRol ? 'Roll ' : '') . $titulo, 'cantidad' => $cantGrupo,
+						// el nombre ya dice "Roll": la nota sin el "Roll:" del principio
+						'nota' => ($porRol ? mb_substr($desc, 6) : $desc) . ' (' . $prod->nombre_producto . ($nota !== '' ? ' · ' . $nota : '') . ')', 'agregados' => array());
+					$resumen[] = ($porRol ? $g['rolls'] . ($g['rolls'] === 1 ? ' roll ' : ' rolls ') : $g['piezas'] . ' ') . $titulo . ' (' . ($porRol ? mb_substr($desc, 6) : $desc) . ')';
 				}
 				foreach ($sel['extras'] as $par) {
 					list($o, $q) = $par;

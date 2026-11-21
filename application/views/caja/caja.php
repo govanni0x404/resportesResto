@@ -2347,7 +2347,7 @@
 			</div>
 			<div class="modal-body">
 				<div class="su-avance">
-					<div class="su-cifra"><small>Total</small><b id="suTotal">0</b></div>
+					<div class="su-cifra"><small id="suUnidadTotal">Total</small><b id="suTotal">0</b></div>
 					<div class="su-cifra"><small>Configuradas</small><b id="suConfiguradas">0</b></div>
 					<div class="su-cifra pendiente" id="suPendCifra"><small>Pendientes</small><b id="suPendientes">0</b></div>
 					<div class="su-barra"><div class="progress"><div class="progress-bar" id="suBarra" style="width:0%"></div></div><small id="suPorcentaje">0%</small></div>
@@ -2355,7 +2355,7 @@
 				<div class="su-cols">
 					<div>
 						<div class="su-tarjeta">
-							<div class="su-tit"><span><i class="fa fa-th-large"></i> Grupos de piezas</span>
+							<div class="su-tit"><span><i class="fa fa-th-large"></i> <span id="suTitGrupos">Grupos de piezas</span></span>
 								<button type="button" class="btn btn-success btn-sm" id="btnSushiNuevo"><i class="fa fa-plus"></i> Agregar grupo</button></div>
 							<div class="su-grupos" id="suGrupos"></div>
 						</div>
@@ -2367,7 +2367,7 @@
 					<div class="su-tarjeta" id="suEditor">
 						<div class="su-tit"><span id="suEditorTit">Nuevo grupo</span></div>
 						<div class="su-sec">
-							<div class="su-sec-tit"><span>Piezas</span><small id="suPiezasAyuda"></small></div>
+							<div class="su-sec-tit"><span id="suTitCant">Piezas</span><small id="suPiezasAyuda"></small></div>
 							<div class="su-piezas">
 								<button type="button" class="btn btn-default" id="suMenos"><i class="fa fa-minus"></i></button>
 								<input type="text" inputmode="numeric" class="form-control" id="suPiezas" autocomplete="off">

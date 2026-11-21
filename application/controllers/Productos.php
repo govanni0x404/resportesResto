@@ -982,6 +982,7 @@ class Productos extends CI_Controller
 				'id_producto' => $in->post('id_producto'), 'nombre' => $in->post('nombre'), 'piezas' => $in->post('piezas'),
 				'paso' => $in->post('paso'), 'max_rellenos' => $in->post('max_rellenos'), 'precio' => $in->post('precio'),
 				'id_familia' => $in->post('id_familia'), 'id_dimpresion' => $in->post('id_dimpresion'), 'vigente' => $in->post('vigente'),
+				'modo' => $in->post('modo'), 'rolls' => $in->post('rolls'), 'piezas_rol' => $in->post('piezas_rol'),   // v1.26.0
 			));
 		});
 	}

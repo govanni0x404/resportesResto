@@ -28,6 +28,20 @@ class Mpromosushi extends CI_Model
 		return $r && (int)$r->n === 2;
 	}
 
+	/** v1.26.0: ¿ya tiene promos por roll (migración 20261121110000)? */
+	private function tieneRol($db)
+	{
+		$r = $db->query("SELECT count(*) AS n FROM information_schema.columns
+			WHERE table_schema = 'public' AND table_name = 'promo_sushi_web' AND column_name IN ('modo', 'piezas_rol')")->row();
+		return $r && (int)$r->n === 2;
+	}
+
+	/** Columnas de modo para los SELECT (sin la migración: todas por pieza) */
+	private function selModo($db, $s = 's')
+	{
+		return $this->tieneRol($db) ? "$s.modo, $s.piezas_rol" : "'pieza'::varchar AS modo, 10 AS piezas_rol";
+	}
+
 	private function sinTablas()
 	{
 		return array('error' => 'Las promos de sushi todavía no están instaladas en esta base. Cierra sesión y vuelve a entrar para que se actualice.');
@@ -38,7 +52,7 @@ class Mpromosushi extends CI_Model
 	{
 		$db = $this->db();
 		if (!$this->disponible($db)) return $this->sinTablas();
-		$promos = $db->query("SELECT s.id_producto, p.nombre_producto AS nombre, s.piezas, s.paso, s.max_rellenos,
+		$promos = $db->query("SELECT s.id_producto, p.nombre_producto AS nombre, s.piezas, s.paso, s.max_rellenos, " . $this->selModo($db) . ",
 				(p.vigente IS TRUE) AS vigente, COALESCE(p.precio_bruto, 0) AS precio,
 				(SELECT count(*) FROM promo_sushi_opcion_web o WHERE o.id_producto_promo = s.id_producto) AS opciones
 			FROM promo_sushi_web s JOIN producto p ON p.id_producto = s.id_producto
@@ -46,6 +60,7 @@ class Mpromosushi extends CI_Model
 		foreach ($promos as $p) {
 			$p->id_producto = (int)$p->id_producto; $p->piezas = (int)$p->piezas; $p->paso = (int)$p->paso;
 			$p->max_rellenos = (int)$p->max_rellenos; $p->precio = (int)$p->precio; $p->opciones = (int)$p->opciones;
+			$p->modo = $p->modo === 'rol' ? 'rol' : 'pieza'; $p->piezas_rol = max(1, (int)$p->piezas_rol);   // v1.26.0
 			$p->vigente = $p->vigente === true || $p->vigente === 't';
 		}
 		$productos = $db->query("SELECT p.id_producto, p.nombre_producto AS nombre, COALESCE(f.nombre_familia, '') AS familia,
@@ -59,6 +74,7 @@ class Mpromosushi extends CI_Model
 			'productos' => $productos,
 			'familias' => $db->query('SELECT id_familia, nombre_familia FROM familia ORDER BY nombre_familia')->result(),
 			'destinos' => $db->query('SELECT id_dimpresion, nombre_dimpresion FROM dimpresion ORDER BY nombre_dimpresion')->result(),
+			'con_rol' => $this->tieneRol($db),   // v1.26.0
 		);
 	}
 
@@ -67,7 +83,7 @@ class Mpromosushi extends CI_Model
 	{
 		$db = $this->db();
 		if (!$this->disponible($db)) return $this->sinTablas();
-		$p = $db->query("SELECT s.id_producto, p.nombre_producto AS nombre, s.piezas, s.paso, s.max_rellenos, (p.vigente IS TRUE) AS vigente,
+		$p = $db->query("SELECT s.id_producto, p.nombre_producto AS nombre, s.piezas, s.paso, s.max_rellenos, " . $this->selModo($db) . ", (p.vigente IS TRUE) AS vigente,
 				COALESCE(p.precio_bruto, 0) AS precio, COALESCE(p.id_familia, 0) AS id_familia, COALESCE(p.id_dimpresion, 0) AS id_dimpresion
 			FROM promo_sushi_web s JOIN producto p ON p.id_producto = s.id_producto WHERE s.id_producto = ?", array((int)$idPromo))->row();
 		if (!$p) return array('error' => 'La promo ya no existe. Recarga la página.');
@@ -82,7 +98,8 @@ class Mpromosushi extends CI_Model
 		}
 		return array('promo' => array('id_producto' => (int)$p->id_producto, 'nombre' => $p->nombre, 'piezas' => (int)$p->piezas,
 			'paso' => (int)$p->paso, 'max_rellenos' => (int)$p->max_rellenos, 'vigente' => $p->vigente === true || $p->vigente === 't',
-			'precio' => (int)$p->precio, 'id_familia' => (int)$p->id_familia, 'id_dimpresion' => (int)$p->id_dimpresion), 'opciones' => $opciones);
+			'precio' => (int)$p->precio, 'id_familia' => (int)$p->id_familia, 'id_dimpresion' => (int)$p->id_dimpresion,
+			'modo' => $p->modo === 'rol' ? 'rol' : 'pieza', 'piezas_rol' => max(1, (int)$p->piezas_rol)), 'opciones' => $opciones);
 	}
 
 	/**
@@ -102,6 +119,18 @@ class Mpromosushi extends CI_Model
 		$idFamilia = (int)($d['id_familia'] ?? 0);
 		$idDimpresion = (int)($d['id_dimpresion'] ?? 0);
 		$vigente = !isset($d['vigente']) || in_array((string)$d['vigente'], array('1', 'true', 't'), true);
+		// v1.26.0: por roll: llegan los rolls y las piezas de cada roll; piezas = rolls x piezas_rol y cada grupo va de a un roll
+		$modo = (string)($d['modo'] ?? 'pieza') === 'rol' ? 'rol' : 'pieza';
+		$piezasRol = 10;
+		if ($modo === 'rol') {
+			if (!$this->tieneRol($db)) return array('error' => 'Las promos por roll todavía no están instaladas en esta base. Cierra sesión y vuelve a entrar para que se actualice.');
+			$rolls = (int)($d['rolls'] ?? 0);
+			$piezasRol = (int)($d['piezas_rol'] ?? 10);
+			if ($rolls < 1 || $rolls > 50) return array('error' => 'Los rolls deben ser de 1 a 50');
+			if ($piezasRol < 1 || $piezasRol > 100) return array('error' => 'Las piezas por roll deben ser de 1 a 100');
+			$piezas = $rolls * $piezasRol;
+			$paso = $piezasRol;
+		}
 
 		if ($nombre === '') return array('error' => 'Escribe el nombre de la promo');
 		if ($piezas < 1 || $piezas > 500) return array('error' => 'Las piezas deben ser de 1 a 500');
@@ -115,16 +144,21 @@ class Mpromosushi extends CI_Model
 		$db->trans_begin();
 		try {
 			if ($id > 0) {
-				if (!$db->query('SELECT 1 FROM promo_sushi_web WHERE id_producto = ? FOR UPDATE', array($id))->row()) throw new Exception('La promo ya no existe. Recarga la página.');
+				$antes = $db->query('SELECT ' . $this->selModo($db, 'promo_sushi_web') . ' FROM promo_sushi_web WHERE id_producto = ? FOR UPDATE', array($id))->row();
+				if (!$antes) throw new Exception('La promo ya no existe. Recarga la página.');
+				// v1.26.0: el modo no se cambia (los valores de sus opciones son por pieza o por roll)
+				if ($antes->modo !== $modo) throw new Exception('Esta promo es ' . ($antes->modo === 'rol' ? 'por roll' : 'por pieza') . ': no se puede cambiar. Crea otra promo.');
 				$this->ok($db->query('UPDATE producto SET nombre_producto = ?, id_familia = ?, id_dimpresion = ?, vigente = ?, precio_bruto = ?
 					WHERE id_producto = ?', array($nombre, $idFamilia, $idDimpresion, $vigente ? 't' : 'f', $precio, $id)));
 				$this->ok($db->query('UPDATE promo_sushi_web SET piezas = ?, paso = ?, max_rellenos = ?, vigente = ? WHERE id_producto = ?',
 					array($piezas, $paso, $maxRellenos, $vigente ? 't' : 'f', $id)));
+				if ($modo === 'rol') $this->ok($db->query('UPDATE promo_sushi_web SET piezas_rol = ? WHERE id_producto = ?', array($piezasRol, $id)));
 			} else {
 				$id = $this->crearProducto($db, array('nombre' => $nombre, 'id_familia' => $idFamilia, 'id_dimpresion' => $idDimpresion,
 					'precio' => $precio, 'venta_publico' => true, 'vigente' => $vigente));
 				$this->ok($db->query('INSERT INTO promo_sushi_web (id_producto, piezas, paso, max_rellenos, vigente) VALUES (?, ?, ?, ?, ?)',
 					array($id, $piezas, $paso, $maxRellenos, $vigente ? 't' : 'f')));
+				if ($modo === 'rol') $this->ok($db->query("UPDATE promo_sushi_web SET modo = 'rol', piezas_rol = ? WHERE id_producto = ?", array($piezasRol, $id)));
 			}
 			$this->precioEnTodasLasListas($db, $id, $precio);
 			if ($db->trans_status() === false) throw new Exception('No se pudo grabar la promo');
@@ -226,6 +260,11 @@ class Mpromosushi extends CI_Model
 		if (!$this->disponible($db)) return $this->sinTablas();
 		if ((int)$idOrigen === (int)$idDestino) return array('error' => 'Elige otra promo');
 		if (!$db->query('SELECT 1 FROM promo_sushi_web WHERE id_producto = ?', array((int)$idDestino))->row()) return array('error' => 'La promo ya no existe');
+		// v1.26.0: entre una promo por pieza y una por roll los valores no significan lo mismo (por pieza / por roll)
+		if ($this->tieneRol($db)) {
+			$m = $db->query('SELECT count(DISTINCT modo) AS n FROM promo_sushi_web WHERE id_producto IN (?, ?)', array((int)$idOrigen, (int)$idDestino))->row();
+			if ($m && (int)$m->n > 1) return array('error' => 'Solo se copian opciones entre promos del mismo tipo (por pieza o por roll): los valores son por pieza en unas y por roll en otras');
+		}
 		$db->query('INSERT INTO promo_sushi_opcion_web (id_producto_promo, tipo, id_producto, valor, orden)
 			SELECT ?, o.tipo, o.id_producto, o.valor, o.orden FROM promo_sushi_opcion_web o
 			WHERE o.id_producto_promo = ? AND o.id_producto <> ?

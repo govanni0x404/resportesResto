@@ -6,6 +6,14 @@
 #ModalPromosSushi .modal-footer { padding: 12px 20px; background: #fff; border-top: 1px solid var(--t-borde, #E5E7EB); }
 #ModalPromosSushi .modal-footer .btn { min-width: 120px; height: 40px; border-radius: 9px; font-weight: 700; }
 .ps-elegir { display: flex; gap: 10px; align-items: center; }
+/* v1.26.0: arriba, promos por pieza o por roll */
+.ps-modo { display: inline-flex; padding: 4px; margin-bottom: 12px; border-radius: 12px; background: var(--t-fondo-alt, #F3F4F6); }
+.ps-modo button { border: 0; background: transparent; padding: 8px 18px; border-radius: 9px; font-weight: 800; color: var(--t-texto-suave, #4B5563); }
+.ps-modo button.on { background: #fff; color: var(--t-primario, #15803D); box-shadow: 0 1px 4px rgba(17, 24, 39, .12); }
+.ps-modo button b { margin-left: 6px; padding: 0 7px; border-radius: 10px; background: rgba(0, 0, 0, .07); font-size: 12px; }
+.ps-solo-rol { display: none; }
+#ModalPromosSushi.modo-rol .ps-solo-rol { display: block; }
+#ModalPromosSushi.modo-rol .ps-solo-pieza { display: none; }
 .ps-elegir select { flex: 1; height: 42px; font-size: 15px; font-weight: 600; }
 .ps-elegir .btn { height: 42px; border-radius: 9px; font-weight: 700; white-space: nowrap; }
 .ps-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 12px; }
@@ -50,12 +58,17 @@
                 <div class="lm-cab-icono"><i class="fa fa-th"></i></div>
                 <div>
                     <h4>Promos de Sushi</h4>
-                    <small>Promos por piezas (20, 30, 40…): en la Caja el cliente arma sus rolls con base, rellenos y envoltorio</small>
+                    <small id="psSubtitulo">Promos por piezas (20, 30, 40…): en la Caja el cliente arma sus rolls con base, rellenos y envoltorio</small>
                 </div>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
             </div>
             <div class="lm-cuerpo">
                 <div class="lm-tarjeta">
+                    <!-- v1.26.0: separar las promos por pieza y por roll -->
+                    <div class="ps-modo" id="psModo">
+                        <button type="button" data-modo="pieza" class="on"><i class="fa fa-th"></i> Por pieza <b>0</b></button>
+                        <button type="button" data-modo="rol"><i class="fa fa-circle-o"></i> Por roll <b>0</b></button>
+                    </div>
                     <div class="ps-elegir">
                         <select id="cboPromoSushi" class="form-control"></select>
                         <button type="button" class="btn btn-default" id="btnPsNueva"><i class="fa fa-plus"></i> Nueva promo</button>
@@ -66,16 +79,18 @@
                     <div class="lm-titulo"><span><i class="fa fa-tag"></i><span id="psTituloForm">Nueva promo</span></span></div>
                     <div class="ps-form">
                         <div class="ps-ancho"><label for="psNombre">Nombre</label><input type="text" class="form-control" id="psNombre" maxlength="100" placeholder="Ej: PROMO 30 PIEZAS MIXTAS"></div>
-                        <div><label for="psPiezas">Piezas</label><input type="text" inputmode="numeric" class="form-control" id="psPiezas" placeholder="30"></div>
+                        <div class="ps-solo-pieza"><label for="psPiezas">Piezas</label><input type="text" inputmode="numeric" class="form-control" id="psPiezas" placeholder="30"></div>
+                        <div class="ps-solo-rol"><label for="psRolls">Rolls <small id="psRollsPiezas"></small></label><input type="text" inputmode="numeric" class="form-control" id="psRolls" placeholder="3"></div>
                         <div><label for="psPrecio">Precio <small>(todas las listas)</small></label><input type="text" inputmode="numeric" class="form-control" id="psPrecio" placeholder="9500"></div>
-                        <div><label for="psPaso">De a cuántas piezas <small>(1 = libre)</small></label><input type="text" inputmode="numeric" class="form-control" id="psPaso" value="1"></div>
+                        <div class="ps-solo-pieza"><label for="psPaso">De a cuántas piezas <small>(1 = libre)</small></label><input type="text" inputmode="numeric" class="form-control" id="psPaso" value="1"></div>
+                        <div class="ps-solo-rol"><label for="psPiezasRol">Piezas por roll</label><input type="text" inputmode="numeric" class="form-control" id="psPiezasRol" value="10"></div>
                         <div><label for="psMaxRellenos">Máx. rellenos <small>(0 = sin límite)</small></label><input type="text" inputmode="numeric" class="form-control" id="psMaxRellenos" value="3"></div>
                         <div><label for="psFamilia">Familia</label><select class="form-control" id="psFamilia"></select></div>
                         <div><label for="psDestino">Destino de impresión</label><select class="form-control" id="psDestino"></select></div>
                         <div><label class="ps-check"><input type="checkbox" id="psVigente" checked> Vigente (se vende en la Caja)</label></div>
                     </div>
                     <div class="ps-pie-form">
-                        <small><i class="fa fa-info-circle"></i> "De a cuántas piezas": con 10, cada grupo es un roll completo de 10 (10, 20, 30…). Con 1, cualquier cantidad.</small>
+                        <small id="psAyudaForm"><i class="fa fa-info-circle"></i> "De a cuántas piezas": con 10, cada grupo es un roll completo de 10 (10, 20, 30…). Con 1, cualquier cantidad.</small>
                         <button type="button" class="btn btn-success" id="btnPsGrabar"><i class="fa fa-save"></i> Grabar promo</button>
                     </div>
                 </div>
@@ -116,7 +131,16 @@
 <script>
 (function () {
     var URL_PS = base_url + 'index.php/Productos/';
-    var ps = { datos: null, promo: null, opciones: null, tipo: 'relleno' };
+    var ps = { datos: null, promo: null, opciones: null, tipo: 'relleno', modo: 'pieza' };   // v1.26.0: modo = pieza | rol
+    // v1.26.0: en una promo por roll el valor de las opciones es por roll
+    var AYUDA_ROL = {
+        relleno: 'Lo que va dentro del roll (pollo, kanikama, palta…). El cliente elige hasta el máximo de rellenos por roll. El valor es por roll (0 = no se cobra).',
+        envoltorio: 'Con qué se envuelve (queso, panko, palta, nori…). El cliente elige 1 por roll. El valor es por roll (0 = no se cobra).',
+        base: 'Opcional. Si no agregas bases, no se pregunta (ej. siempre arroz). Si hay una sola, se elige sola. El valor es por roll.',
+        extra: 'Salsas y extras aparte de los rolls (soya, teriyaki, jengibre…). El cliente elige cuántas. El valor es por unidad (0 = no se cobra).'
+    };
+    var esRol = function () { return ps.modo === 'rol'; };
+    var porQue = function () { return ps.tipo === 'extra' ? 'c/u' : (esRol() ? 'x roll' : 'x pieza'); };
     var AYUDA = {
         relleno: 'Lo que va dentro del roll (pollo, kanikama, palta…). El cliente elige hasta el máximo de rellenos por grupo. El valor es por pieza (0 = no se cobra).',
         envoltorio: 'Con qué se envuelve (queso, panko, palta, nori…). El cliente elige 1 por grupo. El valor es por pieza (0 = no se cobra).',
@@ -136,12 +160,42 @@
         cargarDatos(0).done(function () { $('#ModalPromosSushi').modal('show'); });
     };
 
+    /** v1.26.0: la lista de promos del modo elegido arriba (por pieza o por roll) */
+    function pintarListaPromos() {
+        var d = ps.datos;
+        if (!d) return;
+        $('#psModo button').each(function () {
+            var m = $(this).data('modo');
+            $(this).toggleClass('on', m === ps.modo).find('b').text($.grep(d.promos, function (p) { return p.modo === m; }).length);
+        });
+        $('#psModo button[data-modo="rol"]').toggle(!!d.con_rol);
+        $('#ModalPromosSushi').toggleClass('modo-rol', esRol());
+        $('#psSubtitulo').text(esRol()
+            ? 'Promos por roll (3 rolls = 30 piezas, 5 rolls = 50): en la Caja el cliente arma cada roll con base, rellenos y envoltorio'
+            : 'Promos por piezas (20, 30, 40…): en la Caja el cliente arma sus rolls con base, rellenos y envoltorio');
+        $('#psAyudaForm').html(esRol()
+            ? '<i class="fa fa-info-circle"></i> Por roll: con 3 rolls de 10 piezas la promo trae 30 piezas. En la Caja se arma roll por roll.'
+            : '<i class="fa fa-info-circle"></i> "De a cuántas piezas": con 10, cada grupo es un roll completo de 10 (10, 20, 30…). Con 1, cualquier cantidad.');
+        $('#cboPromoSushi').html('<option value="0">— Nueva promo ' + (esRol() ? 'por roll' : 'por pieza') + ' —</option>' + $.map(d.promos, function (p) {
+            if (p.modo !== ps.modo) return null;
+            var cuanto = p.modo === 'rol' ? (p.piezas / p.piezas_rol) + ' rolls (' + p.piezas + ' pz)' : p.piezas + ' pz';
+            return '<option value="' + p.id_producto + '">' + esc(p.nombre) + ' · ' + cuanto + ' · ' + pesos(p.precio) + (p.vigente ? '' : ' (no vigente)') + '</option>';
+        }).join(''));
+    }
+    function rollsPiezas() {
+        var r = entero($('#psRolls').val()), pr = entero($('#psPiezasRol').val()) || 10;
+        $('#psRollsPiezas').text(r ? '(= ' + (r * pr) + ' piezas)' : '');
+    }
+    $('#psRolls, #psPiezasRol').on('input', rollsPiezas);
+
     function cargarDatos(elegir) {
         return post('obtenerPromosSushi').done(function (d) {
             ps.datos = d;
-            $('#cboPromoSushi').html('<option value="0">— Nueva promo —</option>' + $.map(d.promos, function (p) {
-                return '<option value="' + p.id_producto + '">' + esc(p.nombre) + ' · ' + p.piezas + ' pz · ' + pesos(p.precio) + (p.vigente ? '' : ' (no vigente)') + '</option>';
-            }).join(''));
+            // Al abrir una promo, arriba queda su modo
+            var elegida = elegir ? $.grep(d.promos, function (p) { return p.id_producto === elegir; })[0] : null;
+            if (elegida) ps.modo = elegida.modo;
+            if (!d.con_rol) ps.modo = 'pieza';
+            pintarListaPromos();
             $('#psFamilia').html('<option value="0">Elige…</option>' + $.map(d.familias, function (f) { return '<option value="' + f.id_familia + '">' + esc(f.nombre_familia) + '</option>'; }).join(''));
             $('#psDestino').html('<option value="0">Según la familia</option>' + $.map(d.destinos, function (x) { return '<option value="' + x.id_dimpresion + '">' + esc(x.nombre_dimpresion) + '</option>'; }).join(''));
             pintarProductos();
@@ -155,6 +209,8 @@
             ps.promo = null; ps.opciones = null;
             $('#psTituloForm').text('Nueva promo');
             $('#psNombre').val(''); $('#psPiezas').val(''); $('#psPrecio').val(''); $('#psPaso').val('1'); $('#psMaxRellenos').val('3');
+            $('#psRolls').val(''); $('#psPiezasRol').val('10'); rollsPiezas();
+            $('#psNombre').attr('placeholder', esRol() ? 'Ej: PROMO 3 ROLLS' : 'Ej: PROMO 30 PIEZAS MIXTAS');
             var sushi = $.grep(ps.datos.familias, function (f) { return /sushi/i.test(f.nombre_familia); })[0];
             $('#psFamilia').val(sushi ? String(sushi.id_familia) : '0'); $('#psDestino').val('0'); $('#psVigente').prop('checked', true);
             pintarCatalogo();
@@ -166,6 +222,7 @@
             var p = r.promo;
             $('#psTituloForm').text('Editar ' + p.nombre);
             $('#psNombre').val(p.nombre); $('#psPiezas').val(p.piezas); $('#psPrecio').val(p.precio); $('#psPaso').val(p.paso); $('#psMaxRellenos').val(p.max_rellenos);
+            $('#psRolls').val(p.modo === 'rol' ? p.piezas / p.piezas_rol : ''); $('#psPiezasRol').val(p.piezas_rol || 10); rollsPiezas();
             $('#psFamilia').val(String(p.id_familia)); $('#psDestino').val(String(p.id_dimpresion)); $('#psVigente').prop('checked', p.vigente);
             pintarCatalogo();
         }).fail(function (x) { error(x, 'No se pudo abrir la promo'); });
@@ -192,26 +249,35 @@
             var t = $(this).data('tipo');
             $(this).toggleClass('on', t === ps.tipo).find('b').text(ps.opciones ? ps.opciones[t].length : 0);
         });
-        $('#psAyudaTipo').text(ps.promo ? AYUDA[ps.tipo] : 'Graba la promo primero; después agrega sus rellenos, envoltorios, bases y extras.');
-        $('.ps-lbl-valor').text(ps.tipo === 'extra' ? 'Valor $ c/u' : 'Valor $ x pieza');
+        $('#psAyudaTipo').text(ps.promo ? (esRol() ? AYUDA_ROL : AYUDA)[ps.tipo] : 'Graba la promo primero; después agrega sus rellenos, envoltorios, bases y extras.');
+        $('.ps-lbl-valor').text('Valor $ ' + porQue());
         var lista = ps.opciones ? ps.opciones[ps.tipo] : [];
         $('#psLista').html(lista.length ? $.map(lista, function (o) {
             return '<div class="ps-op" data-id="' + o.id_opcion + '"><span class="nombre">' + esc(o.nombre)
                 + (o.vigente ? '' : ' <small class="text-danger">(producto no vigente: no se ofrece)</small>')
                 + (o.con_receta ? ' <small><i class="fa fa-book"></i> con receta</small>' : '') + '</span>'
-                + '<span class="ps-valor">' + (ps.tipo === 'extra' ? 'c/u' : 'x pieza') + ' $<input type="text" inputmode="numeric" class="form-control input-sm ps-valor-input" value="' + o.valor + '"></span>'
+                + '<span class="ps-valor">' + porQue() + ' $<input type="text" inputmode="numeric" class="form-control input-sm ps-valor-input" value="' + o.valor + '"></span>'
                 + '<button type="button" class="btn btn-default btn-sm ps-quitar" title="Quitar de la promo"><i class="fa fa-times text-danger"></i></button></div>';
         }).join('') : '<div class="ps-vacio">' + (ps.promo ? 'Todavía no hay nada aquí' : '—') + '</div>');
         $('#psCopiarDe').html('<option value="0">Copiar las opciones de otra promo…</option>' + $.map(ps.datos ? ps.datos.promos : [], function (p) {
-            return ps.promo && p.id_producto === ps.promo.id_producto ? null : '<option value="' + p.id_producto + '">' + esc(p.nombre) + ' (' + p.opciones + ' opciones)</option>';
+            // v1.26.0: solo de promos del mismo tipo (los valores son por pieza o por roll)
+            return (ps.promo && p.id_producto === ps.promo.id_producto) || p.modo !== ps.modo ? null : '<option value="' + p.id_producto + '">' + esc(p.nombre) + ' (' + p.opciones + ' opciones)</option>';
         }).join(''));
         pintarProductos();
     }
 
     $('#cboPromoSushi').on('change', function () { elegirPromo(Number(this.value)); });
     $('#btnPsNueva').on('click', function () { elegirPromo(0); });
+    // v1.26.0: cambiar arriba entre promos por pieza y por roll
+    $('#psModo').on('click', 'button', function () {
+        var m = $(this).data('modo');
+        if (m === ps.modo) return;
+        ps.modo = m;
+        pintarListaPromos();
+        elegirPromo(0);
+    });
     $('#psTabs').on('click', '.ps-tab', function () { ps.tipo = $(this).data('tipo'); pintarCatalogo(); });
-    $('#ModalPromosSushi').on('input', '#psPiezas, #psPrecio, #psPaso, #psMaxRellenos, #psValorExistente, #psValorNuevo, .ps-valor-input', function () {
+    $('#ModalPromosSushi').on('input', '#psPiezas, #psPrecio, #psPaso, #psMaxRellenos, #psRolls, #psPiezasRol, #psValorExistente, #psValorNuevo, .ps-valor-input', function () {
         this.value = this.value.replace(/\D/g, '').slice(0, 9);
     });
 
@@ -219,9 +285,12 @@
         var datos = {
             id_producto: ps.promo ? ps.promo.id_producto : 0, nombre: $.trim($('#psNombre').val()), piezas: entero($('#psPiezas').val()),
             precio: entero($('#psPrecio').val()), paso: entero($('#psPaso').val()) || 1, max_rellenos: entero($('#psMaxRellenos').val()),
-            id_familia: Number($('#psFamilia').val()) || 0, id_dimpresion: Number($('#psDestino').val()) || 0, vigente: $('#psVigente').is(':checked') ? 1 : 0
+            id_familia: Number($('#psFamilia').val()) || 0, id_dimpresion: Number($('#psDestino').val()) || 0, vigente: $('#psVigente').is(':checked') ? 1 : 0,
+            modo: ps.modo, rolls: entero($('#psRolls').val()), piezas_rol: entero($('#psPiezasRol').val()) || 10   // v1.26.0
         };
+        if (esRol()) { datos.piezas = datos.rolls * datos.piezas_rol; datos.paso = datos.piezas_rol; }
         if (!datos.nombre) { showAppAlert('warning', 'Escribe el nombre de la promo', { duration: 4000 }); return; }
+        if (esRol() && !datos.rolls) { showAppAlert('warning', 'Indica cuántos rolls trae la promo', { duration: 4000 }); return; }
         if (!datos.piezas) { showAppAlert('warning', 'Indica cuántas piezas trae la promo', { duration: 4000 }); return; }
         if (!datos.precio) { showAppAlert('warning', 'Indica el precio', { duration: 4000 }); return; }
         if (!datos.id_familia) { showAppAlert('warning', 'Elige la familia', { duration: 4000 }); return; }

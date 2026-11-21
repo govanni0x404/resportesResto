@@ -982,6 +982,18 @@
 			return $.grep((catalogo && catalogo.sushis) || [], function (s) { return s.id_producto === id; })[0] || null;
 		}
 		var SU_LISTA = { base: 'bases', relleno: 'rellenos', envoltorio: 'envoltorios', extra: 'extras' };
+		// v1.26.0: promo por roll: se arma y se cobra por roll (piezas_rol piezas cada uno). Por dentro los grupos siguen
+		// guardando sus piezas (rolls x piezas_rol), igual que el servidor (Mcaja::eleccionSushi)
+		function suEsRol(promo) { return !!promo && promo.modo === 'rol'; }
+		function suUnidad(promo) { return suEsRol(promo) ? Math.max(1, promo.piezas_rol || 10) : 1; }
+		/** Lo que se cobra de un grupo: por roll, sus rolls; por pieza, sus piezas */
+		function unidadesGrupoSushi(promo, g) { return g.piezas / suUnidad(promo); }
+		/** "3 rolls" / "1 roll" / "30 pz" */
+		function textoCantSushi(promo, piezas) {
+			if (!suEsRol(promo)) return piezas + ' pz';
+			var r = piezas / suUnidad(promo);
+			return r + (r === 1 ? ' roll' : ' rolls');
+		}
 		function opcionSushi(promo, tipo, id) {
 			return $.grep(promo ? promo[SU_LISTA[tipo]] : [], function (o) { return o.id === id; })[0] || null;
 		}
@@ -997,7 +1009,7 @@
 		function adicionalSushiSel(promo, sel) {
 			var t = 0;
 			if (!promo || !sel) return 0;
-			$.each(sel.grupos || [], function (i, g) { t += g.piezas * valorPiezaSushi(promo, g); });
+			$.each(sel.grupos || [], function (i, g) { t += unidadesGrupoSushi(promo, g) * valorPiezaSushi(promo, g); });
 			$.each(sel.extras || [], function (i, e) { var o = opcionSushi(promo, 'extra', e.id); if (o) t += o.valor * e.cantidad; });
 			return t;
 		}
@@ -1554,6 +1566,7 @@
 		/** Piezas sugeridas para un grupo nuevo: un "roll" (el paso, o 10 si va de a 1) o lo que falte si es menos */
 		function suPiezasSugeridas() {
 			var falta = su.promo.piezas - suConfiguradas(-1), paso = su.promo.paso;
+			if (suEsRol(su.promo)) return Math.max(0, Math.min(suUnidad(su.promo), falta));   // v1.26.0: 1 roll
 			return Math.max(0, Math.min(paso > 1 ? paso : 10, falta));
 		}
 
@@ -1570,7 +1583,11 @@
 				su.grupos = $.map(linea.sushi.grupos, function (g) { return { piezas: g.piezas, base: g.base || 0, envoltorio: g.envoltorio || 0, rellenos: (g.rellenos || []).slice() }; });
 				$.each(linea.sushi.extras || [], function (i, e) { su.extras[e.id] = e.cantidad; });
 			}
-			$('#sushiTitulo').text(p.nombre + ' · ' + promo.piezas + ' piezas');
+			var rol = suEsRol(promo);   // v1.26.0
+			$('#sushiTitulo').text(p.nombre + ' · ' + (rol ? textoCantSushi(promo, promo.piezas) + ' (' + promo.piezas + ' piezas)' : promo.piezas + ' piezas'));
+			$('#suTitGrupos').text(rol ? 'Rolls' : 'Grupos de piezas');
+			$('#btnSushiNuevo').html('<i class="fa fa-plus"></i> ' + (rol ? 'Agregar roll' : 'Agregar grupo'));
+			$('#suTitCant').text(rol ? 'Rolls' : 'Piezas');
 			$('#txtNotaSushi').val(linea ? linea.nota || '' : '');
 			$('#btnConfirmarSushi').text(linea ? 'Guardar' : 'Agregar');
 			$('#suExtrasCaja').toggle(promo.extras.length > 0);
@@ -1583,25 +1600,27 @@
 		function pintarSushi() {
 			var promo = su.promo, total = promo.piezas, conf = suConfiguradas(-1), pend = total - conf;
 			var pct = total ? Math.round(conf * 100 / total) : 0;
-			$('#suTotal').text(total);
-			$('#suConfiguradas').text(conf);
-			$('#suPendientes').text(pend < 0 ? 0 : pend);
+			var u = suUnidad(promo);   // v1.26.0: por roll, las cifras van en rolls
+			$('#suTotal').text(total / u);
+			$('#suConfiguradas').text(conf / u);
+			$('#suPendientes').text(pend < 0 ? 0 : pend / u);
+			$('#suUnidadTotal').text(suEsRol(promo) ? 'Rolls' : 'Total');
 			$('#suPendCifra').toggleClass('listo', pend === 0);
 			$('#suBarra').css('width', Math.min(100, pct) + '%');
 			$('#suPorcentaje').text(pct + '% configurado' + (pend === 0 ? ' · ¡listo!' : ''));
 
 			// Grupos
 			$('#suGrupos').html(su.grupos.length ? $.map(su.grupos, function (g, i) {
-				var tx = textoGrupoSushi(promo, g), v = g.piezas * valorPiezaSushi(promo, g);
+				var tx = textoGrupoSushi(promo, g), v = unidadesGrupoSushi(promo, g) * valorPiezaSushi(promo, g);
 				var editando = su.ed && su.ed.idx === i;
 				return '<div class="su-grupo' + (editando ? ' editando' : '') + '" data-i="' + i + '"><div class="su-grupo-cab">'
-					+ '<span class="su-pz">' + g.piezas + ' pz</span><span class="su-env">' + esc(tx.titulo) + '</span>'
+					+ '<span class="su-pz">' + textoCantSushi(promo, g.piezas) + '</span><span class="su-env">' + esc(tx.titulo) + '</span>'
 					+ '<button type="button" class="btn btn-default btn-xs su-editar" title="Editar"><i class="fa fa-pencil"></i></button>'
 					+ '<button type="button" class="btn btn-default btn-xs su-duplicar" title="Duplicar"><i class="fa fa-clone"></i></button>'
 					+ '<button type="button" class="btn btn-default btn-xs su-eliminar" title="Eliminar"><i class="fa fa-trash text-danger"></i></button></div>'
 					+ '<div class="su-grupo-det">' + (tx.rellenos ? esc(tx.rellenos) : '<i>Sin relleno</i>') + (tx.base ? ' · Base ' + esc(tx.base) : '')
 					+ (v ? ' · <b>+' + fmt(v) + '</b>' : '') + '</div></div>';
-			}).join('') : '<div class="su-vacio">Todavía no hay grupos. Arma el primero a la derecha.</div>');
+			}).join('') : '<div class="su-vacio">Todavía no hay ' + (suEsRol(promo) ? 'rolls' : 'grupos') + '. Arma el primero a la derecha.</div>');
 			$('#btnSushiNuevo').prop('disabled', pend <= 0 || !!(su.ed && su.ed.idx === null));
 
 			// Extras
@@ -1622,17 +1641,19 @@
 			var promo = su.promo;
 			$('#suEditor').toggle(!!su.ed);
 			if (!su.ed) return;
-			var g = su.ed.g, max = suMaxEditor(), paso = promo.paso;
-			$('#suEditorTit').text(su.ed.idx === null ? 'Nuevo grupo' : 'Editando grupo ' + (su.ed.idx + 1));
-			if (!$('#suPiezas').is(':focus')) $('#suPiezas').val(g.piezas || '');
-			$('#suPiezasAyuda').text('Quedan ' + max + (paso > 1 ? ' · de a ' + paso : ''));
+			var g = su.ed.g, max = suMaxEditor(), paso = promo.paso, rol = suEsRol(promo), u = suUnidad(promo);
+			$('#suEditorTit').text(su.ed.idx === null ? (rol ? 'Nuevo roll' : 'Nuevo grupo') : 'Editando grupo ' + (su.ed.idx + 1));
+			// v1.26.0: por roll el número que se ve y se escribe son rolls (por dentro, piezas = rolls x piezas del roll)
+			if (!$('#suPiezas').is(':focus')) $('#suPiezas').val(g.piezas ? g.piezas / u : '');
+			$('#suPiezasAyuda').text(rol ? 'Quedan ' + (max / u) + (max / u === 1 ? ' roll' : ' rolls') + ' · de ' + u + ' piezas' : 'Quedan ' + max + (paso > 1 ? ' · de a ' + paso : ''));
 			// Atajos: lo que queda y algunos tamaños de roll
 			var atajos = [];
 			if (paso > 1) { for (var k = paso; k <= max && atajos.length < 5; k += paso) atajos.push(k); }
 			else $.each([5, 8, 10], function (i, k) { if (k <= max) atajos.push(k); });
 			if (max > 0 && $.inArray(max, atajos) < 0) atajos.push(max);
 			$('#suAtajos').html($.map(atajos, function (k) {
-				return '<button type="button" class="btn btn-' + (k === g.piezas ? 'success' : 'default') + ' btn-sm su-atajo" data-n="' + k + '">' + (k === max ? 'Todas (' + k + ')' : k) + '</button>';
+				var n = rol ? k / u : k;
+				return '<button type="button" class="btn btn-' + (k === g.piezas ? 'success' : 'default') + ' btn-sm su-atajo" data-n="' + k + '">' + (k === max ? (rol ? 'Todos (' + n + ')' : 'Todas (' + n + ')') : n) + '</button>';
 			}).join(' '));
 			$('#suMenos').prop('disabled', g.piezas <= paso);
 			$('#suMas').prop('disabled', g.piezas + paso > max);
@@ -1649,7 +1670,7 @@
 				$sec.find('.su-chips').html($.map(lista, function (o) {
 					var on = multiple ? $.inArray(o.id, g.rellenos) >= 0 : g[tipo] === o.id;
 					return '<span class="su-chip' + (on ? ' on' : (tope ? ' off' : '')) + '" data-id="' + o.id + '">' + esc(o.nombre)
-						+ (o.valor ? ' <small>+' + fmt(o.valor) + '/pz</small>' : '') + '</span>';
+						+ (o.valor ? ' <small>+' + fmt(o.valor) + (rol ? '/roll' : '/pz') + '</small>' : '') + '</span>';
 				}).join(''));
 			});
 		}
@@ -1667,11 +1688,11 @@
 		$('#suAtajos').on('click', '.su-atajo', function () { suPonerPiezas($(this).data('n')); });
 		$('#suPiezas').on('input', function () {
 			this.value = this.value.replace(/\D/g, '').slice(0, 3);
-			var n = Number(this.value) || 0, max = suMaxEditor();
-			if (n > max) { this.value = max; n = max; toastr.info('Solo quedan ' + max + ' piezas'); }
+			var u = suUnidad(su.promo), n = (Number(this.value) || 0) * u, max = suMaxEditor();   // v1.26.0: por roll se escriben rolls
+			if (n > max) { this.value = max / u; n = max; toastr.info('Solo quedan ' + textoCantSushi(su.promo, max).replace(' pz', ' piezas')); }
 			su.ed.g.piezas = n;
 			pintarSushi();
-		}).on('blur', function () { if (su && su.ed) { suPonerPiezas(this.value); } });
+		}).on('blur', function () { if (su && su.ed) { suPonerPiezas((Number(this.value) || 0) * suUnidad(su.promo)); } });
 
 		$('#suEditor').on('click', '.su-chip', function () {
 			var tipo = $(this).closest('.su-chips').data('tipo'), id = Number($(this).data('id')), g = su.ed.g;
@@ -1687,7 +1708,7 @@
 		});
 
 		$('#btnSushiNuevo').on('click', function () {
-			if (su.promo.piezas - suConfiguradas(-1) <= 0) { toastr.info('Ya están todas las piezas configuradas'); return; }
+			if (su.promo.piezas - suConfiguradas(-1) <= 0) { toastr.info(suEsRol(su.promo) ? 'Ya están todos los rolls configurados' : 'Ya están todas las piezas configuradas'); return; }
 			su.ed = { idx: null, g: suGrupoNuevo(suPiezasSugeridas()) };
 			pintarSushi();
 		});
@@ -1714,9 +1735,10 @@
 		$('#btnSushiCancelarGrupo').on('click', function () { su.ed = null; pintarSushi(); });
 		$('#btnSushiGuardarGrupo').on('click', function () {
 			var g = su.ed.g, promo = su.promo, max = suMaxEditor();
-			if (g.piezas < 1) { toastr.warning('Indica cuántas piezas lleva el grupo'); return; }
-			if (g.piezas % promo.paso !== 0) { toastr.warning('Las piezas van de a ' + promo.paso); return; }
-			if (g.piezas > max) { toastr.warning('Solo quedan ' + max + ' piezas'); return; }
+			var rolG = suEsRol(promo);
+			if (g.piezas < 1) { toastr.warning(rolG ? 'Indica cuántos rolls' : 'Indica cuántas piezas lleva el grupo'); return; }
+			if (g.piezas % promo.paso !== 0) { toastr.warning(rolG ? 'Los rolls van completos' : 'Las piezas van de a ' + promo.paso); return; }
+			if (g.piezas > max) { toastr.warning('Solo quedan ' + textoCantSushi(promo, max).replace(' pz', ' piezas')); return; }
 			if (promo.bases.length && !g.base) { toastr.warning('Elige la base'); return; }
 			if (promo.rellenos.length && !g.rellenos.length) { toastr.warning('Elige al menos un relleno'); return; }
 			if (promo.envoltorios.length && !g.envoltorio) { toastr.warning('Elige con qué se envuelve'); return; }
@@ -1738,7 +1760,10 @@
 		$('#btnConfirmarSushi').on('click', function () {
 			if (su.ed) { toastr.warning('Guarda o cancela el grupo que estás armando'); return; }
 			var pend = su.promo.piezas - suConfiguradas(-1);
-			if (pend !== 0) { toastr.warning(pend > 0 ? 'Faltan ' + pend + ' piezas por configurar' : 'Sobran ' + (-pend) + ' piezas'); return; }
+			if (pend !== 0) {
+				var cp = function (n) { return textoCantSushi(su.promo, n).replace(' pz', ' piezas'); };
+				toastr.warning(pend > 0 ? 'Faltan ' + cp(pend) + ' por configurar' : 'Sobran ' + cp(-pend)); return;
+			}
 			var sel = {
 				grupos: $.map(su.grupos, function (g) { return { piezas: g.piezas, base: g.base || 0, envoltorio: g.envoltorio || 0, rellenos: g.rellenos.slice() }; }),
 				extras: $.map(su.promo.extras, function (o) { return su.extras[o.id] ? { id: o.id, cantidad: su.extras[o.id] } : null; })
@@ -1866,7 +1891,7 @@
 				// v1.25.0: promo de sushi: cada producto de cada grupo (por pieza) y cada extra es una línea (Mcaja::armarLineas)
 				var suL = l.sushi ? sushiDe(l.id_producto) : null;
 				$.each(suL ? l.sushi.grupos : [], function (j, g) {
-					var q = r3(l.cantidad * g.piezas);
+					var q = r3(l.cantidad * unidadesGrupoSushi(suL, g));   // v1.26.0: por roll, los rolls
 					$.each([['envoltorio', g.envoltorio], ['base', g.base]].concat($.map(g.rellenos || [], function (id) { return [['relleno', id]]; })), function (k, par) {
 						var o = par[1] ? opcionSushi(suL, par[0], par[1]) : null;
 						if (o && o.valor) res.push({ bruto: Math.round(o.valor * q), exento: exento, ila: ila });
@@ -1977,16 +2002,16 @@
 				var suD = sushiDe(l.id_producto);
 				if (suD && l.sushi) {
 					$.each(l.sushi.grupos, function (j, g) {
-						var tx = textoGrupoSushi(suD, g), v = g.piezas * valorPiezaSushi(suD, g);
-						detalle.push('<span class="del-sushi">' + g.piezas + ' pz <b>' + esc(tx.titulo) + '</b>' + (tx.rellenos ? ' · ' + esc(tx.rellenos) : '') + (tx.base ? ' · ' + esc(tx.base) : '') + (v ? ' <b>+' + fmt(v) + '</b>' : '') + '</span>');
+						var tx = textoGrupoSushi(suD, g), v = unidadesGrupoSushi(suD, g) * valorPiezaSushi(suD, g);
+						detalle.push('<span class="del-sushi">' + textoCantSushi(suD, g.piezas) + ' <b>' + esc(tx.titulo) + '</b>' + (tx.rellenos ? ' · ' + esc(tx.rellenos) : '') + (tx.base ? ' · ' + esc(tx.base) : '') + (v ? ' <b>+' + fmt(v) + '</b>' : '') + '</span>');
 					});
 					$.each(l.sushi.extras || [], function (j, e) {
 						var o = opcionSushi(suD, 'extra', e.id);
 						if (o) detalle.push('<span class="del-sushi">+ ' + (e.cantidad > 1 ? e.cantidad + ' ' : '') + esc(o.nombre) + (o.valor ? ' <b>+' + fmt(o.valor * e.cantidad) + '</b>' : '') + '</span>');
 					});
-				} else if (suD) detalle.push('<span class="text-danger">Falta armar las piezas de la promo</span>');
+				} else if (suD) detalle.push('<span class="text-danger">Falta armar ' + (suEsRol(suD) ? 'los rolls' : 'las piezas') + ' de la promo</span>');
 				if (l.nota) detalle.push('<i>' + esc(l.nota) + '</i>');
-				var nombre = tieneOpciones(l.id_producto) ? '<a href="#" class="editar" title="' + (sushiDe(l.id_producto) ? 'Cambiar las piezas de la promo' : menuDe(l.id_producto) ? 'Cambiar lo elegido del menú' : 'Cambiar agregados / indicaciones') + '">' + esc(l.nombre) + '</a>' : esc(l.nombre);
+				var nombre = tieneOpciones(l.id_producto) ? '<a href="#" class="editar" title="' + (sushiDe(l.id_producto) ? (suEsRol(sushiDe(l.id_producto)) ? 'Cambiar los rolls de la promo' : 'Cambiar las piezas de la promo') : menuDe(l.id_producto) ? 'Cambiar lo elegido del menú' : 'Cambiar agregados / indicaciones') + '">' + esc(l.nombre) + '</a>' : esc(l.nombre);
 				// Mensaje para la comanda: disponible en cualquier producto, tenga o no mensajes predefinidos
 				nombre += ' <a href="#" class="editar caja-btn-mensaje' + (l.nota ? ' con-mensaje' : '') + '" title="' + (l.nota ? 'Editar mensaje para la comanda' : 'Agregar mensaje para la comanda') + '"><i class="fa fa-commenting-o"></i></a>';
 				var prod = producto(l.id_producto);
