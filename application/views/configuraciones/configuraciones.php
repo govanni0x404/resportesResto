@@ -91,7 +91,7 @@ if (!function_exists('cfg_opciones')) {
 
                                         <?php if (array_key_exists('usar_cocina_web', $config)) :
                                             $__activa = function ($k) use ($config) { return in_array($config[$k] ?? null, array(true, 't', 1, '1'), true); }; ?>
-                                        <!-- v1.29.0 (PRUEBA): pantalla de cocina y reservas (migración 20261121140000) -->
+                                        <!-- v1.29.0: pantalla de cocina y reservas (migración 20261121140000) -->
                                         <div class="config-card">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title"><i class="fa fa-fire"></i>Cocina y reservas</h3>

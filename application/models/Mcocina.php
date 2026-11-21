@@ -2,7 +2,7 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
- * v1.28.0 (PRUEBA): pantalla de cocina (Cocina). Muestra lo que se mandó a preparar y todavía no está "Listo".
+ * v1.28.0: pantalla de cocina (Cocina). Muestra lo que se mandó a preparar y todavía no está "Listo".
  *
  * - Mesas y delivery: detalle_cotizacion (cada envío a la mesa = una comanda: misma cotización y misma hora de impresión).
  * - Venta directa: detalle_venta de ventas directas no anuladas (cada venta = una comanda).

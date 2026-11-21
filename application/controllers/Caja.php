@@ -437,7 +437,7 @@ class Caja extends CI_Controller
 	}
 
 	/** 19-11-2026: guarda o borra el mensaje general de la mesa (sale en sus comandas). */
-	/** v1.29.0 (prueba): llegó el cliente de la reserva de esta mesa (la mesa se desbloquea). */
+	/** v1.29.0: llegó el cliente de la reserva de esta mesa (la mesa se desbloquea). */
 	public function reservaLlego()
 	{
 		$this->ejecutar(function () {

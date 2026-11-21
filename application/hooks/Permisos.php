@@ -69,7 +69,7 @@ class Permisos
 		'proveedor' => array('Proveedor', 'Compras', 'ResumenDeCompras'),
 		'insumos' => array('Insumos', 'Compras', 'EntradaBodega', 'SalidaBodega', 'Inventario', 'Productos', 'Recetas', 'InsumosPorBodega'),
 		'compras' => array('Compras', 'ResumenDeCompras'),
-		'reservas' => array('Reservas'),   // v1.28.0 (prueba): nombres y teléfonos de quienes reservan
+		'reservas' => array('Reservas'),   // v1.28.0: nombres y teléfonos de quienes reservan
 	);
 
 	/** Consultas de apoyo: listados y búsquedas de solo lectura. */

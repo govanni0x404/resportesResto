@@ -3970,7 +3970,7 @@ class Mcaja extends CI_Model
 				'id_tipo_mesa' => (int)$m->id_tipo_mesa,
 			);
 		}
-		// v1.29.0 (prueba): mesas libres bloqueadas por una reserva
+		// v1.29.0: mesas libres bloqueadas por una reserva
 		$reservas = $this->bloqueosReserva($db);
 		if ($reservas) {
 			foreach ($res as $i => $mm) {
@@ -4183,7 +4183,7 @@ class Mcaja extends CI_Model
 
 	/** Rechaza mesas bloqueadas o que quedaron marcadas ocupadas sin un pedido abierto. */
 	/**
-	 * v1.29.0 (prueba): mesas libres bloqueadas por una reserva (Reservas). Una reserva "por llegar" bloquea su mesa desde
+	 * v1.29.0: mesas libres bloqueadas por una reserva (Reservas). Una reserva "por llegar" bloquea su mesa desde
 	 * Configuraciones > minutos antes de la hora hasta 1 hora después, o hasta que se marque Llegó / No vino / Cancelada.
 	 * Con reservas apagadas, sin la tabla o con 0 minutos: nada. Devuelve id_mesa => [id, nombre, hora, personas].
 	 */
@@ -4215,7 +4215,7 @@ class Mcaja extends CI_Model
 			. ($r['personas'] === 1 ? ' persona' : ' personas') . '). Si el cliente llegó, márcalo tocando la mesa.', 409);
 	}
 
-	/** v1.29.0 (prueba): el cliente de la reserva llegó (desde la mesa en la Caja): la mesa se desbloquea. */
+	/** v1.29.0: el cliente de la reserva llegó (desde la mesa en la Caja): la mesa se desbloquea. */
 	public function reservaLlego($idMesa, $idReserva)
 	{
 		$db = $this->conexion();
@@ -4266,7 +4266,7 @@ class Mcaja extends CI_Model
 			$this->validarMesaUsable($this->bloquearMesa($db, $idMesa), $db);
 			$this->validarStock($db, $lineas);
 			$cot = $this->cotizacionDeMesa($db, $idMesa);
-			if (!$cot) $this->exigirSinReserva($db, $idMesa);   // v1.29.0 (prueba): mesa libre bloqueada por reserva
+			if (!$cot) $this->exigirSinReserva($db, $idMesa);   // v1.29.0: mesa libre bloqueada por reserva
 			if ($cot) {
 				$idCot = (int)$cot->id_cotizacion;
 			} else {
@@ -4559,7 +4559,7 @@ class Mcaja extends CI_Model
 				return true;
 			});
 			$destino = $this->cotizacionDeMesa($db, $idDestino);
-			if (!$destino) $this->exigirSinReserva($db, $idDestino);   // v1.29.0 (prueba): no se pasan productos a una mesa reservada
+			if (!$destino) $this->exigirSinReserva($db, $idDestino);   // v1.29.0: no se pasan productos a una mesa reservada
 			if ($todo && !$destino) {
 				$this->q($db, 'UPDATE cotizacion SET id_mesa = ? WHERE id_cotizacion = ?', array($idDestino, (int)$cot->id_cotizacion));
 				$this->q($db, 'UPDATE mesa SET disponible = false, id_cotizacion = ?, id_garzon = ? WHERE id_mesa = ?', array((int)$cot->id_cotizacion, (int)$idUsuario, $idDestino));

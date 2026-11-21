@@ -1,4 +1,4 @@
-<?php /* v1.28.0 (PRUEBA): pantalla de cocina. Controlador Cocina, modelo Mcocina. */ ?>
+<?php /* v1.28.0: pantalla de cocina (en main desde v1.29.0). Controlador Cocina, modelo Mcocina. */ ?>
 <style>
 	:root {
 		--k-fondo: #f4f1ec; --k-tarjeta: #ffffff; --k-borde: #e5ddd3; --k-texto: #2A1D17; --k-suave: #7A6A5E;
@@ -64,7 +64,7 @@
 </style>
 
 <div class="k-barra">
-	<h1><i class="fa fa-fire" aria-hidden="true"></i> Cocina <span class="k-cuenta" id="kCuenta">0</span> <span class="k-prueba">PRUEBA</span></h1>
+	<h1><i class="fa fa-fire" aria-hidden="true"></i> Cocina <span class="k-cuenta" id="kCuenta">0</span></h1>
 	<label class="sr-only" for="kDestino">Destino</label>
 	<select id="kDestino" class="form-control">
 		<option value="0">Todos los destinos</option>

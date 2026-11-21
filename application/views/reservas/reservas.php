@@ -1,4 +1,4 @@
-<?php /* v1.28.0 (PRUEBA): reservas de mesas. Controlador Reservas, modelo Mreservas. */ ?>
+<?php /* v1.28.0: reservas de mesas (en main desde v1.29.0). Controlador Reservas, modelo Mreservas. */ ?>
 <style>
 	.r-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 14px; }
 	.r-barra h1 { margin: 0 auto 0 0; font-size: 22px; font-weight: 800; color: #2A1D17; display: flex; align-items: center; gap: 10px; }
@@ -29,7 +29,7 @@
 </style>
 
 <div class="r-barra">
-	<h1><i class="fa fa-calendar-check-o" aria-hidden="true"></i> Reservas <span class="r-prueba">PRUEBA</span></h1>
+	<h1><i class="fa fa-calendar-check-o" aria-hidden="true"></i> Reservas</h1>
 	<div class="r-dia">
 		<button type="button" class="btn btn-default" id="rAntes" title="Día anterior" aria-label="Día anterior"><i class="fa fa-chevron-left"></i></button>
 		<label class="sr-only" for="rFecha">Día</label>

@@ -2,7 +2,7 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
- * v1.28.0 (PRUEBA, rama prueba/pantalla-cocina): pantalla de cocina (ver models/Mcocina.php).
+ * v1.28.0: pantalla de cocina (ver models/Mcocina.php).
  * Pensada para una tablet o un monitor en la cocina: muestra las comandas por preparar, la más antigua primero, con el
  * tiempo que llevan esperando, y se marcan "Listo" con un toque. Se actualiza sola cada 5 segundos.
  * Acceso: módulo "Cocina" en Privilegios de Usuario (gerencia siempre).

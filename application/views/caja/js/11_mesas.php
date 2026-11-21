@@ -28,7 +28,7 @@
 				$('#mesasOcupadas').text(ocupadas).toggle(ocupadas > 0);
 				if (editandoPlano) return;   // no pisar lo que se está moviendo
 				mesasLista = r.mesas;
-				$('.leyenda-reserva').toggle($.grep(r.mesas, function (m) { return !!m.reserva; }).length > 0);   // v1.29.0 (prueba)
+				$('.leyenda-reserva').toggle($.grep(r.mesas, function (m) { return !!m.reserva; }).length > 0);   // v1.29.0
 				sectoresLista = r.sectores || [];
 				pintarFiltroTipoMesa(r.tipos_mesa || []);
 				renderMesas();
@@ -113,7 +113,7 @@
 						.toggleClass('demora', m.estado === 'ocupada' && m.segundos >= 3600 && m.segundos < 7200).toggleClass('critica', m.estado === 'ocupada' && m.segundos >= 7200)
 						.append($('<div class="atiende">').text(m.atiende));
 				} else if (m.reserva) {
-					// v1.29.0 (prueba): mesa libre bloqueada por una reserva (Reservas)
+					// v1.29.0: mesa libre bloqueada por una reserva (Reservas)
 					$c.addClass('reservada').attr('data-reserva', m.reserva.id)
 						.attr('title', 'Bloqueada por reserva: ' + m.reserva.nombre + ' a las ' + m.reserva.hora + ' (' + m.reserva.personas + ')')
 						.append($('<div class="estado">').text('Reservada ' + m.reserva.hora))
@@ -492,7 +492,7 @@
 			if (editandoPlano) return;
 			var id = Number($(this).attr('data-id'));
 			if ($(this).attr('data-estado') === 'bloqueada') { ofrecerLiberar(id); return; }
-			// v1.29.0 (prueba): mesa bloqueada por reserva: solo se abre si llegó el cliente
+			// v1.29.0: mesa bloqueada por reserva: solo se abre si llegó el cliente
 			if ($(this).attr('data-reserva')) {
 				var mr = $.grep(mesasLista, function (x) { return x.id_mesa === id; })[0], rv = mr && mr.reserva;
 				if (!rv) return;

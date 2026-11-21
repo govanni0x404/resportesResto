@@ -2,7 +2,7 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
- * v1.28.0 (PRUEBA): reservas de mesas (tabla reserva_web, migración 20261121130000).
+ * v1.28.0: reservas de mesas (tabla reserva_web, migración 20261121130000).
  * Estados: pendiente (por llegar), llego, cancelada, no_vino.
  */
 class Mreservas extends CI_Model

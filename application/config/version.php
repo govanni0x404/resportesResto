@@ -9,7 +9,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 $config['version'] = [
     'number' => '1.29.0',
     'commit' => 'dc6219a',
-    'branch' => 'prueba/pantalla-cocina',
+    'branch' => 'main',
     'date' => '2026-11-21 14:00:00',
     'build' => 162,
     'full' => '1.29.0+dc6219a'

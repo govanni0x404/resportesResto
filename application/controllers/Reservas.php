@@ -2,7 +2,7 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
- * v1.28.0 (PRUEBA, rama prueba/pantalla-cocina): reservas de mesas (ver models/Mreservas.php).
+ * v1.28.0: reservas de mesas (ver models/Mreservas.php).
  * Acceso: módulo "Reservas" en Privilegios de Usuario (gerencia siempre).
  */
 class Reservas extends CI_Controller

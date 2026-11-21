@@ -856,7 +856,7 @@
                         <?php
                         $__showDashboard = menu_visible('Dashboard');
                         $__showCaja = menu_visible('Caja');
-                        // v1.29.0 (prueba): cocina y reservas, con permiso Y encendidas en Configuraciones
+                        // v1.29.0: cocina y reservas, con permiso Y encendidas en Configuraciones
                         $__showCocina = menu_visible('Cocina') && opcion_config_activa(get_instance(), 'usar_cocina_web');
                         $__showReservas = menu_visible('Reservas') && opcion_config_activa(get_instance(), 'usar_reservas_web');
 
