@@ -581,6 +581,7 @@
 	.su-extra .btn { padding: 1px 8px; }
 	.su-extra b.q { min-width: 20px; text-align: center; }
 	.caja-linea .detalle-linea .del-sushi { display: block; color: var(--t-texto-suave, #4B5563); }
+	.su-grupo-nota { margin-top: 3px; font-size: 13px; font-style: italic; color: var(--t-texto-fuerte, #111827); }   /* v1.26.1 */
 	.caja-linea.enviada.hijo-menu { padding-left: 22px; opacity: .85; }
 	.caja-linea.enviada.hijo-menu .nombre { font-weight: 500; }
 
@@ -2378,6 +2379,11 @@
 						<div class="su-sec" id="suSecBase"><div class="su-sec-tit"><span>Base</span><small></small></div><div class="su-chips" data-tipo="base"></div></div>
 						<div class="su-sec" id="suSecRelleno"><div class="su-sec-tit"><span>Rellenos</span><small></small></div><div class="su-chips" data-tipo="relleno"></div></div>
 						<div class="su-sec" id="suSecEnvoltorio"><div class="su-sec-tit"><span>Envuelto en</span><small></small></div><div class="su-chips" data-tipo="envoltorio"></div></div>
+						<!-- v1.26.1: nota de este roll / grupo (sale en la comanda junto a él) -->
+						<div class="su-sec">
+							<div class="su-sec-tit"><span id="suTitNotaGrupo">Nota del grupo</span><small>opcional · sale en la comanda</small></div>
+							<input type="text" class="form-control" id="suNotaGrupo" maxlength="100" placeholder="Ej: sin palta, bien tostado">
+						</div>
 						<div class="su-editor-pie">
 							<button type="button" class="btn btn-default" id="btnSushiCancelarGrupo">Cancelar</button>
 							<button type="button" class="btn btn-success" id="btnSushiGuardarGrupo"><i class="fa fa-check"></i> Guardar grupo</button>
@@ -2385,7 +2391,7 @@
 					</div>
 				</div>
 				<div class="form-group" style="margin:12px 0 0">
-					<label for="txtNotaSushi">Nota <small class="text-muted" style="font-weight:400">· sale impresa en la comanda</small></label>
+					<label for="txtNotaSushi">Nota de la promo completa <small class="text-muted" style="font-weight:400">· sale una sola vez en la comanda</small></label>
 					<input type="text" class="form-control" id="txtNotaSushi" maxlength="100" placeholder="Ej: sin sésamo, palillos extra">
 				</div>
 			</div>

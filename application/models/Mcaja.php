@@ -395,8 +395,10 @@ class Mcaja extends CI_Model
 			}
 			if (!$base && !$env && !$rellenos) throw new Exception($nombre . ', grupo ' . $num . ': está vacío', 400);
 			// v1.26.0: rolls = piezas / piezas del roll (por roll); por pieza no se usa
+			// v1.26.1: nota del roll / grupo (sin caracteres de control, hasta 100)
+			$notaG = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', isset($g['nota']) && is_scalar($g['nota']) ? (string)$g['nota'] : '')), 0, 100);
 			$res['grupos'][] = array('piezas' => $piezas, 'rolls' => $rol ? intdiv($piezas, $promo['piezas_rol']) : 0,
-				'base' => $base, 'envoltorio' => $env, 'rellenos' => array_values($rellenos));
+				'base' => $base, 'envoltorio' => $env, 'rellenos' => array_values($rellenos), 'nota' => $notaG);
 		}
 		if ($total !== $promo['piezas']) {
 			// v1.26.0: por roll, el aviso en rolls
@@ -2247,7 +2249,8 @@ class Mcaja extends CI_Model
 				// v1.26.0: promo por roll: cada línea del grupo va con la cantidad de rolls (no de piezas) y su valor por roll;
 				// en cocina sale "2 x ROLL PANKO" y el mensaje empieza con "Roll:" (también en anulaciones y reenvíos)
 				$porRol = $sushis[$id]['modo'] === 'rol';
-				foreach ($sel['grupos'] as $g) {
+				// v1.26.1: cada roll (grupo) puede llevar su nota; la nota de la promo completa va UNA sola vez, en el primero
+				foreach ($sel['grupos'] as $ng => $g) {
 					$cantGrupo = round($cantidad * ($porRol ? $g['rolls'] : $g['piezas']), 3);
 					$nombresRellenos = array_map(function ($o) { return $o['nombre']; }, $g['rellenos']);
 					$titulo = $g['envoltorio'] ? $g['envoltorio']['nombre'] : ($g['base'] ? $g['base']['nombre'] : $nombresRellenos[0]);
@@ -2257,11 +2260,15 @@ class Mcaja extends CI_Model
 					if ($g['envoltorio']) $partes[] = $g['envoltorio'];
 					if ($g['base']) $partes[] = $g['base'];
 					foreach ($g['rellenos'] as $o) $partes[] = $o;
-					foreach ($partes as $k => $o) $hijo($o, $cantGrupo, $k === 0 ? $desc . ' (' . $prod->nombre_producto . ')' : '', $k === 0);
+					$notaG = $g['nota'] !== '' ? ' · Nota: ' . $g['nota'] : '';
+					$notaPromo = $ng === 0 && $nota !== '' ? ' · Nota promo: ' . $nota : '';
+					// Lo guardado en la línea (sale así en reenvíos y anulaciones)
+					foreach ($partes as $k => $o) $hijo($o, $cantGrupo, $k === 0 ? $desc . $notaG . ' (' . $prod->nombre_producto . $notaPromo . ')' : '', $k === 0);
 					$comanda[] = array('id_producto' => $id, 'nombre' => ($porRol ? 'Roll ' : '') . $titulo, 'cantidad' => $cantGrupo,
 						// el nombre ya dice "Roll": la nota sin el "Roll:" del principio
-						'nota' => ($porRol ? mb_substr($desc, 6) : $desc) . ' (' . $prod->nombre_producto . ($nota !== '' ? ' · ' . $nota : '') . ')', 'agregados' => array());
-					$resumen[] = ($porRol ? $g['rolls'] . ($g['rolls'] === 1 ? ' roll ' : ' rolls ') : $g['piezas'] . ' ') . $titulo . ' (' . ($porRol ? mb_substr($desc, 6) : $desc) . ')';
+						'nota' => ($porRol ? mb_substr($desc, 6) : $desc) . $notaG . ' (' . $prod->nombre_producto . $notaPromo . ')', 'agregados' => array());
+					$resumen[] = ($porRol ? $g['rolls'] . ($g['rolls'] === 1 ? ' roll ' : ' rolls ') : $g['piezas'] . ' ') . $titulo
+						. ' (' . ($porRol ? mb_substr($desc, 6) : $desc) . $notaG . ')';
 				}
 				foreach ($sel['extras'] as $par) {
 					list($o, $q) = $par;

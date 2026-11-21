@@ -368,7 +368,9 @@ class Mventasespera extends CI_Model
 		foreach (array_slice($s['grupos'], 0, 100) as $g) {
 			if (!is_array($g)) continue;
 			$grupos[] = array('piezas' => max(0, min(500, (int)($g['piezas'] ?? 0))), 'base' => max(0, (int)($g['base'] ?? 0)),
-				'envoltorio' => max(0, (int)($g['envoltorio'] ?? 0)), 'rellenos' => $ids($g['rellenos'] ?? null, 20));
+				'envoltorio' => max(0, (int)($g['envoltorio'] ?? 0)), 'rellenos' => $ids($g['rellenos'] ?? null, 20),
+				// v1.26.1: nota del roll / grupo
+				'nota' => mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', isset($g['nota']) && is_scalar($g['nota']) ? (string)$g['nota'] : '')), 0, 100));
 		}
 		$extras = array();
 		foreach (array_slice(isset($s['extras']) && is_array($s['extras']) ? $s['extras'] : array(), 0, 40) as $e) {
