@@ -1,6 +1,14 @@
 <?php
 // Opciones de las listas: los datos reales de la base, con el valor guardado marcado.
 // Si el valor guardado ya no existe en la tabla se muestra igual, para no cambiarlo sin querer al grabar.
+// v1.29.1: botón (i) con la explicación de una opción (se ve al pasar el mouse o al tocarlo; js.php > cfgInfo)
+if (!function_exists('cfg_info')) {
+    function cfg_info($texto)
+    {
+        echo '<button type="button" class="cfg-info" aria-label="Más información" aria-expanded="false" data-info="'
+            . htmlspecialchars($texto, ENT_QUOTES, 'UTF-8') . '"><i class="fa fa-info" aria-hidden="true"></i></button>';
+    }
+}
 if (!function_exists('cfg_opciones')) {
     function cfg_opciones($lista, $valor, $vacio)
     {
@@ -65,9 +73,8 @@ if (!function_exists('cfg_opciones')) {
 
                         <!-- novalidate: un campo inválido en una pestaña oculta impedía guardar sin mostrar nada -->
                         <form id="configForm" method="post" action="<?php echo site_url('Configuraciones/guardar'); ?>" novalidate>
-                            <!-- Tab General -->
+                            <!-- Tab General. v1.29.1: cada opción con un texto corto y su botón (i) con la explicación completa -->
                             <div id="general" class="tab active">
-                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Opciones de la caja, propinas y permisos. Los cambios se aplican al presionar Grabar.</p>
                                 <div class="config-grid">
                                         <div class="config-card">
                                             <div class="panel-heading">
@@ -75,16 +82,17 @@ if (!function_exists('cfg_opciones')) {
                                             </div>
                                             <div class="panel-body">
                                                 <?php $modoCaja = in_array($config['modo_caja_web'] ?? '', array('directa', 'mesas', 'ambos'), true) ? $config['modo_caja_web'] : 'ambos'; ?>
-                                                <select class="form-control" name="modo_caja_web">
+<div class="form-group" style="margin-top:0">
+                                                <label class="cfg-titulo" for="cboModoCaja">Cómo se vende <?php cfg_info("Ambos: la Caja tiene la pestaña Venta directa y la pestaña Mesas.\nVenta directa: sin mesas, cada venta se cobra al tiro.\nMesas: toda venta se hace en una mesa. En este modo conviene dejar siempre una mesa libre para la venta rápida (por ejemplo \"Mostrador\")."); ?></label>
+                                                <select class="form-control" name="modo_caja_web" id="cboModoCaja">
                                                     <option value="ambos" <?php echo $modoCaja === 'ambos' ? 'selected' : ''; ?>>Ambos: venta directa y mesas</option>
                                                     <option value="directa" <?php echo $modoCaja === 'directa' ? 'selected' : ''; ?>>Venta directa (sin mesas)</option>
                                                     <option value="mesas" <?php echo $modoCaja === 'mesas' ? 'selected' : ''; ?>>Mesas (toda venta se hace en una mesa)</option>
                                                 </select>
-                                                <p class="help-block" style="margin-top:8px">En modo Mesas deja siempre una mesa libre para la venta rápida (por ejemplo "Mostrador").</p>
+                                                </div>
                                                 <?php if (array_key_exists('agrupar_productos_web', $config)) : ?>
                                                 <!-- v1.24.8: agrupar productos iguales (migración 20261120170000) -->
-                                                <label style="margin-top:6px"><input type="checkbox" name="agrupar_productos_web" value="1" <?php echo ($config['agrupar_productos_web'] ?? true) !== false ? 'checked' : ''; ?>> Agrupar productos iguales en la Caja</label>
-                                                <p class="help-block" style="margin:-4px 0 0 22px">Marcada: dos pizzas van en una fila con cantidad 2. Sin marcar: cada pizza va en su propia fila, para ponerle a cada una su propio mensaje.</p>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="agrupar_productos_web" value="1" <?php echo ($config['agrupar_productos_web'] ?? true) !== false ? 'checked' : ''; ?>> Juntar productos iguales en una sola fila</label><?php cfg_info("Marcada: si agregas dos pizzas iguales, quedan en una fila con cantidad 2.\nSin marcar: cada pizza va en su propia fila, para ponerle a cada una su propio mensaje (ej. \"sin cebolla\")."); ?></div>
                                                 <?php endif; ?>
                                             </div>
                                         </div>
@@ -97,15 +105,12 @@ if (!function_exists('cfg_opciones')) {
                                                 <h3 class="panel-title"><i class="fa fa-fire"></i>Cocina y reservas</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <label><input type="checkbox" name="usar_cocina_web" value="1" <?php echo $__activa('usar_cocina_web') ? 'checked' : ''; ?>> Usar la pantalla de cocina</label>
-                                                <p class="help-block" style="margin-top:0">Para una tablet o monitor en la cocina: las comandas se ven en pantalla, el cocinero las toma y las marca listas. Las comandas en papel siguen saliendo igual.</p>
-                                                <label><input type="checkbox" name="usar_reservas_web" value="1" <?php echo $__activa('usar_reservas_web') ? 'checked' : ''; ?>> Usar reservas de mesas</label>
-                                                <div class="form-group" style="margin-top:8px">
-                                                    <label for="minBloqueoReserva">Bloquear la mesa reservada desde (minutos antes de la hora)</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="usar_cocina_web" value="1" <?php echo $__activa('usar_cocina_web') ? 'checked' : ''; ?>> Usar la pantalla de cocina</label><?php cfg_info("Para una tablet o monitor en la cocina: las comandas se ven en pantalla, el cocinero las toma (\"Siendo preparado por…\") y las marca listas.\nLas comandas en papel siguen saliendo igual.\nQuién la ve: gerencia siempre; los demás roles, si se les da \"Cocina\" en Privilegios de Usuario."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="usar_reservas_web" value="1" <?php echo $__activa('usar_reservas_web') ? 'checked' : ''; ?>> Usar reservas de mesas</label><?php cfg_info("Agrega el menú Reservas para anotar quién viene, a qué hora, cuántas personas y en qué mesa.\nQuién la ve: gerencia siempre; los demás roles, si se les da \"Reservas\" en Privilegios de Usuario."); ?></div>
+                                                <div class="form-group">
+                                                    <label class="cfg-titulo" for="minBloqueoReserva">Bloquear la mesa reservada (minutos antes) <?php cfg_info("Desde esos minutos antes de la hora de la reserva, la mesa sale \"Reservada\" en la Caja y no acepta pedidos.\nSe desbloquea al marcar que el cliente llegó (tocando la mesa en la Caja), que no vino o que se canceló, o cuando pasa 1 hora de la hora reservada.\n0 = no bloquear."); ?></label>
                                                     <input type="number" min="0" max="720" step="5" class="form-control" id="minBloqueoReserva" name="minutos_bloqueo_reserva_web" value="<?php echo (int)($config['minutos_bloqueo_reserva_web'] ?? 60); ?>">
-                                                    <p class="help-block">Desde ese momento la mesa sale "Bloqueada por reserva" en la Caja y no acepta pedidos, hasta que se marque que el cliente llegó, no vino o se canceló (o pase 1 hora de la hora reservada). 0 = no bloquear.</p>
                                                 </div>
-                                                <p class="help-block">Quién las ve: gerencia siempre; los demás roles, en Privilegios de Usuario (Cocina / Reservas).</p>
                                             </div>
                                         </div>
                                         <?php endif; ?>
@@ -117,17 +122,16 @@ if (!function_exists('cfg_opciones')) {
                                                 <h3 class="panel-title"><i class="fa fa-motorcycle"></i>Delivery</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <label><input type="checkbox" name="delivery_habilitado" value="1" <?php echo ($config['delivery_habilitado'] ?? null) === true || ($config['delivery_habilitado'] ?? null) === 't' ? 'checked' : ''; ?>> Habilitar Delivery en la Caja (pestaña aparte de venta directa y mesas)</label>
-                                                <div class="form-group" style="margin-top:10px">
-                                                    <label>Costo de envío (el mismo para todos los pedidos)</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="delivery_habilitado" value="1" <?php echo ($config['delivery_habilitado'] ?? null) === true || ($config['delivery_habilitado'] ?? null) === 't' ? 'checked' : ''; ?>> Usar delivery en la Caja</label><?php cfg_info("Agrega a la Caja la pestaña Delivery (aparte de Venta directa y Mesas), con los datos de entrega del cliente.\nSe puede cobrar al tiro o al entregar."); ?></div>
+                                                <div class="form-group">
+                                                    <label class="cfg-titulo">Costo de envío <?php cfg_info("Lo que se cobra por el envío en cada delivery (el mismo valor para todos).\n0 = no se cobra envío."); ?></label>
                                                     <input type="number" min="0" step="1" class="form-control" name="delivery_costo_envio" value="<?php echo (int)($config['delivery_costo_envio'] ?? 0); ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Producto con que va el envío en la boleta</label>
+                                                    <label class="cfg-titulo">Producto del envío <?php cfg_info("El SII pide que todo lo cobrado sea una línea del documento.\nCrea un producto (ej. \"DESPACHO\"), elígelo aquí y el envío se suma solo a cada delivery con el costo de arriba.\nSin producto, no se cobra envío."); ?></label>
                                                     <select class="form-control" name="delivery_id_producto_envio">
 <?php cfg_opciones($opciones['producto'] ?? array(), $config['delivery_id_producto_envio'] ?? 0, 'SIN ENVÍO'); ?>
                                                     </select>
-                                                    <p class="help-block">El SII pide que todo lo cobrado sea una línea del documento: crea un producto (ej. "DESPACHO"), elígelo aquí y el envío se suma solo a cada delivery con el valor de arriba. Con costo 0 o sin producto, no se cobra envío.</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -141,13 +145,12 @@ if (!function_exists('cfg_opciones')) {
                                                 <?php /* v1.23.0: Usar propina (apagada = no sale en nada) y Propina en mesas (migración 20261120140000) */ ?>
                                                 <?php $conColPropina = array_key_exists('usar_propina_web', $config); ?>
                                                 <?php if ($conColPropina) : ?>
-                                                <label><input type="checkbox" name="usar_propina_web" id="chkUsarPropina" value="1" <?php echo ($config['usar_propina_web'] ?? true) !== false ? 'checked' : ''; ?>> <b>Usar propina</b></label>
-                                                <p class="help-block" style="margin:-4px 0 8px 22px">Si la empresa no trabaja con propina, desmárcala: no se pregunta al cobrar ni sale en la precuenta ni en ningún documento.</p>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="usar_propina_web" id="chkUsarPropina" value="1" <?php echo ($config['usar_propina_web'] ?? true) !== false ? 'checked' : ''; ?>> <b>Usar propina</b></label><?php cfg_info("Desmárcala si el local no trabaja con propina: no se pregunta al cobrar ni sale en la precuenta ni en ningún documento."); ?></div>
                                                 <div id="opcionesPropina" style="margin-left:22px">
-                                                <label><input type="checkbox" name="propina_mesas_web" value="1" <?php echo ($config['propina_mesas_web'] ?? true) !== false ? 'checked' : ''; ?>> Propina en mesas</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="propina_mesas_web" value="1" <?php echo ($config['propina_mesas_web'] ?? true) !== false ? 'checked' : ''; ?>> Propina en mesas</label><?php cfg_info("Al cobrar una mesa, la Caja propone la propina (el cajero la puede cambiar o quitar)."); ?></div>
                                                 <?php endif; ?>
-                                                <label><input type="checkbox" name="calcular_valor_propina" value="1" <?php echo ($config['calcular_valor_propina'] ?? false) ? 'checked' : ''; ?>> Mostrar la propina sugerida en la precuenta</label>
-                                                <label><input type="checkbox" name="propina_en_venta_directa" value="1" <?php echo ($config['propina_en_venta_directa'] ?? false) ? 'checked' : ''; ?>> Propina en venta directa</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="calcular_valor_propina" value="1" <?php echo ($config['calcular_valor_propina'] ?? false) ? 'checked' : ''; ?>> Propina sugerida en la precuenta</label><?php cfg_info("La precuenta que se entrega en la mesa muestra el valor de la propina sugerida y el total con propina."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="propina_en_venta_directa" value="1" <?php echo ($config['propina_en_venta_directa'] ?? false) ? 'checked' : ''; ?>> Propina en venta directa</label><?php cfg_info("Al cobrar una venta directa (sin mesa), la Caja también pregunta por la propina."); ?></div>
                                                 <?php if ($conColPropina) : ?>
                                                 </div>
                                                 <?php endif; ?>
@@ -160,11 +163,11 @@ if (!function_exists('cfg_opciones')) {
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
-                                                    <label>Mesa para venta directa</label>
+                                                    <label class="cfg-titulo">Mesa de venta directa <?php cfg_info("Número de la mesa \"técnica\" que el sistema usa por dentro para la venta directa. No aparece en la lista de mesas de la Caja.\nNo la cambies si no sabes cuál es."); ?></label>
                                                     <input type="text" class="form-control" name="id_mesa_venta_directa" value="<?php echo $config['id_mesa_venta_directa'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Impresora de la caja</label>
+                                                    <label class="cfg-titulo">Impresora de la caja <?php cfg_info("Ahí salen las boletas, facturas, comprobantes (anulación, pago de créditos), el cierre y el informe X.\nAhí también va conectada la gaveta de dinero.\nSe imprime directo por el agente de impresión del computador de la caja."); ?></label>
                                                     <?php $impCierre = trim((string)($config['nombre_impresora_cierre'] ?? '')); ?>
                                                     <select class="form-control" name="nombre_impresora_cierre">
                                                         <!-- v1.25.2: sin "LA DE LA CAJA" (era la impresora que deja el POS de escritorio, que la web no deja
@@ -177,27 +180,24 @@ if (!function_exists('cfg_opciones')) {
                                                             <option value="<?php echo htmlspecialchars($impCierre, ENT_QUOTES, 'UTF-8'); ?>" selected><?php echo htmlspecialchars($impCierre, ENT_QUOTES, 'UTF-8'); ?> (no existe)</option>
                                                         <?php endif; ?>
                                                     </select>
-                                                    <p class="help-block">Destino de impresión de la caja: ahí salen las boletas, facturas, comprobantes (anulación, pago de créditos), el cierre y el informe X, y ahí va conectada la gaveta (directo al agente de impresión del equipo).</p>
                                                     <!-- v1.21.0: probar la gaveta de dinero (va conectada a la impresora) sin ir a la Caja -->
-                                                    <button type="button" class="btn btn-orange" id="btnProbarGaveta"><i class="fa fa-inbox"></i> Probar gaveta</button>
-                                                    <p class="help-block">Abre la gaveta de dinero conectada a la impresora de arriba. Hazlo desde el computador de la caja, con el agente de impresión abierto.</p>
+                                                    <div class="cfg-fila cfg-boton"><button type="button" class="btn btn-orange" id="btnProbarGaveta"><i class="fa fa-inbox"></i> Probar gaveta</button><?php cfg_info("Abre la gaveta de dinero conectada a la impresora de arriba, para ver que funciona.\nHazlo desde el computador de la caja, con el agente de impresión abierto."); ?></div>
                                                     <?php if (array_key_exists('abrir_gaveta_solo_por_pago_efectivo', $config)) : ?>
                                                     <!-- v1.24.18: la gaveta se abre sola al cobrar. Columna del POS de escritorio: vacía = activa -->
-                                                    <label style="margin-top:8px"><input type="checkbox" name="abrir_gaveta_solo_por_pago_efectivo" value="1" <?php echo ($config['abrir_gaveta_solo_por_pago_efectivo'] === null || in_array($config['abrir_gaveta_solo_por_pago_efectivo'], array(true, 't', 1, '1'), true)) ? 'checked' : ''; ?>> Abrir la gaveta solo cuando pagan en efectivo</label>
-                                                    <p class="help-block">La gaveta se abre sola al cobrar. Marcada: solo si parte del pago es en efectivo. Desmarcada: en todos los cobros (tarjeta, transferencia…).</p>
+                                                    <div class="cfg-fila"><label><input type="checkbox" name="abrir_gaveta_solo_por_pago_efectivo" value="1" <?php echo ($config['abrir_gaveta_solo_por_pago_efectivo'] === null || in_array($config['abrir_gaveta_solo_por_pago_efectivo'], array(true, 't', 1, '1'), true)) ? 'checked' : ''; ?>> Abrir la gaveta solo con pagos en efectivo</label><?php cfg_info("La gaveta se abre sola al cobrar.\nMarcada: solo si parte del pago es en efectivo.\nSin marcar: en todos los cobros (también tarjeta, transferencia…)."); ?></div>
                                                     <?php endif; ?>
                                                 </div>
                                                 <!-- 18-11-2026: se quitaron "Imprimir documentos en el equipo de la caja" y "con el diseño de la página":
                                                      todos los locales imprimen por el agente (impresionWeb.exe) y como imagen, siempre encendidas -->
                                                 <?php if (array_key_exists('imprimir_comandas_app', $config)) : ?>
                                                 <!-- 14-11-2026: comandas de la app de garzones impresas por la Caja web (solo locales sin POS de escritorio) -->
-                                                <label><input type="checkbox" name="imprimir_comandas_app" value="1" <?php echo ($config['imprimir_comandas_app'] ?? null) === true || ($config['imprimir_comandas_app'] ?? null) === 't' ? 'checked' : ''; ?>> Imprimir las comandas de la app de garzones (cada producto en su destino de impresión). Marcar solo si el local NO usa el POS de escritorio: si no, salen dos veces</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="imprimir_comandas_app" value="1" <?php echo ($config['imprimir_comandas_app'] ?? null) === true || ($config['imprimir_comandas_app'] ?? null) === 't' ? 'checked' : ''; ?>> Imprimir las comandas de la app de garzones</label><?php cfg_info("La Caja web imprime los pedidos que llegan desde la app de garzones, cada producto en su destino de impresión (cocina, barra…).\nMárcala solo si el local NO usa el POS de escritorio: si no, cada comanda sale dos veces."); ?></div>
                                                 <?php endif; ?>
                                                 <?php if (array_key_exists('imprimir_comandas_app_forzar', $config)) : ?>
                                                 <!-- 16-11-2026: celulares que mandan el pedido con "imprimir": 0 (la API2 lo graba como ya impreso) -->
-                                                <label style="margin-left:22px"><input type="checkbox" name="imprimir_comandas_app_forzar" value="1" <?php echo ($config['imprimir_comandas_app_forzar'] ?? null) === true || ($config['imprimir_comandas_app_forzar'] ?? null) === 't' ? 'checked' : ''; ?>> Imprimir también los pedidos que el celular manda sin pedir impresión (si algún celular imprime él mismo por Bluetooth, saldrían dos veces)</label>
+                                                <div class="cfg-fila" style="margin-left:22px"><label><input type="checkbox" name="imprimir_comandas_app_forzar" value="1" <?php echo ($config['imprimir_comandas_app_forzar'] ?? null) === true || ($config['imprimir_comandas_app_forzar'] ?? null) === 't' ? 'checked' : ''; ?>> También los pedidos marcados sin imprimir</label><?php cfg_info("Algunos celulares mandan el pedido diciendo que no se imprima.\nMarcada: igual se imprimen.\nOjo: si algún celular imprime él mismo por Bluetooth, esos pedidos saldrían dos veces."); ?></div>
                                                 <?php endif; ?>
-                                                <label><input type="checkbox" name="imprimir_comprobante_anulacion" value="1" <?php echo ($config['imprimir_comprobante_anulacion'] ?? false) ? 'checked' : ''; ?>> Imprimir comprobantes de anulacion</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="imprimir_comprobante_anulacion" value="1" <?php echo ($config['imprimir_comprobante_anulacion'] ?? false) ? 'checked' : ''; ?>> Imprimir comprobante al anular</label><?php cfg_info("Al anular una venta en la Caja, sale un comprobante con el documento, el monto, quién la anuló y el motivo."); ?></div>
                                             </div>
                                         </div>
 
@@ -207,19 +207,19 @@ if (!function_exists('cfg_opciones')) {
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
-                                                    <label>Clave de administrador</label>
+                                                    <label class="cfg-titulo" for="txtclaveAdmin">Clave de administrador <?php cfg_info("La clave que se pide en la Caja para lo que tú decidas proteger (anulaciones, descuentos, cortesías, abrir la gaveta…).\nPor seguridad no se muestra: déjala vacía para mantener la guardada, o escribe otra para cambiarla."); ?></label>
                                                     <!-- 19-11-2026: la clave guardada no se manda a la página; vacía = se mantiene -->
                                                     <input type="password" id="txtclaveAdmin" class="form-control" name="txtclaveAdmin" value="" autocomplete="new-password"
                                                         placeholder="<?php echo !empty($tiene_clave_admin) ? '•••••• (guardada; escribe otra para cambiarla)' : 'Sin clave: escribe una para crearla'; ?>">
                                                 </div>
                                                 <?php if (!empty($tiene_clave_admin)) : ?>
-                                                <label><input type="checkbox" name="borrar_clave_admin" value="1"> Quitar la clave guardada</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="borrar_clave_admin" value="1"> Quitar la clave guardada</label><?php cfg_info("Borra la clave al grabar. Lo protegido quedará sin clave hasta que crees otra."); ?></div>
                                                 <?php endif; ?>
-                                                <label><input type="checkbox" id="chkMostrarClaveAdmin" onchange="toggleMostrarClaveAdmin()" name="mostrar_clave_admin" value="1" <?php echo ($config['mostrar_clave_admin'] ?? false) ? 'checked' : ''; ?>> Mostrar clave</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" id="chkMostrarClaveAdmin" onchange="toggleMostrarClaveAdmin()" name="mostrar_clave_admin" value="1" <?php echo ($config['mostrar_clave_admin'] ?? false) ? 'checked' : ''; ?>> Ver lo que escribo</label><?php cfg_info("Muestra la clave que estás escribiendo arriba, para revisar que esté bien."); ?></div>
                                                 <?php if (array_key_exists('admin_anular_venta_web', $config)) : ?>
                                                 <!-- v1.25.3 (pedido del usuario): la clave se pide por separado en cada tipo de anulación. Marcada: se
                                                      pide a todos, también a un administrador (migración 20261121100000) -->
-                                                <div style="margin-top:10px"><b>Pedir la clave para anular:</b></div>
+                                                <div class="cfg-subtitulo">Pedir la clave para anular <?php cfg_info("Marcada: se pide la clave a todos, también a un administrador.\nSin marcar: se anula sin clave."); ?></div>
                                                 <?php foreach (array(
                                                     'admin_anular_producto_mesa_web' => 'Un producto de la mesa',
                                                     'admin_anular_pedido_mesa_web' => 'El pedido completo de la mesa',
@@ -229,10 +229,9 @@ if (!function_exists('cfg_opciones')) {
                                                 ) as $campoClave => $textoClave) : ?>
                                                 <label style="margin-left:12px"><input type="checkbox" name="<?php echo $campoClave; ?>" value="1" <?php echo in_array($config[$campoClave] ?? false, array(true, 't', 1, '1'), true) ? 'checked' : ''; ?>> <?php echo $textoClave; ?></label>
                                                 <?php endforeach; ?>
-                                                <p class="help-block">Marcada: se pide la clave a todos, también a un administrador. Desmarcada: se anula sin clave.</p>
-                                                <label><input type="checkbox" name="admin_anulacion_eliminacion" value="1" <?php echo ($config['admin_anulacion_eliminacion'] ?? false) ? 'checked' : ''; ?>> Requerir clave admin para anulacion en el POS de escritorio</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="admin_anulacion_eliminacion" value="1" <?php echo ($config['admin_anulacion_eliminacion'] ?? false) ? 'checked' : ''; ?>> Pedir la clave para anular en el POS de escritorio</label><?php cfg_info("Solo para el programa de escritorio (no la Caja web): pide la clave de administrador al anular o eliminar."); ?></div>
                                                 <?php else : ?>
-                                                <label><input type="checkbox" name="admin_anulacion_eliminacion" value="1" <?php echo ($config['admin_anulacion_eliminacion'] ?? false) ? 'checked' : ''; ?>> Requerir clave admin para anulacion</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="admin_anulacion_eliminacion" value="1" <?php echo ($config['admin_anulacion_eliminacion'] ?? false) ? 'checked' : ''; ?>> Pedir la clave para anular</label><?php cfg_info("Pide la clave de administrador al anular una venta o un producto."); ?></div>
                                                 <?php endif; ?>
                                             </div>
                                         </div>
@@ -242,29 +241,30 @@ if (!function_exists('cfg_opciones')) {
                                                 <h3 class="panel-title"><i class="fa fa-envelope-o"></i>Informes por correo</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <label><input type="checkbox" name="usar_correo_electronico" value="1" <?php echo ($config['usar_correo_electronico'] ?? false) ? 'checked' : ''; ?>> Enviar Cierre de caja por correo</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="usar_correo_electronico" value="1" <?php echo ($config['usar_correo_electronico'] ?? false) ? 'checked' : ''; ?>> Enviar el cierre de caja por correo</label><?php cfg_info("Al cerrar la caja, el informe del cierre llega a los correos de abajo."); ?></div>
                                                 <div class="form-group">
+                                                    <label class="cfg-titulo" for="txtCorreosInforme">Correos que reciben los informes <?php cfg_info("Uno o varios correos, separados por coma.\nEj: dueno@correo.com, contador@correo.com"); ?></label>
                                                     <input type="email" multiple class="form-control" name="correo_electronico" id="txtCorreosInforme" placeholder="ejemplo@correo.com, otro@correo.com" title="Uno o varios correos separados por coma" value="<?php echo htmlspecialchars((string)($config['correo_electronico'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                                                 </div>
-                                                <label><input type="checkbox" name="informar_anulaciones_mail" value="1" <?php echo ($config['informar_anulaciones_mail'] ?? false) ? 'checked' : ''; ?>> Informar anulaciones y comisiones</label>
-                                                <button type="button" class="btn btn-orange" id="btnProbarCorreo">Probar envío</button>
-                                                <p class="p">Separar por coma para múltiples correos</p>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="informar_anulaciones_mail" value="1" <?php echo ($config['informar_anulaciones_mail'] ?? false) ? 'checked' : ''; ?>> Avisar por correo cada anulación</label><?php cfg_info("Cada vez que se anula una venta, llega un correo con el documento, el monto, la fecha, quién la anuló y el motivo."); ?></div>
+                                                <div class="cfg-fila cfg-boton"><button type="button" class="btn btn-orange" id="btnProbarCorreo">Probar envío</button><?php cfg_info("Manda un correo de prueba a los correos de arriba, para comprobar que llegan."); ?></div>
                                             </div>
                                         </div>
 
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-print"></i>Imprimir cierre de caja</h3>
+                                                <h3 class="panel-title"><i class="fa fa-print"></i>Cierre de caja</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <label><input type="checkbox" name="ver_ingresos_egresos_cierre_caja" value="1" <?php echo ($config['ver_ingresos_egresos_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Ingresos y Egresos</label>
-                                                <label><input type="checkbox" name="ver_creditos_a_clientes_cierre_caja" value="1" <?php echo ($config['ver_creditos_a_clientes_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Creditos a clientes</label>
+                                                <div class="cfg-subtitulo">Qué sale en el cierre impreso <?php cfg_info("Las secciones que lleva el informe de cierre de caja."); ?></div>
+                                                <label><input type="checkbox" name="ver_ingresos_egresos_cierre_caja" value="1" <?php echo ($config['ver_ingresos_egresos_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Ingresos y egresos de dinero</label>
+                                                <label><input type="checkbox" name="ver_creditos_a_clientes_cierre_caja" value="1" <?php echo ($config['ver_creditos_a_clientes_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Créditos a clientes</label>
                                                 <label><input type="checkbox" name="ver_cortesias_cierre_caja" value="1" <?php echo ($config['ver_cortesias_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Cortesías</label>
                                                 <label><input type="checkbox" name="ver_anulaciones_eliminaciones_cierre_caja" value="1" <?php echo ($config['ver_anulaciones_eliminaciones_cierre_caja'] ?? true) ? 'checked' : ''; ?>> Anulaciones y eliminaciones</label>
                                                 <hr>
-                                                <label><input type="checkbox" name="mostrar_recaudacion_cierre_no_efectivo" value="1" <?php echo ($config['mostrar_recaudacion_cierre_no_efectivo'] ?? true) ? 'checked' : ''; ?>> Llenar forma de pago no efectivo</label>
-                                                <label><input type="checkbox" name="cierre_caja_manual" value="1" <?php echo ($config['cierre_caja_manual'] ?? true) ? 'checked' : ''; ?>> Cierre de caja detallado</label>
-                                                <label><input type="checkbox" name="imprimir_cierre_caja_impresora_termica" value="1" <?php echo ($config['imprimir_cierre_caja_impresora_termica'] ?? true) ? 'checked' : ''; ?>> Imprimir cierre de caja</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="mostrar_recaudacion_cierre_no_efectivo" value="1" <?php echo ($config['mostrar_recaudacion_cierre_no_efectivo'] ?? true) ? 'checked' : ''; ?>> Completar solos los pagos con tarjeta y otros</label><?php cfg_info("Al cerrar, los montos de tarjeta, transferencia y otras formas que no son efectivo vienen escritos con lo que dice el sistema.\nSin marcar: el cajero los escribe él mismo, sumando sus comprobantes (cierre ciego)."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="cierre_caja_manual" value="1" <?php echo ($config['cierre_caja_manual'] ?? true) ? 'checked' : ''; ?>> Abrir el informe detallado (PDF) al cerrar</label><?php cfg_info("Al cerrar la caja se abre en otra pestaña el informe completo en PDF, para guardarlo o imprimirlo."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="imprimir_cierre_caja_impresora_termica" value="1" <?php echo ($config['imprimir_cierre_caja_impresora_termica'] ?? true) ? 'checked' : ''; ?>> Imprimir el cierre en la impresora de la caja</label><?php cfg_info("Al cerrar, el cierre sale impreso en papel en la impresora de la caja."); ?></div>
                                             </div>
                                         </div>
 
@@ -274,23 +274,23 @@ if (!function_exists('cfg_opciones')) {
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
-                                                    <label>Máximo Permitido (%)</label>
+                                                    <label class="cfg-titulo">Descuento máximo (%) <?php cfg_info("El porcentaje más alto de descuento que se puede dar en una venta en la Caja.\nEj: 10 = hasta un 10%."); ?></label>
                                                     <input type="number" step="0.01" class="form-control" name="por_maximodescuento" value="<?php echo $config['por_maximodescuento'] ?? ''; ?>">
                                                 </div>
-                                                <label><input type="checkbox" name="requiere_cliente_descuento" value="1" <?php echo ($config['requiere_cliente_descuento'] ?? false) ? 'checked' : ''; ?>> Requerir Cliente</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="requiere_cliente_descuento" value="1" <?php echo ($config['requiere_cliente_descuento'] ?? false) ? 'checked' : ''; ?>> Descuento solo con cliente</label><?php cfg_info("Para hacer un descuento hay que elegir un cliente con nombre (no \"Público general\"), así queda registrado a quién se le hizo."); ?></div>
                                             </div>
                                         </div>
 
                                         <!-- v1.24.3: se quitó "Máximo de agregados por producto en la Caja": la Caja web ya no tiene límite -->
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-shield"></i>Requerir administrador para</h3>
+                                                <h3 class="panel-title"><i class="fa fa-shield"></i>Pedir clave de administrador para</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <label><input type="checkbox" name="requerir_usuario_admin_credito" value="1" <?php echo ($config['requerir_usuario_admin_credito'] ?? false) ? 'checked' : ''; ?>> Ventas a credito</label>
-                                                <label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> cortesias</label>
-                                                <label><input type="checkbox" name="requerir_usuario_admin_descuento" value="1" <?php echo ($config['requerir_usuario_admin_descuento'] ?? false) ? 'checked' : ''; ?>> Descuentos en caja</label>
-                                                <label><input type="checkbox" name="boton_apertura_caja_solo_admin" value="1" <?php echo ($config['boton_apertura_caja_solo_admin'] ?? false) ? 'checked' : ''; ?>> Apertura de gaveta</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="requerir_usuario_admin_credito" value="1" <?php echo ($config['requerir_usuario_admin_credito'] ?? false) ? 'checked' : ''; ?>> Ventas a crédito</label><?php cfg_info("Para vender fiado (a crédito a un cliente), la Caja pide la clave de un administrador."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="requerir_usuario_admin_cortesia" value="1" <?php echo ($config['requerir_usuario_admin_cortesia'] ?? false) ? 'checked' : ''; ?>> Cortesías</label><?php cfg_info("Para regalar una venta (cortesía, sin cobro), la Caja pide la clave de un administrador."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="requerir_usuario_admin_descuento" value="1" <?php echo ($config['requerir_usuario_admin_descuento'] ?? false) ? 'checked' : ''; ?>> Descuentos</label><?php cfg_info("Para hacer un descuento en la Caja, se pide la clave de un administrador."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="boton_apertura_caja_solo_admin" value="1" <?php echo ($config['boton_apertura_caja_solo_admin'] ?? false) ? 'checked' : ''; ?>> Abrir la gaveta a mano</label><?php cfg_info("Para abrir la gaveta con el botón de la Caja (sin una venta), se pide la clave de un administrador.\nAl cobrar se sigue abriendo sola."); ?></div>
                                             </div>
                                         </div>
 
@@ -298,17 +298,16 @@ if (!function_exists('cfg_opciones')) {
                                         <?php if (array_key_exists('pago_electronico_usuario_api', $config)) : ?>
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-credit-card"></i>Pago electrónico</h3>
+                                                <h3 class="panel-title"><i class="fa fa-credit-card"></i>Pago electrónico <?php cfg_info("Usuario y clave del programa de pago de las cajas. Van en cada cobro a la máquina POS (Mantención › Pago electrónico)."); ?></h3>
                                             </div>
                                             <div class="panel-body">
-                                                <p class="help-block" style="margin-top:0">Usuario y clave de la API del programa de pago de las cajas. Van en cada cobro a la máquina POS (Mantención &rsaquo; Pago electrónico).</p>
                                                 <div class="form-group">
-                                                    <label>Usuario API</label>
+                                                    <label class="cfg-titulo">Usuario API <?php cfg_info("El usuario que te entregó el proveedor del programa de pago."); ?></label>
                                                     <input type="text" class="form-control" name="pago_electronico_usuario_api" maxlength="60" autocomplete="off" placeholder="DATAMAULE"
                                                         value="<?php echo htmlspecialchars((string)($config['pago_electronico_usuario_api'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                                                 </div>
                                                 <div class="form-group" style="margin-bottom:0">
-                                                    <label>Clave API</label>
+                                                    <label class="cfg-titulo">Clave API <?php cfg_info("La clave del programa de pago. Por seguridad no se muestra: vacía = se mantiene la guardada."); ?></label>
                                                     <input type="password" class="form-control" name="pago_electronico_clave_api" maxlength="200" autocomplete="new-password"
                                                         placeholder="<?php echo !empty($pago_electronico_tiene_clave) ? '•••••• (guardada; vacía = se mantiene)' : ''; ?>">
                                                 </div>
@@ -320,23 +319,22 @@ if (!function_exists('cfg_opciones')) {
 
                             <!-- Tab Otras Configuraciones -->
                             <div id="otras" class="tab">
-                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Documentos, formas de pago y bodegas que se proponen por defecto en compras y ventas.</p>
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-shopping-cart"></i>Configuración por defecto de compras</h3>
+                                                <h3 class="panel-title"><i class="fa fa-shopping-cart"></i>Compras <?php cfg_info("Lo que se propone solo al ingresar una compra. Siempre se puede cambiar en cada compra."); ?></h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
                                                     <div class="col-md-4 form-group">
-                                                        <label>Documento de compra</label>
+                                                        <label class="cfg-titulo">Documento de compra <?php cfg_info("El tipo de documento que viene elegido al ingresar una compra (ej. factura)."); ?></label>
                                                         <select class="form-control" name="id_tdocumento_compra">
 <?php cfg_opciones($opciones['tdocumento'], $config['id_tdocumento_compra'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
                                                     </div>
                                                     <div class="col-md-4 form-group">
-                                                        <label>Formas de pago</label>
+                                                        <label class="cfg-titulo">Forma de pago de compras <?php cfg_info("Cómo se paga normalmente a los proveedores. Viene elegida al ingresar una compra."); ?></label>
                                                         <select class="form-control" name="id_fpago_compra">
 <?php cfg_opciones($opciones['fpago'], $config['id_fpago_compra'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
@@ -344,16 +342,16 @@ if (!function_exists('cfg_opciones')) {
                                                     <!-- La bodega de compras se elige abajo, en "Bodegas" (antes estaba repetida y una pisaba a la otra) -->
                                                 </div>
                                                 <hr>
-                                                <h4>Créditos</h4>
+                                                <h4>Créditos a clientes</h4>
                                                 <div class="row">
                                                     <div class="col-md-6 form-group">
-                                                        <label>Formas de pago credito a clientes</label>
+                                                        <label class="cfg-titulo">Forma de pago "a crédito" <?php cfg_info("La forma de pago que significa \"fiado\": lo que se cobra con ella queda como deuda del cliente.\nNINGUNA = la Caja no vende a crédito."); ?></label>
                                                         <select class="form-control" name="id_fpago_creditodirecto">
 <?php cfg_opciones($opciones['fpago'], $config['id_fpago_creditodirecto'] ?? 0, 'NINGUNA (sin venta a crédito)'); ?>
 </select>
                                                     </div>
                                                     <div class="col-md-6 form-group">
-                                                        <label>Centro costo pago credito</label>
+                                                        <label class="cfg-titulo">Centro de costo de los pagos de crédito <?php cfg_info("Cuando un cliente paga su deuda en la Caja, el ingreso queda registrado en este centro de costo."); ?></label>
                                                         <select class="form-control" name="id_pagocreditodirecto">
 <?php cfg_opciones($opciones['ccosto'], $config['id_pagocreditodirecto'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
@@ -363,19 +361,19 @@ if (!function_exists('cfg_opciones')) {
                                                 <h4>Bodegas</h4>
                                                 <div class="row">
                                                     <div class="col-md-4 form-group">
-                                                        <label>Compras</label>
+                                                        <label class="cfg-titulo">Bodega de compras <?php cfg_info("Donde entra la mercadería que se compra (suma stock)."); ?></label>
                                                         <select class="form-control" name="id_bodega_compra">
 <?php cfg_opciones($opciones['bodega'], $config['id_bodega_compra'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
                                                     </div>
                                                     <div class="col-md-4 form-group">
-                                                        <label>Ventas</label>
+                                                        <label class="cfg-titulo">Bodega de ventas <?php cfg_info("De donde salen los insumos cuando se vende (resta stock según la receta)."); ?></label>
                                                         <select class="form-control" name="id_bodega_venta">
 <?php cfg_opciones($opciones['bodega'], $config['id_bodega_venta'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
                                                     </div>
                                                     <div class="col-md-4 form-group">
-                                                        <label>Merma</label>
+                                                        <label class="cfg-titulo">Bodega de mermas <?php cfg_info("Donde se registra lo que se pierde o se bota (mermas) al hacer inventario."); ?></label>
                                                         <select class="form-control" name="id_bodega_merma_inventario">
 <?php cfg_opciones($opciones['bodega'], $config['id_bodega_merma_inventario'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
@@ -387,68 +385,67 @@ if (!function_exists('cfg_opciones')) {
                                     <div class="col-md-6">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-shopping-bag"></i>Configuración por defecto de venta</h3>
+                                                <h3 class="panel-title"><i class="fa fa-shopping-bag"></i>Ventas <?php cfg_info("Lo que viene elegido solo en la Caja. El cajero lo puede cambiar en cada venta."); ?></h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
-                                                    <label>cliente boleta</label>
+                                                    <label class="cfg-titulo">Cliente de las boletas <?php cfg_info("El cliente \"Público general\": el que va en las ventas cuando el cajero no elige a nadie."); ?></label>
                                                     <select class="form-control" name="id_cliente_publico">
 <?php cfg_opciones($opciones['cliente'], $config['id_cliente_publico'] ?? 0, 'EL PRIMER CLIENTE (N° más bajo)'); ?>
 </select>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Lista de precio publico</label>
+                                                    <label class="cfg-titulo">Lista de precios normal <?php cfg_info("La lista de precios que usa la Caja. Cambiar a otra lista en una venta pide la clave de administrador."); ?></label>
                                                     <select class="form-control" name="id_lpreciopublico">
 <?php cfg_opciones($opciones['lprecio'], $config['id_lpreciopublico'] ?? 0, 'LA PRIMERA LISTA (N° más bajo)'); ?>
 </select>
                                                 </div>
                                                 <?php if (array_key_exists('usar_comision_web', $config)) : ?>
                                                 <!-- v1.24.1: comisión opcional en el precio de los productos (Productos y Lista de Precios) -->
-                                                <label><input type="checkbox" name="usar_comision_web" value="1" <?php echo ($config['usar_comision_web'] ?? false) === true ? 'checked' : ''; ?>> Comisión en el precio de los productos</label>
-                                                <p class="help-block" style="margin:-4px 0 8px 22px">Sin marcar, el recuadro de comisión no aparece al grabar el precio de un producto ni en Lista de Precios, y la comisión se graba en 0.</p>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="usar_comision_web" value="1" <?php echo ($config['usar_comision_web'] ?? false) === true ? 'checked' : ''; ?>> Comisión en el precio de los productos</label><?php cfg_info("Marcada: al grabar el precio de un producto (Carta y Lista de precios) aparece el recuadro de comisión.\nSin marcar: el recuadro no aparece y la comisión queda en 0."); ?></div>
                                                 <?php endif; ?>
                                                 <div class="form-group">
-                                                    <label>documento de venta</label>
+                                                    <label class="cfg-titulo">Documento de venta <?php cfg_info("El documento que viene elegido al cobrar (ej. boleta)."); ?></label>
                                                     <select class="form-control" name="id_docventa_defecto">
 <?php cfg_opciones($opciones['tdocumento'], $config['id_docventa_defecto'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Forma de pago por defecto</label>
+                                                    <label class="cfg-titulo">Forma de pago <?php cfg_info("La forma de pago que viene elegida al cobrar (ej. efectivo)."); ?></label>
                                                     <select class="form-control" name="id_fpago_defecto">
 <?php cfg_opciones($opciones['fpago'], $config['id_fpago_defecto'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Solo otorgar vuelto por pago</label>
+                                                    <label class="cfg-titulo">Forma de pago que da vuelto <?php cfg_info("Solo los pagos con esta forma pueden tener vuelto (normalmente efectivo).\nCon tarjeta o transferencia no se puede pagar de más."); ?></label>
                                                     <select class="form-control" name="vueltofpago">
 <?php cfg_opciones($opciones['fpago'], $config['vueltofpago'] ?? 0, 'LA QUE SE LLAME EFECTIVO'); ?>
 </select>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Documento pago cortesias</label>
+                                                    <label class="cfg-titulo">Comprobante interno <?php cfg_info("El documento sin valor tributario que usa la Caja para cortesías y ventas internas.\nSiempre está disponible, aunque no haya facturación electrónica."); ?></label>
                                                     <select class="form-control" name="id_tdocumento_ticket">
 <?php cfg_opciones($opciones['tdocumento'], $config['id_tdocumento_ticket'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>impuestos iva</label>
+                                                    <label class="cfg-titulo">Impuesto IVA <?php cfg_info("Cuál de los impuestos es el IVA. Con él se calculan el neto y el IVA de las boletas y facturas."); ?></label>
                                                     <select class="form-control" name="id_impuesto_iva">
 <?php cfg_opciones($opciones['impuesto'], $config['id_impuesto_iva'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
                                                 </div>
-                                                                                                <hr>
-                                                <label><input type="checkbox" name="permitir_retiro_fondo_fijo" value="1" <?php echo ($config['permitir_retiro_fondo_fijo'] ?? false) ? 'checked' : ''; ?>> Permitir retiro fondo fijo</label>
+                                                <hr>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="permitir_retiro_fondo_fijo" value="1" <?php echo ($config['permitir_retiro_fondo_fijo'] ?? false) ? 'checked' : ''; ?>> Permitir retirar el fondo de la caja</label><?php cfg_info("Marcada: en un retiro de dinero se puede sacar también el fondo con que se abrió la caja.\nSin marcar: el fondo siempre queda en la caja."); ?></div>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-cutlery"></i>Operación de mesas e inventario</h3>
+                                                <h3 class="panel-title"><i class="fa fa-cutlery"></i>Inventario</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <label><input type="checkbox" name="inventario_cierre_caja" value="1" <?php echo ($config['inventario_cierre_caja'] ?? false) ? 'checked' : ''; ?>> Inventario insumos cierre de caja</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="inventario_cierre_caja" value="1" <?php echo ($config['inventario_cierre_caja'] ?? false) ? 'checked' : ''; ?>> Contar insumos al cerrar la caja</label><?php cfg_info("Al cerrar la caja, el cajero cuenta los insumos marcados \"Inventario en cierre de turno\" (en Insumos) y el stock se ajusta a lo contado."); ?></div>
                                             </div>
                                         </div>
                                     </div>
@@ -457,7 +454,6 @@ if (!function_exists('cfg_opciones')) {
 
                             <!-- Tab Facturación Electrónica -->
                             <div id="facturacion" class="tab">
-                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Proveedor DTE, documentos electrónicos, acceso al proveedor (Cloud Apps o datamaule.cl) y folios autorizados por el SII.</p>
                                 <div class="row t-dos-columnas">
                                     <div class="col-md-6">
                                         <div class="config-card">
@@ -465,11 +461,10 @@ if (!function_exists('cfg_opciones')) {
                                                 <h3 class="panel-title"><i class="fa fa-file-text-o"></i>Facturación electrónica</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <label><input type="checkbox" name="habilitar_facturacion_electronica" value="1" <?php echo ($config['habilitar_facturacion_electronica'] ?? false) ? 'checked' : ''; ?>> Habilitar factura electronica</label>
-                                                <p class="help-block">En la Caja solo se pueden usar la boleta, la factura y la nota de crédito que estén asignadas abajo, y solo con esta opción activada. El comprobante interno se usa siempre.</p>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="habilitar_facturacion_electronica" value="1" <?php echo ($config['habilitar_facturacion_electronica'] ?? false) ? 'checked' : ''; ?>> Usar boleta y factura electrónica</label><?php cfg_info("Marcada: la Caja puede emitir la boleta, la factura y la nota de crédito electrónicas que se eligen abajo.\nSin marcar: solo el comprobante interno."); ?></div>
                                                 <hr>
                                                 <div class="form-group">
-                                                    <label>EMPRESA PROVEEDORA DTE</label>
+                                                    <label class="cfg-titulo">Proveedor de facturación <?php cfg_info("La empresa que envía los documentos al SII por ti."); ?></label>
                                                     <div style="display: flex; gap: 20px; margin-top: 5px;">
                                                         <?php $esDatamaule = ($dte_auth['proveedor'] ?? 'acierto') === 'datamaule'; ?>
                                                         <label style="margin:0"><input type="radio" name="proveedor_dte" value="1" <?php echo $esDatamaule ? 'checked' : ''; ?>> datamaule.cl</label>
@@ -477,25 +472,25 @@ if (!function_exists('cfg_opciones')) {
                                                     </div>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Factura Electrónica</label>
+                                                    <label class="cfg-titulo">Factura electrónica <?php cfg_info("El tipo de documento que se usa como factura electrónica (código SII 33)."); ?></label>
                                                     <select class="form-control" name="id_tdocumento_factura">
 <?php cfg_opciones($opciones['tdoc_factura'], $config['id_tdocumento_factura'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Nota de Crédito Electrónica</label>
+                                                    <label class="cfg-titulo">Nota de crédito electrónica <?php cfg_info("El documento que se emite al devolver una venta electrónica (código SII 61)."); ?></label>
                                                     <select class="form-control" name="id_tdocumento_nota_credito">
 <?php cfg_opciones($opciones['tdoc_nc'], $config['id_tdocumento_nota_credito'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Ind traslado venta factura electronica</label>
+                                                    <label class="cfg-titulo">Indicador de traslado <?php cfg_info("Dato que pide el SII en la factura: si la venta traslada mercadería y de qué tipo. En un restaurante normalmente es \"Operación constituye venta\"."); ?></label>
                                                     <select class="form-control" name="id_indicador_traslado_venta">
 <?php cfg_opciones($opciones['indicador_traslado'], $config['id_indicador_traslado_venta'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Boleta Electrónica</label>
+                                                    <label class="cfg-titulo">Boleta electrónica <?php cfg_info("El tipo de documento que se usa como boleta electrónica (código SII 39)."); ?></label>
                                                     <select class="form-control" name="id_tdocumento_boleta_electronica">
 <?php cfg_opciones($opciones['tdoc_boleta'], $config['id_tdocumento_boleta_electronica'] ?? 0, 'SIN DEFINIR'); ?>
 </select>
@@ -507,23 +502,23 @@ if (!function_exists('cfg_opciones')) {
                                                 <h3 class="panel-title"><i class="fa fa-print"></i>Impresión de documentos</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <label><input type="checkbox" name="imprimir_pdf_dte" value="1" <?php echo ($config['imprimir_pdf_dte'] ?? false) ? 'checked' : ''; ?>> Imprimir pdf</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="imprimir_pdf_dte" value="1" <?php echo ($config['imprimir_pdf_dte'] ?? false) ? 'checked' : ''; ?>> Imprimir la boleta o factura al cobrar</label><?php cfg_info("Marcada: al cobrar, la boleta o factura sale impresa sola.\nSin marcar: no se imprime sola (se puede reimprimir desde Opciones > Documentos)."); ?></div>
                                                 <div class="form-group">
-                                                    <label>Ruta Impresora/PDF</label>
+                                                    <label class="cfg-titulo">Impresora de documentos (opcional) <?php cfg_info("Solo si las boletas y facturas deben salir en otra impresora compartida de Windows, ej. //127.0.0.1/pos80.\nSi esa impresora no está en el agente de impresión, se usa la impresora de la caja."); ?></label>
                                                     <input type="text" class="form-control" name="ruta_dte_pdf" value="<?php echo $config['ruta_dte_pdf'] ?? '/17.0.1/caja'; ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Formato pdf</label>
+                                                    <label class="cfg-titulo">Ancho del papel <?php cfg_info("El ancho del papel de las boletas en milímetros: 80 o 58.\nEs el que se usa cuando el computador de la caja no eligió el suyo."); ?></label>
                                                     <input type="text" class="form-control" name="formato_dte" value="<?php echo $config['formato_dte'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Copias dte</label>
+                                                    <label class="cfg-titulo">Copias de cada documento <?php cfg_info("Cuántas veces se imprime cada boleta o factura (de 1 a 5)."); ?></label>
                                                     <input type="number" class="form-control" name="copias_dte" value="<?php echo $config['copias_dte'] ?? 1; ?>">
                                                 </div>
-                                                <label><input type="checkbox" name="imprimir_copia_cedible" value="1" <?php echo ($config['imprimir_copia_cedible'] ?? false) ? 'checked' : ''; ?>> Imprimir copia cedible</label>
-                                                <label><input type="checkbox" name="enviar_dte_sii" value="1" <?php echo ($config['enviar_dte_sii'] ?? false) ? 'checked' : ''; ?>> enviar dte al sii</label>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="imprimir_copia_cedible" value="1" <?php echo ($config['imprimir_copia_cedible'] ?? false) ? 'checked' : ''; ?>> Imprimir copia cedible</label><?php cfg_info("En las facturas a crédito sale además la copia \"CEDIBLE\", la que se usa para cobrarla o venderla (factoring)."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="enviar_dte_sii" value="1" <?php echo ($config['enviar_dte_sii'] ?? false) ? 'checked' : ''; ?>> Enviar los documentos al SII</label><?php cfg_info("Marcada: cada boleta y factura electrónica se manda al SII al emitirla.\nSin marcar: no se envía (solo para pruebas)."); ?></div>
                                                 <div class="form-group">
-                                                    <label>Timeout (Seg)</label>
+                                                    <label class="cfg-titulo">Tiempo de espera (segundos) <?php cfg_info("Cuánto espera la Caja la respuesta del proveedor de facturación antes de darse por vencida. 20 es lo normal."); ?></label>
                                                     <input type="number" class="form-control" name="timeout" value="<?php echo $config['timeout'] ?? 20; ?>">
                                                 </div>
                                             </div>
@@ -532,21 +527,21 @@ if (!function_exists('cfg_opciones')) {
                                     <div class="col-md-6">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-certificate"></i>Certificación SII</h3>
+                                                <h3 class="panel-title"><i class="fa fa-certificate"></i>Datos del SII <?php cfg_info("Los datos de la resolución del SII que autorizó a la empresa a emitir documentos electrónicos. Salen impresos en las boletas y facturas."); ?></h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
-                                                    <label>Comuna SII</label>
+                                                    <label class="cfg-titulo">Comuna SII <?php cfg_info("La comuna de la oficina del SII de la empresa (sale en los documentos)."); ?></label>
                                                     <select class="form-control" id="cboIdComunaSii" name="id_comuna_sii" data-selected="<?php echo $config['id_comuna_sii'] ?? 0; ?>">
                                                         <option value="0">Seleccione la comuna</option>
                                                     </select>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Resolución SII</label>
+                                                    <label class="cfg-titulo">N° de resolución SII <?php cfg_info("El número de la resolución que autorizó la facturación electrónica (0 si es de prueba)."); ?></label>
                                                     <input type="text" class="form-control" name="resolucion_sii" value="<?php echo $config['resolucion_sii'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Año resolución</label>
+                                                    <label class="cfg-titulo">Año de la resolución <?php cfg_info("El año de esa resolución."); ?></label>
                                                     <input type="number" class="form-control" name="anio_resolucion_sii" value="<?php echo $config['anio_resolucion_sii'] ?? ''; ?>">
                                                 </div>
                                             </div>
@@ -558,63 +553,59 @@ if (!function_exists('cfg_opciones')) {
                                             <div class="panel-body">
                                                 <?php $tipoAuthDte = $dte_auth['tipo'] ?? 'basic'; $tokenDte = $dte_auth['token'] ?? array('tiene' => false, 'last4' => ''); ?>
                                                 <div class="form-group">
-                                                    <label>Tipo de autenticación</label>
+                                                    <label class="cfg-titulo">Tipo de autenticación <?php cfg_info("Cómo se envía la credencial al proveedor.\nCon datamaule.cl la credencial es la API Key de la empresa (Administración → Empresas → Integración Ventas); X-API-Key es lo recomendado."); ?></label>
                                                     <select class="form-control" name="tipo_auth_dte" id="cboTipoAuthDte">
                                                         <?php foreach (($dte_auth['etiquetas'] ?? array('basic' => 'Basic (usuario y contraseña)')) as $valor => $texto) : ?>
                                                             <option value="<?php echo $valor; ?>" <?php echo $valor === $tipoAuthDte ? 'selected' : ''; ?>><?php echo htmlspecialchars($texto, ENT_QUOTES); ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
-                                                    <p class="help-block">Cómo se envía la credencial al proveedor. Con datamaule.cl la credencial es la API Key de la empresa (Administración &rarr; Empresas &rarr; Integración Ventas); X-API-Key es el recomendado.</p>
                                                     <?php if (empty($dte_auth['columnas'])) : ?>
                                                         <p class="help-block text-warning"><i class="fa fa-exclamation-triangle"></i> Esta base aún no tiene las columnas de la migración 20261111100000: se aplica al entrar al sistema. Mientras tanto se emite con Cloud Apps y Basic, como antes.</p>
                                                     <?php endif; ?>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Usuario</label>
                                                     <?php $rutEmpresaDte = !empty($empresa['rut_empresa']) ? number_format((float)$empresa['rut_empresa'], 0, '', '') . '-' . strtoupper(trim($empresa['dv_empresa'] ?? '')) : ''; ?>
+                                                    <label class="cfg-titulo" for="txtUsuarioDte">Usuario <?php cfg_info('El RUT de la empresa con guion y sin puntos' . ($rutEmpresaDte ? ' (' . $rutEmpresaDte . ').' : '.')); ?></label>
                                                     <input type="text" class="form-control" name="usuario_dte" id="txtUsuarioDte" value="<?php echo htmlspecialchars($config['usuario_dte'] ?? '', ENT_QUOTES); ?>" placeholder="<?php echo $rutEmpresaDte ? 'Ej: ' . $rutEmpresaDte : 'RUT de la empresa'; ?>">
-                                                    <p class="help-block">RUT de la empresa con guion<?php echo $rutEmpresaDte ? ' (' . $rutEmpresaDte . ')' : ''; ?>.</p>
                                                 </div>
                                                 <div class="form-group" id="grupoClaveDte">
-                                                    <label>Contraseña</label>
+                                                    <label class="cfg-titulo" for="txtClaveDte">Contraseña <?php cfg_info("La contraseña del proveedor de facturación.\nCon datamaule.cl en Basic, la contraseña es la API Key de la empresa."); ?></label>
                                                     <input type="password" class="form-control" name="clave_usuario_dte" id="txtClaveDte" value="<?php echo htmlspecialchars($config['clave_usuario_dte'] ?? '', ENT_QUOTES); ?>">
-                                                    <p class="help-block" id="ayudaClaveDatamaule" style="display:none">Con datamaule.cl en Basic, la contraseña es la API Key de la empresa.</p>
                                                 </div>
                                                 <div class="form-group" id="grupoTokenDte">
-                                                    <label>API Key</label>
+                                                    <label class="cfg-titulo" for="txtTokenDte">API Key <?php cfg_info("La API Key de la empresa en el proveedor. Se guarda cifrada y no se vuelve a mostrar: déjala vacía para mantener la guardada."); ?></label>
                                                     <input type="password" class="form-control" name="token_dte" id="txtTokenDte" autocomplete="new-password" value=""
                                                         placeholder="<?php echo $tokenDte['tiene'] ? 'Guardada (termina en ' . htmlspecialchars($tokenDte['last4'], ENT_QUOTES) . '). Escriba una nueva solo para cambiarla' : 'Pegue aquí la API Key de la empresa'; ?>">
-                                                    <p class="help-block">Se guarda cifrada y no se vuelve a mostrar.<?php if (empty($dte_auth['clave_cifrado'])) : ?> <span class="text-danger"><i class="fa fa-exclamation-triangle"></i> Falta la variable RESTO_DTE_TOKEN_KEY en el servidor: sin ella no se puede guardar ni usar la API Key.</span><?php endif; ?></p>
+                                                    <?php if (empty($dte_auth['clave_cifrado'])) : ?><p class="help-block text-danger"><i class="fa fa-exclamation-triangle"></i> Falta la variable RESTO_DTE_TOKEN_KEY en el servidor: sin ella no se puede guardar ni usar la API Key.</p><?php endif; ?>
                                                     <?php if ($tokenDte['tiene']) : ?>
                                                         <label style="font-weight:normal"><input type="checkbox" name="quitar_token_dte" value="1" id="chkQuitarTokenDte"> Quitar la API Key guardada</label>
                                                     <?php endif; ?>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Terminal</label>
+                                                    <label class="cfg-titulo" for="txtTerminalDte">Terminal <?php cfg_info("El nombre del terminal registrado en el proveedor (Cloud Apps o datamaule.cl) para la caja web.\nSin terminal no se emiten boletas ni facturas."); ?></label>
                                                     <input type="text" class="form-control" name="terminal_dte" id="txtTerminalDte" maxlength="60" value="<?php echo htmlspecialchars($config['terminal_dte'] ?? '', ENT_QUOTES); ?>" placeholder="Ej: DATAPDV-CAJA1">
-                                                    <p class="help-block">Terminal registrado en el proveedor (Cloud Apps o datamaule.cl) para la caja web. Sin terminal no se emiten boletas ni facturas.</p>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-globe"></i>Parámetros web y DTE</h3>
+                                                <h3 class="panel-title"><i class="fa fa-globe"></i>Direcciones del POS de escritorio <?php cfg_info("Direcciones que usa solo el programa de escritorio para traer el PDF, el código QR y los folios. La Caja web no las usa. No las cambies si no sabes para qué son."); ?></h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
-                                                    <label>Ruta API Get PDF</label>
+                                                    <label class="cfg-titulo">Ruta API Get PDF</label>
                                                     <input type="text" class="form-control" name="ruta_api_get_pdf" value="<?php echo $config['ruta_api_get_pdf'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Ruta API Get QR</label>
+                                                    <label class="cfg-titulo">Ruta API Get QR</label>
                                                     <input type="text" class="form-control" name="ruta_api_get_qr" value="<?php echo $config['ruta_api_get_qr'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Ruta DTE Código QR</label>
+                                                    <label class="cfg-titulo">Ruta DTE Código QR</label>
                                                     <input type="text" class="form-control" name="ruta_dte_qr" value="<?php echo $config['ruta_dte_qr'] ?? ''; ?>">
                                                 </div>
                                                 <div class="form-group">
-                                                    <label>Ruta Consulta Folio DTE</label>
+                                                    <label class="cfg-titulo">Ruta Consulta Folio DTE</label>
                                                     <input type="text" class="form-control" name="url_consulta_folio_dte" value="<?php echo $config['url_consulta_folio_dte'] ?? ''; ?>">
                                                 </div>
                                             </div>
@@ -623,10 +614,9 @@ if (!function_exists('cfg_opciones')) {
                                     <div class="col-md-12">
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-list-ol"></i>Folios electrónicos</h3>
+                                                <h3 class="panel-title"><i class="fa fa-list-ol"></i>Folios electrónicos <?php cfg_info("Consulta en el proveedor elegido los folios (números) que el SII autorizó para cada documento, con el acceso y el terminal de arriba. No hace falta grabar antes.\nCon datamaule.cl el rango es el del CAF en uso, desde el próximo folio que se entregará."); ?></h3>
                                             </div>
                                             <div class="panel-body">
-                                                <p class="text-muted">Consulta en el proveedor elegido los folios autorizados por el SII para cada documento, con el acceso y el terminal de arriba (no hace falta grabar antes). Con datamaule.cl el rango es el del CAF en uso, desde el próximo folio que se entregará.</p>
                                                 <div class="table-responsive">
                                                     <table class="table table-bordered table-condensed" id="tablaFoliosDte">
                                                         <thead>
@@ -665,12 +655,11 @@ if (!function_exists('cfg_opciones')) {
 
                             <!-- Tab Datos de la Empresa (11-11-2026): varias empresas y sus sucursales, con los datos de la intranet (Mempresas) -->
                             <div id="empresa" class="tab">
-                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Empresas de esta base y sus sucursales. Los datos vienen de la intranet de Datamaule; las empresas las registran los técnicos de Datamaule.</p>
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="config-card">
                                             <div class="panel-heading emp-cabecera">
-                                                <h3 class="panel-title"><i class="fa fa-building-o"></i>Empresas</h3>
+                                                <h3 class="panel-title"><i class="fa fa-building-o"></i>Empresas <?php cfg_info("Empresas de esta base y sus sucursales. Los datos vienen de la intranet de Datamaule; las empresas las registran los técnicos de Datamaule.\nLas boletas, facturas y tickets de una caja (Herramientas > Control de cajas) llevan la dirección, comuna y código SII de su sucursal. Emite la primera empresa de la lista."); ?></h3>
                                                 <button type="button" class="btn btn-default btn-sm" id="btnSincronizarEmpresas"><i class="fa fa-refresh"></i> Actualizar desde la intranet</button>
                                             </div>
                                             <div class="panel-body">
@@ -692,7 +681,6 @@ if (!function_exists('cfg_opciones')) {
                                                         </tbody>
                                                     </table>
                                                 </div>
-                                                <p class="emp-nota"><i class="fa fa-print"></i> Las boletas, facturas y tickets de una caja (Herramientas &gt; Control de cajas) llevan la dirección, comuna y código SII de su sucursal. Emite la primera empresa de la lista.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -701,12 +689,11 @@ if (!function_exists('cfg_opciones')) {
                             <?php if ((int)$this->session->userdata('id_rol') === 1) : ?>
                             <!-- v1.27.0: respaldos de la base (libraries/Respaldo_bd.php). Solo administradores. -->
                             <div id="respaldos" class="tab">
-                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Copias de seguridad de la base de esta empresa, guardadas en la carpeta <b>backups</b> del sistema. Se hace sola una vez al día, cuando alguien entra al sistema (o con el botón Respaldar ahora). Se guardan las de los últimos 7 días, 4 semanas y 3 meses; las más viejas se borran solas para que no pesen.</p>
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="config-card">
                                             <div class="panel-heading emp-cabecera">
-                                                <h3 class="panel-title"><i class="fa fa-database"></i>Respaldos de la base</h3>
+                                                <h3 class="panel-title"><i class="fa fa-database"></i>Respaldos de la base <?php cfg_info("Copias de seguridad de la base de esta empresa, guardadas en la carpeta backups del sistema.\nSe hace una sola al día, cuando alguien entra al sistema, o con el botón Respaldar ahora.\nSe guardan las de los últimos 7 días, 4 semanas y 3 meses; las más viejas se borran solas para que no pesen.\nUn respaldo tiene todos los datos de la empresa (ventas, clientes, claves): guárdalo en un lugar seguro y no lo compartas."); ?></h3>
                                                 <button type="button" class="btn btn-orange btn-sm" id="btnRespaldarAhora"><i class="fa fa-floppy-o"></i> Respaldar ahora</button>
                                             </div>
                                             <div class="panel-body">
@@ -720,7 +707,6 @@ if (!function_exists('cfg_opciones')) {
                                                     </table>
                                                 </div>
                                                 <p class="emp-nota" id="respaldoTotal"></p>
-                                                <p class="emp-nota"><i class="fa fa-lock"></i> Un respaldo tiene todos los datos de la empresa (ventas, clientes, claves): guárdalo en un lugar seguro y no lo compartas.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -907,6 +893,32 @@ if (!function_exists('cfg_opciones')) {
     .t-config .config-card .form-group label[style] { display: inline-flex; padding: 6px 10px; text-transform: none; font-size: 13px;
         border: 1px solid var(--t-borde); border-radius: var(--t-radio-sm); color: var(--t-texto); cursor: pointer; }
     .t-config .help-block { font-size: 12px; color: var(--t-texto-tenue); margin: 5px 0 0; }
+
+    /* v1.29.1: cada opción con su botón (i): la explicación sale en una burbuja (js.php > cfgInfo) */
+    .t-config .cfg-fila { display: flex; align-items: flex-start; gap: 2px; }
+    .t-config .cfg-fila > label { flex: 1 1 auto; min-width: 0; }
+    .t-config .cfg-fila > .cfg-info { margin-top: 7px; }
+    .t-config .cfg-fila.cfg-boton { align-items: center; gap: 6px; margin: 8px 0 4px; }
+    .t-config .cfg-fila.cfg-boton > .cfg-info { margin-top: 0; }
+    .t-config .form-group > label.cfg-titulo { display: flex; align-items: center; gap: 6px; }
+    .t-config .cfg-subtitulo { display: flex; align-items: center; gap: 6px; margin: 12px 6px 2px; font-size: 12px; font-weight: 700;
+        color: var(--t-texto-suave); text-transform: uppercase; letter-spacing: .3px; }
+    .t-config .panel-title .cfg-info { margin-left: 6px; text-transform: none; letter-spacing: 0; }
+    .cfg-info {
+        flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; padding: 0;
+        border-radius: 50%; border: 1.5px solid var(--t-primario, #15803D); background: transparent; color: var(--t-primario, #15803D);
+        font-size: 11px; line-height: 1; cursor: help; vertical-align: middle; transition: background-color .15s, color .15s;
+    }
+    .t-config .panel-title .cfg-info i { margin: 0; font-size: 11px; color: inherit; }
+    .cfg-info:hover, .cfg-info[aria-expanded="true"] { background: var(--t-primario, #15803D); color: #fff; }
+    .cfg-info:focus-visible { outline: 2px solid var(--t-primario, #15803D); outline-offset: 2px; }
+    #cfgBurbuja {
+        position: fixed; z-index: 3000; max-width: min(340px, calc(100vw - 24px)); padding: 10px 13px; border-radius: 10px;
+        background: #1f2937; color: #f9fafb; font-size: 13px; font-weight: 400; line-height: 1.5; text-transform: none; letter-spacing: 0;
+        white-space: pre-line; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); pointer-events: none; opacity: 0; transition: opacity .12s;
+    }
+    #cfgBurbuja.visible { opacity: 1; }
+    @media (prefers-reduced-motion: reduce) { #cfgBurbuja { transition: none; } }
     .t-config .p { font-size: 12px; color: var(--t-texto-tenue); margin: 6px 0 0; }
 
     .t-config .btn-orange {

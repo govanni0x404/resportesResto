@@ -477,3 +477,64 @@
     })();
 </script>
 <?php endif; ?>
+<script>
+    // v1.29.1: botones (i) de Configuraciones. La explicación sale en una burbuja al pasar el mouse, al llegar con el
+    // teclado (Tab) o al tocarlo (en el celular). Tocarlo de nuevo, tocar afuera o Esc la cierra. No marca la casilla.
+    (function cfgInfo() {
+        var burbuja = document.createElement('div'), actual = null, fijada = false;
+        burbuja.id = 'cfgBurbuja';
+        burbuja.setAttribute('role', 'tooltip');
+        document.body.appendChild(burbuja);
+        function ubicar(b) {
+            var r = b.getBoundingClientRect(), w = burbuja.offsetWidth, h = burbuja.offsetHeight, m = 12;
+            var x = Math.min(Math.max(m, r.left + r.width / 2 - w / 2), window.innerWidth - w - m);
+            var y = r.bottom + 8;
+            if (y + h > window.innerHeight - m && r.top - h - 8 > m) y = r.top - h - 8;
+            burbuja.style.left = x + 'px';
+            burbuja.style.top = y + 'px';
+        }
+        function mostrar(b, fijar) {
+            if (actual && actual !== b) actual.setAttribute('aria-expanded', 'false');
+            actual = b;
+            fijada = !!fijar;
+            burbuja.textContent = b.getAttribute('data-info');
+            b.setAttribute('aria-expanded', 'true');
+            b.setAttribute('aria-describedby', 'cfgBurbuja');
+            ubicar(b);
+            burbuja.classList.add('visible');
+        }
+        function ocultar() {
+            if (actual) { actual.setAttribute('aria-expanded', 'false'); actual.removeAttribute('aria-describedby'); }
+            actual = null;
+            fijada = false;
+            burbuja.classList.remove('visible');
+        }
+        document.addEventListener('click', function (e) {
+            var b = e.target.closest ? e.target.closest('.cfg-info') : null;
+            if (b) {
+                e.preventDefault();   // dentro de una etiqueta: no marca ni desmarca la casilla
+                e.stopPropagation();
+                if (actual === b && fijada) ocultar(); else mostrar(b, true);
+                return;
+            }
+            if (actual) ocultar();
+        }, true);
+        document.addEventListener('mouseover', function (e) {
+            var b = e.target.closest ? e.target.closest('.cfg-info') : null;
+            if (b && !fijada) mostrar(b, false);
+        });
+        document.addEventListener('mouseout', function (e) {
+            var b = e.target.closest ? e.target.closest('.cfg-info') : null;
+            if (b && b === actual && !fijada && !b.contains(e.relatedTarget)) ocultar();
+        });
+        document.addEventListener('focusin', function (e) {
+            if (e.target.classList && e.target.classList.contains('cfg-info') && !fijada) mostrar(e.target, false);
+        });
+        document.addEventListener('focusout', function (e) {
+            if (e.target === actual && !fijada) ocultar();
+        });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && actual) ocultar(); });
+        window.addEventListener('scroll', function () { if (actual) ubicar(actual); }, true);
+        window.addEventListener('resize', function () { if (actual) ubicar(actual); });
+    })();
+</script>
