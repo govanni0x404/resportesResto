@@ -200,12 +200,15 @@
 		// v1.29.0: tomar / soltar la comanda
 		$('#kGrilla').on('click', '.k-tomar', function () {
 			var $b = $(this), c = $b.closest('.k-com').data('c'), soltar = $b.data('soltar') ? '1' : '0';
-			if (soltar === '0' && c.tomado_por && c.tomado_id !== YO
-				&& !confirm(c.tomado_por + ' ya la está preparando. ¿La tomas tú?')) return;
-			$b.prop('disabled', true);
-			$.ajax({ url: URL + 'tomar', type: 'POST', data: { lineas: lineasDe(c), soltar: soltar }, dataType: 'json', global: false })
-				.always(function () { primera = true; vistas = {}; cargar(); })
-				.fail(function (x) { $('#kAviso').text((x.responseJSON && x.responseJSON.error) || 'No se pudo tomar la comanda').show(); });
+			var enviar = function () {
+				$b.prop('disabled', true);
+				$.ajax({ url: URL + 'tomar', type: 'POST', data: { lineas: lineasDe(c), soltar: soltar }, dataType: 'json', global: false })
+					.always(function () { primera = true; vistas = {}; cargar(); })
+					.fail(function (x) { $('#kAviso').text((x.responseJSON && x.responseJSON.error) || 'No se pudo tomar la comanda').show(); });
+			};
+			if (soltar === '0' && c.tomado_por && c.tomado_id !== YO) {
+				confirmarSistema(c.tomado_por + ' ya la está preparando', '¿La tomas tú?', 'Sí, la tomo yo', enviar);
+			} else enviar();
 		});
 		$('#kDeshacer .btn').on('click', function () {
 			if (!ultimoListo) return;

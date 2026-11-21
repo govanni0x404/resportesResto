@@ -96,7 +96,7 @@
         console.log(id_usuario);
         if ($('#ckTodosLosUsuarios').prop('checked') == false) {
             if (id_usuario == null || id_usuario == 0) {
-                alert("Debe seleccionar el usuario");
+                showAppAlert('warning', "Debe seleccionar el usuario");
                 return;
             }
         } else {
@@ -123,10 +123,10 @@
     });
 
     function procesarRespuesta(ajaxResponse) {
-        // observa que aquÃ­ asumimos que el resultado es un objeto
-        // serializado en JSON, razÃ³n por la cual tomamos este dato
+        // observa que aquí asumimos que el resultado es un objeto
+        // serializado en JSON, razón por la cual tomamos este dato
         // y lo procesamos para recuperar un objeto que podamos
-        // manejar fÃ¡cilmente
+        // manejar fácilmente
         if (typeof ajaxResponse == "string")
             ajaxResponse = $.parseJSON(ajaxResponse);
         return ajaxResponse;

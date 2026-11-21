@@ -52,7 +52,7 @@ $('#btnFiltrar').on('click', function() {
     console.log(id_familia);
     if ($('#ckTodasLasFamilias').prop('checked') == false) {
         if (id_familia == null || id_familia == 0) {
-            alert("Debe seleccionar la familia");
+            showAppAlert('warning', "Debe seleccionar la familia");
             return;
         }
     } else {

@@ -95,7 +95,7 @@
         console.log(idFpago);
         if ($('#ckTodasLasFpago').prop('checked') == false) {
             if (idFpago == null || idFpago == 0) {
-                alert("Debe seleccionar la forma de pago");
+                showAppAlert('warning', "Debe seleccionar la forma de pago");
                 return;
             }
         } else {
@@ -105,7 +105,7 @@
         console.log(idUsuario);
         if ($('#ckTodosLosUsuarios').prop('checked') == false) {
             if (idUsuario == null || idUsuario == 0) {
-                alert("Debe seleccionar el usuario");
+                showAppAlert('warning', "Debe seleccionar el usuario");
                 return;
             }
         } else {
@@ -116,10 +116,10 @@
     });
 
     function procesarRespuesta(ajaxResponse) {
-        // observa que aquÃ­ asumimos que el resultado es un objeto
-        // serializado en JSON, razÃ³n por la cual tomamos este dato
+        // observa que aquí asumimos que el resultado es un objeto
+        // serializado en JSON, razón por la cual tomamos este dato
         // y lo procesamos para recuperar un objeto que podamos
-        // manejar fÃ¡cilmente
+        // manejar fácilmente
         if (typeof ajaxResponse == "string")
             ajaxResponse = $.parseJSON(ajaxResponse);
         return ajaxResponse;
@@ -468,7 +468,7 @@
             });
         }).done(function () { })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () { });
     }
@@ -486,7 +486,7 @@
             $('#idFormaDePago').val($.map(obj, function (v) { return v.nombre_fpago; }).join(' + '));
         }).done(function () { })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () { });
     }
@@ -515,7 +515,7 @@
             $('#grupoPagoACambiar').toggle(obj.length > 1);
         }).done(function () { })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () { });
     }

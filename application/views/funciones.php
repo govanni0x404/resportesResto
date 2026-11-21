@@ -97,7 +97,7 @@
 	            return;
 	          }
 	      }).fail(function() {
-	        alert( "Se produjo un error al realizar el proceso, favor contacte a su administrador" );
+	        showAppAlert('error', "Se produjo un error al realizar el proceso, favor contacte a su administrador");
 	      });
 	      $("#"+nombreObjeto).select2();
 	  }*/

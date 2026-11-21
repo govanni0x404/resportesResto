@@ -88,7 +88,7 @@ $fechaActual = date('d-m-Y');
             <div class="panel panel-success lobidisable">
                 <div class="panel-heading">
                     <div class="panel-title">
-                        <i class="pe-7s-cash"></i>
+                        <i class="pe-7s-close-circle"></i>
                         <h4>Detalle de anulaciones</h4>
                     </div>
                 </div>

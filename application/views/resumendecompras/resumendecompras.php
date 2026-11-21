@@ -7,7 +7,7 @@ $fechaActual = date('d-m-Y');
 <link href="<?php echo base_url() ?>assets/dist/css/reportes.css" rel="stylesheet" type="text/css" />
 <div class="content-header rep-encabezado">
     <div class="header-icon">
-        <i class="pe-7s-home"></i>
+        <i class="pe-7s-cart"></i>
     </div>
     <div class="header-title">
         <h1>Resumen De Compras</h1>

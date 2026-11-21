@@ -1,12 +1,12 @@
 <div class="content-header">
 	<div class="header-icon">
-		<i class="pe-7s-home"></i>
+		<i class="pe-7s-notebook"></i>
 	</div>
 	<div class="header-title">
 		<h1>Recetas</h1>
 		<small id="caja"></small>
 		<ol class="breadcrumb">
-			<li><a href="<?php echo base_url() ?>index.php/Dashboard"><i class="pe-7s-home"></i>Mantenedores</a></li>
+			<li><a href="<?php echo base_url() ?>index.php/Dashboard"><i class="pe-7s-home"></i>Inicio</a></li>
 			<li class="active">Recetas</li>
 		</ol>
 	</div>
@@ -29,7 +29,7 @@
 			<div class="panel panel-success lobidisable t-lista">
 				<div class="panel-heading">
 					<div class="panel-title">
-						<i class="pe-7s-cash"></i>
+						<i class="pe-7s-notebook"></i>
 						<h4>Recetas</h4>
 						<div class="t-acciones"><button id="btnNuevaReceta" type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Crear Receta</button></div>
 					</div>

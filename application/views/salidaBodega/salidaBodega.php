@@ -6,7 +6,7 @@ $fechaActual = date('Y-m-d');
 ?>
 <div class="content-header">
     <div class="header-icon">
-        <i class="pe-7s-home"></i>
+        <i class="pe-7s-upload"></i>
     </div>
     <div class="header-title">
         <h1>Salidas A Bodega</h1>

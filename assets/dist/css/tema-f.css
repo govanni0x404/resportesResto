@@ -135,3 +135,35 @@ sup > a[onclick]:hover, sup > a[onclick]:focus, sup[onclick] > a:hover {
 /* Quitar y Cambiar no llevan "+" */
 sup > a[onclick^="Quitar"]::before, sup[onclick] > a::before { content: none; }
 sup > a[onclick^="Quitar"] { color: var(--t-peligro, #b91c1c) !important; background: transparent; }
+
+/* ---------- v1.29.2: tablas (DataTables) con la letra del sistema ----------
+   Las celdas venían en Verdana y "Buscar", los números de página y "Anterior/Siguiente" en Tahoma (de una hoja vieja):
+   donde Tahoma no está instalada salían con una letra con serifas. Ahora todo usa la letra del sistema. */
+/* La letra se escribe directo (no "inherit": el contenedor de la tabla también venía en Tahoma) */
+.dataTables_wrapper, table.dataTable td, table.dataTable th,
+.dataTables_wrapper .dataTables_paginate, .dataTables_wrapper .dataTables_paginate .paginate_button,
+.dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_filter label,
+.dataTables_wrapper .dataTables_filter input, .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_length label,
+.dataTables_wrapper .dataTables_length select, table.dataTable td.dataTables_empty {
+    font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+}
+.dataTables_wrapper .dataTables_filter label, .dataTables_wrapper .dataTables_length label { font-weight: 600; font-size: 13px; }
+.dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate .paginate_button { font-size: 13px; }
+
+/* ---------- v1.29.2: la paleta vieja de theme.css (líneas 300-313) pintaba con !important de rojo ladrillo (#B4432E)
+   todo lo "de éxito": los 150 botones btn-success (ej. "Consultar" de los reportes) salían café y los btn-primary
+   verdes, aunque son la misma acción. Aquí se usan los colores del tema (y el oscuro al pasar el mouse). ---------- */
+.color-green, .text-success { color: var(--t-primario) !important; }
+.border-green { border-color: var(--t-primario) !important; }
+.bg-green { background: var(--t-primario) !important; }
+.btn-success, .btn-success.btn-outline:active, .btn-success.btn-outline:focus, .btn-success.btn-outline:hover,
+.card-footer-message, .chart-legend-color.green, .label-success,
+.progress-bar-success, .progress-bar-success .tooltip .tooltip-inner, .yearly-change span, .info-aapl li span.green,
+.inbox-item .profile-status.available, .f1-progress-line, .f1-step.active .f1-step-icon {
+    background-color: var(--t-primario) !important;
+}
+.btn-success { border-color: var(--t-primario) !important; color: #fff !important; }
+.btn-success:hover, .btn-success:focus, .btn-success:active, .btn-success.active, .open > .dropdown-toggle.btn-success {
+    background-color: var(--t-primario-osc) !important; border-color: var(--t-primario-osc) !important;
+}
+.btn-success[disabled], .btn-success.disabled, fieldset[disabled] .btn-success { background-color: var(--t-primario) !important; opacity: .55; }

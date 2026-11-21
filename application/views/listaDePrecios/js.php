@@ -20,7 +20,7 @@
         console.log(id_lprecio);
         if ($('#ckTodasLasListasDePrecios').prop('checked') == false) {
             if (id_lprecio == null || id_lprecio == 0) {
-                alert("Debe seleccionar la lista de precios");
+                showAppAlert('warning', "Debe seleccionar la lista de precios");
                 return;
             }
         } else {
@@ -30,7 +30,7 @@
         console.log(id_familia);
         if ($('#ckTodasLasFamilias').prop('checked') == false) {
             if (id_familia == null || id_familia == 0) {
-                alert("Debe seleccionar la familia");
+                showAppAlert('warning', "Debe seleccionar la familia");
                 return;
             }
         } else {
@@ -446,7 +446,7 @@
         tableResumenListaPrecios.ajax.reload();
 
     }).fail(function () {
-        alert("Error al grabar precios");
+        showAppAlert('error', "Error al grabar precios");
     });
 }
 </script>

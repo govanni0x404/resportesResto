@@ -1,12 +1,12 @@
 <div class="content-header">
 	<div class="header-icon">
-		<i class="pe-7s-home"></i>
+		<i class="pe-7s-leaf"></i>
 	</div>
 	<div class="header-title">
 		<h1>Insumos</h1>
 		<small id="caja"></small>
 		<ol class="breadcrumb">
-			<li><a href="<?php echo base_url() ?>index.php/Dashboard"><i class="pe-7s-home"></i>Mantenedores</a></li>
+			<li><a href="<?php echo base_url() ?>index.php/Dashboard"><i class="pe-7s-home"></i>Inicio</a></li>
 			<li class="active">Insumos</li>
 		</ol>
 	</div>
@@ -29,7 +29,7 @@
 			<div class="panel panel-success lobidisable t-lista">
 				<div class="panel-heading">
 					<div class="panel-title">
-						<i class="pe-7s-cash"></i>
+						<i class="pe-7s-leaf"></i>
 						<h4>Insumos</h4>
 						<div class="t-acciones"><button onclick="AbrirModalNuevoInsumo()" id="btnNuevoInsumo" type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Crear Insumo</button></div>
 					</div>

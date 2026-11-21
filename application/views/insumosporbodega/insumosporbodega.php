@@ -7,7 +7,7 @@ $fechaActual = date('Y-m-d');
 <link href="<?php echo base_url() ?>assets/dist/css/reportes.css" rel="stylesheet" type="text/css" />
 <div class="content-header rep-encabezado">
     <div class="header-icon">
-        <i class="pe-7s-home"></i>
+        <i class="pe-7s-box2"></i>
     </div>
     <div class="header-title">
         <h1>Stock</h1>
@@ -62,7 +62,7 @@ $fechaActual = date('Y-m-d');
             <div class="panel panel-success lobidisable">
                 <div class="panel-heading">
                     <div class="panel-title">
-                        <i class="pe-7s-cash"></i>
+                        <i class="pe-7s-box2"></i>
                         <h4>Stock Por Bodega</h4>
                     </div>
                 </div>

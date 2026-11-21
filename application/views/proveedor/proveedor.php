@@ -1,6 +1,6 @@
 <div class="content-header">
   <div class="header-icon">
-    <i class="pe-7s-home"></i>
+    <i class="pe-7s-portfolio"></i>
   </div>
   <div class="header-title">
     <h1>Proveedores</h1>
@@ -33,7 +33,7 @@
         <div class="panel panel-success lobidisable t-lista">
           <div class="panel-heading">
             <div class="panel-title">
-              <i class="pe-7s-cash"></i>
+              <i class="pe-7s-portfolio"></i>
               <h4>Listado De Proveedores</h4>
               <div class="t-acciones"><button onclick="AbrirModalNuevoProveedor()" type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Crear Nuevo Proveedor</button></div>
             </div>

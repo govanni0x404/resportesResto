@@ -68,12 +68,14 @@
         });
 
         $('#btnProdImagenQuitar').on('click', function () {
-            if (!idActual() || !confirm('¿Quitar la imagen de este producto?')) return;
-            cargando(true);
-            $.post(urlBase + 'eliminar', { id_producto: idActual() }, null, 'json')
-                .done(function () { mostrar(null); })
-                .fail(function (x) { error(x); })
-                .always(function () { cargando(false); });
+            if (!idActual()) return;
+            confirmarSistema('¿Quitar la imagen de este producto?', 'El producto se verá sin foto en la Caja.', 'Sí, quitar', function () {
+                cargando(true);
+                $.post(urlBase + 'eliminar', { id_producto: idActual() }, null, 'json')
+                    .done(function () { mostrar(null); })
+                    .fail(function (x) { error(x); })
+                    .always(function () { cargando(false); });
+            }, true);
         });
 
         // ---------- búsqueda en línea ----------

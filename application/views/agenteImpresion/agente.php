@@ -85,11 +85,13 @@ window.addEventListener('load', function () {
     $.post(base + 'crear', { nombre: nombre }, null, 'json').done(function (r) {
       $('#tokenAgente').val(r.token);
       $('#resultadoAgente').show();
-    }).fail(function (x) { alert((x.responseJSON && x.responseJSON.error) || 'No se pudo crear el equipo'); });
+    }).fail(function (x) { showAppAlert('error', (x.responseJSON && x.responseJSON.error) || 'No se pudo crear el equipo'); });
   });
   $('#tablaAgentes').on('click', '.btn-revocar', function () {
-    if (!confirm('¿Quitar este equipo? Su agente dejará de imprimir.')) return;
-    $.post(base + 'revocar', { id_agente: $(this).data('id') }, null, 'json').always(function () { location.reload(); });
+    var id = $(this).data('id');
+    confirmarSistema('¿Quitar este equipo?', 'Su agente de impresión dejará de imprimir.', 'Sí, quitar', function () {
+      $.post(base + 'revocar', { id_agente: id }, null, 'json').always(function () { location.reload(); });
+    }, true);
   });
 });
 </script>

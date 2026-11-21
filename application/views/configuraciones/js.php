@@ -215,16 +215,16 @@
                 dataType: 'json',
                 success: function(response) {
                     if (response.status === 'success') {
-                        alert('Configuración guardada exitosamente');
+                        showAppAlert('success', 'Configuración guardada exitosamente');
                         location.reload();
                     } else {
-                        alert(response.mensaje || 'Error al guardar la configuración');
+                        showAppAlert('error', response.mensaje || 'Error al guardar la configuración');
                         $submitBtn.prop('disabled', false).text('Grabar');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('Error:', xhr.responseText);
-                    alert((xhr.responseJSON && xhr.responseJSON.mensaje) || ('Error en la solicitud: ' + error));
+                    showAppAlert('error', (xhr.responseJSON && xhr.responseJSON.mensaje) || ('Error en la solicitud: ' + error));
                     $submitBtn.prop('disabled', false).text('Grabar');
                 }
             });

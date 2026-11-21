@@ -7,13 +7,13 @@ $fechaActual = date('Y-m-d');
 <div class="container compras-page">
     <div class="content-header">
     <div class="header-icon">
-        <i class="pe-7s-home"></i>
+        <i class="pe-7s-cart"></i>
     </div>
     <div class="header-title">
         <h1>Compras</h1>
         <small id="caja"></small>
         <ol class="breadcrumb">
-            <li><a href="<?php echo base_url() ?>index.php/Dashboard"><i class="pe-7s-home"></i></a></li>
+            <li><a href="<?php echo base_url() ?>index.php/Dashboard"><i class="pe-7s-home"></i>Inicio</a></li>
             <li class="active">Ingresos De Compras</li>
         </ol>
     </div>

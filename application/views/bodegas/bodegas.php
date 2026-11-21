@@ -1,6 +1,6 @@
 <div class="content-header">
   <div class="header-icon">
-    <i class="pe-7s-home"></i>
+    <i class="pe-7s-box1"></i>
   </div>
   <div class="header-title">
     <h1>Bodegas</h1>
@@ -33,7 +33,7 @@
         <div class="panel panel-success lobidisable t-lista">
           <div class="panel-heading">
             <div class="panel-title">
-              <i class="pe-7s-cash"></i>
+              <i class="pe-7s-box1"></i>
               <h4>Listado De Bodegas</h4>
               <div class="t-acciones"><button onclick="AbrirModalNuevaBodega()" type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Crear Nueva Bodega</button></div>
             </div>

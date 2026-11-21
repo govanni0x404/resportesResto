@@ -43,16 +43,28 @@ function abrirPagina($url)
 	return array($codigo, substr($r, $tam), $loc);
 }
 
-function entrar()
+/** Entra con el login local. $idUsuario = null: el primer usuario de la lista (gerencia en la base de pruebas). */
+function entrar($idUsuario = null)
 {
+	salir();
 	list($c, $html) = pedir(BASE . '/login/dev', null, false);
-	if ($c !== 200 || !preg_match('/name="token" value="([a-f0-9]+)".*?name="id_usuario" value="(\d+)"/s', $html, $m)) {
+	$hay = $c === 200 && preg_match('/name="token" value="([a-f0-9]+)".*?name="id_usuario" value="(\d+)"/s', $html, $m);
+	// Otro usuario: la clave de la página es la misma para todos; tiene que estar en la lista
+	if ($hay && $idUsuario !== null) {
+		$hay = strpos($html, 'name="id_usuario" value="' . (int)$idUsuario . '"') !== false;
+		$m[2] = (int)$idUsuario;
+	}
+	if (!$hay) {
 		echo "No pude entrar por " . BASE . "/login/dev (código $c). ¿Está prendida la web y en modo local (RESTO_CONEXION=2)?\n";
 		exit(1);
 	}
 	pedir(BASE . '/login/dev', array('token' => $m[1], 'id_usuario' => $m[2]), false);
-	list($c, $html) = pedir(BASE . '/Dashboard', null, false);
-	if (!preg_match('/csrf-web" content="([a-f0-9]+)"/', $html, $t)) { echo "Entré, pero el Dashboard no cargó (código $c)\n"; exit(1); }
+	// La clave anti-CSRF sale de una página con menú: el Dashboard o, si el rol no lo tiene, Mi perfil (la ven todos)
+	foreach (array('/Dashboard', '/PerfilDeUsuario') as $pagina) {
+		list($c, $html) = pedir(BASE . $pagina, null, false);
+		if (preg_match('/csrf-web" content="([a-f0-9]+)"/', $html, $t)) break;
+	}
+	if (empty($t)) { echo "Entré, pero no cargó ninguna página con menú (código $c)\n"; exit(1); }
 	$GLOBALS['__token'] = $t[1];
 	return $t[1];
 }

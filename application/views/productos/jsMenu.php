@@ -484,7 +484,7 @@
         // Encontrar la fila seleccionada en la tabla tableCategoriasMenuModal
         let selectedRow = $("#tableCategoriasMenuModal tbody tr.selected");
         if (selectedRow.length == 0) {
-            alert("Por favor, seleccione una categoría de la tabla primero (haga clic en una fila)");
+            showAppAlert('warning', "Por favor, seleccione una categoría de la tabla primero (haga clic en una fila)");
             return;
         }
         
@@ -494,7 +494,7 @@
         let id_categoria_menu = data ? data.id_categoria_menu : null;
         
         if(!id_categoria_menu) {
-            alert("No se pudo obtener el ID de la categoría seleccionada");
+            showAppAlert('error', "No se pudo obtener el ID de la categoría seleccionada");
             return;
         }
         
@@ -680,7 +680,7 @@
                 });
             })
             .fail(function() {
-                alert("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+                showAppAlert('error', "Se produjo un error al realizar el proceso, favor contacte a su administrador");
             })
             .always(function() {});
     }
@@ -720,7 +720,7 @@
                 });
             })
             .fail(function() {
-                alert("Se produjo un error al realizar el proceso, favor contacte a su administrador");
+                showAppAlert('error', "Se produjo un error al realizar el proceso, favor contacte a su administrador");
             })
             .always(function() {});
     }

@@ -927,7 +927,7 @@
             });
         }).done(function () { })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () { });
     }*/
@@ -984,7 +984,7 @@
             });
         }).done(function () { })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () { });
     }*/
@@ -1036,7 +1036,7 @@
             });
         }).done(function () { })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () { });
     }*/
@@ -1887,7 +1887,7 @@
             });
         }).done(function () { })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () { });
     }
@@ -1907,7 +1907,7 @@
             });
         }).done(function () { })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () { });
     }
@@ -1927,7 +1927,7 @@
             });
         }).done(function () { })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () { });
     }
@@ -1947,7 +1947,7 @@
             });
         }).done(function () { })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () { });
     }
@@ -1967,7 +1967,7 @@
             });
         }).done(function () { })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () { });
     }
@@ -1987,7 +1987,7 @@
             });
         }).done(function () { })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () { });
     }
@@ -2007,7 +2007,7 @@
             });
         }).done(function () { })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () { });
     }
@@ -2055,7 +2055,7 @@
         var id_usuario = $("#cboUsuarios").val();
         if ($('#ckTodosLosUsuarios').prop('checked') == false) {
             if (id_usuario == null || id_usuario == 0) {
-                alert("Debe seleccionar el usuario");
+                showAppAlert('warning', "Debe seleccionar el usuario");
                 return;
             }
         } else {

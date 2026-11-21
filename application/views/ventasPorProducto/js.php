@@ -367,7 +367,7 @@
         }).done(function () {
         })
             .fail(function () {
-                alert("Se produjo un error al realizar la consulta");
+                showAppAlert('error', "Se produjo un error al realizar la consulta");
             })
             .always(function () {
             });

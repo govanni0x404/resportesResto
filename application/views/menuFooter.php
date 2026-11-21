@@ -133,6 +133,19 @@
 <!-- 14-11-2026: las celdas de texto de todas las tablas se muestran como texto (XSS guardado) -->
 <script src="<?php echo base_url() ?>assets/js/dt-escapar.js?v=20261114"></script>
 <script src="https://cdn.datatables.net/select/1.3.3/js/dataTables.select.min.js"></script>
+<script>
+  // v1.29.2: todas las tablas en español por defecto. 5 pantallas no traían su traducción y salían en inglés
+  // ("Show 10 entries", "Search", "No data available in table", "Previous / Next"). La que trae la suya la sigue usando.
+  if (window.jQuery && $.fn.dataTable) {
+    $.extend(true, $.fn.dataTable.defaults, { language: {
+      decimal: ',', thousands: '.', processing: 'Procesando…', search: 'Buscar:', lengthMenu: 'Mostrar _MENU_ registros',
+      info: 'Mostrando _START_ a _END_ de _TOTAL_ registros', infoEmpty: 'Sin registros', infoFiltered: '(filtrado de _MAX_ registros)',
+      loadingRecords: 'Cargando…', zeroRecords: 'No se encontraron resultados', emptyTable: 'No hay datos para mostrar',
+      paginate: { first: 'Primera', previous: 'Anterior', next: 'Siguiente', last: 'Última' },
+      aria: { sortAscending: ': ordenar de menor a mayor', sortDescending: ': ordenar de mayor a menor' }
+    } });
+  }
+</script>
 <!-- <script src="<?php echo base_url() ?>assets/plugins/datatables/buttons.bootstrap.js"></script> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.js"></script>
 <!-- <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.7/js/dataTables.responsive.min.js"></script> -->
@@ -290,17 +303,60 @@
             });
           })();
 
-          // v1.24.5: los alert() del navegador (ventana gris que bloquea la pantalla) salen como aviso del sistema
+          // v1.24.5: los alert() del navegador (ventana gris que bloquea la pantalla) salen como aviso del sistema.
+          // v1.29.2: con el color que corresponde: error (rojo), salió bien (verde) o falta algo (amarillo). Antes un
+          // "Configuración guardada exitosamente" salía amarillo como "Atención".
           (function () {
             var nativo = window.alert;
             window.alert = function (msg) {
               if (!window.toastr) return nativo.apply(window, arguments);
               var t = String(msg == null ? '' : msg);
-              var esError = /error|no se pudo|fall|inv[aá]lid/i.test(t);
-              var limpio = $('<div>').text(t).html().replace(/\r?\n/g, '<br>');
-              toastr[esError ? 'error' : 'warning'](limpio, esError ? 'Ocurrió un error' : 'Atención',
-                { escapeHtml: false, timeOut: 6000, extendedTimeOut: 2000, closeButton: true, progressBar: true });
+              var tipo = /error|no se pudo|fall|inv[aá]lid/i.test(t) ? 'error'
+                : (/exitos|correctamente|guardad|grabad|cread|eliminad|actualizad|listo/i.test(t) ? 'success' : 'warning');
+              showAppAlert(tipo, $('<div>').text(t).html(), { duration: tipo === 'success' ? 4000 : 6000 });
             };
+          })();
+
+          /**
+           * v1.29.2: pregunta "¿Seguro?" con la ventana del sistema (SweetAlert con el diseño de la Caja) en vez del confirm()
+           * gris del navegador. si() se llama solo si se acepta. peligro = true pinta el botón en rojo.
+           */
+          window.confirmarSistema = function (titulo, texto, botonSi, si, peligro) {
+            if (!window.swal) { if (window.confirm(titulo + (texto ? '\n' + texto : ''))) si(); return; }
+            swal({ title: titulo, text: texto || '', type: 'warning', showCancelButton: true, confirmButtonText: botonSi || 'Sí',
+              cancelButtonText: 'Cancelar', confirmButtonColor: peligro ? '#b91c1c' : undefined, closeOnConfirm: true },
+              function (ok) { if (ok) si(); });
+          };
+
+          // v1.29.2: un aviso que se está mostrando cuando la página se recarga (ej. "Guardado" y al tiro location.reload())
+          // ya no se pierde: se vuelve a mostrar en la página nueva. Vale para todos los avisos (toastr) del sistema.
+          (function () {
+            if (!window.toastr || !window.sessionStorage) return;
+            var CLAVE = 'restoWeb.avisosPendientes', VIDA = 8000;
+            var leer = function () { try { return JSON.parse(sessionStorage.getItem(CLAVE) || '[]') || []; } catch (e) { return []; } };
+            var escribir = function (l) { try { sessionStorage.setItem(CLAVE, JSON.stringify(l)); } catch (e) { /* sin almacenamiento */ } };
+            var originales = {}, seq = 0;
+            $.each(['success', 'error', 'warning', 'info'], function (i, tipo) {
+              originales[tipo] = toastr[tipo];
+              toastr[tipo] = function (mensaje, titulo, opciones) {
+                var id = Date.now() + '-' + (++seq);
+                var l = leer().filter(function (a) { return Date.now() - a.t < VIDA; });
+                l.push({ id: id, tipo: tipo, m: mensaje == null ? '' : String(mensaje), ti: titulo == null ? '' : String(titulo),
+                  o: opciones && typeof opciones === 'object' ? { escapeHtml: opciones.escapeHtml, timeOut: opciones.timeOut, closeButton: opciones.closeButton } : null, t: Date.now() });
+                escribir(l.slice(-5));
+                var o = $.extend({}, opciones || {});
+                var antes = o.onHidden;
+                o.onHidden = function () {   // se vio entero (o lo cerraron): ya no hay que repetirlo
+                  escribir(leer().filter(function (a) { return a.id !== id; }));
+                  if (typeof antes === 'function') antes.apply(this, arguments);
+                };
+                return originales[tipo].call(toastr, mensaje, titulo, o);
+              };
+            });
+            // Al cargar: los que la recarga anterior cortó
+            var pendientes = leer().filter(function (a) { return Date.now() - a.t < VIDA; });
+            escribir([]);
+            $.each(pendientes, function (i, a) { toastr[a.tipo](a.m, a.ti || undefined, a.o || undefined); });
           })();
 
           // Opcional: cerrar al presionar ESC
