@@ -47,7 +47,7 @@ function ObtenerAgregadosDelProducto(idProducto) {
         var tbl = '';
         
         if (obj.length === 0) {
-            tbl = '<tr><td colspan="7" class="text-center">No hay agregados para este producto</td></tr>';
+            tbl = '<tr><td colspan="8" class="text-center">No hay agregados para este producto</td></tr>';
         } else {
             $.each(obj, function(index, v) {
                 // AGREGAR data-id-producto para validación de duplicados
@@ -65,6 +65,10 @@ function ObtenerAgregadosDelProducto(idProducto) {
                 tbl += 'class="text-right form-control valor-agregado-input" ';
                 tbl += 'type="number" min="0" max="50000" value="' + v.valor + '">';
                 tbl += '</td>';
+                // v1.30.2: "Imprimir en su propio destino" en un agregado ya ingresado (antes solo al crearlo)
+                tbl += '<td class="ag-destino-propio"><label style="margin:0; font-weight:600; cursor:pointer; white-space:nowrap">'
+                    + '<input type="checkbox" class="ck-destino-propio" data-id="' + v.id_agregado + '"' + (v.destino_propio ? ' checked' : '') + '> Sí</label>'
+                    + '<small class="text-muted" style="display:block">' + (v.destino_propio ? 'Sale en ' + escaparHtml(v.destino_agregado || 'sin destino') : 'Sale con el producto') + '</small></td>';
                 tbl += "<td>" + (v.vigente == 't' ? 'SI' : 'NO') + "</td>";
                 
                 if (v.vigente == 't') {
@@ -733,4 +737,20 @@ function pintarDestinoAgregado() {
     $i.html('<i class="fa fa-print"></i> ' + html).show();
 }
 $(document).on('change', '#ckUsarDestinoDeImpresion, #cboProductoAgregadoProductos, #ckVariosAgregados', pintarDestinoAgregado);
+
+// v1.30.2: marcar o desmarcar "Imprimir en su propio destino" en un agregado que ya está en la tabla (se graba al tocarlo)
+$(document).on('change', '.ck-destino-propio', function () {
+    var $c = $(this), activo = $c.is(':checked');
+    $c.prop('disabled', true);
+    $.post(base_url + 'index.php/Productos/destinoPropioAgregado', { id_agregado: $c.data('id'), id_producto_maestro: $('#txtID').val(), activo: activo ? 1 : 0 }, null, 'json')
+        .done(function () {
+            showAppAlert('success', activo ? 'El agregado ahora sale en su propio destino de impresión' : 'El agregado ahora sale junto al producto');
+            ObtenerAgregadosDelProducto($('#txtID').val());
+        })
+        .fail(function (x) {
+            $c.prop('checked', !activo);
+            showAppAlert('error', (x.responseJSON && x.responseJSON.error) || 'No se pudo cambiar el agregado');
+        })
+        .always(function () { $c.prop('disabled', false); });
+});
 </script>

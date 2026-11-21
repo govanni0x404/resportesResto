@@ -156,9 +156,13 @@ revisar('BARRA: la SALSA, 2 unidades, con su mensaje y para qué producto es', s
 
 echo "Pantalla de cocina:\n";
 list(, $b) = pedir(BASE . '/Configuraciones/guardar', array('usar_cocina_web' => '1'));
-$ve = function ($destino) use ($nPrin, $mesa) {
+// El pedido que envió esta prueba (producto + SALSA): la base puede traer otros pedidos del mismo producto
+$ve = function ($destino) use ($nPrin, $nSalsa) {
 	list(, $b) = pedir(BASE . '/Cocina/pendientes?destino=' . $destino);
-	foreach ((json($b)['comandas'] ?? array()) as $c) foreach ($c['lineas'] as $l) if (strpos(mb_strtoupper($l['nombre']), $nPrin) === 0) return $l;
+	foreach ((json($b)['comandas'] ?? array()) as $c) foreach ($c['lineas'] as $l) {
+		$n = mb_strtoupper($l['nombre']);
+		if (strpos($n, $nPrin) === 0 && strpos($n, '+ ' . $nSalsa) !== false) return $l;
+	}
 	return null;
 };
 $enParrilla = $ve($parrilla);
@@ -166,6 +170,21 @@ revisar('filtrada por PARRILLA, la cocina muestra el producto', $enParrilla !== 
 revisar('con el agregado en la misma fila y sus dos destinos', $enParrilla && strpos(mb_strtoupper($enParrilla['nombre']), '+ ' . $nSalsa) !== false
 	&& strpos($enParrilla['destino'], 'COCINA') !== false && strpos($enParrilla['destino'], 'PARRILLA') !== false, json_encode($enParrilla));
 revisar('filtrada por COCINA también', $ve($cocina) !== null);
+
+echo "Agregado ya ingresado (casilla de la tabla de agregados):\n";
+$filaAg = function () use ($idPrin, $idSalsa) {
+	list(, $b) = pedir(BASE . '/Productos/obtenerAgregadosDelProducto', array('id_producto_maestro' => $idPrin));
+	foreach ((array)json($b) as $a) if ((int)$a['id_producto'] === $idSalsa) return $a;
+	return null;
+};
+$fa = $filaAg();
+revisar('la tabla muestra que SALSA sale en su destino (BARRA)', $fa && $fa['destino_propio'] === true && $fa['destino_agregado'] === 'BARRA', json_encode($fa));
+list($c, ) = pedir(BASE . '/Productos/destinoPropioAgregado', array('id_agregado' => $fa['id_agregado'], 'id_producto_maestro' => $idPrin, 'activo' => 0));
+revisar('desmarcarla en la tabla la graba', $c === 200 && ($filaAg()['destino_propio'] ?? null) === false);
+list($c, ) = pedir(BASE . '/Productos/destinoPropioAgregado', array('id_agregado' => $fa['id_agregado'], 'id_producto_maestro' => $idPrin, 'activo' => 1));
+revisar('y volver a marcarla también', $c === 200 && ($filaAg()['destino_propio'] ?? null) === true);
+list($c, ) = pedir(BASE . '/Productos/destinoPropioAgregado', array('id_agregado' => $fa['id_agregado'], 'id_producto_maestro' => $idNormal, 'activo' => 0));
+revisar('no se puede cambiar el agregado de otro producto', $c === 404 && ($filaAg()['destino_propio'] ?? null) === true, "código $c");
 
 echo "Sin marcar, todo vuelve a ser como antes:\n";
 grabarProducto(carta()[$idPrin], array('id_dimpresion' => $cocina, 'id_dimpresion2_web' => 0));

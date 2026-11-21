@@ -418,13 +418,28 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 			redirect(base_url()); //redireccionar al login
 		}
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$q = 'SELECT a.id_agregado, a.id_producto, round(a.cantidad) as cantidad, a.valor, a.vigente, p.nombre_producto, pm.nombre_producto as producto_maestro 
+		// v1.30.2: también "Imprimir en su propio destino" y la impresora del producto agregado (su destino o el de su familia),
+		// para marcarlo en un agregado que ya existe y ver a dónde sale
+		$q = "SELECT a.id_agregado, a.id_producto, round(a.cantidad) as cantidad, a.valor, a.vigente, p.nombre_producto, pm.nombre_producto as producto_maestro,
+			(a.usar_destino_impresion IS TRUE) AS destino_propio,
+			COALESCE((SELECT d.nombre_dimpresion FROM dimpresion d LEFT JOIN familia f ON f.id_familia = p.id_familia
+				WHERE d.id_dimpresion = COALESCE(NULLIF(p.id_dimpresion, 0), NULLIF(f.id_dimpresion, 0))), '') AS destino_agregado
         from agregados a
         join producto p on p.id_producto=a.id_producto
         join producto pm on pm.id_producto=a.id_producto_maestro
-      	where a.id_producto_maestro=' . (int)$idProducto . ' and a.eliminado = false order by p.nombre_producto';
-		$query = $this->db->query($q)->result();
+      	where a.id_producto_maestro = ? and a.eliminado = false order by p.nombre_producto";
+		$query = $this->db->query($q, array((int)$idProducto))->result();
+		foreach ($query as $f) $f->destino_propio = ($f->destino_propio === 't' || $f->destino_propio === true);
 		return $query;
+	}
+
+	/** v1.30.2: marca o desmarca "Imprimir en su propio destino" en un agregado que ya existe (de ese producto). */
+	public function destinoPropioAgregado($idAgregado, $idMaestro, $activo)
+	{
+		$this->load->helper('tenant'); $db = get_tenant_db($this);
+		$db->query('UPDATE agregados SET usar_destino_impresion = ? WHERE id_agregado = ? AND id_producto_maestro = ? AND eliminado IS NOT TRUE',
+			array($activo ? 't' : 'f', (int)$idAgregado, (int)$idMaestro));
+		return $db->affected_rows() > 0;
 	}
 
 	/**

@@ -930,6 +930,7 @@
                                                     <th>AGREGADO</th>
                                                     <th>CANTIDAD</th>
                                                     <th>VALOR ADICIONAL</th>
+                                                    <th title="Imprimir en su propio destino: el agregado sale en la impresora de su producto">SALE EN SU DESTINO</th>
                                                     <th>ACTIVO</th>
                                                     <th style="width:10%">ACCION</th>
                                                 </tr>

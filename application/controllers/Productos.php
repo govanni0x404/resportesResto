@@ -455,6 +455,19 @@ class Productos extends CI_Controller
 		echo json_encode($this->Mproductos->obtenerAgregadosDelProducto($idProducto));
 	}
 
+	/** v1.30.2: casilla "Sale en su destino" de un agregado ya ingresado (tabla de agregados del producto). */
+	public function destinoPropioAgregado()
+	{
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+			echo json_encode(array('ok' => false, 'error' => 'Sesión expirada'));
+			return;
+		}
+		$ok = $this->Mproductos->destinoPropioAgregado((int)$this->input->post('id_agregado'), (int)$this->input->post('id_producto_maestro'),
+			in_array((string)$this->input->post('activo'), array('1', 'true'), true));
+		if (!$ok) http_response_code(404);
+		echo json_encode($ok ? array('ok' => true) : array('ok' => false, 'error' => 'El agregado ya no existe. Recarga la lista.'));
+	}
+
 	public function grabarAgregados()
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
