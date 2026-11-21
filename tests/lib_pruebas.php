@@ -7,6 +7,7 @@
  * La dirección se puede cambiar con el primer argumento: php tests\algo_test.php http://localhost:8082/index.php
  */
 error_reporting(E_ALL);
+date_default_timezone_set(getenv('RESTO_ZONA_HORARIA') ?: 'America/Santiago');   // la misma hora que la web (index.php)
 if (!defined('BASE')) define('BASE', rtrim($GLOBALS['argv'][1] ?? 'http://localhost:8001/index.php', '/'));
 $GLOBALS['__cookies'] = tempnam(sys_get_temp_dir(), 'prueba');
 $GLOBALS['__token'] = '';
