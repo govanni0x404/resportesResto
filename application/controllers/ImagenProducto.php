@@ -138,12 +138,24 @@ class ImagenProducto extends CI_Controller
 
 	const CARPETA = 'uploads/';
 
-	/** Carpeta de la empresa: su RUT con guion y sin puntos (ej. 76193938-6). Solo números, K y guion. */
-	public static function carpetaDe($rutEmpresa)
+	/**
+	 * Carpeta de la empresa: su RUT con guion y sin puntos (ej. 76193938-6). Solo números, K y guion.
+	 * v1.27.0: sin un RUT válido ya no se usa la carpeta común "general" (dos empresas sin RUT veían las fotos de la otra):
+	 * se usa una propia de su servidor y base, ej. sin-rut-localhost-DataRestoWeb.
+	 */
+	public static function carpetaDe($rutEmpresa, $servidor = '', $base = '')
 	{
 		// El login guarda el RUT a veces con puntos y un 0 adelante (09.209.734-K) y a veces sin (9209734-K): misma carpeta
 		$c = ltrim(preg_replace('/[^0-9k-]/', '', strtolower((string)$rutEmpresa)), '0');
-		return preg_match('/^\d+-[0-9k]$/', $c) ? $c : 'general';
+		if (preg_match('/^\d+-[0-9k]$/', $c)) return $c;
+		$limpio = function ($t) { return substr(preg_replace('/[^A-Za-z0-9_]+/', '_', (string)$t), 0, 60); };
+		return ($servidor !== '' || $base !== '') ? 'sin-rut-' . $limpio($servidor) . '-' . $limpio($base) : 'general';
+	}
+
+	/** Carpeta de la empresa de la sesión abierta. */
+	public static function carpetaSesion($session)
+	{
+		return self::carpetaDe($session->userdata('rut_cliente'), (string)$session->userdata('db_server'), (string)$session->userdata('bd_name'));
 	}
 
 	public static function rutaImagen($carpeta, $idProducto)
@@ -171,7 +183,7 @@ class ImagenProducto extends CI_Controller
 
 	private function carpetaEmpresa()
 	{
-		return self::carpetaDe($this->session->userdata('rut_cliente'));
+		return self::carpetaSesion($this->session);
 	}
 
 	private function idProducto($valor)

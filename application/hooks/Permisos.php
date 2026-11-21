@@ -26,7 +26,8 @@ class Permisos
 
 	/** Métodos públicos que actúan sobre la sesión del usuario (cambiar empresa, descargar el instalador del agente). */
 	// 19-11-2026 (auditoría): crear y revocar equipos de impresión también piden la clave anti-CSRF
-	private static $publicosConSesion = array('login/relogin' => true, 'login/postloginwarmup' => true, 'agenteimpresion/instalador' => true,
+	// v1.27.0: login/respaldodiario (respaldo automático del día, en segundo plano)
+	private static $publicosConSesion = array('login/relogin' => true, 'login/postloginwarmup' => true, 'login/respaldodiario' => true, 'agenteimpresion/instalador' => true,
 		'agenteimpresion/crear' => true, 'agenteimpresion/revocar' => true);
 
 	/** Cualquier usuario con sesión (trabaja solo sobre el propio usuario). */
@@ -160,6 +161,8 @@ class Permisos
 		if (in_array($metodo, array('GET', 'HEAD', 'OPTIONS'), true)) return;
 		$CI->load->helper('permisos_web');
 		$esperado = (string)$CI->session->userdata('csrf_web');
+		// v1.27.0: sin sesión no hay clave que comparar; es una sesión vencida (401: la página va al ingreso), no una página desactualizada
+		if ($esperado === '') $this->negar($CI, 401, 'Tu sesión expiró. Vuelve a ingresar.');
 		$recibido = (string)$CI->input->get_request_header('X-CSRF-Token');
 		if ($recibido === '' && isset($_POST['csrf_web'])) $recibido = (string)$_POST['csrf_web'];
 		if ($esperado !== '' && $recibido !== '' && hash_equals($esperado, $recibido)) {
@@ -172,7 +175,9 @@ class Permisos
 	private function negar($CI, $codigo, $mensaje = null)
 	{
 		if ($mensaje === null) $mensaje = 'No tienes permiso para esta sección. Pide acceso a gerencia en Privilegios de Usuario.';
-		log_message('error', 'Permisos: acceso negado (' . $codigo . ') a ' . $CI->router->fetch_class() . '/' . $CI->router->fetch_method()
+		// v1.27.0: una sesión vencida (401) es normal (el Dashboard pide sus 10 recuadros a la vez y todos vuelven 401):
+		// se anota como debug para no llenar el registro de errores; los 403 (sin permiso o CSRF) siguen como error
+		log_message($codigo === 401 ? 'debug' : 'error', 'Permisos: acceso negado (' . $codigo . ') a ' . $CI->router->fetch_class() . '/' . $CI->router->fetch_method()
 			. ' usuario ' . $CI->session->userdata('nombre_usuario') . ' rol ' . (int)$CI->session->userdata('id_rol'));
 		while (ob_get_level()) ob_end_clean();
 		$ajax = $CI->input->is_ajax_request() || $CI->input->method() === 'post'

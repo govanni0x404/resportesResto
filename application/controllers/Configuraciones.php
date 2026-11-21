@@ -367,6 +367,58 @@ class Configuraciones extends CI_Controller {
         }, true);
     }
 
+    // ==================== RESPALDOS (v1.27.0, ver libraries/Respaldo_bd.php) ====================
+    // Solo administradores: un respaldo tiene todos los datos de la empresa.
+
+    private function soloAdmin() {
+        if ((int)$this->session->userdata('id_rol') !== 1) throw new Exception('Solo un administrador puede ver y hacer respaldos', 403);
+        $this->load->library('Respaldo_bd');
+        $this->load->helper('tenant');
+        return array((string)$this->session->userdata('db_server'), (string)$this->session->userdata('bd_name'));
+    }
+
+    public function respaldos() {
+        $this->responderJson(function () {
+            list($srv, $bd) = $this->soloAdmin();
+            $lista = $this->respaldo_bd->lista($srv, $bd);
+            return array('respaldos' => $lista, 'pg_dump' => $this->respaldo_bd->pgDump() !== '',
+                'total' => array_sum(array_map(function ($r) { return $r['bytes']; }, $lista)));
+        });
+    }
+
+    public function respaldarAhora() {
+        $this->responderJson(function () {
+            list($srv, $bd) = $this->soloAdmin();
+            $db = get_tenant_db($this);
+            // La sesión se suelta mientras corre pg_dump: las otras pestañas (la Caja) no esperan
+            if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+            $r = $this->respaldo_bd->respaldar($db, $srv, $bd);
+            if (empty($r['ok'])) throw new Exception('No se pudo hacer el respaldo: ' . $r['error'], !empty($r['ocupado']) ? 409 : 500);
+            return $r + array('respaldos' => $this->respaldo_bd->lista($srv, $bd));
+        }, true);
+    }
+
+    /** Descarga un respaldo (archivo .dump). El nombre tiene que ser uno de la carpeta de esta empresa. */
+    public function descargarRespaldo() {
+        try {
+            list($srv, $bd) = $this->soloAdmin();
+        } catch (Exception $e) {
+            show_error($e->getMessage(), 403);
+            return;
+        }
+        $f = $this->respaldo_bd->ruta($srv, $bd, (string)$this->input->get('archivo'));
+        if ($f === null) show_404();
+        log_message('info', 'Respaldo descargado: ' . basename($f) . ' por ' . $this->session->userdata('nombre_usuario'));
+        if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+        while (ob_get_level()) ob_end_clean();
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . basename($f) . '"');
+        header('Content-Length: ' . filesize($f));
+        header('Cache-Control: no-store');
+        readfile($f);
+        exit;
+    }
+
     // ==================== EMPRESAS Y SUCURSALES (11-11-2026, ver Mempresas) ====================
     // Las empresas las registran los técnicos de Datamaule; sus datos y sucursales vienen de la intranet.
 

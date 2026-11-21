@@ -182,7 +182,7 @@ class MlistaDePrecios extends CI_Model
         $idDetalleLprecio = (int)$idDetalleLprecio;
         $this->db->where('id_detalle_lprecio', $idDetalleLprecio);
         $this->db->update('detalle_lprecio', $dataToSave);
-        $consulta = $this->db->query("select $idDetalleLprecio as id_detalle_lprecio from detalle_lprecio where id_detalle_lprecio=$idDetalleLprecio");
+        $consulta = $this->db->query("SELECT id_detalle_lprecio FROM detalle_lprecio WHERE id_detalle_lprecio = ?", array($idDetalleLprecio));
         return $consulta->result();
     }
 }

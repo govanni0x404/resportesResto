@@ -65,11 +65,13 @@ for ($n = 0; $n < $casos; $n++) {
 }
 
 // 1. Servidor vs pantalla (Node)
+// v1.27.0: el JavaScript de la Caja está dividido en views/caja/js/ (js.php los incluye en orden): se juntan todas las partes
 $jsCaja = file_get_contents($raiz . '/application/views/caja/js.php');
+foreach ((array)glob($raiz . '/application/views/caja/js/*.php') as $parte) $jsCaja .= "\n" . file_get_contents($parte);
 $jsOk = preg_match('/\n(\t\tfunction totales\(\) \{.*?\n\t\t\})\r?\n/s', $jsCaja, $m);
 $node = trim((string)@shell_exec('node --version 2>&1'));
 if (!$jsOk) {
-	$fallas[] = 'No encontré function totales() en views/caja/js.php (¿se cambió de nombre o de sangría?)';
+	$fallas[] = 'No encontré function totales() en views/caja/js.php ni en views/caja/js/ (¿se cambió de nombre o de sangría?)';
 } elseif (strpos($node, 'v') !== 0) {
 	echo "AVISO: sin Node.js no se compara con la pantalla (instálalo para la prueba completa)\n";
 } else {

@@ -425,3 +425,54 @@
         $(function () { if ($('#empresa').hasClass('active')) cargar(); });
     })();
 </script>
+<?php if ((int)$this->session->userdata('id_rol') === 1) : ?>
+<script>
+    // v1.27.0: Configuraciones > Respaldos (Configuraciones::respaldos / respaldarAhora / descargarRespaldo)
+    (function () {
+        var URL = '<?php echo base_url() ?>index.php/Configuraciones/';
+        var cargada = false;
+        function peso(b) {
+            return b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+        }
+        function fecha(f) {   // 2026-11-21 04:00 -> 21-11-2026 04:00
+            var p = String(f).split(' '), d = p[0].split('-');
+            return d[2] + '-' + d[1] + '-' + d[0] + ' ' + (p[1] || '');
+        }
+        function pintar(r) {
+            var $t = $('#cuerpoRespaldos').empty();
+            $('#respaldoAviso').toggle(!r.pg_dump).text(r.pg_dump ? '' : 'Este servidor no tiene pg_dump: no se pueden hacer respaldos. Pide que instalen el paquete postgresql-client.');
+            $('#btnRespaldarAhora').prop('disabled', !r.pg_dump);
+            if (!r.respaldos.length) {
+                $t.append('<tr><td colspan="3" class="emp-vacio">Todavía no hay respaldos.</td></tr>');
+            }
+            $.each(r.respaldos, function (i, x) {
+                var $tr = $('<tr>');
+                $tr.append($('<td>').text(fecha(x.fecha)).append(i === 0 ? ' <span class="label label-success">último</span>' : ''));
+                $tr.append($('<td class="text-right">').text(peso(x.bytes)));
+                $tr.append($('<td class="text-right">').append($('<a class="btn btn-default btn-sm"><i class="fa fa-download"></i> Descargar</a>')
+                    .attr('href', URL + 'descargarRespaldo?archivo=' + encodeURIComponent(x.archivo))));
+                $t.append($tr);
+            });
+            $('#respaldoTotal').html('<i class="fa fa-hdd-o"></i> ' + r.respaldos.length + ' respaldo(s), en total ' + peso(r.total || 0) + '.');
+        }
+        function cargar() {
+            cargada = true;
+            $.ajax({ url: URL + 'respaldos', dataType: 'json' }).done(pintar).fail(function (x) {
+                $('#cuerpoRespaldos').html('<tr><td colspan="3" class="emp-vacio">' + $('<span>').text((x.responseJSON && x.responseJSON.error) || 'No se pudieron cargar los respaldos').html() + '</td></tr>');
+            });
+        }
+        $('#btnRespaldarAhora').on('click', function () {
+            var $b = $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Respaldando…');
+            $.ajax({ url: URL + 'respaldarAhora', type: 'POST', dataType: 'json' }).done(function (r) {
+                toastr.success('Respaldo listo (' + peso(r.bytes) + ', ' + String(r.segundos).replace('.', ',') + ' s)');
+                $.ajax({ url: URL + 'respaldos', dataType: 'json' }).done(pintar);
+            }).fail(function (x) {
+                toastr.error((x.responseJSON && x.responseJSON.error) || 'No se pudo hacer el respaldo');
+            }).always(function () { $b.prop('disabled', false).html('<i class="fa fa-floppy-o"></i> Respaldar ahora'); });
+        });
+        $(document).on('click', '.tablink', function () {
+            if (!cargada && /'respaldos'/.test($(this).attr('onclick') || '')) cargar();
+        });
+    })();
+</script>
+<?php endif; ?>

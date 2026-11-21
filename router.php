@@ -26,12 +26,14 @@ $prohibido = array(
 	'#(^|/)\.(?!well-known(/|$))#i',
 	// Respaldos del usuario
 	'#(^|/)_respaldos[^/]*(/|$)#i',
+	// v1.27.0: respaldos de las bases (Configuraciones > Respaldos)
+	'#^/backups(/|$)#i',
 	// Código, scripts de la base, instaladores (se descargan por la app) y configuración de docker
 	'#^/(application|system|instaladores|sql|docker|tests)(/|$)#i',
 	// Archivos del proyecto en la raíz
 	'#^/(docker-compose\.ya?ml|composer\.(json|lock)|readme\.rst|license\.txt|c\.txt|router\.php)$#i',
 	// Tipos que nunca son parte de la página
-	'#\.(sql|bak|old|orig|swp|log|sh|bat|ps1|key|pem|env|ini|dist)$#i',
+	'#\.(sql|bak|old|orig|swp|log|sh|bat|ps1|key|pem|env|ini|dist|dump)$#i',
 	// uploads/: solo imágenes, nunca código
 	'#^/uploads/.*\.(php[0-9]?|phtml|phar|pl|py|cgi)$#i',
 );

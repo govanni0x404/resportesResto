@@ -50,3 +50,6 @@ instaladores/*.exe
 /_respaldos_*/
 /c.txt
 /uploads/*/
+
+# v1.27.0: respaldos de las bases (Configuraciones > Respaldos): nunca a git
+/backups/

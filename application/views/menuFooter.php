@@ -632,6 +632,19 @@ if ($__ciMig->migracionesresto->revisarEnSesion()) : ?>
   });
  </script>
 <?php endif; ?>
+<?php
+// v1.27.0: respaldo automático del día (Login::respaldoDiario), una vez por día y empresa en cada sesión, en segundo plano.
+// Espera 20 segundos después de cargar la página para no competir con lo que el usuario está abriendo.
+// Nunca desde la Caja: en un equipo local con Windows, php -S atiende de a una petición y la impresión esperaría.
+$__resp = date('Y-m-d') . '|' . $__ciMig->session->userdata('db_server') . '|' . $__ciMig->session->userdata('bd_name');
+if (strtolower($__ciMig->router->fetch_class()) !== 'caja' && strlen((string)$__ciMig->session->userdata('nombre_usuario')) > 0
+    && $__ciMig->session->userdata('respaldo_revisado') !== $__resp) : ?>
+ <script>
+  setTimeout(function () {
+    if (window.jQuery) $.ajax({ url: '<?php echo base_url() ?>index.php/Login/respaldoDiario', type: 'POST', dataType: 'json', global: false });
+  }, 20000);
+ </script>
+<?php endif; ?>
 </body>
 
 </html>

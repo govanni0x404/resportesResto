@@ -1,0 +1,36 @@
+<?php
+/**
+ * Corre todas las pruebas automáticas de una vez (v1.27.0).
+ *
+ *   php tests/todas.php                                         (web en http://localhost:8001/index.php)
+ *   php tests/todas.php http://localhost:8002/index.php COPIA   (también las que graban ventas: SOLO con una copia de la base)
+ *
+ * Termina con 0 si todas pasaron y 1 si alguna falló.
+ */
+$base = $argv[1] ?? 'http://localhost:8001/index.php';
+$copia = ($argv[2] ?? '') === 'COPIA';
+$pruebas = array(
+	'totales_test.php' => array(),                       // cálculo de totales (no necesita la web)
+	'humo_test.php' => array($base),                     // todas las pantallas y consultas sin errores
+	'consultas_sesion_test.php' => array($base),         // consultas con "?" y sesión vencida
+	'caja_js_test.php' => array($base),                  // la Caja dividida completa y el JavaScript de cada pantalla
+	'respaldo_test.php' => array($base),                 // respaldos de la base y fotos en webp
+);
+if ($copia) {
+	$pruebas['venta_caja_test.php'] = array($base, 'COPIA');   // abrir, cobrar, anular y cerrar (graba)
+	$pruebas['stock_bajo_test.php'] = array($base, 'COPIA');   // aviso de stock bajo de la Caja (crea un insumo)
+}
+
+$php = escapeshellarg(PHP_BINARY);
+$fallaron = array();
+foreach ($pruebas as $archivo => $args) {
+	if (!is_file(__DIR__ . '/' . $archivo)) continue;
+	echo "\n=== $archivo ===\n";
+	passthru($php . ' ' . escapeshellarg(__DIR__ . '/' . $archivo) . ' ' . implode(' ', array_map('escapeshellarg', $args)), $cod);
+	if ($cod !== 0) $fallaron[] = $archivo;
+}
+echo "\n";
+if (!$copia) echo "(No corrí venta_caja_test.php ni stock_bajo_test.php: graban datos. Úsala con una copia: php tests/todas.php <url de la copia> COPIA)\n";
+if ($fallaron) { echo 'FALLARON: ' . implode(', ', $fallaron) . "\n"; exit(1); }
+echo "TODAS LAS PRUEBAS PASARON\n";
+exit(0);

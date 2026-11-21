@@ -641,6 +641,18 @@ class Caja extends CI_Controller
 		return $body;
 	}
 
+	/**
+	 * v1.27.0: insumos con stock igual o menor a su stock mínimo (aviso rojo arriba de la Caja). Solo lee y suelta la
+	 * sesión al tiro: nunca hace esperar a un cobro ni a una impresión.
+	 */
+	public function stockBajo()
+	{
+		$this->ejecutar(function () {
+			$this->soltarSesion();
+			return array('insumos' => $this->Mcaja->stockBajo());
+		});
+	}
+
 	public function ventas()
 	{
 		$this->ejecutar(function () {

@@ -207,7 +207,12 @@
 									</div>
 								</fieldset>
 								<fieldset>
-									<div class="col-md-8"></div>
+									<!-- v1.27.0: con stock igual o menor a este número (unidad de inventario, todas las bodegas) la Caja avisa arriba en rojo "Quedan pocos". 0 = sin aviso -->
+									<div class="col-md-4">
+										<label for="stockMinimo">STOCK MÍNIMO (AVISO EN LA CAJA)</label>
+										<input type="number" class="form-control input-sm" min="0" step="any" id="stockMinimo" value="0" title="Cuando quede esta cantidad o menos (en la unidad de inventario), la Caja muestra un aviso rojo arriba. 0 = sin aviso.">
+									</div>
+									<div class="col-md-4"></div>
 									<div class="col-md-4">
 										<button type="button" class="btn btn-primary" id="btnHistoricoCompras">HISTORICO DE COMPRAS</button>
 									</div>
@@ -574,6 +579,7 @@
 		$("#costoReceta").val(0);
 		$("#costoBruto").val(0);
 		$("#costoUltCompra").val(0);
+		$("#stockMinimo").val(0);
 		$("#obsInsumo").val("");
 		$("#cboMedReceta").val(0);
 		$("#tabReceta").hide();
@@ -697,6 +703,7 @@
 		precio_ucompra = $("#costoUltCompra").val();
 		observaciones = $("#obsInsumo").val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
 		inv_cierre = ($('#ckInvCierre').is(":checked") ? 1 : 0);
+		var stock_minimo = Math.max(0, Number(String($('#stockMinimo').val() || '0').replace(',', '.')) || 0);   // v1.27.0
 		var miJson = {};
 		var msg = "";
 
@@ -781,7 +788,8 @@
 						'costo_bruto_ppp': costo_bruto_ppp,
 						'precio_ucompra': precio_ucompra,
 						'observaciones': observaciones,
-						'inv_cierre': inv_cierre
+						'inv_cierre': inv_cierre,
+						'stock_minimo': stock_minimo
 					};
 				} else {
 					var miJson = {
@@ -799,7 +807,8 @@
 						'costo_bruto_ppp': costo_bruto_ppp,
 						'precio_ucompra': precio_ucompra,
 						'observaciones': observaciones,
-						'inv_cierre': inv_cierre
+						'inv_cierre': inv_cierre,
+						'stock_minimo': stock_minimo
 					};
 				}
 				$.post(base_url + "index.php/Insumos/buscarInsumo", {

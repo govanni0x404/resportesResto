@@ -340,6 +340,34 @@ class Login extends CI_Controller
 		echo json_encode($salida);
 	}
 
+	/**
+	 * v1.27.0: respaldo automático del día (libraries/Respaldo_bd.php). Lo llama menuFooter en segundo plano una vez por
+	 * sesión: si la empresa todavía no tiene respaldo de hoy, se hace uno. Primero suelta la sesión (session_write_close)
+	 * para no frenar nada del usuario mientras corre pg_dump (con sesiones en archivos PHP atiende de a una las
+	 * peticiones de una sesión: la Caja y la impresión esperarían).
+	 */
+	public function respaldoDiario()
+	{
+		if ($this->input->method() !== 'post' || strlen((string)$this->session->userdata('nombre_usuario')) === 0) {
+			echo json_encode(array('ok' => false));
+			return;
+		}
+		$srv = (string)$this->session->userdata('db_server');
+		$bd = (string)$this->session->userdata('bd_name');
+		$this->session->set_userdata('respaldo_revisado', date('Y-m-d') . '|' . $srv . '|' . $bd);
+		if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+		ignore_user_abort(true);
+		$this->load->library('Respaldo_bd');
+		if ($srv === '' || $bd === '' || $this->respaldo_bd->hayDeHoy($srv, $bd)) {
+			echo json_encode(array('ok' => true, 'hecho' => false));
+			return;
+		}
+		$this->load->helper('tenant');
+		$r = $this->respaldo_bd->respaldar(get_tenant_db($this), $srv, $bd);
+		// El detalle solo se anota en el registro; la página no muestra nada (es en segundo plano)
+		echo json_encode(array('ok' => !empty($r['ok']), 'hecho' => !empty($r['ok'])));
+	}
+
 	public function logout_ci()
 	{
 		$this->session->unset_userdata('nombre_usuario');

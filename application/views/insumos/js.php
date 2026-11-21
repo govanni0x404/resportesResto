@@ -250,6 +250,7 @@ function listarInsumos() {
             $("#costoReceta").val(rowData[0].costo_neto_ppp);
             $("#costoBruto").val(rowData[0].costo_bruto_ppp);
             $("#costoUltCompra").val(rowData[0].precio_ucompra);
+            $("#stockMinimo").val(Number(rowData[0].stock_minimo_web) || 0);   // v1.27.0
             $("#obsInsumo").val(rowData[0].observaciones);
             tabsInsumos();
             $("#tabReceta").show();

@@ -145,7 +145,7 @@ class Minsumos extends CI_Model
 				set_status_header(404);
 				return array('error' => 'El registro ya no existe (pudo haberlo borrado otra persona). Recarga la página.');
 			}
-			$consulta = $this->db->query("select " . (int)$id . " as id_insumo");
+			$consulta = $this->db->query("SELECT ?::int AS id_insumo", array((int)$id));
 		} else {
 			$this->db->insert('insumo', $data);
 			$consulta = $this->db->query("SELECT CURRVAL('insumo_id_insumo_seq'::regclass) as id_insumo");

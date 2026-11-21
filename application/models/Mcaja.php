@@ -94,7 +94,7 @@ class Mcaja extends CI_Model
 		}
 		// Imágenes de la Carta (controlador ImagenProducto): uploads/<rut empresa>/productos/<id>.webp
 		if (!class_exists('ImagenProducto', false)) require_once APPPATH . 'controllers/ImagenProducto.php';
-		$imagenes = ImagenProducto::imagenesDe(ImagenProducto::carpetaDe($this->session->userdata('rut_cliente')));
+		$imagenes = ImagenProducto::imagenesDe(ImagenProducto::carpetaSesion($this->session));
 		$productos = array();
 		foreach ($this->q($db, $q . " ORDER BY p.nombre_producto", array($idLprecio))->result() as $p) {
 			$productos[] = array(
@@ -3341,6 +3341,29 @@ class Mcaja extends CI_Model
 					. ' (disponible ' . round((float)$s->saldo, 2) . ')', 409);
 			}
 		}
+	}
+
+	/**
+	 * v1.27.0: insumos vigentes con stock mínimo (insumo.stock_minimo_web > 0) cuyo stock total (todas las bodegas) llegó
+	 * a ese número o bajó de él. Los más cerca de acabarse primero. Sin la migración 20261121120000: lista vacía.
+	 */
+	public function stockBajo()
+	{
+		$db = $this->conexion();
+		$c = $this->columnas($db, array('insumo', 'stock_insumo'));
+		if (!isset($c['insumo']['stock_minimo_web'], $c['stock_insumo'])) return array();
+		$filas = $this->q($db, "SELECT i.id_insumo, i.nombre_insumo AS nombre, i.stock_minimo_web AS minimo, COALESCE(s.saldo, 0) AS saldo,
+				COALESCE(um.nombre_umedida, '') AS unidad
+			FROM insumo i
+			LEFT JOIN (SELECT id_insumo, sum(saldo) AS saldo FROM stock_insumo GROUP BY id_insumo) s ON s.id_insumo = i.id_insumo
+			LEFT JOIN umedida um ON um.id_umedida = i.id_umedida_inventario
+			WHERE COALESCE(i.stock_minimo_web, 0) > 0 AND i.vigente IS NOT FALSE AND COALESCE(s.saldo, 0) <= i.stock_minimo_web
+			ORDER BY COALESCE(s.saldo, 0) / i.stock_minimo_web, i.nombre_insumo
+			LIMIT 30")->result();
+		return array_map(function ($f) {
+			return array('id_insumo' => (int)$f->id_insumo, 'nombre' => $f->nombre, 'minimo' => round((float)$f->minimo, 3),
+				'saldo' => round((float)$f->saldo, 3), 'unidad' => $f->unidad);
+		}, $filas);
 	}
 
 	private function tieneTriggerStock($db)

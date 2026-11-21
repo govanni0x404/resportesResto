@@ -1271,6 +1271,16 @@
 	.pe-pendiente .pe-acc { display: flex; flex-wrap: wrap; gap: 6px; }
 	.pe-pendiente .pe-acc .btn i { margin-right: 4px; }
 	@media (max-width: 767px) { .pe-pendiente .pe-acc { width: 100%; } .pe-pendiente .pe-acc .btn { flex: 1 1 auto; } }
+
+	/* v1.27.0: aviso de stock bajo (js/16_stock_bajo.php). Franja roja arriba, no tapa nada ni impide vender */
+	.stock-bajo { display: flex; align-items: flex-start; gap: 10px; padding: 9px 12px 9px 14px; margin: 0 0 10px; border-radius: 10px;
+		background: #fdecea; border: 1px solid #f3b8b0; color: #8a1c10; font-size: 13px; line-height: 1.45; }
+	.stock-bajo .sb-ico { font-size: 18px; line-height: 1.2; color: #c0392b; }
+	.stock-bajo .sb-texto { flex: 1 1 auto; min-width: 0; }
+	.stock-bajo .sb-item { display: inline-block; max-width: 100%; margin-right: 12px; overflow-wrap: anywhere; }
+	.stock-bajo .sb-item.agotado { font-weight: 700; }
+	.stock-bajo .sb-cerrar { flex: 0 0 auto; border: 0; background: transparent; color: #8a1c10; font-size: 18px; line-height: 1; padding: 2px 4px; cursor: pointer; opacity: .7; }
+	.stock-bajo .sb-cerrar:hover, .stock-bajo .sb-cerrar:focus { opacity: 1; }
 </style>
 
 <div class="row caja">
@@ -1319,6 +1329,8 @@
 			</div>
 			<!-- 19-11-2026: cobros con tarjeta sin terminar (pago electrónico): cancelar, volver a enviar o aprobar -->
 			<div class="pe-pendientes" id="pePendientes" style="display:none" aria-live="polite"></div>
+			<!-- v1.27.0: insumos con poco stock (Insumos > stock mínimo). Solo avisa: no tapa nada ni impide vender -->
+			<div class="stock-bajo" id="stockBajo" style="display:none" role="status" aria-live="polite"></div>
 			<div class="caja-barra">
 				<ul class="nav nav-tabs caja-tabs">
 					<li class="active"><a href="#tabVenta" data-toggle="tab" id="lnkVenta"><i class="pe-7s-cart"></i> Venta directa</a></li>

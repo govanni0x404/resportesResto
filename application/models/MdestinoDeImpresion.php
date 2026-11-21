@@ -59,7 +59,7 @@ class MdestinoDeImpresion extends CI_Model
     if ($id) {
       $this->db->where('id_dimpresion', $id);
       $this->db->update('dimpresion', $data);
-      $consulta = $this->db->query("select " . $id . " as id_dimpresion");
+      $consulta = $this->db->query("SELECT ?::int AS id_dimpresion", array((int)$id));
     } else {
       $this->db->insert('dimpresion', $data);
       $consulta = $this->db->query("SELECT CURRVAL('dimpresion_id_dimpresion_seq'::regclass) as id_dimpresion");

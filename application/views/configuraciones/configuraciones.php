@@ -58,6 +58,9 @@ if (!function_exists('cfg_opciones')) {
                             <button class="tablink" onclick="openTab(event, 'otras')"><i class="fa fa-cogs"></i>Valores por defecto</button>
                             <button class="tablink" onclick="openTab(event, 'facturacion')"><i class="fa fa-file-text-o"></i>Facturación Electrónica</button>
                             <button class="tablink" onclick="openTab(event, 'empresa')"><i class="fa fa-building-o"></i>Datos de la Empresa</button>
+                            <?php if ((int)$this->session->userdata('id_rol') === 1) : ?>
+                            <button class="tablink" onclick="openTab(event, 'respaldos')"><i class="fa fa-database"></i>Respaldos</button>
+                            <?php endif; ?>
                         </div>
 
                         <!-- novalidate: un campo inválido en una pestaña oculta impedía guardar sin mostrar nada -->
@@ -674,6 +677,35 @@ if (!function_exists('cfg_opciones')) {
                                     </div>
                                 </div>
                             </div>
+                            <?php if ((int)$this->session->userdata('id_rol') === 1) : ?>
+                            <!-- v1.27.0: respaldos de la base (libraries/Respaldo_bd.php). Solo administradores. -->
+                            <div id="respaldos" class="tab">
+                                <p class="t-config-intro"><i class="fa fa-info-circle"></i> Copias de seguridad de la base de esta empresa, guardadas en la carpeta <b>backups</b> del sistema. Se hace sola una vez al día, cuando alguien entra al sistema (o con el botón Respaldar ahora). Se guardan las de los últimos 7 días, 4 semanas y 3 meses; las más viejas se borran solas para que no pesen.</p>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="config-card">
+                                            <div class="panel-heading emp-cabecera">
+                                                <h3 class="panel-title"><i class="fa fa-database"></i>Respaldos de la base</h3>
+                                                <button type="button" class="btn btn-orange btn-sm" id="btnRespaldarAhora"><i class="fa fa-floppy-o"></i> Respaldar ahora</button>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div id="respaldoAviso" class="alert alert-danger" style="display:none"></div>
+                                                <div class="table-responsive emp-tabla">
+                                                    <table class="table table-hover">
+                                                        <thead><tr><th>Fecha</th><th class="text-right">Tamaño</th><th class="text-right"></th></tr></thead>
+                                                        <tbody id="cuerpoRespaldos">
+                                                            <tr><td colspan="3" class="emp-vacio"><i class="fa fa-spinner fa-spin"></i> Cargando…</td></tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <p class="emp-nota" id="respaldoTotal"></p>
+                                                <p class="emp-nota"><i class="fa fa-lock"></i> Un respaldo tiene todos los datos de la empresa (ventas, clientes, claves): guárdalo en un lugar seguro y no lo compartas.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
                             <div class="modal-footer t-config-footer">
                                 <button type="button" onclick="location.reload();" class="btn btn-default">Cancelar</button>
                                 <button type="submit" form="configForm" class="btn btn-primary"><i class="fa fa-check"></i> Grabar</button>

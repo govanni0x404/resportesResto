@@ -127,6 +127,17 @@ class Insumos extends CI_Controller
 			return;
 		}
 		$miData['umedida_inventario'] = $umi;
+		// v1.27.0: stock mínimo para el aviso de la Caja. Solo si viene (otras pantallas también graban insumos) y si la
+		// migración 20261121120000 ya creó la columna
+		if (array_key_exists('stock_minimo', $d)) {
+			$min = str_replace(',', '.', trim((string)$d['stock_minimo']));
+			if ($min !== '' && (!is_numeric($min) || (float)$min < 0)) {
+				echo json_encode(array('success' => false, 'status' => 'error', 'msg' => 'El stock mínimo debe ser un número mayor o igual a 0'));
+				return;
+			}
+			$this->load->helper('tenant');
+			if (get_tenant_db($this)->field_exists('stock_minimo_web', 'insumo')) $miData['stock_minimo_web'] = $min === '' ? 0 : (float)$min;
+		}
 		// v1.19.1: código de barras repetido = aviso claro (antes: error de la base "insumo_cbarra_key")
 		$this->load->helper('tenant');
 		$dup = get_tenant_db($this)->query('SELECT nombre_insumo FROM insumo WHERE trim(cbarra) = trim(?) AND id_insumo <> ? LIMIT 1',
