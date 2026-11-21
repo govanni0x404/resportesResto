@@ -84,6 +84,20 @@ for (const p of pantallas) {
 	errores = [];
 	await cmd('Page.navigate', { url: BASE + '/' + p });
 	await esperar(2500);
+	// Tablas: una columna de números marcada con un tipo que DataTables no sabe ordenar (ej. "num,") se ordena como texto
+	// (1, 10, 2...). Pasó en v1.29.2 con el decimal por defecto.
+	const malOrden = (await cmd('Runtime.evaluate', { returnByValue: true, expression: `(function () {
+		if (!window.jQuery || !jQuery.fn.dataTable) return [];
+		var ord = jQuery.fn.dataTable.ext.type.order, res = [];
+		jQuery.fn.dataTable.tables().forEach(function (t) {
+			jQuery(t).DataTable().settings()[0].aoColumns.forEach(function (c, i) {
+				var tipo = c.sType || '';
+				if (/num/.test(tipo) && !ord[tipo + '-pre'] && !ord[tipo + '-asc']) res.push('#' + (t.id || '?') + ' columna ' + (i + 1) + ' tipo "' + tipo + '" sin orden');
+			});
+		});
+		return res;
+	})()` })).result.value || [];
+	errores.push(...malOrden);
 	const ok = errores.length === 0;
 	if (!ok) fallas++;
 	console.log((ok ? '  ok    ' : '  FALLA ') + p + (ok ? '' : '\n         -> ' + [...new Set(errores)].slice(0, 3).join('\n         -> ')));

@@ -6,6 +6,7 @@ function AbrirModalAgregadosDelProducto(idProducto) {
     $('#cantidadAgregado').val("1");
     $('#valorAdicionalAgregado').val("0");
     $('#ckUsarDestinoDeImpresion').prop('checked', false);
+    pintarDestinoAgregado();
     $('#ckVigenciaAgregado').prop('checked', true);
     // v1.24.2: al abrir, de uno en uno (como siempre)
     $('#ckVariosAgregados').prop('checked', false);
@@ -710,4 +711,26 @@ $(document).on('click', '#btnCaCopiar', function () {
         })
         .always(function () { contarCopiarAg(); });
 });
+
+// v1.30.1: con "Imprimir en su propio destino" se muestra a qué impresora va a salir el agregado: el destino de impresión
+// que el producto agregado tiene en la Carta (ej. SALSA -> BARRA). Se lee de la tabla de la Carta, sin pedir nada al servidor.
+function pintarDestinoAgregado() {
+    var $i = $('#infoDestinoAgregado');
+    if (!$('#ckUsarDestinoDeImpresion').is(':checked')) { $i.hide(); return; }
+    var html;
+    if ($('#ckVariosAgregados').is(':checked')) {
+        html = 'Cada agregado sale en el destino de impresión de su producto (el que tiene en la Carta).';
+    } else {
+        var id = String($('#cboProductoAgregadoProductos').val() || '0'), fila = null;
+        if (id !== '0' && window.tablaCartaProductos) {
+            tablaCartaProductos.rows().every(function () { if (String(this.data().id_producto) === id) fila = this.data(); });
+        }
+        html = fila
+            ? 'Sale en: <b>' + escaparHtml(fila.nombre_dimpresion || 'sin destino') + '</b> (el destino de impresión de '
+                + escaparHtml(fila.nombre_producto) + ' en la Carta; para cambiarlo, edita ese producto).'
+            : 'Sale en el destino de impresión que el producto agregado tiene en la Carta.';
+    }
+    $i.html('<i class="fa fa-print"></i> ' + html).show();
+}
+$(document).on('change', '#ckUsarDestinoDeImpresion, #cboProductoAgregadoProductos, #ckVariosAgregados', pintarDestinoAgregado);
 </script>

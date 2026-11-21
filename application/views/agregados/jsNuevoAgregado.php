@@ -56,6 +56,8 @@
 											IMPRIMIR EN SU PROPIO DESTINO
 										</label>
 									</div>
+									<!-- v1.30.1 -->
+									<small class="text-muted" style="display:block; margin-top:4px"><i class="fa fa-print"></i> Sale en el destino de impresión que el producto agregado tiene en la Carta (para cambiarlo, edita ese producto).</small>
 								</div></div>
 							</div>
 

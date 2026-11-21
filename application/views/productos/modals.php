@@ -893,6 +893,8 @@
                                         </label>
                                     </div>
                                 </div>
+                                <!-- v1.30.1: a qué impresora sale (el destino del producto agregado, el que tiene en la Carta) -->
+                                <div id="infoDestinoAgregado" class="destino-agregado-info" style="display:none; margin:6px 0 4px; padding:7px 10px; border-radius:8px; background:var(--t-primario-suave, #E8F5EC); color:var(--t-texto, #1F2937); font-size:12px; line-height:1.4"></div>
                             </div>
 
                             <div class="col-md-6">

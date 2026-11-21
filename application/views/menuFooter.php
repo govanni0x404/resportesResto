@@ -137,8 +137,10 @@
   // v1.29.2: todas las tablas en español por defecto. 5 pantallas no traían su traducción y salían en inglés
   // ("Show 10 entries", "Search", "No data available in table", "Previous / Next"). La que trae la suya la sigue usando.
   if (window.jQuery && $.fn.dataTable) {
+    // v1.30.1: sin decimal/thousands aquí: puestos por defecto, la columna queda como tipo "num," sin forma de ordenarse y
+    // DataTables la ordenaba como texto (1, 10, 2, 3...: ID de Mesas, código de barras de la Carta)
     $.extend(true, $.fn.dataTable.defaults, { language: {
-      decimal: ',', thousands: '.', processing: 'Procesando…', search: 'Buscar:', lengthMenu: 'Mostrar _MENU_ registros',
+      processing: 'Procesando…', search: 'Buscar:', lengthMenu: 'Mostrar _MENU_ registros',
       info: 'Mostrando _START_ a _END_ de _TOTAL_ registros', infoEmpty: 'Sin registros', infoFiltered: '(filtrado de _MAX_ registros)',
       loadingRecords: 'Cargando…', zeroRecords: 'No se encontraron resultados', emptyTable: 'No hay datos para mostrar',
       paginate: { first: 'Primera', previous: 'Anterior', next: 'Siguiente', last: 'Última' },
