@@ -184,6 +184,16 @@ class Comanda_local
 	{
 		$s = preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)$s);
 		// 16-11-2026: el símbolo de grado sale como "ø" en este agente ("Nø 80068")
-		return str_replace(array('N°', 'Nº', '°', 'º'), array('N.', 'N.', 'o', 'o'), $s);
+		$s = str_replace(array('N°', 'Nº', '°', 'º'), array('N.', 'N.', 'o', 'o'), $s);
+		// v1.25.1: el agente manda los caracteres que no son ASCII en otra página de códigos y salen como basura (el "·" de
+		// las promos de sushi, la "Ú" de "MENÚ" en la anulación). En la comanda todo va sin acentos ni símbolos.
+		$s = strtr($s, array(
+			'á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n',
+			'Á' => 'A', 'É' => 'E', 'Í' => 'I', 'Ó' => 'O', 'Ú' => 'U', 'Ü' => 'U', 'Ñ' => 'N',
+			'à' => 'a', 'è' => 'e', 'ì' => 'i', 'ò' => 'o', 'ù' => 'u', 'À' => 'A', 'È' => 'E', 'Ì' => 'I', 'Ò' => 'O', 'Ù' => 'U',
+			'·' => '-', '•' => '-', '–' => '-', '—' => '-', '¿' => '', '¡' => '', '“' => '"', '”' => '"', '‘' => "'", '’' => "'",
+			'´' => "'", '€' => 'EUR', '…' => '...', "\xC2\xA0" => ' ',
+		));
+		return preg_replace('/[^\x20-\x7E]/u', '', $s);
 	}
 }

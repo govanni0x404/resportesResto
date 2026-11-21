@@ -4665,8 +4665,10 @@ class Mcaja extends CI_Model
 	{
 		$nombres = array();
 		$conHijos = array();
+		$sushi = array();   // v1.25.1: promo de sushi (menú sin id_menu) => su producto
 		foreach ($lineas as $l) {
 			if (!empty($l['es_menu'])) $nombres[$l['id_detalle']] = $l['nombre'];
+			if (!empty($l['es_menu']) && empty($l['id_menu'])) $sushi[$l['id_detalle']] = (int)$l['id_producto'];
 			if (!empty($l['menu_de'])) $conHijos[$l['menu_de']] = true;
 		}
 		$res = array();
@@ -4674,8 +4676,15 @@ class Mcaja extends CI_Model
 			if (!empty($l['es_menu']) && isset($conHijos[$l['id_detalle']])) continue;
 			if (!empty($l['menu_de']) && isset($l['imprimir']) && !$l['imprimir']) continue;   // producto del menú que no se imprime
 			$nota = $l['nota'];
-			if (!empty($l['menu_de']) && isset($nombres[$l['menu_de']])) $nota = 'Menú: ' . $nombres[$l['menu_de']] . ($nota !== '' ? ' · ' . $nota : '');
-			$res[] = array('id_producto' => $l['id_producto'], 'nombre' => $l['nombre'], 'cantidad' => $l['cantidad'],
+			$idProd = $l['id_producto'];
+			if (!empty($l['menu_de']) && isset($sushi[$l['menu_de']])) {
+				// v1.25.1: un grupo de una promo de sushi sale igual que en la comanda al enviarla: su nota ya dice la promo
+				// ("Relleno - Base X (PROMO)") y va a la impresora de la promo
+				$idProd = $sushi[$l['menu_de']];
+			} elseif (!empty($l['menu_de']) && isset($nombres[$l['menu_de']])) {
+				$nota = 'Menú: ' . $nombres[$l['menu_de']] . ($nota !== '' ? ' · ' . $nota : '');
+			}
+			$res[] = array('id_producto' => $idProd, 'nombre' => $l['nombre'], 'cantidad' => $l['cantidad'],
 				'nota' => $nota, 'agregados' => $l['agregado'] !== '' ? array($l['agregado']) : array());
 		}
 		return $res;
