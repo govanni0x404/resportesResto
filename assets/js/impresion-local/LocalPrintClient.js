@@ -5,7 +5,8 @@
   'use strict';
 
   var runtimeConfig = global.LOCAL_PRINT_CONFIG || {};
-  var DEFAULT_BASE_URL = 'http://localhost:5050';
+  // v1.25.3: 127.0.0.1 y no "localhost" (en Windows "localhost" a veces esperaba 5 s probando IPv6 antes de conectar)
+  var DEFAULT_BASE_URL = 'http://127.0.0.1:5050';
   var DEFAULT_API_KEY = '';   // resportesResto: la clave la entrega el servidor (RESTO_IMPRESION_LOCAL_CLAVE), no va en el código
   var pingCache = {
     ts: 0,

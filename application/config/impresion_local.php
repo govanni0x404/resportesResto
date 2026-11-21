@@ -14,8 +14,13 @@ defined('BASEPATH') or exit('No direct script access allowed');
 |   RESTO_IMPRESION_LOCAL_CLAVE "usuario:clave" del agente (Basic)
 | en el .env.php o en la configuración del servidor (SetEnv de Apache / fastcgi_param de Nginx).
 */
-defined('RESTO_IMPRESION_LOCAL_URL_DEFECTO') OR define('RESTO_IMPRESION_LOCAL_URL_DEFECTO', 'http://localhost:5050');
+// v1.25.3: 127.0.0.1 y no "localhost". En Windows "localhost" a veces intenta primero por IPv6 (::1), donde el agente no
+// escucha, y espera 5 segundos antes de usar 127.0.0.1: algunas impresiones tardaban ~7 s en vez de ~2 s (medido el
+// 21-11-2026: con 127.0.0.1 el agente recibe el trabajo en menos de 0,1 s, siempre).
+defined('RESTO_IMPRESION_LOCAL_URL_DEFECTO') OR define('RESTO_IMPRESION_LOCAL_URL_DEFECTO', 'http://127.0.0.1:5050');
 defined('RESTO_IMPRESION_LOCAL_CLAVE_DEFECTO') OR define('RESTO_IMPRESION_LOCAL_CLAVE_DEFECTO', 'admin:12345');   // la del agente impresionWeb.exe
 
 $config['impresion_local_url'] = rtrim((string)(_resto_env_raw('RESTO_IMPRESION_LOCAL_URL', '') ?: RESTO_IMPRESION_LOCAL_URL_DEFECTO), '/');
+// Aunque la variable diga "localhost", se usa 127.0.0.1 (ver arriba)
+$config['impresion_local_url'] = preg_replace('#^(https?://)localhost(?=[:/]|$)#i', '${1}127.0.0.1', $config['impresion_local_url']);
 $config['impresion_local_clave'] = (string)(_resto_env_raw('RESTO_IMPRESION_LOCAL_CLAVE', '') ?: RESTO_IMPRESION_LOCAL_CLAVE_DEFECTO);

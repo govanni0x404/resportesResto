@@ -65,33 +65,64 @@
 		}).finally(function () { if (reloj) clearTimeout(reloj); });
 	}
 
-	/** Impresoras de este equipo según el agente (null = el agente no tiene la lista). Se recuerda 30 segundos: una venta o
-	 *  mesa imprime varias comandas seguidas (una por destino) y no hace falta preguntar cada vez. */
-	var listaCache = null;
-	function listaImpresoras() {
-		var ahora = Date.now();
-		if (listaCache && ahora - listaCache.t < 30000) return listaCache.promesa;
+	/**
+	 * Impresoras de este equipo según el agente (null = el agente no tiene la lista).
+	 * v1.25.3: pedirle la lista al agente puede tardar varios segundos (Windows revisa cada impresora). Antes se recordaba
+	 * solo 30 segundos: lo que se imprimía después de una pausa (anular, reenviar a cocina) esperaba la lista y tardaba
+	 * ~7 s en vez de ~2 s. Ahora se recuerda y se renueva sola en segundo plano cada 5 minutos, cuando no se está
+	 * imprimiendo (el agente atiende de a una petición). Al imprimir se usa la recordada; si en ella no está la impresora,
+	 * se vuelve a pedir una vez (forzar = true). ultimaLista = cuánto tardó y si vino recordada (para ?medir=1).
+	 */
+	var listaCache = null, imprimiendo = 0, ultimaLista = { ms: 0, recordada: false };
+	var RENOVAR_LISTA = 5 * 60 * 1000;
+	function pedirLista() {
+		var t0 = Date.now();
 		var p = llamar('impresoras', {}, 8000).then(function (r) {
+			ultimaLista = { ms: Date.now() - t0, recordada: false };
 			return r && Array.isArray(r.impresoras) ? r.impresoras : (Array.isArray(r) ? r : null);
 		}, function (e) {
 			if (e.tipo === 'agente' && e.status === 404) return null;   // agente sin lista de impresoras
 			throw e;
 		});
-		listaCache = { t: ahora, promesa: p };
-		p.catch(function () { listaCache = null; });   // un error no se recuerda
+		listaCache = { t: Date.now(), promesa: p };
+		p.catch(function () { if (listaCache && listaCache.promesa === p) listaCache = null; });   // un error no se recuerda
 		return p;
+	}
+	function listaImpresoras(forzar) {
+		if (!forzar && listaCache) {
+			ultimaLista = { ms: 0, recordada: true };
+			return listaCache.promesa;
+		}
+		return pedirLista();
+	}
+	// Renovación en segundo plano (solo si ya se pidió alguna vez y no hay nada imprimiéndose)
+	setInterval(function () {
+		if (!listaCache || imprimiendo > 0 || Date.now() - listaCache.t < RENOVAR_LISTA) return;
+		var anterior = listaCache;
+		pedirLista().catch(function () { listaCache = anterior; });   // si falla, se sigue con la que había
+	}, 60000);
+	/** Pide la lista ahora (al abrir la Caja), para que la primera impresión no la espere. */
+	function precargar() {
+		if (!listaCache) pedirLista().catch(function () {});
 	}
 
 	/** Conexión de PrinterJob para el destino: impresora de Windows de este equipo o IP y puerto */
 	function conexion(destino) {
 		var ruta = String(destino.ruta_windows || '').trim(), ip = String(destino.ip || '').trim(), puerto = parseInt(destino.puerto, 10) || 0;
 		var buscado = nombreImpresora(ruta).toLowerCase(), completa = ruta.replace(/\//g, '\\').toLowerCase();
+		var buscar = function (lista) {
+			return (lista || []).filter(function (i) {
+				var n = String((i && i.nombre) || '').toLowerCase();
+				return n !== '' && (n === buscado || n === completa || nombreImpresora(n) === buscado);
+			})[0];
+		};
 		return listaImpresoras().then(function (lista) {
+			// v1.25.3: la lista recordada no tiene la impresora (se conectó después): se vuelve a pedir una vez
+			if (lista && buscado && !buscar(lista) && ultimaLista.recordada) return listaImpresoras(true);
+			return lista;
+		}).then(function (lista) {
 			if (lista && buscado) {
-				var hallada = lista.filter(function (i) {
-					var n = String((i && i.nombre) || '').toLowerCase();
-					return n !== '' && (n === buscado || n === completa || nombreImpresora(n) === buscado);
-				})[0];
+				var hallada = buscar(lista);
 				if (hallada) {
 					return { job: { tipo_conexion: hallada.tipo_conexion || 'usb', dispositivo: hallada.nombre, ip: hallada.ip, puerto: hallada.puerto },
 						impresora: hallada.nombre, nombre: hallada.nombre };
@@ -121,6 +152,8 @@
 	function imprimir(destino, operaciones, opciones) {
 		opciones = opciones || {};
 		if (sinImpresion(destino)) return Promise.resolve({ impresora: (destino.nombre || 'destino') + ' (sin impresión)', sin_impresion: true });
+		imprimiendo++;
+		var fin = function () { imprimiendo = Math.max(0, imprimiendo - 1); };
 		return conexion(destino).then(function (con) {
 			var raster = opciones.raster_max_width || (String(con.nombre).toLowerCase().indexOf('pos80') >= 0 || anchoMm(con.nombre) === 58 ? 384 : 576);
 			var trabajo = Object.assign({ raster_max_width: raster, operaciones: operaciones }, con.job);
@@ -130,7 +163,7 @@
 				}
 				return { impresora: con.impresora, nombre: con.nombre };
 			});
-		});
+		}).then(function (r) { fin(); return r; }, function (e) { fin(); throw e; });
 	}
 
 	/** Mensaje para la persona (HTML escapado) */
@@ -143,5 +176,6 @@
 		return 'No se pudo imprimir: ' + esc(e && e.message ? e.message : e);
 	}
 
-	global.ImpresionLocal = { imprimir: imprimir, sinImpresion: sinImpresion, conexion: conexion, mensaje: mensaje, nombreImpresora: nombreImpresora, esIp: esIp, anchoMm: anchoMm, url: urlAgente };
+	global.ImpresionLocal = { imprimir: imprimir, sinImpresion: sinImpresion, conexion: conexion, mensaje: mensaje, nombreImpresora: nombreImpresora, esIp: esIp, anchoMm: anchoMm, url: urlAgente,
+		precargar: precargar, ultimaLista: function () { return ultimaLista; } };
 })(window);

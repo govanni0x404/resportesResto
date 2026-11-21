@@ -3,9 +3,9 @@
     window.LOCAL_PRINT_CONFIG = Object.assign({}, window.LOCAL_PRINT_CONFIG || {},
         <?php echo json_encode(array('baseUrl' => $impresion_local['url'] ?? 'http://localhost:5050', 'apiKey' => $impresion_local['clave'] ?? ''), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
 </script>
-<script src="<?php echo base_url() ?>assets/js/impresion-local/LocalPrintClient.js?v=1"></script>
+<script src="<?php echo base_url() ?>assets/js/impresion-local/LocalPrintClient.js?v=2"></script>
 <script src="<?php echo base_url() ?>assets/js/impresion-local/printerJob.js?v=1"></script>
-<script src="<?php echo base_url() ?>assets/js/impresion-local/impresionLocal.js?v=2"></script>
+<script src="<?php echo base_url() ?>assets/js/impresion-local/impresionLocal.js?v=3"></script>
 <script>
     var base_url = "<?php echo base_url(); ?>";
 

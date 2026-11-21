@@ -129,8 +129,11 @@
 			var s = function (n) { return ((n || 0) / 1000).toFixed(1) + ' s'; };
 			var que = /ticket\//.test(urlPagina) ? 'Boleta' : (/comanda\?/.test(urlPagina) ? 'Comanda' : 'Precuenta');
 			var total = (t.pagina || 0) + (t.dibujo || 0) + (t.subida || 0) + (t.impresora || 0);
+			// v1.25.3: dentro de "Impresora", cuánto se esperó la lista de impresoras del agente (0 si estaba recordada)
+			var ul = window.ImpresionLocal && ImpresionLocal.ultimaLista ? ImpresionLocal.ultimaLista() : null;
 			toastr.info('Página ' + s(t.pagina) + ' · Dibujo ' + s(t.dibujo) + ' · Subida ' + s(t.subida)
-				+ ' · Esperó turno ' + s(t.espera) + ' · Impresora ' + s(t.impresora) + ' · Total ' + s(total),
+				+ ' · Esperó turno ' + s(t.espera) + ' · Impresora ' + s(t.impresora)
+				+ (ul ? ' (lista de impresoras ' + (ul.recordada ? 'recordada' : s(ul.ms)) + ')' : '') + ' · Total ' + s(total),
 				'Tiempos: ' + que + ' (' + ((destino && destino.nombre) || '') + ')', { timeOut: 0, extendedTimeOut: 0, closeButton: true });
 			if (window.console) console.log('Tiempos impresión', que, t);
 		}
@@ -903,6 +906,8 @@
 				aplicarModoCaja();
 				var primeraVez = !catalogo;
 				catalogo = r;
+				// v1.25.3: la lista de impresoras del agente se pide al abrir la Caja (la primera impresión no la espera)
+				if (primeraVez && impresionLocalActiva() && window.ImpresionLocal && ImpresionLocal.precargar) ImpresionLocal.precargar();
 				prepararDelivery();   // 18-11-2026: pestaña Delivery, sectores y repartidores
 				if (primeraVez) {
 					var $d = $('#cboDocumento').empty();
@@ -3093,8 +3098,10 @@
 			enviando = true;
 			actualizarResumenPago();
 			var terminar = function () { enviando = false; actualizarResumenPago(); };
+			var t0Venta = performance.now();
 			enviarConAutorizacion(function (aut) {
 				venta.autorizacion = aut;
+				t0Venta = performance.now();
 				return $.ajax({ url: base + 'vender', type: 'POST', contentType: 'application/json', data: JSON.stringify(venta), dataType: 'json' })
 					.fail(function (x) {
 						// 19-11-2026 (auditoría): "Este cobro ya se registró" = la venta SÍ quedó guardada (se cortó la respuesta y se
@@ -3109,6 +3116,12 @@
 					});
 			}, function (r) {
 				terminar();
+				// v1.25.3: con ?medir=1, cuánto tardó el cobro y, dentro de él, la boleta electrónica (Cloud Apps)
+				if (MEDIR_IMPRESION) {
+					var seg = function (n) { return ((n || 0) / 1000).toFixed(1) + ' s'; };
+					toastr.info('Cobro ' + seg(performance.now() - t0Venta) + (r && r.dte && r.dte.ms != null ? ' · Boleta electrónica (Cloud Apps) ' + seg(r.dte.ms) : ' · Sin boleta electrónica'),
+						'Tiempos: venta', { timeOut: 0, extendedTimeOut: 0, closeButton: true });
+				}
 				ventaRegistrada(r, ctx);
 			}, function () {
 				terminar();

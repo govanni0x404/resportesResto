@@ -124,6 +124,11 @@ class Configuraciones extends CI_Controller {
             'imprimir_cierre_caja_impresora_termica',
             'requiere_cliente_descuento',
             'admin_anulacion_eliminacion',
+            'admin_anular_venta_web',          // v1.25.3: clave de administrador por tipo de anulación (migración 20261121100000)
+            'admin_devolucion_web',
+            'admin_anular_espera_web',
+            'admin_anular_producto_mesa_web',
+            'admin_anular_pedido_mesa_web',
             'requerir_usuario_admin_credito',
             'requerir_usuario_admin_cortesia',
             'requerir_usuario_admin_descuento',

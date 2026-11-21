@@ -192,7 +192,24 @@ if (!function_exists('cfg_opciones')) {
                                                 <label><input type="checkbox" name="borrar_clave_admin" value="1"> Quitar la clave guardada</label>
                                                 <?php endif; ?>
                                                 <label><input type="checkbox" id="chkMostrarClaveAdmin" onchange="toggleMostrarClaveAdmin()" name="mostrar_clave_admin" value="1" <?php echo ($config['mostrar_clave_admin'] ?? false) ? 'checked' : ''; ?>> Mostrar clave</label>
+                                                <?php if (array_key_exists('admin_anular_venta_web', $config)) : ?>
+                                                <!-- v1.25.3 (pedido del usuario): la clave se pide por separado en cada tipo de anulación. Marcada: se
+                                                     pide a todos, también a un administrador (migración 20261121100000) -->
+                                                <div style="margin-top:10px"><b>Pedir la clave para anular:</b></div>
+                                                <?php foreach (array(
+                                                    'admin_anular_producto_mesa_web' => 'Un producto de la mesa',
+                                                    'admin_anular_pedido_mesa_web' => 'El pedido completo de la mesa',
+                                                    'admin_anular_espera_web' => 'Una venta en espera',
+                                                    'admin_anular_venta_web' => 'Una venta (boleta, factura o comprobante)',
+                                                    'admin_devolucion_web' => 'Una devolución (nota de crédito)',
+                                                ) as $campoClave => $textoClave) : ?>
+                                                <label style="margin-left:12px"><input type="checkbox" name="<?php echo $campoClave; ?>" value="1" <?php echo in_array($config[$campoClave] ?? false, array(true, 't', 1, '1'), true) ? 'checked' : ''; ?>> <?php echo $textoClave; ?></label>
+                                                <?php endforeach; ?>
+                                                <p class="help-block">Marcada: se pide la clave a todos, también a un administrador. Desmarcada: se anula sin clave.</p>
+                                                <label><input type="checkbox" name="admin_anulacion_eliminacion" value="1" <?php echo ($config['admin_anulacion_eliminacion'] ?? false) ? 'checked' : ''; ?>> Requerir clave admin para anulacion en el POS de escritorio</label>
+                                                <?php else : ?>
                                                 <label><input type="checkbox" name="admin_anulacion_eliminacion" value="1" <?php echo ($config['admin_anulacion_eliminacion'] ?? false) ? 'checked' : ''; ?>> Requerir clave admin para anulacion</label>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
 

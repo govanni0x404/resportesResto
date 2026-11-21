@@ -13,9 +13,9 @@ $__flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON
 	window.LOCAL_PRINT_CONFIG = Object.assign({}, window.LOCAL_PRINT_CONFIG || {},
 		<?php echo json_encode(array('baseUrl' => $impresion_local['url'], 'apiKey' => $impresion_local['clave']), $__flags); ?>);
 </script>
-<script src="<?php echo base_url() ?>assets/js/impresion-local/LocalPrintClient.js?v=1"></script>
+<script src="<?php echo base_url() ?>assets/js/impresion-local/LocalPrintClient.js?v=2"></script>
 <script src="<?php echo base_url() ?>assets/js/impresion-local/printerJob.js?v=1"></script>
-<script src="<?php echo base_url() ?>assets/js/impresion-local/impresionLocal.js?v=2"></script>
+<script src="<?php echo base_url() ?>assets/js/impresion-local/impresionLocal.js?v=3"></script>
 <script>
 	(function () {
 		var USUARIO = <?php echo json_encode($usuario, $__flags); ?>, EMPRESA = <?php echo json_encode($empresa, $__flags); ?>;

@@ -99,8 +99,15 @@ class Mdte extends CI_Model
 	 */
 	public function emitir($db, $idVenta, $cfg = null)
 	{
+		$t0 = microtime(true);
 		try {
-			return $this->emitirVenta($db, $idVenta, $cfg);
+			$r = $this->emitirVenta($db, $idVenta, $cfg);
+			// v1.25.3: cuánto tardó el proveedor (la boleta no se imprime hasta tener el timbre). Va en la respuesta (la Caja
+			// con ?medir=1 lo muestra) y, si pasa de 3 segundos, queda en el log (en producción solo se guardan errores)
+			$ms = (int)round((microtime(true) - $t0) * 1000);
+			if (is_array($r)) $r['ms'] = $ms;
+			if ($ms > 3000) log_message('error', 'Caja web DTE venta ' . (int)$idVenta . ': el proveedor tardó ' . round($ms / 1000, 1) . ' s');
+			return $r;
 		} catch (Throwable $e) {
 			log_message('error', 'Caja web DTE venta ' . (int)$idVenta . ': ' . $e->getMessage() . ' en ' . basename($e->getFile()) . ':' . $e->getLine());
 			try { $this->registrarFalla($db, $idVenta, $e->getMessage()); } catch (Throwable $e2) {}

@@ -490,9 +490,33 @@ class Mcaja extends CI_Model
 	 * $aut = {id_usuario, clave}; id_usuario 0 = clave de administración de Configuraciones.
 	 * Lanza 403 con autorizacion=true para que la pantalla pida la clave.
 	 */
-	private function exigirAutorizacion($db, $motivo, $idUsuario, $idRol, $aut)
+	/**
+	 * v1.25.3: clave de administrador para una anulación, según su casilla en Configuraciones > Requerir clave de
+	 * administrador para anular ($tipo = admin_anular_venta, admin_devolucion, admin_anular_espera,
+	 * admin_anular_producto_mesa, admin_anular_pedido_mesa). Marcada: la pide a todos, también a un administrador.
+	 * Desmarcada: no la pide. Sin la columna (migración sin correr), como antes: venta, devolución y espera según la
+	 * casilla general (admin_anulacion); en la mesa, solo a quien no es administrador.
+	 */
+	private function claveAnulacion($db, $tipo, $motivo, $idUsuario, $idRol, $aut)
 	{
-		if ($this->esAdmin($db, $idUsuario, $idRol)) return;
+		$c = $this->configuracion($db);
+		$v = array_key_exists($tipo, $c) ? $c[$tipo] : null;
+		if ($v === null) {
+			if ($tipo === 'admin_anular_producto_mesa' || $tipo === 'admin_anular_pedido_mesa') {
+				$this->exigirAutorizacion($db, $motivo, $idUsuario, $idRol, $aut);
+			} elseif ($c['admin_anulacion']) {
+				$this->exigirAutorizacion($db, $motivo, $idUsuario, $idRol, $aut, true);
+			}
+			return;
+		}
+		if ($v) $this->exigirAutorizacion($db, $motivo, $idUsuario, $idRol, $aut, true);
+	}
+
+	private function exigirAutorizacion($db, $motivo, $idUsuario, $idRol, $aut, $siempre = false)
+	{
+		// v1.25.3: $siempre = true pide la clave también a un administrador (Configuraciones > Requerir clave admin para
+		// anulación: el usuario la marcó y al anular una mesa con un usuario administrador no la pedía)
+		if (!$siempre && $this->esAdmin($db, $idUsuario, $idRol)) return;
 		$clave = is_array($aut) && isset($aut['clave']) ? (string)$aut['clave'] : '';
 		if ($clave === '') throw new AutorizacionRequerida($motivo);
 		// 18-11-2026: límite de intentos (5 incorrectas en 10 min → 5 min de bloqueo), por cajero y empresa
@@ -1012,7 +1036,7 @@ class Mcaja extends CI_Model
 	public function autorizarAnulacionEspera($idUsuario, $idRol, $aut)
 	{
 		$db = $this->conexion();
-		if ($this->configuracion($db)['admin_anulacion']) $this->exigirAutorizacion($db, 'anular una venta en espera', $idUsuario, $idRol, $aut);
+		$this->claveAnulacion($db, 'admin_anular_espera', 'anular una venta en espera', $idUsuario, $idRol, $aut);
 	}
 
 	/**
@@ -2398,7 +2422,7 @@ class Mcaja extends CI_Model
 		$motivo = trim((string)$motivo);
 		if ($motivo === '') throw new Exception('Indica el motivo de la anulación', 400);
 		$config = $this->configuracion($db);
-		if ($config['admin_anulacion']) $this->exigirAutorizacion($db, 'anular venta', $idUsuario, $idRol, $autorizacion);
+		$this->claveAnulacion($db, 'admin_anular_venta', 'anular venta', $idUsuario, $idRol, $autorizacion);
 		$cols = $this->columnas($db, array('venta', 'ctacte_cliente', 'consolidado_ventas', 'anulacion_ticket'));
 
 		// Si el documento electrónico se está enviando al SII (venta recién hecha o reenvío), no se anula: podría
@@ -2909,9 +2933,7 @@ class Mcaja extends CI_Model
 		}
 		if (!$pedidas) throw new Exception('Indica qué productos se devuelven', 400);
 
-		if ($config['admin_anulacion']) {
-			$this->exigirAutorizacion($db, 'devolución', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
-		}
+		$this->claveAnulacion($db, 'admin_devolucion', 'devolución', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
 
 		$ahora = date('Y-m-d H:i:s');
 		$dia = date('Y-m-d');
@@ -4585,7 +4607,7 @@ class Mcaja extends CI_Model
 		$idDetalle = (int)($p['id_detalle'] ?? 0);
 		$motivo = trim((string)(isset($p['motivo']) ? $p['motivo'] : ''));
 		if ($motivo === '') throw new Exception('Indica el motivo de la anulación', 400);
-		$this->exigirAutorizacion($db, 'anular un producto de la mesa', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
+		$this->claveAnulacion($db, 'admin_anular_producto_mesa', 'anular un producto de la mesa', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
 		$db->trans_begin();
 		try {
 			$this->q($db, 'SET LOCAL TIME ZONE ' . $db->escape(self::TZ));
@@ -4629,7 +4651,7 @@ class Mcaja extends CI_Model
 		$idMesa = (int)($p['id_mesa'] ?? 0);
 		$motivo = mb_substr(trim((string)(isset($p['motivo']) ? $p['motivo'] : '')), 0, 100);
 		if ($motivo === '') throw new Exception('Indica el motivo de la anulación', 400);
-		$this->exigirAutorizacion($db, 'anular el pedido de la mesa', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
+		$this->claveAnulacion($db, 'admin_anular_pedido_mesa', 'anular el pedido de la mesa', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
 		$db->trans_begin();
 		try {
 			$this->q($db, 'SET LOCAL TIME ZONE ' . $db->escape(self::TZ));
@@ -4765,6 +4787,12 @@ class Mcaja extends CI_Model
 			'requerir_usuario_admin_cortesia' => 'admin_cortesia',
 			'requerir_usuario_admin_credito' => 'admin_credito',
 			'admin_anulacion_eliminacion' => 'admin_anulacion',
+			// v1.25.3: clave de administrador por tipo de anulación (migración 20261121100000)
+			'admin_anular_venta_web' => 'admin_anular_venta',
+			'admin_devolucion_web' => 'admin_devolucion',
+			'admin_anular_espera_web' => 'admin_anular_espera',
+			'admin_anular_producto_mesa_web' => 'admin_anular_producto_mesa',
+			'admin_anular_pedido_mesa_web' => 'admin_anular_pedido_mesa',
 			'imprimir_cierre_caja_impresora_termica' => 'imprimir_cierre_termica',
 			'habilitar_facturacion_electronica' => 'facturacion_electronica',
 			'imprimir_copia_cedible' => 'copia_cedible',
@@ -4821,6 +4849,10 @@ class Mcaja extends CI_Model
 		if ($config['id_impuesto_iva'] > 0 && isset($this->columnas($db, array('impuesto'))['impuesto']['valor'])) {
 			$iva = $this->q($db, 'SELECT valor FROM impuesto WHERE id_impuesto = ?', array($config['id_impuesto_iva']))->row();
 			if ($iva && (float)$iva->valor > 0) $config['por_iva'] = (float)$iva->valor;
+		}
+		// v1.25.3: sin la migración 20261121100000, null = como antes (ver claveAnulacion)
+		foreach (array('admin_anular_venta', 'admin_devolucion', 'admin_anular_espera', 'admin_anular_producto_mesa', 'admin_anular_pedido_mesa') as $k) {
+			if (!in_array(array_search($k, $flags), $existentes, true)) $config[$k] = null;
 		}
 		$config['copias_documento'] = max(1, min(5, (int)$config['copias_documento']));
 		// v1.23.0: sin "Usar propina" no hay propina en ninguna parte (venta directa, mesas, precuenta)
