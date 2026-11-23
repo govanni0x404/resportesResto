@@ -455,6 +455,23 @@ class Productos extends CI_Controller
 		echo json_encode($this->Mproductos->obtenerAgregadosDelProducto($idProducto));
 	}
 
+	/**
+	 * v1.30.3: máximo de agregados a elegir en la Caja para un producto (0 = sin límite).
+	 * Sin "maximo" en el POST lo lee; con "maximo" lo graba.
+	 */
+	public function maxAgregados()
+	{
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+			echo json_encode(array('ok' => false, 'error' => 'Sesión expirada'));
+			return;
+		}
+		$id = (int)$this->input->post('id_producto');
+		$max = $this->input->post('maximo');
+		$r = $max === null ? $this->Mproductos->maxAgregados($id) : $this->Mproductos->grabarMaxAgregados($id, (int)$max);
+		if (isset($r['error'])) http_response_code(400);
+		echo json_encode($r);
+	}
+
 	/** v1.30.2: casilla "Sale en su destino" de un agregado ya ingresado (tabla de agregados del producto). */
 	public function destinoPropioAgregado()
 	{

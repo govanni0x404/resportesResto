@@ -377,6 +377,8 @@
 
         /* Enlace "¿Olvidaste tu contraseña?" */
         .login-opts { text-align: center; margin-top: 18px; }
+        .lg-recordar { display: flex; align-items: center; gap: 10px; margin: -4px 0 18px; font-size: 14px; font-weight: 500; color: #4a5568; cursor: pointer; user-select: none; }
+        .lg-recordar input { width: 18px; height: 18px; margin: 0; accent-color: #568c30; cursor: pointer; flex: 0 0 auto; }
         .lg-forgot { border: 0; background: none; padding: 6px 10px; border-radius: 8px; color: #3d6b20; font-size: 14px; font-weight: 600; cursor: pointer; }
         .lg-forgot:hover { text-decoration: underline; }
         .lg-forgot:focus-visible { outline: 2px solid #568c30; outline-offset: 2px; }
@@ -463,7 +465,7 @@
 ?>
     <div class="lg-layout">
     <div class="login-wrapper">
-        <?php echo form_open('Login/new_user', 'id="loginForm"', 'autocomplete="off"'); ?>
+        <?php echo form_open('Login/new_user', 'id="loginForm" autocomplete="on"'); /* v1.30.3: el navegador puede guardar el usuario y la clave */ ?>
         <div class="login-card">
             <div class="login-header">
                 <div class="login-icon">
@@ -496,6 +498,7 @@
                             class="form-control" 
                             name="username" 
                             placeholder="Ingresa tu usuario"
+                            autocomplete="username"
                             required
                         >
                         <i class="fa fa-user input-icon"></i>
@@ -512,12 +515,19 @@
                             class="form-control" 
                             name="password" 
                             placeholder="••••••••"
+                            autocomplete="current-password"
                             required
                         >
                         <i class="fa fa-key input-icon"></i>
                     </div>
                     <span class="help-text">Ingresa tu contraseña del sistema</span>
                 </div>
+
+                <!-- v1.30.3 (pedido del usuario): recordar usuario y contraseña en este equipo -->
+                <label class="lg-recordar" for="lgRecordar">
+                    <input type="checkbox" id="lgRecordar">
+                    <span>Recordar mi usuario y contraseña en este equipo</span>
+                </label>
 
                 <button type="submit" class="btn-login">
                     Iniciar Sesión
@@ -661,6 +671,49 @@
 
     <script src="<?php echo base_url() ?>assets/plugins/jQuery/jquery-1.12.4.min.js"></script>
     <script src="<?php echo base_url() ?>assets/bootstrap/js/bootstrap.min.js"></script>
+    <script>
+    /* v1.30.3: "Recordar mi usuario y contraseña". El usuario queda en este navegador (localStorage) y la contraseña la
+       guarda el administrador de contraseñas del propio navegador (Chrome/Edge: PasswordCredential; los demás ofrecen
+       "¿Guardar contraseña?" al entrar). La contraseña nunca se guarda en texto en la página. Solo se rellena: no entra solo. */
+    (function () {
+        var CLAVE = 'restoWeb.login.recordar';
+        var form = document.getElementById('loginForm');
+        var u = document.getElementById('username'), pw = document.getElementById('password'), chk = document.getElementById('lgRecordar');
+        if (!form || !u || !pw || !chk) return;
+        var leer = function () { try { return JSON.parse(localStorage.getItem(CLAVE) || 'null'); } catch (e) { return null; } };
+        var guardado = leer();
+        if (guardado && guardado.usuario) {
+            chk.checked = true;
+            if (!u.value) u.value = guardado.usuario;
+            // Contraseña desde el navegador (si el usuario la dejó guardada); sin preguntar si hay una sola
+            if (window.PasswordCredential && navigator.credentials && navigator.credentials.get) {
+                navigator.credentials.get({ password: true, mediation: 'optional' }).then(function (c) {
+                    if (!c || !c.password) return;
+                    if (!u.value || u.value === c.id) { u.value = c.id; if (!pw.value) pw.value = c.password; }
+                }).catch(function () {});
+            }
+        }
+        var enviando = false;
+        form.addEventListener('submit', function (e) {
+            if (enviando) return;
+            if (!chk.checked) {
+                try { localStorage.removeItem(CLAVE); } catch (er) {}
+                if (navigator.credentials && navigator.credentials.preventSilentAccess) navigator.credentials.preventSilentAccess().catch(function () {});
+                return;
+            }
+            try { localStorage.setItem(CLAVE, JSON.stringify({ usuario: u.value.trim() })); } catch (er) {}
+            if (!(window.PasswordCredential && navigator.credentials && navigator.credentials.store) || !u.value || !pw.value) return;
+            // Guardar en el navegador y recién entonces enviar (máximo 1,5 s de espera)
+            e.preventDefault();
+            enviando = true;
+            var listo = false, seguir = function () { if (listo) return; listo = true; form.submit(); };
+            try {
+                navigator.credentials.store(new PasswordCredential({ id: u.value.trim(), password: pw.value, name: u.value.trim() })).then(seguir, seguir);
+            } catch (er) { seguir(); }
+            setTimeout(seguir, 1500);
+        });
+    })();
+    </script>
     <script>
     /* Anuncios del fondo (11-11-2026): rotan solos; se detienen con el botón de pausa, al pasar el mouse o el foco,
        con la pestaña oculta y si el sistema pide menos movimiento. */

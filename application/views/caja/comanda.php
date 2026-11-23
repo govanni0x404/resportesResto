@@ -125,12 +125,12 @@ $titulos = array('anulacion' => array('ANULACIÓN', 'NO PREPARAR'), 'traslado' =
 		<?php foreach ($g['lineas'] as $l) : ?>
 			<div class="linea">
 				<div class="prod"><span class="cant"><?php echo $h($cant($l['cantidad'])); ?> x</span> <?php echo $h(mb_strtoupper($l['nombre'])); ?></div>
-				<?php foreach ($l['agregados'] as $a) : ?>
-					<div class="agregado">+ <?php echo $h(mb_strtoupper($a)); ?></div>
-				<?php endforeach; ?>
 				<?php if ($l['nota'] !== '') : ?>
 					<div class="mensaje">&raquo; <?php echo $h(mb_strtoupper($l['nota'])); ?></div>
 				<?php endif; ?>
+				<?php foreach ($l['agregados'] as $a) : ?>
+					<div class="agregado">+ <?php echo $h(mb_strtoupper($a)); ?></div>
+				<?php endforeach; ?>
 			</div>
 		<?php endforeach; ?>
 		<hr>

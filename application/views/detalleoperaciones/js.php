@@ -273,7 +273,6 @@
 
             },
             'language': {
-                url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
                 // traduce la linea de abajo que quedaba en ingles
                 select: {
                     rows: {
@@ -378,7 +377,6 @@
                 );
             },
             'language': {
-                url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
                 // traduce la linea de abajo que quedaba en ingles
                 select: {
                     rows: {

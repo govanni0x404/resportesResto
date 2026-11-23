@@ -22,6 +22,7 @@ if ($copia) {
 	$pruebas['stock_bajo_test.php'] = array($base, 'COPIA');   // aviso de stock bajo de la Caja (crea un insumo)
 	$pruebas['doble_comanda_test.php'] = array($base, 'COPIA');   // un producto en dos impresoras y el agregado en la suya
 	$pruebas['privilegios_test.php'] = array($base, 'COPIA');   // lo nuevo con un rol que no es gerencia (ver el archivo)
+	$pruebas['agregados_mesa_test.php'] = array($base, 'COPIA');   // v1.30.3: máximo de agregados, agregados unidos en la mesa, descuento 0
 	if (is_file(__DIR__ . '/cocina_reservas_test.php')) $pruebas['cocina_reservas_test.php'] = array($base, 'COPIA');   // pantalla de cocina y reservas (rama de prueba)
 }
 

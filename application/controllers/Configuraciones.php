@@ -206,6 +206,8 @@ class Configuraciones extends CI_Controller {
                 $update_config[$f] = intval($post[$f]);
             }
         }
+        // v1.30.3: descuento máximo entre 0 (no se permite descuento) y 100 (sin límite)
+        if (isset($update_config['por_maximodescuento'])) $update_config['por_maximodescuento'] = max(0, min(100, $update_config['por_maximodescuento']));
         // 18-11-2026: el costo de envío no puede ser negativo
         if (isset($update_config['delivery_costo_envio'])) $update_config['delivery_costo_envio'] = max(0, $update_config['delivery_costo_envio']);
         if (isset($update_config['minutos_bloqueo_reserva_web'])) $update_config['minutos_bloqueo_reserva_web'] = max(0, min(720, $update_config['minutos_bloqueo_reserva_web']));

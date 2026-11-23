@@ -64,11 +64,19 @@ class Mcaja extends CI_Model
 		$config = $this->configuracion($db);
 		$idLprecio = (int)$idLprecio ?: $config['id_lprecio_publico'];
 
-		$tiene = $this->columnas($db, array('familia', 'producto', 'fpago', 'tdocumento', 'lprecio'));
+		$tiene = $this->columnas($db, array('familia', 'producto', 'fpago', 'tdocumento', 'lprecio', 'subfamilia'));
 
 		$q = "SELECT id_familia, nombre_familia FROM familia";
 		if (isset($tiene['familia']['vigente'])) $q .= " WHERE vigente IS NOT FALSE";
 		$familias = $this->q($db, $q . " ORDER BY nombre_familia")->result_array();
+		// v1.30.3: subfamilias, para filtrar en Favoritos y en la ventana de Productos
+		$subfamilias = array();
+		$conSub = isset($tiene['subfamilia']['id_subfamilia'], $tiene['subfamilia']['nombre_subfamilia'], $tiene['producto']['id_subfamilia']);
+		if ($conSub) {
+			foreach ($this->q($db, "SELECT id_subfamilia, nombre_subfamilia, COALESCE(id_familia, 0) AS id_familia FROM subfamilia ORDER BY nombre_subfamilia")->result() as $s) {
+				$subfamilias[] = array('id_subfamilia' => (int)$s->id_subfamilia, 'nombre' => (string)$s->nombre_subfamilia, 'id_familia' => (int)$s->id_familia);
+			}
+		}
 
 		// Precio de la lista elegida; si el producto no está en la lista, su precio_bruto
 		// Productos fraccionables (permite_porcion, p. ej. pan por kilo): la caja acepta cantidad con decimales.
@@ -78,11 +86,13 @@ class Mcaja extends CI_Model
 		$colPedir = isset($tiene['producto']['pedir_cantidad_en_venta']) ? '(p.pedir_cantidad_en_venta IS TRUE)' : 'false';
 		// Favoritos marcados en la Carta (migración 20261110190000); sin la columna no hay favoritos
 		$colFavorito = isset($tiene['producto']['favorito']) ? '(p.favorito IS TRUE)' : 'false';
+		// v1.30.3: máximo de agregados a elegir (migración 20261123100000); 0 = sin límite
+		$colMaxAg = isset($tiene['producto']['max_agregados_web']) ? 'COALESCE(p.max_agregados_web, 0)' : '0';
 		$usaUm = isset($tiene['producto']['id_umedida']) && isset($tieneUm['umedida']['nombre_umedida']);
 		$q = "SELECT p.id_producto, p.nombre_producto, COALESCE(p.cbarra, '') AS cbarra,
-				COALESCE(p.id_familia, 0) AS id_familia,
+				COALESCE(p.id_familia, 0) AS id_familia, " . ($conSub ? 'COALESCE(p.id_subfamilia, 0)' : '0') . " AS id_subfamilia,
 				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, " . $this->sqlExento($db, 'p') . " AS exento, " . $this->sqlIla($db, 'p') . " AS ila,
-				$colFraccion AS fraccion, $colPedir AS pedir_cantidad, $colFavorito AS favorito, " . ($usaUm ? "COALESCE(um.nombre_umedida, '')" : "''") . " AS umedida
+				$colFraccion AS fraccion, $colPedir AS pedir_cantidad, $colFavorito AS favorito, $colMaxAg AS max_agregados, " . ($usaUm ? "COALESCE(um.nombre_umedida, '')" : "''") . " AS umedida
 			FROM producto p
 			LEFT JOIN detalle_lprecio dl ON dl.id_producto = p.id_producto AND dl.id_lprecio = ?
 			" . ($usaUm ? "LEFT JOIN umedida um ON um.id_umedida = p.id_umedida" : "") . "
@@ -102,12 +112,14 @@ class Mcaja extends CI_Model
 				'nombre' => $p->nombre_producto,
 				'cbarra' => trim($p->cbarra),
 				'id_familia' => (int)$p->id_familia,
+				'id_subfamilia' => (int)$p->id_subfamilia,   // v1.30.3
 				'precio' => (int)round((float)$p->precio),
 				'exento' => $p->exento === 't' || $p->exento === true,
 				'ila' => ($p->exento === 't' || $p->exento === true) ? 0 : (float)$p->ila,   // v1.20.0
 				'fraccion' => $p->fraccion === 't' || $p->fraccion === true,
 				'pedir_cantidad' => $p->pedir_cantidad === 't' || $p->pedir_cantidad === true,
 				'favorito' => $p->favorito === 't' || $p->favorito === true,
+				'max_agregados' => max(0, (int)$p->max_agregados),   // v1.30.3
 				'umedida' => $this->abreviaturaUmedida($p->umedida),
 				'imagen' => isset($imagenes[(int)$p->id_producto]) ? $imagenes[(int)$p->id_producto] : null,
 			);
@@ -201,6 +213,7 @@ class Mcaja extends CI_Model
 			'id_lprecio' => $idLprecio,
 			'comunas' => $comunas,
 			'familias' => $familias,
+			'subfamilias' => $subfamilias,   // v1.30.3
 			'productos' => $productos,
 			'formas_pago' => $formasPago,
 			'documentos' => $documentos,
@@ -1037,6 +1050,12 @@ class Mcaja extends CI_Model
 			'sin_impresion' => $r->sin_impresion === true || $r->sin_impresion === 't');
 	}
 
+	/** v1.30.3: aviso del tope de descuento (0 = no se permite). */
+	public static function textoTopeDescuento($por)
+	{
+		return $por <= 0 ? 'No se permiten descuentos (Configuraciones > Descuento máximo está en 0)' : 'El descuento máximo permitido es ' . $por . '%';
+	}
+
 	/** Opciones de Configuraciones que usa la Caja (ver configuracion()). */
 	public function opciones()
 	{
@@ -1856,8 +1875,8 @@ class Mcaja extends CI_Model
 		$porDescuento = $subtotal > 0 ? round($descuento * 100 / $subtotal, 2) : 0;
 		// v1.24.1: tope en pesos = el máximo % del subtotal redondeado como la Caja (antes un 10% exacto de $1.005 = $101
 		// daba 10,05% y se rechazaba)
-		if ($config['por_maximo_descuento'] > 0 && $descuento > (int)round($subtotal * $config['por_maximo_descuento'] / 100)) {
-			throw new Exception('El descuento máximo permitido es ' . $config['por_maximo_descuento'] . '%', 400);
+		if ($config['por_maximo_descuento'] < 100 && $descuento > (int)round($subtotal * $config['por_maximo_descuento'] / 100)) {
+			throw new Exception(self::textoTopeDescuento($config['por_maximo_descuento']), 400);
 		}
 		// El trigger f_adddescuentoproducto divide por el subtotal de la venta
 		if ($subtotal <= 0) throw new Exception('La venta debe tener un monto mayor a cero', 400);
@@ -2219,10 +2238,11 @@ class Mcaja extends CI_Model
 		$selFraccion = isset($cols['producto']['permite_porcion']) ? '(p.permite_porcion IS TRUE)' : 'false';
 		// 14-11-2026: sin la columna, como el catálogo: un producto sin precio no se vende
 		$selSinPrecio = isset($cols['producto']['permitir_venta_sin_precio']) ? '(p.permitir_venta_sin_precio IS TRUE)' : 'false';
+		$selMaxAg = isset($cols['producto']['max_agregados_web']) ? 'COALESCE(p.max_agregados_web, 0)' : '0';   // v1.30.3
 		$productos = array();
 		$q = "SELECT p.id_producto, p.nombre_producto, COALESCE(p.id_receta, 0) AS id_receta, COALESCE(p.id_bodega, 0) AS id_bodega,
 				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, $selVss AS segun_stock, $selFraccion AS fraccion,
-				$selSinPrecio AS sin_precio_ok,
+				$selSinPrecio AS sin_precio_ok, $selMaxAg AS max_agregados,
 				" . $this->sqlExento($db, 'p') . " AS exento
 			FROM producto p
 			LEFT JOIN detalle_lprecio dl ON dl.id_producto = p.id_producto AND dl.id_lprecio = ?
@@ -2389,6 +2409,10 @@ class Mcaja extends CI_Model
 			// v1.24.3: sin límite de agregados por producto (pedido del usuario; antes Configuraciones > Máximo de agregados).
 			// Solo un tope técnico alto para que una venta armada a mano no traiga cientos.
 			if (count($elegidos) > 100) throw new Exception('Demasiados agregados en ' . $prod->nombre_producto, 400);
+			// v1.30.3 (pedido del usuario): máximo de agregados de ese producto (Carta > Agregados); 0 = sin límite
+			if ((int)$prod->max_agregados > 0 && count($elegidos) > (int)$prod->max_agregados) {
+				throw new Exception($prod->nombre_producto . ' permite elegir hasta ' . (int)$prod->max_agregados . ' agregado' . ((int)$prod->max_agregados === 1 ? '' : 's'), 400);
+			}
 
 			// 19-11-2026: la nota del producto llega hasta 150 caracteres, para que en la misma fila quepa el mensaje de su
 			// primer agregado (detalle_cotizacion.mensaje es de 250; antes se cortaba a 200 y en el reenvío se perdía)
@@ -2426,10 +2450,12 @@ class Mcaja extends CI_Model
 			$bodega = !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : (int)$prod->id_bodega;
 			$recetas = array(array((int)$prod->id_receta, $bodega));
 			if ($primero) $recetas[] = array((int)$primero->id_receta, $bodega);
+			$idxProd = count($lineas);
 			$lineas[] = array(
 				'id_producto' => $id, 'nombre' => $prod->nombre_producto, 'cantidad' => $cantidad,
 				'unitario' => $unitario, 'bruto' => $bruto, 'id_agregado' => $primero ? (int)$primero->id_producto : 0,
 				'nota' => $notaFila, 'segun_stock' => $segunStock, 'recetas' => $recetas, 'exento' => $exento,
+				'con_hijos' => (bool)$elegidos,   // v1.30.3: en la mesa, sus otros agregados apuntan a esta fila
 			);
 			foreach ($elegidos as $a) {
 				$bruto = (int)round((int)$a->valor * $cantidad);
@@ -2440,6 +2466,9 @@ class Mcaja extends CI_Model
 					'segun_stock' => $segunStock, 'recetas' => array(array((int)$a->id_receta, !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : (int)$a->id_bodega)),
 					'exento' => $exento,
 					'ila_de' => $id,   // v1.20.0: el agregado lleva el ILA de su producto, igual que el exento
+					// v1.30.3: en la mesa queda unido a su producto (id_detalle_menu_web, sin marcarlo como menú): se ve debajo
+					// del producto y se anula, mueve y cobra junto con él (antes quedaba como un producto aparte)
+					'del_menu' => $idxProd,
 				);
 			}
 		}
@@ -3661,8 +3690,8 @@ class Mcaja extends CI_Model
 			}
 			$bruto = $subtotal + $costoEnvio;
 			if ($descuento > $bruto) throw new Exception('El descuento no puede superar el subtotal', 400);
-			if ($config['por_maximo_descuento'] > 0 && $descuento > (int)round($bruto * $config['por_maximo_descuento'] / 100)) {   // v1.24.1
-				throw new Exception('El descuento máximo permitido es ' . $config['por_maximo_descuento'] . '%', 400);
+			if ($config['por_maximo_descuento'] < 100 && $descuento > (int)round($bruto * $config['por_maximo_descuento'] / 100)) {   // v1.24.1
+				throw new Exception(self::textoTopeDescuento($config['por_maximo_descuento']), 400);
 			}
 			if ($config['descuento_cliente'] && (!$idCliente || $idCliente === $config['id_cliente_publico'])) {
 				throw new Exception('Para hacer un descuento debes elegir el cliente de la venta (Configuraciones > Descuentos > Requerir cliente)', 400);
@@ -3905,6 +3934,23 @@ class Mcaja extends CI_Model
 			WHERE id_mesa = ?', array((int)$idMesa));
 	}
 
+	/**
+	 * v1.30.3: separa el mensaje guardado en la fila de un producto con agregado. armarLineas() guarda en la misma fila el
+	 * mensaje del producto y el de su primer agregado: "sin cebolla | PALTA: sin sal" (o solo "PALTA: sin sal").
+	 * Devuelve [mensaje del producto, mensaje del agregado]. Sin agregado, o si no calza, todo es del producto.
+	 */
+	public static function partirNotaFila($nota, $agregado)
+	{
+		$nota = (string)$nota;
+		$agregado = trim((string)$agregado);
+		if ($agregado === '' || $nota === '') return array($nota, '');
+		$pref = $agregado . ': ';
+		$i = mb_strrpos($nota, ' | ' . $pref);
+		if ($i !== false) return array(mb_substr($nota, 0, $i), mb_substr($nota, $i + 3 + mb_strlen($pref)));
+		if (mb_strpos($nota, $pref) === 0) return array('', mb_substr($nota, mb_strlen($pref)));
+		return array($nota, '');
+	}
+
 	/** Líneas vigentes de un pedido, con la misma forma que armarLineas(). El stock se descuenta al cobrar (trigger de venta). */
 	private function lineasDeCotizacion($db, $idCotizacion)
 	{
@@ -3943,7 +3989,10 @@ class Mcaja extends CI_Model
 				if (!isset($vigentes[$menuDe])) $menuDe = 0;   // su menú ya no está (anulado): queda suelto
 			} elseif (!$esMenu) {
 				$ultimoMenu = 0;
+				// v1.30.3: agregado unido a su producto (segundo agregado en adelante; ver armarLineas)
+				if ((int)$r->menu_de > 0 && isset($vigentes[(int)$r->menu_de])) $menuDe = (int)$r->menu_de;
 			}
+			$notaPartida = self::partirNotaFila((string)$r->nota, (string)$r->agregado);
 			$lineas[] = array(
 				'es_menu' => $esMenu, 'es_detalle_menu' => $esDetMenu, 'id_menu' => (int)$r->id_menu, 'menu_de' => $menuDe,
 				'imprimir' => $si($r->imprimir),
@@ -3952,6 +4001,8 @@ class Mcaja extends CI_Model
 				// Monto sin redondear (el POS guarda decimales): las partes se calculan sobre él, igual en todos lados
 				'bruto_exacto' => (float)$r->total_bruto > 0 ? (float)$r->total_bruto : (float)$r->bruto_un * $cantidad,
 				'id_agregado' => (int)$r->id_agregado, 'nota' => $r->nota, 'hora' => $r->hora, 'segun_stock' => false, 'recetas' => array(),
+				// v1.30.3: la fila guarda "mensaje del producto | AGREGADO: mensaje del agregado"; separados, cada uno se muestra en su lugar
+				'nota_producto' => $notaPartida[0], 'nota_agregado' => $notaPartida[1],
 				'exento' => $r->exento === 't' || $r->exento === true,
 				'ila' => ($r->exento === 't' || $r->exento === true) ? 0 : (float)$r->ila,   // v1.20.0
 			);
@@ -4360,7 +4411,7 @@ class Mcaja extends CI_Model
 					'desde_android' => !empty($p['desde_app']),
 					'id_garzon' => (int)$idUsuario, 'nombre_computador' => !empty($p['desde_app']) ? 'APP MOVIL' : self::COMPUTADOR,
 					'id_dimpresion' => isset($destinos[$l['id_producto']]) ? $destinos[$l['id_producto']]['id'] : 0,
-				), !empty($l['es_menu']) ? 'id_detalle_cotizacion' : null);
+				), !empty($l['es_menu']) || !empty($l['con_hijos']) ? 'id_detalle_cotizacion' : null);
 			}
 			// 19-11-2026: mensaje general de la mesa escrito ANTES del primer envío (mesa sin pedido). Con el pedido ya abierto el
 			// mensaje se cambia solo con guardarMensajeMesa: aquí no se pisa (auditoría: otra caja o el POS de escritorio pudo
@@ -4491,7 +4542,7 @@ class Mcaja extends CI_Model
 		$cantMenu = array();
 		foreach ($lineas as $l) {
 			if (!empty($l['menu_de'])) $hijos[$l['menu_de']][] = $l;
-			if (!empty($l['es_menu'])) $cantMenu[$l['id_detalle']] = $l['cantidad'];
+			$cantMenu[$l['id_detalle']] = $l['cantidad'];   // v1.30.3: también un producto con sus agregados unidos
 		}
 		if (!$hijos) return $sel;
 		$elegidos = array();
@@ -4500,12 +4551,12 @@ class Mcaja extends CI_Model
 		foreach ($sel as $l) {
 			if (!empty($l['menu_de'])) {
 				if (!isset($elegidos[$l['menu_de']])) {
-					throw new Exception($l['nombre'] . ' es parte de un menú: elige el menú completo', 400);
+					throw new Exception($l['nombre'] . (empty($l['es_detalle_menu']) ? ' es un agregado: elige el producto al que va' : ' es parte de un menú: elige el menú completo'), 400);
 				}
 				continue;   // va junto a su menú, más abajo
 			}
 			$res[] = $l;
-			if (empty($l['es_menu']) || empty($hijos[$l['id_detalle']])) continue;
+			if (empty($hijos[$l['id_detalle']])) continue;
 			$total = isset($cantMenu[$l['id_detalle']]) ? $cantMenu[$l['id_detalle']] : $l['cantidad'];
 			$f = $total > 0 ? $l['cantidad'] / $total : 1;
 			foreach ($hijos[$l['id_detalle']] as $h) {
@@ -4864,7 +4915,14 @@ class Mcaja extends CI_Model
 			if (!empty($l['menu_de'])) $conHijos[$l['menu_de']] = true;
 		}
 		$res = array();
+		$pos = array();   // v1.30.3: id_detalle => posición en $res (para sumarle sus agregados unidos)
+		$agTexto = function ($nombre, $nota) { return $nombre . ($nota !== '' ? ' » ' . $nota : ''); };
 		foreach ($lineas as $l) {
+			// v1.30.3: un agregado unido a su producto sale como agregado del producto (antes, como un producto más)
+			if (!empty($l['menu_de']) && empty($l['es_detalle_menu']) && isset($pos[$l['menu_de']])) {
+				$res[$pos[$l['menu_de']]]['agregados'][] = $agTexto($l['nombre'], (string)$l['nota']);
+				continue;
+			}
 			if (!empty($l['es_menu']) && isset($conHijos[$l['id_detalle']])) continue;
 			if (!empty($l['menu_de']) && isset($l['imprimir']) && !$l['imprimir']) continue;   // producto del menú que no se imprime
 			$nota = $l['nota'];
@@ -4876,8 +4934,11 @@ class Mcaja extends CI_Model
 			} elseif (!empty($l['menu_de']) && isset($nombres[$l['menu_de']])) {
 				$nota = 'Menú: ' . $nombres[$l['menu_de']] . ($nota !== '' ? ' · ' . $nota : '');
 			}
+			// v1.30.3: el mensaje del agregado va junto al agregado y el del producto, junto al producto
+			if ($l['agregado'] !== '' && isset($l['nota_producto']) && empty($l['menu_de'])) $nota = $l['nota_producto'];
+			$pos[$l['id_detalle']] = count($res);
 			$res[] = array('id_producto' => $idProd, 'nombre' => $l['nombre'], 'cantidad' => $l['cantidad'],
-				'nota' => $nota, 'agregados' => $l['agregado'] !== '' ? array($l['agregado']) : array());
+				'nota' => $nota, 'agregados' => $l['agregado'] !== '' ? array($agTexto($l['agregado'], isset($l['nota_agregado']) ? $l['nota_agregado'] : '')) : array());
 		}
 		return $res;
 	}
@@ -5004,6 +5065,12 @@ class Mcaja extends CI_Model
 				$config[$textos[$c]] = trim((string)(isset($fila[$c]) ? $fila[$c] : ''));
 			}
 		}
+		// v1.30.3 (pedido del usuario): Descuento máximo 0 = no se permite descuento (antes 0 era "sin límite"). Sin valor
+		// guardado (o sin la columna) = sin límite, que se maneja como 100%.
+		if (!isset($fila) || !isset($fila['por_maximodescuento']) || $fila['por_maximodescuento'] === null || $config['por_maximo_descuento'] > 100) {
+			$config['por_maximo_descuento'] = 100;
+		}
+		$config['por_maximo_descuento'] = max(0, $config['por_maximo_descuento']);
 		// IVA: el porcentaje del impuesto elegido en Configuraciones (Impuestos IVA); si no hay, el de configuracion.por_iva
 		if ($config['id_impuesto_iva'] > 0 && isset($this->columnas($db, array('impuesto'))['impuesto']['valor'])) {
 			$iva = $this->q($db, 'SELECT valor FROM impuesto WHERE id_impuesto = ?', array($config['id_impuesto_iva']))->row();

@@ -4,6 +4,7 @@
 		var cliente = null;      // {id_cliente, nombre_cliente, rut}
 		var tipoDesc = 'monto';
 		var familiaActiva = 0;
+		var subfamiliaActiva = 0;   // v1.30.3: subfamilia elegida en la ventana de Productos (0 = todas)
 		var pagos = [];          // [{id_fpago, monto}]
 		var resumen = null;
 		var enviando = false;

@@ -504,6 +504,7 @@
 		border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; background: #fff; transition: border-color .12s, background .12s; }
 	#listaAgregados .ag-item:hover { border-color: var(--t-primario-borde, #BBE3C9); }
 	#listaAgregados .ag-item.marcado { border-color: var(--t-primario, #15803D); background: var(--t-primario-suave, #E8F5EC); }
+	#listaAgregados .ag-item.bloqueado { opacity: .45; }   /* v1.30.3: máximo de agregados alcanzado */
 	#listaAgregados .ag-item .checkbox { margin: 0; }
 	#listaAgregados .ag-item .checkbox label { display: flex; align-items: baseline; gap: 6px; width: 100%; font-weight: 600; line-height: 1.25; cursor: pointer; }
 	#listaAgregados .ag-item .valor { margin-left: auto; white-space: nowrap; font-size: 13px; }
@@ -758,6 +759,10 @@
 	/* Botón solo ícono junto al buscador: Productos (F2). Favoritos (★) va en el selector del panel lateral */
 	.caja-busqueda .btn-icono { flex: 0 0 44px; width: 44px; padding: 0; font-size: 18px; }
 	.caja-familias .caja-familia-fav i { color: #E3A008; margin-right: 2px; }
+	/* v1.30.3: subfamilias de la familia elegida, debajo de las familias */
+	.caja-subfamilias { padding-top: 0; margin-top: -4px; }
+	.caja-subfamilias .btn { font-size: 11px; padding: 4px 12px; }
+	.caja-subfamilias .caja-sub-titulo { align-self: center; font-size: 12px; color: var(--t-texto-suave, #7A6A5E); margin-right: 2px; }
 	.caja-familias .caja-familia-fav.btn-success i { color: #fff; }
 
 	/* Ingresos / Retiros, Créditos y Cierre se abren desde el panel Opciones: arriba solo se ven mientras están abiertas.
@@ -826,7 +831,9 @@
 	.fav-recargar:focus-visible { outline: 2px solid #F5B301; outline-offset: 2px; }
 	.fav-recargar.is-cargando .fa-refresh { -webkit-animation: favGirar .8s linear infinite; animation: favGirar .8s linear infinite; }
 	@keyframes favGirar { to { transform: rotate(360deg); } }
-	.fav-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+	.fav-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+	#favSubfamilia { flex-basis: 100%; order: 3; }   /* v1.30.3: la subfamilia en su propia fila */
+	#favSubfamilia[hidden], .caja-subfamilias[hidden] { display: none; }
 	.fav-toolbar[hidden] { display: none; }
 	.caja-venta-lateral .fav-familia { flex: 1; min-width: 0; height: 38px; padding: 0 10px; font-size: 13px; font-weight: 500; cursor: pointer; }
 	.fav-vista { display: inline-flex; flex-shrink: 0; border: 1px solid var(--t-borde, #EADFD2); border-radius: 8px; background: #fff; overflow: hidden; }
@@ -1537,6 +1544,8 @@
 									</div>
 									<div id="favToolbar" class="fav-toolbar" hidden>
 										<select id="favFamilia" class="form-control fav-familia" aria-label="Filtrar favoritos por familia"><option value="0">Todas las familias</option></select>
+										<!-- v1.30.3: subfamilia (solo si los favoritos tienen) -->
+										<select id="favSubfamilia" class="form-control fav-familia" aria-label="Filtrar favoritos por subfamilia" hidden><option value="0">Todas las subfamilias</option></select>
 										<div class="fav-vista" role="group" aria-label="Ver favoritos como">
 											<button type="button" class="fav-vista-btn" data-fav-vista="iconos" title="Ver como íconos"><i class="fa fa-th-large" aria-hidden="true"></i></button>
 											<button type="button" class="fav-vista-btn" data-fav-vista="lista" title="Ver como lista"><i class="fa fa-list" aria-hidden="true"></i></button>
@@ -1782,6 +1791,7 @@
 					<input type="text" id="filtroProductos" class="form-control" placeholder="Filtrar en la familia elegida" autocomplete="off">
 				</div>
 				<div class="caja-familias" id="familias"></div>
+				<div class="caja-familias caja-subfamilias" id="subfamilias" hidden></div>
 				<div class="caja-productos" id="productos"></div>
 			</div>
 			<div class="modal-footer modal-productos-pie">

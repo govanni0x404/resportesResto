@@ -414,8 +414,11 @@
 			}
 			var t = totales();
 			// v1.24.1: tope en pesos = el máximo % del subtotal redondeado (igual que el descuento en %): un 10% exacto pasa
-			if (catalogo.config.por_maximo_descuento > 0 && t.subtotal > 0 && t.descuento > Math.round(t.subtotal * catalogo.config.por_maximo_descuento / 100)) {
-				swal('Descuento', 'El descuento máximo permitido es ' + catalogo.config.por_maximo_descuento + '%', 'warning');
+			// v1.30.3: 0 = no se permite descuento; sin límite = 100
+			var tope = Number(catalogo.config.por_maximo_descuento);
+			if (!isFinite(tope)) tope = 100;
+			if (tope < 100 && t.subtotal > 0 && t.descuento > Math.round(t.subtotal * tope / 100)) {
+				swal('Descuento', tope <= 0 ? 'No se permiten descuentos (Configuraciones > Descuento máximo está en 0)' : 'El descuento máximo permitido es ' + tope + '%', 'warning');
 				return false;
 			}
 			// Configuraciones > Descuentos > Requerir cliente

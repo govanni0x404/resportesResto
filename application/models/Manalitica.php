@@ -103,6 +103,7 @@ class Manalitica extends CI_Model
 			'garzones' => $this->numeros($garzones, array('nombre')),
 			'formas_pago' => $this->numeros($formas, array('nombre')),
 			'mesas' => $this->mesas($cte, $binds, $valida),
+			'por_mesa' => $this->porMesa($cte, $binds, $valida),   // v1.30.3
 		);
 	}
 
@@ -158,6 +159,35 @@ class Manalitica extends CI_Model
 	}
 
 	/**
+	 * v1.30.3 (pedido del usuario): venta de cada mesa con su recinto, para el gráfico y el detalle por recinto y mesa.
+	 * Solo ventas de mesa (no la venta directa). Nombre de la mesa: el del plano, si tiene; si no, el de su tipo (Mesa D1).
+	 */
+	private function porMesa($cte, $binds, $valida)
+	{
+		$m = $this->columnasDe('mesa');
+		if (!isset($m['id_mesa'])) return array();
+		$this->load->model('Mtipomesa');
+		$pl = $this->columnasDe('mesa_plano');
+		$joinPl = isset($pl['nombre']) ? 'LEFT JOIN mesa_plano pl ON pl.id_mesa = m.id_mesa' : '';
+		$nombre = $this->Mtipomesa->nombreSql('m', 'tmw');
+		$nombre = isset($pl['nombre']) ? "COALESCE(NULLIF(trim(pl.nombre), ''), $nombre)" : $nombre;
+		$rec = isset($m['id_recinto']) && $this->columnasDe('recinto') ? true : false;
+		$filas = $this->q("$cte SELECT b.id_mesa, " . ($rec ? 'COALESCE(r.id_recinto, 0)' : '0') . " AS id_recinto,
+				" . ($rec ? "COALESCE(r.nombre_recinto, 'Sin recinto')" : "'Sin recinto'::text") . " AS recinto,
+				COALESCE($nombre, 'Mesa ' || b.id_mesa) AS mesa,
+				round(sum(b.total)) AS venta, count(*) AS docs, round(sum(b.propina)) AS propina,
+				count(DISTINCT NULLIF(b.folio_cotizacion, 0)) AS pedidos
+			FROM base b
+			LEFT JOIN mesa m ON m.id_mesa = b.id_mesa
+			" . $this->Mtipomesa->joinSql('m', 'tmw') . "
+			$joinPl
+			" . ($rec ? 'LEFT JOIN recinto r ON r.id_recinto = m.id_recinto' : '') . "
+			WHERE $valida AND b.es_mesa
+			GROUP BY 1, 2, 3, 4 ORDER BY venta DESC", $binds);
+		return $this->numeros($filas, array('recinto', 'mesa'));
+	}
+
+	/**
 	 * CTE con una fila por venta del período y sus marcas (anulada, cortesía, NC, mesa, garzón).
 	 * Sin "?" fuera de los parámetros: CodeIgniter los toma como marcadores.
 	 */
@@ -188,7 +218,8 @@ class Manalitica extends CI_Model
 					(v.id_tdocumento $enNc) AS es_nc,
 					$mesa AS es_mesa,
 					$garzon AS id_garzon,
-					$folioCot AS folio_cotizacion
+					$folioCot AS folio_cotizacion,
+					COALESCE(v.id_mesa, 0) AS id_mesa
 				FROM venta v
 				JOIN caja ca ON ca.id_caja = v.id_caja
 				LEFT JOIN pagos p ON p.id_venta = v.id_venta

@@ -133,7 +133,6 @@ function ListadoDeUsuarios() {
             }
         ],
         'language': {
-            url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
             select: {
                 rows: {
                     _: " (Seleccionadas %d filas)",

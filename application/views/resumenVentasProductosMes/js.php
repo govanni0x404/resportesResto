@@ -174,7 +174,6 @@ function resumenVentasProductos(desde, hasta) {
             $(api.column(5).footer()).html('<strong>$' + totalFormatted + '</strong>');
         },
         'language': {
-            url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"
         },
         "buttons": [
             {
@@ -286,7 +285,6 @@ function detalleProductoMes(id_producto, mes) {
             $(api.column(5).footer()).html('<strong>$' + totalFormatted + '</strong>');
         },
         'language': {
-            url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"
         },
         "buttons": [
             {

@@ -28,6 +28,7 @@ function AbrirModalAgregadosDelProducto(idProducto) {
     
     // Cargar agregados existentes del producto
     ObtenerAgregadosDelProducto(idProductoActual);
+    cargarMaxAgregados(idProductoActual);   // v1.30.3
     
     $('#ModalAgregadosDelProducto').modal({
         backdrop: 'static',
@@ -753,4 +754,33 @@ $(document).on('change', '.ck-destino-propio', function () {
         })
         .always(function () { $c.prop('disabled', false); });
 });
+
+// v1.30.3 (pedido del usuario): máximo de agregados que se pueden elegir en la Caja para este producto (vacío o 0 = sin límite)
+function textoMaxAgregados(r) {
+    var n = r.agregados || 0;
+    return (r.maximo > 0 ? 'En la Caja se eligen hasta ' + r.maximo : 'Sin límite: se pueden elegir todos') + ' · el producto tiene ' + n + (n === 1 ? ' agregado activo' : ' agregados activos');
+}
+function cargarMaxAgregados(idProducto) {
+    $('#txtMaxAgregados').val('');
+    $('#lblMaxAgregados').text('');
+    $.post(base_url + 'index.php/Productos/maxAgregados', { id_producto: idProducto }, null, 'json').done(function (r) {
+        if (!r || !r.ok) return;
+        $('#txtMaxAgregados').val(r.maximo > 0 ? r.maximo : '');
+        $('#lblMaxAgregados').text(textoMaxAgregados(r));
+    });
+}
+$(document).on('click', '#btnGrabarMaxAgregados', function () {
+    var id = $('#txtID').val(), v = $.trim($('#txtMaxAgregados').val());
+    if (!id || id === '0') return;
+    var max = v === '' ? 0 : parseInt(v, 10);
+    if (!(max >= 0) || max > 100) { showAppAlert('warning', 'El máximo debe ser un número entre 0 y 100 (vacío o 0 = sin límite)'); return; }
+    var $b = $(this).prop('disabled', true);
+    $.post(base_url + 'index.php/Productos/maxAgregados', { id_producto: id, maximo: max }, null, 'json').done(function (r) {
+        showAppAlert('success', max > 0 ? 'Listo: en la Caja se podrán elegir hasta ' + max + ' agregados de este producto' : 'Listo: este producto no tiene límite de agregados');
+        cargarMaxAgregados(id);
+    }).fail(function (x) {
+        showAppAlert('error', (x.responseJSON && x.responseJSON.error) || 'No se pudo guardar el máximo');
+    }).always(function () { $b.prop('disabled', false); });
+});
+$(document).on('keydown', '#txtMaxAgregados', function (e) { if (e.which === 13) { e.preventDefault(); $('#btnGrabarMaxAgregados').click(); } });
 </script>

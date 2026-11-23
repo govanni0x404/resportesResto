@@ -433,6 +433,38 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 		return $query;
 	}
 
+	/** v1.30.3: ¿ya corrió la migración 20261123100000 (producto.max_agregados_web)? */
+	private function hayMaxAgregados($db)
+	{
+		$r = $db->query("SELECT count(*) AS n FROM information_schema.columns
+			WHERE table_schema = 'public' AND table_name = 'producto' AND column_name = 'max_agregados_web'")->row();
+		return $r && (int)$r->n > 0;
+	}
+
+	/** v1.30.3: máximo de agregados a elegir en la Caja (0 = sin límite) y cuántos agregados vigentes tiene. */
+	public function maxAgregados($idProducto)
+	{
+		$this->load->helper('tenant'); $db = get_tenant_db($this);
+		$n = $db->query('SELECT count(*) AS n FROM agregados WHERE id_producto_maestro = ? AND eliminado IS NOT TRUE AND vigente IS NOT FALSE', array((int)$idProducto))->row();
+		$max = 0;
+		$hay = $this->hayMaxAgregados($db);
+		if ($hay) {
+			$r = $db->query('SELECT COALESCE(max_agregados_web, 0) AS m FROM producto WHERE id_producto = ?', array((int)$idProducto))->row();
+			$max = $r ? (int)$r->m : 0;
+		}
+		return array('ok' => true, 'maximo' => max(0, $max), 'agregados' => $n ? (int)$n->n : 0, 'disponible' => $hay);
+	}
+
+	public function grabarMaxAgregados($idProducto, $max)
+	{
+		$this->load->helper('tenant'); $db = get_tenant_db($this);
+		if (!$this->hayMaxAgregados($db)) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
+		$max = max(0, min(100, (int)$max));
+		$db->query('UPDATE producto SET max_agregados_web = ? WHERE id_producto = ?', array($max, (int)$idProducto));
+		if ($db->affected_rows() < 1) return array('error' => 'El producto ya no existe. Recarga la página.');
+		return array('ok' => true, 'maximo' => $max);
+	}
+
 	/** v1.30.2: marca o desmarca "Imprimir en su propio destino" en un agregado que ya existe (de ese producto). */
 	public function destinoPropioAgregado($idAgregado, $idMaestro, $activo)
 	{

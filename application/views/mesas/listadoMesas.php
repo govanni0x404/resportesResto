@@ -118,7 +118,6 @@ function ListadoDeMesas() {
         // v1.23.1: fila de la mesa de venta directa con otro color
         "createdRow": function(row, data) { if (data.venta_directa) $(row).addClass('mesa-vd'); },
         'language': {
-            url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
             select: {
                 rows: {
                     _: " (Seleccionadas %d filas)",

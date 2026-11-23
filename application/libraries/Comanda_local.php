@@ -93,8 +93,8 @@ class Comanda_local
 			$cant = rtrim(rtrim(number_format((float)$l['cantidad'], 3, ',', ''), '0'), ',');
 			// 19-11-2026: productos grandes, agregados y nota en texto normal (como la comanda de la página), sin negrita
 			$this->grande($cant . ' x ' . mb_strtoupper($l['nombre']), $W2);
+			if ($l['nota'] !== '') foreach ($this->lineasTexto(' >> ' . mb_strtoupper($l['nota']), $W) as $f) $this->texto($f);   // v1.30.3: junto al producto
 			foreach ($l['agregados'] as $a) foreach ($this->lineasTexto('   + ' . $a, $W) as $f) $this->texto($f);
-			if ($l['nota'] !== '') foreach ($this->lineasTexto(' >> ' . mb_strtoupper($l['nota']), $W) as $f) $this->texto($f);
 			if ($i < $n - 1) $this->linea($W);
 		}
 		$this->linea($W, '=');

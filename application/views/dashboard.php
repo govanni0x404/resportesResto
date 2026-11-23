@@ -132,6 +132,17 @@
 	.dsa-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 	.dsa-card { min-width: 0; padding: 16px 18px; background: #fff; border: 1px solid var(--t-borde, #EADFD2); border-radius: 14px; box-shadow: var(--t-sombra, 0 1px 2px rgba(58, 42, 34, .05)); }
 	.dsa-span2 { grid-column: span 2; }
+	.dsa-span3 { grid-column: 1 / -1; }
+	/* v1.30.3: ventas por recinto y mesa */
+	.dsa-rm-cabecera { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; }
+	.dsa-rm-filtros { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+	.dsa-rm-filtros label { display: flex; flex-direction: column; gap: 3px; margin: 0; font-size: 11.5px; font-weight: 600; color: var(--t-texto-suave, #7A6A5E); }
+	.dsa-rm-filtros select { min-width: 190px; }
+	.dsa-mini.dsa-rm-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 12px; }
+	.dsa-rm-chart { height: 280px; }
+	.dsa-rm-detalle table tr.activa td { background: var(--t-primario-suave, #E8F5EC); font-weight: 700; }
+	.dsa-rm-detalle table tbody tr { cursor: pointer; }
+	@media (max-width: 767px) { .dsa-mini.dsa-rm-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dsa-rm-filtros, .dsa-rm-filtros label, .dsa-rm-filtros select { width: 100%; min-width: 0; } }
 	.dsa-card > header { margin: 0 0 12px; }
 	.dsa-card > header h4 { margin: 0; font-size: 15px; font-weight: 700; color: var(--t-texto, #3A2A22); font-family: inherit; }
 	.dsa-card > header small { display: block; margin-top: 2px; font-size: 12px; color: var(--dsa-tenue); }
@@ -320,6 +331,19 @@ $fechaActual = date('d-m-Y');
 							<div class="dsa-grid">
 								<section class="dsa-card"><header><h4>Mesa y venta directa</h4><small>Participación en la venta</small></header><div id="dsaMesa"></div></section>
 								<section class="dsa-card dsa-span2"><header><h4>Ventas por garzón</h4><small>Venta, propina, documentos y ticket promedio</small></header><div id="dsaGarzones"></div></section>
+								<!-- v1.30.3 (pedido del usuario): ventas por recinto y por mesa, con filtro de recinto y de mesa -->
+								<section class="dsa-card dsa-span3" id="dsaRecintosCard">
+									<header class="dsa-rm-cabecera">
+										<div><h4>Ventas por recinto y mesa</h4><small id="dsaRmSub">Solo ventas de mesa (sin la venta directa)</small></div>
+										<div class="dsa-rm-filtros">
+											<label><span>Recinto</span><select id="dsaRmRecinto" class="form-control input-sm"><option value="0">Todos los recintos</option></select></label>
+											<label><span>Mesa</span><select id="dsaRmMesa" class="form-control input-sm"><option value="0">Todas las mesas</option></select></label>
+										</div>
+									</header>
+									<div class="dsa-mini dsa-rm-kpis" id="dsaRmKpis"></div>
+									<div class="dsa-chart dsa-rm-chart"><canvas id="dsaChartRm" role="img" aria-label="Ventas por recinto y mesa"></canvas></div>
+									<div class="dsa-tabla dsa-rm-detalle" id="dsaRmTabla"></div>
+								</section>
 							</div>
 						</div>
 

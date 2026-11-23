@@ -45,7 +45,6 @@ $(document).ready(function () {
             }
         ],
         language: {
-            url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"
         }
     });
         tablaMesasSinAsignar.on('select', function (e, dt, type, indexes) {

@@ -274,8 +274,8 @@ if (!function_exists('cfg_opciones')) {
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
-                                                    <label class="cfg-titulo">Descuento máximo (%) <?php cfg_info("El porcentaje más alto de descuento que se puede dar en una venta en la Caja.\nEj: 10 = hasta un 10%."); ?></label>
-                                                    <input type="number" step="0.01" class="form-control" name="por_maximodescuento" value="<?php echo $config['por_maximodescuento'] ?? ''; ?>">
+                                                    <label class="cfg-titulo">Descuento máximo (%) <?php cfg_info("El porcentaje más alto de descuento que se puede dar en una venta en la Caja (venta directa, mesas y delivery).\nEj: 10 = hasta un 10%.\n0 = no se permite ningún descuento.\n100 = sin límite."); ?></label>
+                                                    <input type="number" step="0.01" class="form-control" name="por_maximodescuento" min="0" max="100" placeholder="100 = sin límite" value="<?php echo $config['por_maximodescuento'] ?? ''; ?>">
                                                 </div>
                                                 <div class="cfg-fila"><label><input type="checkbox" name="requiere_cliente_descuento" value="1" <?php echo ($config['requiere_cliente_descuento'] ?? false) ? 'checked' : ''; ?>> Descuento solo con cliente</label><?php cfg_info("Para hacer un descuento hay que elegir un cliente con nombre (no \"Público general\"), así queda registrado a quién se le hizo."); ?></div>
                                             </div>

@@ -168,8 +168,9 @@
 					var parte = cobroParcial && cobroParcial[l.id_detalle] && cobroParcial[l.id_detalle] < l.cantidad ? ' · se cobran ' + fmtCant(cobroParcial[l.id_detalle]) : '';
 					$t.append('<div class="caja-linea enviada' + (fuera ? ' fuera-cobro' : '') + '" data-i="' + i + '"><div class="info">'
 						+ '<div class="nombre"><i class="fa fa-lock" title="Ya enviado a la mesa"></i>' + esc(l.nombre) + '</div>'
-						+ (l.agregado ? '<div class="detalle-linea">+ ' + esc(l.agregado) + '</div>' : '')
-						+ (l.nota ? '<div class="detalle-linea"><i>' + esc(l.nota) + '</i></div>' : '')
+						// v1.30.3: el mensaje del producto junto al producto y el del agregado junto al agregado
+						+ (l.nota ? '<div class="detalle-linea"><i>» ' + esc(l.nota) + '</i></div>' : '')
+						+ (l.agregado ? '<div class="detalle-linea">+ ' + esc(l.agregado) + (l.nota_agregado ? ' <i>» ' + esc(l.nota_agregado) + '</i>' : '') + '</div>' : '')
 						+ '<div class="hora">Enviado ' + esc(l.hora) + parte + '<a href="#" class="reenviar-linea" title="Vuelve a imprimir este producto en su destino (cocina, barra…)"><i class="fa fa-repeat"></i> Volver a enviar</a></div></div>'
 						+ '<div class="precio">' + fmt(l.precio) + '</div>'
 						+ '<div class="cantidad">' + fmtCant(l.cantidad) + '</div>'
@@ -180,10 +181,12 @@
 				var fraccion = esFraccion(l.id_producto);
 				// Un producto pesado cuenta como 1 ítem, no como 0,35
 				unidades += fraccion ? 1 : l.cantidad;
-				var detalle = $.map(l.agregados, function (id) {
+				// v1.30.3: el mensaje del producto va primero, junto al producto (antes salía abajo de todo, después de los agregados)
+				var detalle = l.nota ? ['<i class="nota-producto">» ' + esc(l.nota) + '</i>'] : [];
+				detalle = detalle.concat($.map(l.agregados, function (id) {
 					var a = agregado(id), na = l.notas_agregados && l.notas_agregados[id];
 					return a ? '+ ' + esc(a.nombre) + (na ? ' <i>» ' + esc(na) + '</i>' : '') : null;
-				});
+				}));
 				// v1.24.0: lo elegido del menú
 				var menuL = l.menu && l.menu.length ? menuDe(l.id_producto) : null;
 				$.each(menuL ? l.menu : [], function (j, e) {
@@ -203,7 +206,6 @@
 						if (o) detalle.push('<span class="del-sushi">+ ' + (e.cantidad > 1 ? e.cantidad + ' ' : '') + esc(o.nombre) + (o.valor ? ' <b>+' + fmt(o.valor * e.cantidad) + '</b>' : '') + '</span>');
 					});
 				} else if (suD) detalle.push('<span class="text-danger">Falta armar ' + (suEsRol(suD) ? 'los rolls' : 'las piezas') + ' de la promo</span>');
-				if (l.nota) detalle.push('<i>' + esc(l.nota) + '</i>');
 				var nombre = tieneOpciones(l.id_producto) ? '<a href="#" class="editar" title="' + (sushiDe(l.id_producto) ? (suEsRol(sushiDe(l.id_producto)) ? 'Cambiar los rolls de la promo' : 'Cambiar las piezas de la promo') : menuDe(l.id_producto) ? 'Cambiar lo elegido del menú' : 'Cambiar agregados / indicaciones') + '">' + esc(l.nombre) + '</a>' : esc(l.nombre);
 				// Mensaje para la comanda: disponible en cualquier producto, tenga o no mensajes predefinidos
 				nombre += ' <a href="#" class="editar caja-btn-mensaje' + (l.nota ? ' con-mensaje' : '') + '" title="' + (l.nota ? 'Editar mensaje para la comanda' : 'Agregar mensaje para la comanda') + '"><i class="fa fa-commenting-o"></i></a>';
@@ -294,25 +296,39 @@
 				return;
 			}
 			var c = ajustarCantidad(carro[i].id_producto, $(this).val());
-			if (c > 0) carro[i].cantidad = c; else carro.splice(i, 1);
+			if (c > 0) carro[i].cantidad = c;
 			renderCarro();
+			if (!(c > 0)) preguntarQuitar(i);   // v1.30.3: un 0 escrito también pregunta (si dice que no, queda como estaba)
 		}).on('click', '.quitar', function () {
 			var i = $(this).closest('[data-i]').data('i');
 			if (carro[i].enviada) { anularLineaMesa(carro[i]); return; }
-			carro.splice(i, 1);
-			renderCarro();
+			preguntarQuitar(i);
 		}).on('click', '.mas, .menos', function () {
 			var i = $(this).closest('[data-i]').data('i');
 			// Pesables: +/- de a 0,1 (100 g); el resto de a una unidad
 			var paso = esFraccion(carro[i].id_producto) ? 0.1 : 1;
-			carro[i].cantidad = ajustarCantidad(carro[i].id_producto, carro[i].cantidad + ($(this).hasClass('mas') ? paso : -paso));
-			if (carro[i].cantidad <= 0) carro.splice(i, 1);
+			var nueva = ajustarCantidad(carro[i].id_producto, carro[i].cantidad + ($(this).hasClass('mas') ? paso : -paso));
+			if (nueva <= 0) { preguntarQuitar(i); return; }   // v1.30.3: el "-" en la última unidad también pregunta
+			carro[i].cantidad = nueva;
 			renderCarro();
 		}).on('click', '.editar', function (e) {
 			e.preventDefault();
 			var i = $(this).closest('[data-i]').data('i');
 			abrirOpciones(carro[i].id_producto, i);
 		});
+
+		/** v1.30.3 (pedido del usuario): quitar un producto de la venta pregunta antes (se borraban con un clic sin querer). */
+		function preguntarQuitar(i) {
+			var l = carro[i];
+			if (!l) return;
+			confirmarSistema('¿Quitar ' + l.nombre + '?', 'Se quita de la venta' + (l.cantidad !== 1 ? ' (' + fmtCant(l.cantidad) + ')' : '') + '.', 'Sí, quitar', function () {
+				var j = carro.indexOf(l);   // la venta pudo cambiar mientras estaba la pregunta abierta
+				if (j < 0) return;
+				carro.splice(j, 1);
+				renderCarro();
+				$('#buscarProducto').focus();
+			}, true);
+		}
 
 		$('#txtDescuento').on('input', renderCarro);
 

@@ -70,10 +70,11 @@ class Comanda_impresion
 			// 16-11-2026: producto en doble ancho y alto (antes solo doble alto) para leerlo de lejos en la cocina;
 			// agregados y nota en doble alto
 			$b .= $izq . $neg . $doble . $this->envolver($cant . ' x ' . mb_strtoupper($l['nombre']), (int)floor($W / 2)) . $normal;
-			foreach ($l['agregados'] as $a) $b .= $neg . $alto . $this->envolver('  + ' . mb_strtoupper($a), $W) . $normal;
+			// v1.30.3: el mensaje del producto justo debajo del producto, antes de sus agregados
 			if ($l['nota'] !== '') {
 				$b .= $inv . $neg . $alto . $this->envolver(' >> ' . mb_strtoupper($l['nota']), $W) . $normal;
 			}
+			foreach ($l['agregados'] as $a) $b .= $neg . $alto . $this->envolver('  + ' . mb_strtoupper($a), $W) . $normal;
 			$b .= $i < $n - 1 ? str_repeat('-', $W) . "\n" : "\n";
 		}
 		$b .= str_repeat('=', $W) . "\n";

@@ -319,11 +319,37 @@
 				$f.append($('<button class="btn btn-sm">').toggleClass('btn-success', familiaActiva === id).toggleClass('btn-default', familiaActiva !== id)
 					.text(f.nombre_familia).data('id', id));
 			});
+			renderSubfamilias();
+		}
+		// v1.30.3 (pedido del usuario): subfamilias de la familia elegida (las que tienen productos en venta)
+		function subfamiliasCon(productos) {
+			var usadas = {};
+			$.each(productos, function (i, p) { if (p.id_subfamilia) usadas[p.id_subfamilia] = true; });
+			return $.grep(catalogo.subfamilias || [], function (s) { return usadas[s.id_subfamilia]; });
+		}
+		function renderSubfamilias() {
+			var $s = $('#subfamilias').empty();
+			var subs = familiaActiva > 0 ? subfamiliasCon($.grep(catalogo.productos, function (p) { return p.id_familia === familiaActiva; })) : [];
+			if (!$.grep(subs, function (s) { return s.id_subfamilia === subfamiliaActiva; }).length) subfamiliaActiva = 0;
+			$s.prop('hidden', !subs.length);
+			if (!subs.length) return;
+			$s.append('<span class="caja-sub-titulo"><i class="fa fa-level-up fa-rotate-90"></i> Subfamilia:</span>');
+			$s.append($('<button class="btn btn-sm">').toggleClass('btn-success', !subfamiliaActiva).toggleClass('btn-default', !!subfamiliaActiva).text('Todas').data('id', 0));
+			$.each(subs, function (i, s) {
+				$s.append($('<button class="btn btn-sm">').toggleClass('btn-success', subfamiliaActiva === s.id_subfamilia).toggleClass('btn-default', subfamiliaActiva !== s.id_subfamilia)
+					.text(s.nombre).data('id', s.id_subfamilia));
+			});
 		}
 
 		$('#familias').on('click', 'button', function () {
 			familiaActiva = $(this).data('id');
+			subfamiliaActiva = 0;
 			renderFamilias();
+			renderProductos();
+		});
+		$('#subfamilias').on('click', 'button', function () {
+			subfamiliaActiva = $(this).data('id');
+			renderSubfamilias();
 			renderProductos();
 		});
 
@@ -333,6 +359,7 @@
 			var texto = $.trim($('#filtroProductos').val()).toLowerCase();
 			var lista = $.grep(catalogo.productos, function (p) {
 				var enFamilia = familiaActiva === -1 ? p.favorito : (!familiaActiva || p.id_familia === familiaActiva);
+				if (enFamilia && familiaActiva > 0 && subfamiliaActiva && p.id_subfamilia !== subfamiliaActiva) return false;   // v1.30.3
 				return enFamilia && (!texto || p.nombre.toLowerCase().indexOf(texto) >= 0);
 			});
 			var $c = $('#productos').empty();

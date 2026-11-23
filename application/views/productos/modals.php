@@ -21,6 +21,11 @@
 .ag-op.ya-esta { opacity: .55; cursor: default; background: var(--t-fondo-alt, #F3F4F6); }
 .ag-op.ya-esta small { font-weight: 600; color: var(--t-texto-tenue, #6B7280); }
 .ag-varios-vacio { grid-column: 1 / -1; padding: 18px; text-align: center; color: var(--t-texto-tenue, #6B7280); }
+/* v1.30.3: máximo de agregados por producto */
+.ag-maximo { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; background: var(--t-fondo-alt, #F9FAFB); }
+.ag-maximo label { display: block; margin-bottom: 6px; font-weight: 600; }
+.ag-maximo-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.ag-maximo-fila input { width: 110px; text-align: center; font-weight: 700; }
 .ag-varios-pie { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; justify-content: space-between; padding: 8px 12px; border-top: 1px solid var(--t-borde, #E5E7EB); background: var(--t-fondo-alt, #F3F4F6); }
 .ag-varios-pie span { font-weight: 700; color: var(--t-primario-osc, #116632); }
 .ag-varios-pie small { color: var(--t-texto-tenue, #6B7280); }
@@ -916,6 +921,19 @@
                             <!--<div class="col-md-4">
                                 <button type="button" class="btn btn-warning"><i class="fa fa-plus"></i>NUEVO AGREGADO</button>
                             </div>-->
+                        </fieldset>
+                        <!-- v1.30.3: máximo de agregados que se pueden elegir en la Caja para este producto -->
+                        <fieldset>
+                            <div class="col-md-12">
+                                <div class="ag-maximo" id="bloqueMaxAgregados">
+                                    <label for="txtMaxAgregados"><i class="fa fa-sliders"></i> Máximo de agregados a elegir en la Caja</label>
+                                    <div class="ag-maximo-fila">
+                                        <input type="number" id="txtMaxAgregados" class="form-control input-sm" min="0" max="100" step="1" placeholder="Sin límite" inputmode="numeric">
+                                        <button type="button" class="btn btn-success btn-sm" id="btnGrabarMaxAgregados"><i class="fa fa-check"></i> Guardar máximo</button>
+                                        <small id="lblMaxAgregados" class="text-muted"></small>
+                                    </div>
+                                </div>
+                            </div>
                         </fieldset>
                         <br>
                         <fieldset>

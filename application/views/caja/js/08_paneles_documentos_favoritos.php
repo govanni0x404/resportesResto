@@ -180,6 +180,16 @@
 			});
 			$f.html(opciones).val(String(usadas[elegida] ? elegida : 0));
 			elegida = Number($f.val()) || 0;
+			// v1.30.3 (pedido del usuario): subfamilia, con las que tienen favoritos en la familia elegida
+			var $sf = $('#favSubfamilia'), subElegida = Number($sf.val()) || 0;
+			var subs = subfamiliasCon($.grep(favs, function (p) { return !elegida || p.id_familia === elegida; }));
+			var opSub = '<option value="0">Todas las subfamilias</option>';
+			$.each(subs, function (i, s) {
+				var fam = !elegida ? nombreFamilia(s.id_familia) : '';
+				opSub += '<option value="' + s.id_subfamilia + '">' + esc(s.nombre + (fam ? ' (' + fam + ')' : '')) + '</option>';
+			});
+			$sf.html(opSub).val(String($.grep(subs, function (s) { return s.id_subfamilia === subElegida; }).length ? subElegida : 0)).prop('hidden', !subs.length);
+			subElegida = Number($sf.val()) || 0;
 			$('.fav-vista-btn').each(function () {
 				var on = $(this).data('fav-vista') === favVista;
 				$(this).toggleClass('is-activo', on).attr('aria-pressed', on ? 'true' : 'false');
@@ -189,6 +199,7 @@
 			var html = '';
 			$.each(favs, function (i, p) {
 				if (elegida && p.id_familia !== elegida) return;
+				if (subElegida && p.id_subfamilia !== subElegida) return;   // v1.30.3
 				var n = enVenta[p.id_producto] || 0;
 				var img = p.imagen
 					? '<img src="' + escAttr(p.imagen) + '" alt="" loading="lazy">'
@@ -202,7 +213,7 @@
 					+ '<span class="fav-ok" aria-hidden="true"><i class="fa fa-check"></i></span></button>';
 			});
 			$l.html('<div class="fav-grid' + (favVista === 'lista' ? ' fav-grid--lista' : '') + '">'
-				+ (html || favEstado('fa-filter', 'Sin favoritos en esta familia', '')) + '</div>');
+				+ (html || favEstado('fa-filter', subElegida ? 'Sin favoritos en esta subfamilia' : 'Sin favoritos en esta familia', '')) + '</div>');
 		}
 		$('#favLista').on('click', '.fav-item', function () {
 			var id = Number($(this).data('id'));
@@ -215,7 +226,7 @@
 		$('#favFijar').on('change', function () {
 			try { localStorage.setItem(CLAVE_FAV_FIJAR, this.checked ? '1' : '0'); } catch (e) {}
 		});
-		$('#favFamilia').on('change', renderFavoritos);
+		$('#favFamilia, #favSubfamilia').on('change', renderFavoritos);
 		$('.fav-vista-btn').on('click', function () {
 			favVista = $(this).data('fav-vista') === 'lista' ? 'lista' : 'iconos';
 			try { localStorage.setItem(CLAVE_FAV_VISTA, favVista); } catch (e) {}

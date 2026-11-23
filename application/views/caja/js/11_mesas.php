@@ -277,7 +277,8 @@
 			pintarMensajeMesa();
 			carro = $.map(d.lineas, function (l) {
 				return { enviada: true, id_detalle: l.id_detalle, id_producto: l.id_producto, nombre: l.nombre, precio: l.unitario, bruto: l.bruto, bruto_exacto: l.bruto_exacto,
-					cantidad: l.cantidad, agregados: [], agregado: l.agregado, nota: l.nota, exento: l.exento, ila: l.ila || 0, hora: l.hora,
+					// v1.30.3: nota = solo el mensaje del producto; el de su agregado va aparte (nota_agregado)
+					cantidad: l.cantidad, agregados: [], agregado: l.agregado, nota: l.nota_producto !== undefined ? l.nota_producto : l.nota, nota_agregado: l.nota_agregado || '', exento: l.exento, ila: l.ila || 0, hora: l.hora,
 					es_menu: !!l.es_menu, menu_de: l.menu_de || 0 };   // v1.24.0
 			}).concat(pendientesMesa());
 			actualizarModoMesa();
@@ -604,8 +605,10 @@
 			$('#mpResumenTexto').text(modo === 'anular' ? 'Se anula' : (modo === 'mover' ? 'Pasa a la otra mesa' : 'A cobrar ahora'));
 			$('#mpLineas').html($.map(mp.lineas, function (l, i) {
 				var fraccion = l.cantidad !== Math.round(l.cantidad);
-				var inicial = modo === 'parcial' ? (cobroParcial && cobroParcial[l.id_detalle] ? cobroParcial[l.id_detalle] : 0) : l.cantidad;
-				return '<div class="mp-linea" data-i="' + i + '"><div class="mp-nombre">' + esc(l.nombre) + (l.agregado ? '<small>+ ' + esc(l.agregado) + '</small>' : '') + (l.nota ? '<small>' + esc(l.nota) + '</small>' : '') + '</div>'
+				// v1.30.3 (pedido del usuario): anular parte con 1 (o lo que haya, si es menos de 1); se sube con + para anular más
+				var inicial = modo === 'parcial' ? (cobroParcial && cobroParcial[l.id_detalle] ? cobroParcial[l.id_detalle] : 0) : (modo === 'anular' ? Math.min(1, l.cantidad) : l.cantidad);
+				return '<div class="mp-linea" data-i="' + i + '"><div class="mp-nombre">' + esc(l.nombre) + (l.nota ? '<small>» ' + esc(l.nota) + '</small>' : '') + (l.agregado ? '<small>+ ' + esc(l.agregado) + (l.nota_agregado ? ' » ' + esc(l.nota_agregado) : '') + '</small>' : '')
+					+ $.map($.grep(carro, function (h) { return h.enviada && h.menu_de === l.id_detalle; }), function (h) { return '<small>+ ' + esc(h.nombre) + '</small>'; }).join('') + '</div>'
 					+ '<div class="input-group input-group-sm"><span class="input-group-btn"><button class="btn btn-default mp-menos" type="button"><i class="fa fa-minus"></i></button></span>'
 					+ '<input type="number" class="form-control mp-cant" min="0" max="' + l.cantidad + '" step="' + (fraccion ? '0.001' : '1') + '" value="' + inicial + '">'
 					+ '<span class="input-group-btn"><button class="btn btn-default mp-mas" type="button"><i class="fa fa-plus"></i></button></span></div>'

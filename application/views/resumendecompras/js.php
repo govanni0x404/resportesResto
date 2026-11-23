@@ -175,7 +175,6 @@ function resumenDeCompras(desde, hasta) {
             $(totalCompras.column(5).footer()).html('TOTAL: $' + totalFormatted);
         },
         'language': {
-            url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
             select: {
                 rows: {
                     _: " (Seleccionadas %d filas)",
@@ -297,7 +296,6 @@ function detalleFacturas(id_compra) {
             $(totalGeneralCompra.column(3).footer()).html('TOTAL: $' + totalFormatted);
         },
         'language': {
-            url: "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json",
             select: {
                 rows: {
                     _: " (Seleccionadas %d filas)",

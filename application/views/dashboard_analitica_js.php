@@ -91,7 +91,92 @@
 				return pct(x.monto, sumar(r.formas_pago, 'monto')) + ' · ' + x.docs + (x.docs === 1 ? ' documento' : ' documentos');
 			}, 'Sin pagos en el período');
 			control(a);
+			recintosMesas(r.por_mesa || []);
 		}
+
+		// ---------- v1.30.3: ventas por recinto y mesa ----------
+		var rmFilas = [];
+		function recintosMesas(filas) {
+			rmFilas = filas;
+			var $r = $('#dsaRmRecinto'), elegido = Number($r.val()) || 0, recs = {}, orden = [];
+			$.each(filas, function (i, f) { if (!recs[f.id_recinto]) { recs[f.id_recinto] = f.recinto; orden.push(f.id_recinto); } });
+			orden.sort(function (x, y) { return String(recs[x]).localeCompare(String(recs[y])); });
+			$r.html('<option value="0">Todos los recintos</option>' + $.map(orden, function (id) { return '<option value="' + id + '">' + h(recs[id]) + '</option>'; }).join(''))
+				.val(String(recs[elegido] !== undefined ? elegido : 0));
+			opcionesMesaRm();
+			pintarRm();
+		}
+		function opcionesMesaRm() {
+			var rec = Number($('#dsaRmRecinto').val()) || 0, $m = $('#dsaRmMesa'), elegida = Number($m.val()) || 0, hay = false;
+			var mesas = $.grep(rmFilas, function (f) { return !rec || f.id_recinto === rec; }).slice()
+				.sort(function (x, y) { return String(x.mesa).localeCompare(String(y.mesa), 'es', { numeric: true }); });
+			$m.html('<option value="0">Todas las mesas</option>' + $.map(mesas, function (f) {
+				if (f.id_mesa === elegida) hay = true;
+				return '<option value="' + f.id_mesa + '">' + h(f.mesa + (rec ? '' : ' · ' + f.recinto)) + '</option>';
+			}).join('')).val(String(hay ? elegida : 0));
+		}
+		function pintarRm() {
+			var rec = Number($('#dsaRmRecinto').val()) || 0, mesaSel = Number($('#dsaRmMesa').val()) || 0;
+			var total = sumar(rmFilas, 'venta');
+			$('#dsaRecintosCard .dsa-rm-chart, #dsaRmKpis, #dsaRecintosCard .dsa-rm-filtros').toggle(rmFilas.length > 0);
+			if (!rmFilas.length) {
+				$('#dsaRmKpis').html('');
+				grafico('dsaChartRm', { type: 'bar', data: { labels: [], datasets: [] } });
+				$('#dsaRmTabla').html(vacio('Sin ventas de mesa en el período'));
+				return;
+			}
+			// Filas a mostrar: por recinto (todos) o por mesa (un recinto, o todas si se eligió una mesa sin recinto)
+			var porRecinto = !rec && !mesaSel, filas = [];
+			if (porRecinto) {
+				var idx = {};
+				$.each(rmFilas, function (i, f) {
+					if (!idx[f.id_recinto]) { idx[f.id_recinto] = { id: f.id_recinto, nombre: f.recinto, venta: 0, docs: 0, propina: 0, pedidos: 0, mesas: 0 }; filas.push(idx[f.id_recinto]); }
+					var x = idx[f.id_recinto];
+					x.venta += f.venta; x.docs += f.docs; x.propina += f.propina; x.pedidos += f.pedidos; x.mesas++;
+				});
+			} else {
+				filas = $.map($.grep(rmFilas, function (f) { return !rec || f.id_recinto === rec || f.id_mesa === mesaSel; }), function (f) {
+					return { id: f.id_mesa, nombre: f.mesa + (rec ? '' : ' · ' + f.recinto), venta: f.venta, docs: f.docs, propina: f.propina, pedidos: f.pedidos, mesas: 1 };
+				});
+			}
+			filas.sort(function (x, y) { return y.venta - x.venta; });
+			var base = sumar(filas, 'venta');
+			var sel = mesaSel ? $.grep(rmFilas, function (f) { return f.id_mesa === mesaSel; })[0] : null;
+			var ambito = sel ? { venta: sel.venta, docs: sel.docs, propina: sel.propina, pedidos: sel.pedidos }
+				: { venta: base, docs: sumar(filas, 'docs'), propina: sumar(filas, 'propina'), pedidos: sumar(filas, 'pedidos') };
+			$('#dsaRmSub').text(sel ? sel.mesa + ' · ' + sel.recinto : (rec ? $('#dsaRmRecinto option:selected').text() + ' · cada mesa' : 'Cada recinto · solo ventas de mesa'));
+			$('#dsaRmKpis').html('<div><small>' + (sel ? 'Venta de la mesa' : 'Venta') + '</small><b>' + plata(ambito.venta) + '</b></div>'
+				+ '<div><small>' + (sel ? 'Del total de mesas' : 'Pedidos atendidos') + '</small><b>' + (sel ? pct(sel.venta, total) : num(ambito.pedidos)) + '</b></div>'
+				+ '<div><small>Ticket por pedido</small><b>' + plata(ambito.pedidos ? ambito.venta / ambito.pedidos : (ambito.docs ? ambito.venta / ambito.docs : 0)) + '</b></div>'
+				+ '<div><small>Propinas</small><b>' + plata(ambito.propina) + '</b></div>');
+			var max = 25, vista = filas.slice(0, max);
+			var tt = tooltipBase();
+			tt.callbacks = { label: function (it) { var f = vista[it.dataIndex]; return plata(f.venta) + ' · ' + pct(f.venta, total) + ' · ' + num(f.docs) + ' doc.'; } };
+			grafico('dsaChartRm', {
+				type: 'bar',
+				data: { labels: $.map(vista, function (f) { return f.nombre; }), datasets: [{ data: $.map(vista, function (f) { return f.venta; }),
+					backgroundColor: $.map(vista, function (f) { return sel && f.id === mesaSel ? NARANJO : AZUL; }), borderRadius: 4, borderSkipped: 'start', maxBarThickness: 34 }] },
+				options: { maintainAspectRatio: false, animation: { duration: 250 }, plugins: { legend: { display: false }, tooltip: tt }, scales: ejes(),
+					onClick: function (e, el) { if (el && el.length) elegirRm(vista[el[0].index]); } }
+			});
+			var tabla = '<table><thead><tr><th>' + (porRecinto ? 'Recinto' : 'Mesa') + '</th>' + (porRecinto ? '<th>Mesas</th>' : '') + '<th>Pedidos</th><th>Documentos</th><th>Venta</th><th>%</th><th>Ticket</th><th>Propina</th></tr></thead><tbody>'
+				+ $.map(filas, function (f, i) {
+					return '<tr data-i="' + i + '"' + (sel && f.id === mesaSel ? ' class="activa"' : '') + '><td>' + h(f.nombre) + '</td>' + (porRecinto ? '<td>' + num(f.mesas) + '</td>' : '')
+						+ '<td>' + num(f.pedidos) + '</td><td>' + num(f.docs) + '</td><td>' + plata(f.venta) + '</td><td>' + pct(f.venta, base) + '</td>'
+						+ '<td>' + plata(f.pedidos ? f.venta / f.pedidos : (f.docs ? f.venta / f.docs : 0)) + '</td><td>' + plata(f.propina) + '</td></tr>';
+				}).join('') + '</tbody></table>' + (filas.length > max ? '<small class="text-muted">El gráfico muestra las ' + max + ' con más venta; la tabla, todas.</small>' : '');
+			$('#dsaRmTabla').html(tabla).data('filas', filas).data('recinto', porRecinto);
+		}
+		// Tocar una barra o una fila: un recinto abre sus mesas; una mesa queda elegida
+		function elegirRm(f) {
+			if (!f) return;
+			if ($('#dsaRmTabla').data('recinto')) { $('#dsaRmRecinto').val(String(f.id)); $('#dsaRmMesa').val('0'); opcionesMesaRm(); }
+			else { $('#dsaRmMesa').val(String(f.id)); }
+			pintarRm();
+		}
+		$(document).on('change', '#dsaRmRecinto', function () { $('#dsaRmMesa').val('0'); opcionesMesaRm(); pintarRm(); });
+		$(document).on('change', '#dsaRmMesa', pintarRm);
+		$(document).on('click', '#dsaRmTabla tbody tr', function () { elegirRm(($('#dsaRmTabla').data('filas') || [])[$(this).data('i')]); });
 		function sumar(lista, campo) { var t = 0; $.each(lista || [], function (i, x) { t += Number(x[campo]) || 0; }); return t; }
 
 		// ---------- KPIs con comparación ----------

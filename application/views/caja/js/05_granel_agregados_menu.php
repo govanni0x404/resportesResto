@@ -157,7 +157,9 @@
 			$('#opcionesAgregados').toggle(ags.length > 0);
 			// v1.24.9: con muchos agregados (o un menú) la ventana se ensancha y van en cuadrícula hacia el lado
 			$('#modalOpciones').toggleClass('opciones-ancho', ags.length > 4 || mensajesDe(id).length > 6 || !!opcionesMenu);
-			$('#opcionesMaxAgregados').text('');
+			// v1.30.3: máximo de agregados de este producto (Carta > Agregados); 0 = sin límite
+			var maxAg = Number(p.max_agregados) || 0;
+			$('#opcionesMaxAgregados').text(maxAg > 0 && ags.length > maxAg ? 'Elige hasta ' + maxAg : '');
 			$('#listaAgregados').html($.map(ags, function (a) {
 				var marcado = linea && $.inArray(a.id_agregado, linea.agregados) >= 0;
 				// 19-11-2026: cada agregado marcado puede llevar su propio mensaje para la comanda (ej. Palta: sin sal)
@@ -167,6 +169,7 @@
 					+ '<label for="ag' + a.id_agregado + '">' + esc(a.nombre) + (a.valor ? ' <span class="valor">+' + fmt(a.valor) + '</span>' : '') + '</label></div>'
 					+ '<input type="text" class="form-control input-sm ag-nota" data-id="' + a.id_agregado + '" maxlength="60" placeholder="Mensaje para ' + esc(a.nombre) + ' (opcional)" value="' + esc(notaAg) + '"' + (marcado ? '' : ' style="display:none"') + '></div>';
 			}).join(''));
+			limitarAgregados();
 
 			// La nota guarda las indicaciones elegidas + el texto libre, separados por coma
 			var partes = linea && linea.nota ? linea.nota.split(', ') : [];
@@ -262,11 +265,28 @@
 		// v1.24.9: tocar cualquier parte de la tarjeta del agregado lo marca o desmarca (menos su mensaje)
 		$('#listaAgregados').on('click', '.ag-item', function (e) {
 			if ($(e.target).closest('input, label, .ag-nota').length) return;
+			if ($(this).hasClass('bloqueado')) { toastr.warning('Este producto permite elegir hasta ' + maxAgregadosAbierto() + ' agregados: quita uno para elegir otro'); return; }
 			$(this).find('.chk-agregado').trigger('click');
 		});
+		// v1.30.3: con el máximo del producto alcanzado, los demás agregados quedan sin poder marcarse
+		function maxAgregadosAbierto() { var p = opcionEdicion ? producto(opcionEdicion.id_producto) : null; return p ? Number(p.max_agregados) || 0 : 0; }
+		function limitarAgregados() {
+			var max = maxAgregadosAbierto(), n = $('#listaAgregados .chk-agregado:checked').length, lleno = max > 0 && n >= max;
+			$('#listaAgregados .chk-agregado').each(function () {
+				var bloquear = lleno && !this.checked;
+				$(this).prop('disabled', bloquear).closest('.ag-item').toggleClass('bloqueado', bloquear);
+			});
+			if (max > 0 && $('#listaAgregados .chk-agregado').length > max) $('#opcionesMaxAgregados').text('Elige hasta ' + max + ' · ' + n + '/' + max);
+		}
 		$('#listaAgregados').on('change', '.chk-agregado', function () {
-			// v1.24.3: sin límite de agregados por producto
+			var max = maxAgregadosAbierto();
+			if (this.checked && max > 0 && $('#listaAgregados .chk-agregado:checked').length > max) {
+				this.checked = false;
+				toastr.warning('Este producto permite elegir hasta ' + max + ' agregado' + (max === 1 ? '' : 's'));
+				return;
+			}
 			$(this).closest('.ag-item').toggleClass('marcado', this.checked).find('.ag-nota').toggle(this.checked);
+			limitarAgregados();
 			precioOpciones();
 		});
 
@@ -275,6 +295,8 @@
 			var menuSel = eleccionMenuOpciones();   // v1.24.0
 			if (menuSel === null) return;
 			var ags = $('#listaAgregados .chk-agregado:checked').map(function () { return Number(this.value); }).get();
+			var maxAg = Number((producto(id) || {}).max_agregados) || 0;   // v1.30.3
+			if (maxAg > 0 && ags.length > maxAg) { toastr.warning('Este producto permite elegir hasta ' + maxAg + ' agregado' + (maxAg === 1 ? '' : 's')); return; }
 			var msgs = mensajesDe(id);
 			var partes = $('#listaMensajes .chk-mensaje:checked').map(function () { return msgs[$(this).data('i')].mensaje; }).get();
 			var libre = $.trim($('#txtNotaProducto').val());

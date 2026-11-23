@@ -132,7 +132,8 @@
 <script src="<?php echo base_url() ?>assets/plugins/datatables/dataTables.responsive.js"></script>
 <!-- 14-11-2026: las celdas de texto de todas las tablas se muestran como texto (XSS guardado) -->
 <script src="<?php echo base_url() ?>assets/js/dt-escapar.js?v=20261114"></script>
-<script src="https://cdn.datatables.net/select/1.3.3/js/dataTables.select.min.js"></script>
+<!-- v1.30.3: librerías desde el propio servidor (antes de internet: si el CDN iba lento, la página quedaba en "Cargando…") -->
+<script src="<?php echo base_url() ?>assets/vendor/dataTables.select-1.3.3.min.js"></script>
 <script>
   // v1.29.2: todas las tablas en español por defecto. 5 pantallas no traían su traducción y salían en inglés
   // ("Show 10 entries", "Search", "No data available in table", "Previous / Next"). La que trae la suya la sigue usando.
@@ -149,11 +150,11 @@
   }
 </script>
 <!-- <script src="<?php echo base_url() ?>assets/plugins/datatables/buttons.bootstrap.js"></script> -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.js"></script>
+<script src="<?php echo base_url() ?>assets/vendor/chart-3.9.1.min.js"></script>
 <!-- <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.7/js/dataTables.responsive.min.js"></script> -->
 
 <!-- <script src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script> -->
-<script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/min/moment.min.js"></script>
+<script src="<?php echo base_url() ?>assets/vendor/moment-2.30.1.min.js"></script>
 <script src="<?php echo base_url() ?>assets/plugins/date-range-picker/daterangepicker.js"></script>
 <!-- Start Theme label Script
         =====================================================================-->
@@ -173,7 +174,7 @@
 
 <!-- End Theme label Script
         =====================================================================-->
-<script src="https://cdn.datatables.net/plug-ins/1.10.20/api/sum().js"></script>
+<script src="<?php echo base_url() ?>assets/vendor/dataTables.sum-1.10.20.js"></script>
 <script>
   // Texto seguro para meter en HTML: lo que escriben los usuarios (nombres, observaciones, motivos) no se ejecuta
   window.escHtml = function (s) {
@@ -541,6 +542,10 @@
     }
 
     pintar();
+    // v1.30.3: el aviso se quita cuando la página ya está armada (DOMContentLoaded, después de los $(function) de la página),
+    // sin esperar imágenes, fotos de productos ni letras: con internet lento eso dejaba "Cargando…" muchos segundos
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(finNavegacion, 50); });
+    else setTimeout(finNavegacion, 50);
     window.addEventListener('load', finNavegacion);
     timerSeguridad = setTimeout(finNavegacion, 15000);
     // Al volver con el botón atrás el navegador puede restaurar la página con el aviso visible
