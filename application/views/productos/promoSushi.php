@@ -107,6 +107,10 @@
 .ps-limite label { margin: 0; font-weight: 800; }
 .ps-limite input { width: 80px; height: 34px; text-align: center; font-weight: 800; }
 .ps-limite small { color: var(--t-texto-suave, #4B5563); }
+.ps-limite input::placeholder { font-size: 20px; color: var(--t-primario, #15803D); }
+.ps-sin-limite { height: 34px; padding: 0 12px; border: 1px solid var(--t-borde, #D1D5DB); border-radius: 9px; background: #fff; font-size: 13px; font-weight: 700; color: var(--t-texto-suave, #4B5563); }
+.ps-sin-limite span { font-size: 17px; line-height: 0; vertical-align: -1px; }
+.ps-sin-limite.activo { border-color: var(--t-primario, #15803D); background: var(--t-primario, #15803D); color: #fff; }
 .ps-copiar { display: flex; gap: 8px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--t-borde-suave, #EEF0F3); }
 .ps-copiar select { flex: 1; height: 36px; }
 .ps-copiar .btn { height: 36px; border-radius: 9px; font-weight: 700; white-space: nowrap; }
@@ -181,6 +185,7 @@
                         <div class="ps-limite" id="psLimite">
                             <label for="psLimiteValor" id="psLimiteTexto">Máximo por roll</label>
                             <input type="text" inputmode="numeric" class="form-control" id="psLimiteValor">
+                            <button type="button" class="ps-sin-limite" id="btnPsSinLimite" title="Que se puedan elegir todos los que quiera"><span>∞</span> Sin límite</button>
                             <small id="psLimiteAyuda"></small>
                         </div>
                         <div class="ps-lista" id="psLista"></div>
@@ -414,15 +419,19 @@
         });
         var conPrecioEnv = ps.tipo === 'envoltorio' && ps.promo && ps.promo.precio_envoltorio && esRol();   // v1.32.0
         // v1.32.1 (pedido del usuario): el límite de esta sección, aquí mismo
-        var LIM = { relleno: ['max_rellenos', 'Máximo de rellenos', ' por roll', '0 = sin límite'], envoltorio: ['max_envoltorios', 'Máximo de envoltorios', ' por roll', 'de 1 a 5'],
-            base: ['max_bases', 'Máximo de bases', ' por roll', 'de 1 a 5'], salsa: ['max_salsas', 'Máximo de salsas', ' en total', '0 = sin límite'],
-            extra: ['max_extras', 'Máximo de extras', ' en total', '0 = sin límite'] }[ps.tipo];
+        // v1.32.5 (pedido del usuario): 0 es 0 (esa sección no se ofrece); "Sin límite" es un botón aparte (se guarda -1)
+        var LIM = { relleno: ['max_rellenos', 'Máximo de rellenos', ' por roll', '0 = no se piden rellenos'], envoltorio: ['max_envoltorios', 'Máximo de envoltorios', ' por roll', 'de 1 a 5'],
+            base: ['max_bases', 'Máximo de bases', ' por roll', 'de 1 a 5'], salsa: ['max_salsas', 'Máximo de salsas', ' en total', '0 = no se ofrecen salsas'],
+            extra: ['max_extras', 'Máximo de extras', ' en total', '0 = no se ofrecen extras'] }[ps.tipo];
+        var conSinLimite = ps.tipo === 'relleno' || ps.tipo === 'extra' || ps.tipo === 'salsa';
         $('#psLimite').toggle(!!ps.promo);
         if (ps.promo && LIM) {
             var porQ = (ps.tipo === 'salsa' || ps.tipo === 'extra') ? LIM[2] : (esRol() ? LIM[2] : ' por grupo');
             $('#psLimiteTexto').text(LIM[1] + porQ);
-            if (!$('#psLimiteValor').is(':focus')) $('#psLimiteValor').val(ps.promo[LIM[0]] != null ? ps.promo[LIM[0]] : '');
-            $('#psLimiteAyuda').text(LIM[3] + ' · se guarda solo');
+            var actual = ps.promo[LIM[0]] != null ? Number(ps.promo[LIM[0]]) : -1, sinLimite = conSinLimite && actual < 0;
+            if (!$('#psLimiteValor').is(':focus')) $('#psLimiteValor').val(sinLimite ? '' : actual).attr('placeholder', conSinLimite ? '∞' : '');
+            $('#btnPsSinLimite').toggle(conSinLimite).toggleClass('activo', sinLimite);
+            $('#psLimiteAyuda').text((sinLimite ? 'Sin límite: puede elegir todos los que quiera' : LIM[3]) + ' · se guarda solo');
         }
         $('#psTituloAgregar').text('Agregar a ' + $('#psTabs .ps-tab.on').clone().children().remove().end().text().trim());
         $('#psAyudaTipo').text(ps.promo ? (esRol() ? AYUDA_ROL : AYUDA)[ps.tipo] : 'Graba la promo primero; después agrega sus rellenos, envoltorios, bases y extras.');
@@ -455,15 +464,23 @@
     });
     $('#psTabs').on('click', '.ps-tab', function () { ps.tipo = $(this).data('tipo'); ps.marcados = {}; $('#psBuscar').val(''); pintarCatalogo(); });
     // v1.32.1: guardar el límite de la sección al cambiarlo
-    $('#psLimiteValor').on('change', function () {
+    function guardarLimite(v) {
         if (!ps.promo) return;
-        var tipo = ps.tipo, v = entero(this.value);
+        var tipo = ps.tipo;
         post('limitePromoSushi', { id_promo: ps.promo.id_producto, tipo: tipo, valor: v }).done(function (r) {
             var campo = { relleno: 'max_rellenos', envoltorio: 'max_envoltorios', base: 'max_bases', salsa: 'max_salsas', extra: 'max_extras' }[tipo];
             ps.promo[campo] = r.valor;
-            showAppAlert('success', 'Límite guardado', { duration: 2000 });
+            showAppAlert('success', r.valor < 0 ? 'Listo: sin límite' : (r.valor === 0 ? 'Listo: esta sección no se ofrece en la Caja' : 'Límite guardado: hasta ' + r.valor), { duration: 2500 });
+            pintarCatalogo();
         }).fail(function (x) { error(x, 'No se pudo guardar el límite'); pintarCatalogo(); });
+    }
+    $('#psLimiteValor').on('change', function () {
+        // vacío en rellenos, extras o salsas = sin límite; si no, el número escrito (0 es 0)
+        var vacio = $.trim(this.value) === '', conSL = ps.tipo === 'relleno' || ps.tipo === 'extra' || ps.tipo === 'salsa';
+        if (vacio && !conSL) { pintarCatalogo(); return; }
+        guardarLimite(vacio ? -1 : entero(this.value));
     }).on('keydown', function (e) { if (e.which === 13) $(this).blur(); });
+    $('#btnPsSinLimite').on('click', function () { $('#psLimiteValor').val(''); guardarLimite(-1); });
     $('#ModalPromosSushi').on('input', '#psLimiteValor, #psPiezas, #psPrecio, #psPaso, #psRolls, #psPiezasRol, #psValorExistente, #psValorNuevo, .ps-valor-input, .ps-precio-input', function () {
         this.value = this.value.replace(/\D/g, '').slice(0, 9);
     });
@@ -489,7 +506,7 @@
             // v1.32.0
             // v1.32.1: los límites se ponen en la parte 2 (cada sección); aquí se mandan los que ya tiene
             precio_envoltorio: esRol() && $('#psPrecioEnv').is(':checked') ? 1 : 0, max_envoltorios: ps.promo ? ps.promo.max_envoltorios : 1,
-            max_extras: ps.promo ? ps.promo.max_extras : 0, max_salsas: ps.promo ? ps.promo.max_salsas : 0
+            max_extras: ps.promo ? ps.promo.max_extras : -1, max_salsas: ps.promo ? ps.promo.max_salsas : -1   // v1.32.5: -1 = sin límite
         };
         if (esRol()) { datos.piezas = datos.rolls * datos.piezas_rol; datos.paso = datos.piezas_rol; }
         if (!datos.nombre) { showAppAlert('warning', 'Escribe el nombre de la promo', { duration: 4000 }); return; }

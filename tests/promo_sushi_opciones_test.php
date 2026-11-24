@@ -91,6 +91,15 @@ revisar('9 envoltorios por roll se rechaza (máximo 5)', $c === 400, "código $c
 list($c, $r) = ps('limitePromoSushi', array('id_promo' => $idPromo, 'tipo' => 'extra', 'valor' => 1));
 list(, $p) = ps('obtenerPromoSushi', array('id_producto' => $idPromo));
 revisar('al reabrir la promo trae los límites guardados', ($p['promo']['max_bases'] ?? 0) === 2 && ($p['promo']['max_extras'] ?? 0) === 1);
+// v1.32.5: 0 es 0 (la sección no se ofrece) y "sin límite" se guarda como -1
+list($c, $r) = ps('limitePromoSushi', array('id_promo' => $idPromo, 'tipo' => 'salsa', 'valor' => -1));
+revisar('"Sin límite" en salsas se guarda como -1', $c === 200 && ($r['valor'] ?? 0) === -1, "código $c");
+ps('limitePromoSushi', array('id_promo' => $idPromo, 'tipo' => 'salsa', 'valor' => 0));
+list(, $b) = pedir(BASE . '/Caja/catalogo?id_lprecio=1');
+$suCero = null;
+foreach (json($b)['sushis'] ?? array() as $x) if ((int)$x['id_producto'] === $idPromo) $suCero = $x;
+revisar('salsas con máximo 0: la Caja no ofrece salsas', $suCero && count($suCero['salsas']) === 0 && $suCero['max_salsas'] === 0, json_encode($suCero['max_salsas'] ?? null));
+ps('limitePromoSushi', array('id_promo' => $idPromo, 'tipo' => 'salsa', 'valor' => 2));
 
 echo "Vender en la Caja:\n";
 list(, $b) = pedir(BASE . '/Caja/estado');

@@ -104,12 +104,12 @@
 			// Extras y (v1.32.0) salsas: opcionales, con su máximo total (0 = sin límite)
 			$.each([['extra', 'extras', '#suExtras', '#suExtrasMax'], ['salsa', 'salsas', '#suSalsas', '#suSalsasMax']], function (i, c) {
 				var elegido = su[c[1]], max = Number(promo['max_' + c[1]]) || 0, n = suSuma(elegido);
-				$(c[3]).text(max ? n + '/' + max : '');
+				$(c[3]).text(max > 0 ? n + '/' + max : '');
 				$(c[2]).html($.map(promo[c[1]] || [], function (o) {
 					var q = elegido[o.id] || 0;
 					return '<div class="su-extra" data-id="' + o.id + '"><span class="nombre">' + esc(o.nombre) + (o.valor ? ' <small class="text-muted">+' + fmt(o.valor) + '</small>' : '') + '</span>'
 						+ '<button type="button" class="btn btn-default btn-xs su-ex-menos"' + (q ? '' : ' disabled') + '><i class="fa fa-minus"></i></button>'
-						+ '<b class="q">' + q + '</b><button type="button" class="btn btn-default btn-xs su-ex-mas"' + (max && n >= max ? ' disabled' : '') + '><i class="fa fa-plus"></i></button></div>';
+						+ '<b class="q">' + q + '</b><button type="button" class="btn btn-default btn-xs su-ex-mas"' + (max > 0 && n >= max ? ' disabled' : '') + '><i class="fa fa-plus"></i></button></div>';
 				}).join(''));
 			});
 
@@ -255,7 +255,8 @@
 			var tipo = $(this).closest('[data-tipo]').data('tipo'), clave = tipo === 'salsa' ? 'salsas' : 'extras', lista = su[clave];
 			var id = Number($(this).closest('.su-extra').data('id')), q = lista[id] || 0, mas = $(this).hasClass('su-ex-mas');
 			var max = Number(su.promo['max_' + clave]) || 0;
-			if (mas && max && suSuma(lista) >= max) { toastr.warning('Máximo ' + max + (tipo === 'salsa' ? ' salsas' : ' extras') + ' en esta promo'); return; }
+			if (mas && max > 0 && suSuma(lista) >= max) {   // v1.32.5: -1 = sin límite
+				 toastr.warning('Máximo ' + max + (tipo === 'salsa' ? ' salsas' : ' extras') + ' en esta promo'); return; }
 			q += mas ? 1 : -1;
 			if (q > 99) q = 99;
 			if (q > 0) lista[id] = q; else delete lista[id];

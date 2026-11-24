@@ -49,7 +49,7 @@ class Mpromosushi extends CI_Model
 	{
 		return ($this->conOpciones($db)
 			? "$s.fija_web, ($s.armado_fijo_web IS NOT NULL) AS con_armado, $s.precio_envoltorio_web, $s.max_envoltorios_web, $s.max_extras_web, $s.max_salsas_web"
-			: 'false AS fija_web, false AS con_armado, false AS precio_envoltorio_web, 1 AS max_envoltorios_web, 0 AS max_extras_web, 0 AS max_salsas_web')
+			: 'false AS fija_web, false AS con_armado, false AS precio_envoltorio_web, 1 AS max_envoltorios_web, -1 AS max_extras_web, -1 AS max_salsas_web')
 			. ($this->conMaxBases($db) ? ", $s.max_bases_web" : ', 1 AS max_bases_web');   // v1.32.1
 	}
 
@@ -77,14 +77,15 @@ class Mpromosushi extends CI_Model
 	{
 		$db = $this->db();
 		if (!$this->disponible($db)) return $this->sinTablas();
-		$cols = array('relleno' => array('max_rellenos', 0, 20), 'envoltorio' => array('max_envoltorios_web', 1, 5), 'base' => array('max_bases_web', 1, 5),
-			'extra' => array('max_extras_web', 0, 99), 'salsa' => array('max_salsas_web', 0, 99));
+		// v1.32.5: -1 = sin límite; 0 = esa sección no se ofrece (rellenos, extras y salsas)
+		$cols = array('relleno' => array('max_rellenos', -1, 20), 'envoltorio' => array('max_envoltorios_web', 1, 5), 'base' => array('max_bases_web', 1, 5),
+			'extra' => array('max_extras_web', -1, 99), 'salsa' => array('max_salsas_web', -1, 99));
 		if (!isset($cols[$tipo])) return array('error' => 'Sección inválida');
 		list($col, $min, $max) = $cols[$tipo];
 		if ($col !== 'max_rellenos' && !$this->conOpciones($db)) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
 		if ($col === 'max_bases_web' && !$this->conMaxBases($db)) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
 		$valor = (int)$valor;
-		if ($valor < $min || $valor > $max) return array('error' => 'El máximo debe ser de ' . $min . ($min === 0 ? ' (sin límite)' : '') . ' a ' . $max);
+		if ($valor < $min || $valor > $max) return array('error' => 'El máximo debe ser de ' . max(0, $min) . ' a ' . $max . ($min < 0 ? ', o sin límite' : ''));
 		$db->query("UPDATE promo_sushi_web SET $col = ? WHERE id_producto = ?", array($valor, (int)$idPromo));
 		if ($db->affected_rows() < 1) return array('error' => 'La promo ya no existe. Recarga la página.');
 		return array('ok' => true, 'valor' => $valor);
@@ -172,7 +173,7 @@ class Mpromosushi extends CI_Model
 			'modo' => $p->modo === 'rol' ? 'rol' : 'pieza', 'piezas_rol' => max(1, (int)$p->piezas_rol),
 			// v1.32.0
 			'fija' => self::si($p->fija_web) && self::si($p->con_armado), 'precio_envoltorio' => self::si($p->precio_envoltorio_web),
-			'max_envoltorios' => max(1, (int)$p->max_envoltorios_web), 'max_extras' => max(0, (int)$p->max_extras_web), 'max_salsas' => max(0, (int)$p->max_salsas_web),
+			'max_envoltorios' => max(1, (int)$p->max_envoltorios_web), 'max_extras' => max(-1, (int)$p->max_extras_web), 'max_salsas' => max(-1, (int)$p->max_salsas_web),
 			'max_bases' => max(1, (int)$p->max_bases_web)),
 			'opciones' => $opciones);
 	}
@@ -197,13 +198,13 @@ class Mpromosushi extends CI_Model
 		// v1.32.0: precio según el envoltorio, máximos y quitar "fija" (dejarla fija se hace desde la Caja, armándola)
 		$precioEnv = in_array((string)($d['precio_envoltorio'] ?? ''), array('1', 'true', 't'), true);
 		$maxEnv = (int)($d['max_envoltorios'] ?? 1);
-		$maxExtras = (int)($d['max_extras'] ?? 0);
-		$maxSalsas = (int)($d['max_salsas'] ?? 0);
+		$maxExtras = (int)($d['max_extras'] ?? -1);   // v1.32.5: -1 = sin límite
+		$maxSalsas = (int)($d['max_salsas'] ?? -1);
 		$quitarFija = isset($d['fija']) && in_array((string)$d['fija'], array('0', 'false', 'f'), true);
 		if ($maxEnv < 1 || $maxEnv > 5) return array('error' => 'Los envoltorios por roll deben ser de 1 a 5');
-		if ($maxExtras < 0 || $maxExtras > 99 || $maxSalsas < 0 || $maxSalsas > 99) return array('error' => 'El máximo de extras y de salsas debe ser de 0 (sin límite) a 99');
+		if ($maxExtras < -1 || $maxExtras > 99 || $maxSalsas < -1 || $maxSalsas > 99) return array('error' => 'El máximo de extras y de salsas debe ser de 0 a 99, o sin límite');
 		$conOp = $this->conOpciones($db);
-		if (($precioEnv || $maxEnv > 1 || $maxExtras || $maxSalsas) && !$conOp) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
+		if (($precioEnv || $maxEnv > 1 || $maxExtras >= 0 || $maxSalsas >= 0) && !$conOp) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
 		if ((string)($d['modo'] ?? 'pieza') !== 'rol' && $id <= 0) {
 			$cfgS = $this->configSushi($db);
 			if (!$cfgS['por_pieza']) return array('error' => 'Las promos por pieza están apagadas (Configuraciones > Promos de sushi)');
@@ -225,7 +226,7 @@ class Mpromosushi extends CI_Model
 		if ($piezas < 1 || $piezas > 500) return array('error' => 'Las piezas deben ser de 1 a 500');
 		if ($paso > 100) return array('error' => '"De a cuántas piezas" debe ser de 1 a 100');
 		if ($piezas % $paso !== 0) return array('error' => 'Las ' . $piezas . ' piezas no se pueden repartir de a ' . $paso . ': usa un número que divida a ' . $piezas);
-		if ($maxRellenos < 0 || $maxRellenos > 20) return array('error' => 'El máximo de rellenos debe ser de 0 (sin límite) a 20');
+		if ($maxRellenos < -1 || $maxRellenos > 20) return array('error' => 'El máximo de rellenos debe ser de 0 a 20, o sin límite');   // v1.32.5: -1 = sin límite
 		if ($precio <= 0) return array('error' => 'El precio debe ser mayor a 0');
 		if (!$db->query('SELECT 1 FROM familia WHERE id_familia = ?', array($idFamilia))->row()) return array('error' => 'Elige la familia');
 		if ($idDimpresion && !$db->query('SELECT 1 FROM dimpresion WHERE id_dimpresion = ?', array($idDimpresion))->row()) return array('error' => 'El destino de impresión no existe');

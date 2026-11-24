@@ -322,7 +322,7 @@ class Mcaja extends CI_Model
 
 	/**
 	 * v1.25.0: promos de sushi (migración 20261120180000): [id del producto-promo => promo]. Sin las tablas, ninguna.
-	 * Promo: piezas, paso (de a cuántas piezas va cada grupo), max_rellenos (0 = sin límite) y sus opciones por tipo
+	 * Promo: piezas, paso (de a cuántas piezas va cada grupo), max_rellenos (-1 = sin límite, 0 = no se ofrece) y sus opciones por tipo
 	 * (base, relleno, envoltorio, extra), cada una con su producto vigente y su valor adicional.
 	 */
 	private $sushisCache = null;
@@ -338,7 +338,7 @@ class Mcaja extends CI_Model
 		// v1.32.0: promo fija, precio según el envoltorio, máximos y salsas (migración 20261123110000)
 		$conOp = isset($t['promo_sushi_web']['fija_web'], $t['promo_sushi_web']['max_salsas_web'], $t['promo_sushi_opcion_web']['precio_promo_web']);
 		$selOp = $conOp ? 's.fija_web, s.armado_fijo_web, s.precio_envoltorio_web, s.max_envoltorios_web, s.max_extras_web, s.max_salsas_web'
-			: 'false AS fija_web, NULL AS armado_fijo_web, false AS precio_envoltorio_web, 1 AS max_envoltorios_web, 0 AS max_extras_web, 0 AS max_salsas_web';
+			: 'false AS fija_web, NULL AS armado_fijo_web, false AS precio_envoltorio_web, 1 AS max_envoltorios_web, -1 AS max_extras_web, -1 AS max_salsas_web';
 		$selOp .= isset($t['promo_sushi_web']['max_bases_web']) ? ', s.max_bases_web' : ', 1 AS max_bases_web';   // v1.32.1
 		$cfg = $this->opcionesSushi($db);
 		$si = function ($v) { return $v === true || $v === 't'; };
@@ -348,12 +348,12 @@ class Mcaja extends CI_Model
 			$pr = max(1, (int)$r->piezas_rol);
 			$fijo = $si($r->fija_web) && $r->armado_fijo_web ? json_decode((string)$r->armado_fijo_web, true) : null;
 			$this->sushisCache[(int)$r->id_producto] = array('piezas' => (int)$r->piezas, 'paso' => $rol ? $pr : max(1, (int)$r->paso),
-				'max_rellenos' => max(0, (int)$r->max_rellenos),
+				'max_rellenos' => max(-1, (int)$r->max_rellenos),   // v1.32.5: -1 = sin límite, 0 = no se ofrece
 				// v1.26.0: por roll, cada grupo va de a un roll (paso = piezas del roll) y lo elegido se cobra por roll
 				'modo' => $rol ? 'rol' : 'pieza', 'piezas_rol' => $pr,
 				// v1.32.1: precio según el envoltorio solo en promos por roll (cada roll se cobra con el precio de su envoltorio)
 				'fijo' => is_array($fijo) ? $fijo : null, 'precio_envoltorio' => $rol && $si($r->precio_envoltorio_web), 'max_bases' => max(1, (int)$r->max_bases_web),
-				'max_envoltorios' => max(1, (int)$r->max_envoltorios_web), 'max_extras' => max(0, (int)$r->max_extras_web), 'max_salsas' => max(0, (int)$r->max_salsas_web),
+				'max_envoltorios' => max(1, (int)$r->max_envoltorios_web), 'max_extras' => max(-1, (int)$r->max_extras_web), 'max_salsas' => max(-1, (int)$r->max_salsas_web),
 				'opciones' => array('base' => array(), 'relleno' => array(), 'envoltorio' => array(), 'extra' => array(), 'salsa' => array()));
 		}
 		if (!$this->sushisCache) return array();
@@ -366,6 +366,9 @@ class Mcaja extends CI_Model
 			if (!isset($this->sushisCache[$idP]['opciones'][$r->tipo])) continue;
 			// v1.32.0: bases y salsas se usan solo si están encendidas en Configuraciones > Promos de sushi
 			if (($r->tipo === 'base' && !$cfg['bases']) || ($r->tipo === 'salsa' && !$cfg['salsas'])) continue;
+			// v1.32.5 (pedido del usuario): máximo 0 = esa sección no se ofrece (0 es 0; sin límite es -1)
+			$maxDe = array('relleno' => 'max_rellenos', 'extra' => 'max_extras', 'salsa' => 'max_salsas');
+			if (isset($maxDe[$r->tipo]) && $this->sushisCache[$idP][$maxDe[$r->tipo]] === 0) continue;
 			$this->sushisCache[$idP]['opciones'][$r->tipo][(int)$r->id_opcion] = array('id' => (int)$r->id_opcion,
 				'id_producto' => (int)$r->id_producto, 'nombre' => (string)$r->nombre_producto, 'valor' => max(0, (int)$r->valor),
 				'precio_promo' => max(0, (int)$r->precio_promo),
