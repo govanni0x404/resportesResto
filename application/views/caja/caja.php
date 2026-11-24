@@ -1450,6 +1450,7 @@
 										<label><input type="radio" name="delCobro" id="delCobroAhora" value="ahora" checked> Cobrar ahora</label>
 										<label><input type="radio" name="delCobro" id="delCobroEntregar" value="entregar"> Cobrar al entregar</label>
 									</div>
+									<div class="form-group" id="grupoEnvioDelivery"><label><input type="checkbox" id="delConEnvio" checked> Incluye despacho</label><small class="help-block">Desmárcalo si el cliente retira en el local.</small></div>
 								</div>
 								<p class="del-ayuda" id="delAyuda"></p>
 							</div>

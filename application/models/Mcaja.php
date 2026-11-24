@@ -4061,7 +4061,8 @@ class Mcaja extends CI_Model
 			if (!$d) throw new Exception('El delivery no existe', 404);
 			if ($d->estado === 'anulado') throw new Exception('El delivery ya está anulado', 409);
 			$cobrado = (int)$d->id_venta > 0 && !($d->venta_anulada === 't' || $d->venta_anulada === true);
-			if ($estado === 'entregado' && !$cobrado) throw new Exception('Cobra el delivery antes de marcarlo entregado', 409);
+			$requiereReparto = (int)$d->id_repartidor > 0 || $d->cobrar_al_entregar === 't' || $d->cobrar_al_entregar === true;
+			if ($estado === 'entregado' && !$cobrado && !$requiereReparto) throw new Exception('Cobra el delivery antes de marcarlo entregado', 409);
 			if ($estado === 'anulado' && $cobrado) {
 				throw new Exception('Este delivery ya está cobrado: anula primero su boleta en Opciones > Ventas, y después el delivery', 409);
 			}
@@ -4073,7 +4074,7 @@ class Mcaja extends CI_Model
 				$custodio = $this->q($db, 'SELECT id_usuario FROM delivery_cobro WHERE id_delivery = ? AND en_custodia_repartidor IS TRUE AND monto > 0 ORDER BY id_delivery_cobro DESC LIMIT 1', array((int)$idDelivery))->row();
 				if ($custodio && (int)$custodio->id_usuario !== (int)$idRepartidor) throw new Exception('No se puede reasignar un pedido cuyo efectivo ya está bajo custodia de otro repartidor.', 409);
 			}
-			if ($estado === 'en_camino' && $idRepartidor !== null && $idRepartidor > 0 && $limite > 0 && (int)$d->id_repartidor !== (int)$idRepartidor) {
+			if ($estado === 'en_camino' && $idRepartidor !== null && $idRepartidor > 0 && (int)$d->id_repartidor !== (int)$idRepartidor) {
 				// Serializa asignaciones por repartidor, para que dos cajas no sobrepasen simultáneamente el límite.
 				$this->q($db, 'SELECT id_usuario FROM usuario WHERE id_usuario = ? FOR UPDATE', array((int)$idRepartidor));
 				$saldoRow = $this->q($db, "SELECT GREATEST(0,

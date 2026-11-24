@@ -348,7 +348,6 @@ class Caja extends CI_Controller
 	public function deliveryRendiciones()
 	{
 		$this->ejecutar(function () {
-			$this->cajaRequerida();
 			$this->exigirVerificadorDelivery();
 			$this->load->model('Mdelivery');
 			return array('rendiciones' => $this->Mdelivery->rendicionesPendientes());
@@ -358,7 +357,7 @@ class Caja extends CI_Controller
 	public function deliveryComisiones()
 	{
 		$this->ejecutar(function () {
-			$this->cajaRequerida(); $this->exigirVerificadorDelivery(); $this->load->model('Mdelivery');
+			$this->exigirVerificadorDelivery(); $this->load->model('Mdelivery');
 			return array('comisiones' => $this->Mdelivery->listarComisiones());
 		});
 	}

@@ -145,7 +145,7 @@ En la Caja las salsas y los extras siempre son opcionales."); ?></div>
                                                 <div class="cfg-fila"><label><input type="checkbox" name="delivery_habilitado" value="1" <?php echo ($config['delivery_habilitado'] ?? null) === true || ($config['delivery_habilitado'] ?? null) === 't' ? 'checked' : ''; ?>> Usar delivery en la Caja</label><?php cfg_info("Agrega a la Caja la pestaña Delivery (aparte de Venta directa y Mesas), con los datos de entrega del cliente.\nSe puede cobrar al tiro o al entregar."); ?></div>
                                                 <?php if (array_key_exists('delivery_limite_rendicion', $config)) : ?>
                                                 <div class="form-group">
-                                                    <label class="cfg-titulo">Máximo pendiente de rendición por repartidor <?php cfg_info("Límite de efectivo cobrado por los repartidores y aún no rendido. Si una nueva asignación lo supera, se pedirá autorización de administrador.\n0 = sin límite."); ?></label>
+                                                    <label class="cfg-titulo">Máximo pendiente de rendición por repartidor <?php cfg_info("Límite de efectivo cobrado por los repartidores y aún no rendido. Si una nueva asignación lo supera, se pedirá autorización de administrador.\n0 = no se permite asignar pedidos que generen efectivo pendiente."); ?></label>
                                                     <input type="number" min="0" step="1" class="form-control" name="delivery_limite_rendicion" value="<?php echo (int)($config['delivery_limite_rendicion'] ?? 0); ?>">
                                                 </div>
                                                 <?php endif; ?>
