@@ -257,12 +257,25 @@
 		var SU_LISTA = { base: 'bases', relleno: 'rellenos', envoltorio: 'envoltorios', extra: 'extras', salsa: 'salsas' };   // v1.32.0: salsas
 		/** v1.32.0: envoltorios de un grupo (puede llevar varios; lo de antes traía uno solo en "envoltorio") */
 		function suEnvs(g) { return g.envoltorios && g.envoltorios.length ? g.envoltorios : (g.envoltorio ? [g.envoltorio] : []); }
-		/** v1.32.0: precio de la promo: con "precio según el envoltorio", el del envoltorio elegido más caro (0 = el de la promo) */
-		function precioBaseSushi(promo, sel, precio) {
-			if (!promo || !promo.precio_envoltorio || !sel) return precio;
-			var p = 0;
-			$.each(sel.grupos || [], function (i, g) { $.each(suEnvs(g), function (j, id) { var o = opcionSushi(promo, 'envoltorio', id); if (o) p = Math.max(p, o.precio_promo || 0); }); });
-			return p > 0 ? p : precio;
+		/** v1.32.1: bases de un grupo (puede llevar varias; lo de antes traía una sola en "base") */
+		function suBases(g) { return g.bases && g.bases.length ? g.bases : (g.base ? [g.base] : []); }
+		/** v1.32.1: con "cada roll se cobra según su envoltorio" la línea de la promo va en $0 (cada roll lleva su precio) */
+		function precioBaseSushi(promo, sel, precio) { return promo && promo.precio_envoltorio ? 0 : precio; }
+		/**
+		 * v1.32.1: precio de cada roll (grupo): el de su envoltorio por roll (el más caro si lleva varios) o, si no tiene,
+		 * su parte del precio de la promo (redondeo acumulado). Igual que Mcaja::preciosRollSushi.
+		 */
+		function preciosRollSushi(promo, grupos) {
+			var p = producto(promo.id_producto), precio = p ? p.precio : 0, u = suUnidad(promo);
+			var total = Math.max(1, Math.floor(promo.piezas / u)), acum = 0, antes = 0;
+			return $.map(grupos || [], function (g) {
+				var rolls = Math.floor(g.piezas / u);
+				acum += rolls;
+				var hasta = Math.round(precio * acum / total), parte = hasta - antes, pe = 0;
+				antes = hasta;
+				$.each(suEnvs(g), function (j, id) { var o = opcionSushi(promo, 'envoltorio', id); if (o) pe = Math.max(pe, o.precio_promo || 0); });
+				return pe > 0 ? pe * rolls : parte;
+			});
 		}
 		// v1.26.0: promo por roll: se arma y se cobra por roll (piezas_rol piezas cada uno). Por dentro los grupos siguen
 		// guardando sus piezas (rolls x piezas_rol), igual que el servidor (Mcaja::eleccionSushi)
@@ -281,8 +294,8 @@
 		}
 		/** Valor por pieza de un grupo (base + envoltorio + rellenos) */
 		function valorPiezaSushi(promo, g) {
-			var t = 0, o;
-			if (g.base && (o = opcionSushi(promo, 'base', g.base))) t += o.valor;
+			var t = 0;
+			$.each(suBases(g), function (i, id) { var b = opcionSushi(promo, 'base', id); if (b) t += b.valor; });   // v1.32.1: varias bases
 			// v1.32.0: varios envoltorios; con precio según el envoltorio su valor no se suma (ya es el precio)
 			if (!promo.precio_envoltorio) $.each(suEnvs(g), function (i, id) { var e = opcionSushi(promo, 'envoltorio', id); if (e) t += e.valor; });
 			$.each(g.rellenos || [], function (i, id) { var r = opcionSushi(promo, 'relleno', id); if (r) t += r.valor; });
@@ -292,7 +305,8 @@
 		function adicionalSushiSel(promo, sel) {
 			var t = 0;
 			if (!promo || !sel) return 0;
-			$.each(sel.grupos || [], function (i, g) { t += unidadesGrupoSushi(promo, g) * valorPiezaSushi(promo, g); });
+			if (promo.precio_envoltorio) $.each(preciosRollSushi(promo, sel.grupos), function (i, v) { t += v; });   // v1.32.1
+			else $.each(sel.grupos || [], function (i, g) { t += unidadesGrupoSushi(promo, g) * valorPiezaSushi(promo, g); });
 			$.each(sel.extras || [], function (i, e) { var o = opcionSushi(promo, 'extra', e.id); if (o) t += o.valor * e.cantidad; });
 			$.each(sel.salsas || [], function (i, e) { var o = opcionSushi(promo, 'salsa', e.id); if (o) t += o.valor * e.cantidad; });   // v1.32.0
 			return t;
@@ -300,9 +314,10 @@
 		function adicionalSushi(l) { return l.sushi ? adicionalSushiSel(sushiDe(l.id_producto), l.sushi) : 0; }
 		/** Texto de un grupo: "10 PANKO · Pollo, Palta · Base Arroz" */
 		function textoGrupoSushi(promo, g) {
-			var envs = $.map(suEnvs(g), function (id) { var e = opcionSushi(promo, 'envoltorio', id); return e ? e.nombre : null; }), base = g.base ? opcionSushi(promo, 'base', g.base) : null;
+			var envs = $.map(suEnvs(g), function (id) { var e = opcionSushi(promo, 'envoltorio', id); return e ? e.nombre : null; });
+			var bases = $.map(suBases(g), function (id) { var b = opcionSushi(promo, 'base', id); return b ? b.nombre : null; }).join(' + ');
 			var rell = $.map(g.rellenos || [], function (id) { var r = opcionSushi(promo, 'relleno', id); return r ? r.nombre : null; });
-			return { titulo: envs.length ? envs.join(' + ') : (base ? base.nombre : (rell[0] || '')), rellenos: rell.join(', '), base: base ? base.nombre : '' };
+			return { titulo: envs.length ? envs.join(' + ') : (bases || rell[0] || ''), rellenos: rell.join(', '), base: bases };
 		}
 		// Precio unitario con agregados (v1.24.0: o con los adicionales del menú)
 		function precioLinea(l) {
@@ -340,7 +355,10 @@
 		}
 		function renderSubfamilias() {
 			var $s = $('#subfamilias').empty();
-			var subs = familiaActiva > 0 ? subfamiliasCon($.grep(catalogo.productos, function (p) { return p.id_familia === familiaActiva; })) : [];
+			// v1.32.1: todas las subfamilias de la familia elegida (con cuántos productos tiene cada una), aunque estén vacías
+			var subs = familiaActiva > 0 ? $.grep(catalogo.subfamilias || [], function (sf) { return sf.id_familia === familiaActiva; }) : [];
+			var cuenta = {};
+			$.each(catalogo.productos, function (i, p) { if (p.id_familia === familiaActiva && p.id_subfamilia) cuenta[p.id_subfamilia] = (cuenta[p.id_subfamilia] || 0) + 1; });
 			if (!$.grep(subs, function (s) { return s.id_subfamilia === subfamiliaActiva; }).length) subfamiliaActiva = 0;
 			$s.prop('hidden', !subs.length);
 			if (!subs.length) return;
@@ -348,7 +366,7 @@
 			$s.append($('<button class="btn btn-sm">').toggleClass('btn-success', !subfamiliaActiva).toggleClass('btn-default', !!subfamiliaActiva).text('Todas').data('id', 0));
 			$.each(subs, function (i, s) {
 				$s.append($('<button class="btn btn-sm">').toggleClass('btn-success', subfamiliaActiva === s.id_subfamilia).toggleClass('btn-default', subfamiliaActiva !== s.id_subfamilia)
-					.text(s.nombre).data('id', s.id_subfamilia));
+					.text(s.nombre + ' (' + (cuenta[s.id_subfamilia] || 0) + ')').data('id', s.id_subfamilia));
 			});
 		}
 

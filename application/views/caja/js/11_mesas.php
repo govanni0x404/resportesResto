@@ -610,7 +610,7 @@
 				return '<div class="mp-linea" data-i="' + i + '"><div class="mp-nombre">' + esc(l.nombre) + (l.nota ? '<small>» ' + esc(l.nota) + '</small>' : '') + (l.agregado ? '<small>+ ' + esc(l.agregado) + (l.nota_agregado ? ' » ' + esc(l.nota_agregado) : '') + '</small>' : '')
 					+ $.map($.grep(carro, function (h) { return h.enviada && h.menu_de === l.id_detalle; }), function (h) { return '<small>+ ' + esc(h.nombre) + '</small>'; }).join('') + '</div>'
 					+ '<div class="input-group input-group-sm"><span class="input-group-btn"><button class="btn btn-default mp-menos" type="button"><i class="fa fa-minus"></i></button></span>'
-					+ '<input type="number" class="form-control mp-cant" min="0" max="' + l.cantidad + '" step="' + (fraccion ? '0.001' : '1') + '" value="' + inicial + '">'
+					+ '<input type="number" class="form-control mp-cant" min="' + (modo === 'anular' ? (fraccion ? '0.001' : '1') : '0') + '" max="' + l.cantidad + '" step="' + (fraccion ? '0.001' : '1') + '" value="' + inicial + '">'
 					+ '<span class="input-group-btn"><button class="btn btn-default mp-mas" type="button"><i class="fa fa-plus"></i></button></span></div>'
 					+ '<div class="mp-de">de ' + fmtCant(l.cantidad) + '</div><div class="mp-monto"></div></div>';
 			}).join(''));
@@ -633,7 +633,7 @@
 			var res = [];
 			$('#mpLineas .mp-linea').each(function () {
 				var l = mp.lineas[$(this).data('i')];
-				var q = Math.max(0, Math.min(l.cantidad, Number(String($(this).find('.mp-cant').val()).replace(',', '.')) || 0));
+				var q = Math.max(minimoMp(l), Math.min(l.cantidad, Number(String($(this).find('.mp-cant').val()).replace(',', '.')) || 0));   // v1.32.1: anular nunca en 0
 				res.push({ linea: l, cantidad: Math.round(q * 1000) / 1000 });
 			});
 			return res;
@@ -648,11 +648,18 @@
 			$('#mpResumenMonto').text(fmt(total));
 			$('#mpConfirmar').prop('disabled', !hay);
 		}
-		$('#mpLineas').on('input change', '.mp-cant', actualizarMp).on('click', '.mp-mas, .mp-menos', function () {
+		// v1.32.1 (pedido del usuario): al anular nunca queda en 0: lo mínimo es 1 (o 0,001 si se vende por peso)
+		function minimoMp(l) { return mp && mp.modo === 'anular' ? Math.min(l.cantidad, l.cantidad !== Math.round(l.cantidad) ? 0.001 : 1) : 0; }
+		$('#mpLineas').on('change', '.mp-cant', function () {
+			var l = mp.lineas[$(this).closest('.mp-linea').data('i')], v = Number(String(this.value).replace(',', '.')) || 0, min = minimoMp(l);
+			if (v < min) { this.value = min; toastr.info('Se anula como mínimo ' + fmtCant(min)); }
+			if (v > l.cantidad) this.value = l.cantidad;
+			actualizarMp();
+		}).on('input', '.mp-cant', actualizarMp).on('click', '.mp-mas, .mp-menos', function () {
 			var $c = $(this).closest('.mp-linea').find('.mp-cant'), l = mp.lineas[$(this).closest('.mp-linea').data('i')];
 			var paso = l.cantidad !== Math.round(l.cantidad) ? 0.1 : 1;
 			var v = (Number($c.val()) || 0) + ($(this).hasClass('mp-mas') ? paso : -paso);
-			$c.val(Math.round(Math.max(0, Math.min(l.cantidad, v)) * 1000) / 1000);
+			$c.val(Math.round(Math.max(minimoMp(l), Math.min(l.cantidad, v)) * 1000) / 1000);
 			actualizarMp();
 		});
 		$('#mpConfirmar').on('click', function () {

@@ -47,9 +47,10 @@ class Mpromosushi extends CI_Model
 	/** v1.32.0: columnas nuevas para los SELECT (sin la migración: como antes) */
 	private function selOpciones($db, $s = 's')
 	{
-		return $this->conOpciones($db)
+		return ($this->conOpciones($db)
 			? "$s.fija_web, ($s.armado_fijo_web IS NOT NULL) AS con_armado, $s.precio_envoltorio_web, $s.max_envoltorios_web, $s.max_extras_web, $s.max_salsas_web"
-			: 'false AS fija_web, false AS con_armado, false AS precio_envoltorio_web, 1 AS max_envoltorios_web, 0 AS max_extras_web, 0 AS max_salsas_web';
+			: 'false AS fija_web, false AS con_armado, false AS precio_envoltorio_web, 1 AS max_envoltorios_web, 0 AS max_extras_web, 0 AS max_salsas_web')
+			. ($this->conMaxBases($db) ? ", $s.max_bases_web" : ', 1 AS max_bases_web');   // v1.32.1
 	}
 
 	/** v1.32.0: Configuraciones > Promos de sushi */
@@ -60,6 +61,43 @@ class Mpromosushi extends CI_Model
 	}
 
 	private static function si($v) { return $v === true || $v === 't'; }
+
+	/** v1.32.1: ¿ya tiene el máximo de bases (migración 20261124100000)? */
+	private function conMaxBases($db)
+	{
+		$r = $db->query("SELECT count(*) AS n FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'promo_sushi_web' AND column_name = 'max_bases_web'")->row();
+		return $r && (int)$r->n > 0;
+	}
+
+	/**
+	 * v1.32.1 (pedido del usuario): guarda un límite de lo que el cliente puede elegir, desde la pestaña de esa sección.
+	 * $tipo: relleno, envoltorio, base (por roll / grupo), extra o salsa (en total). 0 = sin límite (rellenos, extras, salsas).
+	 */
+	public function guardarLimite($idPromo, $tipo, $valor)
+	{
+		$db = $this->db();
+		if (!$this->disponible($db)) return $this->sinTablas();
+		$cols = array('relleno' => array('max_rellenos', 0, 20), 'envoltorio' => array('max_envoltorios_web', 1, 5), 'base' => array('max_bases_web', 1, 5),
+			'extra' => array('max_extras_web', 0, 99), 'salsa' => array('max_salsas_web', 0, 99));
+		if (!isset($cols[$tipo])) return array('error' => 'Sección inválida');
+		list($col, $min, $max) = $cols[$tipo];
+		if ($col !== 'max_rellenos' && !$this->conOpciones($db)) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
+		if ($col === 'max_bases_web' && !$this->conMaxBases($db)) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
+		$valor = (int)$valor;
+		if ($valor < $min || $valor > $max) return array('error' => 'El máximo debe ser de ' . $min . ($min === 0 ? ' (sin límite)' : '') . ' a ' . $max);
+		$db->query("UPDATE promo_sushi_web SET $col = ? WHERE id_producto = ?", array($valor, (int)$idPromo));
+		if ($db->affected_rows() < 1) return array('error' => 'La promo ya no existe. Recarga la página.');
+		return array('ok' => true, 'valor' => $valor);
+	}
+
+	/** v1.32.1: deja la promo para armar otra vez (quita "fija"). */
+	public function quitarFija($idPromo)
+	{
+		$db = $this->db();
+		if (!$this->conOpciones($db)) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
+		$db->query('UPDATE promo_sushi_web SET fija_web = false WHERE id_producto = ?', array((int)$idPromo));
+		return array('ok' => true);
+	}
 
 	/** Columnas de modo para los SELECT (sin la migración: todas por pieza) */
 	private function selModo($db, $s = 's')
@@ -88,7 +126,7 @@ class Mpromosushi extends CI_Model
 			$p->modo = $p->modo === 'rol' ? 'rol' : 'pieza'; $p->piezas_rol = max(1, (int)$p->piezas_rol);   // v1.26.0
 			$p->vigente = $p->vigente === true || $p->vigente === 't';
 			$p->fija = self::si($p->fija_web) && self::si($p->con_armado);   // v1.32.0
-			unset($p->fija_web, $p->con_armado, $p->precio_envoltorio_web, $p->max_envoltorios_web, $p->max_extras_web, $p->max_salsas_web);
+			unset($p->fija_web, $p->con_armado, $p->precio_envoltorio_web, $p->max_envoltorios_web, $p->max_extras_web, $p->max_salsas_web, $p->max_bases_web);
 		}
 		$productos = $db->query("SELECT p.id_producto, p.nombre_producto AS nombre, COALESCE(f.nombre_familia, '') AS familia,
 				COALESCE(p.id_familia, 0) AS id_familia, (p.vigente IS TRUE) AS vigente
@@ -134,7 +172,8 @@ class Mpromosushi extends CI_Model
 			'modo' => $p->modo === 'rol' ? 'rol' : 'pieza', 'piezas_rol' => max(1, (int)$p->piezas_rol),
 			// v1.32.0
 			'fija' => self::si($p->fija_web) && self::si($p->con_armado), 'precio_envoltorio' => self::si($p->precio_envoltorio_web),
-			'max_envoltorios' => max(1, (int)$p->max_envoltorios_web), 'max_extras' => max(0, (int)$p->max_extras_web), 'max_salsas' => max(0, (int)$p->max_salsas_web)),
+			'max_envoltorios' => max(1, (int)$p->max_envoltorios_web), 'max_extras' => max(0, (int)$p->max_extras_web), 'max_salsas' => max(0, (int)$p->max_salsas_web),
+			'max_bases' => max(1, (int)$p->max_bases_web)),
 			'opciones' => $opciones);
 	}
 

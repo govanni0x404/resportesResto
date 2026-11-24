@@ -170,26 +170,24 @@
 					'Marca la opción Favorito En Caja (y Venta a público) en la ficha del producto para verlo aquí.'));
 				return;
 			}
-			// Familias que tienen favoritos; se mantiene la elegida si sigue teniendo
-			var $f = $('#favFamilia'), elegida = Number($f.val()) || 0, usadas = {};
-			$.each(favs, function (i, p) { usadas[p.id_familia] = true; });
-			var opciones = '<option value="0">Todas las familias</option>';
+			// v1.32.1 (pedido del usuario): una sola lista con TODAS las familias y, debajo de cada una, sus subfamilias,
+			// con cuántos favoritos tiene cada una. Valor "f:ID" (familia) o "s:ID" (subfamilia).
+			var $f = $('#favFamilia'), antes = $f.val() || '0', porFam = {}, porSub = {};
+			$.each(favs, function (i, p) { porFam[p.id_familia] = (porFam[p.id_familia] || 0) + 1; if (p.id_subfamilia) porSub[p.id_subfamilia] = (porSub[p.id_subfamilia] || 0) + 1; });
+			var opciones = '<option value="0">Todas las familias (' + favs.length + ')</option>';
 			$.each(catalogo.familias, function (i, f) {
 				var id = Number(f.id_familia);
-				if (usadas[id]) opciones += '<option value="' + id + '">' + esc(f.nombre_familia) + '</option>';
+				var subs = $.grep(catalogo.subfamilias || [], function (sf) { return sf.id_familia === id; });
+				if (!porFam[id] && !subs.length) return;
+				opciones += '<option value="f:' + id + '">' + esc(f.nombre_familia) + ' (' + (porFam[id] || 0) + ')</option>';
+				$.each(subs, function (j, sf) {
+					opciones += '<option value="s:' + sf.id_subfamilia + '">\u00a0\u00a0\u00a0└ ' + esc(sf.nombre) + ' (' + (porSub[sf.id_subfamilia] || 0) + ')</option>';
+				});
 			});
-			$f.html(opciones).val(String(usadas[elegida] ? elegida : 0));
-			elegida = Number($f.val()) || 0;
-			// v1.30.3 (pedido del usuario): subfamilia, con las que tienen favoritos en la familia elegida
-			var $sf = $('#favSubfamilia'), subElegida = Number($sf.val()) || 0;
-			var subs = subfamiliasCon($.grep(favs, function (p) { return !elegida || p.id_familia === elegida; }));
-			var opSub = '<option value="0">Todas las subfamilias</option>';
-			$.each(subs, function (i, s) {
-				var fam = !elegida ? nombreFamilia(s.id_familia) : '';
-				opSub += '<option value="' + s.id_subfamilia + '">' + esc(s.nombre + (fam ? ' (' + fam + ')' : '')) + '</option>';
-			});
-			$sf.html(opSub).val(String($.grep(subs, function (s) { return s.id_subfamilia === subElegida; }).length ? subElegida : 0)).prop('hidden', !subs.length);
-			subElegida = Number($sf.val()) || 0;
+			$f.html(opciones).val(antes);
+			if ($f.val() === null) $f.val('0');
+			var filtro = String($f.val()), elegida = filtro.indexOf('f:') === 0 ? Number(filtro.slice(2)) : 0, subElegida = filtro.indexOf('s:') === 0 ? Number(filtro.slice(2)) : 0;
+			$('#favSubfamilia').prop('hidden', true);
 			$('.fav-vista-btn').each(function () {
 				var on = $(this).data('fav-vista') === favVista;
 				$(this).toggleClass('is-activo', on).attr('aria-pressed', on ? 'true' : 'false');

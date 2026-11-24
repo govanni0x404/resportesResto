@@ -1047,6 +1047,18 @@ class Productos extends CI_Controller
 		$this->respuestaSushi(function ($m, $in) { return $m->valorOpcion((int)$in->post('id_opcion'), $in->post('valor')); });
 	}
 
+	/** v1.32.1: un límite de lo que el cliente puede elegir (desde la pestaña de esa sección) */
+	public function limitePromoSushi()
+	{
+		$this->respuestaSushi(function ($m, $in) { return $m->guardarLimite((int)$in->post('id_promo'), (string)$in->post('tipo'), $in->post('valor')); });
+	}
+
+	/** v1.32.1: quitar "fija" a una promo */
+	public function quitarFijaSushi()
+	{
+		$this->respuestaSushi(function ($m, $in) { return $m->quitarFija((int)$in->post('id_promo')); });
+	}
+
 	/** v1.32.0: precio de la promo con ese envoltorio */
 	public function precioOpcionSushi()
 	{

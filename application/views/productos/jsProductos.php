@@ -1,14 +1,14 @@
 <script>
 // v1.24.12: secciones de la ficha del producto (Datos / Parámetros / Imagen). Siempre abre en Datos.
 function mostrarSeccionProducto(nombre) {
-    $('.prod-sec-btn').each(function () {
+    $('#modalNuevoProducto .prod-sec-btn').each(function () {   // v1.32.1: solo la ficha (Promos Sushi usa el mismo estilo)
         var on = $(this).data('seccion') === nombre;
         $(this).toggleClass('activo', on).attr('aria-selected', on ? 'true' : 'false');
     });
     $('#modalNuevoProducto .prod-seccion').each(function () { $(this).toggleClass('activa', $(this).data('seccion') === nombre); });
     $('#modalNuevoProducto .modal-body').scrollTop(0);
 }
-$(document).on('click', '.prod-sec-btn', function () { mostrarSeccionProducto($(this).data('seccion')); });
+$(document).on('click', '#modalNuevoProducto .prod-sec-btn', function () { mostrarSeccionProducto($(this).data('seccion')); });
 $(document).on('show.bs.modal', '#modalNuevoProducto', function (e) { if (e.target === this) mostrarSeccionProducto('datos'); });
 
 var base_url = "<?php echo base_url(); ?>";

@@ -192,7 +192,7 @@ class Mcaja extends CI_Model
 			$sushisCaja[] = array('id_producto' => $idP, 'piezas' => $sp['piezas'], 'paso' => $sp['paso'], 'max_rellenos' => $sp['max_rellenos'],
 				'modo' => $sp['modo'], 'piezas_rol' => $sp['piezas_rol'],   // v1.26.0
 				// v1.32.0: promo fija (lo armado), precio según el envoltorio, máximos y salsas
-				'fijo' => $sp['fijo'], 'precio_envoltorio' => $sp['precio_envoltorio'], 'max_envoltorios' => $sp['max_envoltorios'],
+				'fijo' => $sp['fijo'], 'precio_envoltorio' => $sp['precio_envoltorio'], 'max_envoltorios' => $sp['max_envoltorios'], 'max_bases' => $sp['max_bases'],
 				'max_extras' => $sp['max_extras'], 'max_salsas' => $sp['max_salsas'],
 				'bases' => $ops['base'], 'rellenos' => $ops['relleno'], 'envoltorios' => $ops['envoltorio'], 'extras' => $ops['extra'], 'salsas' => $ops['salsa']);
 		}
@@ -339,6 +339,7 @@ class Mcaja extends CI_Model
 		$conOp = isset($t['promo_sushi_web']['fija_web'], $t['promo_sushi_web']['max_salsas_web'], $t['promo_sushi_opcion_web']['precio_promo_web']);
 		$selOp = $conOp ? 's.fija_web, s.armado_fijo_web, s.precio_envoltorio_web, s.max_envoltorios_web, s.max_extras_web, s.max_salsas_web'
 			: 'false AS fija_web, NULL AS armado_fijo_web, false AS precio_envoltorio_web, 1 AS max_envoltorios_web, 0 AS max_extras_web, 0 AS max_salsas_web';
+		$selOp .= isset($t['promo_sushi_web']['max_bases_web']) ? ', s.max_bases_web' : ', 1 AS max_bases_web';   // v1.32.1
 		$cfg = $this->opcionesSushi($db);
 		$si = function ($v) { return $v === true || $v === 't'; };
 		foreach ($this->q($db, "SELECT s.id_producto, s.piezas, s.paso, s.max_rellenos, $selRol, $selOp FROM promo_sushi_web s
@@ -350,7 +351,8 @@ class Mcaja extends CI_Model
 				'max_rellenos' => max(0, (int)$r->max_rellenos),
 				// v1.26.0: por roll, cada grupo va de a un roll (paso = piezas del roll) y lo elegido se cobra por roll
 				'modo' => $rol ? 'rol' : 'pieza', 'piezas_rol' => $pr,
-				'fijo' => is_array($fijo) ? $fijo : null, 'precio_envoltorio' => $si($r->precio_envoltorio_web),
+				// v1.32.1: precio según el envoltorio solo en promos por roll (cada roll se cobra con el precio de su envoltorio)
+				'fijo' => is_array($fijo) ? $fijo : null, 'precio_envoltorio' => $rol && $si($r->precio_envoltorio_web), 'max_bases' => max(1, (int)$r->max_bases_web),
 				'max_envoltorios' => max(1, (int)$r->max_envoltorios_web), 'max_extras' => max(0, (int)$r->max_extras_web), 'max_salsas' => max(0, (int)$r->max_salsas_web),
 				'opciones' => array('base' => array(), 'relleno' => array(), 'envoltorio' => array(), 'extra' => array(), 'salsa' => array()));
 		}
@@ -392,12 +394,36 @@ class Mcaja extends CI_Model
 		$ids = function ($o) { return $o ? (int)$o['id'] : 0; };
 		$guardar = array('grupos' => array(), 'extras' => array(), 'salsas' => array());
 		foreach ($r['grupos'] as $g) {
-			$guardar['grupos'][] = array('piezas' => $g['piezas'], 'base' => $ids($g['base']), 'envoltorio' => $ids($g['envoltorio']),
+			$guardar['grupos'][] = array('piezas' => $g['piezas'], 'base' => $ids($g['base']), 'bases' => array_map($ids, $g['bases']), 'envoltorio' => $ids($g['envoltorio']),
 				'envoltorios' => array_map($ids, $g['envoltorios']), 'rellenos' => array_map($ids, $g['rellenos']), 'nota' => $g['nota']);
 		}
 		foreach (array('extras', 'salsas') as $k) foreach ($r[$k] as $par) $guardar[$k][] = array('id' => (int)$par[0]['id'], 'cantidad' => (int)$par[1]);
 		$this->q($db, 'UPDATE promo_sushi_web SET fija_web = true, armado_fijo_web = ? WHERE id_producto = ?', array(json_encode($guardar), (int)$idPromo));
 		return array('ok' => true, 'fija' => true, 'armado' => $guardar);
+	}
+
+	/**
+	 * v1.32.1: precio de cada roll (grupo) de una promo con precio según el envoltorio. Un grupo cuyo envoltorio tiene
+	 * precio vale ese precio por roll (el más caro si lleva varios); el que no, su parte del precio de la promo (repartida
+	 * por rolls con redondeo acumulado, para que la suma cuadre). Igual en la Caja (preciosRollSushi en 04_estado_catalogo).
+	 */
+	public static function preciosRollSushi($promo, $grupos, $precioPromo)
+	{
+		$totalRolls = max(1, intdiv((int)$promo['piezas'], max(1, (int)$promo['piezas_rol'])));
+		$res = array();
+		$acum = 0;
+		$antes = 0;
+		foreach ($grupos as $i => $g) {
+			$rolls = isset($g['rolls']) && $g['rolls'] ? (int)$g['rolls'] : intdiv((int)$g['piezas'], max(1, (int)$promo['piezas_rol']));
+			$acum += $rolls;
+			$hasta = (int)round($precioPromo * $acum / $totalRolls);
+			$parte = $hasta - $antes;
+			$antes = $hasta;
+			$p = 0;
+			foreach ($g['envoltorios'] as $o) $p = max($p, (int)$o['precio_promo']);
+			$res[$i] = $p > 0 ? $p * $rolls : $parte;
+		}
+		return $res;
 	}
 
 	/** v1.32.0: Configuraciones > Promos de sushi (sin las columnas: como antes, con bases y sin salsas aparte). */
@@ -447,11 +473,19 @@ class Mcaja extends CI_Model
 				throw new Exception($nombre . ', grupo ' . $num . ': ' . ($rol ? 'los rolls van completos (de ' . $promo['paso'] . ' piezas)' : 'las piezas van de a ' . $promo['paso']), 400);
 			}
 			$total += $piezas;
-			$base = null;
-			if ($op['base']) {
-				if (empty($g['base'])) throw new Exception($nombre . ', grupo ' . $num . ': elige la base', 400);
-				$base = $opcion('base', $g['base']);
+			// v1.32.1: puede llevar más de una base (hasta max_bases); llega "bases" [ids] o "base" (una)
+			$idsBase = isset($g['bases']) && is_array($g['bases']) ? $g['bases'] : (!empty($g['base']) ? array($g['base']) : array());
+			$bases = array();
+			foreach ($idsBase as $idB) {
+				$o = $opcion('base', $idB);
+				if (isset($bases[$o['id']])) throw new Exception($nombre . ', grupo ' . $num . ': ' . $o['nombre'] . ' está repetido', 400);
+				$bases[$o['id']] = $o;
 			}
+			$bases = array_values($bases);
+			if ($op['base'] && !$bases) throw new Exception($nombre . ', grupo ' . $num . ': elige la base', 400);
+			$maxBases = isset($promo['max_bases']) ? max(1, (int)$promo['max_bases']) : 1;
+			if (count($bases) > $maxBases) throw new Exception($nombre . ', grupo ' . $num . ': se pueden elegir hasta ' . $maxBases . ($maxBases === 1 ? ' base' : ' bases'), 400);
+			$base = $bases ? $bases[0] : null;
 			// v1.32.0: puede llevar más de un envoltorio (hasta max_envoltorios); llega "envoltorios" [ids] o "envoltorio" (uno)
 			$idsEnv = isset($g['envoltorios']) && is_array($g['envoltorios']) ? $g['envoltorios'] : (!empty($g['envoltorio']) ? array($g['envoltorio']) : array());
 			$envs = array();
@@ -480,7 +514,7 @@ class Mcaja extends CI_Model
 			// v1.26.1: nota del roll / grupo (sin caracteres de control, hasta 100)
 			$notaG = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', isset($g['nota']) && is_scalar($g['nota']) ? (string)$g['nota'] : '')), 0, 100);
 			$res['grupos'][] = array('piezas' => $piezas, 'rolls' => $rol ? intdiv($piezas, $promo['piezas_rol']) : 0,
-				'base' => $base, 'envoltorio' => $env, 'envoltorios' => $envs, 'rellenos' => array_values($rellenos), 'nota' => $notaG);
+				'base' => $base, 'bases' => $bases, 'envoltorio' => $env, 'envoltorios' => $envs, 'rellenos' => array_values($rellenos), 'nota' => $notaG);
 		}
 		if ($total !== $promo['piezas']) {
 			// v1.26.0: por roll, el aviso en rolls
@@ -2376,14 +2410,12 @@ class Mcaja extends CI_Model
 				$nota = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', isset($it['nota']) ? (string)$it['nota'] : '')), 0, 150);
 				$bodegaCaja = !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : 0;
 				$unitario = (int)round((float)$prod->precio);
-				// v1.32.0: precio según el envoltorio: el del envoltorio elegido (el más caro si hay varios); su valor
-				// adicional no se suma aparte. Un envoltorio sin precio deja el de la promo.
+				// v1.32.1 (pedido del usuario): precio según el envoltorio (solo por roll). Cada roll va en su línea con el precio
+				// de su envoltorio (el más caro si lleva varios), sin sumar lo adicional de rellenos ni bases; un roll cuyo
+				// envoltorio no tiene precio lleva su parte del precio de la promo. La línea de la promo queda en $0.
 				$porEnv = !empty($sushis[$id]['precio_envoltorio']);
-				if ($porEnv) {
-					$pEnv = 0;
-					foreach ($sel['grupos'] as $g) foreach ($g['envoltorios'] as $o) $pEnv = max($pEnv, (int)$o['precio_promo']);
-					if ($pEnv > 0) $unitario = $pEnv;
-				}
+				$preciosGrupo = $porEnv ? self::preciosRollSushi($sushis[$id], $sel['grupos'], $unitario) : array();
+				if ($porEnv) $unitario = 0;
 				$bruto = (int)round($unitario * $cantidad);
 				$subtotal += $bruto;
 				$idxPromo = count($lineas);
@@ -2395,6 +2427,7 @@ class Mcaja extends CI_Model
 				);
 				$hijo = function ($o, $cant, $notaLinea, $imprimir) use (&$lineas, &$subtotal, $exento, $id, $idxPromo, $bodegaCaja) {
 					$b = (int)round($o['valor'] * $cant);
+					$o['valor'] = is_float($o['valor']) ? (int)round($o['valor']) : $o['valor'];   // v1.32.1: unitario entero (el total ya va exacto)
 					$subtotal += $b;
 					$lineas[] = array(
 						'id_producto' => $o['id_producto'], 'nombre' => $o['nombre'], 'cantidad' => $cant,
@@ -2414,12 +2447,18 @@ class Mcaja extends CI_Model
 					$nombresRellenos = array_map(function ($o) { return $o['nombre']; }, $g['rellenos']);
 					$titulo = $g['envoltorios'] ? implode(' + ', array_map(function ($o) { return $o['nombre']; }, $g['envoltorios']))
 						: ($g['base'] ? $g['base']['nombre'] : $nombresRellenos[0]);
-					$desc = ($porRol ? 'Roll: ' : '') . ($nombresRellenos ? implode(', ', $nombresRellenos) : 'Sin relleno') . ($g['base'] ? ' · Base ' . $g['base']['nombre'] : '');
+					$nombresBases = implode(' + ', array_map(function ($o) { return $o['nombre']; }, $g['bases']));   // v1.32.1: varias bases
+					$desc = ($porRol ? 'Roll: ' : '') . ($nombresRellenos ? implode(', ', $nombresRellenos) : 'Sin relleno') . ($g['bases'] ? ' · Base ' . $nombresBases : '');
 					// La primera línea del grupo lleva la descripción completa y es la que sale en comandas, reenvíos y anulaciones
 					$partes = array();
-					foreach ($g['envoltorios'] as $o) $partes[] = $porEnv ? array_merge($o, array('valor' => 0)) : $o;   // v1.32.0: varios envoltorios
-					if ($g['base']) $partes[] = $g['base'];
+					foreach ($g['envoltorios'] as $o) $partes[] = $o;   // v1.32.0: varios envoltorios
+					foreach ($g['bases'] as $o) $partes[] = $o;
 					foreach ($g['rellenos'] as $o) $partes[] = $o;
+					// v1.32.1: precio según el envoltorio: el primer producto del roll lleva el precio del roll; los demás, $0
+					if ($porEnv) {
+						foreach ($partes as $k => $o) $partes[$k]['valor'] = 0;
+						$partes[0]['valor'] = $g['rolls'] > 0 ? $preciosGrupo[$ng] / $g['rolls'] : $preciosGrupo[$ng];
+					}
 					$notaG = $g['nota'] !== '' ? ' · Nota: ' . $g['nota'] : '';
 					$notaPromo = $ng === 0 && $nota !== '' ? ' · Nota promo: ' . $nota : '';
 					// Lo guardado en la línea (sale así en reenvíos y anulaciones)

@@ -49,6 +49,24 @@ class Dashboard extends CI_Controller
 		}
 	}
 
+	/** v1.32.1: detalle de las ventas de mesa (por recinto, tipo de mesa o mesa) del período del Dashboard. Solo lectura. */
+	public function ventasMesas()
+	{
+		$this->output->set_content_type('application/json', 'utf-8');
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+			$this->output->set_status_header(401)->set_output(json_encode(array('error' => 'Sesión expirada, vuelve a ingresar')));
+			return;
+		}
+		try {
+			$this->load->model('Manalitica');
+			$in = $this->input;
+			$this->output->set_output(json_encode($this->Manalitica->ventasMesas((int)$in->post('id_caja'), $in->post('desde'), $in->post('hasta'),
+				(int)$in->post('id_recinto'), (int)$in->post('id_tipo'), (int)$in->post('id_mesa'))));
+		} catch (Throwable $e) {
+			$this->output->set_status_header(500)->set_output(json_encode(array('error' => $e->getMessage())));
+		}
+	}
+
 	public function empresa()
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {

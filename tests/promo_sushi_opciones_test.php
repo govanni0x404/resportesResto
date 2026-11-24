@@ -61,6 +61,7 @@ $idsRell = array();
 foreach (array('POLLO', 'PALTA', 'QUESO') as $n) { $idsRell[] = $crear('relleno', "PRU $n $sufijo", 0); }
 $crear('envoltorio', "PRU NORI $sufijo", 0);
 $crear('envoltorio', "PRU PANKO $sufijo", 0);
+$crear('envoltorio', "PRU TEMPURA $sufijo", 0);   // sin precio: el roll lleva su parte del precio de la promo
 $crear('extra', "PRU GYOZA $sufijo", 500);
 $crear('salsa', "PRU SOYA $sufijo", 0);
 $crear('salsa', "PRU TERIYAKI $sufijo", 300);
@@ -75,11 +76,21 @@ revisar('repetirlo no los duplica (se saltan)', ($r['agregados'] ?? -1) === 0 &&
 list($c, $r, $b) = ps('agregarVariasSushi', array('id_promo' => $idPromo, 'tipo' => 'base', 'id_familia' => $fam, 'valor' => 0));
 revisar('agregar toda una familia de una vez', $c === 200 && isset($r['agregados']), "código $c: " . substr($b, 0, 200));
 
-// Precio con cada envoltorio
+// Precio de cada roll con su envoltorio
 list(, $p) = ps('obtenerPromoSushi', array('id_producto' => $idPromo));
-$envs = $p['opciones']['envoltorio'];
-ps('precioOpcionSushi', array('id_opcion' => $envs[0]['id_opcion'], 'precio' => 8000));
-ps('precioOpcionSushi', array('id_opcion' => $envs[1]['id_opcion'], 'precio' => 9500));
+foreach ($p['opciones']['envoltorio'] as $o) {
+	if (strpos($o['nombre'], 'NORI') !== false) ps('precioOpcionSushi', array('id_opcion' => $o['id_opcion'], 'precio' => 8000));
+	if (strpos($o['nombre'], 'PANKO') !== false) ps('precioOpcionSushi', array('id_opcion' => $o['id_opcion'], 'precio' => 9500));
+}
+
+echo "Límites de cada sección (parte 2):\n";
+list($c, $r) = ps('limitePromoSushi', array('id_promo' => $idPromo, 'tipo' => 'base', 'valor' => 2));
+revisar('máximo de bases por roll = 2', $c === 200 && ($r['valor'] ?? 0) === 2, "código $c");
+list($c) = ps('limitePromoSushi', array('id_promo' => $idPromo, 'tipo' => 'envoltorio', 'valor' => 9));
+revisar('9 envoltorios por roll se rechaza (máximo 5)', $c === 400, "código $c");
+list($c, $r) = ps('limitePromoSushi', array('id_promo' => $idPromo, 'tipo' => 'extra', 'valor' => 1));
+list(, $p) = ps('obtenerPromoSushi', array('id_producto' => $idPromo));
+revisar('al reabrir la promo trae los límites guardados', ($p['promo']['max_bases'] ?? 0) === 2 && ($p['promo']['max_extras'] ?? 0) === 1);
 
 echo "Vender en la Caja:\n";
 list(, $b) = pedir(BASE . '/Caja/estado');
@@ -112,12 +123,18 @@ revisar('un envoltorio repetido se rechaza', $c === 400, "código $c: " . substr
 list($c, , $b) = $vender(array('grupos' => array($grupo(array($nori, $panko)), $grupo(array($nori))), 'extras' => array(),
 	'salsas' => array(array('id' => $idOp('salsas', 'SOYA'), 'cantidad' => 2), array('id' => $idOp('salsas', 'TERIYAKI'), 'cantidad' => 1))), 20000);
 revisar('3 salsas con máximo 2: se rechaza', $c === 400 && strpos($b, 'hasta 2 salsas') !== false, "código $c: " . substr($b, 0, 200));
-// Bien: NORI+PANKO y NORI, 1 teriyaki ($300): precio = el envoltorio más caro (PANKO $9.500) + 300 = 9.800
-list($c, $r, $b) = $vender(array('grupos' => array($grupo(array($nori, $panko)), $grupo(array($nori))), 'extras' => array(),
-	'salsas' => array(array('id' => $idOp('salsas', 'TERIYAKI'), 'cantidad' => 1))), 9800);
-revisar('venta con 2 envoltorios y una salsa: cobra el envoltorio más caro + la salsa ($9.800)', $c === 200 && !empty($r['id_venta']), "código $c: " . substr($b, 0, 300));
-list($c, , $b) = $vender(array('grupos' => array($grupo(array($nori)), $grupo(array($nori))), 'extras' => array(), 'salsas' => array()), 9500);
-revisar('solo NORI cuesta $8.000 (pagar $9.500 deja vuelto, no falla)', $c === 200, "código $c: " . substr($b, 0, 200));
+// Cada roll con su precio: roll 1 NORI+PANKO (el más caro, $9.500) y roll 2 NORI ($8.000) + 1 teriyaki ($300) = $17.800
+$selA = array('grupos' => array($grupo(array($nori, $panko)), $grupo(array($nori))), 'extras' => array(),
+	'salsas' => array(array('id' => $idOp('salsas', 'TERIYAKI'), 'cantidad' => 1)));
+list($c, , $b) = $vender($selA, 17799);
+revisar('pagar $17.799 no alcanza (el total es $17.800)', $c >= 400, "código $c: " . substr($b, 0, 200));
+list($c, $r, $b) = $vender($selA, 17800);
+revisar('cada roll con el precio de su envoltorio: $9.500 + $8.000 + salsa $300 = $17.800', $c === 200 && !empty($r['id_venta']), "código $c: " . substr($b, 0, 300));
+$tempura = $idEnv('TEMPURA');
+list($c, , $b) = $vender(array('grupos' => array($grupo(array($tempura)), $grupo(array($panko))), 'extras' => array(), 'salsas' => array()), 13999);
+revisar('roll con envoltorio sin precio = su parte de la promo: $4.500 + $9.500 = $14.000 ($13.999 no alcanza)', $c >= 400, "código $c");
+list($c, , $b) = $vender(array('grupos' => array($grupo(array($tempura)), $grupo(array($panko))), 'extras' => array(), 'salsas' => array()), 14000);
+revisar('y con $14.000 se cobra', $c === 200, "código $c: " . substr($b, 0, 200));
 
 echo "Promo fija:\n";
 $armado = array('grupos' => array($grupo(array($panko)), $grupo(array($nori))), 'extras' => array(), 'salsas' => array(array('id' => $idOp('salsas', 'SOYA'), 'cantidad' => 1)));
@@ -132,9 +149,9 @@ list($c, , $b) = postJson(BASE . '/Caja/fijarPromoSushi', array('id_producto' =>
 revisar('un armado incompleto no se deja fijo', $c === 400, "código $c: " . substr($b, 0, 200));
 $datosPromo = array('id_producto' => $idPromo, 'nombre' => $nombre, 'rolls' => 2, 'piezas_rol' => 10, 'precio' => 9000, 'paso' => 10, 'max_rellenos' => 2,
 	'id_familia' => $fam, 'id_dimpresion' => 0, 'vigente' => 1, 'modo' => 'rol', 'precio_envoltorio' => 1, 'max_envoltorios' => 2, 'max_extras' => 1, 'max_salsas' => 2);
-ps('grabarPromoSushi', $datosPromo + array('fija' => 0));
+list($c) = ps('quitarFijaSushi', array('id_promo' => $idPromo));
 list(, $p) = ps('obtenerPromoSushi', array('id_producto' => $idPromo));
-revisar('"Quitar fija" en la Carta la deja para armar otra vez', empty($p['promo']['fija']));
+revisar('"Quitar fija" en la Carta la deja para armar otra vez', $c === 200 && empty($p['promo']['fija']));
 
 // Dejar la copia como estaba
 ps('grabarPromoSushi', array_merge($datosPromo, array('vigente' => 0)));

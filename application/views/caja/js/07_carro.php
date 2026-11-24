@@ -84,12 +84,14 @@
 				});
 				// v1.25.0: promo de sushi: cada producto de cada grupo (por pieza) y cada extra es una línea (Mcaja::armarLineas)
 				var suL = l.sushi ? sushiDe(l.id_producto) : null;
-				$.each(suL ? l.sushi.grupos : [], function (j, g) {
+				// v1.32.1: cada roll con el precio de su envoltorio: una línea por roll (Mcaja::armarLineas)
+				var preciosRoll = suL && suL.precio_envoltorio ? preciosRollSushi(suL, l.sushi.grupos) : null;
+				$.each(preciosRoll || [], function (j, v) { res.push({ bruto: Math.round(v * l.cantidad), exento: exento, ila: ila }); });
+				$.each(suL && !preciosRoll ? l.sushi.grupos : [], function (j, g) {
 					var q = r3(l.cantidad * unidadesGrupoSushi(suL, g));   // v1.26.0: por roll, los rolls
 					// v1.32.0: varios envoltorios (con precio según el envoltorio, su valor no se cobra aparte)
-					$.each($.map(suEnvs(g), function (id) { return [['envoltorio', id]]; }).concat([['base', g.base]], $.map(g.rellenos || [], function (id) { return [['relleno', id]]; })), function (k, par) {
+					$.each($.map(suEnvs(g), function (id) { return [['envoltorio', id]]; }).concat($.map(suBases(g), function (id) { return [['base', id]]; }), $.map(g.rellenos || [], function (id) { return [['relleno', id]]; })), function (k, par) {   // v1.32.1: varias bases
 						var o = par[1] ? opcionSushi(suL, par[0], par[1]) : null;
-						if (par[0] === 'envoltorio' && suL.precio_envoltorio) return;
 						if (o && o.valor) res.push({ bruto: Math.round(o.valor * q), exento: exento, ila: ila });
 					});
 				});
@@ -202,9 +204,10 @@
 				// v1.25.0: lo armado de la promo de sushi
 				var suD = sushiDe(l.id_producto);
 				if (suD && l.sushi) {
+					var prRoll = suD.precio_envoltorio ? preciosRollSushi(suD, l.sushi.grupos) : null;   // v1.32.1
 					$.each(l.sushi.grupos, function (j, g) {
-						var tx = textoGrupoSushi(suD, g), v = unidadesGrupoSushi(suD, g) * valorPiezaSushi(suD, g);
-						detalle.push('<span class="del-sushi">' + textoCantSushi(suD, g.piezas) + ' <b>' + esc(tx.titulo) + '</b>' + (tx.rellenos ? ' · ' + esc(tx.rellenos) : '') + (tx.base ? ' · ' + esc(tx.base) : '') + (v ? ' <b>+' + fmt(v) + '</b>' : '') + (g.nota ? ' · <i>' + esc(g.nota) + '</i>' : '') + '</span>');
+						var tx = textoGrupoSushi(suD, g), v = prRoll ? prRoll[j] : unidadesGrupoSushi(suD, g) * valorPiezaSushi(suD, g);
+						detalle.push('<span class="del-sushi">' + textoCantSushi(suD, g.piezas) + ' <b>' + esc(tx.titulo) + '</b>' + (tx.rellenos ? ' · ' + esc(tx.rellenos) : '') + (tx.base ? ' · ' + esc(tx.base) : '') + (v ? ' <b>' + (prRoll ? '' : '+') + fmt(v) + '</b>' : '') + (g.nota ? ' · <i>' + esc(g.nota) + '</i>' : '') + '</span>');
 					});
 					$.each([['extra', l.sushi.extras || []], ['salsa', l.sushi.salsas || []]], function (j, par) {   // v1.32.0: salsas
 						$.each(par[1], function (k, e) {
@@ -238,6 +241,7 @@
 			$('#cantItems, #barraItems, #modalProductosItems').text(unidades);
 			$('#barraMovil').toggleClass('visible', carro.length > 0);
 			$('.caja').toggleClass('con-barra', carro.length > 0);
+			aplicarTopeDescuento(false);   // v1.32.1: si bajó el subtotal, el descuento no queda sobre el tope
 			var t = totales();
 			$('#lblSubtotal').text(fmt(t.subtotal));
 			$('#lblDescuento').text(fmt(-t.descuento));
@@ -349,7 +353,31 @@
 			}, true);
 		}
 
-		$('#txtDescuento').on('input', renderCarro);
+		// v1.32.1 (pedido del usuario): el tope de Configuraciones se aplica al escribir: con 0 no se puede hacer descuento y
+		// con, por ejemplo, 50 no deja pasar del 50% del subtotal (ni en $ ni en %). Al cobrar el servidor lo vuelve a revisar.
+		function topeDescuento() {
+			var t = catalogo && catalogo.config ? Number(catalogo.config.por_maximo_descuento) : 100;
+			return isFinite(t) ? Math.max(0, Math.min(100, t)) : 100;
+		}
+		function aplicarTopeDescuento(avisar) {
+			var tope = topeDescuento(), $d = $('#txtDescuento');
+			$d.prop('disabled', tope <= 0).attr('title', tope <= 0 ? 'No se permiten descuentos (Configuraciones > Descuento máximo está en 0)' : (tope < 100 ? 'Máximo ' + tope + '% del subtotal' : ''));
+			$('[data-tipo-desc]').prop('disabled', tope <= 0);
+			if (tope >= 100) return;
+			var v = Math.max(0, Number($d.val()) || 0), max;
+			if (tipoDesc === 'porc') max = tope;
+			else {
+				var sub = 0;
+				$.each(lineasBrutas(), function (i, l) { sub += l.bruto; });
+				max = Math.round(sub * tope / 100);
+			}
+			if (v > max) {
+				$d.val(max);
+				if (avisar) toastr.warning(tope <= 0 ? 'No se permiten descuentos (Configuraciones > Descuento máximo está en 0)'
+					: 'El descuento máximo es ' + tope + '%' + (tipoDesc === 'porc' ? '' : ' (' + fmt(max) + ')'));
+			}
+		}
+		$('#txtDescuento').on('input', function () { aplicarTopeDescuento(true); renderCarro(); });
 
 		// Escritorio: la venta ocupa el alto visible para que el total y Cobrar queden siempre a la vista
 		function ajustarAltoVenta() {

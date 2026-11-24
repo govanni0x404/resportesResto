@@ -66,8 +66,19 @@
 .ps-op .ps-precio-env input { width: 100px; height: 30px; text-align: right; }
 .ps-fija { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--t-fondo-alt, #F3F4F6); font-size: 13px; }
 .ps-fija.on { background: var(--t-primario-suave, #E8F5EC); }
-.ps-fija .btn { height: 32px; border-radius: 8px; font-weight: 700; }
+.ps-fija .btn { height: 36px; border-radius: 8px; font-weight: 700; margin-left: auto; }
+.ps-fija .ps-fija-txt { flex: 1 1 320px; line-height: 1.45; }
 .ps-form label a.ps-nueva-fam { font-weight: 700; margin-left: 6px; cursor: pointer; }
+/* v1.32.1: dos partes (como la ficha de la Carta) y el límite de cada sección */
+#ModalPromosSushi .lm-cuerpo + .ps-secciones { padding-top: 0; }
+#ModalPromosSushi .ps-secciones + .lm-cuerpo { padding-top: 14px; }
+.ps-seccion { display: none; }
+.ps-seccion.activa { display: block; }
+.ps-secciones .prod-sec-btn:disabled { opacity: .45; cursor: not-allowed; }
+.ps-limite { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: var(--t-primario-suave, #E8F5EC); }
+.ps-limite label { margin: 0; font-weight: 800; }
+.ps-limite input { width: 80px; height: 34px; text-align: center; font-weight: 800; }
+.ps-limite small { color: var(--t-texto-suave, #4B5563); }
 .ps-copiar { display: flex; gap: 8px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--t-borde-suave, #EEF0F3); }
 .ps-copiar select { flex: 1; height: 36px; }
 .ps-copiar .btn { height: 36px; border-radius: 9px; font-weight: 700; white-space: nowrap; }
@@ -84,9 +95,9 @@
                 </div>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
             </div>
+            <!-- v1.32.1 (pedido del usuario): como la ficha de la Carta, en dos partes: los datos de la promo y lo que el cliente elige -->
             <div class="lm-cuerpo">
                 <div class="lm-tarjeta">
-                    <!-- v1.26.0: separar las promos por pieza y por roll -->
                     <div class="ps-modo" id="psModo">
                         <button type="button" data-modo="pieza" class="on"><i class="fa fa-th"></i> Por pieza <b>0</b></button>
                         <button type="button" data-modo="rol"><i class="fa fa-circle-o"></i> Por roll <b>0</b></button>
@@ -96,70 +107,81 @@
                         <button type="button" class="btn btn-default" id="btnPsNueva"><i class="fa fa-plus"></i> Nueva promo</button>
                     </div>
                 </div>
-
-                <div class="lm-tarjeta">
-                    <div class="lm-titulo"><span><i class="fa fa-tag"></i><span id="psTituloForm">Nueva promo</span></span></div>
-                    <div class="ps-form">
-                        <div class="ps-ancho"><label for="psNombre">Nombre</label><input type="text" class="form-control" id="psNombre" maxlength="100" placeholder="Ej: PROMO 30 PIEZAS MIXTAS"></div>
-                        <div class="ps-solo-pieza"><label for="psPiezas">Piezas</label><input type="text" inputmode="numeric" class="form-control" id="psPiezas" placeholder="30"></div>
-                        <div class="ps-solo-rol"><label for="psRolls">Rolls <small id="psRollsPiezas"></small></label><input type="text" inputmode="numeric" class="form-control" id="psRolls" placeholder="3"></div>
-                        <div><label for="psPrecio">Precio <small>(todas las listas)</small></label><input type="text" inputmode="numeric" class="form-control" id="psPrecio" placeholder="9500"></div>
-                        <div class="ps-solo-pieza"><label for="psPaso">De a cuántas piezas <small>(1 = libre)</small></label><input type="text" inputmode="numeric" class="form-control" id="psPaso" value="1"></div>
-                        <div class="ps-solo-rol"><label for="psPiezasRol">Piezas por roll</label><input type="text" inputmode="numeric" class="form-control" id="psPiezasRol" value="10"></div>
-                        <div><label for="psMaxRellenos">Máx. rellenos <span class="ps-por-que">por roll</span> <small>(0 = sin límite)</small></label><input type="text" inputmode="numeric" class="form-control" id="psMaxRellenos" value="3"></div>
-                        <!-- v1.32.0: máximos que se ponen al crear la promo -->
-                        <div><label for="psMaxEnvoltorios">Máx. envoltorios <span class="ps-por-que">por roll</span></label><input type="text" inputmode="numeric" class="form-control" id="psMaxEnvoltorios" value="1"></div>
-                        <div><label for="psMaxExtras">Máx. extras <small>(0 = sin límite)</small></label><input type="text" inputmode="numeric" class="form-control" id="psMaxExtras" value="0"></div>
-                        <div class="ps-con-salsas"><label for="psMaxSalsas">Máx. salsas <small>(0 = sin límite)</small></label><input type="text" inputmode="numeric" class="form-control" id="psMaxSalsas" value="0"></div>
-                        <div><label for="psFamilia">Familia <a class="ps-nueva-fam" id="psNuevaFamilia" title="Crear una familia nueva (queda elegida)"><i class="fa fa-plus"></i> Nueva</a></label><select class="form-control" id="psFamilia"></select></div>
-                        <div><label for="psDestino">Destino de impresión</label><select class="form-control" id="psDestino"></select></div>
-                        <div><label class="ps-check"><input type="checkbox" id="psVigente" checked> Vigente (se vende en la Caja)</label></div>
-                        <!-- v1.32.0: precio según el envoltorio -->
-                        <div class="ps-ancho"><label class="ps-check" title="El precio se pone en cada envoltorio (pestaña Envoltorios). Si se eligen envoltorios distintos, se cobra el más caro."><input type="checkbox" id="psPrecioEnv"> El precio depende del envoltorio</label></div>
+            </div>
+            <div class="prod-secciones ps-secciones" role="tablist" aria-label="Partes de la promo">
+                <button type="button" class="prod-sec-btn activo" data-ps-seccion="datos" role="tab"><i class="fa fa-tag"></i> 1. Datos de la promo</button>
+                <button type="button" class="prod-sec-btn" data-ps-seccion="elegir" role="tab"><i class="fa fa-list"></i> 2. Lo que el cliente elige</button>
+            </div>
+            <div class="lm-cuerpo">
+                <!-- 1. Datos de la promo -->
+                <div class="ps-seccion activa" data-ps-seccion="datos">
+                    <div class="lm-tarjeta">
+                        <div class="lm-titulo"><span><i class="fa fa-tag"></i><span id="psTituloForm">Nueva promo</span></span></div>
+                        <div class="ps-form">
+                            <div class="ps-ancho"><label for="psNombre">Nombre</label><input type="text" class="form-control" id="psNombre" maxlength="100" placeholder="Ej: PROMO 30 PIEZAS MIXTAS"></div>
+                            <div class="ps-solo-pieza"><label for="psPiezas">Piezas</label><input type="text" inputmode="numeric" class="form-control" id="psPiezas" placeholder="30"></div>
+                            <div class="ps-solo-rol"><label for="psRolls">Rolls <small id="psRollsPiezas"></small></label><input type="text" inputmode="numeric" class="form-control" id="psRolls" placeholder="3"></div>
+                            <div><label for="psPrecio">Precio <small>(todas las listas)</small></label><input type="text" inputmode="numeric" class="form-control" id="psPrecio" placeholder="9500"></div>
+                            <div class="ps-solo-pieza"><label for="psPaso">De a cuántas piezas <small>(1 = libre)</small></label><input type="text" inputmode="numeric" class="form-control" id="psPaso" value="1"></div>
+                            <div class="ps-solo-rol"><label for="psPiezasRol">Piezas por roll</label><input type="text" inputmode="numeric" class="form-control" id="psPiezasRol" value="10"></div>
+                            <div><label for="psFamilia">Familia <a class="ps-nueva-fam" id="psNuevaFamilia" title="Crear una familia nueva (queda elegida)"><i class="fa fa-plus"></i> Nueva</a></label><select class="form-control" id="psFamilia"></select></div>
+                            <div><label for="psDestino">Destino de impresión</label><select class="form-control" id="psDestino"></select></div>
+                            <div class="ps-ancho"><label class="ps-check"><input type="checkbox" id="psVigente" checked> Vigente (se vende en la Caja)</label></div>
+                            <div class="ps-ancho ps-solo-rol"><label class="ps-check" title="Cada roll va en su propia línea con el precio de su envoltorio (se pone en la parte 2, Envoltorios). Un roll con un envoltorio sin precio lleva su parte del precio de la promo."><input type="checkbox" id="psPrecioEnv"> Cada roll se cobra según su envoltorio</label></div>
+                        </div>
+                        <div class="ps-pie-form">
+                            <small id="psAyudaForm"></small>
+                            <button type="button" class="btn btn-success" id="btnPsGrabar"><i class="fa fa-save"></i> Grabar promo</button>
+                        </div>
                     </div>
-                    <!-- v1.32.0: promo fija (se arma una vez en la Caja y queda así) -->
-                    <div class="ps-fija" id="psFija" style="display:none"></div>
-                    <div class="ps-pie-form">
-                        <small id="psAyudaForm"><i class="fa fa-info-circle"></i> "De a cuántas piezas": con 10, cada grupo es un roll completo de 10 (10, 20, 30…). Con 1, cualquier cantidad.</small>
-                        <button type="button" class="btn btn-success" id="btnPsGrabar"><i class="fa fa-save"></i> Grabar promo</button>
-                    </div>
+                    <!-- promo fija: se arma una vez en la Caja y queda así; aquí se ve y se quita -->
+                    <div class="lm-tarjeta ps-fija" id="psFija" style="display:none"></div>
                 </div>
 
-                <div class="lm-tarjeta ps-bloqueado" id="psCatalogo">
-                    <div class="lm-titulo"><span><i class="fa fa-list"></i>Lo que el cliente puede elegir</span></div>
-                    <div class="ps-tabs" id="psTabs">
-                        <span class="ps-tab on" data-tipo="relleno">Rellenos <b>0</b></span>
-                        <span class="ps-tab" data-tipo="envoltorio">Envoltorios <b>0</b></span>
-                        <span class="ps-tab" data-tipo="base">Bases <b>0</b></span>
-                        <span class="ps-tab" data-tipo="salsa">Salsas <b>0</b></span>
-                        <span class="ps-tab" data-tipo="extra">Extras <b>0</b></span>
-                    </div>
-                    <p class="ps-ayuda-tipo" id="psAyudaTipo"></p>
-                    <div class="ps-lista" id="psLista"></div>
-                    <!-- v1.32.0: agregar productos que ya existen: uno, varios a la vez (marcándolos) o toda una familia -->
-                    <label style="display:block; margin-bottom:4px; font-size:12px; font-weight:700; color:var(--t-texto-suave, #4B5563)">Agregar productos que ya existen</label>
-                    <div class="ps-picker">
-                        <div class="ps-picker-barra">
-                            <div class="ps-buscar"><i class="fa fa-search"></i><input type="text" class="form-control" id="psBuscar" placeholder="Buscar producto…" autocomplete="off"></div>
-                            <select class="form-control" id="psFiltroFamilia"><option value="0">Todas las familias</option></select>
+                <!-- 2. Lo que el cliente elige -->
+                <div class="ps-seccion" data-ps-seccion="elegir">
+                    <div class="lm-tarjeta" id="psCatalogo">
+                        <div class="ps-tabs" id="psTabs">
+                            <span class="ps-tab on" data-tipo="relleno">Rellenos <b>0</b></span>
+                            <span class="ps-tab" data-tipo="envoltorio">Envoltorios <b>0</b></span>
+                            <span class="ps-tab" data-tipo="base">Bases <b>0</b></span>
+                            <span class="ps-tab" data-tipo="salsa">Salsas <b>0</b></span>
+                            <span class="ps-tab" data-tipo="extra">Extras <b>0</b></span>
                         </div>
-                        <div class="ps-picker-lista" id="psPickerLista"></div>
-                        <div class="ps-picker-pie">
-                            <span class="ps-pie-valor"><span class="ps-lbl-valor">Valor $</span> <input type="text" inputmode="numeric" class="form-control" id="psValorExistente" value="0"></span>
-                            <span>
-                                <button type="button" class="btn btn-default" id="btnPsFamilia" title="Agrega todos los productos vigentes de la familia elegida arriba"><i class="fa fa-folder-open-o"></i> Agregar toda la familia</button>
-                                <button type="button" class="btn btn-success" id="btnPsAgregar" disabled><i class="fa fa-plus"></i> Agregar marcados</button>
-                            </span>
+                        <p class="ps-ayuda-tipo" id="psAyudaTipo"></p>
+                        <!-- límite de esta sección (se guarda al cambiarlo) -->
+                        <div class="ps-limite" id="psLimite">
+                            <label for="psLimiteValor" id="psLimiteTexto">Máximo por roll</label>
+                            <input type="text" inputmode="numeric" class="form-control" id="psLimiteValor">
+                            <small id="psLimiteAyuda"></small>
                         </div>
+                        <div class="ps-lista" id="psLista"></div>
                     </div>
-                    <div class="ps-agregar">
-                        <div><label for="psNuevoNombre">…o crear uno nuevo</label><input type="text" class="form-control" id="psNuevoNombre" maxlength="100" placeholder="Ej: POLLO"></div>
-                        <div><label for="psValorNuevo" class="ps-lbl-valor">Valor $</label><input type="text" inputmode="numeric" class="form-control" id="psValorNuevo" value="0"></div>
-                        <button type="button" class="btn btn-success" id="btnPsCrear"><i class="fa fa-magic"></i> Crear y agregar</button>
-                    </div>
-                    <div class="ps-copiar">
-                        <select class="form-control" id="psCopiarDe"></select>
-                        <button type="button" class="btn btn-default" id="btnPsCopiar"><i class="fa fa-clone"></i> Copiar sus opciones a esta promo</button>
+                    <div class="lm-tarjeta">
+                        <div class="lm-titulo"><span><i class="fa fa-plus-circle"></i><span id="psTituloAgregar">Agregar</span></span></div>
+                        <div class="ps-picker">
+                            <div class="ps-picker-barra">
+                                <div class="ps-buscar"><i class="fa fa-search"></i><input type="text" class="form-control" id="psBuscar" placeholder="Buscar producto…" autocomplete="off"></div>
+                                <select class="form-control" id="psFiltroFamilia"><option value="0">Todas las familias</option></select>
+                            </div>
+                            <div class="ps-picker-lista" id="psPickerLista"></div>
+                            <div class="ps-picker-pie">
+                                <span class="ps-pie-valor"><span class="ps-lbl-valor">Valor $</span> <input type="text" inputmode="numeric" class="form-control" id="psValorExistente" value="0"></span>
+                                <span>
+                                    <button type="button" class="btn btn-default" id="btnPsFamilia" title="Agrega todos los productos vigentes de la familia elegida arriba"><i class="fa fa-folder-open-o"></i> Agregar toda la familia</button>
+                                    <button type="button" class="btn btn-success" id="btnPsAgregar" disabled><i class="fa fa-plus"></i> Agregar marcados</button>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="ps-agregar">
+                            <div><label for="psNuevoNombre">…o crear un producto nuevo</label><input type="text" class="form-control" id="psNuevoNombre" maxlength="100" placeholder="Ej: POLLO"></div>
+                            <div><label for="psValorNuevo" class="ps-lbl-valor">Valor $</label><input type="text" inputmode="numeric" class="form-control" id="psValorNuevo" value="0"></div>
+                            <button type="button" class="btn btn-success" id="btnPsCrear"><i class="fa fa-magic"></i> Crear y agregar</button>
+                        </div>
+                        <div class="ps-copiar">
+                            <select class="form-control" id="psCopiarDe"></select>
+                            <button type="button" class="btn btn-default" id="btnPsCopiar"><i class="fa fa-clone"></i> Copiar todo lo de esa promo</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -178,7 +200,7 @@
     // v1.26.0: en una promo por roll el valor de las opciones es por roll
     var AYUDA_ROL = {
         relleno: 'Lo que va dentro del roll (pollo, kanikama, palta…). El cliente elige hasta el máximo de rellenos por roll. El valor es por roll (0 = no se cobra).',
-        envoltorio: 'Con qué se envuelve (queso, panko, palta, nori…). El cliente elige hasta el máximo de envoltorios por roll. El valor es por roll (0 = no se cobra; con «el precio depende del envoltorio» se pone su precio).',
+        envoltorio: 'Con qué se envuelve (queso, panko, palta, nori…). El cliente elige hasta el máximo de envoltorios por roll. El valor es por roll (0 = no se cobra). Si en la parte 1 marcaste «Cada roll se cobra según su envoltorio», aquí pones el precio del roll con cada envoltorio.',
         base: 'Opcional. Si no agregas bases, no se pregunta (ej. siempre arroz). Si hay una sola, se elige sola. El valor es por roll.',
         extra: 'Opcional. Extras aparte de los rolls (jengibre, palillos, gyozas…). El cliente elige si quiere y cuántos, hasta el máximo de extras de la promo. El valor es por unidad (0 = no se cobra).',
         salsa: 'Opcional. Salsas aparte de los rolls (soya, teriyaki, agridulce…). El cliente elige si quiere y cuántas, hasta el máximo de salsas de la promo. El valor es por unidad (0 = no se cobra).'
@@ -187,7 +209,7 @@
     var porQue = function () { return ps.tipo === 'extra' || ps.tipo === 'salsa' ? 'c/u' : (esRol() ? 'x roll' : 'x pieza'); };
     var AYUDA = {
         relleno: 'Lo que va dentro del roll (pollo, kanikama, palta…). El cliente elige hasta el máximo de rellenos por grupo. El valor es por pieza (0 = no se cobra).',
-        envoltorio: 'Con qué se envuelve (queso, panko, palta, nori…). El cliente elige hasta el máximo de envoltorios por grupo. El valor es por pieza (0 = no se cobra; con «el precio depende del envoltorio» se pone su precio).',
+        envoltorio: 'Con qué se envuelve (queso, panko, palta, nori…). El cliente elige hasta el máximo de envoltorios por grupo. El valor es por pieza (0 = no se cobra).',
         base: 'Opcional. Si no agregas bases, no se pregunta (ej. siempre arroz). Si hay una sola, se elige sola. El valor es por pieza.',
         extra: 'Opcional. Extras aparte de las piezas (jengibre, palillos, gyozas…). El cliente elige si quiere y cuántos, hasta el máximo de extras de la promo. El valor es por unidad (0 = no se cobra).',
         salsa: 'Opcional. Salsas aparte de las piezas (soya, teriyaki, agridulce…). El cliente elige si quiere y cuántas, hasta el máximo de salsas de la promo. El valor es por unidad (0 = no se cobra).'
@@ -214,10 +236,9 @@
             $(this).toggleClass('on', m === ps.modo).find('b').text($.grep(d.promos, function (p) { return p.modo === m; }).length);
         });
         $('#psModo button[data-modo="rol"]').toggle(!!d.con_rol);
-        // v1.32.0: por pieza solo si está encendido en Configuraciones (o si ya hay promos por pieza, para editarlas)
+        // v1.32.1 (pedido del usuario): "Por pieza" arriba solo si está encendido en Configuraciones > Promos de sushi
         $('#psModo button[data-modo="pieza"]').toggle(!d.con_rol || piezaVisible());
         $('#psModo').toggle(!!d.con_rol && piezaVisible());
-        $('.ps-por-que').text(esRol() ? 'por roll' : 'por grupo');
         $('#ModalPromosSushi').toggleClass('modo-rol', esRol());
         $('#psSubtitulo').text(esRol()
             ? 'Promos por roll (3 rolls = 30 piezas, 5 rolls = 50): en la Caja el cliente arma cada roll con base, rellenos y envoltorio'
@@ -255,9 +276,19 @@
     }
 
     /** v1.32.0: ¿se muestran las promos por pieza? (Configuraciones, o si ya existe alguna) */
-    function piezaVisible() {
-        return cfgSushi().por_pieza || $.grep(ps.datos ? ps.datos.promos : [], function (p) { return p.modo === 'pieza'; }).length > 0;
+    function piezaVisible() { return !!cfgSushi().por_pieza; }
+    // v1.32.1: las dos partes de la ventana (como la ficha de la Carta); la 2 se usa con la promo ya grabada
+    function irSeccion(nombre) {
+        if (nombre === 'elegir' && !ps.promo) nombre = 'datos';
+        $('#ModalPromosSushi .ps-secciones .prod-sec-btn').each(function () { $(this).toggleClass('activo', $(this).data('ps-seccion') === nombre); });
+        $('#ModalPromosSushi .ps-seccion').each(function () { $(this).toggleClass('activa', $(this).data('ps-seccion') === nombre); });
     }
+    function pintarSecciones() {
+        $('#ModalPromosSushi .prod-sec-btn[data-ps-seccion="elegir"]').prop('disabled', !ps.promo)
+            .attr('title', ps.promo ? '' : 'Graba la promo primero');
+        if (!ps.promo) irSeccion('datos');
+    }
+    $('#ModalPromosSushi').on('click', '.ps-secciones .prod-sec-btn', function () { irSeccion($(this).data('ps-seccion')); });
     function tipoVisible(t) {
         if (t === 'base') return !!cfgSushi().bases;
         if (t === 'salsa') return !!cfgSushi().salsas;
@@ -265,10 +296,12 @@
     }
     function pintarFija() {
         var $f = $('#psFija');
+        pintarSecciones();
         if (!ps.promo || !(ps.datos && ps.datos.con_opciones)) { $f.hide(); return; }
         $f.show().toggleClass('on', !!ps.promo.fija).html(ps.promo.fija
-            ? '<span><i class="fa fa-lock"></i> <b>Promo fija:</b> en la Caja se agrega ya armada, sin preguntar.</span><button type="button" class="btn btn-default" id="btnPsQuitarFija"><i class="fa fa-unlock"></i> Quitar fija</button>'
-            : '<span><i class="fa fa-unlock-alt"></i> <b>Promo para armar.</b> Para dejarla <b>fija</b> (siempre igual): ármala una vez en la Caja y marca «Dejar esta promo fija».</span>');
+            ? '<div class="ps-fija-txt"><i class="fa fa-lock"></i> <b>Esta promo está FIJA.</b> En la Caja se agrega ya armada, sin preguntar.<br><small>Para cambiarla solo en una venta, toca su nombre en la Caja. Para que se vuelva a armar siempre, quítale lo fijo:</small></div>'
+                + '<button type="button" class="btn btn-warning" id="btnPsQuitarFija"><i class="fa fa-unlock"></i> Quitar fija</button>'
+            : '<div class="ps-fija-txt"><i class="fa fa-unlock-alt"></i> <b>Promo para armar</b> (en la Caja se elige cada vez).<br><small>Para dejarla <b>fija</b> (siempre igual): ármala una vez en la Caja y marca «Dejar esta promo fija» antes de Agregar.</small></div>');
     }
 
     function elegirPromo(id) {
@@ -277,8 +310,7 @@
         if (!id) {
             ps.promo = null; ps.opciones = null;
             $('#psTituloForm').text('Nueva promo');
-            $('#psNombre').val(''); $('#psPiezas').val(''); $('#psPrecio').val(''); $('#psPaso').val('1'); $('#psMaxRellenos').val('3');
-            $('#psMaxEnvoltorios').val('1'); $('#psMaxExtras').val('0'); $('#psMaxSalsas').val('0'); $('#psPrecioEnv').prop('checked', false);   // v1.32.0
+            $('#psNombre').val(''); $('#psPiezas').val(''); $('#psPrecio').val(''); $('#psPaso').val('1'); $('#psPrecioEnv').prop('checked', false);
             $('#psRolls').val(''); $('#psPiezasRol').val('10'); rollsPiezas();
             $('#psNombre').attr('placeholder', esRol() ? 'Ej: PROMO 3 ROLLS' : 'Ej: PROMO 30 PIEZAS MIXTAS');
             var sushi = $.grep(ps.datos.familias, function (f) { return /sushi/i.test(f.nombre_familia); })[0];
@@ -292,11 +324,9 @@
             ps.promo = r.promo; ps.opciones = r.opciones;
             var p = r.promo;
             $('#psTituloForm').text('Editar ' + p.nombre);
-            $('#psNombre').val(p.nombre); $('#psPiezas').val(p.piezas); $('#psPrecio').val(p.precio); $('#psPaso').val(p.paso); $('#psMaxRellenos').val(p.max_rellenos);
+            $('#psNombre').val(p.nombre); $('#psPiezas').val(p.piezas); $('#psPrecio').val(p.precio); $('#psPaso').val(p.paso);
             $('#psRolls').val(p.modo === 'rol' ? p.piezas / p.piezas_rol : ''); $('#psPiezasRol').val(p.piezas_rol || 10); rollsPiezas();
             $('#psFamilia').val(String(p.id_familia)); $('#psDestino').val(String(p.id_dimpresion)); $('#psVigente').prop('checked', p.vigente);
-            // v1.32.0
-            $('#psMaxEnvoltorios').val(p.max_envoltorios || 1); $('#psMaxExtras').val(p.max_extras || 0); $('#psMaxSalsas').val(p.max_salsas || 0);
             $('#psPrecioEnv').prop('checked', !!p.precio_envoltorio);
             pintarCatalogo();
             pintarFija();
@@ -344,8 +374,19 @@
             var t = $(this).data('tipo');
             $(this).toggle(tipoVisible(t)).toggleClass('on', t === ps.tipo).find('b').text(ps.opciones && ps.opciones[t] ? ps.opciones[t].length : 0);
         });
-        $('.ps-con-salsas').toggle(tipoVisible('salsa'));
-        var conPrecioEnv = ps.tipo === 'envoltorio' && ps.promo && ps.promo.precio_envoltorio;   // v1.32.0
+        var conPrecioEnv = ps.tipo === 'envoltorio' && ps.promo && ps.promo.precio_envoltorio && esRol();   // v1.32.0
+        // v1.32.1 (pedido del usuario): el límite de esta sección, aquí mismo
+        var LIM = { relleno: ['max_rellenos', 'Máximo de rellenos', ' por roll', '0 = sin límite'], envoltorio: ['max_envoltorios', 'Máximo de envoltorios', ' por roll', 'de 1 a 5'],
+            base: ['max_bases', 'Máximo de bases', ' por roll', 'de 1 a 5'], salsa: ['max_salsas', 'Máximo de salsas', ' en total', '0 = sin límite'],
+            extra: ['max_extras', 'Máximo de extras', ' en total', '0 = sin límite'] }[ps.tipo];
+        $('#psLimite').toggle(!!ps.promo);
+        if (ps.promo && LIM) {
+            var porQ = (ps.tipo === 'salsa' || ps.tipo === 'extra') ? LIM[2] : (esRol() ? LIM[2] : ' por grupo');
+            $('#psLimiteTexto').text(LIM[1] + porQ);
+            if (!$('#psLimiteValor').is(':focus')) $('#psLimiteValor').val(ps.promo[LIM[0]] != null ? ps.promo[LIM[0]] : '');
+            $('#psLimiteAyuda').text(LIM[3] + ' · se guarda solo');
+        }
+        $('#psTituloAgregar').text('Agregar a ' + $('#psTabs .ps-tab.on').clone().children().remove().end().text().trim());
         $('#psAyudaTipo').text(ps.promo ? (esRol() ? AYUDA_ROL : AYUDA)[ps.tipo] : 'Graba la promo primero; después agrega sus rellenos, envoltorios, bases y extras.');
         $('.ps-lbl-valor').text('Valor $ ' + porQue());
         var lista = ps.opciones && ps.opciones[ps.tipo] ? ps.opciones[ps.tipo] : [];
@@ -353,7 +394,7 @@
             return '<div class="ps-op" data-id="' + o.id_opcion + '"><span class="nombre">' + esc(o.nombre)
                 + (o.vigente ? '' : ' <small class="text-danger">(producto no vigente: no se ofrece)</small>')
                 + (o.con_receta ? ' <small><i class="fa fa-book"></i> con receta</small>' : '') + '</span>'
-                + (conPrecioEnv ? '<span class="ps-precio-env" title="Precio de la promo con este envoltorio (0 = el precio de la promo)">Precio promo $<input type="text" inputmode="numeric" class="form-control input-sm ps-precio-input" value="' + (o.precio_promo || 0) + '"></span>'
+                + (conPrecioEnv ? '<span class="ps-precio-env" title="Precio de cada roll con este envoltorio (0 = el roll lleva su parte del precio de la promo)">Precio del roll $<input type="text" inputmode="numeric" class="form-control input-sm ps-precio-input" value="' + (o.precio_promo || 0) + '"></span>'
                     : '<span class="ps-valor">' + porQue() + ' $<input type="text" inputmode="numeric" class="form-control input-sm ps-valor-input" value="' + o.valor + '"></span>')
                 + '<button type="button" class="btn btn-default btn-sm ps-quitar" title="Quitar de la promo"><i class="fa fa-times text-danger"></i></button></div>';
         }).join('') : '<div class="ps-vacio">' + (ps.promo ? 'Todavía no hay nada aquí' : '—') + '</div>');
@@ -375,29 +416,43 @@
         elegirPromo(0);
     });
     $('#psTabs').on('click', '.ps-tab', function () { ps.tipo = $(this).data('tipo'); ps.marcados = {}; $('#psBuscar').val(''); pintarCatalogo(); });
-    $('#ModalPromosSushi').on('input', '#psPiezas, #psPrecio, #psPaso, #psMaxRellenos, #psMaxEnvoltorios, #psMaxExtras, #psMaxSalsas, #psRolls, #psPiezasRol, #psValorExistente, #psValorNuevo, .ps-valor-input, .ps-precio-input', function () {
+    // v1.32.1: guardar el límite de la sección al cambiarlo
+    $('#psLimiteValor').on('change', function () {
+        if (!ps.promo) return;
+        var tipo = ps.tipo, v = entero(this.value);
+        post('limitePromoSushi', { id_promo: ps.promo.id_producto, tipo: tipo, valor: v }).done(function (r) {
+            var campo = { relleno: 'max_rellenos', envoltorio: 'max_envoltorios', base: 'max_bases', salsa: 'max_salsas', extra: 'max_extras' }[tipo];
+            ps.promo[campo] = r.valor;
+            showAppAlert('success', 'Límite guardado', { duration: 2000 });
+        }).fail(function (x) { error(x, 'No se pudo guardar el límite'); pintarCatalogo(); });
+    }).on('keydown', function (e) { if (e.which === 13) $(this).blur(); });
+    $('#ModalPromosSushi').on('input', '#psLimiteValor, #psPiezas, #psPrecio, #psPaso, #psRolls, #psPiezasRol, #psValorExistente, #psValorNuevo, .ps-valor-input, .ps-precio-input', function () {
         this.value = this.value.replace(/\D/g, '').slice(0, 9);
     });
 
-    var quitarFija = false;   // v1.32.0: "Quitar fija" graba la promo con fija = 0
+    // v1.32.1: "Quitar fija" la deja para armar otra vez (sin tocar lo demás de la promo)
     $('#ModalPromosSushi').on('click', '#btnPsQuitarFija', function () {
+        if (!ps.promo) return;
         confirmarSistema('¿Quitar la promo fija?', 'En la Caja se volverá a pedir que se arme cada vez.', 'Sí, quitar', function () {
-            quitarFija = true;
-            $('#btnPsGrabar').click();
+            post('quitarFijaSushi', { id_promo: ps.promo.id_producto }).done(function () {
+                showAppAlert('success', 'Listo: la promo ya no es fija', { duration: 3500 });
+                ps.promo.fija = false;
+                pintarFija();
+                cargarDatos(ps.promo.id_producto);
+            }).fail(function (x) { error(x, 'No se pudo quitar'); });
         });
     });
     $('#btnPsGrabar').on('click', function () {
         var datos = {
             id_producto: ps.promo ? ps.promo.id_producto : 0, nombre: $.trim($('#psNombre').val()), piezas: entero($('#psPiezas').val()),
-            precio: entero($('#psPrecio').val()), paso: entero($('#psPaso').val()) || 1, max_rellenos: entero($('#psMaxRellenos').val()),
+            precio: entero($('#psPrecio').val()), paso: entero($('#psPaso').val()) || 1, max_rellenos: ps.promo ? ps.promo.max_rellenos : 3,
             id_familia: Number($('#psFamilia').val()) || 0, id_dimpresion: Number($('#psDestino').val()) || 0, vigente: $('#psVigente').is(':checked') ? 1 : 0,
             modo: ps.modo, rolls: entero($('#psRolls').val()), piezas_rol: entero($('#psPiezasRol').val()) || 10,   // v1.26.0
             // v1.32.0
-            precio_envoltorio: $('#psPrecioEnv').is(':checked') ? 1 : 0, max_envoltorios: entero($('#psMaxEnvoltorios').val()) || 1,
-            max_extras: entero($('#psMaxExtras').val()), max_salsas: entero($('#psMaxSalsas').val())
+            // v1.32.1: los límites se ponen en la parte 2 (cada sección); aquí se mandan los que ya tiene
+            precio_envoltorio: esRol() && $('#psPrecioEnv').is(':checked') ? 1 : 0, max_envoltorios: ps.promo ? ps.promo.max_envoltorios : 1,
+            max_extras: ps.promo ? ps.promo.max_extras : 0, max_salsas: ps.promo ? ps.promo.max_salsas : 0
         };
-        if (quitarFija) datos.fija = 0;
-        quitarFija = false;
         if (esRol()) { datos.piezas = datos.rolls * datos.piezas_rol; datos.paso = datos.piezas_rol; }
         if (!datos.nombre) { showAppAlert('warning', 'Escribe el nombre de la promo', { duration: 4000 }); return; }
         if (esRol() && !datos.rolls) { showAppAlert('warning', 'Indica cuántos rolls trae la promo', { duration: 4000 }); return; }
@@ -406,9 +461,10 @@
         if (!datos.id_familia) { showAppAlert('warning', 'Elige la familia', { duration: 4000 }); return; }
         var $b = $(this).prop('disabled', true);
         post('grabarPromoSushi', datos).done(function (r) {
-            showAppAlert('success', datos.fija === 0 ? 'Listo: la promo ya no es fija' : (datos.id_producto ? 'Promo actualizada' : 'Promo creada: ahora agrégale sus rellenos y envoltorios'), { duration: 4000 });
-            if (datos.precio_envoltorio && datos.id_producto) showAppAlert('info', 'Pon el precio de la promo en cada envoltorio (pestaña Envoltorios)', { duration: 5000 });
-            cargarDatos(r.id_producto);
+            showAppAlert('success', datos.id_producto ? 'Promo actualizada' : 'Promo creada: ahora, en la parte 2, agrégale sus rellenos y envoltorios', { duration: 4000 });
+            if (datos.precio_envoltorio) showAppAlert('info', 'Pon el precio de cada envoltorio en la parte 2 > Envoltorios', { duration: 5000 });
+            var nueva = !datos.id_producto;
+            cargarDatos(r.id_producto).done(function () { if (nueva) setTimeout(function () { irSeccion('elegir'); }, 400); });
             if (typeof tablaCartaProductos !== 'undefined' && tablaCartaProductos && tablaCartaProductos.ajax) tablaCartaProductos.ajax.reload(null, false);
         }).fail(function (x) { error(x, 'No se pudo grabar la promo'); }).always(function () { $b.prop('disabled', false); });
     });

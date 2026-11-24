@@ -142,6 +142,15 @@
 	.dsa-rm-chart { height: 280px; }
 	.dsa-rm-detalle table tr.activa td { background: var(--t-primario-suave, #E8F5EC); font-weight: 700; }
 	.dsa-rm-detalle table tbody tr { cursor: pointer; }
+	.dsa-rm-ventas { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--t-borde-suave, #F0E8DD); }
+	.dsa-rm-ventas-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 8px; }
+	.dsa-rm-ventas-cab .btn { margin-left: auto; border-radius: 8px; font-weight: 700; }
+	.dsa-rm-ventas table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+	.dsa-rm-ventas th, .dsa-rm-ventas td { padding: 6px 8px; border-bottom: 1px solid var(--t-borde-suave, #F0E8DD); vertical-align: top; }
+	.dsa-rm-ventas th { text-align: left; font-size: 11.5px; color: var(--t-texto-suave, #7A6A5E); }
+	.dsa-rm-ventas td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.dsa-rm-ventas .prods { color: var(--t-texto-suave, #7A6A5E); font-size: 12px; }
+	.dsa-rm-ventas-scroll { max-height: 420px; overflow: auto; }
 	@media (max-width: 767px) { .dsa-mini.dsa-rm-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dsa-rm-filtros, .dsa-rm-filtros label, .dsa-rm-filtros select { width: 100%; min-width: 0; } }
 	.dsa-card > header { margin: 0 0 12px; }
 	.dsa-card > header h4 { margin: 0; font-size: 15px; font-weight: 700; color: var(--t-texto, #3A2A22); font-family: inherit; }
@@ -331,18 +340,25 @@ $fechaActual = date('d-m-Y');
 							<div class="dsa-grid">
 								<section class="dsa-card"><header><h4>Mesa y venta directa</h4><small>Participación en la venta</small></header><div id="dsaMesa"></div></section>
 								<section class="dsa-card dsa-span2"><header><h4>Ventas por garzón</h4><small>Venta, propina, documentos y ticket promedio</small></header><div id="dsaGarzones"></div></section>
-								<!-- v1.30.3 (pedido del usuario): ventas por recinto y por mesa, con filtro de recinto y de mesa -->
+								<!-- v1.32.1 (pedido del usuario): ventas por recinto, por tipo de mesa y por mesa, con filtros y el detalle de las ventas -->
 								<section class="dsa-card dsa-span3" id="dsaRecintosCard">
 									<header class="dsa-rm-cabecera">
-										<div><h4>Ventas por recinto y mesa</h4><small id="dsaRmSub">Solo ventas de mesa (sin la venta directa)</small></div>
+										<div><h4>Ventas por recinto, tipo de mesa y mesa</h4><small id="dsaRmSub">Solo ventas de mesa (sin la venta directa)</small></div>
 										<div class="dsa-rm-filtros">
-											<label><span>Recinto</span><select id="dsaRmRecinto" class="form-control input-sm"><option value="0">Todos los recintos</option></select></label>
-											<label><span>Mesa</span><select id="dsaRmMesa" class="form-control input-sm"><option value="0">Todas las mesas</option></select></label>
+											<label><span>Ver por</span><select id="dsaRmVer" class="form-control input-sm"><option value="recinto">Recinto</option><option value="tipo">Tipo de mesa</option><option value="mesa">Mesa</option></select></label>
+											<label><span>Recinto</span><select id="dsaRmRecinto" class="form-control input-sm"><option value="0">Todos</option></select></label>
+											<label><span>Tipo de mesa</span><select id="dsaRmTipo" class="form-control input-sm"><option value="0">Todos</option></select></label>
+											<label><span>Mesa</span><select id="dsaRmMesa" class="form-control input-sm"><option value="0">Todas</option></select></label>
 										</div>
 									</header>
 									<div class="dsa-mini dsa-rm-kpis" id="dsaRmKpis"></div>
-									<div class="dsa-chart dsa-rm-chart"><canvas id="dsaChartRm" role="img" aria-label="Ventas por recinto y mesa"></canvas></div>
+									<div class="dsa-chart dsa-rm-chart"><canvas id="dsaChartRm" role="img" aria-label="Ventas por recinto, tipo de mesa y mesa"></canvas></div>
 									<div class="dsa-tabla dsa-rm-detalle" id="dsaRmTabla"></div>
+									<div class="dsa-rm-ventas" id="dsaRmVentasCaja">
+										<div class="dsa-rm-ventas-cab"><b><i class="fa fa-list-alt"></i> Detalle de las ventas</b> <small id="dsaRmVentasSub" class="text-muted"></small>
+											<button type="button" class="btn btn-default btn-sm" id="dsaRmVerVentas"><i class="fa fa-eye"></i> Ver las ventas</button></div>
+										<div id="dsaRmVentas"></div>
+									</div>
 								</section>
 							</div>
 						</div>
