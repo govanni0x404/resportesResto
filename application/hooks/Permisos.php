@@ -44,7 +44,7 @@ class Permisos
 		'ventasmensualestotalizadas', 'ventasporproducto', 'auditoriacaja', 'anulacionventas');
 
 	/** Controladores sin menú propio: se rigen por el módulo de la pantalla que los usa. */
-	private static $modulo = array('imagenproducto' => 'Productos', 'produccion' => 'Insumos', 'recetaproduccion' => 'Insumos');
+	private static $modulo = array('imagenproducto' => 'Productos', 'produccion' => 'Insumos', 'recetaproduccion' => 'Insumos', 'repartidor' => 'Delivery');
 
 	/**
 	 * Métodos que otras pantallas usan: basta tener cualquiera de los módulos de la lista ('*' = cualquier usuario).
@@ -57,6 +57,7 @@ class Permisos
 		'cierresdecaja/cierrecajapdf' => array('CierresDeCaja', 'Caja'),
 		'insumos/grabarinsumo' => array('Insumos', 'Productos'),
 		'recetas/grabarreceta' => array('Recetas', 'Productos'),
+		'repartidor/verevidencia' => array('Delivery', 'Configuraciones'),
 	);
 
 	/**

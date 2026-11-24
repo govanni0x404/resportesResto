@@ -74,7 +74,8 @@
 				// v1.20.0: ILA del producto (los agregados llevan el de su producto, como el exento: Mcaja::conIla)
 				var ila = exento ? 0 : Number(p && p.ila) || 0;
 				var primero = l.agregados.length ? agregado(l.agregados[0]) : null;
-				res.push({ bruto: Math.round((l.precio + (primero ? primero.valor : 0)) * l.cantidad), exento: exento, ila: ila });
+				var precioBase = l.sushi ? precioBaseSushi(sushiDe(l.id_producto), l.sushi, l.precio) : l.precio;   // v1.32.0: precio según el envoltorio
+				res.push({ bruto: Math.round((precioBase + (primero ? primero.valor : 0)) * l.cantidad), exento: exento, ila: ila });
 				// v1.24.0: cada producto del menú con costo adicional es una línea más (Mcaja::armarLineas)
 				var menuL = l.menu && l.menu.length ? menuDe(l.id_producto) : null;
 				$.each(menuL ? l.menu : [], function (j, e) {
@@ -85,14 +86,18 @@
 				var suL = l.sushi ? sushiDe(l.id_producto) : null;
 				$.each(suL ? l.sushi.grupos : [], function (j, g) {
 					var q = r3(l.cantidad * unidadesGrupoSushi(suL, g));   // v1.26.0: por roll, los rolls
-					$.each([['envoltorio', g.envoltorio], ['base', g.base]].concat($.map(g.rellenos || [], function (id) { return [['relleno', id]]; })), function (k, par) {
+					// v1.32.0: varios envoltorios (con precio según el envoltorio, su valor no se cobra aparte)
+					$.each($.map(suEnvs(g), function (id) { return [['envoltorio', id]]; }).concat([['base', g.base]], $.map(g.rellenos || [], function (id) { return [['relleno', id]]; })), function (k, par) {
 						var o = par[1] ? opcionSushi(suL, par[0], par[1]) : null;
+						if (par[0] === 'envoltorio' && suL.precio_envoltorio) return;
 						if (o && o.valor) res.push({ bruto: Math.round(o.valor * q), exento: exento, ila: ila });
 					});
 				});
-				$.each(suL ? l.sushi.extras || [] : [], function (j, e) {
-					var o = opcionSushi(suL, 'extra', e.id);
-					if (o && o.valor) res.push({ bruto: Math.round(o.valor * r3(l.cantidad * e.cantidad)), exento: exento, ila: ila });
+				$.each(suL ? [['extra', l.sushi.extras || []], ['salsa', l.sushi.salsas || []]] : [], function (j, par) {   // v1.32.0: salsas
+					$.each(par[1], function (k, e) {
+						var o = opcionSushi(suL, par[0], e.id);
+						if (o && o.valor) res.push({ bruto: Math.round(o.valor * r3(l.cantidad * e.cantidad)), exento: exento, ila: ila });
+					});
 				});
 				$.each(l.agregados.slice(1), function (j, id) {
 					var a = agregado(id);
@@ -201,9 +206,11 @@
 						var tx = textoGrupoSushi(suD, g), v = unidadesGrupoSushi(suD, g) * valorPiezaSushi(suD, g);
 						detalle.push('<span class="del-sushi">' + textoCantSushi(suD, g.piezas) + ' <b>' + esc(tx.titulo) + '</b>' + (tx.rellenos ? ' · ' + esc(tx.rellenos) : '') + (tx.base ? ' · ' + esc(tx.base) : '') + (v ? ' <b>+' + fmt(v) + '</b>' : '') + (g.nota ? ' · <i>' + esc(g.nota) + '</i>' : '') + '</span>');
 					});
-					$.each(l.sushi.extras || [], function (j, e) {
-						var o = opcionSushi(suD, 'extra', e.id);
-						if (o) detalle.push('<span class="del-sushi">+ ' + (e.cantidad > 1 ? e.cantidad + ' ' : '') + esc(o.nombre) + (o.valor ? ' <b>+' + fmt(o.valor * e.cantidad) + '</b>' : '') + '</span>');
+					$.each([['extra', l.sushi.extras || []], ['salsa', l.sushi.salsas || []]], function (j, par) {   // v1.32.0: salsas
+						$.each(par[1], function (k, e) {
+							var o = opcionSushi(suD, par[0], e.id);
+							if (o) detalle.push('<span class="del-sushi">+ ' + (e.cantidad > 1 ? e.cantidad + ' ' : '') + esc(o.nombre) + (o.valor ? ' <b>+' + fmt(o.valor * e.cantidad) + '</b>' : '') + '</span>');
+						});
 					});
 				} else if (suD) detalle.push('<span class="text-danger">Falta armar ' + (suEsRol(suD) ? 'los rolls' : 'las piezas') + ' de la promo</span>');
 				var nombre = tieneOpciones(l.id_producto) ? '<a href="#" class="editar" title="' + (sushiDe(l.id_producto) ? (suEsRol(sushiDe(l.id_producto)) ? 'Cambiar los rolls de la promo' : 'Cambiar las piezas de la promo') : menuDe(l.id_producto) ? 'Cambiar lo elegido del menú' : 'Cambiar agregados / indicaciones') + '">' + esc(l.nombre) + '</a>' : esc(l.nombre);
@@ -211,7 +218,11 @@
 				nombre += ' <a href="#" class="editar caja-btn-mensaje' + (l.nota ? ' con-mensaje' : '') + '" title="' + (l.nota ? 'Editar mensaje para la comanda' : 'Agregar mensaje para la comanda') + '"><i class="fa fa-commenting-o"></i></a>';
 				var prod = producto(l.id_producto);
 				if (prod && prod.exento) nombre += ' <span class="label label-default">EXENTO</span>';
-				$t.append('<div class="caja-linea" data-i="' + i + '">'
+				// v1.30.3/v1.32.0 (pedido del usuario): flechas para cambiar el orden (solo lo que aún no se envía; así sale en la comanda)
+				var sueltas = $.map(carro, function (x, k) { return x.enviada ? null : k; }), pos = $.inArray(i, sueltas);
+				var mover = sueltas.length > 1 ? '<div class="mover-linea"><button type="button" class="subir" title="Subir"' + (pos <= 0 ? ' disabled' : '') + '><i class="fa fa-chevron-up"></i></button>'
+					+ '<button type="button" class="bajar" title="Bajar"' + (pos >= sueltas.length - 1 ? ' disabled' : '') + '><i class="fa fa-chevron-down"></i></button></div>' : '';
+				$t.append('<div class="caja-linea" data-i="' + i + '">' + mover
 					+ '<div class="info">' + (prod && prod.cbarra ? '<div class="cbarra"><i class="fa fa-barcode"></i> ' + esc(prod.cbarra) + '</div>' : '') + '<div class="nombre">' + nombre + '</div>'
 					+ (detalle.length ? '<div class="detalle-linea">' + detalle.join('<br>') + '</div>' : '')
 					+ '<div class="unitario">' + fmt(precioLinea(l)) + (prod && prod.umedida ? ' / ' + esc(prod.umedida) : ' c/u') + (fraccion && l.cantidad !== Math.round(l.cantidad) ? ' · ' + fmtCant(l.cantidad) + ' ' + esc(prod.umedida || '') : '') + '</div></div>'
@@ -311,6 +322,14 @@
 			if (nueva <= 0) { preguntarQuitar(i); return; }   // v1.30.3: el "-" en la última unidad también pregunta
 			carro[i].cantidad = nueva;
 			renderCarro();
+		}).on('click', '.subir, .bajar', function () {
+			// Cambia de lugar con la fila de arriba o de abajo que tampoco se ha enviado (las enviadas a la mesa quedan donde están)
+			var i = $(this).closest('[data-i]').data('i'), arriba = $(this).hasClass('subir'), j = i;
+			do { j += arriba ? -1 : 1; } while (j >= 0 && j < carro.length && carro[j].enviada);
+			if (j < 0 || j >= carro.length || carro[i].enviada) return;
+			var x = carro[i]; carro[i] = carro[j]; carro[j] = x;
+			renderCarro();
+			$('#lineas [data-i="' + j + '"]').addClass('recien-movida').find(arriba ? '.subir' : '.bajar').focus();
 		}).on('click', '.editar', function (e) {
 			e.preventDefault();
 			var i = $(this).closest('[data-i]').data('i');

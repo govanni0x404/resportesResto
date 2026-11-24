@@ -254,7 +254,16 @@
 		function sushiDe(id) {
 			return $.grep((catalogo && catalogo.sushis) || [], function (s) { return s.id_producto === id; })[0] || null;
 		}
-		var SU_LISTA = { base: 'bases', relleno: 'rellenos', envoltorio: 'envoltorios', extra: 'extras' };
+		var SU_LISTA = { base: 'bases', relleno: 'rellenos', envoltorio: 'envoltorios', extra: 'extras', salsa: 'salsas' };   // v1.32.0: salsas
+		/** v1.32.0: envoltorios de un grupo (puede llevar varios; lo de antes traía uno solo en "envoltorio") */
+		function suEnvs(g) { return g.envoltorios && g.envoltorios.length ? g.envoltorios : (g.envoltorio ? [g.envoltorio] : []); }
+		/** v1.32.0: precio de la promo: con "precio según el envoltorio", el del envoltorio elegido más caro (0 = el de la promo) */
+		function precioBaseSushi(promo, sel, precio) {
+			if (!promo || !promo.precio_envoltorio || !sel) return precio;
+			var p = 0;
+			$.each(sel.grupos || [], function (i, g) { $.each(suEnvs(g), function (j, id) { var o = opcionSushi(promo, 'envoltorio', id); if (o) p = Math.max(p, o.precio_promo || 0); }); });
+			return p > 0 ? p : precio;
+		}
 		// v1.26.0: promo por roll: se arma y se cobra por roll (piezas_rol piezas cada uno). Por dentro los grupos siguen
 		// guardando sus piezas (rolls x piezas_rol), igual que el servidor (Mcaja::eleccionSushi)
 		function suEsRol(promo) { return !!promo && promo.modo === 'rol'; }
@@ -274,7 +283,8 @@
 		function valorPiezaSushi(promo, g) {
 			var t = 0, o;
 			if (g.base && (o = opcionSushi(promo, 'base', g.base))) t += o.valor;
-			if (g.envoltorio && (o = opcionSushi(promo, 'envoltorio', g.envoltorio))) t += o.valor;
+			// v1.32.0: varios envoltorios; con precio según el envoltorio su valor no se suma (ya es el precio)
+			if (!promo.precio_envoltorio) $.each(suEnvs(g), function (i, id) { var e = opcionSushi(promo, 'envoltorio', id); if (e) t += e.valor; });
 			$.each(g.rellenos || [], function (i, id) { var r = opcionSushi(promo, 'relleno', id); if (r) t += r.valor; });
 			return t;
 		}
@@ -284,18 +294,19 @@
 			if (!promo || !sel) return 0;
 			$.each(sel.grupos || [], function (i, g) { t += unidadesGrupoSushi(promo, g) * valorPiezaSushi(promo, g); });
 			$.each(sel.extras || [], function (i, e) { var o = opcionSushi(promo, 'extra', e.id); if (o) t += o.valor * e.cantidad; });
+			$.each(sel.salsas || [], function (i, e) { var o = opcionSushi(promo, 'salsa', e.id); if (o) t += o.valor * e.cantidad; });   // v1.32.0
 			return t;
 		}
 		function adicionalSushi(l) { return l.sushi ? adicionalSushiSel(sushiDe(l.id_producto), l.sushi) : 0; }
 		/** Texto de un grupo: "10 PANKO · Pollo, Palta · Base Arroz" */
 		function textoGrupoSushi(promo, g) {
-			var env = g.envoltorio ? opcionSushi(promo, 'envoltorio', g.envoltorio) : null, base = g.base ? opcionSushi(promo, 'base', g.base) : null;
+			var envs = $.map(suEnvs(g), function (id) { var e = opcionSushi(promo, 'envoltorio', id); return e ? e.nombre : null; }), base = g.base ? opcionSushi(promo, 'base', g.base) : null;
 			var rell = $.map(g.rellenos || [], function (id) { var r = opcionSushi(promo, 'relleno', id); return r ? r.nombre : null; });
-			return { titulo: env ? env.nombre : (base ? base.nombre : (rell[0] || '')), rellenos: rell.join(', '), base: base ? base.nombre : '' };
+			return { titulo: envs.length ? envs.join(' + ') : (base ? base.nombre : (rell[0] || '')), rellenos: rell.join(', '), base: base ? base.nombre : '' };
 		}
 		// Precio unitario con agregados (v1.24.0: o con los adicionales del menú)
 		function precioLinea(l) {
-			var precio = l.precio;
+			var precio = l.sushi ? precioBaseSushi(sushiDe(l.id_producto), l.sushi, l.precio) : l.precio;   // v1.32.0
 			$.each(l.agregados, function (i, id) { var a = agregado(id); if (a) precio += a.valor; });
 			return precio + adicionalMenu(l) + adicionalSushi(l);   // v1.25.0
 		}
@@ -537,6 +548,9 @@
 		});
 
 		function elegir(id) {
+			// v1.32.0 (pedido del usuario): promo de sushi fija: entra ya armada, sin preguntar (si su armado sigue sirviendo)
+			var fija = sushiDe(id) ? armadoFijoSushi(sushiDe(id)) : null;
+			if (fija) { agregar(id, [], '', undefined, {}, [], fija); toastr.success('Promo fija agregada (para cambiarla en esta venta, toca su nombre)'); return; }
 			if (tieneOpciones(id)) abrirOpciones(id, null);
 			else if (!mesa && pideValorOPeso(id)) abrirPesable(id);   // a granel en venta directa: por valor o por peso
 			else agregar(id, [], '');

@@ -2,6 +2,22 @@
 var base_url = "<?php echo base_url(); ?>";
 tableInsumos = $('#tableInsumos').DataTable();
 
+function numeroCostoInsumo(valor) {
+    var texto = String(valor || '0').trim();
+    if (texto.indexOf(',') >= 0) {
+        texto = texto.replace(/\./g, '').replace(',', '.');
+    } else if (/^-?\d{1,3}(\.\d{3})+$/.test(texto)) {
+        texto = texto.replace(/\./g, '');
+    }
+    var numero = parseFloat(texto);
+    return isNaN(numero) ? 0 : numero;
+}
+
+function mostrarCostoInsumo(valor) {
+    var numero = numeroCostoInsumo(valor);
+    return new Intl.NumberFormat('es-CL', { maximumFractionDigits: 2 }).format(numero);
+}
+
 
 $(document).ready(function() {
     listarInsumos();
@@ -106,11 +122,13 @@ function listarInsumos() {
                 mData: "costo_neto_ppp",
                 className: "text-right",
                 "width": "1%",
+                mRender: function(data) { return mostrarCostoInsumo(data); }
             },
             {
                 mData: "costo_bruto_ppp",
                 className: "text-right",
                 "width": "1%",
+                mRender: function(data) { return mostrarCostoInsumo(data); }
             },
             {
                 mData: "umedida_inventario",
@@ -246,9 +264,9 @@ function listarInsumos() {
             $('#nombreInsumo').val(rowData[0].nombre_insumo);
             $("#medInventario").val(rowData[0].umedida_inventario)
             $('#medReceta').val(rowData[0].umedida_receta);
-            $("#costoReceta").val(rowData[0].costo_neto_ppp);
-            $("#costoBruto").val(rowData[0].costo_bruto_ppp);
-            $("#costoUltCompra").val(rowData[0].precio_ucompra);
+            $("#costoReceta").val(mostrarCostoInsumo(rowData[0].costo_neto_ppp));
+            $("#costoBruto").val(mostrarCostoInsumo(rowData[0].costo_bruto_ppp));
+            $("#costoUltCompra").val(mostrarCostoInsumo(rowData[0].precio_ucompra));
             $("#stockMinimo").val(Number(rowData[0].stock_minimo_web) || 0);   // v1.27.0
             $("#obsInsumo").val(rowData[0].observaciones);
             tabsInsumos();

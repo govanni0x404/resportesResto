@@ -162,11 +162,11 @@
 											</div>
 											<div class="col-md-2">
 												<label for="costoInsumoReceta">COSTO PP UN</label>
-												<input type="number" disabled class="form-control input-sm input-sm" onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="costoInsumoReceta" id="costoInsumoReceta" requerido="si" value="" />
+								<input type="text" disabled class="form-control input-sm input-sm" autocomplete="off" name="costoInsumoReceta" id="costoInsumoReceta" requerido="si" value="" />
 											</div>
 											<div class="col-md-2">
 												<label for="costoTotalInsumoReceta">COSTO TOTAL</label>
-												<input type="number" disabled class="form-control input-sm input-sm" onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="costoTotalInsumoReceta" id="costoTotalInsumoReceta" requerido="si" value="" />
+											<input type="text" disabled class="form-control input-sm input-sm" autocomplete="off" name="costoTotalInsumoReceta" id="costoTotalInsumoReceta" requerido="si" value="" />
 											</div>
 											<div class="col-md-2 rec-agregar">
 												<button type="button" class="btn btn-rounded btn-danger" id="btnAgregarInsumoTabla"><i class="fa fa-check-circle"></i> AGREGAR INSUMO</button>
@@ -302,17 +302,17 @@
 			$('#esSubreceta').val(esreceta);
 			$('#idInsumoReceta').val(id_insumo);
 			$('#unMedidaInsumoReceta').val(nombre_umedida);
-			$('#costoInsumoReceta').val(costo_neto_ppp);
+			$('#costoInsumoReceta').val(mostrarCostoReceta(costo_neto_ppp));
 			$('#cBarraI').val(cBarra);
 		}
 	});
 
 	$("#cantidadInsumoReceta").on('keyup', function() {
 		var cantidad = parseFloat($("#cantidadInsumoReceta").val()) || 0;
-		var costo_unitario = parseFloat($('#costoInsumoReceta').val()) || 0;
+		var costo_unitario = parseCostoReceta($('#costoInsumoReceta').val());
 
 		var total = cantidad * costo_unitario;
-		$('#costoTotalInsumoReceta').val(total.toFixed(2));
+		$('#costoTotalInsumoReceta').val(formatearCostoReceta(total));
 	});
 
 	$("#btnAgregarInsumoTabla").on('click', function() {
@@ -415,10 +415,10 @@
 						}
 						break;
 					case 7: // precio un
-						costo_pp = $(this).html().replace(/,/g, '');
+						costo_pp = parseCostoReceta($(this).html());
 						break;
 					case 8: // total
-						costo_total = $(this).html().replace(/,/g, '');
+						costo_total = parseCostoReceta($(this).html());
 						break;
 				}
 			});
@@ -488,7 +488,7 @@
 		var subreceta = $('#esSubreceta').val();
 		var cantidad_insumo = $('#cantidadInsumoReceta').val();
 		var uMedida = $('#unMedidaInsumoReceta').val();
-		var costoInsumo = parseFloat($('#costoInsumoReceta').val());
+		var costoInsumo = parseCostoReceta($('#costoInsumoReceta').val());
 		var costoTotal = 0; // se calculará en la tabla
 		var errorexiste = 0;
 		//RECORRE LA TABLA EN BUSCA DEL PRODUCTO EN CASO DE QUE YA ESTE, SI ESTA NO DEJA AGREGAR
@@ -545,8 +545,8 @@
 		tbl = tbl + "<td class='text-left'>" + subreceta + "</td>";
 		tbl = tbl + "<td style='vertical-align:middle; height:50px;' class='text-left'> <a  onclick='aumentarCantidad(" + rnd + ")' href='#'  class='btn_cantidad'><i class='fa fa-plus-square' style='font-size: 18px;'></i></a>   <input style='width:70px; margin-right:4px' class='text-right' onpaste='return false;' ondrop='return false;' autocomplete='off' onkeyup='actualizarCantidadTXT(" + rnd + ")'  id='txt" + rnd + "' type='text' pattern='\d*' maxlength='5' style='width: 100px;  margin: 10px;' class='input-sm' name='' onkeypress='validate(event)' value='" + cantidad_insumo + "'><a  onclick='disminuirCantidad(" + rnd + ")' href='#' class='btn_cantidad'><i class='fa fa-minus-square' style='font-size: 18px;'></i></a></td>";
 		tbl = tbl + "<td style='vertical-align:middle;' class='text-left'>" + uMedida + "</td>";
-		tbl = tbl + "<td style='vertical-align:middle;' class='text-right'>" + costoInsumo + "</td>";
-		tbl = tbl + "<td style='vertical-align:middle;' class='text-right montoTotal'>" + costoTotal + "</td>";
+		tbl = tbl + "<td style='vertical-align:middle;' class='text-right'>" + mostrarCostoReceta(costoInsumo) + "</td>";
+		tbl = tbl + "<td style='vertical-align:middle;' class='text-right montoTotal'>" + mostrarCostoReceta(costoTotal) + "</td>";
 		tbl = tbl + "<td style='vertical-align:middle;' class='text-center'><a  onclick='removeRow(" + rnd + ")' href='#' class='btn btn-danger btn-icon'><i class='fa fa-trash-o'></i></a></td>";
 		tbl = tbl + "</tr>";
 		$('#tableInsumoReceta').append(tbl);
@@ -654,7 +654,7 @@
 			$("#nombreInsumoReceta").val(nombre_insumo);
 			$("#esSubreceta").val(es_receta === 't' ? 'SI' : 'NO'); // Asumiendo 't' es true
 			$("#unMedidaInsumoReceta").val(umedida);
-			$("#costoInsumoReceta").val(costoPP);
+			$("#costoInsumoReceta").val(mostrarCostoReceta(costoPP));
 			
 			// Inicializar cantidad y calcular el costo total
 			$("#cantidadInsumoReceta").val(1); // Puedes poner 1 como cantidad inicial
@@ -793,7 +793,7 @@
 	}
 
 	function calcularDatos(rnd) {
-		var costoUn = parseFloat($('#' + rnd).children('td')[7].innerHTML.replace(/,/g, ''));
+		var costoUn = parseCostoReceta($('#' + rnd).children('td')[7].innerHTML);
 		var cantidad = parseFloat($('#txt' + rnd).val());
 
 		if (isNaN(cantidad) || cantidad == null || cantidad == "" || parseFloat(cantidad) < 0) {
@@ -801,7 +801,21 @@
 			cantidad = 0.1;
 		}
 		var totalLinea = costoUn * cantidad;
-		$('#' + rnd).children('td')[8].innerHTML = totalLinea.toFixed(2);
+		$('#' + rnd).children('td')[8].innerHTML = formatearCostoReceta(totalLinea);
+	}
+
+	function formatearCostoReceta(valor) {
+		return mostrarCostoReceta(valor);
+	}
+
+	function mostrarCostoReceta(valor) {
+		var numero = parseFloat(String(valor || '0').replace(',', '.')) || 0;
+		return new Intl.NumberFormat('es-CL', { maximumFractionDigits: 2 }).format(numero);
+	}
+
+	function parseCostoReceta(valor) {
+		var numero = parseFloat(String(valor || '0').replace(/\./g, '').replace(',', '.'));
+		return isNaN(numero) ? 0 : numero;
 	}
 
 	function validate(evt) {

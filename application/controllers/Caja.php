@@ -316,10 +316,11 @@ class Caja extends CI_Controller
 		$this->ejecutar(function () {
 			$body = $this->cuerpoJson();
 			$r = $this->Mcaja->guardarDeliveryPendiente($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $body);
-			$nombre = isset($body['delivery']['nombre']) && is_scalar($body['delivery']['nombre']) ? trim((string)$body['delivery']['nombre']) : '';
+			$nombre = isset($r['nombre']) ? $r['nombre'] : (isset($body['delivery']['nombre']) && is_scalar($body['delivery']['nombre']) ? trim((string)$body['delivery']['nombre']) : '');
 			return array('id_delivery' => $r['id_delivery'], 'total' => $r['total'],
 				'comanda_id' => $this->guardarComanda($r['comanda'], array('directa' => true, 'observacion' => $r['observacion'],
-					'delivery' => $this->etiquetaDelivery($r['id_delivery'], $nombre), 'entrega' => $r['entrega'])));
+					'delivery' => $this->etiquetaDelivery($r['id_delivery'], $nombre), 'entrega' => $r['entrega'],
+					'comanda_id' => 'delivery-' . (int)$r['id_delivery'])));
 		}, true);
 	}
 
@@ -343,6 +344,95 @@ class Caja extends CI_Controller
 		});
 	}
 
+	/** Rendiciones declaradas por los repartidores; solo quien puede administrar Configuraciones las verifica. */
+	public function deliveryRendiciones()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida();
+			$this->exigirVerificadorDelivery();
+			$this->load->model('Mdelivery');
+			return array('rendiciones' => $this->Mdelivery->rendicionesPendientes());
+		});
+	}
+
+	public function deliveryComisiones()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida(); $this->exigirVerificadorDelivery(); $this->load->model('Mdelivery');
+			return array('comisiones' => $this->Mdelivery->listarComisiones());
+		});
+	}
+
+	public function deliveryComisionPagar()
+	{
+		$this->ejecutar(function () {
+			if ($this->input->method() !== 'post') throw new Exception('Método no permitido', 405);
+			$this->exigirVerificadorDelivery();
+			$b = json_decode($this->input->raw_input_stream, true); if (!is_array($b)) $b = $this->input->post();
+			$this->load->model('Mdelivery');
+			return $this->Mdelivery->pagarComision($this->cajaRequerida(), $this->idUsuario(), (int)($b['id_comision'] ?? 0),
+				(string)($b['accion_id'] ?? ''), isset($b['referencia']) ? $b['referencia'] : '');
+		}, true);
+	}
+
+	public function deliveryLiquidacionesPendientes()
+	{
+		$this->ejecutar(function () {
+			$this->cajaRequerida(); $this->exigirVerificadorDelivery(); $this->load->model('Mdelivery');
+			return array('liquidaciones' => $this->Mdelivery->listarLiquidacionesPendientes());
+		});
+	}
+
+	public function deliveryLiquidacionConfirmar()
+	{
+		$this->ejecutar(function () {
+			if ($this->input->method() !== 'post') throw new Exception('Método no permitido', 405);
+			$this->cajaRequerida(); $this->exigirVerificadorDelivery();
+			$b = json_decode($this->input->raw_input_stream, true); if (!is_array($b)) $b = $this->input->post();
+			$this->load->model('Mdelivery');
+			return $this->Mdelivery->confirmarLiquidacionPlataforma($this->idUsuario(), (int)($b['id_delivery_cobro'] ?? 0), $b);
+		}, true);
+	}
+
+	public function deliveryRendicionVerificar()
+	{
+		$this->ejecutar(function () {
+			if ($this->input->method() !== 'post') throw new Exception('Método no permitido', 405);
+			$this->exigirVerificadorDelivery();
+			$b = json_decode($this->input->raw_input_stream, true);
+			if (!is_array($b)) $b = $this->input->post();
+			$contadoRaw = isset($b['monto_contado']) && is_scalar($b['monto_contado']) ? (string)$b['monto_contado'] : '';
+			if (!preg_match('/^\\d+$/', $contadoRaw)) throw new Exception('El monto contado debe ser un número entero no negativo.', 400);
+			$this->load->model('Mdelivery');
+			return $this->Mdelivery->verificarRendicion($this->cajaRequerida(), $this->idUsuario(),
+				(int)(isset($b['id_rendicion']) ? $b['id_rendicion'] : 0), (int)$contadoRaw,
+				isset($b['observacion']) ? $b['observacion'] : '');
+		}, true);
+	}
+
+	public function deliveryRendicionResolver()
+	{
+		$this->ejecutar(function () {
+			if ($this->input->method() !== 'post') throw new Exception('Método no permitido', 405);
+			$this->exigirVerificadorDelivery();
+			$b = json_decode($this->input->raw_input_stream, true);
+			if (!is_array($b)) $b = $this->input->post();
+			$accion = (string)($b['accion'] ?? '');
+			if ($accion === 'ajuste_autorizado' && (int)$this->idRol() !== 1) throw new Exception('Solo un administrador puede autorizar el ajuste de un faltante.', 403);
+			$this->load->model('Mdelivery');
+			return $this->Mdelivery->resolverDiferencia($this->cajaRequerida(), $this->idUsuario(), (int)($b['id_rendicion'] ?? 0),
+				$accion, isset($b['observacion']) ? $b['observacion'] : '');
+		}, true);
+	}
+
+	private function exigirVerificadorDelivery()
+	{
+		$idRol = $this->idRol();
+		if ($idRol === 1) return;
+		$this->load->helper('permisos_web');
+		if (!permiso_web($this, 'Configuraciones', $idRol)) throw new Exception('Solo un administrador autorizado puede verificar rendiciones de Delivery.', 403);
+	}
+
 	/** Cambia el estado de un delivery (en camino, entregado, anulado) y, si viene, el repartidor. */
 	public function deliveryEstado()
 	{
@@ -351,7 +441,8 @@ class Caja extends CI_Controller
 			$b = $this->cuerpoJson();
 			$rep = array_key_exists('id_repartidor', $b) ? (int)$b['id_repartidor'] : null;
 			return $this->Mcaja->cambiarEstadoDelivery((int)(isset($b['id_delivery']) ? $b['id_delivery'] : 0),
-				(string)(isset($b['estado']) ? $b['estado'] : ''), $rep, isset($b['motivo']) ? $b['motivo'] : '');
+				(string)(isset($b['estado']) ? $b['estado'] : ''), $rep, isset($b['motivo']) ? $b['motivo'] : '',
+				$this->idUsuario(), $this->idRol(), isset($b['autorizacion']) ? $b['autorizacion'] : null);
 		}, true);
 	}
 
@@ -452,6 +543,19 @@ class Caja extends CI_Controller
 			$b = $this->cuerpoJson();
 			$this->cajaRequerida();
 			return $this->Mcaja->guardarMensajeMesa((int)($b['id_mesa'] ?? 0), $b['mensaje'] ?? '');
+		}, true);
+	}
+
+	/**
+	 * v1.32.0 (pedido del usuario): dejar una promo de sushi FIJA con lo armado (en la Caja ya no se pregunta), o quitarla.
+	 * Solo un administrador (la carta cambia para todos).
+	 */
+	public function fijarPromoSushi()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			return $this->Mcaja->fijarPromoSushi($this->idUsuario(), $this->idRol(), (int)($b['id_producto'] ?? 0),
+				!empty($b['fija']), isset($b['sushi']) && is_array($b['sushi']) ? $b['sushi'] : array());
 		}, true);
 	}
 
@@ -582,7 +686,9 @@ class Caja extends CI_Controller
 		// Solo las recientes: las de más de 15 minutos o más allá de las últimas 30 se descartan
 		$todas = array_filter($todas, function ($c) { return isset($c['t']) && $c['t'] > time() - 900; });
 		$todas = array_slice($todas, -29, null, true);
-		$id = bin2hex(random_bytes(8));
+		$id = isset($meta['comanda_id']) && preg_match('/^[a-zA-Z0-9_-]{1,80}$/', (string)$meta['comanda_id'])
+			? (string)$meta['comanda_id'] : bin2hex(random_bytes(8));
+		unset($meta['comanda_id']);
 		// 19-11-2026: quién atiende (sale en la comanda); por defecto el usuario de la Caja
 		if (!isset($meta['atiende'])) $meta['atiende'] = (string)$this->session->userdata('nombre_usuario');
 		if (!isset($meta['caja'])) {

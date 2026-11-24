@@ -40,6 +40,8 @@ class Configuraciones extends CI_Controller {
         $data['empresa'] = $this->Mconfiguraciones->get_empresa();
         $data['bodegas'] = $this->Mconfiguraciones->get_bodegas();
         $data['opciones'] = $this->Mconfiguraciones->get_opciones($data['config']);
+        $this->load->model('Mdelivery');
+        $data['tarifas_delivery'] = $this->Mdelivery->tarifasComision();
         // v1.21.0: "Probar gaveta" la abre por el agente de impresión de este equipo (config/impresion_local.php)
         $this->config->load('impresion_local', true);
         $data['impresion_local'] = array(
@@ -150,6 +152,9 @@ class Configuraciones extends CI_Controller {
             'agrupar_productos_web',  // v1.24.8: agrupar productos iguales en la Caja (migración 20261120170000)
             'usar_cocina_web',        // v1.29.0: pantalla de cocina (migración 20261121140000)
             'usar_reservas_web',      // v1.29.0: reservas de mesas
+            'sushi_por_pieza_web',    // v1.32.0: promos de sushi por pieza (migración 20261123110000)
+            'sushi_bases_web',        // v1.32.0: preguntar la base en las promos de sushi
+            'sushi_salsas_web',       // v1.32.0: salsas aparte de los extras
             'acepta',
             'acierto'
         ];
@@ -198,6 +203,7 @@ class Configuraciones extends CI_Controller {
             'id_mesa_venta_directa',
             'delivery_id_producto_envio',   // 18-11-2026: producto con que va el costo de envío en la boleta
             'delivery_costo_envio',         // 18-11-2026: costo de envío (el mismo para todos los delivery)
+            'delivery_limite_rendicion',    // 24-11-2026: máximo efectivo pendiente por rendir; 0 = sin límite
             'minutos_bloqueo_reserva_web'   // v1.29.0: minutos antes de la reserva en que se bloquea la mesa
         ];
 
@@ -210,6 +216,13 @@ class Configuraciones extends CI_Controller {
         if (isset($update_config['por_maximodescuento'])) $update_config['por_maximodescuento'] = max(0, min(100, $update_config['por_maximodescuento']));
         // 18-11-2026: el costo de envío no puede ser negativo
         if (isset($update_config['delivery_costo_envio'])) $update_config['delivery_costo_envio'] = max(0, $update_config['delivery_costo_envio']);
+        if (isset($update_config['delivery_limite_rendicion'])) $update_config['delivery_limite_rendicion'] = max(0, $update_config['delivery_limite_rendicion']);
+        if (isset($post['delivery_comision_valor']) && is_numeric($post['delivery_comision_valor'])) {
+            $valorComision = max(0, (float)$post['delivery_comision_valor']);
+            if (($post['delivery_comision_tipo'] ?? '') === 'porcentaje') $valorComision = min(100, $valorComision);
+            $update_config['delivery_comision_valor'] = $valorComision;
+        }
+        if (isset($post['delivery_comision_tipo']) && in_array($post['delivery_comision_tipo'], array('fija', 'porcentaje'), true)) $update_config['delivery_comision_tipo'] = $post['delivery_comision_tipo'];
         if (isset($update_config['minutos_bloqueo_reserva_web'])) $update_config['minutos_bloqueo_reserva_web'] = max(0, min(720, $update_config['minutos_bloqueo_reserva_web']));
         if (isset($update_config['cant_agregados'])) $update_config['cant_agregados'] = max(1, min(20, $update_config['cant_agregados']));
 
@@ -327,6 +340,10 @@ class Configuraciones extends CI_Controller {
         // Guardar ambas tablas
         $ok_config = $this->Mconfiguraciones->update_configuracion($update_config);
         $ok_empresa = $this->Mconfiguraciones->update_empresa($update_empresa);
+        if (isset($post['delivery_tarifa_repartidor']) && is_array($post['delivery_tarifa_repartidor'])) {
+            $this->load->model('Mdelivery');
+            $this->Mdelivery->guardarTarifasComision($post['delivery_tarifa_repartidor'], (int)$this->session->userdata('id_usuario'));
+        }
 
         header('Content-Type: application/json');
         // La configuración debe quedar guardada; empresa puede venir sin cambios

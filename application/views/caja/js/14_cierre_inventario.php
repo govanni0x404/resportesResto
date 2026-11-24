@@ -15,6 +15,13 @@
 					['Propinas (se pagan a los garzones desde la caja)', r.propinas],
 					['Ventas anuladas', r.anuladas, true],
 					['Pagos de créditos recibidos', r.pagos_credito || 0],
+					['Efectivo declarado por repartidores (fuera de caja)', r.efectivo_custodia_delivery || 0],
+					['Pagos electrónicos pendientes de confirmar', r.delivery_pendiente_liquidacion || 0],
+					['Pagos electrónicos confirmados (no efectivo)', r.delivery_liquidado_neto || 0],
+					['Cargos y retenciones de plataformas (informativo)', r.delivery_cargos_plataforma || 0],
+					['Comisiones Delivery pagadas (incluidas en egresos)', r.delivery_comisiones_pagadas || 0],
+					['Diferencias de rendición pendientes (informativo)', r.delivery_diferencias_pendientes || 0],
+					['Faltantes asumidos con ajuste autorizado (informativo)', r.delivery_diferencias_ajustadas || 0],
 					['Ingresos de caja' + (r.pagos_credito ? ' (incluye los pagos de crédito en efectivo)' : ''), r.ingresos],
 					['Retiros de caja', -r.egresos]
 				];

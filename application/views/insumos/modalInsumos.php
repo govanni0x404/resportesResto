@@ -195,15 +195,15 @@
 								<fieldset>
 									<div class="col-md-4">
 										<label for="costoReceta">C. NETO + I. ADIC (C. RECETA)</label>
-										<input type="number" class="form-control input-sm input-sm" name="costoReceta" onkeypress="return soloNumeros(event)" id="costoReceta" requerido="no" value="">
+										<input type="text" class="form-control input-sm input-sm" name="costoReceta" id="costoReceta" requerido="no" value="">
 									</div>
 									<div class="col-md-4">
 										<label for="costoBruto">COSTO BRUTO PP (INFORM)</label>
-										<input type="number" class="form-control input-sm input-sm" name="costoBruto" onkeypress="return soloNumeros(event)" id="costoBruto" requerido="no" value="">
+										<input type="text" class="form-control input-sm input-sm" name="costoBruto" id="costoBruto" requerido="no" value="">
 									</div>
 									<div class="col-md-4">
 										<label for="costoUltCompra">C. ULT. COMPRA</label>
-										<input type="number" class="form-control input-sm input-sm" name="costoUltCompra" onkeypress="return soloNumeros(event)" id="costoUltCompra" requerido="no" value="">
+										<input type="text" class="form-control input-sm input-sm" name="costoUltCompra" id="costoUltCompra" requerido="no" value="">
 									</div>
 								</fieldset>
 								<fieldset>
@@ -704,9 +704,9 @@
 		id_umedida_inventario = $('#cboUnMedInventario').val();
 		umedida_receta = $('#medReceta').val();
 		id_umedida_receta = $('#cboUnMedReceta').val();
-		costo_neto_ppp = $("#costoReceta").val();
-		costo_bruto_ppp = $("#costoBruto").val();
-		precio_ucompra = $("#costoUltCompra").val();
+		costo_neto_ppp = numeroCostoInsumo($("#costoReceta").val());
+		costo_bruto_ppp = numeroCostoInsumo($("#costoBruto").val());
+		precio_ucompra = numeroCostoInsumo($("#costoUltCompra").val());
 		observaciones = $("#obsInsumo").val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
 		inv_cierre = ($('#ckInvCierre').is(":checked") ? 1 : 0);
 		var stock_minimo = Math.max(0, Number(String($('#stockMinimo').val() || '0').replace(',', '.')) || 0);   // v1.27.0

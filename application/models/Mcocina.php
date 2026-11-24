@@ -118,14 +118,43 @@ class Mcocina extends CI_Model
 				$filtroV
 			ORDER BY v.fecha_transaccion, dv.id_detalle_venta", array($desde))->result();
 
+		// Pedidos que aún no tienen venta (cobro al entregar): la comanda ya existe y debe aparecer en Cocina.
+		$delivery = array();
+		if ($db->table_exists('delivery_pedido') && $db->field_exists('comanda_snapshot', 'delivery_pedido')) {
+			$prepSql = $db->field_exists('estado_preparacion', 'delivery_pedido')
+				? "AND COALESCE(d.estado_preparacion, 'pendiente') NOT IN ('listo', 'cancelado')" : '';
+			$delivery = $db->query("SELECT 'd' AS origen, d.id_delivery AS id, d.id_delivery AS grupo,
+					to_char(d.fecha, 'YYYY-MM-DD HH24:MI:SS') AS envio, (x.item->>'cantidad')::numeric AS cantidad,
+					COALESCE(x.item->>'nombre', p.nombre_producto) AS nombre, COALESCE(x.item->>'nota', '') AS nota,
+					COALESCE(dp.nombre_dimpresion, '') AS destino, $selD2 AS destino2,
+					COALESCE((SELECT string_agg(a.nombre, ' + ') FROM jsonb_array_elements_text(COALESCE(x.item->'agregados', '[]'::jsonb)) a(nombre)), '') AS agregado,
+					0 AS id_mesa, '' AS recinto, '' AS nombre_mesa, true AS delivery, '' AS garzon, '' AS mensaje_mesa,
+					EXTRACT(EPOCH FROM (now() - d.fecha))::bigint AS segundos,
+					COALESCE(t.nombre, '') AS tomado_por, COALESCE(t.id_usuario, 0) AS tomado_id,
+					COALESCE(EXTRACT(EPOCH FROM (now() - t.desde))::bigint, 0) AS tomado_seg
+				FROM delivery_pedido d
+				CROSS JOIN LATERAL jsonb_array_elements(COALESCE(d.comanda_snapshot, '[]'::jsonb)) AS x(item)
+				JOIN producto p ON p.id_producto = COALESCE(NULLIF(x.item->>'id_producto', '')::integer, 0)
+				LEFT JOIN familia f ON f.id_familia = p.id_familia
+				LEFT JOIN dimpresion dp ON dp.id_dimpresion = $destinoProducto
+				LEFT JOIN cocina_toma_web t ON t.origen = 'd' AND t.id_detalle = d.id_delivery
+				WHERE d.fecha >= ? AND d.estado <> 'anulado' $prepSql
+					AND NOT EXISTS (SELECT 1 FROM cocina_listo_web k WHERE k.origen = 'd' AND k.id_detalle = d.id_delivery)
+					$filtroV
+				ORDER BY d.fecha, d.id_delivery", array($desde))->result();
+		}
+
 		$comandas = array();
-		foreach (array_merge($mesas, $directas) as $l) {
+		foreach (array_merge($mesas, $directas, $delivery) as $l) {
 			$clave = $l->origen . ':' . $l->grupo . ':' . $l->envio;
 			if (!isset($comandas[$clave])) {
 				if ($l->origen === 'c') {
 					$l->delivery = ($l->delivery === 't' || $l->delivery === true);   // PostgreSQL entrega 't' / 'f' (texto)
 					$titulo = $l->delivery ? 'Delivery' : ((int)$l->id_mesa ? ($l->nombre_mesa !== '' ? $l->nombre_mesa : 'Mesa ' . (int)$l->id_mesa) : 'Pedido ' . (int)$l->grupo);
 					$detalle = trim(($l->recinto !== '' && !$l->delivery ? $l->recinto : '') . ($l->garzon !== '' ? ' · ' . $l->garzon : ''), ' ·');
+				} elseif ($l->origen === 'd') {
+					$titulo = 'Delivery N° ' . (int)$l->grupo;
+					$detalle = 'Pedido para entrega';
 				} else {
 					$titulo = 'Venta directa N° ' . (int)$l->folio;
 					$detalle = $l->retira !== '' ? 'Retira: ' . $l->retira : '';
@@ -160,12 +189,18 @@ class Mcocina extends CI_Model
 		$db = $this->db();
 		$n = 0;
 		foreach ((array)$lineas as $l) {
-			$origen = isset($l['origen']) && in_array($l['origen'], array('c', 'v'), true) ? $l['origen'] : null;
+			$origen = isset($l['origen']) && in_array($l['origen'], array('c', 'v', 'd'), true) ? $l['origen'] : null;
 			$id = isset($l['id']) ? (int)$l['id'] : 0;
 			if (!$origen || $id <= 0) continue;
 			$db->query('INSERT INTO cocina_listo_web (origen, id_detalle, id_usuario) VALUES (?, ?, ?) ON CONFLICT DO NOTHING',
 				array($origen, $id, (int)$idUsuario));
-			$n += $db->affected_rows();
+			$insertados = $db->affected_rows();
+			$n += $insertados;
+			if ($origen === 'd' && $insertados && $db->field_exists('estado_preparacion', 'delivery_pedido')) {
+				$db->query("UPDATE delivery_pedido SET estado_preparacion = 'listo' WHERE id_delivery = ? AND estado <> 'anulado'", array($id));
+				if ($db->table_exists('delivery_evento')) $db->query("INSERT INTO delivery_evento (id_delivery, id_usuario, accion, datos)
+					VALUES (?, ?, 'preparacion_lista', '{}'::jsonb)", array($id, (int)$idUsuario));
+			}
 		}
 		return $n;
 	}
@@ -179,7 +214,7 @@ class Mcocina extends CI_Model
 		$db = $this->db();
 		$n = 0;
 		foreach ((array)$lineas as $l) {
-			$origen = isset($l['origen']) && in_array($l['origen'], array('c', 'v'), true) ? $l['origen'] : null;
+			$origen = isset($l['origen']) && in_array($l['origen'], array('c', 'v', 'd'), true) ? $l['origen'] : null;
 			$id = isset($l['id']) ? (int)$l['id'] : 0;
 			if (!$origen || $id <= 0) continue;
 			if ($soltar) {
@@ -200,11 +235,16 @@ class Mcocina extends CI_Model
 		$db = $this->db();
 		$n = 0;
 		foreach ((array)$lineas as $l) {
-			$origen = isset($l['origen']) && in_array($l['origen'], array('c', 'v'), true) ? $l['origen'] : null;
+			$origen = isset($l['origen']) && in_array($l['origen'], array('c', 'v', 'd'), true) ? $l['origen'] : null;
 			$id = isset($l['id']) ? (int)$l['id'] : 0;
 			if (!$origen || $id <= 0) continue;
 			$db->query('DELETE FROM cocina_listo_web WHERE origen = ? AND id_detalle = ?', array($origen, $id));
 			$n += $db->affected_rows();
+			if ($origen === 'd' && $db->affected_rows() && $db->field_exists('estado_preparacion', 'delivery_pedido')) {
+				$db->query("UPDATE delivery_pedido SET estado_preparacion = 'en_preparacion' WHERE id_delivery = ? AND estado <> 'anulado'", array($id));
+				if ($db->table_exists('delivery_evento')) $db->query("INSERT INTO delivery_evento (id_delivery, id_usuario, accion, datos)
+					VALUES (?, ?, 'preparacion_reabierta', '{}'::jsonb)", array($id, (int)$this->session->userdata('id_usuario')));
+			}
 		}
 		// Limpieza: lo de más de 2 días ya no sirve
 		$db->query("DELETE FROM cocina_listo_web WHERE listo < now() - interval '2 days'");

@@ -187,11 +187,14 @@ class Mcaja extends CI_Model
 			$ops = array();
 			foreach ($sp['opciones'] as $tipo => $lista) {
 				$ops[$tipo] = array();
-				foreach ($lista as $o) $ops[$tipo][] = array('id' => $o['id'], 'nombre' => $o['nombre'], 'valor' => $o['valor']);
+				foreach ($lista as $o) $ops[$tipo][] = array('id' => $o['id'], 'nombre' => $o['nombre'], 'valor' => $o['valor'], 'precio_promo' => $o['precio_promo']);
 			}
 			$sushisCaja[] = array('id_producto' => $idP, 'piezas' => $sp['piezas'], 'paso' => $sp['paso'], 'max_rellenos' => $sp['max_rellenos'],
 				'modo' => $sp['modo'], 'piezas_rol' => $sp['piezas_rol'],   // v1.26.0
-				'bases' => $ops['base'], 'rellenos' => $ops['relleno'], 'envoltorios' => $ops['envoltorio'], 'extras' => $ops['extra']);
+				// v1.32.0: promo fija (lo armado), precio según el envoltorio, máximos y salsas
+				'fijo' => $sp['fijo'], 'precio_envoltorio' => $sp['precio_envoltorio'], 'max_envoltorios' => $sp['max_envoltorios'],
+				'max_extras' => $sp['max_extras'], 'max_salsas' => $sp['max_salsas'],
+				'bases' => $ops['base'], 'rellenos' => $ops['relleno'], 'envoltorios' => $ops['envoltorio'], 'extras' => $ops['extra'], 'salsas' => $ops['salsa']);
 		}
 
 		$config['es_admin'] = $this->esAdmin($db, $idUsuario, $idRol);
@@ -332,28 +335,86 @@ class Mcaja extends CI_Model
 		// v1.26.0: modo pieza / rol (migración 20261121110000); sin las columnas, todas por pieza
 		$conRol = isset($t['promo_sushi_web']['modo'], $t['promo_sushi_web']['piezas_rol']);
 		$selRol = $conRol ? 's.modo, s.piezas_rol' : "'pieza' AS modo, 10 AS piezas_rol";
-		foreach ($this->q($db, "SELECT s.id_producto, s.piezas, s.paso, s.max_rellenos, $selRol FROM promo_sushi_web s
+		// v1.32.0: promo fija, precio según el envoltorio, máximos y salsas (migración 20261123110000)
+		$conOp = isset($t['promo_sushi_web']['fija_web'], $t['promo_sushi_web']['max_salsas_web'], $t['promo_sushi_opcion_web']['precio_promo_web']);
+		$selOp = $conOp ? 's.fija_web, s.armado_fijo_web, s.precio_envoltorio_web, s.max_envoltorios_web, s.max_extras_web, s.max_salsas_web'
+			: 'false AS fija_web, NULL AS armado_fijo_web, false AS precio_envoltorio_web, 1 AS max_envoltorios_web, 0 AS max_extras_web, 0 AS max_salsas_web';
+		$cfg = $this->opcionesSushi($db);
+		$si = function ($v) { return $v === true || $v === 't'; };
+		foreach ($this->q($db, "SELECT s.id_producto, s.piezas, s.paso, s.max_rellenos, $selRol, $selOp FROM promo_sushi_web s
 			JOIN producto p ON p.id_producto = s.id_producto AND p.vigente IS TRUE WHERE s.vigente IS TRUE")->result() as $r) {
 			$rol = $r->modo === 'rol';
 			$pr = max(1, (int)$r->piezas_rol);
+			$fijo = $si($r->fija_web) && $r->armado_fijo_web ? json_decode((string)$r->armado_fijo_web, true) : null;
 			$this->sushisCache[(int)$r->id_producto] = array('piezas' => (int)$r->piezas, 'paso' => $rol ? $pr : max(1, (int)$r->paso),
 				'max_rellenos' => max(0, (int)$r->max_rellenos),
 				// v1.26.0: por roll, cada grupo va de a un roll (paso = piezas del roll) y lo elegido se cobra por roll
 				'modo' => $rol ? 'rol' : 'pieza', 'piezas_rol' => $pr,
-				'opciones' => array('base' => array(), 'relleno' => array(), 'envoltorio' => array(), 'extra' => array()));
+				'fijo' => is_array($fijo) ? $fijo : null, 'precio_envoltorio' => $si($r->precio_envoltorio_web),
+				'max_envoltorios' => max(1, (int)$r->max_envoltorios_web), 'max_extras' => max(0, (int)$r->max_extras_web), 'max_salsas' => max(0, (int)$r->max_salsas_web),
+				'opciones' => array('base' => array(), 'relleno' => array(), 'envoltorio' => array(), 'extra' => array(), 'salsa' => array()));
 		}
 		if (!$this->sushisCache) return array();
 		foreach ($this->q($db, "SELECT o.id_opcion, o.id_producto_promo, o.tipo, o.id_producto, o.valor, p.nombre_producto,
+				" . ($conOp ? 'COALESCE(o.precio_promo_web, 0)' : '0') . " AS precio_promo,
 				COALESCE(p.id_receta, 0) AS id_receta, COALESCE(p.id_bodega, 0) AS id_bodega
 			FROM promo_sushi_opcion_web o JOIN producto p ON p.id_producto = o.id_producto AND p.vigente IS TRUE
 			ORDER BY o.id_producto_promo, o.tipo, o.orden, p.nombre_producto")->result() as $r) {
 			$idP = (int)$r->id_producto_promo;
 			if (!isset($this->sushisCache[$idP]['opciones'][$r->tipo])) continue;
+			// v1.32.0: bases y salsas se usan solo si están encendidas en Configuraciones > Promos de sushi
+			if (($r->tipo === 'base' && !$cfg['bases']) || ($r->tipo === 'salsa' && !$cfg['salsas'])) continue;
 			$this->sushisCache[$idP]['opciones'][$r->tipo][(int)$r->id_opcion] = array('id' => (int)$r->id_opcion,
 				'id_producto' => (int)$r->id_producto, 'nombre' => (string)$r->nombre_producto, 'valor' => max(0, (int)$r->valor),
+				'precio_promo' => max(0, (int)$r->precio_promo),
 				'id_receta' => (int)$r->id_receta, 'id_bodega' => (int)$r->id_bodega);
 		}
 		return $this->sushisCache;
+	}
+
+	/**
+	 * v1.32.0: deja una promo de sushi fija con lo armado ($sel, validado como una venta) o la deja de nuevo para armar.
+	 * Se guardan solo los ids (no nombres ni valores): si después cambia la promo, la Caja vuelve a pedir que se arme.
+	 */
+	public function fijarPromoSushi($idUsuario, $idRol, $idPromo, $fija, $sel)
+	{
+		$db = $this->conexion();
+		if (!$this->esAdmin($db, $idUsuario, $idRol)) throw new Exception('Solo un administrador puede dejar una promo fija', 403);
+		$t = $this->columnas($db, array('promo_sushi_web'));
+		if (!isset($t['promo_sushi_web']['fija_web'])) throw new Exception('Falta actualizar la base: cierra sesión y vuelve a entrar', 409);
+		$sushis = $this->sushis($db);
+		if (!isset($sushis[(int)$idPromo])) throw new Exception('La promo no existe o no está vigente', 404);
+		if (!$fija) {
+			$this->q($db, 'UPDATE promo_sushi_web SET fija_web = false WHERE id_producto = ?', array((int)$idPromo));
+			return array('ok' => true, 'fija' => false);
+		}
+		$r = $this->eleccionSushi($sushis[(int)$idPromo], $sel, 'La promo');
+		$ids = function ($o) { return $o ? (int)$o['id'] : 0; };
+		$guardar = array('grupos' => array(), 'extras' => array(), 'salsas' => array());
+		foreach ($r['grupos'] as $g) {
+			$guardar['grupos'][] = array('piezas' => $g['piezas'], 'base' => $ids($g['base']), 'envoltorio' => $ids($g['envoltorio']),
+				'envoltorios' => array_map($ids, $g['envoltorios']), 'rellenos' => array_map($ids, $g['rellenos']), 'nota' => $g['nota']);
+		}
+		foreach (array('extras', 'salsas') as $k) foreach ($r[$k] as $par) $guardar[$k][] = array('id' => (int)$par[0]['id'], 'cantidad' => (int)$par[1]);
+		$this->q($db, 'UPDATE promo_sushi_web SET fija_web = true, armado_fijo_web = ? WHERE id_producto = ?', array(json_encode($guardar), (int)$idPromo));
+		return array('ok' => true, 'fija' => true, 'armado' => $guardar);
+	}
+
+	/** v1.32.0: Configuraciones > Promos de sushi (sin las columnas: como antes, con bases y sin salsas aparte). */
+	public function opcionesSushi($db = null)
+	{
+		$db = $db ?: $this->conexion();
+		$c = $this->columnas($db, array('configuracion'));
+		$c = isset($c['configuracion']) ? $c['configuracion'] : array();
+		$res = array('por_pieza' => true, 'bases' => true, 'salsas' => false);
+		$mapa = array('por_pieza' => 'sushi_por_pieza_web', 'bases' => 'sushi_bases_web', 'salsas' => 'sushi_salsas_web');
+		$sel = array();
+		foreach ($mapa as $k => $col) if (isset($c[$col])) $sel[$k] = "($col IS TRUE) AS $k";
+		if ($sel) {
+			$f = $this->q($db, 'SELECT ' . implode(', ', $sel) . ' FROM configuracion LIMIT 1')->row_array();
+			foreach ($sel as $k => $x) $res[$k] = isset($f[$k]) && ($f[$k] === true || $f[$k] === 't');
+		}
+		return $res;
 	}
 
 	/**
@@ -391,11 +452,19 @@ class Mcaja extends CI_Model
 				if (empty($g['base'])) throw new Exception($nombre . ', grupo ' . $num . ': elige la base', 400);
 				$base = $opcion('base', $g['base']);
 			}
-			$env = null;
-			if ($op['envoltorio']) {
-				if (empty($g['envoltorio'])) throw new Exception($nombre . ', grupo ' . $num . ': elige el envoltorio', 400);
-				$env = $opcion('envoltorio', $g['envoltorio']);
+			// v1.32.0: puede llevar más de un envoltorio (hasta max_envoltorios); llega "envoltorios" [ids] o "envoltorio" (uno)
+			$idsEnv = isset($g['envoltorios']) && is_array($g['envoltorios']) ? $g['envoltorios'] : (!empty($g['envoltorio']) ? array($g['envoltorio']) : array());
+			$envs = array();
+			foreach ($idsEnv as $idE) {
+				$o = $opcion('envoltorio', $idE);
+				if (isset($envs[$o['id']])) throw new Exception($nombre . ', grupo ' . $num . ': ' . $o['nombre'] . ' está repetido', 400);
+				$envs[$o['id']] = $o;
 			}
+			$envs = array_values($envs);
+			if ($op['envoltorio'] && !$envs) throw new Exception($nombre . ', grupo ' . $num . ': elige el envoltorio', 400);
+			$maxEnv = isset($promo['max_envoltorios']) ? max(1, (int)$promo['max_envoltorios']) : 1;
+			if (count($envs) > $maxEnv) throw new Exception($nombre . ', grupo ' . $num . ': se pueden elegir hasta ' . $maxEnv . ($maxEnv === 1 ? ' envoltorio' : ' envoltorios'), 400);
+			$env = $envs ? $envs[0] : null;
 			$rellenos = array();
 			foreach (isset($g['rellenos']) && is_array($g['rellenos']) ? $g['rellenos'] : array() as $idR) {
 				$o = $opcion('relleno', $idR);
@@ -411,7 +480,7 @@ class Mcaja extends CI_Model
 			// v1.26.1: nota del roll / grupo (sin caracteres de control, hasta 100)
 			$notaG = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', isset($g['nota']) && is_scalar($g['nota']) ? (string)$g['nota'] : '')), 0, 100);
 			$res['grupos'][] = array('piezas' => $piezas, 'rolls' => $rol ? intdiv($piezas, $promo['piezas_rol']) : 0,
-				'base' => $base, 'envoltorio' => $env, 'rellenos' => array_values($rellenos), 'nota' => $notaG);
+				'base' => $base, 'envoltorio' => $env, 'envoltorios' => $envs, 'rellenos' => array_values($rellenos), 'nota' => $notaG);
 		}
 		if ($total !== $promo['piezas']) {
 			// v1.26.0: por roll, el aviso en rolls
@@ -421,17 +490,24 @@ class Mcaja extends CI_Model
 			throw new Exception($nombre . ': hay ' . intdiv($total, $u) . ' de ' . intdiv($promo['piezas'], $u) . ($rol ? ' rolls' : ' piezas')
 				. ($total < $promo['piezas'] ? ', ' . ($dif === 1 ? 'falta ' : 'faltan ') . $cuanto : ', ' . ($dif === 1 ? 'sobra ' : 'sobran ') . $cuanto), 400);
 		}
-		$extras = array();
-		foreach (isset($sel['extras']) && is_array($sel['extras']) ? $sel['extras'] : array() as $e) {
-			$id = (int)(is_array($e) && isset($e['id']) ? $e['id'] : 0);
-			$q = (int)(is_array($e) && isset($e['cantidad']) ? $e['cantidad'] : 0);
-			if ($id <= 0 || $q <= 0) continue;
-			$o = $opcion('extra', $id);
-			$q += isset($extras[$id]) ? $extras[$id][1] : 0;
-			if ($q > 99) throw new Exception('Cantidad demasiado alta en los extras de ' . $nombre, 400);
-			$extras[$id] = array($o, $q);
+		// Extras y (v1.32.0) salsas: opcionales, cada uno con su máximo total (0 = sin límite)
+		foreach (array('extra' => 'extras', 'salsa' => 'salsas') as $tipo => $clave) {
+			$lista = array();
+			$suma = 0;
+			foreach (isset($sel[$clave]) && is_array($sel[$clave]) ? $sel[$clave] : array() as $e) {
+				$id = (int)(is_array($e) && isset($e['id']) ? $e['id'] : 0);
+				$q = (int)(is_array($e) && isset($e['cantidad']) ? $e['cantidad'] : 0);
+				if ($id <= 0 || $q <= 0) continue;
+				$o = $opcion($tipo, $id);
+				$suma += $q;
+				$q += isset($lista[$id]) ? $lista[$id][1] : 0;
+				if ($q > 99) throw new Exception('Cantidad demasiado alta en ' . ($tipo === 'salsa' ? 'las salsas' : 'los extras') . ' de ' . $nombre, 400);
+				$lista[$id] = array($o, $q);
+			}
+			$max = isset($promo['max_' . $clave]) ? (int)$promo['max_' . $clave] : 0;
+			if ($max > 0 && $suma > $max) throw new Exception($nombre . ': se pueden elegir hasta ' . $max . ($tipo === 'salsa' ? ' salsas' : ' extras'), 400);
+			$res[$clave] = array_values($lista);
 		}
-		$res['extras'] = array_values($extras);
 		return $res;
 	}
 
@@ -801,12 +877,13 @@ class Mcaja extends CI_Model
 		$efectivoPropinas = 0;
 		$propinas = 0;
 		$creditos = 0;
+		$filtroCustodia = $db->table_exists('delivery_cobro') ? "AND NOT EXISTS (SELECT 1 FROM delivery_cobro dc WHERE dc.id_venta = v.id_venta AND (dc.en_custodia_repartidor IS TRUE OR dc.estado <> 'verificada'))" : '';
 		$rows = $this->q($db, "SELECT f.id_fpago, f.nombre_fpago, (f.escortesia IS TRUE) AS cortesia,
 				COALESCE(sum(pv.monto_pagado - COALESCE(pv.propina, 0)), 0) AS monto, COALESCE(sum(pv.propina), 0) AS propina
 			FROM pago_venta pv
 			JOIN venta v ON v.id_venta = pv.id_venta
 			JOIN fpago f ON f.id_fpago = pv.id_fpago
-			WHERE v.id_caja = ?
+			WHERE v.id_caja = ? $filtroCustodia
 			GROUP BY f.id_fpago, f.nombre_fpago, f.escortesia
 			ORDER BY f.id_fpago", array($idCaja))->result();
 		foreach ($rows as $r) {
@@ -845,6 +922,42 @@ class Mcaja extends CI_Model
 		}
 
 		$fondo = (int)$caja->fondo_fijo_anterior ?: (int)$caja->fondo_fijo;
+		$custodiaDelivery = 0;
+		$liquidacionDelivery = 0;
+		$comisionesDelivery = 0;
+		$diferenciasDelivery = 0;
+		$ajustesDiferenciaDelivery = 0;
+		$liquidadoNetoDelivery = 0;
+		$cargoPlataformaDelivery = 0;
+		if ($db->table_exists('delivery_cobro')) {
+			$saldoCustodia = $db->table_exists('delivery_rendicion_detalle') && $db->table_exists('delivery_rendicion')
+				? "GREATEST(dc.monto - COALESCE((SELECT sum(rd.monto_recibido) FROM delivery_rendicion_detalle rd
+					JOIN delivery_rendicion dr ON dr.id_delivery_rendicion = rd.id_delivery_rendicion WHERE rd.id_delivery_cobro = dc.id_delivery_cobro), 0)
+					- COALESCE((SELECT sum(rd.monto_ajustado) FROM delivery_rendicion_detalle rd WHERE rd.id_delivery_cobro = dc.id_delivery_cobro), 0), 0)"
+				: "CASE WHEN dc.estado = 'verificada' THEN 0 ELSE dc.monto END";
+			$r = $this->q($db, "SELECT COALESCE(sum($saldoCustodia), 0) AS monto FROM delivery_cobro dc
+				JOIN venta v ON v.id_venta = dc.id_venta WHERE v.id_caja = ? AND dc.en_custodia_repartidor IS TRUE", array($idCaja))->row();
+			$custodiaDelivery = $r ? (int)$r->monto : 0;
+			$r = $this->q($db, "SELECT COALESCE(sum(dc.monto), 0) AS monto FROM delivery_cobro dc
+				JOIN venta v ON v.id_venta = dc.id_venta
+				WHERE v.id_caja = ? AND dc.en_custodia_repartidor IS FALSE AND dc.estado <> 'verificada'", array($idCaja))->row();
+			$liquidacionDelivery = $r ? (int)$r->monto : 0;
+		}
+		if ($db->table_exists('delivery_comision')) {
+			$r = $this->q($db, "SELECT COALESCE(sum(monto), 0) AS monto FROM delivery_comision WHERE id_caja = ? AND estado = 'pagada'", array($idCaja))->row();
+			$comisionesDelivery = $r ? (int)$r->monto : 0;
+		}
+		if ($db->table_exists('delivery_rendicion') && $db->field_exists('diferencia_resuelta', 'delivery_rendicion')) {
+			$r = $this->q($db, "SELECT COALESCE(sum(abs(diferencia)), 0) AS monto FROM delivery_rendicion WHERE id_caja = ? AND estado = 'diferencia' AND diferencia_resuelta IS NOT TRUE", array($idCaja))->row();
+			$diferenciasDelivery = $r ? (int)$r->monto : 0;
+			$r = $this->q($db, "SELECT COALESCE(sum(abs(diferencia)), 0) AS monto FROM delivery_rendicion WHERE id_caja = ? AND estado = 'diferencia' AND resolucion = 'ajuste_autorizado'", array($idCaja))->row();
+			$ajustesDiferenciaDelivery = $r ? (int)$r->monto : 0;
+		}
+		if ($db->table_exists('delivery_liquidacion')) {
+			$r = $this->q($db, 'SELECT COALESCE(sum(l.monto_neto), 0) AS neto, COALESCE(sum(l.cargo_plataforma + l.otras_retenciones), 0) AS cargos
+				FROM delivery_liquidacion l JOIN delivery_cobro dc ON dc.id_delivery_cobro = l.id_delivery_cobro JOIN venta v ON v.id_venta = dc.id_venta WHERE v.id_caja = ?', array($idCaja))->row();
+			$liquidadoNetoDelivery = $r ? (int)$r->neto : 0; $cargoPlataformaDelivery = $r ? (int)$r->cargos : 0;
+		}
 		return array(
 			'id_caja' => $idCaja,
 			// Caja de Control de cajas con que se abrió (nombre, lista y bodega), o null
@@ -866,6 +979,13 @@ class Mcaja extends CI_Model
 			'creditos' => $creditos,
 			'propinas_efectivo' => $efectivoPropinas,
 			'efectivo_ventas' => $efectivoVentas,
+			'efectivo_custodia_delivery' => $custodiaDelivery,
+			'delivery_pendiente_liquidacion' => $liquidacionDelivery,
+			'delivery_comisiones_pagadas' => $comisionesDelivery,
+			'delivery_diferencias_pendientes' => $diferenciasDelivery,
+			'delivery_diferencias_ajustadas' => $ajustesDiferenciaDelivery,
+			'delivery_liquidado_neto' => $liquidadoNetoDelivery,
+			'delivery_cargos_plataforma' => $cargoPlataformaDelivery,
 			// Las propinas (de cualquier forma de pago) se pagan a los garzones en efectivo desde la caja
 			'efectivo_esperado' => $fondo + $efectivoVentas + $efectivoPropinas - $propinas + (int)$m->ingresos - (int)$m->egresos,
 			'por_forma_pago' => $porFpago,
@@ -1936,6 +2056,21 @@ class Mcaja extends CI_Model
 
 		$requerido = $total + $propina;
 		if ($suma < $requerido) throw new Exception('Falta pagar $' . number_format($requerido - $suma, 0, ',', '.'), 400);
+		$cobroDelivery = $pedidoDelivery && isset($pedidoDelivery['cobro']) ? $pedidoDelivery['cobro'] : null;
+			if ($cobroDelivery && in_array($cobroDelivery['estado'], array('pendiente_registro', 'verificada'), true)) {
+			if ($propina > 0 || (int)$cobroDelivery['monto'] !== $total) {
+				throw new Exception('El cobro declarado por el repartidor debe coincidir exactamente con el total del delivery; revisa el monto antes de registrarlo.', 409);
+			}
+			if ($cobroDelivery['en_custodia_repartidor']) {
+				foreach ($pagos as $pg) if (empty($fpagos[$pg['id_fpago']]['efectivo'])) {
+					throw new Exception('El repartidor declaró efectivo. Registra el cobro con la forma Efectivo; el dinero seguirá marcado bajo su custodia hasta la rendición.', 409);
+				}
+			} else {
+				foreach ($pagos as $pg) if (!empty($fpagos[$pg['id_fpago']]['efectivo'])) {
+					throw new Exception('El repartidor declaró un pago electrónico o de plataforma. Regístralo con una forma de pago no efectivo.', 409);
+				}
+			}
+		}
 		$vuelto = $suma - $requerido;
 		if ($vuelto > 0) {
 			if ($idxEfectivo < 0 || $pagos[$idxEfectivo]['monto'] <= $vuelto) {
@@ -2178,10 +2313,20 @@ class Mcaja extends CI_Model
 			// dos veces). Nuevo: se registra ya cobrado.
 			$idDelivery = null;
 			if ($pedidoDelivery) {
-				$this->q($db, "UPDATE delivery_pedido SET id_venta = ?, total = ?, fecha_estado = now()
+				$this->q($db, "UPDATE delivery_pedido SET id_venta = ?, total = ?, fecha_estado = now(),
+					estado = CASE WHEN estado_entrega = 'entregado' THEN 'entregado' ELSE estado END
 					WHERE id_delivery = ? AND id_venta IS NULL AND estado <> 'anulado'",
 					array($idVenta, $subtotal - $descuento, $pedidoDelivery['id_delivery']));
 				if ($db->affected_rows() !== 1) throw new Exception('Ese delivery ya se cobró o se anuló en otra pantalla', 409);
+				if ($cobroDelivery && in_array($cobroDelivery['estado'], array('pendiente_registro', 'verificada'), true)) {
+					// Lo declarado por repartidor queda pendiente de verificación: efectivo bajo custodia o pago electrónico.
+					$estadoCobro = ($cobroDelivery['en_custodia_repartidor'] || in_array($cobroDelivery['medio_pago'], array('plataforma', 'transferencia', 'tarjeta', 'prepago', 'otro'), true)) ? 'registrada' : 'verificada';
+					$this->q($db, 'UPDATE delivery_cobro SET id_venta = ?, estado = CASE WHEN estado = \'verificada\' THEN estado ELSE ? END WHERE id_delivery_cobro = ? AND estado IN (\'pendiente_registro\', \'verificada\') AND id_venta IS NULL',
+						array((int)$idVenta, $estadoCobro, (int)$cobroDelivery['id_delivery_cobro']));
+					if ($db->affected_rows() !== 1) throw new Exception('El cobro de Delivery ya fue registrado en otra caja.', 409);
+					$this->q($db, "UPDATE delivery_pedido SET estado_pago = ?, estado = CASE WHEN estado_entrega = 'entregado' THEN 'entregado' ELSE estado END
+						WHERE id_delivery = ?", array($estadoCobro === 'registrada' ? 'declarado' : 'verificado', (int)$pedidoDelivery['id_delivery']));
+				}
 				$this->guardarDescuentoDelivery($db, $pedidoDelivery['id_delivery'], $descuento);
 				$idDelivery = $pedidoDelivery['id_delivery'];
 			} elseif ($entregaDelivery) {
@@ -2300,6 +2445,14 @@ class Mcaja extends CI_Model
 				$nota = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', isset($it['nota']) ? (string)$it['nota'] : '')), 0, 150);
 				$bodegaCaja = !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : 0;
 				$unitario = (int)round((float)$prod->precio);
+				// v1.32.0: precio según el envoltorio: el del envoltorio elegido (el más caro si hay varios); su valor
+				// adicional no se suma aparte. Un envoltorio sin precio deja el de la promo.
+				$porEnv = !empty($sushis[$id]['precio_envoltorio']);
+				if ($porEnv) {
+					$pEnv = 0;
+					foreach ($sel['grupos'] as $g) foreach ($g['envoltorios'] as $o) $pEnv = max($pEnv, (int)$o['precio_promo']);
+					if ($pEnv > 0) $unitario = $pEnv;
+				}
 				$bruto = (int)round($unitario * $cantidad);
 				$subtotal += $bruto;
 				$idxPromo = count($lineas);
@@ -2328,11 +2481,12 @@ class Mcaja extends CI_Model
 				foreach ($sel['grupos'] as $ng => $g) {
 					$cantGrupo = round($cantidad * ($porRol ? $g['rolls'] : $g['piezas']), 3);
 					$nombresRellenos = array_map(function ($o) { return $o['nombre']; }, $g['rellenos']);
-					$titulo = $g['envoltorio'] ? $g['envoltorio']['nombre'] : ($g['base'] ? $g['base']['nombre'] : $nombresRellenos[0]);
+					$titulo = $g['envoltorios'] ? implode(' + ', array_map(function ($o) { return $o['nombre']; }, $g['envoltorios']))
+						: ($g['base'] ? $g['base']['nombre'] : $nombresRellenos[0]);
 					$desc = ($porRol ? 'Roll: ' : '') . ($nombresRellenos ? implode(', ', $nombresRellenos) : 'Sin relleno') . ($g['base'] ? ' · Base ' . $g['base']['nombre'] : '');
 					// La primera línea del grupo lleva la descripción completa y es la que sale en comandas, reenvíos y anulaciones
 					$partes = array();
-					if ($g['envoltorio']) $partes[] = $g['envoltorio'];
+					foreach ($g['envoltorios'] as $o) $partes[] = $porEnv ? array_merge($o, array('valor' => 0)) : $o;   // v1.32.0: varios envoltorios
 					if ($g['base']) $partes[] = $g['base'];
 					foreach ($g['rellenos'] as $o) $partes[] = $o;
 					$notaG = $g['nota'] !== '' ? ' · Nota: ' . $g['nota'] : '';
@@ -2345,13 +2499,16 @@ class Mcaja extends CI_Model
 					$resumen[] = ($porRol ? $g['rolls'] . ($g['rolls'] === 1 ? ' roll ' : ' rolls ') : $g['piezas'] . ' ') . $titulo
 						. ' (' . ($porRol ? mb_substr($desc, 6) : $desc) . $notaG . ')';
 				}
-				foreach ($sel['extras'] as $par) {
-					list($o, $q) = $par;
-					$cantExtra = round($cantidad * $q, 3);
-					$hijo($o, $cantExtra, 'Extra de ' . $prod->nombre_producto, true);
-					$comanda[] = array('id_producto' => $id, 'nombre' => $o['nombre'], 'cantidad' => $cantExtra,
-						'nota' => 'Extra de ' . $prod->nombre_producto, 'agregados' => array());
-					$resumen[] = ($q > 1 ? $q . ' ' : '') . $o['nombre'];
+				// v1.32.0: las salsas, igual que los extras (cada una es una línea y sale en la comanda de la promo)
+				foreach (array('extras' => 'Extra de ', 'salsas' => 'Salsa de ') as $clave => $pref) {
+					foreach ($sel[$clave] as $par) {
+						list($o, $q) = $par;
+						$cantExtra = round($cantidad * $q, 3);
+						$hijo($o, $cantExtra, $pref . $prod->nombre_producto, true);
+						$comanda[] = array('id_producto' => $id, 'nombre' => $o['nombre'], 'cantidad' => $cantExtra,
+							'nota' => $pref . $prod->nombre_producto, 'agregados' => array());
+						$resumen[] = ($q > 1 ? $q . ' ' : '') . $o['nombre'];
+					}
 				}
 				$notas[] = $prod->nombre_producto . ': ' . implode('; ', $resumen) . ($nota !== '' ? ' (' . $nota . ')' : '');
 				continue;
@@ -3612,6 +3769,10 @@ class Mcaja extends CI_Model
 			'nombre' => $texto('nombre', 120), 'telefono' => $texto('telefono', 30), 'direccion' => $texto('direccion', 250),
 			'referencia' => $texto('referencia', 250), 'observacion' => $texto('observacion', 250),
 			'id_sector' => (int)(isset($d['id_sector']) ? $d['id_sector'] : 0), 'id_repartidor' => (int)(isset($d['id_repartidor']) ? $d['id_repartidor'] : 0),
+			'origen' => in_array(isset($d['origen']) ? (string)$d['origen'] : '', array('llamada', 'whatsapp', 'presencial', 'plataforma', 'otro'), true)
+				? (string)$d['origen'] : 'manual',
+			'medio_pago_previsto' => in_array(isset($d['medio_pago_previsto']) ? (string)$d['medio_pago_previsto'] : '',
+				array('efectivo', 'transferencia', 'tarjeta', 'prepago', 'plataforma', 'otro'), true) ? (string)$d['medio_pago_previsto'] : '',
 		);
 		if ($e['nombre'] === '') throw new Exception('Falta el nombre de quien recibe el delivery', 400);
 		if (!preg_match('/^\+?[0-9][0-9 ()-]{5,}$/', $e['telefono'])) throw new Exception('Falta el teléfono del delivery (solo números)', 400);
@@ -3652,14 +3813,43 @@ class Mcaja extends CI_Model
 	/** Graba el pedido (dentro de la transacción de quien llama). Devuelve id_delivery. */
 	private function insertarDelivery($db, $e, $extra)
 	{
-		$r = $this->q($db, 'INSERT INTO delivery_pedido (id_caja, id_usuario, id_cliente, nombre, telefono, direccion, referencia, id_sector,
-				observacion, id_lprecio, detalle, subtotal, costo_envio, total, cobrar_al_entregar, id_venta, estado, id_repartidor, fecha_estado)
-			VALUES (?, ?, ?, ?, ?, ?, ?, NULLIF(?, 0), ?, ?, ?::jsonb, ?, ?, ?, ?, ?, \'preparando\', NULLIF(?, 0), now()) RETURNING id_delivery',
-			array((int)$extra['id_caja'], (int)$extra['id_usuario'], $extra['id_cliente'] ? (int)$extra['id_cliente'] : null,
-				$e['nombre'], $e['telefono'], $e['direccion'], $e['referencia'], $e['id_sector'], $e['observacion'], (int)$extra['id_lprecio'],
-				json_encode($extra['detalle']), (int)$extra['subtotal'], (int)$extra['costo_envio'], (int)$extra['total'],
-				!empty($extra['cobrar_al_entregar']) ? 't' : 'f', $extra['id_venta'] ? (int)$extra['id_venta'] : null, $e['id_repartidor']))->row();
-		return (int)$r->id_delivery;
+		$c = $this->columnas($db, array('delivery_pedido'));
+		$cols = isset($c['delivery_pedido']) ? $c['delivery_pedido'] : array();
+		$fila = array(
+			'id_caja' => (int)$extra['id_caja'], 'id_usuario' => (int)$extra['id_usuario'],
+			'id_cliente' => $extra['id_cliente'] ? (int)$extra['id_cliente'] : null, 'nombre' => $e['nombre'],
+			'telefono' => $e['telefono'], 'direccion' => $e['direccion'], 'referencia' => $e['referencia'],
+			'id_sector' => $e['id_sector'] ?: null, 'observacion' => $e['observacion'], 'id_lprecio' => (int)$extra['id_lprecio'],
+			'detalle' => json_encode($extra['detalle']), 'subtotal' => (int)$extra['subtotal'],
+			'costo_envio' => (int)$extra['costo_envio'], 'total' => (int)$extra['total'],
+			'cobrar_al_entregar' => !empty($extra['cobrar_al_entregar']), 'id_venta' => !empty($extra['id_venta']) ? (int)$extra['id_venta'] : null,
+			'estado' => 'preparando', 'id_repartidor' => $e['id_repartidor'] ?: null, 'fecha_estado' => date('Y-m-d H:i:s'),
+			'estado_pago' => !empty($extra['id_venta']) ? 'verificado' : 'pendiente',
+			'solicitud_id' => isset($extra['solicitud_id']) && $extra['solicitud_id'] !== '' ? $extra['solicitud_id'] : null,
+			'comanda_snapshot' => isset($extra['comanda_snapshot']) ? json_encode($extra['comanda_snapshot']) : null,
+			'origen' => $e['origen'], 'medio_pago_previsto' => $e['medio_pago_previsto'] !== '' ? $e['medio_pago_previsto'] : null,
+		);
+		$fila = array_intersect_key($fila, $cols);
+		$expresiones = array();
+		$valores = array();
+		foreach ($fila as $k => $v) {
+			if ($k === 'fecha_estado') $expresiones[] = 'now()';
+			else { $expresiones[] = in_array($k, array('detalle', 'comanda_snapshot'), true) ? '?::jsonb' : '?'; $valores[] = $v; }
+		}
+		$r = $this->q($db, 'INSERT INTO delivery_pedido (' . implode(', ', array_keys($fila)) . ') VALUES (' . implode(', ', $expresiones) . ') RETURNING id_delivery',
+			$valores)->row();
+		$id = $r ? (int)$r->id_delivery : 0;
+		if ($id > 0) $this->eventoDelivery($db, $id, (int)$extra['id_usuario'], 'pedido_creado', array(
+			'origen' => $e['origen'], 'medio_pago_previsto' => $e['medio_pago_previsto'], 'total' => (int)$extra['total']));
+		return $id;
+	}
+
+	/** Bitácora append-only de las acciones del pedido; sin migración, conserva compatibilidad con la versión anterior. */
+	private function eventoDelivery($db, $idDelivery, $idUsuario, $accion, $datos = array())
+	{
+		if (!$db->table_exists('delivery_evento')) return;
+		$this->q($db, 'INSERT INTO delivery_evento (id_delivery, id_usuario, accion, datos) VALUES (?, ?, ?, ?::jsonb)',
+			array((int)$idDelivery, (int)$idUsuario, substr((string)$accion, 0, 40), json_encode($datos)));
 	}
 
 	/**
@@ -3671,6 +3861,17 @@ class Mcaja extends CI_Model
 		$db = $this->conexion();
 		$config = $this->configuracion($db);
 		if (empty($config['delivery']) || !$this->hayDelivery($db)) throw new Exception('El delivery no está habilitado (Configuraciones > Delivery)', 409);
+		$solicitudId = trim(isset($p['solicitud_id']) && is_scalar($p['solicitud_id']) ? (string)$p['solicitud_id'] : '');
+		if ($solicitudId !== '' && !preg_match('/^[a-f0-9-]{16,64}$/i', $solicitudId)) throw new Exception('Identificador de pedido inválido', 400);
+		$deliveryCols = $this->columnas($db, array('delivery_pedido'));
+		if ($solicitudId !== '' && isset($deliveryCols['delivery_pedido']['solicitud_id'])) {
+			$existente = $this->q($db, 'SELECT id_delivery, total, nombre, direccion, referencia, telefono, observacion, comanda_snapshot
+				FROM delivery_pedido WHERE solicitud_id = ?', array($solicitudId))->row();
+			if ($existente) return array('id_delivery' => (int)$existente->id_delivery, 'total' => (int)$existente->total, 'repetido' => true,
+				'comanda' => (array)json_decode((string)$existente->comanda_snapshot, true), 'observacion' => (string)$existente->observacion,
+				'entrega' => array('direccion' => $existente->direccion, 'referencia' => $existente->referencia, 'telefono' => $existente->telefono),
+				'nombre' => (string)$existente->nombre);
+		}
 		$cols = $this->columnas($db, array('producto'));
 		$entrega = $this->datosEntrega($db, isset($p['delivery']) ? $p['delivery'] : null);
 		$idLprecio = !empty($p['id_lprecio']) ? (int)$p['id_lprecio'] : $config['id_lprecio_publico'];
@@ -3705,11 +3906,21 @@ class Mcaja extends CI_Model
 		try {
 			$id = $this->insertarDelivery($db, $entrega, array('id_caja' => (int)$caja->id_caja, 'id_usuario' => (int)$idUsuario,
 				'id_cliente' => $idCliente, 'id_lprecio' => $idLprecio, 'detalle' => $detalle, 'subtotal' => $subtotal,
-				'costo_envio' => $costoEnvio, 'total' => $total, 'cobrar_al_entregar' => true, 'id_venta' => null));
+				'costo_envio' => $costoEnvio, 'total' => $total, 'cobrar_al_entregar' => true, 'id_venta' => null,
+				'solicitud_id' => $solicitudId, 'comanda_snapshot' => $comanda));
 			$this->guardarDescuentoDelivery($db, $id, $descuento);
 			$db->trans_commit();
 		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
+			// Si dos reintentos con la misma clave llegaron en paralelo, el índice único deja un solo pedido.
+			if ($solicitudId !== '' && isset($deliveryCols['delivery_pedido']['solicitud_id'])) {
+				$existente = $this->q($db, 'SELECT id_delivery, total, nombre, direccion, referencia, telefono, observacion, comanda_snapshot
+					FROM delivery_pedido WHERE solicitud_id = ?', array($solicitudId))->row();
+				if ($existente) return array('id_delivery' => (int)$existente->id_delivery, 'total' => (int)$existente->total, 'repetido' => true,
+					'comanda' => (array)json_decode((string)$existente->comanda_snapshot, true), 'observacion' => (string)$existente->observacion,
+					'entrega' => array('direccion' => $existente->direccion, 'referencia' => $existente->referencia, 'telefono' => $existente->telefono),
+					'nombre' => (string)$existente->nombre);
+			}
 			throw $e;
 		}
 		return array('id_delivery' => $id, 'total' => $total, 'comanda' => $comanda, 'observacion' => $entrega['observacion'],
@@ -3745,7 +3956,16 @@ class Mcaja extends CI_Model
 		$db = $this->conexion();
 		if (!$this->hayDelivery($db)) return array();
 		$tieneSector = isset($this->columnas($db, array('sector'))['sector']);
+		$colsDelivery = $this->columnas($db, array('delivery_pedido'))['delivery_pedido'];
+		$origen = isset($colsDelivery['origen']) ? "COALESCE(d.origen, 'manual')" : "'manual'";
+		$pagoPrevisto = isset($colsDelivery['medio_pago_previsto']) ? "COALESCE(d.medio_pago_previsto, '')" : "''";
+		$estadoPago = isset($colsDelivery['estado_pago']) ? "COALESCE(d.estado_pago, 'pendiente')" : "'pendiente'";
+		$estadoEntrega = isset($colsDelivery['estado_entrega']) ? "COALESCE(d.estado_entrega, '')" : "''";
+		$cobroDeclarado = $db->table_exists('delivery_cobro')
+			? "(SELECT dc.monto FROM delivery_cobro dc WHERE dc.id_delivery = d.id_delivery AND dc.monto > 0 ORDER BY dc.id_delivery_cobro DESC LIMIT 1)"
+			: 'NULL';
 		$q = "SELECT d.id_delivery, to_char(d.fecha AT TIME ZONE ?, 'DD/MM HH24:MI') AS hora, d.nombre, d.telefono, d.direccion, d.referencia,
+				$origen AS origen, $pagoPrevisto AS medio_pago_previsto, $estadoPago AS estado_pago, $estadoEntrega AS estado_entrega, $cobroDeclarado AS monto_cobro_declarado,
 				d.id_sector, " . ($tieneSector ? 's.nombre_sector' : "''") . " AS sector, d.observacion, d.detalle, d.subtotal, d.costo_envio, d.total,
 				d.cobrar_al_entregar, d.id_venta, d.estado, d.id_repartidor, r.nombre_usuario AS repartidor, u.nombre_usuario AS atendio,
 				to_char(d.fecha_entrega AT TIME ZONE ?, 'HH24:MI') AS hora_entrega, d.motivo_anulacion,
@@ -3782,6 +4002,7 @@ class Mcaja extends CI_Model
 			$f['items'] = $items;
 			unset($f['detalle']);
 			foreach (array('id_delivery', 'id_sector', 'subtotal', 'costo_envio', 'total', 'id_venta', 'id_repartidor', 'folio_dte') as $k) $f[$k] = (int)$f[$k];
+			$f['monto_cobro_declarado'] = (int)$f['monto_cobro_declarado'];
 			$f['cobrar_al_entregar'] = $f['cobrar_al_entregar'] === 't' || $f['cobrar_al_entregar'] === true;
 			$f['venta_anulada'] = $f['venta_anulada'] === 't' || $f['venta_anulada'] === true;
 			$f['cobrado'] = $f['id_venta'] > 0 && !$f['venta_anulada'];
@@ -3799,11 +4020,23 @@ class Mcaja extends CI_Model
 		if (!$d) throw new Exception('El delivery no existe', 404);
 		if ($d['estado'] === 'anulado') throw new Exception('El delivery está anulado', 409);
 		if ((int)$d['id_venta']) throw new Exception('El delivery ya está cobrado', 409);
+		if (isset($d['estado_entrega']) && $d['estado_entrega'] === 'no_entregado') throw new Exception('El delivery tiene una entrega fallida. Resuelve o reasigna el pedido antes de cobrarlo.', 409);
+		$cobro = null;
+		if ($db->table_exists('delivery_cobro')) {
+			$r = $this->q($db, "SELECT id_delivery_cobro, medio_pago, monto, en_custodia_repartidor, estado
+				FROM delivery_cobro WHERE id_delivery = ? AND monto > 0 ORDER BY id_delivery_cobro DESC LIMIT 1", array((int)$idDelivery))->row_array();
+			if ($r) {
+				$r['id_delivery_cobro'] = (int)$r['id_delivery_cobro']; $r['monto'] = (int)$r['monto'];
+				$r['en_custodia_repartidor'] = $r['en_custodia_repartidor'] === 't' || $r['en_custodia_repartidor'] === true;
+				$cobro = $r;
+			}
+		}
 		return array('id_delivery' => (int)$d['id_delivery'], 'id_lprecio' => (int)$d['id_lprecio'], 'id_cliente' => (int)$d['id_cliente'],
 			'detalle' => (array)json_decode((string)$d['detalle'], true), 'costo_envio' => (int)$d['costo_envio'], 'nombre' => $d['nombre'],
 			'observacion' => (string)$d['observacion'],
 			// 18-11-2026: el descuento puesto al tomarlo, y el cliente (para mostrarlo en la venta al cobrar)
 			'descuento' => isset($d['descuento']) ? (int)$d['descuento'] : 0,
+			'cobro' => $cobro,
 			'cliente' => (int)$d['id_cliente'] ? $this->q($db, "SELECT cl.id_cliente, cl.nombre_cliente, COALESCE(cl.rut::text, '') AS rut, COALESCE(cl.dv, '') AS dv,
 					COALESCE(cl.giro, '') AS giro, COALESCE(cl.direccion, '') AS direccion, COALESCE(cl.id_comuna, 0) AS id_comuna,
 					COALESCE(cl.telefono, '') AS telefono, COALESCE(cl.mail, '') AS mail
@@ -3814,14 +4047,16 @@ class Mcaja extends CI_Model
 	 * Cambia el estado: preparando → en_camino → entregado (entregado solo cobrado), o anulado (solo sin cobrar, o con la
 	 * boleta ya anulada en Ventas). $idRepartidor > 0 lo cambia (null = como estaba).
 	 */
-	public function cambiarEstadoDelivery($idDelivery, $estado, $idRepartidor, $motivo)
+	public function cambiarEstadoDelivery($idDelivery, $estado, $idRepartidor, $motivo, $idUsuario = 0, $idRol = 0, $aut = null)
 	{
 		$db = $this->conexion();
 		if (!$this->hayDelivery($db)) throw new Exception('El delivery no está habilitado', 409);
 		if (!in_array($estado, self::DELIVERY_ESTADOS, true)) throw new Exception('Estado inválido', 400);
 		$db->trans_begin();
 		try {
-			$d = $this->q($db, "SELECT d.id_delivery, d.estado, d.id_venta, (COALESCE(v.mensaje_pedido, '') LIKE 'ANULADA%') AS venta_anulada
+			$d = $this->q($db, "SELECT d.id_delivery, d.estado, d.id_venta, d.id_repartidor, d.total, d.cobrar_al_entregar,
+				COALESCE(d.medio_pago_previsto, '') AS medio_pago_previsto,
+				(COALESCE(v.mensaje_pedido, '') LIKE 'ANULADA%') AS venta_anulada
 				FROM delivery_pedido d LEFT JOIN venta v ON v.id_venta = d.id_venta WHERE d.id_delivery = ? FOR UPDATE OF d", array((int)$idDelivery))->row();
 			if (!$d) throw new Exception('El delivery no existe', 404);
 			if ($d->estado === 'anulado') throw new Exception('El delivery ya está anulado', 409);
@@ -3833,18 +4068,63 @@ class Mcaja extends CI_Model
 			if ($idRepartidor !== null && $idRepartidor > 0 && !$this->q($db, 'SELECT 1 FROM usuario WHERE id_usuario = ? AND vigente IS NOT FALSE', array((int)$idRepartidor))->row()) {
 				throw new Exception('El repartidor elegido ya no existe o no está vigente', 400);
 			}
+			$limite = (int)$this->configuracion($db)['delivery_limite_rendicion'];
+			if ($estado === 'en_camino' && $idRepartidor !== null && $idRepartidor > 0 && (int)$d->id_repartidor !== (int)$idRepartidor && $db->table_exists('delivery_cobro')) {
+				$custodio = $this->q($db, 'SELECT id_usuario FROM delivery_cobro WHERE id_delivery = ? AND en_custodia_repartidor IS TRUE AND monto > 0 ORDER BY id_delivery_cobro DESC LIMIT 1', array((int)$idDelivery))->row();
+				if ($custodio && (int)$custodio->id_usuario !== (int)$idRepartidor) throw new Exception('No se puede reasignar un pedido cuyo efectivo ya está bajo custodia de otro repartidor.', 409);
+			}
+			if ($estado === 'en_camino' && $idRepartidor !== null && $idRepartidor > 0 && $limite > 0 && (int)$d->id_repartidor !== (int)$idRepartidor) {
+				// Serializa asignaciones por repartidor, para que dos cajas no sobrepasen simultáneamente el límite.
+				$this->q($db, 'SELECT id_usuario FROM usuario WHERE id_usuario = ? FOR UPDATE', array((int)$idRepartidor));
+				$saldoRow = $this->q($db, "SELECT GREATEST(0,
+					(SELECT COALESCE(sum(c.monto), 0) FROM delivery_cobro c WHERE c.id_usuario = ? AND c.en_custodia_repartidor IS TRUE)
+					- COALESCE((SELECT sum(rd.monto_recibido + rd.monto_ajustado) FROM delivery_rendicion_detalle rd
+						JOIN delivery_rendicion r ON r.id_delivery_rendicion = rd.id_delivery_rendicion
+						WHERE r.id_repartidor = ? AND r.estado IN ('verificada','diferencia')), 0)) AS saldo",
+					array((int)$idRepartidor, (int)$idRepartidor))->row();
+				$saldo = $saldoRow ? (int)$saldoRow->saldo : 0;
+				$pendiente = $this->q($db, "SELECT 1 FROM delivery_cobro WHERE id_delivery = ? AND en_custodia_repartidor IS TRUE LIMIT 1", array((int)$idDelivery))->row();
+				$esEfectivoPorCobrar = ($d->cobrar_al_entregar === 't' || $d->cobrar_al_entregar === true)
+					&& in_array((string)$d->medio_pago_previsto, array('', 'efectivo'), true);
+				$proyectado = $saldo + ($esEfectivoPorCobrar && !$pendiente && !$cobrado ? (int)$d->total : 0);
+				if ($proyectado > $limite) {
+					$this->exigirAutorizacion($db, 'asignar delivery sobre el límite de rendición del repartidor', $idUsuario, $idRol, $aut, true);
+					$this->eventoDelivery($db, (int)$idDelivery, (int)$idUsuario, 'asignacion_excepcion_limite', array(
+						'id_repartidor' => (int)$idRepartidor, 'saldo_actual' => $saldo, 'monto_pedido' => $esEfectivoPorCobrar && !$pendiente && !$cobrado ? (int)$d->total : 0,
+						'saldo_proyectado' => $proyectado, 'limite' => $limite, 'autorizador' => (int)(is_array($aut) && isset($aut['id_usuario']) ? $aut['id_usuario'] : $idUsuario)));
+				}
+			}
 			$motivo = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)$motivo)), 0, 200);
 			if ($estado === 'anulado' && $motivo === '') throw new Exception('Indica el motivo de la anulación', 400);
+			$colsDelivery = $this->columnas($db, array('delivery_pedido'))['delivery_pedido'];
+			$prepSql = isset($colsDelivery['estado_preparacion']) ? ", estado_preparacion = CASE WHEN ? = 'anulado' THEN 'cancelado' ELSE estado_preparacion END" : '';
+			$entregaSql = isset($colsDelivery['estado_entrega']) ? ", estado_entrega = CASE WHEN ? = 't' THEN CASE WHEN NULLIF(?, 0) IS NULL THEN 'sin_asignar' ELSE 'asignado' END WHEN ? = 'entregado' THEN 'entregado' WHEN ? = 'anulado' THEN 'cancelado' ELSE estado_entrega END,
+				asignado_en = CASE WHEN ? = 't' AND ? > 0 THEN now() ELSE asignado_en END,
+				respondido_en = CASE WHEN ? = 't' THEN NULL ELSE respondido_en END" : '';
+			$binds = array($estado, $estado, $idRepartidor !== null ? 't' : 'f', (int)$idRepartidor);
+			if ($prepSql !== '') $binds[] = $estado;
+			if ($entregaSql !== '') {
+				$binds[] = $idRepartidor !== null ? 't' : 'f'; $binds[] = (int)$idRepartidor; $binds[] = $estado; $binds[] = $estado;
+				$binds[] = $idRepartidor !== null ? 't' : 'f'; $binds[] = (int)$idRepartidor; $binds[] = $idRepartidor !== null ? 't' : 'f';
+			}
+			$binds[] = $estado; $binds[] = $motivo; $binds[] = (int)$idDelivery;
 			$this->q($db, 'UPDATE delivery_pedido SET estado = ?, fecha_estado = now(),
 					fecha_entrega = CASE WHEN ? = \'entregado\' THEN now() ELSE fecha_entrega END,
-					id_repartidor = CASE WHEN ? THEN NULLIF(?, 0) ELSE id_repartidor END,
+					id_repartidor = CASE WHEN ? = \'t\' THEN NULLIF(?, 0) ELSE id_repartidor END' . $prepSql . $entregaSql . ',
 					motivo_anulacion = CASE WHEN ? = \'anulado\' THEN ? ELSE motivo_anulacion END
 				WHERE id_delivery = ?',
-				array($estado, $estado, $idRepartidor !== null ? 't' : 'f', (int)$idRepartidor, $estado, $motivo, (int)$idDelivery));
+				$binds);
+			$this->eventoDelivery($db, (int)$idDelivery, (int)$this->session->userdata('id_usuario'), 'estado_cambiado', array(
+				'estado_anterior' => $d->estado, 'estado_nuevo' => $estado, 'repartidor_anterior' => (int)$d->id_repartidor,
+				'repartidor_nuevo' => $idRepartidor === null ? (int)$d->id_repartidor : (int)$idRepartidor, 'motivo' => $motivo));
 			$db->trans_commit();
 		} catch (Throwable $e) {   // 19-11-2026: también errores de PHP deshacen la transacción
 			$db->trans_rollback();
 			throw $e;
+		}
+		if ($estado === 'entregado' && (int)$d->id_repartidor > 0) {
+			$this->load->model('Mdelivery');
+			$this->Mdelivery->capturarComision((int)$idDelivery);
 		}
 		return array('ok' => true);
 	}
@@ -4993,6 +5273,7 @@ class Mcaja extends CI_Model
 			// 18-11-2026: delivery (migración 20261118100000)
 			'delivery_id_producto_envio' => 'delivery_producto_envio',
 			'delivery_costo_envio' => 'delivery_costo_envio',
+			'delivery_limite_rendicion' => 'delivery_limite_rendicion',
 		);
 		// Opciones on/off de Configuraciones
 		$flags = array(

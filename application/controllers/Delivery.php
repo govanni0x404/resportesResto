@@ -11,6 +11,7 @@ class Delivery extends CI_Controller
 
     public function index()
     {
+        $this->exigirAdministracionSectores();
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
@@ -29,6 +30,7 @@ class Delivery extends CI_Controller
 
     public function ListadoDeSectores()
     {
+        $this->exigirAdministracionSectores();
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
@@ -37,6 +39,7 @@ class Delivery extends CI_Controller
 
     public function grabarNuevoSector()
     {
+        $this->exigirAdministracionSectores();
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
             redirect(base_url()); //redireccionar al login
         }
@@ -51,5 +54,17 @@ class Delivery extends CI_Controller
         );
         $r = $this->Mdelivery->grabarNuevoSector($id, $miData);
         echo json_encode($r);
+    }
+
+    /** El permiso Delivery permite usar el portal móvil; administrar sectores requiere permiso de Configuraciones. */
+    private function exigirAdministracionSectores()
+    {
+        $idRol = (int)$this->session->userdata('id_rol');
+        if ($idRol === 1) return;
+        $this->load->helper('permisos_web');
+        if (!permiso_web($this, 'Configuraciones', $idRol)) {
+            show_error('No tienes permiso para administrar los sectores de Delivery.', 403);
+            exit;
+        }
     }
 }

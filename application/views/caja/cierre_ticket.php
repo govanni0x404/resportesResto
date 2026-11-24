@@ -84,6 +84,13 @@ $papel = isset($papel) ? (int)$papel : 80;
 			<?php if ($ver('cierre_anulaciones') && $r['anuladas']) : ?><tr><td>Ventas anuladas</td><td class="r"><?php echo (int)$r['anuladas']; ?></td></tr><?php endif; ?>
 			<?php if ($r['propinas']) : ?><tr><td>Propinas (a garzones)</td><td class="r"><?php echo $m($r['propinas']); ?></td></tr><?php endif; ?>
 			<?php if (!empty($r['pagos_credito'])) : ?><tr><td>Pagos de créditos recibidos</td><td class="r"><?php echo $m($r['pagos_credito']); ?></td></tr><?php endif; ?>
+			<?php if (!empty($r['efectivo_custodia_delivery'])) : ?><tr><td>Efectivo declarado por repartidores (fuera de caja)</td><td class="r"><?php echo $m($r['efectivo_custodia_delivery']); ?></td></tr><?php endif; ?>
+			<?php if (!empty($r['delivery_pendiente_liquidacion'])) : ?><tr><td>Pagos electrónicos pendientes de confirmar</td><td class="r"><?php echo $m($r['delivery_pendiente_liquidacion']); ?></td></tr><?php endif; ?>
+			<?php if (!empty($r['delivery_liquidado_neto'])) : ?><tr><td>Pagos electrónicos confirmados (no efectivo)</td><td class="r"><?php echo $m($r['delivery_liquidado_neto']); ?></td></tr><?php endif; ?>
+			<?php if (!empty($r['delivery_cargos_plataforma'])) : ?><tr><td>Cargos y retenciones de plataformas</td><td class="r"><?php echo $m($r['delivery_cargos_plataforma']); ?></td></tr><?php endif; ?>
+			<?php if (!empty($r['delivery_comisiones_pagadas'])) : ?><tr><td>Comisiones Delivery pagadas (incluidas en egresos)</td><td class="r"><?php echo $m($r['delivery_comisiones_pagadas']); ?></td></tr><?php endif; ?>
+			<?php if (!empty($r['delivery_diferencias_pendientes'])) : ?><tr><td>Diferencias de rendición pendientes</td><td class="r"><?php echo $m($r['delivery_diferencias_pendientes']); ?></td></tr><?php endif; ?>
+			<?php if (!empty($r['delivery_diferencias_ajustadas'])) : ?><tr><td>Faltantes asumidos con ajuste autorizado (informativo)</td><td class="r"><?php echo $m($r['delivery_diferencias_ajustadas']); ?></td></tr><?php endif; ?>
 			<?php if ($ver('cierre_ingresos') && $r['ingresos']) : ?><tr><td>Ingresos de caja</td><td class="r"><?php echo $m($r['ingresos']); ?></td></tr><?php endif; ?>
 			<?php if ($ver('cierre_ingresos') && $r['egresos']) : ?><tr><td>Retiros de caja</td><td class="r"><?php echo $m(-$r['egresos']); ?></td></tr><?php endif; ?>
 		</table>

@@ -115,6 +115,26 @@ if (!function_exists('cfg_opciones')) {
                                         </div>
                                         <?php endif; ?>
 
+                                        <?php if (array_key_exists('sushi_por_pieza_web', $config)) :
+                                            $__sushi = function ($k) use ($config) { return in_array($config[$k] ?? null, array(true, 't', 1, '1'), true); }; ?>
+                                        <!-- v1.32.0: promos de sushi (migración 20261123110000) -->
+                                        <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"><i class="fa fa-th"></i>Promos de sushi</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="cfg-fila"><label><input type="checkbox" name="sushi_por_pieza_web" value="1" <?php echo $__sushi('sushi_por_pieza_web') ? 'checked' : ''; ?>> Armar promos por pieza</label><?php cfg_info("Además de las promos por roll, permite crear promos por pieza (ej. 30 piezas repartidas como el cliente quiera).
+Pocos locales lo usan.
+Apagada: en Carta > Promos Sushi solo se crean promos por roll. Las promos por pieza que ya existen se siguen vendiendo."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="sushi_bases_web" value="1" <?php echo $__sushi('sushi_bases_web') ? 'checked' : ''; ?>> Preguntar la base (arroz, etc.)</label><?php cfg_info("Marcada: en la promo se pueden agregar bases y en la Caja se pregunta la base de cada roll.
+Sin marcar: no se pregunta la base (las bases que ya tengan las promos no se ofrecen)."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="sushi_salsas_web" value="1" <?php echo $__sushi('sushi_salsas_web') ? 'checked' : ''; ?>> Salsas aparte de los extras</label><?php cfg_info("Marcada: la promo tiene una sección de Salsas (soya, teriyaki…) separada de los Extras, cada una con su propio máximo.
+Sin marcar: solo Extras.
+En la Caja las salsas y los extras siempre son opcionales."); ?></div>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+
                                         <?php if (array_key_exists('delivery_habilitado', $config)) : ?>
                                         <!-- 18-11-2026: Delivery en la Caja (migración 20261118100000; sin ella la tarjeta no aparece) -->
                                         <div class="config-card">
@@ -123,6 +143,33 @@ if (!function_exists('cfg_opciones')) {
                                             </div>
                                             <div class="panel-body">
                                                 <div class="cfg-fila"><label><input type="checkbox" name="delivery_habilitado" value="1" <?php echo ($config['delivery_habilitado'] ?? null) === true || ($config['delivery_habilitado'] ?? null) === 't' ? 'checked' : ''; ?>> Usar delivery en la Caja</label><?php cfg_info("Agrega a la Caja la pestaña Delivery (aparte de Venta directa y Mesas), con los datos de entrega del cliente.\nSe puede cobrar al tiro o al entregar."); ?></div>
+                                                <?php if (array_key_exists('delivery_limite_rendicion', $config)) : ?>
+                                                <div class="form-group">
+                                                    <label class="cfg-titulo">Máximo pendiente de rendición por repartidor <?php cfg_info("Límite de efectivo cobrado por los repartidores y aún no rendido. Si una nueva asignación lo supera, se pedirá autorización de administrador.\n0 = sin límite."); ?></label>
+                                                    <input type="number" min="0" step="1" class="form-control" name="delivery_limite_rendicion" value="<?php echo (int)($config['delivery_limite_rendicion'] ?? 0); ?>">
+                                                </div>
+                                                <?php endif; ?>
+                                                <?php if (array_key_exists('delivery_comision_tipo', $config)) : ?>
+                                                <div class="form-group">
+                                                    <label class="cfg-titulo">Comisión general por pedido entregado <?php cfg_info("Se genera cuando el pedido está entregado y el pago confirmado. La base porcentual son los productos después de descuentos; excluye despacho y propina. Cada repartidor puede tener una tarifa particular."); ?></label>
+                                                    <div class="row">
+                                                        <div class="col-sm-5"><select class="form-control" name="delivery_comision_tipo"><option value="fija" <?php echo ($config['delivery_comision_tipo'] ?? 'fija') === 'fija' ? 'selected' : ''; ?>>Monto fijo ($)</option><option value="porcentaje" <?php echo ($config['delivery_comision_tipo'] ?? '') === 'porcentaje' ? 'selected' : ''; ?>>Porcentaje de productos</option></select></div>
+                                                        <div class="col-sm-4"><input type="number" min="0" step="0.01" class="form-control" name="delivery_comision_valor" value="<?php echo htmlspecialchars((string)($config['delivery_comision_valor'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>"></div>
+                                                    </div>
+                                                </div>
+                                                <?php if (!empty($opciones['repartidor'])) : ?>
+                                                <div class="form-group">
+                                                    <label class="cfg-titulo">Tarifas particulares por repartidor <?php cfg_info("Tarifa general usa el valor de arriba. La tarifa particular lo reemplaza; también puedes excluir a un repartidor."); ?></label>
+                                                    <?php foreach ($opciones['repartidor'] as $idRep => $nombreRep) : $tr = $tarifas_delivery[(int)$idRep] ?? array(); ?>
+                                                    <div class="row" style="margin-bottom:5px">
+                                                        <div class="col-sm-4" style="padding-top:7px"><?php echo htmlspecialchars($nombreRep, ENT_QUOTES, 'UTF-8'); ?></div>
+                                                        <div class="col-sm-4"><select class="form-control" name="delivery_tarifa_repartidor[<?php echo (int)$idRep; ?>][tipo]"><option value="">Tarifa general</option><option value="fija" <?php echo ($tr['tipo'] ?? '') === 'fija' ? 'selected' : ''; ?>>Monto fijo ($)</option><option value="porcentaje" <?php echo ($tr['tipo'] ?? '') === 'porcentaje' ? 'selected' : ''; ?>>Porcentaje</option><option value="sin_comision" <?php echo ($tr['tipo'] ?? '') === 'sin_comision' ? 'selected' : ''; ?>>Sin comisión</option></select></div>
+                                                        <div class="col-sm-3"><input type="number" min="0" step="0.01" class="form-control" name="delivery_tarifa_repartidor[<?php echo (int)$idRep; ?>][valor]" value="<?php echo htmlspecialchars((string)($tr['valor'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="Valor"></div>
+                                                    </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                                <?php endif; ?>
+                                                <?php endif; ?>
                                                 <div class="form-group">
                                                     <label class="cfg-titulo">Costo de envío <?php cfg_info("Lo que se cobra por el envío en cada delivery (el mismo valor para todos).\n0 = no se cobra envío."); ?></label>
                                                     <input type="number" min="0" step="1" class="form-control" name="delivery_costo_envio" value="<?php echo (int)($config['delivery_costo_envio'] ?? 0); ?>">

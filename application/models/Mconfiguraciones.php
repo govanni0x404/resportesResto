@@ -219,6 +219,7 @@ class Mconfiguraciones extends CI_Model {
             'cliente' => $lista('SELECT id_cliente AS id, nombre_cliente AS nombre FROM cliente ORDER BY nombre_cliente LIMIT 1000'),
             // 18-11-2026: producto del costo de envío del delivery (vigentes)
             'producto' => $lista('SELECT id_producto AS id, nombre_producto AS nombre FROM producto WHERE vigente IS TRUE ORDER BY nombre_producto LIMIT 3000'),
+            'repartidor' => $lista('SELECT id_usuario AS id, nombre_usuario AS nombre FROM usuario WHERE vigente IS TRUE ORDER BY nombre_usuario'),
         );
         // Destinos de impresión por nombre (Impresora para cierre de caja guarda el nombre)
         if ($db->table_exists('dimpresion')) {

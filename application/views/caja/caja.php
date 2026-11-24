@@ -173,6 +173,13 @@
 	.caja-lineas { flex: 1; min-height: 160px; max-height: 45vh; overflow-y: auto; }
 	.caja-linea { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--t-borde-suave, #F0E8DD); }
 	.caja-linea .info, .caja-linea-cab .info { flex: 1; min-width: 0; }
+	/* v1.32.0: flechas para cambiar el orden de los productos */
+	.caja-linea .mover-linea { display: flex; flex-direction: column; gap: 2px; flex: 0 0 22px; margin-left: -10px; }
+	.caja-linea .mover-linea button { width: 22px; height: 20px; padding: 0; border: 1px solid var(--t-borde, #EADFD2); border-radius: 5px; background: #fff; color: var(--t-texto-suave, #7A6A5E); font-size: 10px; line-height: 1; }
+	.caja-linea .mover-linea button:hover:not(:disabled) { background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); }
+	.caja-linea .mover-linea button:disabled { opacity: .3; }
+	.caja-linea.recien-movida { animation: recienMovida .6s ease; }
+	@keyframes recienMovida { from { background: var(--t-primario-suave, #E8F5EC); } to { background: transparent; } }
 	.caja-linea-cab .info { white-space: nowrap; }
 	.caja-linea-cab .badge { background-color: var(--t-primario, #B4432E) !important; color: #fff !important; font-size: 12px; margin-left: 4px; vertical-align: 1px; }
 	.caja-linea .nombre { font-weight: 700; color: var(--t-texto-fuerte, #2A1D17); font-size: 16px; line-height: 1.3; }
@@ -1431,6 +1438,10 @@
 									<div class="form-group"><label for="delTelefono">Teléfono *</label><input type="tel" id="delTelefono" class="form-control" maxlength="30" autocomplete="off" placeholder="Ej: 9 1234 5678"></div>
 									<div class="form-group"><label for="delDireccion">Dirección *</label><input type="text" id="delDireccion" class="form-control" maxlength="250" autocomplete="off" placeholder="Calle, número, depto."></div>
 									<div class="form-group"><label for="delReferencia">Referencia</label><input type="text" id="delReferencia" class="form-control" maxlength="250" autocomplete="off" placeholder="Ej: casa azul, portón negro"></div>
+										<div class="del-fila">
+											<div class="form-group"><label for="delOrigen">Origen</label><select id="delOrigen" class="form-control"><option value="llamada">Llamada</option><option value="whatsapp">WhatsApp</option><option value="presencial">Presencial</option><option value="plataforma">Plataforma externa</option><option value="otro">Otro</option></select></div>
+											<div class="form-group"><label for="delPagoPrevisto">Pago previsto</label><select id="delPagoPrevisto" class="form-control"><option value="efectivo">Efectivo contra entrega</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="prepago">Prepago</option><option value="plataforma">Plataforma</option><option value="otro">Otro</option></select></div>
+										</div>
 									<div class="del-fila">
 										<div class="form-group"><label for="delSector">Sector</label><select id="delSector" class="form-control"><option value="0">— Sin sector —</option></select></div>
 										<div class="form-group"><label for="delRepartidor">Repartidor</label><select id="delRepartidor" class="form-control"><option value="0">— Sin asignar —</option></select></div>
@@ -1596,6 +1607,9 @@
 								<button type="button" class="btn btn-default" data-del-filtro="hoy">Todos de hoy</button>
 							</div>
 							<button type="button" class="btn btn-default" id="btnRecargarDelivery" title="Actualizar"><i class="fa fa-refresh"></i></button>
+							<button type="button" class="btn btn-default" id="btnRendicionesDelivery"><i class="fa fa-money"></i> Rendiciones</button>
+							<button type="button" class="btn btn-default" id="btnComisionesDelivery"><i class="fa fa-motorcycle"></i> Comisiones</button>
+							<button type="button" class="btn btn-default" id="btnLiquidacionesDelivery"><i class="fa fa-bank"></i> Plataformas</button>
 						</div>
 						<div id="listaDelivery" class="del-lista" aria-live="polite"></div>
 					</div>
@@ -2389,9 +2403,14 @@
 								<button type="button" class="btn btn-success btn-sm" id="btnSushiNuevo"><i class="fa fa-plus"></i> Agregar grupo</button></div>
 							<div class="su-grupos" id="suGrupos"></div>
 						</div>
+						<!-- v1.32.0: salsas aparte de los extras; las dos son opcionales y con su máximo -->
+						<div class="su-tarjeta" id="suSalsasCaja" style="display:none">
+							<div class="su-tit"><span><i class="fa fa-tint"></i> Salsas <small class="text-muted">(opcional)</small></span><small id="suSalsasMax" class="text-muted"></small></div>
+							<div id="suSalsas" data-tipo="salsa"></div>
+						</div>
 						<div class="su-tarjeta" id="suExtrasCaja" style="display:none">
-							<div class="su-tit"><span><i class="fa fa-tint"></i> Salsas y extras</span></div>
-							<div id="suExtras"></div>
+							<div class="su-tit"><span><i class="fa fa-plus-square-o"></i> Extras <small class="text-muted">(opcional)</small></span><small id="suExtrasMax" class="text-muted"></small></div>
+							<div id="suExtras" data-tipo="extra"></div>
 						</div>
 					</div>
 					<div class="su-tarjeta" id="suEditor">
@@ -2418,6 +2437,10 @@
 							<button type="button" class="btn btn-success" id="btnSushiGuardarGrupo"><i class="fa fa-check"></i> Guardar grupo</button>
 						</div>
 					</div>
+				</div>
+				<!-- v1.32.0: dejar la promo fija (solo administradores): en la Caja se agrega así, sin preguntar -->
+				<div class="checkbox checkbox-success" id="suFijaCaja" style="margin:12px 0 0; display:none">
+					<input type="checkbox" id="chkSushiFija"><label for="chkSushiFija"><b>Dejar esta promo fija</b> <small class="text-muted">· desde ahora se agrega siempre armada así, sin preguntar (se quita en Carta &gt; Promos Sushi)</small></label>
 				</div>
 				<div class="form-group" style="margin:12px 0 0">
 					<label for="txtNotaSushi">Nota de la promo completa <small class="text-muted" style="font-weight:400">· sale una sola vez en la comanda</small></label>

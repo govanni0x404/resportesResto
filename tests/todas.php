@@ -23,6 +23,7 @@ if ($copia) {
 	$pruebas['doble_comanda_test.php'] = array($base, 'COPIA');   // un producto en dos impresoras y el agregado en la suya
 	$pruebas['privilegios_test.php'] = array($base, 'COPIA');   // lo nuevo con un rol que no es gerencia (ver el archivo)
 	$pruebas['agregados_mesa_test.php'] = array($base, 'COPIA');   // v1.30.3: máximo de agregados, agregados unidos en la mesa, descuento 0
+	$pruebas['promo_sushi_opciones_test.php'] = array($base, 'COPIA');   // v1.32.0: promos de sushi: varios a la vez, salsas, máximos, precio por envoltorio, fija
 	if (is_file(__DIR__ . '/cocina_reservas_test.php')) $pruebas['cocina_reservas_test.php'] = array($base, 'COPIA');   // pantalla de cocina y reservas (rama de prueba)
 }
 

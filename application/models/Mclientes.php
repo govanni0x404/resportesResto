@@ -16,6 +16,12 @@ class Mclientes extends CI_Model
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
     // Plazo del crédito en días (sql/credito_clientes.sql); sin la columna, 30 como valor por defecto
     $plazo = $this->db->field_exists('plazo_credito', 'cliente') ? 'COALESCE(c.plazo_credito, 30)' : '30';
+    // El cliente público/habitual se usa en documentos, pero no debe editarse desde el mantenedor.
+    $idClientePublico = 0;
+    if ($this->db->table_exists('configuracion') && $this->db->field_exists('id_cliente_publico', 'configuracion')) {
+      $config = $this->db->query('SELECT COALESCE(id_cliente_publico, 0) AS id_cliente_publico FROM configuracion LIMIT 1')->row();
+      $idClientePublico = $config ? (int)$config->id_cliente_publico : 0;
+    }
     $q = "SELECT c.id_cliente, c.rut, c.dv, c.nombre_cliente, c.giro, c.direccion, co.nombre_comuna, c.telefono, lp.nombre_lprecio,
     c.mail, c.creditomaximo, c.referencia_direccion, $plazo AS plazo_credito
     from cliente c
@@ -23,6 +29,7 @@ class Mclientes extends CI_Model
     -- id_lprecio = 0) no salían en el mantenedor
     left join comuna co on c.id_comuna=co.id_comuna
     left join lprecio lp on c.id_lprecio=lp.id_lprecio
+    " . ($idClientePublico > 0 ? 'WHERE c.id_cliente <> ' . $idClientePublico : '') . "
     order by c.id_cliente";
 
     $consulta = $this->db->query($q);

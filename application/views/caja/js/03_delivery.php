@@ -7,7 +7,7 @@
 		// El envío es una línea más de la boleta (Configuraciones > Delivery). La lista muestra cada pedido con WhatsApp,
 		// En camino (con repartidor), Entregado (solo cobrado), Cobrar y Anular (solo sin cobrar).
 		var modoDelivery = null;   // null | { nuevo: true } | { id, envio, nombre, id_cliente } (cobrando uno guardado)
-		var deliveryPedidos = [], deliveryFiltro = 'abiertos', deliveryCargando = false, guardandoDelivery = false;
+		var deliveryPedidos = [], deliveryFiltro = 'abiertos', deliveryCargando = false, guardandoDelivery = false, deliverySolicitudId = null;
 		var DEL_ESTADO = { preparando: 'Preparando', en_camino: 'En camino', entregado: 'Entregado', anulado: 'Anulado' };
 		var DEL_TEL = /^\+?[0-9][0-9 ()-]{5,}$/;   // igual que Mcaja::datosEntrega
 		function deliveryHabilitado() { return !!(catalogo && catalogo.delivery); }
@@ -18,6 +18,13 @@
 			return e ? Number(e.monto) || 0 : 0;
 		}
 		function cobrarAlEntregar() { return !!(modoDelivery && modoDelivery.nuevo && $('#delCobroEntregar').prop('checked')); }
+		function nuevoTokenDelivery() {
+			if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+			var bytes = new Uint8Array(16);
+			if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(bytes);
+			else for (var i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+			return Array.prototype.map.call(bytes, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+		}
 		function opcionesSelect($s, lista, vacio) {
 			var v = $s.val();
 			$s.empty().append($('<option>').val(0).text(vacio));
@@ -41,6 +48,8 @@
 		function limpiarCamposDelivery() {
 			$('#delNombre, #delTelefono, #delDireccion, #delReferencia').val('');
 			$('#delSector, #delRepartidor').val(0);
+			$('#delOrigen').val('llamada');
+			$('#delPagoPrevisto').val('efectivo');
 			$('#delCobroAhora').prop('checked', true);
 		}
 		function pintarModoDelivery() {
@@ -67,6 +76,7 @@
 		function salirDelivery() {
 			var cobrando = modoDelivery && modoDelivery.id;
 			modoDelivery = null;
+			deliverySolicitudId = null;
 			limpiarVenta();
 			limpiarCamposDelivery();
 			pintarModoDelivery();
@@ -90,6 +100,7 @@
 			if (modoDelivery && modoDelivery.nuevo) { $('#lnkVenta').tab('show'); mostrarPanel('pago'); return; }
 			if (modoDelivery && modoDelivery.id) salirDelivery();
 			modoDelivery = { nuevo: true };
+			deliverySolicitudId = null;
 			limpiarVenta();
 			limpiarCamposDelivery();
 			pintarModoDelivery();
@@ -107,7 +118,8 @@
 			return {
 				nombre: $.trim($('#delNombre').val()), telefono: $.trim($('#delTelefono').val()), direccion: $.trim($('#delDireccion').val()),
 				referencia: $.trim($('#delReferencia').val()), id_sector: Number($('#delSector').val()) || 0,
-				id_repartidor: Number($('#delRepartidor').val()) || 0, observacion: $.trim($('#txtObservacion').val())
+				id_repartidor: Number($('#delRepartidor').val()) || 0, observacion: $.trim($('#txtObservacion').val()),
+				origen: $('#delOrigen').val() || 'otro', medio_pago_previsto: $('#delPagoPrevisto').val() || 'efectivo'
 			};
 		}
 		function validarEntrega() {
@@ -128,6 +140,7 @@
 			guardandoDelivery = true;
 			$('#btnCobrar').prop('disabled', true);
 			var pedido = {
+				solicitud_id: deliverySolicitudId || (deliverySolicitudId = nuevoTokenDelivery()),
 				delivery: entregaPantalla(), id_lprecio: Number($('#cboLista').val()), id_cliente: cliente ? cliente.id_cliente : 0,
 				descuento: totales().descuento,
 				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [], sushi: l.sushi || null }; })
@@ -138,7 +151,8 @@
 				return postJson('deliveryGuardar', pedido);
 			}, function (r) {
 				terminar();
-				toastr.success('Se cobra al entregar · ' + fmt(r.total), 'Delivery N° ' + r.id_delivery + ' guardado', { timeOut: 6000 });
+				deliverySolicitudId = null;
+				toastr.success((r.repetido ? 'Pedido existente recuperado · ' : 'Se cobra al entregar · ') + fmt(r.total), 'Delivery N° ' + r.id_delivery + ' guardado', { timeOut: 6000 });
 				if (imprimeComanda()) imprimirComandaBloqueando(r.comanda_id, 'Comanda');
 				salirDelivery();
 				$('#lnkDelivery').tab('show');
@@ -209,7 +223,10 @@
 			}
 			$.each(deliveryPedidos, function (i, d) {
 				var items = $.map(d.items || [], function (it) { return esc(fmtCant(it.cantidad) + ' x ' + it.nombre) + (it.nota ? ' <i>(' + esc(it.nota) + ')</i>' : ''); }).join('<br>');
+				var origenTxt = { llamada: 'Llamada', whatsapp: 'WhatsApp', presencial: 'Presencial', plataforma: 'Plataforma externa', otro: 'Otro', manual: 'Manual' }[d.origen] || 'Manual';
+				var pagoTxt = { efectivo: 'Efectivo contra entrega', transferencia: 'Transferencia', tarjeta: 'Tarjeta', prepago: 'Prepago', plataforma: 'Plataforma', otro: 'Otro' }[d.medio_pago_previsto] || '';
 				var pago = d.cobrado ? '<span class="del-pago cobrado">Cobrado' + (d.formas_pago ? ' · ' + esc(d.formas_pago) : '') + '</span>'
+					: d.estado_pago === 'declarado' ? '<span class="del-pago pendiente">Cobro declarado por repartidor · pendiente de registrar en Caja (' + fmt(d.monto_cobro_declarado) + ')</span>'
 					: '<span class="del-pago pendiente">' + (d.venta_anulada ? 'Boleta anulada' : 'Por cobrar') + '</span>';
 				var cerrado = d.estado === 'entregado' || d.estado === 'anulado';
 				var acc = '<button type="button" class="btn btn-sm btn-success" data-del="wsp"><i class="fa fa-whatsapp"></i> WhatsApp</button>';
@@ -221,8 +238,9 @@
 				}
 				$l.append('<div class="del-pedido est-' + esc(d.estado) + '" data-id="' + d.id_delivery + '">'
 					+ '<div class="del-cab"><span class="del-num">N° ' + d.id_delivery + '</span><span class="del-hora">' + esc(d.hora || '')
-					+ (d.hora_entrega ? ' · entregado ' + esc(d.hora_entrega) : '') + '</span><span class="del-estado">' + esc(DEL_ESTADO[d.estado] || d.estado) + '</span></div>'
+					+ (d.hora_entrega ? ' · entregado ' + esc(d.hora_entrega) : '') + '</span><span class="del-estado">' + esc(({asignado:'Asignado',aceptado:'Aceptado',retirado:'Retirado',entregado:'Entregado',no_entregado:'Entrega fallida'}[d.estado_entrega]) || DEL_ESTADO[d.estado] || d.estado) + '</span></div>'
 					+ '<div class="del-cliente">' + esc(d.nombre) + '</div>'
+					+ '<div class="del-linea"><i class="fa fa-info-circle"></i> ' + esc(origenTxt) + (pagoTxt ? ' · Pago previsto: ' + esc(pagoTxt) : '') + '</div>'
 					+ '<div class="del-linea"><i class="fa fa-phone"></i> ' + esc(d.telefono || '') + '</div>'
 					+ '<div class="del-linea"><i class="fa fa-map-marker"></i> ' + esc(d.direccion || '') + (d.referencia ? ' · ' + esc(d.referencia) : '')
 					+ (d.sector ? ' <b>(' + esc(d.sector) + ')</b>' : '') + '</div>'
@@ -250,6 +268,96 @@
 			cargarDeliverys();
 		});
 		$('#btnRecargarDelivery').on('click', cargarDeliverys);
+		$('#btnRendicionesDelivery').on('click', cargarRendicionesDelivery);
+		$('#btnComisionesDelivery').on('click', cargarComisionesDelivery);
+		$('#btnLiquidacionesDelivery').on('click', cargarLiquidacionesDelivery);
+		function cargarLiquidacionesDelivery() {
+			get('deliveryLiquidacionesPendientes').done(function (r) {
+				var filas = r.liquidaciones || [];
+				if (!filas.length) { toastr.info('No hay liquidaciones de plataforma pendientes'); return; }
+				var html = '<div style="max-height:55vh;overflow:auto;text-align:left">';
+				$.each(filas, function (_, x) {
+					html += '<div style="padding:10px;border-bottom:1px solid #ddd"><b>Pedido N° ' + Number(x.id_delivery) + ' · ' + esc(x.nombre || '') + '</b>'
+						+ '<div>Total bruto: ' + fmt(x.monto) + ' · Repartidor: ' + esc(x.repartidor || '') + '</div>'
+						+ (Number(x.id_evidencia) > 0 ? '<a class="btn btn-default btn-sm" target="_blank" rel="noopener" href="' + base + 'Repartidor/verEvidencia/' + Number(x.id_evidencia) + '">Ver respaldo</a> ' : '<span class="text-warning">Sin respaldo adjunto</span> ')
+						+ '<button class="btn btn-primary btn-sm" data-liquidar-plataforma="' + Number(x.id_delivery_cobro) + '" data-liquidar-bruto="' + Number(x.monto) + '">Registrar depósito</button></div>';
+				});
+				html += '</div>';
+				swal({ title: 'Liquidaciones de plataformas', text: html, html: true, showConfirmButton: false, showCancelButton: true, cancelButtonText: 'Cerrar' });
+			}).fail(function (x) { toastr.error((x.responseJSON && x.responseJSON.error) || 'No se pudieron cargar las liquidaciones'); });
+		}
+		$(document).on('click', '[data-liquidar-plataforma]', function () {
+			var id = Number($(this).data('liquidar-plataforma')), bruto = Number($(this).data('liquidar-bruto'));
+			var neto = window.prompt('Monto neto depositado (el cobro bruto fue ' + fmt(bruto) + '):', String(bruto)); if (neto === null) return;
+			var cargo = window.prompt('Cargo/descuento de la plataforma:', '0'); if (cargo === null) return;
+			var otros = window.prompt('Otras retenciones:', '0'); if (otros === null) return;
+			var referencia = window.prompt('Referencia del depósito o liquidación:'); if (referencia === null || !$.trim(referencia)) return;
+			postJson('deliveryLiquidacionConfirmar', { id_delivery_cobro: id, accion_id: nuevoTokenDelivery(), monto_neto: $.trim(neto), cargo_plataforma: $.trim(cargo), otras_retenciones: $.trim(otros), referencia: $.trim(referencia) }).done(function () {
+				toastr.success('Liquidación confirmada; se actualizarán las comisiones elegibles'); cargarLiquidacionesDelivery();
+			}).fail(function (x) { toastr.error((x.responseJSON && x.responseJSON.error) || 'No se pudo confirmar la liquidación'); });
+		});
+		function cargarComisionesDelivery() {
+			get('deliveryComisiones').done(function (r) {
+				var filas = r.comisiones || [];
+				if (!filas.length) { toastr.info('No hay pedidos con comisión elegible'); return; }
+				var html = '<div style="max-height:55vh;overflow:auto;text-align:left">';
+				$.each(filas, function (_, c) {
+					html += '<div style="padding:10px;border-bottom:1px solid #ddd"><b>Pedido N° ' + Number(c.id_delivery) + ' · ' + esc(c.repartidor || '') + '</b>'
+						+ '<div>' + (c.tipo === 'porcentaje' ? esc(c.tarifa) + '% de productos (' + fmt(c.base) + ')' : 'Monto fijo') + ' · Comisión: <b>' + fmt(c.monto) + '</b> · ' + esc(c.estado) + '</div>'
+						+ (c.estado === 'pendiente' ? '<button class="btn btn-primary btn-sm" data-comision-pagar="' + Number(c.id_delivery_comision) + '" data-comision-monto="' + Number(c.monto) + '">Pagar en efectivo desde esta caja</button>' : '<small>Pagada en caja ' + Number(c.id_caja || 0) + ' · ' + esc(c.fecha_pago || '') + '</small>') + '</div>';
+				});
+				html += '</div>';
+				swal({ title: 'Comisiones Delivery', text: html, html: true, showConfirmButton: false, showCancelButton: true, cancelButtonText: 'Cerrar' });
+			}).fail(function (x) { toastr.error((x.responseJSON && x.responseJSON.error) || 'No se pudieron cargar las comisiones'); });
+		}
+		$(document).on('click', '[data-comision-pagar]', function () {
+			var id = Number($(this).data('comision-pagar')), monto = Number($(this).data('comision-monto'));
+			if (!window.confirm('Confirmar pago en efectivo de ' + fmt(monto) + ' desde la caja abierta?')) return;
+			var referencia = window.prompt('Referencia u observación (opcional):', ''); if (referencia === null) return;
+			postJson('deliveryComisionPagar', { id_comision: id, accion_id: nuevoTokenDelivery(), referencia: $.trim(referencia) }).done(function () {
+				toastr.success('Comisión pagada y registrada como egreso de caja'); cargarComisionesDelivery();
+			}).fail(function (x) { toastr.error((x.responseJSON && x.responseJSON.error) || 'No se pudo pagar la comisión'); });
+		});
+		function cargarRendicionesDelivery() {
+			get('deliveryRendiciones').done(function (r) {
+				var filas = r.rendiciones || [];
+				if (!filas.length) { toastr.info('No hay rendiciones pendientes de verificación'); return; }
+				var html = '<div style="max-height:55vh;overflow:auto;text-align:left">';
+				$.each(filas, function (_, x) {
+						html += '<div style="padding:10px;border-bottom:1px solid #ddd"><b>Rendición N° ' + Number(x.id_delivery_rendicion) + ' · ' + esc(x.repartidor || '') + '</b>'
+						+ '<div>Estado: ' + esc(x.estado) + ' · Declarado: ' + fmt(x.monto_declarado)
+						+ (x.monto_contado !== null ? ' · Contado: ' + fmt(x.monto_contado) + ' · Diferencia: ' + fmt(x.diferencia) : '') + '</div>'
+						+ '<small>' + esc(x.detalle || '') + ' · ' + esc(x.fecha_presentada || '') + '</small>'
+						+ (x.estado === 'presentada' ? '<button class="btn btn-primary btn-sm btn-block" style="margin-top:6px" data-rend-verificar="' + Number(x.id_delivery_rendicion) + '" data-rend-declarado="' + Number(x.monto_declarado) + '">Contar y verificar</button>' : '<div class="text-danger"><b>Diferencia pendiente:</b> ' + fmt(Math.abs(Number(x.diferencia) || 0)) + ' (' + ((Number(x.diferencia) || 0) < 0 ? 'faltante' : 'sobrante') + ')</div>')
+						+ (x.estado === 'diferencia' && x.diferencia_resuelta !== true && x.diferencia_resuelta !== 't' ? ((Number(x.diferencia) || 0) < 0
+							? '<button class="btn btn-warning btn-sm" data-rend-resolver="' + Number(x.id_delivery_rendicion) + '" data-resolucion="deuda_reconocida">Mantener deuda</button> <button class="btn btn-primary btn-sm" data-rend-resolver="' + Number(x.id_delivery_rendicion) + '" data-resolucion="faltante_cobrado">Registrar faltante cobrado</button> <button class="btn btn-danger btn-sm" data-rend-resolver="' + Number(x.id_delivery_rendicion) + '" data-resolucion="ajuste_autorizado">Ajustar faltante</button>'
+							: '<button class="btn btn-primary btn-sm" data-rend-resolver="' + Number(x.id_delivery_rendicion) + '" data-resolucion="excedente_confirmado">Confirmar sobrante</button>') : (x.estado === 'diferencia' ? '<div>Resuelta: ' + esc(x.resolucion || '') + ' · ' + esc(x.nota_resolucion || '') + '</div>' : '')) + '</div>';
+				});
+				html += '</div>';
+				swal({ title: 'Rendiciones de repartidores', text: html, html: true, showConfirmButton: false, showCancelButton: true, cancelButtonText: 'Cerrar' });
+			}).fail(function (x) { toastr.error((x.responseJSON && x.responseJSON.error) || 'No se pudieron cargar las rendiciones'); });
+		}
+		$(document).on('click', '[data-rend-verificar]', function () {
+			var id = Number($(this).data('rend-verificar')), declarado = Number($(this).data('rend-declarado'));
+			var valor = window.prompt('Cuenta físicamente el dinero. Declarado: ' + fmt(declarado), String(declarado));
+			if (valor === null) return;
+			if (!/^\d+$/.test($.trim(valor))) { toastr.warning('Ingresa un monto entero válido'); return; }
+			postJson('deliveryRendicionVerificar', { id_rendicion: id, monto_contado: Number(valor) }).done(function (r) {
+				if (r.estado === 'diferencia') toastr.warning('La diferencia quedó registrada y requiere resolución administrativa');
+				else toastr.success('Rendición verificada; el efectivo se registró como ingreso de caja');
+				cargarRendicionesDelivery(); cargarDeliverys();
+			}).fail(function (x) { toastr.error((x.responseJSON && x.responseJSON.error) || 'No se pudo verificar la rendición'); });
+		});
+		$(document).on('click', '[data-rend-resolver]', function () {
+			var id = Number($(this).data('rend-resolver')), accion = String($(this).data('resolucion'));
+			var textos = { deuda_reconocida: 'Mantener el faltante como deuda del repartidor', faltante_cobrado: 'Registrar el faltante recibido como ingreso en caja', ajuste_autorizado: 'Autorizar que el restaurante asuma el faltante', excedente_confirmado: 'Confirmar el sobrante contado e ingresado a caja' };
+			swal({ title: 'Resolver diferencia · Rendición N° ' + id, text: (textos[accion] || 'Resolver') + '. Indica el motivo:', type: 'input', inputPlaceholder: 'Motivo', showCancelButton: true, confirmButtonText: 'Guardar resolución', cancelButtonText: 'Cancelar' }, function (motivo) {
+				if (motivo === false || !$.trim(motivo || '')) return;
+				postJson('deliveryRendicionResolver', { id_rendicion: id, accion: accion, observacion: $.trim(motivo) }).done(function () {
+					toastr.success('Diferencia resuelta'); cargarRendicionesDelivery(); cargarDeliverys();
+				}).fail(function (x) { toastr.error((x.responseJSON && x.responseJSON.error) || 'No se pudo resolver la diferencia'); });
+			});
+		});
 		$('#lnkDelivery').on('shown.bs.tab', cargarDeliverys);
 
 		// Estados: En camino (con repartidor), Entregado, Anulado (con motivo)
@@ -281,10 +389,12 @@
 			cambiarEstadoDelivery(p.id, p.estado, extra);
 		});
 		function cambiarEstadoDelivery(id, estado, extra) {
-			postJson('deliveryEstado', $.extend({ id_delivery: id, estado: estado }, extra || {})).done(function () {
+			enviarConAutorizacion(function (aut) {
+				return postJson('deliveryEstado', $.extend({ id_delivery: id, estado: estado, autorizacion: aut }, extra || {}));
+			}, function () {
 				toastr.success('Delivery N° ' + id + ': ' + DEL_ESTADO[estado].toLowerCase(), '', { timeOut: 2500 });
 				cargarDeliverys();
-			}).fail(error);
+			});
 		}
 
 		// Mensaje para WhatsApp: se puede copiar o abrir WhatsApp con el mensaje listo (wa.me)
