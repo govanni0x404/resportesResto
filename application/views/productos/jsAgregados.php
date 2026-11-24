@@ -134,10 +134,10 @@ function pintarOpcionesAgregados() {
     pintarTextoExtras();
 }
 function pintarTextoExtras() {
-    var mx = Number(agOpc.max_extras) || 0, max = maxAg.valor, cat = agOpc.categorias && Number(agOpc.max_categoria) > 0;
+    var mx = Number(agOpc.max_extras) || 0, max = maxAg.valor, cat = false;   // v1.35.2: los extras salen solo del máximo del producto
     var cuantos = mx ? (mx === 1 ? '1 agregado más' : 'hasta ' + mx + ' agregados más') : 'los agregados que quiera';
     $('#lblExtrasProducto').html(!agOpc.extras_producto ? 'Apagado: el máximo es un tope y los agregados cobran su valor adicional.'
-        : (max > 0 || cat ? (max > 0 ? 'Los ' + max + ' primeros' : 'Los que caben en cada categoría') + ' van <strong>sin costo</strong>; puede sumar ' + cuantos + ' cobrando el <strong>valor adicional</strong> de cada uno.'
+        : (max > 0 || cat ? 'Los ' + max + ' primeros' + ' van <strong>sin costo</strong>; puede sumar ' + cuantos + ' cobrando el <strong>valor adicional</strong> de cada uno.'
             : '<span class="text-danger">Pon un máximo de agregados para que haya extras.</span>'));
 }
 $(document).on('change', '#ckExtrasProducto', function () {

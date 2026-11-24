@@ -594,11 +594,13 @@ class Mcaja extends CI_Model
 	}
 
 	/**
-	 * v1.35.0 / v1.35.1 (pedido del usuario): revisa los agregados elegidos de un producto contra sus límites y devuelve
+	 * v1.35.0 / v1.35.2 (pedido del usuario): revisa los agregados elegidos de un producto contra sus límites y devuelve
 	 * cuáles van como extra. $elegidos son filas de agregados() (con id_categoria = la del producto agregado).
-	 * - Los que NO son extra deben caber en el máximo del producto y, con categorías, en el máximo por categoría.
-	 * - Extras solo si el producto tiene "Extras con cobro" ($modoExtras) y solo cuando su categoría o el total ya están
-	 *   llenos; hasta $maxExtras (Configuraciones; 0 = sin tope).
+	 * - Máximo del producto ($maxTotal): cuántos sin costo en total, de todas las categorías.
+	 * - Máximo por categoría ($maxCat, Configuraciones): tope fijo de cada categoría, contando también los extras; nunca
+	 *   hace que uno vaya como extra. Los sin categoría solo cuentan para el total.
+	 * - Extras: solo con "Extras con cobro" en el producto ($modoExtras) y con el máximo total ya lleno; hasta $maxExtras
+	 *   (Configuraciones; 0 = sin tope).
 	 * Lanza Exception 400 con el motivo.
 	 */
 	public static function revisarAgregadosElegidos($nombre, $elegidos, $idsExtra, $maxTotal, $maxCat, $maxExtras, $modoExtras)
@@ -613,43 +615,33 @@ class Mcaja extends CI_Model
 		$maxTotal = max(0, (int)$maxTotal);
 		$maxCat = max(0, (int)$maxCat);
 		$maxExtras = max(0, (int)$maxExtras);
-		$gratis = 0;
+		$s = function ($n) { return $n === 1 ? '' : 's'; };
 		$porCat = array();
 		foreach ($elegidos as $a) {
-			if (in_array((int)$a->id_agregado, $idsExtra, true)) continue;
-			$gratis++;
 			$cat = (int)$a->id_categoria;
+			if ($cat <= 0) continue;
 			$porCat[$cat] = (isset($porCat[$cat]) ? $porCat[$cat] : 0) + 1;
-		}
-		$s = function ($n) { return $n === 1 ? '' : 's'; };
-		$cola = $modoExtras ? ' (los demás van como extra)' : '';
-		if ($maxTotal > 0 && $gratis > $maxTotal) {
-			throw new Exception($nombre . ' permite elegir hasta ' . $maxTotal . ' agregado' . $s($maxTotal) . $cola, 400);
-		}
-		foreach ($porCat as $cat => $n) {
-			if ($cat > 0 && $maxCat > 0 && $n > $maxCat) {
-				throw new Exception($nombre . ' permite elegir hasta ' . $maxCat . ' agregado' . $s($maxCat) . ' de una categoría' . $cola, 400);
+			if ($maxCat > 0 && $porCat[$cat] > $maxCat) {
+				throw new Exception($nombre . ' permite elegir hasta ' . $maxCat . ' agregado' . $s($maxCat) . ' de cada categoría', 400);
 			}
+		}
+		$gratis = count($elegidos) - count($idsExtra);
+		if ($maxTotal > 0 && $gratis > $maxTotal) {
+			throw new Exception($nombre . ' permite elegir hasta ' . $maxTotal . ' agregado' . $s($maxTotal) . ($modoExtras ? ' (los demás van como extra)' : ''), 400);
 		}
 		if ($maxExtras > 0 && count($idsExtra) > $maxExtras) {
 			throw new Exception($nombre . ' permite sumar hasta ' . $maxExtras . ' agregado' . $s($maxExtras) . ' extra', 400);
 		}
-		foreach ($idsExtra as $id) {
-			$cat = (int)$porId[$id]->id_categoria;
-			$catLlena = $cat > 0 && $maxCat > 0 && (isset($porCat[$cat]) ? $porCat[$cat] : 0) >= $maxCat;
-			$totalLleno = $maxTotal > 0 && $gratis >= $maxTotal;
-			if (!$catLlena && !$totalLleno) {
-				throw new Exception($porId[$id]->nombre_producto . ' todavía cabe sin costo en ' . $nombre . ': no va como extra', 400);
-			}
+		if ($idsExtra && !($maxTotal > 0 && $gratis >= $maxTotal)) {
+			throw new Exception($porId[$idsExtra[0]]->nombre_producto . ' todavía cabe sin costo en ' . $nombre . ': no va como extra', 400);
 		}
 		return $idsExtra;
 	}
 
-	/** v1.35.1: ¿el producto cobra solo los extras? Con su casilla, la opción encendida y algún límite que llenar. */
+	/** v1.35.2: ¿el producto cobra solo los extras? Con su casilla, la opción encendida y un máximo de agregados. */
 	public static function modoExtras($config, $extrasProducto, $maxTotal)
 	{
-		return !empty($config['agregados_extra']) && $extrasProducto
-			&& ((int)$maxTotal > 0 || (!empty($config['agregados_categorias']) && (int)$config['max_categoria_agregados'] > 0));
+		return !empty($config['agregados_extra']) && $extrasProducto && (int)$maxTotal > 0;
 	}
 
 	// ====================== Permisos y autorizaciones ======================
