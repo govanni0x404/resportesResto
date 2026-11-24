@@ -45,16 +45,6 @@
 								<label for="valorAdicionalAgregado">C. ADICIONAL</label>
 								<input type="number" class="form-control input-sm input-sm" maxlength='28' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="valorAdicionalAgregado" id="valorAdicionalAgregado" requerido="si" value="" />
 							</div>
-							<!-- v1.35.0: precio cuando va como extra y categoría (solo si están activados en Configuraciones) -->
-							<div class="col-sm-6 solo-ag-extras" style="display:none">
-								<label for="valorExtraAgregado">PRECIO SI VA COMO EXTRA</label>
-								<input type="number" min="0" max="500000" class="form-control input-sm" onkeypress="return soloNumeros(event)" autocomplete="off" id="valorExtraAgregado" value="0"
-									title="Lo que cobra cuando el cliente ya eligió el máximo de agregados y lo suma igual. 0 = cobra su valor adicional." />
-							</div>
-							<div class="col-sm-6 solo-ag-categorias" style="display:none">
-								<label for="categoriaAgregado">CATEGORÍA</label>
-								<select class="form-control input-sm" id="categoriaAgregado"><option value="0">Sin categoría</option></select>
-							</div>
 						</fieldset>
 						<div class="t-card-titulo">Opciones</div>
 						<!-- v1.33.1 (pedido del usuario): opciones como interruptores en tarjetas, con su explicación -->
@@ -92,28 +82,18 @@
 </div>
 
 <script>
-	// v1.35.0: agregados extra y categorías (cada uno solo si está activado en Configuraciones)
+	// v1.35.1: la columna Categoría (la del producto agregado) solo si está activado en Configuraciones
 	var agOpcGlobal = { disponible: false };
 	function cargarOpcionesAgGlobal(alListo) {
 		$.post(base_url + 'index.php/Productos/opcionesAgregados', { id_producto: 0 }, null, 'json').done(function (r) {
 			agOpcGlobal = r || { disponible: false };
-			$('.solo-ag-extras').toggle(!!agOpcGlobal.extras);
-			$('.solo-ag-categorias').toggle(!!agOpcGlobal.categorias);
-			$('#categoriaAgregado').html('<option value="0">Sin categoría</option>' + $.map(agOpcGlobal.lista_categorias || [], function (c) {
-				return '<option value="' + c.id + '">' + $('<div>').text(c.nombre).html() + (c.vigente ? '' : ' (inactiva)') + '</option>';
-			}).join(''));
-			if (typeof tablaAgregados !== 'undefined' && tablaAgregados.column) {
-				tablaAgregados.column(7).visible(!!agOpcGlobal.extras);
-				tablaAgregados.column(8).visible(!!agOpcGlobal.categorias);
-			}
+			if (typeof tablaAgregados !== 'undefined' && tablaAgregados.column) tablaAgregados.column(7).visible(!!agOpcGlobal.categorias);
 			if (alListo) alListo();
 		});
 	}
 	$(function () { cargarOpcionesAgGlobal(); });
 	function AbrirModalNuevoAgregados() {
 		$('#idAgregado').val('');
-		$('#valorExtraAgregado').val('0');
-		$('#categoriaAgregado').val('0');
 		$('#codigoAgregado').val("");
 		$('#cantidadAgregado').val("0");
 		$('#valorAdicionalAgregado').val("0");
@@ -177,10 +157,6 @@
 				'valor': ValorAdicionalAgregado,
 				'usar_destino_impresion': usarDestinoDeImpresion,
 			};
-			if (agOpcGlobal.disponible) {   // v1.35.0
-				if (agOpcGlobal.extras) miJson.valor_extra = Math.max(0, parseInt($('#valorExtraAgregado').val(), 10) || 0);
-				if (agOpcGlobal.categorias) miJson.id_categoria = Number($('#categoriaAgregado').val()) || 0;
-			}
 			$.post(base_url + "index.php/Agregados/grabarNuevoAgregado", {
 					'prod': miJson
 				}).done(function() {

@@ -111,8 +111,20 @@ if (!function_exists('cfg_opciones')) {
                                                 <h3 class="panel-title"><i class="fa fa-plus-square"></i>Agregados en la Caja</h3>
                                             </div>
                                             <div class="panel-body">
-                                                <div class="cfg-fila"><label><input type="checkbox" name="agregados_extra_web" value="1" <?php echo $__onAg('agregados_extra_web') ? 'checked' : ''; ?>> Agregados extra con costo</label><?php cfg_info("Con el máximo de agregados de un producto lleno (ej. 2 sin costo), el cliente puede sumar más agregados igual, pero esos van con costo: su \"precio extra\".\nEl precio extra y cuántos extras se pueden sumar se ponen en Carta > Agregados del producto.\nSin marcar: el máximo es un tope y no se puede elegir otro."); ?></div>
-                                                <div class="cfg-fila"><label><input type="checkbox" name="agregados_categorias_web" value="1" <?php echo $__onAg('agregados_categorias_web') ? 'checked' : ''; ?>> Categorías de agregados</label><?php cfg_info("Los agregados se ordenan por categoría (Proteína, Verdura, Salsas...): en la Caja sale un cuadro por categoría con su nombre.\nCada producto puede tener un límite por categoría (ej. 2 de Proteína y 2 de Verdura) además del máximo total.\nLas categorías se crean en Tablas > Categorías de agregados, donde también se pueden poner varios agregados de una vez en una categoría."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="agregados_extra_web" value="1" <?php echo $__onAg('agregados_extra_web') ? 'checked' : ''; ?>> Agregados extra con cobro</label><?php cfg_info("En la Carta, cada producto tiene la casilla \"Permitir agregados extra con cobro\" junto a su máximo de agregados.\nEn esos productos, los agregados hasta el máximo (ej. 2) van sin costo, y se pueden sumar más cobrando el valor adicional de cada agregado.\nSin marcar: el máximo es un tope y no se puede elegir otro."); ?></div>
+                                                <?php if (array_key_exists('agregados_max_extras_web', $config)) : ?>
+                                                <div class="form-group cfg-numero-ag">
+                                                    <label class="cfg-titulo" for="txtMaxExtrasAg">Cuántos extras se pueden sumar <?php cfg_info("Después del máximo del producto, cuántos agregados más puede pedir el cliente con cobro. Casi siempre 1 o 2.\n0 = sin tope."); ?></label>
+                                                    <input type="number" class="form-control" id="txtMaxExtrasAg" name="agregados_max_extras_web" min="0" max="20" value="<?php echo (int)($config['agregados_max_extras_web'] ?? 1); ?>">
+                                                </div>
+                                                <?php endif; ?>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="agregados_categorias_web" value="1" <?php echo $__onAg('agregados_categorias_web') ? 'checked' : ''; ?>> Categorías de agregados</label><?php cfg_info("Los agregados se ordenan por categoría (Proteína, Verdura, Salsas...): en la Caja y en la Carta sale un cuadro de color por categoría, con su nombre.\nLas categorías se crean en Mantención > Categorías de agregados, donde se ponen varios productos de una vez en una categoría."); ?></div>
+                                                <?php if (array_key_exists('agregados_max_categoria_web', $config)) : ?>
+                                                <div class="form-group cfg-numero-ag">
+                                                    <label class="cfg-titulo" for="txtMaxCategoriaAg">Máximo por categoría <?php cfg_info("Cuántos agregados puede elegir el cliente de cada categoría (ej. 2 de Proteína y 2 de Verdura). Casi siempre 1 o 2.\nCon extras con cobro, los que pasan del máximo van como extra.\n0 = sin límite."); ?></label>
+                                                    <input type="number" class="form-control" id="txtMaxCategoriaAg" name="agregados_max_categoria_web" min="0" max="20" value="<?php echo (int)($config['agregados_max_categoria_web'] ?? 0); ?>">
+                                                </div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                         <?php endif; ?>

@@ -40,12 +40,12 @@
 					+ '<td class="text-center">' + c.productos + '</td>'
 					+ '<td class="text-center"><span class="ca-chip ' + (c.vigente ? 'si">Sí' : 'no">No') + '</span></td>'
 					+ '<td><div class="ca-botones">'
-					+ '<button type="button" class="btn btn-success btn-sm ca-asignar" title="Poner varios agregados en esta categoría"><i class="fa fa-list-ul"></i> Agregados</button>'
+					+ '<button type="button" class="btn btn-success btn-sm ca-asignar" title="Poner varios productos en esta categoría"><i class="fa fa-list-ul"></i> Productos</button>'
 					+ '<button type="button" class="btn btn-default btn-sm ca-editar"><i class="fa fa-pencil"></i> Editar</button>'
 					+ '<button type="button" class="btn btn-default btn-sm ca-eliminar" title="Eliminar la categoría"><i class="fa fa-trash"></i></button>'
 					+ '</div></td></tr>';
 			}).join('') + (sinCat ? '<tr><td colspan="6" class="ca-ayuda" style="padding:10px 8px"><i class="fa fa-info-circle"></i> ' + sinCat
-				+ (sinCat === 1 ? ' agregado no tiene' : ' agregados no tienen') + ' categoría: en la Caja salen en el cuadro "Otros agregados".</td></tr>' : ''));
+				+ (sinCat === 1 ? ' producto que se usa como agregado no tiene' : ' productos que se usan como agregado no tienen') + ' categoría: en la Caja salen en el cuadro "Otros agregados".</td></tr>' : ''));
 		}
 		function cargar() {
 			$.ajax({ url: base + 'datos', dataType: 'json', cache: false }).done(aplicar).fail(function (xhr) {
@@ -83,7 +83,7 @@
 		$('#cuerpoCategoriasAg').on('click', '.ca-eliminar', function () {
 			var c = categoria(+$(this).closest('tr').data('id'));
 			if (!c) return;
-			confirmarSistema('¿Eliminar ' + c.nombre + '?', c.agregados ? 'Sus ' + c.agregados + ' agregados quedan sin categoría (no se borran).' : 'No tiene agregados.', 'Sí, eliminar', function () {
+			confirmarSistema('¿Eliminar ' + c.nombre + '?', c.agregados ? 'Sus ' + c.agregados + ' productos quedan sin categoría (no se borran).' : 'No tiene productos.', 'Sí, eliminar', function () {
 				$.ajax({ url: base + 'eliminar', type: 'POST', dataType: 'json', data: { id: c.id } }).done(function (r) {
 					showAppAlert('success', 'Categoría eliminada');
 					aplicar(r);
@@ -94,33 +94,29 @@
 		// ---- Poner varios agregados en una categoría ----
 		function abrirAsignar(c) {
 			actual = c;
-			$('#tituloAsignarAg').text('Agregados de ' + c.nombre);
+			$('#tituloAsignarAg').text('Productos de ' + c.nombre);
 			$('#caBuscar').val('');
 			$('#caFiltroEstado').val('todos');
-			$('#caLista').html('<div class="ca-vacio"><i class="fa fa-spinner fa-spin"></i> Cargando agregados…</div>');
+			$('#caLista').html('<div class="ca-vacio"><i class="fa fa-spinner fa-spin"></i> Cargando productos…</div>');
 			$('#caContador, #caCambios').text('');
 			$('#modalAsignarAg').modal('show');
 			$.ajax({ url: base + 'agregados', dataType: 'json', cache: false }).done(function (r) {
 				todos = r.agregados || [];
 				marcados = {}; originales = {};
 				$.each(todos, function (i, a) { if (a.id_categoria === c.id) { marcados[a.id] = true; originales[a.id] = true; } });
-				var prods = {}, $f = $('#caFiltroProducto').html('<option value="0">Todos los productos</option>');
-				$.each(todos, function (i, a) { prods[a.id_maestro] = a.producto; });
-				$.each(Object.keys(prods).sort(function (x, y) { return prods[x].localeCompare(prods[y]); }), function (i, id) {
-					$f.append($('<option>').val(id).text(prods[id]));
-				});
+				$('#caFiltroProducto').val('1');
 				pintarLista();
-			}).fail(function (xhr) { $('#modalAsignarAg').modal('hide'); error(xhr, 'No se pudieron cargar los agregados'); });
+			}).fail(function (xhr) { $('#modalAsignarAg').modal('hide'); error(xhr, 'No se pudieron cargar los productos'); });
 		}
 		$('#modalAsignarAg').on('shown.bs.modal', function () { $('#caBuscar').focus(); });
 		$('#cuerpoCategoriasAg').on('click', '.ca-asignar', function () { abrirAsignar(categoria(+$(this).closest('tr').data('id'))); });
 		function visibles() {
 			var t = $.trim($('#caBuscar').val()).toLowerCase(), p = +$('#caFiltroProducto').val(), e = $('#caFiltroEstado').val();
 			return $.grep(todos, function (a) {
-				if (p && a.id_maestro !== p) return false;
+				if (p && !a.usado && !marcados[a.id]) return false;   // "Los que son agregados" (y los ya marcados)
 				if (e === 'sin' && a.id_categoria) return false;
 				if (e === 'esta' && a.id_categoria !== actual.id) return false;
-				return !t || a.agregado.toLowerCase().indexOf(t) >= 0 || a.producto.toLowerCase().indexOf(t) >= 0;
+				return !t || a.agregado.toLowerCase().indexOf(t) >= 0;
 			});
 		}
 		function pintarLista() {
@@ -130,8 +126,8 @@
 				var tag = a.id_categoria === actual.id ? '<span class="ca-actual esta">En esta</span>'
 					: (c ? '<span class="ca-actual" title="Al guardar marcado, se cambia a ' + esc(actual.nombre) + '">' + esc(c.nombre) + '</span>' : '<span class="ca-actual">Sin categoría</span>');
 				return '<label class="ca-op' + (m ? ' marcado' : '') + '" data-id="' + a.id + '"><input type="checkbox"' + (m ? ' checked' : '') + '>'
-					+ '<span class="ca-ag"><b>' + esc(a.agregado) + (a.vigente ? '' : ' <small style="display:inline">(inactivo)</small>') + '</b><small>en ' + esc(a.producto) + '</small></span>' + tag + '</label>';
-			}).join('') : '<div class="ca-vacio">No hay agregados con ese filtro.' + (todos.length ? '' : '<br>Primero agrega agregados a los productos en Carta &rsaquo; Agregados del producto.') + '</div>');
+					+ '<span class="ca-ag"><b>' + esc(a.agregado) + '</b><small>' + (a.usado ? 'Agregado en ' + a.usado + (a.usado === 1 ? ' producto' : ' productos') : 'Todavía no es agregado de ningún producto') + '</small></span>' + tag + '</label>';
+			}).join('') : '<div class="ca-vacio">No hay productos con ese filtro.</div>');
 			contar();
 		}
 		function cambios() {
@@ -144,7 +140,7 @@
 		}
 		function contar() {
 			var n = Object.keys(marcados).length, c = cambios();
-			$('#caContador').html('<b>' + n + '</b> ' + (n === 1 ? 'agregado' : 'agregados') + ' en ' + esc(actual.nombre));
+			$('#caContador').html('<b>' + n + '</b> ' + (n === 1 ? 'producto' : 'productos') + ' en ' + esc(actual.nombre));
 			$('#caCambios').text(c.poner.length || c.quitar.length ? 'Por guardar: ' + (c.poner.length ? c.poner.length + ' a poner' : '')
 				+ (c.poner.length && c.quitar.length ? ' y ' : '') + (c.quitar.length ? c.quitar.length + ' a quitar' : '') : 'Sin cambios');
 		}
@@ -164,10 +160,10 @@
 			var $b = $(this).prop('disabled', true);
 			$.ajax({ url: base + 'asignar', type: 'POST', dataType: 'json', data: { id_categoria: actual.id, poner: c.poner, quitar: c.quitar } }).done(function (r) {
 				$('#modalAsignarAg').modal('hide');
-				showAppAlert('success', (r.puestos ? r.puestos + (r.puestos === 1 ? ' agregado puesto' : ' agregados puestos') + ' en ' + actual.nombre : '')
+				showAppAlert('success', (r.puestos ? r.puestos + (r.puestos === 1 ? ' producto puesto' : ' productos puestos') + ' en ' + actual.nombre : '')
 					+ (r.puestos && r.quitados ? ' y ' : '') + (r.quitados ? r.quitados + (r.quitados === 1 ? ' quitado' : ' quitados') : '') || 'Sin cambios');
 				aplicar(r);
-			}).fail(function (xhr) { error(xhr, 'No se pudieron guardar los agregados'); })
+			}).fail(function (xhr) { error(xhr, 'No se pudieron guardar los productos'); })
 				.always(function () { $b.prop('disabled', false); });
 		});
 

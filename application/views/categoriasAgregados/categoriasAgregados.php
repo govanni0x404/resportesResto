@@ -84,9 +84,9 @@
                 </div>
                 <div class="ca-aviso" id="avisoCategoriasAg" style="display:none"></div>
                 <p class="ca-ayuda"><i class="fa fa-info-circle"></i>
-                    Crea las categorías y con <b>Agregados</b> pones varios agregados de una vez en una categoría (busca, por ejemplo, <b>pollo</b> y marca todos).
-                    El <b>orden</b> es el orden de los cuadros en la Caja. El límite de cada categoría (ej. 2 de Proteína) se pone en cada producto:
-                    <b>Carta &rsaquo; Agregados del producto</b>.
+                    Crea las categorías y con <b>Productos</b> pones varios productos de una vez en una categoría (busca, por ejemplo, <b>pollo</b> y marca todos).
+                    La categoría vale para ese producto en todos los productos donde es agregado. El <b>orden</b> es el orden de los cuadros en la Caja.
+                    Cuántos se pueden elegir de cada categoría se pone en <b>Configuraciones &rsaquo; Agregados en la Caja</b>.
                 </p>
                 <div class="table-responsive ca-tabla">
                     <table class="table table-hover">
@@ -94,8 +94,8 @@
                             <tr>
                                 <th class="text-center" style="width:70px">Orden</th>
                                 <th>Categoría</th>
-                                <th class="text-center">Agregados</th>
                                 <th class="text-center">Productos</th>
+                                <th class="text-center" title="En cuántos productos se ofrecen como agregado">Se ofrecen en</th>
                                 <th class="text-center">Activa</th>
                                 <th class="text-right">Acciones</th>
                             </tr>
@@ -137,7 +137,7 @@
                                     <span class="op-switch-pista" aria-hidden="true"></span>
                                     <span class="op-switch-texto">
                                         <b><i class="fa fa-check-circle"></i> Activa</b>
-                                        <small>Sale como cuadro en la Caja. Apagada: sus agregados salen en "Otros agregados".</small>
+                                        <small>Sale como cuadro en la Caja. Apagada: sus productos salen en "Otros agregados".</small>
                                     </span>
                                 </label>
                             </div>
@@ -159,14 +159,14 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title" id="tituloAsignarAg">Agregados de la categoría</h4>
+                <h4 class="modal-title" id="tituloAsignarAg">Productos de la categoría</h4>
             </div>
             <div class="modal-body">
-                <p class="ca-ayuda" style="padding:0 0 10px">Marca los agregados que van en esta categoría y presiona <b>Guardar</b>.
+                <p class="ca-ayuda" style="padding:0 0 10px">Marca los productos que van en esta categoría y presiona <b>Guardar</b>.
                     Los que ya están en otra categoría se cambian a esta. Desmarca uno para dejarlo sin categoría.</p>
                 <div class="ca-filtros">
-                    <div class="ca-buscar"><i class="fa fa-search"></i><input type="text" class="form-control" id="caBuscar" placeholder="Buscar agregado o producto (ej. pollo)"></div>
-                    <select class="form-control" id="caFiltroProducto"><option value="0">Todos los productos</option></select>
+                    <div class="ca-buscar"><i class="fa fa-search"></i><input type="text" class="form-control" id="caBuscar" placeholder="Buscar producto (ej. pollo)"></div>
+                    <select class="form-control" id="caFiltroProducto"><option value="1">Los que son agregados</option><option value="0">Todos los productos</option></select>
                     <select class="form-control" id="caFiltroEstado">
                         <option value="todos">Todos</option>
                         <option value="sin">Sin categoría</option>

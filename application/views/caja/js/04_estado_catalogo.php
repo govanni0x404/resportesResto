@@ -230,11 +230,12 @@
 		function agregado(id) {
 			return $.grep(catalogo.agregados, function (a) { return a.id_agregado === id; })[0];
 		}
-		/** v1.35.0: lo que cobra un agregado en una línea: su precio extra si va como extra, si no su valor */
+		/** v1.35.1: lo que cobra un agregado en una línea: con "Extras con cobro" solo los extra (su valor); si no, su valor */
 		function valorAgregadoLinea(l, id) {
 			var a = agregado(id);
 			if (!a) return 0;
-			return l && l.extras && $.inArray(id, l.extras) >= 0 ? (Number(a.valor_extra) || 0) : a.valor;
+			if (!modoExtrasAg(producto(l.id_producto))) return a.valor;
+			return l.extras && $.inArray(id, l.extras) >= 0 ? a.valor : 0;
 		}
 		function mensajesDe(id) {
 			return $.grep(catalogo.mensajes, function (m) { return m.id_producto === id; });

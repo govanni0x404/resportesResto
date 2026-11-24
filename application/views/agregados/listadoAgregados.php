@@ -103,13 +103,7 @@
         className: "text-left",
         visible: false
       },
-      // v1.35.0: precio extra y categoría (se ven si están activados en Configuraciones)
-      {
-        mData: "valor_extra",
-        className: "text-right",
-        visible: !!(window.agOpcGlobal && agOpcGlobal.extras),
-        render: function (v) { return Number(v) > 0 ? '$' + Number(v).toLocaleString('es-CL') : '<span class="text-muted">Su valor</span>'; }
-      },
+      // v1.35.1: categoría del producto agregado (se ve si está activado en Configuraciones)
       {
         mData: "categoria",
         className: "text-left",
@@ -147,8 +141,6 @@
 
         $("#cantidadAgregado").val(data.cantidad);
         $("#valorAdicionalAgregado").val(data.valor);
-        $("#valorExtraAgregado").val(data.valor_extra || 0);   // v1.35.0
-        $("#categoriaAgregado").val(String(data.id_categoria || 0));
         
         // ... Código para checkboxes (vigencia/destino impresión) que ya tenías
         if (data.usar_destino_impresion == 'SI') {

@@ -533,6 +533,17 @@
 	#listaAgregados .ag-cat-titulo span { font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-primario, #15803D); }
 	#listaAgregados .ag-cat-titulo small { color: var(--t-texto-suave, #6B7280); font-size: 12px; white-space: nowrap; }
 	#listaAgregados .ag-cat.completa .ag-cat-titulo small { color: var(--t-primario, #15803D); font-weight: 600; }
+	/* v1.35.1: cada categoría en un cuadro de color, con su nombre */
+	#listaAgregados .ag-cat { border-width: 2px; }
+	#listaAgregados .ag-cat-titulo span { display: inline-block; padding: 2px 10px; border-radius: 8px; color: #fff !important; background: var(--ag-c); }
+	#listaAgregados .ag-cat { border-color: var(--ag-c) !important; background: var(--ag-f); }
+	.ag-color-0 { --ag-c: #15803D; --ag-f: #F0FDF4; }
+	.ag-color-1 { --ag-c: #C2410C; --ag-f: #FFF7ED; }
+	.ag-color-2 { --ag-c: #1D4ED8; --ag-f: #EFF6FF; }
+	.ag-color-3 { --ag-c: #7E22CE; --ag-f: #FAF5FF; }
+	.ag-color-4 { --ag-c: #BE123C; --ag-f: #FFF1F2; }
+	.ag-color-5 { --ag-c: #0E7490; --ag-f: #ECFEFF; }
+	.ag-color-otros { --ag-c: #6B7280; --ag-f: #F9FAFB; }
 	#listaAgregados .ag-cat-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
 	#listaAgregados .ag-extra-tag { display: inline-block; padding: 0 6px; border-radius: 9px; font-size: 11px; font-weight: 700; line-height: 17px;
 		background: #FEF3C7; color: #92400E; text-transform: uppercase; letter-spacing: .3px; }

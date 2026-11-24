@@ -39,29 +39,22 @@
 .ag-sin-limite.activo { border-color: var(--t-primario, #15803D); background: var(--t-primario, #15803D); color: #fff; }
 .ag-maximo-estado { min-width: 74px; font-size: 12px; font-weight: 700; color: var(--t-primario, #15803D); }
 .ag-maximo-estado.error { color: #B91C1C; }
-/* v1.35.0: agregados extra con costo y límite por categoría (cada uno solo si está activado en Configuraciones) */
-.ag-maximo.ag-extras { border-color: #FCD34D; background: #FFFBEB; }
-.ag-maximo.ag-extras .ag-maximo-icono { color: #B45309; }
-.ag-extra-todos { display: inline-flex; align-items: center; height: 40px; border: 1px solid var(--t-borde, #D1D5DB); border-radius: 10px; background: #fff; overflow: hidden; }
-.ag-extra-todos span { padding: 0 8px 0 10px; font-size: 13px; color: var(--t-texto-suave, #4B5563); }
-.ag-extra-todos input { width: 86px; height: 100%; border: 0; border-left: 1px solid var(--t-borde-suave, #EEF0F3); text-align: right; padding: 0 8px; font-weight: 700; outline: none; }
-.ag-extra-todos button { height: 100%; border: 0; border-left: 1px solid var(--t-borde-suave, #EEF0F3); padding: 0 12px; background: var(--t-primario, #15803D); color: #fff; font-size: 12.5px; font-weight: 700; }
-.ag-limites-cat { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 12px; background: var(--t-fondo-alt, #FAFAF9); }
-.ag-limites-cat > b { display: block; font-size: 14px; color: var(--t-texto-fuerte, #111827); }
-.ag-limites-cat > small { display: block; margin: 2px 0 10px; font-size: 12.5px; color: var(--t-texto-suave, #4B5563); }
-.ag-limites-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
-.ag-limite { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; background: #fff; }
-.ag-limite span { flex: 1 1 auto; min-width: 0; font-weight: 700; font-size: 13px; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ag-limite small { color: var(--t-texto-suave, #6B7280); font-size: 11.5px; white-space: nowrap; }
-.ag-limite input { width: 56px; height: 32px; border: 1px solid var(--t-borde, #D1D5DB); border-radius: 8px; text-align: center; font-weight: 800; }
-.ag-limite input::placeholder { color: var(--t-primario, #15803D); font-size: 16px; }
-.ag-limites-vacio { font-size: 12.5px; color: var(--t-texto-suave, #6B7280); }
-#tableAgregados tr.ag-grupo td { background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); font-weight: 800; text-transform: uppercase; letter-spacing: .3px; font-size: 12.5px; padding: 6px 10px; border-top: 2px solid var(--t-primario-borde, #BBE3C8); }
-#ModalAgregadosDelProducto.ag-ancho .modal-dialog { width: 1240px; }
-/* con más columnas, la del producto (siempre el mismo) sobra: se esconde para que la tabla quepa sin moverla de lado */
-#ModalAgregadosDelProducto.ag-ancho #tableAgregados th:nth-child(2), #ModalAgregadosDelProducto.ag-ancho #tableAgregados tr[data-id-agregado] td:nth-child(2) { display: none; }
-#tableAgregados .cat-agregado-select { min-width: 140px; }
-#tableAgregados .extra-agregado-input { min-width: 90px; }
+/* v1.35.1: casilla "Extras con cobro" en el recuadro del máximo y categorías en cuadros de color */
+.ag-extras-producto { display: flex; align-items: center; gap: 12px; flex: 1 1 100%; margin-top: 4px; padding-top: 12px; border-top: 1px dashed var(--t-primario-borde, #BBE3C8); }
+.ag-extras-producto .op-switch { flex: 1 1 auto; margin: 0; background: #fff; }
+.ag-color-0 { --ag-c: #15803D; --ag-f: #F0FDF4; }
+.ag-color-1 { --ag-c: #C2410C; --ag-f: #FFF7ED; }
+.ag-color-2 { --ag-c: #1D4ED8; --ag-f: #EFF6FF; }
+.ag-color-3 { --ag-c: #7E22CE; --ag-f: #FAF5FF; }
+.ag-color-4 { --ag-c: #BE123C; --ag-f: #FFF1F2; }
+.ag-color-5 { --ag-c: #0E7490; --ag-f: #ECFEFF; }
+.ag-color-otros { --ag-c: #6B7280; --ag-f: #F9FAFB; }
+.ag-varios-lista.con-categorias { display: flex; flex-direction: column; gap: 10px; max-height: 340px; }
+.ag-varios-cat { position: relative; border: 2px solid var(--ag-c); border-radius: 10px; background: var(--ag-f); padding: 16px 8px 8px; margin-top: 8px; }
+.ag-varios-cat-titulo { position: absolute; top: -11px; left: 10px; padding: 1px 10px; border-radius: 8px; background: var(--ag-c); color: #fff; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; }
+.ag-varios-cat-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px; }
+.ag-varios-cat .ag-op { background: #fff; }
+#tableAgregados tr.ag-grupo td { background: var(--ag-f, #E8F5EC); color: var(--ag-c, #15803D); font-weight: 800; text-transform: uppercase; letter-spacing: .3px; font-size: 12.5px; padding: 6px 10px; border-top: 2px solid var(--ag-c, #BBE3C8); }
 @media (max-width: 520px) { .ag-maximo-control { width: 100%; } }
 .ag-varios-pie { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; justify-content: space-between; padding: 8px 12px; border-top: 1px solid var(--t-borde, #E5E7EB); background: var(--t-fondo-alt, #F3F4F6); }
 .ag-varios-pie span { font-weight: 700; color: var(--t-primario-osc, #116632); }
@@ -924,18 +917,6 @@
                                     id="valorAdicionalAgregado" requerido="si" value="" />
                             </div>
                         </fieldset>
-                        <!-- v1.35.0: precio cuando va como extra y categoría (solo si están activados en Configuraciones) -->
-                        <fieldset id="filaExtraCategoriaAg" style="display:none">
-                            <div class="col-md-6 solo-ag-extras">
-                                <label for="valorExtraAgregado">PRECIO SI VA COMO EXTRA</label>
-                                <input type="number" min="0" max="500000" class="form-control input-sm" onkeypress="return soloNumeros(event)"
-                                    autocomplete="off" id="valorExtraAgregado" value="0" title="Lo que cobra cuando el cliente ya eligió el máximo y lo suma igual. 0 = cobra su valor adicional." />
-                            </div>
-                            <div class="col-md-6 solo-ag-categorias">
-                                <label for="categoriaAgregado">CATEGORÍA</label>
-                                <select class="form-control input-sm" id="categoriaAgregado"></select>
-                            </div>
-                        </fieldset>
                         <fieldset>
                             <div class="col-md-12">
                                 <!-- v1.33.1 (pedido del usuario): opciones como interruptores en tarjetas, con su explicación.
@@ -989,34 +970,17 @@
                                         <button type="button" class="ag-sin-limite" id="btnSinLimiteAg" title="Que se puedan elegir todos"><span class="ag-inf">∞</span> Sin límite</button>
                                         <span class="ag-maximo-estado" id="estadoMaxAgregados" aria-live="polite"></span>
                                     </div>
-                                </div>
-                                <!-- v1.35.0 (pedido del usuario): después del máximo, agregados extra con costo -->
-                                <div class="ag-maximo ag-extras" id="bloqueMaxExtras" style="display:none">
-                                    <div class="ag-maximo-icono"><i class="fa fa-plus-circle"></i></div>
-                                    <div class="ag-maximo-texto">
-                                        <b>Agregados extra con costo</b>
-                                        <small id="lblMaxExtras">Con el máximo lleno, el cliente puede sumar más agregados pagando su precio extra.</small>
+                                    <!-- v1.35.1 (pedido del usuario): extras con cobro (solo si está activado en Configuraciones) -->
+                                    <div class="ag-extras-producto" id="bloqueExtrasProducto" style="display:none">
+                                        <label class="op-switch">
+                                            <input id="ckExtrasProducto" type="checkbox">
+                                            <span class="op-switch-pista" aria-hidden="true"></span>
+                                            <span class="op-switch-texto">
+                                                <b><i class="fa fa-plus-circle"></i> Permitir agregados extra con cobro</b>
+                                                <small id="lblExtrasProducto"></small>
+                                            </span>
+                                        </label>
                                     </div>
-                                    <div class="ag-maximo-control">
-                                        <div class="ag-contador" role="group" aria-label="Máximo de extras">
-                                            <button type="button" class="ag-cont-btn" data-paso="-1" title="Uno menos" aria-label="Uno menos"><i class="fa fa-minus"></i></button>
-                                            <input type="text" id="txtMaxExtras" inputmode="numeric" maxlength="3" aria-label="Máximo de extras" autocomplete="off">
-                                            <button type="button" class="ag-cont-btn" data-paso="1" title="Uno más" aria-label="Uno más"><i class="fa fa-plus"></i></button>
-                                        </div>
-                                        <button type="button" class="ag-sin-limite" id="btnSinTopeExtras" title="Que se puedan sumar todos los extras que quiera"><span class="ag-inf">∞</span> Sin tope</button>
-                                        <div class="ag-extra-todos" title="Pone este precio extra a todos los agregados del producto">
-                                            <span>Precio extra a todos $</span>
-                                            <input type="text" id="txtExtraTodos" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="0">
-                                            <button type="button" id="btnExtraTodos"><i class="fa fa-check"></i> Poner</button>
-                                        </div>
-                                        <span class="ag-maximo-estado" id="estadoMaxExtras" aria-live="polite"></span>
-                                    </div>
-                                </div>
-                                <!-- v1.35.0 (pedido del usuario): límite de cada categoría, además del máximo total -->
-                                <div class="ag-limites-cat" id="bloqueLimitesCategoria" style="display:none">
-                                    <b><i class="fa fa-th-large"></i> Límite por categoría</b>
-                                    <small>Cuántos puede elegir de cada categoría (ej. 2 de Proteína y 2 de Verdura). Vacío = sin límite. El máximo de arriba es el total.</small>
-                                    <div class="ag-limites-lista" id="listaLimitesCategoria"></div>
                                 </div>
                             </div>
                         </fieldset>
@@ -1033,8 +997,6 @@
                                                     <th>AGREGADO</th>
                                                     <th>CANTIDAD</th>
                                                     <th>VALOR ADICIONAL</th>
-                                                    <th class="solo-ag-extras" style="display:none" title="Lo que cobra cuando va como extra (pasado el máximo)">PRECIO EXTRA</th>
-                                                    <th class="solo-ag-categorias" style="display:none">CATEGORÍA</th>
                                                     <th title="Imprimir en su propio destino: el agregado sale en la impresora de su producto">SALE EN SU DESTINO</th>
                                                     <th>ACTIVO</th>
                                                     <th style="width:10%">ACCION</th>

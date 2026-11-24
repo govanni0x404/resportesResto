@@ -483,8 +483,8 @@ class Productos extends CI_Controller
 	}
 
 	/**
-	 * v1.35.0 (pedidos del usuario): agregados extra con costo y categorías de agregados en la ventana Agregados del producto.
-	 * accion: (ninguna) = leer las opciones; max_extras; limite_categoria; campo (de una fila); extra_todos.
+	 * v1.35.1 (pedidos del usuario): extras con cobro y categorías de agregados en la ventana Agregados del producto.
+	 * accion: (ninguna) = leer las opciones; extras (casilla del producto); campo (cantidad o valor de una fila).
 	 */
 	public function opcionesAgregados()
 	{
@@ -495,10 +495,8 @@ class Productos extends CI_Controller
 		}
 		$id = (int)$this->input->post('id_producto');
 		switch ((string)$this->input->post('accion')) {
-			case 'max_extras': $r = $this->Mproductos->grabarMaxExtras($id, (int)$this->input->post('maximo')); break;
-			case 'limite_categoria': $r = $this->Mproductos->grabarLimiteCategoria($id, (int)$this->input->post('id_categoria'), (int)$this->input->post('maximo')); break;
+			case 'extras': $r = $this->Mproductos->grabarExtrasProducto($id, (string)$this->input->post('valor') === '1'); break;
 			case 'campo': $r = $this->Mproductos->campoAgregado((int)$this->input->post('id_agregado'), $id, (string)$this->input->post('campo'), $this->input->post('valor')); break;
-			case 'extra_todos': $r = $this->Mproductos->valorExtraTodos($id, (int)$this->input->post('valor')); break;
 			default: $r = $this->Mproductos->opcionesAgregados($id);
 		}
 		if (isset($r['error'])) set_status_header(400);
@@ -553,9 +551,6 @@ class Productos extends CI_Controller
 			'id_dimpresion_maestro' => 0,
 			'id_dimpresion_agregado' => 0,
 		);
-		// v1.35.0: precio cuando va como extra y categoría (solo si llegan: la base puede no tener la migración)
-		if (isset($d['valor_extra']) && $d['valor_extra'] !== '') $miData['valor_extra_web'] = max(0, min(500000, (int)$d['valor_extra']));
-		if (isset($d['id_categoria']) && $d['id_categoria'] !== '') $miData['id_categoria_agregado_web'] = max(0, (int)$d['id_categoria']);
 		$r = $this->Mproductos->grabarAgregados($id, $miData);
 		// v1.34.1: el producto queda "Con Agregado" en cuanto tiene uno
 		if (is_array($r) && !isset($r['error'])) $this->Mproductos->marcarConAgregado((int)$miData['id_producto_maestro']);

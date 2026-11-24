@@ -30,7 +30,6 @@ function AbrirModalAgregadosDelProducto(idProducto) {
     ObtenerAgregadosDelProducto(idProductoActual);
     cargarMaxAgregados(idProductoActual);   // v1.30.3
     cargarOpcionesAgregados(idProductoActual);   // v1.35.0
-    $('#valorExtraAgregado').val('0');
     
     $('#ModalAgregadosDelProducto').modal({
         backdrop: 'static',
@@ -64,15 +63,12 @@ function ObtenerAgregadosDelProducto(idProducto) {
 // v1.35.0: la tabla se pinta aparte, para volver a pintarla cuando llegan las opciones (extras / categorías)
 var agFilas = [];
 function pintarTablaAgregados() {
-    var obj = agFilas, conEx = agOpc.extras, conCat = agOpc.categorias, cols = 8 + (conEx ? 1 : 0) + (conCat ? 1 : 0);
-    $('#tableAgregados .solo-ag-extras').toggle(!!conEx);
-    $('#tableAgregados .solo-ag-categorias').toggle(!!conCat);
+    var obj = agFilas, conCat = agOpc.categorias, cols = 8;
     if (!obj.length) {
         $("#detalleAgregadosDelProducto").html('<tr><td colspan="' + cols + '" class="text-center">No hay agregados para este producto</td></tr>');
-        pintarLimitesCategoria();
         return;
     }
-    // Con categorías: agrupados en el orden de las categorías (los sin categoría al final), con el nombre arriba
+    // v1.35.1: con categorías, agrupados en el orden de las categorías (la del producto agregado), con su nombre arriba
     var orden = {};
     $.each(agOpc.lista_categorias, function (i, c) { orden[c.id] = i; });
     var filas = obj.slice();
@@ -82,18 +78,13 @@ function pintarTablaAgregados() {
         return oa - ob || String(a.nombre_producto).localeCompare(String(b.nombre_producto));
     });
     var tbl = '', grupo = null;
-    var opcionesCat = function (sel) {
-        return '<option value="0">Sin categoría</option>' + $.map(agOpc.lista_categorias, function (c) {
-            return '<option value="' + c.id + '"' + (Number(sel) === c.id ? ' selected' : '') + '>' + escaparHtml(c.nombre) + (c.vigente ? '' : ' (inactiva)') + '</option>';
-        }).join('');
-    };
     $.each(filas, function (index, v) {
         if (conCat) {
             var g = v.id_categoria && orden[v.id_categoria] !== undefined ? v.id_categoria : 0;
             if (g !== grupo) {
                 grupo = g;
                 var c = $.grep(agOpc.lista_categorias, function (x) { return x.id === g; })[0];
-                tbl += '<tr class="ag-grupo"><td colspan="' + cols + '"><i class="fa fa-folder-open-o"></i> ' + (c ? escaparHtml(c.nombre) : 'Sin categoría') + '</td></tr>';
+                tbl += '<tr class="ag-grupo ag-color-' + (c ? orden[g] % 6 : 'otros') + '"><td colspan="' + cols + '"><i class="fa fa-folder-open-o"></i> ' + (c ? escaparHtml(c.nombre) : 'Sin categoría') + '</td></tr>';
             }
         }
         // AGREGAR data-id-producto para validación de duplicados
@@ -106,9 +97,6 @@ function pintarTablaAgregados() {
             + 'class="text-right form-control cantidad-agregado-input campo-agregado" type="number" min="1" max="1000" value="' + v.cantidad + '"></td>';
         tbl += '<td style="width:12%" class="text-right"><input id="maxValorAgregado_' + v.id_agregado + '" data-campo="valor" '
             + 'class="text-right form-control valor-agregado-input campo-agregado" type="number" min="0" max="50000" value="' + v.valor + '"></td>';
-        if (conEx) tbl += '<td style="width:12%" class="text-right"><input data-campo="valor_extra" title="0 = cobra su valor adicional" '
-            + 'class="text-right form-control extra-agregado-input campo-agregado" type="number" min="0" max="500000" value="' + (v.valor_extra || 0) + '"></td>';
-        if (conCat) tbl += '<td><select data-campo="categoria" class="form-control input-sm cat-agregado-select campo-agregado">' + opcionesCat(v.id_categoria) + '</select></td>';
         // v1.30.2: "Imprimir en su propio destino" en un agregado ya ingresado (antes solo al crearlo)
         tbl += '<td class="ag-destino-propio"><label style="margin:0; font-weight:600; cursor:pointer; white-space:nowrap">'
             + '<input type="checkbox" class="ck-destino-propio" data-id="' + v.id_agregado + '"' + (v.destino_propio ? ' checked' : '') + '> Sí</label>'
@@ -124,119 +112,58 @@ function pintarTablaAgregados() {
         tbl += "</tr>";
     });
     $("#detalleAgregadosDelProducto").html(tbl);
-    pintarLimitesCategoria();
 }
 
-// ---- v1.35.0 (pedidos del usuario): agregados extra con costo y categorías de agregados ----
-var agOpc = { disponible: false, extras: false, categorias: false, lista_categorias: [], limites: {}, max_extras: 0 };
+// ---- v1.35.1 (pedido del usuario): "Extras con cobro" del producto y categorías de agregados (cada uno solo si está
+// activado en Configuraciones). Cuántos extras y el máximo por categoría se ponen en Configuraciones. ----
+var agOpc = { disponible: false, extras: false, categorias: false, lista_categorias: [], categoria_productos: {}, extras_producto: false };
 function cargarOpcionesAgregados(idProducto) {
-    agOpc = { id: idProducto, disponible: false, extras: false, categorias: false, lista_categorias: [], limites: {}, max_extras: 0 };
+    agOpc = { id: idProducto, disponible: false, extras: false, categorias: false, lista_categorias: [], categoria_productos: {}, extras_producto: false };
     pintarOpcionesAgregados();
     $.post(base_url + 'index.php/Productos/opcionesAgregados', { id_producto: idProducto }, null, 'json').done(function (r) {
         if (!r || !r.ok || String(agOpc.id) !== String(idProducto)) return;
-        agOpc = $.extend({ id: idProducto }, r, { limites: r.limites || {} });
+        agOpc = $.extend({ id: idProducto }, r, { categoria_productos: r.categoria_productos || {} });
         pintarOpcionesAgregados();
         pintarTablaAgregados();
+        if ($('#ckVariosAgregados').is(':checked')) pintarVariosAgregados();
     });
 }
 function pintarOpcionesAgregados() {
-    var conEx = !!agOpc.extras, conCat = !!agOpc.categorias;
-    $('#filaExtraCategoriaAg').toggle(conEx || conCat);
-    $('#ModalAgregadosDelProducto').toggleClass('ag-ancho', conEx || conCat);   // más columnas en la tabla
-    $('#filaExtraCategoriaAg .solo-ag-extras').toggle(conEx);
-    $('#filaExtraCategoriaAg .solo-ag-categorias').toggle(conCat);
-    $('#bloqueMaxExtras').toggle(conEx);
-    $('#bloqueLimitesCategoria').toggle(conCat);
-    var $c = $('#categoriaAgregado'), antes = $c.val();
-    $c.html('<option value="0">Sin categoría</option>' + $.map($.grep(agOpc.lista_categorias, function (c) { return c.vigente; }), function (c) {
-        return '<option value="' + c.id + '">' + escaparHtml(c.nombre) + '</option>';
-    }).join(''));
-    if (antes && $c.find('option[value="' + antes + '"]').length) $c.val(antes);
-    pintarMaxExtras();
+    $('#bloqueExtrasProducto').toggle(!!agOpc.extras);
+    $('#ckExtrasProducto').prop('checked', !!agOpc.extras_producto);
+    pintarTextoExtras();
 }
-/** Lo que se manda al grabar un agregado nuevo (solo si la base tiene las columnas) */
-function datosExtraCategoriaAg() {
-    if (!agOpc.disponible) return {};
-    var d = {};
-    if (agOpc.extras) d.valor_extra = Math.max(0, parseInt($('#valorExtraAgregado').val(), 10) || 0);
-    if (agOpc.categorias) d.id_categoria = Number($('#categoriaAgregado').val()) || 0;
-    return d;
+function pintarTextoExtras() {
+    var mx = Number(agOpc.max_extras) || 0, max = maxAg.valor, cat = agOpc.categorias && Number(agOpc.max_categoria) > 0;
+    var cuantos = mx ? (mx === 1 ? '1 agregado más' : 'hasta ' + mx + ' agregados más') : 'los agregados que quiera';
+    $('#lblExtrasProducto').html(!agOpc.extras_producto ? 'Apagado: el máximo es un tope y los agregados cobran su valor adicional.'
+        : (max > 0 || cat ? (max > 0 ? 'Los ' + max + ' primeros' : 'Los que caben en cada categoría') + ' van <strong>sin costo</strong>; puede sumar ' + cuantos + ' cobrando el <strong>valor adicional</strong> de cada uno.'
+            : '<span class="text-danger">Pon un máximo de agregados para que haya extras.</span>'));
 }
-function pintarMaxExtras() {
-    var v = Number(agOpc.max_extras) || 0;
-    $('#txtMaxExtras').val(v > 0 ? v : '').attr('placeholder', '∞');
-    $('#btnSinTopeExtras').toggleClass('activo', v === 0);
-    $('#bloqueMaxExtras .ag-cont-btn[data-paso="-1"]').prop('disabled', v === 0);
-    $('#bloqueMaxExtras .ag-cont-btn[data-paso="1"]').prop('disabled', v >= 100);
-    $('#lblMaxExtras').html((maxAg.valor > 0 ? 'Elegidos los ' + maxAg.valor + ' sin costo, ' : 'Lleno el máximo de una categoría, ')
-        + (v > 0 ? 'puede sumar <b>hasta ' + v + ' extra' + (v === 1 ? '' : 's') + '</b>' : 'puede sumar <b>los extras que quiera</b>')
-        + ', cada uno con su <b>precio extra</b> (columna PRECIO EXTRA; 0 = su valor adicional).');
-}
-function guardarOpcionAg(datos, $estado, alListo) {
-    var id = $('#txtID').val();
-    if (!id || id === '0') return;
-    if ($estado) $estado.text('Guardando…').removeClass('error');
-    return $.post(base_url + 'index.php/Productos/opcionesAgregados', $.extend({ id_producto: id }, datos), null, 'json').done(function (r) {
-        if ($estado) $estado.html('<i class="fa fa-check"></i> Guardado');
-        if (alListo) alListo(r);
+$(document).on('change', '#ckExtrasProducto', function () {
+    var $c = $(this), on = $c.is(':checked');
+    $c.prop('disabled', true);
+    $.post(base_url + 'index.php/Productos/opcionesAgregados', { id_producto: $('#txtID').val(), accion: 'extras', valor: on ? 1 : 0 }, null, 'json').done(function () {
+        agOpc.extras_producto = on;
+        pintarTextoExtras();
+        toastr.success(on ? 'Extras con cobro activados en este producto' : 'Extras con cobro apagados en este producto', '', { timeOut: 1800 });
     }).fail(function (x) {
-        if ($estado) $estado.text('No se guardó').addClass('error');
+        $c.prop('checked', !on);
         showAppAlert('error', (x.responseJSON && x.responseJSON.error) || 'No se pudo guardar');
-    });
-}
-var timerExtras = null;
-function guardarMaxExtras(valor) {
-    agOpc.max_extras = Math.max(0, Math.min(100, valor | 0));
-    pintarMaxExtras();
-    clearTimeout(timerExtras);
-    $('#estadoMaxExtras').text('Guardando…').removeClass('error');
-    timerExtras = setTimeout(function () { guardarOpcionAg({ accion: 'max_extras', maximo: agOpc.max_extras }, $('#estadoMaxExtras')); }, 500);
-}
-$(document).on('click', '#bloqueMaxExtras .ag-cont-btn', function () { guardarMaxExtras((Number(agOpc.max_extras) || 0) + Number($(this).data('paso'))); });
-$(document).on('click', '#btnSinTopeExtras', function () { guardarMaxExtras(0); });
-$(document).on('input', '#txtMaxExtras', function () { this.value = this.value.replace(/\D/g, '').slice(0, 3); });
-$(document).on('change', '#txtMaxExtras', function () { guardarMaxExtras(parseInt(this.value, 10) || 0); });
-$(document).on('keydown', '#txtMaxExtras', function (e) { if (e.which === 13) { e.preventDefault(); $(this).trigger('change').blur(); } });
-$(document).on('input', '#txtExtraTodos', function () { this.value = this.value.replace(/\D/g, '').slice(0, 6); });
-$(document).on('keydown', '#txtExtraTodos', function (e) { if (e.which === 13) { e.preventDefault(); $('#btnExtraTodos').click(); } });
-$(document).on('click', '#btnExtraTodos', function () {
-    var v = parseInt($('#txtExtraTodos').val(), 10) || 0, n = $('#detalleAgregadosDelProducto tr[data-id-agregado]').length;
-    if (!n) { showAppAlert('error', 'Este producto todavía no tiene agregados'); return; }
-    confirmarSistema('¿Precio extra a todos?', 'Los ' + n + ' agregados de este producto quedarán con precio extra $' + v.toLocaleString('es-CL') + (v ? '.' : ' (cobran su valor adicional).'), 'Sí, poner', function () {
-        guardarOpcionAg({ accion: 'extra_todos', valor: v }, $('#estadoMaxExtras'), function () { ObtenerAgregadosDelProducto($('#txtID').val()); });
-    });
+    }).always(function () { $c.prop('disabled', false); });
 });
-// Un dato de una fila de la tabla (cantidad, valor, precio extra, categoría): se guarda al cambiarlo
+// La cantidad o el valor de una fila de la tabla: se guarda al cambiarlo
 $(document).on('change', '#detalleAgregadosDelProducto .campo-agregado', function () {
     var $i = $(this), campo = $i.data('campo'), idAg = $i.closest('tr').data('id-agregado');
     $i.prop('disabled', true);
-    guardarOpcionAg({ accion: 'campo', id_agregado: idAg, campo: campo, valor: $i.val() }, null, function (r) {
-        $.each(agFilas, function (i, f) { if (Number(f.id_agregado) === Number(idAg)) f[campo === 'categoria' ? 'id_categoria' : campo] = r.valor; });
-        if (campo === 'categoria') pintarTablaAgregados();
-        else { $i.val(r.valor); toastr.success('Guardado', '', { timeOut: 1200 }); }
-    }).always(function () { $i.prop('disabled', false); });
-});
-/** Límite de cada categoría que tienen los agregados de este producto */
-function pintarLimitesCategoria() {
-    if (!agOpc.categorias) return;
-    var usadas = {};
-    $.each(agFilas, function (i, f) { if (f.id_categoria) usadas[f.id_categoria] = (usadas[f.id_categoria] || 0) + 1; });
-    var cats = $.grep(agOpc.lista_categorias, function (c) { return usadas[c.id]; });
-    $('#listaLimitesCategoria').html(cats.length ? $.map(cats, function (c) {
-        var m = Number(agOpc.limites[c.id]) || 0;
-        return '<label class="ag-limite" title="Cuántos de ' + escaparHtml(c.nombre) + ' puede elegir (vacío = sin límite)"><span>' + escaparHtml(c.nombre) + '</span>'
-            + '<small>' + usadas[c.id] + ' agreg.</small><input type="text" inputmode="numeric" maxlength="3" class="txt-limite-cat" data-cat="' + c.id + '" value="' + (m || '') + '" placeholder="∞"></label>';
-    }).join('') : '<div class="ag-limites-vacio"><i class="fa fa-info-circle"></i> Ningún agregado de este producto tiene categoría. Elígela en la columna CATEGORÍA '
-        + '(o en Tablas &gt; Categorías de agregados) y aquí aparece para ponerle su límite.</div>');
-}
-$(document).on('input', '.txt-limite-cat', function () { this.value = this.value.replace(/\D/g, '').slice(0, 3); });
-$(document).on('keydown', '.txt-limite-cat', function (e) { if (e.which === 13) { e.preventDefault(); $(this).blur(); } });
-$(document).on('change', '.txt-limite-cat', function () {
-    var cat = Number($(this).data('cat')), m = parseInt(this.value, 10) || 0;
-    guardarOpcionAg({ accion: 'limite_categoria', id_categoria: cat, maximo: m }, null, function (r) {
-        agOpc.limites[cat] = r.maximo;
-        toastr.success(r.maximo ? 'Límite guardado: hasta ' + r.maximo : 'Sin límite en esa categoría', '', { timeOut: 1500 });
-    });
+    $.post(base_url + 'index.php/Productos/opcionesAgregados', { id_producto: $('#txtID').val(), accion: 'campo', id_agregado: idAg, campo: campo, valor: $i.val() }, null, 'json')
+        .done(function (r) {
+            $.each(agFilas, function (i, f) { if (Number(f.id_agregado) === Number(idAg)) f[campo] = r.valor; });
+            $i.val(r.valor);
+            toastr.success('Guardado', '', { timeOut: 1200 });
+        })
+        .fail(function (x) { showAppAlert('error', (x.responseJSON && x.responseJSON.error) || 'No se pudo guardar'); })
+        .always(function () { $i.prop('disabled', false); });
 });
 
 $(function () { initValidacionesAgregados(); });   // v1.35.0: una sola vez (antes se volvía a enganchar en cada recarga de la tabla)
@@ -309,10 +236,22 @@ function pintarVariosAgregados() {
     if (!todos.length) { $('#listaVariosAgregados').html('<div class="ag-varios-vacio"><i class="fa fa-spinner fa-spin"></i> Cargando productos…</div>'); contarVariosAgregados(); return; }
     var lista = $.grep(todos, function (p) { return !texto || p.nombre.toLowerCase().indexOf(texto) >= 0; });
     var esc = function (t) { return $('<div>').text(t).html(); };
-    $('#listaVariosAgregados').html(lista.length ? $.map(lista, function (p) {
+    var op = function (p) {
         if (ya[p.id]) return '<label class="ag-op ya-esta" title="Ya es agregado de este producto"><input type="checkbox" disabled checked><span>' + esc(p.nombre) + '</span><small>Ya está</small></label>';
         return '<label class="ag-op' + (agElegidos[p.id] ? ' elegido' : '') + '" data-id="' + esc(p.id) + '"><input type="checkbox"' + (agElegidos[p.id] ? ' checked' : '') + '><span title="' + esc(p.nombre) + '">' + esc(p.nombre) + '</span></label>';
-    }).join('') : '<div class="ag-varios-vacio">No hay productos con ese nombre</div>');
+    };
+    // v1.35.1 (pedido del usuario): con categorías, los productos de cada categoría en un cuadro de color con su nombre
+    var grupos = [], sinCat = lista;
+    if (agOpc.categorias && lista.length) {
+        $.each(agOpc.lista_categorias, function (i, c) {
+            var de = $.grep(lista, function (p) { return Number(agOpc.categoria_productos[p.id]) === c.id; });
+            if (de.length) grupos.push('<div class="ag-varios-cat ag-color-' + (i % 6) + '"><div class="ag-varios-cat-titulo">' + esc(c.nombre) + '</div><div class="ag-varios-cat-lista">' + $.map(de, op).join('') + '</div></div>');
+        });
+        sinCat = $.grep(lista, function (p) { return !$.grep(agOpc.lista_categorias, function (c) { return c.id === Number(agOpc.categoria_productos[p.id]); }).length; });
+        if (grupos.length && sinCat.length) grupos.push('<div class="ag-varios-cat ag-color-otros"><div class="ag-varios-cat-titulo">Sin categoría</div><div class="ag-varios-cat-lista">' + $.map(sinCat, op).join('') + '</div></div>');
+    }
+    $('#listaVariosAgregados').toggleClass('con-categorias', grupos.length > 0).html(!lista.length ? '<div class="ag-varios-vacio">No hay productos con ese nombre</div>'
+        : (grupos.length ? grupos.join('') : $.map(lista, op).join('')));
     contarVariosAgregados();
 }
 function contarVariosAgregados() {
@@ -375,7 +314,6 @@ function grabarVariosAgregados() {
         'valor': valor || 0,
         'usar_destino_impresion': $('#ckUsarDestinoDeImpresion').is(":checked") ? 1 : 0
     };
-    $.extend(datos, datosExtraCategoriaAg());   // v1.35.0
     (function siguiente(i) {
         if (i >= pendientes.length) {
             $b.prop('disabled', false);
@@ -472,7 +410,6 @@ function GrabarNuevoAgregados() {
         'valor': valorAdicionalAgregado,
         'usar_destino_impresion': $('#ckUsarDestinoDeImpresion').is(":checked") ? 1 : 0,
     };
-    $.extend(miJson, datosExtraCategoriaAg());   // v1.35.0
     
     console.log("Grabando agregado:", miJson);
     
@@ -929,7 +866,7 @@ function pintarMaxAgregados() {
     $('#lblMaxAgregados').html(v > 0
         ? 'El cliente elige <b>hasta ' + v + '</b> de ' + n + (n === 1 ? ' agregado activo' : ' agregados activos') + (v >= n && n ? ' (alcanza para todos)' : '') + '.'
         : 'Sin límite: puede elegir los ' + n + (n === 1 ? ' agregado activo' : ' agregados activos') + '.');
-    if (typeof pintarMaxExtras === 'function') pintarMaxExtras();   // v1.35.0: el texto de los extras depende del máximo
+    if (typeof pintarTextoExtras === 'function') pintarTextoExtras();   // v1.35.1: el texto de los extras depende del máximo
 }
 function cargarMaxAgregados(idProducto) {
     maxAg = { id: idProducto, valor: 0, activos: 0, timer: null };
