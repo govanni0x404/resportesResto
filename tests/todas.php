@@ -27,6 +27,7 @@ if ($copia) {
 	$pruebas['anular_varias_test.php'] = array($base, 'COPIA');
 	$pruebas['recetas_unidades_test.php'] = array($base, 'COPIA');   // v1.34.0: kilos y gramos en insumos, recetas y producción   // v1.33.0: anular todas las ventas en espera y varias mesas a la vez
 	$pruebas['agregados_extras_categorias_test.php'] = array($base, 'COPIA');   // v1.35.0: agregados extra con costo y categorías de agregados
+	$pruebas['promos_test.php'] = array($base, 'COPIA');   // v1.36.0: promos normales (Carta > Promos)
 	if (is_file(__DIR__ . '/cocina_reservas_test.php')) $pruebas['cocina_reservas_test.php'] = array($base, 'COPIA');   // pantalla de cocina y reservas (rama de prueba)
 }
 

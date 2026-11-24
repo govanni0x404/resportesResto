@@ -244,6 +244,20 @@
 		function menuDe(id) {
 			return $.grep((catalogo && catalogo.menus) || [], function (m) { return m.id_producto === id; })[0] || null;
 		}
+		/**
+		 * v1.36.0: promo con productos fijos (Carta > Promos, o un menú donde cada categoría tiene un solo producto y una
+		 * cantidad obligatoria): lo elegido ya está decidido [{id, cantidad}]; null si hay algo que elegir.
+		 */
+		function menuFijo(id) {
+			var m = menuDe(id);
+			if (!m || !m.categorias.length) return null;
+			var res = [];
+			$.each(m.categorias, function (i, c) {
+				if (res && c.opciones.length === 1 && c.min > 0 && c.min === c.max) res.push({ id: c.opciones[0].id, cantidad: c.min });
+				else res = null;
+			});
+			return res;
+		}
 		function opcionMenu(menu, idDet) {
 			var r = null;
 			$.each(menu ? menu.categorias : [], function (i, c) { $.each(c.opciones, function (j, o) { if (o.id === idDet) r = o; }); });
@@ -577,6 +591,9 @@
 			// v1.32.0 (pedido del usuario): promo de sushi fija: entra ya armada, sin preguntar (si su armado sigue sirviendo)
 			var fija = sushiDe(id) ? armadoFijoSushi(sushiDe(id)) : null;
 			if (fija) { agregar(id, [], '', undefined, {}, [], fija); toastr.success('Promo fija agregada (para cambiarla en esta venta, toca su nombre)'); return; }
+			// v1.36.0: promo normal (todo fijo, sin agregados ni mensajes): entra al tiro
+			var mf = menuFijo(id);
+			if (mf && !agregadosDe(id).length && !mensajesDe(id).length) { agregar(id, [], '', undefined, {}, mf); return; }
 			if (tieneOpciones(id)) abrirOpciones(id, null);
 			else if (!mesa && pideValorOPeso(id)) abrirPesable(id);   // a granel en venta directa: por valor o por peso
 			else agregar(id, [], '');

@@ -16,6 +16,7 @@
 			sushiSel = sushiSel || null;   // v1.25.0: lo armado de una promo de sushi {grupos, extras}
 			notasAg = notasAg || {};
 			menuSel = menuSel || [];   // v1.24.0: lo elegido del menú [{id, cantidad}]
+			if (!menuSel.length && menuFijo(id)) menuSel = menuFijo(id);   // v1.36.0: promo con productos fijos (también con cantidad*código)
 			var p = producto(id);
 			if (!p) return;
 			// 18-11-2026: un delivery guardado se cobra tal como se pidió

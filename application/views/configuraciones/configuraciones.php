@@ -155,6 +155,10 @@ if (!function_exists('cfg_opciones')) {
                                                 <h3 class="panel-title"><i class="fa fa-th"></i>Promos de sushi</h3>
                                             </div>
                                             <div class="panel-body">
+                                                <?php if (array_key_exists('promos_sushi_web', $config)) : ?>
+                                                <!-- v1.36.0: botón Promos Sushi en la Carta (las promos normales salen siempre) -->
+                                                <div class="cfg-fila"><label><input type="checkbox" name="promos_sushi_web" value="1" <?php echo $__sushi('promos_sushi_web') ? 'checked' : ''; ?>> Usar promos de sushi por roll</label><?php cfg_info("Marcada: en la Carta sale el botón \"Promos Sushi\" para armar promos de sushi por roll.\nSin marcar: ese botón no sale. Las promos normales (botón \"Promos\", ej. Completo + Bebida a un precio) salen siempre."); ?></div>
+                                                <?php endif; ?>
                                                 <div class="cfg-fila"><label><input type="checkbox" name="sushi_por_pieza_web" value="1" <?php echo $__sushi('sushi_por_pieza_web') ? 'checked' : ''; ?>> Armar promos por pieza</label><?php cfg_info("Además de las promos por roll, permite crear promos por pieza (ej. 30 piezas repartidas como el cliente quiera).
 Pocos locales lo usan.
 Apagada: en Carta > Promos Sushi solo se crean promos por roll. Las promos por pieza que ya existen se siguen vendiendo."); ?></div>

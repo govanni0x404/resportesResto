@@ -441,8 +441,9 @@ class Mcaja extends CI_Model
 		$db = $db ?: $this->conexion();
 		$c = $this->columnas($db, array('configuracion'));
 		$c = isset($c['configuracion']) ? $c['configuracion'] : array();
-		$res = array('por_pieza' => true, 'bases' => true, 'salsas' => false);
-		$mapa = array('por_pieza' => 'sushi_por_pieza_web', 'bases' => 'sushi_bases_web', 'salsas' => 'sushi_salsas_web');
+		// v1.36.0: activas = botón Promos Sushi en la Carta (sin la columna: como antes, encendido)
+		$res = array('por_pieza' => true, 'bases' => true, 'salsas' => false, 'activas' => true);
+		$mapa = array('por_pieza' => 'sushi_por_pieza_web', 'bases' => 'sushi_bases_web', 'salsas' => 'sushi_salsas_web', 'activas' => 'promos_sushi_web');
 		$sel = array();
 		foreach ($mapa as $k => $col) if (isset($c[$col])) $sel[$k] = "($col IS TRUE) AS $k";
 		if ($sel) {

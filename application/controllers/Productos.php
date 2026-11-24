@@ -20,7 +20,10 @@ class Productos extends CI_Controller
 			//'modulosDisponibles' => json_decode($this->Mroles->modulosDisponibles($this->session->userdata('id_rol')), true)
 		);
 		$this->load->view('menuTop.php', $data);
-				$this->load->view('productos/productos.php');
+				// v1.36.0: el botón Promos Sushi solo con Configuraciones > Promos de sushi > "Usar promos de sushi"
+				$this->load->model('Mcaja');
+				$sushiCfg = $this->Mcaja->opcionesSushi();
+				$this->load->view('productos/productos.php', array('promosSushi' => !empty($sushiCfg['activas'])));
 				$this->load->view('menuFooter.php');
 				$this->load->view('productos/funciones.php');
 				$this->load->view('productos/jsProductos.php');
@@ -33,6 +36,7 @@ class Productos extends CI_Controller
 				$this->load->view('productos/jsReceta.php');
 				$this->load->view('productos/jsImagen.php');
 				$this->load->view('productos/promoSushi.php');   // v1.25.0
+				$this->load->view('productos/promos.php');   // v1.36.0: promos normales
 				$this->load->view('recetas/jsNewFamiliaReceta.php');
 				$this->load->view('recetas/jsNewSeccion.php');
 	}
@@ -1032,6 +1036,26 @@ class Productos extends CI_Controller
 		}
 		$this->load->model('Mpromosushi');
 		$r = $fn($this->Mpromosushi, $this->input);
+		if (isset($r['error'])) set_status_header(400);
+		echo json_encode($r);
+	}
+
+	/** v1.36.0: promos normales (Carta > Promos). Sin id: la lista; con id: una promo. */
+	public function promos()
+	{
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) { set_status_header(401); echo json_encode(array('error' => 'Sesión expirada')); return; }
+		$this->load->model('Mpromos');
+		$id = (int)$this->input->get_post('id');
+		$r = $id > 0 ? $this->Mpromos->promo($id) : $this->Mpromos->datos();
+		if (isset($r['error'])) set_status_header(400);
+		echo json_encode($r);
+	}
+
+	public function grabarPromo()
+	{
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) { set_status_header(401); echo json_encode(array('error' => 'Sesión expirada')); return; }
+		$this->load->model('Mpromos');
+		$r = $this->Mpromos->grabar($this->input->post());
 		if (isset($r['error'])) set_status_header(400);
 		echo json_encode($r);
 	}
