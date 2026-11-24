@@ -39,6 +39,73 @@
 .ag-sin-limite.activo { border-color: var(--t-primario, #15803D); background: var(--t-primario, #15803D); color: #fff; }
 .ag-maximo-estado { min-width: 74px; font-size: 12px; font-weight: 700; color: var(--t-primario, #15803D); }
 .ag-maximo-estado.error { color: #B91C1C; }
+/* v1.35.4: ventana de agregados más simple */
+.agx-grid { display: grid; grid-template-columns: minmax(380px, 5fr) 7fr; gap: 18px; align-items: start; }
+.agx-izq > :last-child { margin-bottom: 0; }
+.agx-der { min-width: 0; }
+.agx-der .agx-tabla { max-height: calc(100vh - 230px); overflow-y: auto; }
+.agx-der .agx-tabla thead th { position: sticky; top: 0; z-index: 2; }
+.agx-izq .agx-producto { flex-basis: 100%; }
+.agx-izq .agx-num { flex: 1 1 90px; }
+.agx-izq .agx-grabar { flex: 1 1 120px; }
+#ModalAgregadosDelProducto .agx-izq .ag-varios-lista { max-height: calc(100vh - 610px); min-height: 150px; }
+@media (max-width: 991px) { .agx-grid { grid-template-columns: 1fr; } .agx-der .agx-tabla { max-height: none; } }
+.agx-reglas { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding: 10px 14px; margin-bottom: 14px; border-radius: 10px;
+    background: var(--t-primario-suave, #E8F5EC); border: 1px solid var(--t-primario-borde, #BBE3C8); }
+.agx-regla { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-weight: 400; }
+.agx-etq { font-size: 13px; font-weight: 700; color: var(--t-texto-fuerte, #111827); white-space: nowrap; }
+.agx-etq i { color: var(--t-texto-tenue, #9CA3AF); font-size: 12px; margin-left: 2px; cursor: help; }
+.ag-contador-sm { height: 32px; }
+.ag-contador-sm .ag-cont-btn { width: 30px; }
+.ag-contador-sm input { width: 40px; font-size: 15px; }
+.ag-sin-limite.agx-sm { height: 32px; padding: 0 10px; }
+.agx-switch { cursor: pointer; position: relative; }
+.agx-switch input:checked + .op-switch-pista { background: var(--t-primario, #15803D); }
+.agx-switch input:checked + .op-switch-pista::after { transform: translateX(18px); }
+.agx-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.agx-nota { margin-top: -8px !important; color: var(--t-texto-tenue, #6B7280) !important; }
+.agx-nota i { margin-right: 3px; }
+.agx-resumen { flex: 1 1 100%; margin-top: -4px; font-size: 12px; color: var(--t-texto-suave, #4B5563); }
+.agx-caja { padding: 12px 14px; margin-bottom: 14px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; }
+.agx-caja-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.agx-caja-cab .ag-modo { margin: 0; }
+.agx-caja-cab { flex-wrap: wrap; }
+.agx-caja-cab .ag-modo { display: inline-flex; flex-wrap: nowrap; }
+.agx-caja-cab .ag-modo-btn { white-space: nowrap; display: inline-flex; flex-direction: row; align-items: center; gap: 6px; }
+.agx-copiar { color: var(--t-texto-suave, #4B5563) !important; font-weight: 600; }
+.agx-fila { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.agx-campo label { display: block; margin-bottom: 4px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #6B7280); }
+.agx-producto { flex: 1 1 260px; min-width: 0; }
+.agx-num { flex: 0 0 100px; }
+.agx-grabar { height: 32px; padding: 0 16px; }
+#bloqueVariosAgregados + .agx-fila { margin-top: 10px; }
+.agx-opciones { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-top: 10px; font-size: 13px; }
+.agx-opciones label { margin: 0; font-weight: 400; cursor: pointer; color: var(--t-texto, #374151); }
+.agx-opciones input { margin: 0 3px 0 0; vertical-align: -2px; accent-color: var(--t-primario, #15803D); }
+.agx-destino { font-size: 12px; color: var(--t-texto-suave, #4B5563); }
+.agx-lista-cab { display: flex; align-items: baseline; gap: 8px; margin: 2px 0 6px; font-size: 14px; }
+.agx-lista-cab span { font-size: 12px; color: var(--t-texto-suave, #6B7280); }
+.agx-tabla { border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; }
+.agx-tabla table { margin: 0; }
+.agx-tabla th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #6B7280); background: var(--t-fondo-alt, #F9FAFB); border-bottom: 1px solid var(--t-borde, #E5E7EB) !important; }
+.agx-tabla td { vertical-align: middle !important; padding: 5px 8px !important; }
+.agx-tabla .ag-nombre { font-weight: 600; }
+.agx-tabla tr.ag-inactivo td { color: var(--t-texto-tenue, #9CA3AF); }
+.agx-tabla tr.ag-inactivo .ag-nombre { text-decoration: line-through; }
+.agx-tabla input.campo-agregado { height: 30px; padding: 2px 6px; text-align: center; }
+.agx-mini-switch { position: relative; display: inline-block; width: 36px; height: 20px; margin: 0; cursor: pointer; vertical-align: middle; }
+.agx-mini-switch input { opacity: 0; width: 0; height: 0; }
+.agx-mini-switch span { position: absolute; inset: 0; border-radius: 20px; background: #D1D5DB; transition: background .15s; }
+.agx-mini-switch span::before { content: ""; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.agx-mini-switch input:checked + span { background: var(--t-primario, #15803D); }
+.agx-mini-switch input:checked + span::before { transform: translateX(16px); }
+.agx-dest { display: block; font-size: 11px; color: var(--t-texto-suave, #6B7280); white-space: nowrap; }
+.t-modal-form .agx-opciones label, .t-modal-form label.agx-switch, .t-modal-form .agx-switch .agx-etq { text-transform: none; letter-spacing: 0; font-size: 13px; }
+.t-modal-form label.agx-switch .agx-etq { font-weight: 700; color: var(--t-texto-fuerte, #111827); }
+.agx-fila .form-control, .agx-fila .select2-container .select2-selection--single { height: 36px !important; }
+.agx-fila .select2-container .select2-selection--single .select2-selection__rendered { line-height: 34px !important; }
+.agx-grabar { height: 36px; }
+@media (max-width: 600px) { .agx-num { flex: 1 1 80px; } .agx-grabar { flex: 1 1 100%; } }
 /* v1.35.1: casilla "Extras con cobro" en el recuadro del máximo y categorías en cuadros de color */
 .ag-extras-producto { display: flex; align-items: center; gap: 12px; flex: 1 1 100%; margin-top: 4px; padding-top: 12px; border-top: 1px dashed var(--t-primario-borde, #BBE3C8); }
 .ag-extras-producto .op-switch { flex: 1 1 auto; margin: 0; background: #fff; }
@@ -779,7 +846,7 @@
 <style>
 #ModalCopiarAgregados .modal-dialog { width: 760px; max-width: calc(100vw - 24px); }
 /* v1.33.1 (pedido del usuario): la ventana Agregados del producto más ancha (la tabla de abajo se veía apretada) */
-#ModalAgregadosDelProducto .modal-dialog { width: 1040px; max-width: calc(100vw - 24px); }
+#ModalAgregadosDelProducto .modal-dialog { width: 1360px; max-width: calc(100vw - 24px); margin-top: 16px; }
 #ModalAgregadosDelProducto #tableAgregados th { white-space: nowrap; vertical-align: bottom; }
 #ModalAgregadosDelProducto #tableAgregados td { vertical-align: middle; }
 #ModalAgregadosDelProducto #tableAgregados .cantidad-agregado-input, #ModalAgregadosDelProducto #tableAgregados .valor-agregado-input { min-width: 80px; }
@@ -871,144 +938,104 @@
                     </ul>
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
-                        <fieldset>
-                            <!-- v1.24.5: modo de agregar: de a uno (como siempre) o varios a la vez (lista con buscador) -->
-                            <div class="col-md-12">
+                        <!-- v1.35.4 (pedido del usuario): ventana más simple, en 3 partes: reglas en la Caja, agregar y la lista.
+                             Las explicaciones largas quedan en el (i) / al pasar el mouse. Mismos ids que antes. -->
+                        <input id="ckVariosAgregados" type="checkbox" hidden>
+
+                        <!-- v1.35.4: a lo ancho: a la izquierda reglas y agregar, a la derecha la lista -->
+                        <div class="agx-grid">
+                        <div class="agx-izq">
+                        <!-- 1. Reglas en la Caja: máximo y extras con cobro (se guardan solos) -->
+                        <div class="agx-reglas" id="bloqueMaxAgregados">
+                            <div class="agx-regla">
+                                <span class="agx-etq">Máximo a elegir <i class="fa fa-info-circle" title="Cuántos agregados puede elegir el cliente de este producto en la Caja. ∞ = todos."></i></span>
+                                <div class="ag-contador ag-contador-sm" role="group" aria-label="Máximo de agregados">
+                                    <button type="button" class="ag-cont-btn" data-paso="-1" title="Uno menos" aria-label="Uno menos"><i class="fa fa-minus"></i></button>
+                                    <input type="text" id="txtMaxAgregados" inputmode="numeric" maxlength="3" aria-label="Máximo de agregados" autocomplete="off">
+                                    <button type="button" class="ag-cont-btn" data-paso="1" title="Uno más" aria-label="Uno más"><i class="fa fa-plus"></i></button>
+                                </div>
+                                <button type="button" class="ag-sin-limite agx-sm" id="btnSinLimiteAg" title="Que se puedan elegir todos"><span class="ag-inf">∞</span></button>
+                                <span class="ag-maximo-estado" id="estadoMaxAgregados" aria-live="polite"></span>
+                            </div>
+                            <!-- v1.35.1: extras con cobro (solo si está activado en Configuraciones) -->
+                            <label class="agx-regla agx-switch" id="bloqueExtrasProducto" style="display:none">
+                                <input id="ckExtrasProducto" type="checkbox">
+                                <span class="op-switch-pista" aria-hidden="true"></span>
+                                <span class="agx-etq">Extras con cobro <i class="fa fa-info-circle" id="lblExtrasProducto" title=""></i></span>
+                            </label>
+                            <small class="agx-resumen" id="lblMaxAgregados"></small>
+                            <small class="agx-resumen agx-nota" id="lblNotaExtras" style="display:none"><i class="fa fa-info-circle"></i>
+                                Cuántos extras se pueden sumar se define en <b>Configuraciones &rsaquo; Agregados en la Caja</b>. Cada extra cobra el <b>Valor $</b> de su agregado (columna de la lista).</small>
+                        </div>
+
+                        <!-- 2. Agregar -->
+                        <div class="agx-caja">
+                            <div class="agx-caja-cab">
                                 <div class="ag-modo" role="tablist" aria-label="Cómo agregar">
                                     <button type="button" class="ag-modo-btn activo" data-modo="uno" role="tab" aria-selected="true"><i class="fa fa-plus"></i> De a uno</button>
                                     <button type="button" class="ag-modo-btn" data-modo="varios" role="tab" aria-selected="false"><i class="fa fa-th-list"></i> Varios a la vez</button>
                                 </div>
-                                <!-- v1.24.17: copiar estos agregados a otro u otros productos -->
-                                <button type="button" class="btn btn-default" id="btnCopiarAgregados" onclick="abrirCopiarAgregados()" title="Copiar los agregados de este producto a otro o varios"><i class="fa fa-clone"></i> Copiar a otros productos</button>
-                                <input id="ckVariosAgregados" type="checkbox" hidden>
+                                <button type="button" class="btn btn-link btn-sm agx-copiar" id="btnCopiarAgregados" onclick="abrirCopiarAgregados()" title="Copiar los agregados de este producto a otro o varios"><i class="fa fa-clone"></i> Copiar a otros productos</button>
                             </div>
-                            <div class="col-md-12" id="bloqueUnAgregado">
-                                <label for="cboProductoAgregadoProductos" id="lblProductoAgregado">PRODUCTO DE AGREGADO</label>
-                                <select id="cboProductoAgregadoProductos" nombre="cboProductoAgregadoProductos"
-                                    class="form-control input-sm" style="width:100%" requerido="si"></select>
-                            </div>
-                            <div class="col-md-12" id="bloqueVariosAgregados" style="display:none">
+                            <div id="bloqueVariosAgregados" style="display:none">
                                 <div class="ag-varios">
                                     <div class="ag-varios-barra">
                                         <div class="ag-buscar"><i class="fa fa-search"></i><input type="text" id="txtBuscarVariosAgregados" class="form-control input-sm" placeholder="Buscar producto…" autocomplete="off"></div>
-                                        <button type="button" class="btn btn-default btn-sm" id="btnMarcarVisiblesAg"><i class="fa fa-check-square-o"></i> Marcar los que se ven</button>
-                                        <button type="button" class="btn btn-default btn-sm" id="btnLimpiarAg"><i class="fa fa-eraser"></i> Limpiar</button>
+                                        <button type="button" class="btn btn-default btn-sm" id="btnMarcarVisiblesAg" title="Marcar los que se ven"><i class="fa fa-check-square-o"></i> Marcar todos</button>
+                                        <button type="button" class="btn btn-default btn-sm" id="btnLimpiarAg" title="Desmarcar"><i class="fa fa-eraser"></i></button>
                                     </div>
                                     <div class="ag-varios-lista" id="listaVariosAgregados"></div>
-                                    <div class="ag-varios-pie"><span id="lblElegidosAg">Ningún producto elegido</span><small>La cantidad, el valor adicional y las opciones de abajo se aplican a todos.</small></div>
+                                    <div class="ag-varios-pie"><span id="lblElegidosAg">Ningún producto elegido</span></div>
                                 </div>
                             </div>
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-6 ">
-                                <label for="cantidadAgregado">CANTIDAD</label>
-                                <input type="number" min="0" max="50000"
-                                    class="form-control input-sm input-sm" maxlength='28'
-                                    onkeypress="return soloNumeros(event)" onpaste="return false;"
-                                    ondrop="return false;" autocomplete="off" name="cantidadAgregado"
-                                    id="cantidadAgregado" requerido="si" value="" />
-                            </div>
-                            <div class="col-md-6 ">
-                                <label for="valorAdicionalAgregado">VALOR ADICIONAL</label>
-                                <input type="number" min="0" max="50000"
-                                    class="form-control input-sm input-sm" maxlength='28'
-                                    onkeypress="return soloNumeros(event)" onpaste="return false;"
-                                    ondrop="return false;" autocomplete="off" name="valorAdicionalAgregado"
-                                    id="valorAdicionalAgregado" requerido="si" value="" />
-                            </div>
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-12">
-                                <!-- v1.33.1 (pedido del usuario): opciones como interruptores en tarjetas, con su explicación.
-                                     v1.30.0: la Caja web ya usa "Imprimir en su propio destino" (antes solo el POS de escritorio) -->
-                                <div class="op-switches">
-                                    <label class="op-switch" title="El agregado sale en la comanda del destino de impresión de SU producto (ej. la SALSA en la BARRA), con el nombre del producto al que va. En la comanda del producto queda anotado dónde salió.">
-                                        <input id="ckUsarDestinoDeImpresion" type="checkbox">
-                                        <span class="op-switch-pista" aria-hidden="true"></span>
-                                        <span class="op-switch-texto">
-                                            <b><i class="fa fa-print"></i> Imprimir en su propio destino</b>
-                                            <small>Sale en la impresora que el agregado tiene en la Carta. Apagado: sale junto con el producto.</small>
-                                        </span>
-                                    </label>
-                                    <label class="op-switch">
-                                        <input id="ckVigenciaAgregado" type="checkbox">
-                                        <span class="op-switch-pista" aria-hidden="true"></span>
-                                        <span class="op-switch-texto">
-                                            <b><i class="fa fa-check-circle"></i> Activo / vigente</b>
-                                            <small>Se ofrece en la Caja. Apagado: queda guardado, pero no se ofrece.</small>
-                                        </span>
-                                    </label>
+                            <div class="agx-fila">
+                                <div class="agx-campo agx-producto" id="bloqueUnAgregado">
+                                    <label for="cboProductoAgregadoProductos" id="lblProductoAgregado">Producto</label>
+                                    <select id="cboProductoAgregadoProductos" nombre="cboProductoAgregadoProductos" class="form-control input-sm" style="width:100%" requerido="si"></select>
                                 </div>
-                                <!-- v1.30.1: a qué impresora sale (el destino del producto agregado, el que tiene en la Carta) -->
-                                <div id="infoDestinoAgregado" class="destino-agregado-info" style="display:none; margin:8px 0 4px; padding:7px 10px; border-radius:8px; background:var(--t-primario-suave, #E8F5EC); color:var(--t-texto, #1F2937); font-size:12px; line-height:1.4"></div>
-                            </div>
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-4">
-                                <button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-success" id="btnGrabarAgregado"><i class="fa fa-check"></i> GRABAR AGREGADO</button>
-                            </div>
-                            <!--<div class="col-md-4">
-                                <button type="button" class="btn btn-warning"><i class="fa fa-plus"></i>NUEVO AGREGADO</button>
-                            </div>-->
-                        </fieldset>
-                        <!-- v1.30.3: máximo de agregados que se pueden elegir en la Caja para este producto -->
-                        <fieldset>
-                            <div class="col-md-12">
-                                <!-- v1.32.2: rediseño del máximo de agregados (contador - / +, se guarda solo) -->
-                                <div class="ag-maximo" id="bloqueMaxAgregados">
-                                    <div class="ag-maximo-icono"><i class="fa fa-sliders"></i></div>
-                                    <div class="ag-maximo-texto">
-                                        <b>Máximo de agregados en la Caja</b>
-                                        <small id="lblMaxAgregados">Cuántos agregados puede elegir el cliente de este producto.</small>
-                                    </div>
-                                    <div class="ag-maximo-control">
-                                        <div class="ag-contador" role="group" aria-label="Máximo de agregados">
-                                            <button type="button" class="ag-cont-btn" data-paso="-1" title="Uno menos" aria-label="Uno menos"><i class="fa fa-minus"></i></button>
-                                            <input type="text" id="txtMaxAgregados" inputmode="numeric" maxlength="3" aria-label="Máximo de agregados" autocomplete="off">
-                                            <button type="button" class="ag-cont-btn" data-paso="1" title="Uno más" aria-label="Uno más"><i class="fa fa-plus"></i></button>
-                                        </div>
-                                        <button type="button" class="ag-sin-limite" id="btnSinLimiteAg" title="Que se puedan elegir todos"><span class="ag-inf">∞</span> Sin límite</button>
-                                        <span class="ag-maximo-estado" id="estadoMaxAgregados" aria-live="polite"></span>
-                                    </div>
-                                    <!-- v1.35.1 (pedido del usuario): extras con cobro (solo si está activado en Configuraciones) -->
-                                    <div class="ag-extras-producto" id="bloqueExtrasProducto" style="display:none">
-                                        <label class="op-switch">
-                                            <input id="ckExtrasProducto" type="checkbox">
-                                            <span class="op-switch-pista" aria-hidden="true"></span>
-                                            <span class="op-switch-texto">
-                                                <b><i class="fa fa-plus-circle"></i> Permitir agregados extra con cobro</b>
-                                                <small id="lblExtrasProducto"></small>
-                                            </span>
-                                        </label>
-                                    </div>
+                                <div class="agx-campo agx-num">
+                                    <label for="cantidadAgregado">Cantidad</label>
+                                    <input type="number" min="0" max="50000" class="form-control input-sm" onkeypress="return soloNumeros(event)" onpaste="return false;"
+                                        ondrop="return false;" autocomplete="off" name="cantidadAgregado" id="cantidadAgregado" requerido="si" value="" />
                                 </div>
-                            </div>
-                        </fieldset>
-                        <br>
-                        <fieldset>
-                            <div class="col-md-12">
-                                <div class="panel panel-default">
-                                    <div class="panel-body table-responsive">
-                                        <table id="tableAgregados" class="table table-hover display" style="width:100%">
-                                            <thead>
-                                                <tr>
-                                                    <th>CODIGO</th>
-                                                    <th>PRODUCTO DE VENTA C/AGREGADO</th>
-                                                    <th>AGREGADO</th>
-                                                    <th>CANTIDAD</th>
-                                                    <th>VALOR ADICIONAL</th>
-                                                    <th title="Imprimir en su propio destino: el agregado sale en la impresora de su producto">SALE EN SU DESTINO</th>
-                                                    <th>ACTIVO</th>
-                                                    <th style="width:10%">ACCION</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="detalleAgregadosDelProducto">
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                <div class="agx-campo agx-num">
+                                    <label for="valorAdicionalAgregado">Valor $</label>
+                                    <input type="number" min="0" max="50000" class="form-control input-sm" onkeypress="return soloNumeros(event)" onpaste="return false;"
+                                        ondrop="return false;" autocomplete="off" name="valorAdicionalAgregado" id="valorAdicionalAgregado" requerido="si" value="" />
                                 </div>
+                                <button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-success agx-grabar" id="btnGrabarAgregado"><i class="fa fa-plus"></i> Agregar</button>
                             </div>
-                        </fieldset>
+                            <div class="agx-opciones">
+                                <label title="El agregado sale en la impresora que tiene en la Carta (ej. la salsa en la barra). Apagado: sale junto con el producto.">
+                                    <input id="ckUsarDestinoDeImpresion" type="checkbox"> <i class="fa fa-print"></i> Imprimir en su propio destino</label>
+                                <label title="Se ofrece en la Caja. Apagado: queda guardado, pero no se ofrece.">
+                                    <input id="ckVigenciaAgregado" type="checkbox"> Activo</label>
+                                <!-- v1.30.1: a qué impresora sale -->
+                                <span id="infoDestinoAgregado" class="agx-destino" style="display:none"></span>
+                            </div>
+                        </div>
+
+                        </div>
+                        <div class="agx-der">
+                        <!-- 3. Lista de agregados del producto (cantidad y valor se guardan al cambiarlos) -->
+                        <div class="agx-lista-cab"><b>Agregados de este producto</b> <span id="lblCuantosAg"></span></div>
+                        <div class="table-responsive agx-tabla">
+                            <table id="tableAgregados" class="table table-hover" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Agregado</th>
+                                        <th class="text-center" style="width:90px">Cantidad</th>
+                                        <th class="text-center" style="width:110px">Valor $</th>
+                                        <th class="text-center" style="width:120px" title="Imprimir en su propio destino">Su impresora</th>
+                                        <th class="text-center" style="width:80px">Activo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detalleAgregadosDelProducto">
+                                </tbody>
+                            </table>
+                        </div>
+                        </div>
+                        </div>
 
                         <!-- FIN CAMPOS DE REGISTRO  -->
                     </div>
