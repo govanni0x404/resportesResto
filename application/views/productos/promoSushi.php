@@ -86,6 +86,9 @@
     #ModalPromosSushi .ps-modo { margin-bottom: 0; flex: 0 0 auto; }
     #ModalPromosSushi .ps-elegir { flex: 1 1 auto; }
     .ps-seccion[data-ps-seccion="datos"] .ps-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .ps-seccion[data-ps-seccion="datos"] .ps-form .ps-check-col { grid-column: auto; }
+    .ps-seccion[data-ps-seccion="datos"] .ps-check-col .ps-check { display: flex !important; flex-wrap: nowrap; align-items: flex-start; line-height: 1.35; }
+    .ps-seccion[data-ps-seccion="datos"] .ps-check-col .ps-check input { flex: 0 0 auto; margin: 1px 0 0; }   /* v1.32.4: Destino, Vigente y Precio por envoltorio en una fila */
     .ps-seccion[data-ps-seccion="elegir"] .ps-lista { max-height: 430px; }
     .ps-seccion[data-ps-seccion="elegir"] .ps-picker-lista { max-height: 250px; }
     .ps-seccion[data-ps-seccion="elegir"] .ps-agregar { grid-template-columns: minmax(0, 1fr) 100px auto; }
@@ -93,6 +96,12 @@
 .ps-fija { flex-direction: column; align-items: stretch !important; margin-top: 0 !important; }
 .ps-fija .btn { margin-left: 0 !important; align-self: flex-start; }
 .ps-fija .ps-fija-txt { flex: 0 0 auto !important; }
+/* v1.32.4: guía de pasos para una promo nueva (en el lugar del recuadro de promo fija) */
+.ps-guia h5 { margin: 0 0 10px; font-size: 14px; font-weight: 800; color: var(--t-texto-fuerte, #111827); }
+.ps-guia ol { margin: 0; padding: 0; list-style: none; counter-reset: paso; }
+.ps-guia li { position: relative; padding: 0 0 12px 36px; font-size: 13px; line-height: 1.45; color: var(--t-texto-suave, #4B5563); counter-increment: paso; }
+.ps-guia li::before { content: counter(paso); position: absolute; left: 0; top: -1px; width: 24px; height: 24px; border-radius: 50%; background: var(--t-primario, #15803D); color: #fff; font-size: 12px; font-weight: 800; text-align: center; line-height: 24px; }
+.ps-guia li b { color: var(--t-texto-fuerte, #111827); }
 .ps-secciones .prod-sec-btn:disabled { opacity: .45; cursor: not-allowed; }
 .ps-limite { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: var(--t-primario-suave, #E8F5EC); }
 .ps-limite label { margin: 0; font-weight: 800; }
@@ -145,8 +154,8 @@
                             <div class="ps-solo-rol"><label for="psPiezasRol">Piezas por roll</label><input type="text" inputmode="numeric" class="form-control" id="psPiezasRol" value="10"></div>
                             <div><label for="psFamilia">Familia <a class="ps-nueva-fam" id="psNuevaFamilia" title="Crear una familia nueva (queda elegida)"><i class="fa fa-plus"></i> Nueva</a></label><select class="form-control" id="psFamilia"></select></div>
                             <div><label for="psDestino">Destino de impresión</label><select class="form-control" id="psDestino"></select></div>
-                            <div class="ps-ancho"><label class="ps-check"><input type="checkbox" id="psVigente" checked> Vigente (se vende en la Caja)</label></div>
-                            <div class="ps-ancho ps-solo-rol"><label class="ps-check" title="Cada roll va en su propia línea con el precio de su envoltorio (se pone en la parte 2, Envoltorios). Un roll con un envoltorio sin precio lleva su parte del precio de la promo."><input type="checkbox" id="psPrecioEnv"> Cada roll se cobra según su envoltorio</label></div>
+                            <div class="ps-ancho ps-check-col"><label class="ps-check"><input type="checkbox" id="psVigente" checked> Vigente (se vende en la Caja)</label></div>
+                            <div class="ps-ancho ps-solo-rol ps-check-col"><label class="ps-check" title="Cada roll va en su propia línea con el precio de su envoltorio (se pone en la parte 2, Envoltorios). Un roll con un envoltorio sin precio lleva su parte del precio de la promo."><input type="checkbox" id="psPrecioEnv"> Cada roll se cobra según su envoltorio</label></div>
                         </div>
                         <div class="ps-pie-form">
                             <small id="psAyudaForm"></small>
@@ -316,7 +325,17 @@
     function pintarFija() {
         var $f = $('#psFija');
         pintarSecciones();
-        if (!ps.promo || !(ps.datos && ps.datos.con_opciones)) { $f.hide(); return; }
+        if (!ps.promo) {
+            // v1.32.4: promo nueva: los pasos, en el lugar del recuadro de promo fija
+            $f.show().removeClass('on').addClass('ps-guia').html('<h5><i class="fa fa-lightbulb-o"></i> Cómo crear una promo</h5><ol>'
+                + '<li><b>Datos:</b> nombre, ' + (esRol() ? 'cuántos rolls trae' : 'cuántas piezas trae') + ', precio y familia. Luego <b>Grabar promo</b>.</li>'
+                + '<li><b>Lo que el cliente elige</b> (parte 2): agrega los rellenos, envoltorios' + (cfgSushi().bases ? ', bases' : '') + (cfgSushi().salsas ? ', salsas' : '') + ' y extras, y el máximo de cada uno.</li>'
+                + (esRol() ? '<li>Opcional: marca <b>Cada roll se cobra según su envoltorio</b> y pon el precio de cada envoltorio en la parte 2.</li>' : '')
+                + '<li>En la <b>Caja</b> se arma al venderla. Si siempre es igual, ármala una vez y marca <b>«Dejar esta promo fija»</b>.</li></ol>');
+            return;
+        }
+        $f.removeClass('ps-guia');
+        if (!(ps.datos && ps.datos.con_opciones)) { $f.hide(); return; }
         $f.show().toggleClass('on', !!ps.promo.fija).html(ps.promo.fija
             ? '<div class="ps-fija-txt"><i class="fa fa-lock"></i> <b>Esta promo está FIJA.</b> En la Caja se agrega ya armada, sin preguntar.<br><small>Para cambiarla solo en una venta, toca su nombre en la Caja. Para que se vuelva a armar siempre, quítale lo fijo:</small></div>'
                 + '<button type="button" class="btn btn-warning" id="btnPsQuitarFija"><i class="fa fa-unlock"></i> Quitar fija</button>'
