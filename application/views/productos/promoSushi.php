@@ -1,7 +1,7 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <!-- v1.25.0: Promos de sushi armables (Productos > botón "Promos Sushi"). Modelo: Mpromosushi. En la Caja: js.php abrirSushi -->
 <style>
-#ModalPromosSushi .modal-dialog { width: 980px; max-width: calc(100vw - 24px); }
+#ModalPromosSushi .modal-dialog { width: 1320px; max-width: calc(100vw - 32px); margin-top: 16px; }   /* v1.32.3: más ancha, menos larga */
 #ModalPromosSushi .modal-content { border: 0; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 60px rgba(17, 24, 39, .28); }
 #ModalPromosSushi .modal-footer { padding: 12px 20px; background: #fff; border-top: 1px solid var(--t-borde, #E5E7EB); }
 #ModalPromosSushi .modal-footer .btn { min-width: 120px; height: 40px; border-radius: 9px; font-weight: 700; }
@@ -74,6 +74,25 @@
 #ModalPromosSushi .ps-secciones + .lm-cuerpo { padding-top: 14px; }
 .ps-seccion { display: none; }
 .ps-seccion.activa { display: block; }
+/* v1.32.3 (pedido del usuario): a lo ancho. Parte 1: datos a la izquierda y "promo fija" a la derecha.
+   Parte 2: lo que ya tiene la promo a la izquierda y "Agregar" a la derecha. En pantallas chicas, una columna. */
+@media (min-width: 992px) {
+    .ps-seccion.activa { display: grid; gap: 14px; align-items: start; }
+    .ps-seccion[data-ps-seccion="datos"].activa { grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); }
+    .ps-seccion[data-ps-seccion="elegir"].activa { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .ps-seccion.activa > .lm-tarjeta + .lm-tarjeta { margin-top: 0; }
+    .ps-seccion.activa > .lm-tarjeta { align-self: start; }
+    #ModalPromosSushi .ps-arriba { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    #ModalPromosSushi .ps-modo { margin-bottom: 0; flex: 0 0 auto; }
+    #ModalPromosSushi .ps-elegir { flex: 1 1 auto; }
+    .ps-seccion[data-ps-seccion="datos"] .ps-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .ps-seccion[data-ps-seccion="elegir"] .ps-lista { max-height: 430px; }
+    .ps-seccion[data-ps-seccion="elegir"] .ps-picker-lista { max-height: 250px; }
+    .ps-seccion[data-ps-seccion="elegir"] .ps-agregar { grid-template-columns: minmax(0, 1fr) 100px auto; }
+}
+.ps-fija { flex-direction: column; align-items: stretch !important; margin-top: 0 !important; }
+.ps-fija .btn { margin-left: 0 !important; align-self: flex-start; }
+.ps-fija .ps-fija-txt { flex: 0 0 auto !important; }
 .ps-secciones .prod-sec-btn:disabled { opacity: .45; cursor: not-allowed; }
 .ps-limite { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: var(--t-primario-suave, #E8F5EC); }
 .ps-limite label { margin: 0; font-weight: 800; }
@@ -97,7 +116,7 @@
             </div>
             <!-- v1.32.1 (pedido del usuario): como la ficha de la Carta, en dos partes: los datos de la promo y lo que el cliente elige -->
             <div class="lm-cuerpo">
-                <div class="lm-tarjeta">
+                <div class="lm-tarjeta ps-arriba">
                     <div class="ps-modo" id="psModo">
                         <button type="button" data-modo="pieza" class="on"><i class="fa fa-th"></i> Por pieza <b>0</b></button>
                         <button type="button" data-modo="rol"><i class="fa fa-circle-o"></i> Por roll <b>0</b></button>
