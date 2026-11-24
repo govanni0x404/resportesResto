@@ -46,6 +46,8 @@ function ObtenerAgregadosDelProducto(idProducto) {
         
         var obj = $.parseJSON(datos);
         var tbl = '';
+        // v1.32.2: el recuadro del máximo cuenta los agregados activos al día
+        if ($.isArray(obj)) { maxAg.activos = $.grep(obj, function (v) { return v.vigente == 't' || v.vigente === true; }).length; pintarMaxAgregados(); }
         
         if (obj.length === 0) {
             tbl = '<tr><td colspan="8" class="text-center">No hay agregados para este producto</td></tr>';
@@ -755,32 +757,52 @@ $(document).on('change', '.ck-destino-propio', function () {
         .always(function () { $c.prop('disabled', false); });
 });
 
-// v1.30.3 (pedido del usuario): máximo de agregados que se pueden elegir en la Caja para este producto (vacío o 0 = sin límite)
-function textoMaxAgregados(r) {
-    var n = r.agregados || 0;
-    return (r.maximo > 0 ? 'En la Caja se eligen hasta ' + r.maximo : 'Sin límite: se pueden elegir todos') + ' · el producto tiene ' + n + (n === 1 ? ' agregado activo' : ' agregados activos');
+// v1.30.3 (pedido del usuario): máximo de agregados que se pueden elegir en la Caja para este producto (0 = sin límite).
+// v1.32.2: contador - / + y botón "Sin límite"; se guarda solo al cambiar (sin botón Guardar)
+var maxAg = { id: 0, valor: 0, activos: 0, timer: null };
+function pintarMaxAgregados() {
+    var v = maxAg.valor, n = maxAg.activos;
+    $('#txtMaxAgregados').val(v > 0 ? v : '').attr('placeholder', '∞');
+    $('#btnSinLimiteAg').toggleClass('activo', v === 0);
+    $('#bloqueMaxAgregados .ag-cont-btn[data-paso="-1"]').prop('disabled', v === 0);
+    $('#bloqueMaxAgregados .ag-cont-btn[data-paso="1"]').prop('disabled', v >= 100);
+    $('#lblMaxAgregados').html(v > 0
+        ? 'El cliente elige <b>hasta ' + v + '</b> de ' + n + (n === 1 ? ' agregado activo' : ' agregados activos') + (v >= n && n ? ' (alcanza para todos)' : '') + '.'
+        : 'Sin límite: puede elegir los ' + n + (n === 1 ? ' agregado activo' : ' agregados activos') + '.');
 }
 function cargarMaxAgregados(idProducto) {
-    $('#txtMaxAgregados').val('');
-    $('#lblMaxAgregados').text('');
+    maxAg = { id: idProducto, valor: 0, activos: 0, timer: null };
+    $('#estadoMaxAgregados').text('').removeClass('error');
+    pintarMaxAgregados();
     $.post(base_url + 'index.php/Productos/maxAgregados', { id_producto: idProducto }, null, 'json').done(function (r) {
-        if (!r || !r.ok) return;
-        $('#txtMaxAgregados').val(r.maximo > 0 ? r.maximo : '');
-        $('#lblMaxAgregados').text(textoMaxAgregados(r));
+        if (!r || !r.ok || maxAg.id !== idProducto) return;
+        maxAg.valor = r.maximo > 0 ? r.maximo : 0;
+        maxAg.activos = r.agregados || 0;
+        pintarMaxAgregados();
     });
 }
-$(document).on('click', '#btnGrabarMaxAgregados', function () {
-    var id = $('#txtID').val(), v = $.trim($('#txtMaxAgregados').val());
+function guardarMaxAgregados(valor) {
+    var id = $('#txtID').val();
     if (!id || id === '0') return;
-    var max = v === '' ? 0 : parseInt(v, 10);
-    if (!(max >= 0) || max > 100) { showAppAlert('warning', 'El máximo debe ser un número entre 0 y 100 (vacío o 0 = sin límite)'); return; }
-    var $b = $(this).prop('disabled', true);
-    $.post(base_url + 'index.php/Productos/maxAgregados', { id_producto: id, maximo: max }, null, 'json').done(function (r) {
-        showAppAlert('success', max > 0 ? 'Listo: en la Caja se podrán elegir hasta ' + max + ' agregados de este producto' : 'Listo: este producto no tiene límite de agregados');
-        cargarMaxAgregados(id);
-    }).fail(function (x) {
-        showAppAlert('error', (x.responseJSON && x.responseJSON.error) || 'No se pudo guardar el máximo');
-    }).always(function () { $b.prop('disabled', false); });
+    maxAg.valor = Math.max(0, Math.min(100, valor | 0));
+    pintarMaxAgregados();
+    clearTimeout(maxAg.timer);
+    $('#estadoMaxAgregados').text('Guardando…').removeClass('error');
+    maxAg.timer = setTimeout(function () {   // espera a que deje de tocar + / -
+        $.post(base_url + 'index.php/Productos/maxAgregados', { id_producto: id, maximo: maxAg.valor }, null, 'json').done(function () {
+            $('#estadoMaxAgregados').html('<i class="fa fa-check"></i> Guardado');
+        }).fail(function (x) {
+            $('#estadoMaxAgregados').text('No se guardó').addClass('error');
+            showAppAlert('error', (x.responseJSON && x.responseJSON.error) || 'No se pudo guardar el máximo');
+        });
+    }, 500);
+}
+$(document).on('click', '#bloqueMaxAgregados .ag-cont-btn', function () { guardarMaxAgregados(maxAg.valor + Number($(this).data('paso'))); });
+$(document).on('click', '#btnSinLimiteAg', function () { guardarMaxAgregados(0); });
+$(document).on('input', '#txtMaxAgregados', function () { this.value = this.value.replace(/\D/g, '').slice(0, 3); });
+$(document).on('change', '#txtMaxAgregados', function () { guardarMaxAgregados(parseInt(this.value, 10) || 0); });
+$(document).on('keydown', '#txtMaxAgregados', function (e) {
+    if (e.which === 13) { e.preventDefault(); $(this).trigger('change').blur(); }
+    else if (e.which === 38 || e.which === 40) { e.preventDefault(); guardarMaxAgregados(maxAg.valor + (e.which === 38 ? 1 : -1)); }
 });
-$(document).on('keydown', '#txtMaxAgregados', function (e) { if (e.which === 13) { e.preventDefault(); $('#btnGrabarMaxAgregados').click(); } });
 </script>

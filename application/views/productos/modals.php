@@ -22,10 +22,24 @@
 .ag-op.ya-esta small { font-weight: 600; color: var(--t-texto-tenue, #6B7280); }
 .ag-varios-vacio { grid-column: 1 / -1; padding: 18px; text-align: center; color: var(--t-texto-tenue, #6B7280); }
 /* v1.30.3: máximo de agregados por producto */
-.ag-maximo { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; background: var(--t-fondo-alt, #F9FAFB); }
-.ag-maximo label { display: block; margin-bottom: 6px; font-weight: 600; }
-.ag-maximo-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-.ag-maximo-fila input { width: 110px; text-align: center; font-weight: 700; }
+.ag-maximo { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 14px; padding: 14px 16px; border: 1px solid var(--t-primario-borde, #BBE3C8); border-radius: 12px; background: var(--t-primario-suave, #E8F5EC); }
+.ag-maximo-icono { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #fff; color: var(--t-primario, #15803D); font-size: 18px; box-shadow: 0 1px 2px rgba(17, 24, 39, .08); }
+.ag-maximo-texto { flex: 1 1 220px; min-width: 0; line-height: 1.35; }
+.ag-maximo-texto > b { display: block; font-size: 14px; color: var(--t-texto-fuerte, #111827); }
+.ag-maximo-texto small { display: block; margin-top: 2px; font-size: 12.5px; color: var(--t-texto-suave, #4B5563); }
+.ag-maximo-control { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.ag-contador { display: inline-flex; align-items: center; height: 40px; border: 1px solid var(--t-borde, #D1D5DB); border-radius: 10px; background: #fff; overflow: hidden; }
+.ag-cont-btn { width: 38px; height: 100%; border: 0; background: transparent; color: var(--t-texto-suave, #4B5563); font-size: 12px; }
+.ag-cont-btn:hover:not(:disabled) { background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); }
+.ag-cont-btn:disabled { opacity: .35; cursor: not-allowed; }
+.ag-contador input { width: 52px; height: 100%; border: 0; border-left: 1px solid var(--t-borde-suave, #EEF0F3); border-right: 1px solid var(--t-borde-suave, #EEF0F3); text-align: center; font-size: 17px; font-weight: 800; color: var(--t-texto-fuerte, #111827); outline: none; }
+.ag-contador input::placeholder { font-size: 20px; color: var(--t-primario, #15803D); }
+.ag-sin-limite { height: 40px; padding: 0 12px; border: 1px solid var(--t-borde, #D1D5DB); border-radius: 10px; background: #fff; font-size: 13px; font-weight: 700; color: var(--t-texto-suave, #4B5563); }
+.ag-sin-limite .ag-inf { font-size: 17px; line-height: 0; vertical-align: -1px; margin-right: 2px; }
+.ag-sin-limite.activo { border-color: var(--t-primario, #15803D); background: var(--t-primario, #15803D); color: #fff; }
+.ag-maximo-estado { min-width: 74px; font-size: 12px; font-weight: 700; color: var(--t-primario, #15803D); }
+.ag-maximo-estado.error { color: #B91C1C; }
+@media (max-width: 520px) { .ag-maximo-control { width: 100%; } }
 .ag-varios-pie { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; justify-content: space-between; padding: 8px 12px; border-top: 1px solid var(--t-borde, #E5E7EB); background: var(--t-fondo-alt, #F3F4F6); }
 .ag-varios-pie span { font-weight: 700; color: var(--t-primario-osc, #116632); }
 .ag-varios-pie small { color: var(--t-texto-tenue, #6B7280); }
@@ -925,12 +939,21 @@
                         <!-- v1.30.3: máximo de agregados que se pueden elegir en la Caja para este producto -->
                         <fieldset>
                             <div class="col-md-12">
+                                <!-- v1.32.2: rediseño del máximo de agregados (contador - / +, se guarda solo) -->
                                 <div class="ag-maximo" id="bloqueMaxAgregados">
-                                    <label for="txtMaxAgregados"><i class="fa fa-sliders"></i> Máximo de agregados a elegir en la Caja</label>
-                                    <div class="ag-maximo-fila">
-                                        <input type="number" id="txtMaxAgregados" class="form-control input-sm" min="0" max="100" step="1" placeholder="Sin límite" inputmode="numeric">
-                                        <button type="button" class="btn btn-success btn-sm" id="btnGrabarMaxAgregados"><i class="fa fa-check"></i> Guardar máximo</button>
-                                        <small id="lblMaxAgregados" class="text-muted"></small>
+                                    <div class="ag-maximo-icono"><i class="fa fa-sliders"></i></div>
+                                    <div class="ag-maximo-texto">
+                                        <b>Máximo de agregados en la Caja</b>
+                                        <small id="lblMaxAgregados">Cuántos agregados puede elegir el cliente de este producto.</small>
+                                    </div>
+                                    <div class="ag-maximo-control">
+                                        <div class="ag-contador" role="group" aria-label="Máximo de agregados">
+                                            <button type="button" class="ag-cont-btn" data-paso="-1" title="Uno menos" aria-label="Uno menos"><i class="fa fa-minus"></i></button>
+                                            <input type="text" id="txtMaxAgregados" inputmode="numeric" maxlength="3" aria-label="Máximo de agregados" autocomplete="off">
+                                            <button type="button" class="ag-cont-btn" data-paso="1" title="Uno más" aria-label="Uno más"><i class="fa fa-plus"></i></button>
+                                        </div>
+                                        <button type="button" class="ag-sin-limite" id="btnSinLimiteAg" title="Que se puedan elegir todos"><span class="ag-inf">∞</span> Sin límite</button>
+                                        <span class="ag-maximo-estado" id="estadoMaxAgregados" aria-live="polite"></span>
                                     </div>
                                 </div>
                             </div>
