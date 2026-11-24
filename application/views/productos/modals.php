@@ -102,7 +102,7 @@
 }
 /* v1.24.12: ficha del producto en secciones (Datos / Parámetros / Imagen), una a la vez y a todo el ancho, con letras y
    campos más grandes (antes dos columnas y todo muy chico) */
-.prod-secciones { display: flex; gap: 6px; padding: 10px 18px 0; background: #fff; border-bottom: 1px solid var(--t-borde, #E5E7EB); overflow-x: auto; }
+.prod-secciones { flex: 0 0 auto; position: relative; z-index: 2; display: flex; gap: 6px; padding: 10px 18px 0; background: #fff; border-bottom: 1px solid var(--t-borde, #E5E7EB); overflow-x: auto; }
 .prod-sec-btn { flex: 0 0 auto; border: 0; border-bottom: 3px solid transparent; background: transparent; padding: 10px 16px 11px; font-size: 15px; font-weight: 700; color: var(--t-texto-suave, #4B5563); white-space: nowrap; }
 .prod-sec-btn i { margin-right: 6px; }
 .prod-sec-btn:hover { color: var(--t-texto-fuerte, #111827); }
@@ -122,11 +122,19 @@
 .t-prod-modal .select2-container .select2-selection--single .select2-selection__rendered { line-height: 42px; font-size: 15px; padding-left: 12px; }
 .t-prod-modal .select2-container .select2-selection--single .select2-selection__arrow { height: 42px; }
 .t-prod-modal fieldset > [class*="col-"] { margin-bottom: 16px; }
-/* Datos: código y nombre lado a lado (cada uno su columna) */
-@media (min-width: 992px) {
-    .t-prod-modal [data-seccion="datos"] fieldset:has(#txtCbarra), .t-prod-modal [data-seccion="datos"] fieldset:has(#txtNombre) { width: 50%; float: left; margin: 0; }
-    .t-prod-modal [data-seccion="datos"] fieldset:has(#txtCbarra) > .col-sm-12, .t-prod-modal [data-seccion="datos"] fieldset:has(#txtNombre) > .col-md-12 { width: 100%; }
-}
+/* v1.34.1 (pedido del usuario): Datos del producto en una grilla de 6 columnas: 3 campos por fila (o 2 anchos), sin huecos */
+.prod-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0 18px; margin-bottom: 6px; }
+.prod-grid > div { grid-column: span 6; min-width: 0; margin-bottom: 16px; }
+.prod-grid > .pg-2 { grid-column: span 2; }
+.prod-grid > .pg-3 { grid-column: span 3; }
+.prod-grid > .pg-4 { grid-column: span 4; }
+.prod-grid > [data-id-auto] { display: none; }
+.t-prod-modal .prod-grid .destino2-check { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-size: 12.5px; font-weight: 600;
+    text-transform: none; letter-spacing: 0; color: var(--t-texto-suave, #4B5563); cursor: pointer; min-height: 0; }
+.t-prod-modal .prod-grid .destino2-check input { margin: 0; accent-color: var(--t-primario, #15803D); }
+.t-prod-modal .prod-grid #cajaDestino2 { margin-top: 6px; }
+@media (max-width: 991px) { .prod-grid > .pg-2, .prod-grid > .pg-3 { grid-column: span 3; } .prod-grid > .pg-4 { grid-column: span 6; } }
+@media (max-width: 600px) { .prod-grid > .pg-2, .prod-grid > .pg-3, .prod-grid > .pg-4 { grid-column: span 6; } }
 .t-prod-modal [data-seccion="datos"] .t-card-titulo { clear: both; }
 /* Parámetros: casillas grandes */
 .t-prod-modal #tabUnidadMedidaInsumo .btn-group { padding: 14px 16px; }
@@ -191,99 +199,84 @@
                             <div class="tab-pane fade active in" id="tabDatosInsumo">
                                 <br>
                                 <!-- CAMPOS DE REGISTRO  -->
+                                <!-- v1.34.1 (pedido del usuario): datos en una grilla ordenada (antes los selects ocupaban media pantalla
+                                     cada uno y quedaban huecos). Sin el impuesto adicional (ILA): ya no va en la Carta. -->
                                 <div class="t-card-titulo"><i class="fa fa-tag"></i> Datos del producto</div>
-                                <fieldset>
-                                    <div class="col-sm-3" style="display:none" data-id-auto="1">
+                                <div class="prod-grid">
+                                    <div style="display:none" data-id-auto="1">
                                         <label for="txtID">ID</label>
                                         <input type="text" disabled class="form-control input-sm input-sm" name="txtID"
                                             id="txtID" requerido="no" value="">
                                     </div>
-                                    <div class="col-sm-12">
+                                    <div class="pg-2">
                                         <label for="txtCbarra">Cód. Barra</label>
                                         <input type="text" autocomplete="off" class="form-control input-sm input-sm"
                                             name="txtCbarra" id="txtCbarra" requerido="no" value="">
                                     </div>
-                                </fieldset>
-                                <br>
-                                <fieldset>
-                                    <div class="col-md-12">
+                                    <div class="pg-4">
                                         <label for="txtNombre">Nombre Producto</label>
                                         <input type="text" autocomplete="off" maxlength="100"
                                             class="form-control input-sm input-sm" name="txtNombre" id="txtNombre"
                                             requerido="si" value="">
                                     </div>
-
-                                </fieldset>
-                                <br>
+                                </div>
                                 <div class="t-card-titulo"><i class="fa fa-sitemap"></i> Clasificación</div>
-                                <fieldset>
-                                    <div class="col-md-6">
+                                <div class="prod-grid">
+                                    <div class="pg-2">
                                         <label for="cboFamilia">Familia
                                             <sup><a onclick="crearNuevaFamilia()">Nuevo</a></sup>
                                         </label>
                                         <select id="cboFamilia" nombre="cboFamilia" class="form-control input-sm"
                                             style="width:100%" requerido="si"></select>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="pg-2">
                                         <label for="cboSubFamilia">Sub Familia
                                             <sup><a onclick="crearNuevaSubFamilia()">Nuevo</a></sup>
                                         </label>
                                         <select id="cboSubFamilia" nombre="cboSubFamilia" class="form-control input-sm"
                                             style="width:100%" requerido="si"></select>
                                     </div>
-                                </fieldset>
-                                <br>
-                                <fieldset>
-                                    <div class="col-md-6">
+                                    <div class="pg-2">
                                         <label for="cboUmedida">U/Medida</label>
                                         <select id="cboUmedida" nombre="cboUmedida" class="form-control input-sm"
                                             style="width:100%" requerido="si"></select>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="cboDestinoDeImpresion">Destino De Impresion </label>
-                                        <select id="cboDestinoDeImpresion" nombre="cboDestinoDeImpresion"
-                                            class="form-control input-sm" style="width:100%" requerido="si"></select>
-                                    </div>
-                                    <!-- v1.30.0 (pedido del usuario): el mismo producto en dos comandas (ej. arroz en la cocina y carne en la parrilla) -->
-                                    <div class="col-md-12 destino2-fila">
-                                        <label class="destino2-check" title="El producto sale completo en su destino de impresión y también en este (ej. arroz con carne: el arroz en la cocina y la carne en la parrilla). Cada comanda dice dónde más salió.">
-                                            <input type="checkbox" id="ckDestino2"> Imprimir también en otro destino
-                                        </label>
-                                        <div id="cajaDestino2" style="display:none"><select id="cboDestino2" class="form-control input-sm" style="width:100%" aria-label="Segundo destino de impresión"></select></div>
-                                    </div>
-
-                                </fieldset>
-                                <br>
-                                <div class="t-card-titulo"><i class="fa fa-cubes"></i> Inventario, impuesto y receta</div>
-                                <fieldset>
-                                    <div class="col-md-6">
+                                </div>
+                                <div class="t-card-titulo"><i class="fa fa-cubes"></i> Venta e impresión</div>
+                                <div class="prod-grid">
+                                    <div class="pg-2">
                                         <label for="cboBodega">Bodega
                                             <sup><a onclick="crearNuevaBodega()">Nuevo</a></sup>
                                         </label>
                                         <select id="cboBodega" nombre="cboBodega" class="form-control input-sm"
                                             style="width:100%" requerido="si"></select>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="pg-2">
                                         <label for="cboImpuestoIva">Impuesto Iva</label>
                                         <select id="cboImpuestoIva" class="form-control input-sm" style="width:100%"
                                             requerido="si"></select>
                                     </div>
-                                    <div class="col-md-6">
-                                        <!-- v1.20.0: impuesto adicional (ILA): bebidas, cervezas, vinos y licores -->
-                                        <label for="cboImpuestoIla">Impuesto adicional (ILA)</label>
-                                        <select id="cboImpuestoIla" class="form-control input-sm" style="width:100%"></select>
+                                    <div class="pg-2">
+                                        <label for="cboDestinoDeImpresion">Destino De Impresion </label>
+                                        <select id="cboDestinoDeImpresion" nombre="cboDestinoDeImpresion"
+                                            class="form-control input-sm" style="width:100%" requerido="si"></select>
+                                        <!-- v1.30.0 (pedido del usuario): el mismo producto en dos comandas (ej. arroz en la cocina y carne en la parrilla) -->
+                                        <label class="destino2-check" title="El producto sale completo en su destino de impresión y también en este (ej. arroz con carne: el arroz en la cocina y la carne en la parrilla). Cada comanda dice dónde más salió.">
+                                            <input type="checkbox" id="ckDestino2"> Imprimir también en otro destino
+                                        </label>
+                                        <div id="cajaDestino2" style="display:none"><select id="cboDestino2" class="form-control input-sm" style="width:100%" aria-label="Segundo destino de impresión"></select></div>
                                     </div>
-                                </fieldset>
-                                <br>
-                                <fieldset>
-                                    <div class="col-md-6">
+                                </div>
+                                <div class="t-card-titulo"><i class="fa fa-book"></i> Receta y menú</div>
+                                <div class="prod-grid">
+                                    <div class="pg-3">
                                         <label for="cboReceta">Receta
                                             <sup><a onclick="AbrirModalNuevoReceta()">Nuevo</a></sup>
                                         </label>
                                         <select id="cboReceta" class="form-control input-sm" style="width:100%"
                                             requerido="si"></select>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="pg-3">
                                         <label for="cboMenu">Menu
                                             <sup><a onclick="AbrirModalListadoMenu()" style="color: var(--t-primario, #B4432E); cursor: pointer;">Nuevo</a></sup>
                                             <sup><a onclick="QuitarMenuDeProducto()" style="color: var(--t-peligro, #C9372C); cursor: pointer;">Quitar</a></sup>
@@ -291,7 +284,7 @@
                                         <select id="cboMenu" class="form-control input-sm" style="width:100%"
                                             requerido="no"></select>
                                     </div>
-                                </fieldset>
+                                </div>
 
                                 <!-- FIN CAMPOS DE REGISTRO  -->
                             </div>

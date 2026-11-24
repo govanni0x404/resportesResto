@@ -284,6 +284,16 @@ class Productos extends CI_Controller
 			$miData['valor_ila'] = (float)$imp->valor;
 		} elseif ($id > 0) {
 			unset($miData['impto_ila'], $miData['valor_ila']);
+		} else {
+			// v1.34.1: la Carta ya no tiene el ILA: un producto nuevo queda con el impuesto "sin ILA" (valor 0)
+			$this->load->helper('tenant');
+			$sinIla = get_tenant_db($this)->query("SELECT id_impuesto FROM impuesto WHERE COALESCE(valor, 0) = 0 ORDER BY (nombre_impuesto ILIKE '%EXENTO%') DESC, id_impuesto LIMIT 1")->row();
+			if (!$sinIla) {
+				echo json_encode(['success' => false, 'error' => 'No hay un impuesto "sin ILA" (valor 0) en la tabla de impuestos']);
+				return;
+			}
+			$miData['impto_ila'] = (int)$sinIla->id_impuesto;
+			$miData['valor_ila'] = 0;
 		}
 		unset($producto['ila_en_formulario']);
 
@@ -521,6 +531,8 @@ class Productos extends CI_Controller
 			'id_dimpresion_agregado' => 0,
 		);
 		$r = $this->Mproductos->grabarAgregados($id, $miData);
+		// v1.34.2: el producto queda "Con Agregado" en cuanto tiene uno
+		if (is_array($r) && !isset($r['error'])) $this->Mproductos->marcarConAgregado((int)$miData['id_producto_maestro']);
 		echo json_encode($r);
 	}
 

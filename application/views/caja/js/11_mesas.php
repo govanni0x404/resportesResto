@@ -159,12 +159,32 @@
 			if (activo) $('#btnAnularVariasMesas').hide();
 			else $('#btnAnularVariasMesas').toggle(!!(catalogo && catalogo.config && catalogo.config.anular_varias_mesas));
 			$('#btnActualizarMesas').toggle(!activo);
-			$('#btnCancelarPlano, #btnGuardarPlano').toggle(activo);
+			$('#btnCancelarPlano, #btnGuardarPlano, #btnAlinearMesas').toggle(activo);
 			$('#mesasGrilla').toggleClass('editando', activo);
 			$('#mesasAyuda').text(activo ? 'Arrastra cada mesa a su lugar o tócala para cambiarle el nombre, y presiona Guardar plano.' : 'Toca una mesa libre para tomar el pedido, o una ocupada para agregar productos o cobrar.');
 		}
 		$('#btnOrganizarMesas').on('click', function () { modoPlano(true); renderMesas(); });
 		$('#btnCancelarPlano').on('click', function () { modoPlano(false); cargarMesas(); });
+		// v1.34.1 (pedido del usuario): alinear las mesas del sector en filas parejas. Respeta el orden en que están (de
+		// arriba hacia abajo y de izquierda a derecha); con un tipo de mesa elegido, solo esas. Se guarda con Guardar plano.
+		$('#btnAlinearMesas').on('click', function () {
+			var lista = mesasVisibles(mesasDelSector());
+			if (!lista.length) return;
+			var ancho = $('#mesasGrilla').width() || 900, cols = Math.max(1, Math.floor((ancho - MESA_GAP) / (MESA_W + MESA_GAP)));
+			var fila = function (m) { return Math.round((Number(m.y) || 0) / (MESA_H + MESA_GAP)); };
+			lista = lista.slice().sort(function (a, b) { return fila(a) - fila(b) || (Number(a.x) || 0) - (Number(b.x) || 0); });
+			// Con un tipo elegido, se ponen debajo de las demás para no taparlas
+			var y0 = MESA_GAP;
+			if (tipoMesaFiltro !== '') {
+				$.each(mesasDelSector(), function (i, m) { if ($.inArray(m, lista) < 0) y0 = Math.max(y0, (Number(m.y) || 0) + MESA_H + MESA_GAP); });
+			}
+			$.each(lista, function (i, m) {
+				m.x = MESA_GAP + (i % cols) * (MESA_W + MESA_GAP);
+				m.y = y0 + Math.floor(i / cols) * (MESA_H + MESA_GAP);
+			});
+			renderMesas();
+			toastr.info('Mesas alineadas. Presiona Guardar plano para dejarlas así');
+		});
 		$('#lnkMesas').on('hidden.bs.tab', function () { if (editandoPlano) { modoPlano(false); cargarMesas(); } });
 		$('#btnGuardarPlano').on('click', function () {
 			var $b = $(this).prop('disabled', true);

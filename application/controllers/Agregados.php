@@ -52,6 +52,9 @@ class Agregados extends CI_Controller
       'id_dimpresion_agregado' => 0,
     );
     $r = $this->Magregados->grabarNuevoAgregado($id, $miData);
+    // v1.34.2: el producto queda "Con Agregado" en cuanto tiene uno (Mproductos::marcarConAgregado)
+    $this->load->model('Mproductos');
+    $this->Mproductos->marcarConAgregado((int)$d['id_producto_maestro']);
     echo json_encode($r);
   }
 }

@@ -518,6 +518,19 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 		return array('ok' => true, 'productos' => count($destinos), 'nuevos' => (int)$nuevos, 'actualizados' => (int)$actualizados);
 	}
 
+	/**
+	 * v1.34.2 (pedido del usuario en cambios.md): al grabar un agregado, el producto queda "Con Agregado" en la base al
+	 * tiro (antes había que volver a grabar el producto, y si no, el agregado no se ofrecía). Solo si tiene alguno vigente.
+	 */
+	public function marcarConAgregado($idMaestro)
+	{
+		$this->load->helper('tenant'); $db = get_tenant_db($this);
+		$db->query('UPDATE producto p SET con_agregado = true WHERE p.id_producto = ? AND p.con_agregado IS NOT TRUE
+			AND EXISTS (SELECT 1 FROM agregados a WHERE a.id_producto_maestro = p.id_producto AND a.eliminado IS NOT TRUE AND a.vigente IS NOT FALSE)',
+			array((int)$idMaestro));
+		return $db->affected_rows() > 0;
+	}
+
 	public function grabarAgregados($id, $data)
 	{
 		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {

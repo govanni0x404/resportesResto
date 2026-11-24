@@ -1591,6 +1591,8 @@
 								<button type="button" class="btn btn-default btn-sm" id="btnOrganizarMesas"><i class="fa fa-arrows"></i> Organizar mesas</button>
 								<!-- v1.33.0: anular varias mesas a la vez (Configuraciones > Modo de la Caja web) -->
 								<button type="button" class="btn btn-default btn-sm" id="btnAnularVariasMesas" style="display:none"><i class="fa fa-ban"></i> Anular varias</button>
+								<!-- v1.34.1 (pedido del usuario): ordena las mesas en filas parejas cuando el plano quedó desordenado -->
+								<button type="button" class="btn btn-default btn-sm" id="btnAlinearMesas" style="display:none" title="Ordena las mesas de este sector en filas parejas, respetando el orden en que están"><i class="fa fa-th"></i> Alinear mesas</button>
 								<button type="button" class="btn btn-default btn-sm" id="btnCancelarPlano" style="display:none">Cancelar</button>
 								<button type="button" class="btn btn-success btn-sm" id="btnGuardarPlano" style="display:none"><i class="fa fa-check"></i> Guardar plano</button>
 							</div>

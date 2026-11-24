@@ -221,7 +221,6 @@ function ListadoCartaDeProductos() {
         ListadoDestinoDeImpresion(rowData[0].nombre_dimpresion, rowData[0].id_dimpresion);
         ListadoDeBodega(rowData[0].nombre_bodega, rowData[0].id_bodega);
         ListadoDeImpuestosIva(rowData[0].iva, rowData[0].impto_iva);
-        ListadoDeImpuestosAdicional(rowData[0].impto_ila);   // v1.20.0
         ListadoDeMenu(rowData[0].id_menu || rowData[0].menu);
         ListadoDeReceta(rowData[0].receta, rowData[0].id_receta);
         
@@ -229,6 +228,7 @@ function ListadoCartaDeProductos() {
 
         $('#ckVigente').prop('checked', rowData[0].vigente == 'SI');
         $('#ckConAgregado').prop('checked', rowData[0].con_agregado == 'SI');
+        conAgregadoEnBase = rowData[0].con_agregado == 'SI';   // v1.34.2
         $('#ckVentaPublico').prop('checked', rowData[0].venta_publico == 'SI');
         $('#ckPermitirFraccion').prop('checked', rowData[0].permite_porcion == 'SI');
         $('#ckVentaPorStock').prop('checked', rowData[0].venta_segun_stock == 'SI');
@@ -270,7 +270,6 @@ function crearNuevoProducto() {
     ListadoDestinoDeImpresion("CAJA");
     ListadoDeBodega("BODEGA PRINCIPAL");
     ListadoDeImpuestosIva("IVA 19%");
-    ListadoDeImpuestosAdicional(null);   // v1.20.0: producto nuevo, sin ILA
     ListadoDeMenu("");
     ListadoDeReceta("");
     
@@ -279,6 +278,7 @@ function crearNuevoProducto() {
     $('#ckPermitirVentaSiempre').prop('checked', false);
     $('#ckVentaDirecta').prop('checked', false);
     $('#ckConAgregado').prop('checked', false);
+    conAgregadoEnBase = false;   // v1.34.2
     $('#ckPermitirFraccion').prop('checked', false);
     $('#ckVentaPorStock').prop('checked', false);
     $('#ckElaboracionLocal').prop('checked', false);
@@ -299,7 +299,9 @@ function crearNuevoProducto() {
     });
 }
 
-$('#ckConAgregado').on('change', function() {
+// v1.34.2: delegado. Este archivo se carga antes que la ventana (productos/modals.php), así que el enlace directo no
+// encontraba la casilla y marcar "Con Agregado" nunca habilitaba el botón Agregados del producto.
+$(document).on('change', '#ckConAgregado', function() {
     var idProducto = $('#txtID').val();
     
     if ($('#ckConAgregado').prop('checked') && idProducto && idProducto != "") {
@@ -478,8 +480,9 @@ function GrabarProducto() {
         'cbarra': $('#txtCbarra').val(),
         'cbarra_auto': cbarraSugerido !== null && $.trim($('#txtCbarra').val()) === cbarraSugerido ? 1 : 0,
         'impto_iva': $('#cboImpuestoIva').val(),
-        'impto_ila': $('#cboImpuestoIla').val() || 0,   // v1.20.0: el ILA elegido (antes siempre 1 = exento)
-        'ila_en_formulario': 1,
+        // v1.34.1 (pedido del usuario): el impuesto adicional (ILA) ya no va en la Carta. Al editar se conserva el que tenga
+        // el producto; uno nuevo queda "sin ILA" (Productos::grabarNuevoProducto)
+        'impto_ila': 0,
         'id_familia': $('#cboFamilia').val(),
         'id_umedida': $('#cboUmedida').val(),
         'precio_bruto': 0,

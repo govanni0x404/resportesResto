@@ -249,7 +249,7 @@ function grabarVariosAgregados() {
         var id = pendientes[i];
         $.ajax({ url: base_url + "index.php/Productos/grabarAgregados", type: "POST", dataType: "json",
                  data: { prod: $.extend({}, datos, { 'id_producto': id }) } })
-            .done(function (r) { if (r && r.error) errores.push(nombre(id) + ': ' + r.error); else ok++; })
+            .done(function (r) { if (r && r.error) errores.push(nombre(id) + ': ' + r.error); else { ok++; agregadoGrabadoEnProducto(); } })
             .fail(function (xhr) {
                 var m = ''; try { m = (xhr.responseJSON && xhr.responseJSON.error) || JSON.parse(xhr.responseText).error || ''; } catch (e) {}
                 errores.push(nombre(id) + (m ? ': ' + m : ''));
@@ -341,6 +341,7 @@ function GrabarNuevoAgregados() {
         dataType: "json",
         success: function(response) {
             console.log("✓ Agregado grabado:", response);
+            agregadoGrabadoEnProducto();   // v1.34.2
             
             showAppAlert('success', "Agregado registrado exitosamente!", {
                 duration: 4000,
@@ -536,8 +537,27 @@ function DeshabilitarAgregado(id) {
 }
 
 
+// v1.34.2 (pedido del usuario en cambios.md): marcar "Con Agregado" habilita Agregados del producto; al grabar un
+// agregado el producto queda marcado en la base (lo hace el servidor). Si se sale sin agregar ninguno, la casilla vuelve a
+// como estaba en la base. conAgregadoEnBase lo pone jsProductos al abrir el producto.
+var conAgregadoEnBase = false;
+function agregadoGrabadoEnProducto() {
+    conAgregadoEnBase = true;
+    $('#ckConAgregado').prop('checked', true);
+    $('#btnAgregados').attr('disabled', false);
+    if (typeof tablaCartaProductos !== 'undefined') tablaCartaProductos.ajax.reload(null, false);
+}
+
 // Detectar cierre del modal de agregados
 $(document).ready(function() {
+    $('#ModalAgregadosDelProducto').on('hidden.bs.modal', function () {
+        // v1.34.2: editando un producto que no tenía agregados: si no se agregó ninguno, vuelve a la normalidad
+        if (typeof debeAbrirAgregados !== 'undefined' && debeAbrirAgregados) return;
+        if (!conAgregadoEnBase) {
+            $('#ckConAgregado').prop('checked', false);
+            $('#btnAgregados').attr('disabled', true);
+        }
+    });
     $('#ModalAgregadosDelProducto').on('hidden.bs.modal', function(e) {
         // ⭐ VERIFICAR SI FUE CANCELACIÓN MANUAL O CIERRE AUTOMÁTICO
         if ($(this).data('cancelado') === true) {
