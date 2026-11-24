@@ -24,7 +24,8 @@ if ($copia) {
 	$pruebas['privilegios_test.php'] = array($base, 'COPIA');   // lo nuevo con un rol que no es gerencia (ver el archivo)
 	$pruebas['agregados_mesa_test.php'] = array($base, 'COPIA');   // v1.30.3: máximo de agregados, agregados unidos en la mesa, descuento 0
 	$pruebas['promo_sushi_opciones_test.php'] = array($base, 'COPIA');   // v1.32.0: promos de sushi: varios a la vez, salsas, máximos, precio por envoltorio, fija
-	$pruebas['anular_varias_test.php'] = array($base, 'COPIA');   // v1.33.0: anular todas las ventas en espera y varias mesas a la vez
+	$pruebas['anular_varias_test.php'] = array($base, 'COPIA');
+	$pruebas['recetas_unidades_test.php'] = array($base, 'COPIA');   // v1.34.0: kilos y gramos en insumos, recetas y producción   // v1.33.0: anular todas las ventas en espera y varias mesas a la vez
 	if (is_file(__DIR__ . '/cocina_reservas_test.php')) $pruebas['cocina_reservas_test.php'] = array($base, 'COPIA');   // pantalla de cocina y reservas (rama de prueba)
 }
 

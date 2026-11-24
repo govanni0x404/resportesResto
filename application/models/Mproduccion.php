@@ -190,6 +190,57 @@ class Mproduccion extends CI_Model
         return $neto;
     }
 
+    /**
+     * v1.34.0: cuánto es en la unidad de INVENTARIO una cantidad escrita en la unidad de RECETA del insumo (500 GRAMO de
+     * un insumo que se guarda en KILOGRAMO = 0,5). Misma fórmula que descuenta las ventas (trigger f_addconsolidado:
+     * umedida_inventario / umedida_receta * cantidad). Antes la producción descontaba 500 KILOS.
+     */
+    public function recetaAInventario($id_insumo, $cantidadReceta)
+    {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $i = $this->db->query('SELECT COALESCE(NULLIF(umedida_inventario, 0), 1) AS inv, COALESCE(NULLIF(umedida_receta, 0), 1) AS rec
+            FROM insumo WHERE id_insumo = ?', array((int)$id_insumo))->row();
+        if (!$i) return null;
+        return round((float)$cantidadReceta * (float)$i->inv / (float)$i->rec, 6);
+    }
+
+    /** v1.34.0: el insumo elaborado (producido) es una sub receta: sale "SI" en Recetas e Insumos. */
+    public function marcarElaborado($id_insumo)
+    {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $this->db->query('UPDATE insumo SET esreceta = true WHERE id_insumo = ? AND esreceta IS NOT TRUE', array((int)$id_insumo));
+    }
+
+    /**
+     * v1.34.0 (pedido del usuario): la receta de producción del insumo (la elegida en el insumo o, si no, la última vigente)
+     * con sus insumos, para cargarla en Producción y no agregarlos de a uno. null si no tiene.
+     */
+    public function recetaParaProducir($id_insumo)
+    {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $r = $this->db->query('SELECT rp.id_receta_produccion, rp.nombre_receta_produccion, rp.cantidad, rp.id_umedida, rp.id_bodega,
+                um.nombre_umedida
+            FROM receta_produccion rp
+            LEFT JOIN umedida um ON um.id_umedida = rp.id_umedida
+            LEFT JOIN insumo i ON i.id_insumo = rp.id_insumo
+            WHERE rp.id_insumo = ? AND rp.vigente IS NOT FALSE
+            ORDER BY (rp.id_receta_produccion = COALESCE(i.id_receta_produccion_default, 0)) DESC, rp.id_receta_produccion DESC
+            LIMIT 1', array((int)$id_insumo))->row_array();
+        if (!$r) return null;
+        $r['lineas'] = $this->db->query('SELECT d.id_insumo, i.nombre_insumo, d.cantidad, d.id_umedida, um.nombre_umedida, d.id_bodega,
+                i.id_umedida_receta, i.id_umedida_inventario,
+                COALESCE(NULLIF(i.umedida_receta, 0), 1) AS m_receta, COALESCE(NULLIF(i.umedida_inventario, 0), 1) AS m_inventario,
+                ur.nombre_umedida AS nombre_umedida_receta, ui.nombre_umedida AS nombre_umedida_inventario
+            FROM detalle_receta_produccion d
+            JOIN insumo i ON i.id_insumo = d.id_insumo
+            LEFT JOIN umedida um ON um.id_umedida = d.id_umedida
+            LEFT JOIN umedida ur ON ur.id_umedida = i.id_umedida_receta
+            LEFT JOIN umedida ui ON ui.id_umedida = i.id_umedida_inventario
+            WHERE d.id_receta_produccion = ? AND d.vigente IS NOT FALSE
+            ORDER BY d.id_detalle_receta_produccion', array((int)$r['id_receta_produccion']))->result_array();
+        return $r;
+    }
+
     public function obtenerCostoPPP($id_insumo)
     {
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
@@ -221,8 +272,10 @@ class Mproduccion extends CI_Model
 
                 -- Unidad inventario
                 ui.id_umedida AS id_umedida_inventario,
-                ui.nombre_umedida AS umedida_inventario
-
+                ui.nombre_umedida AS umedida_inventario,
+                -- v1.34.0: cuántas unidades de receta son cuántas de inventario (ej. 1 KILOGRAMO = 1000 GRAMO)
+                COALESCE(NULLIF(i.umedida_receta, 0), 1) AS m_receta,
+                COALESCE(NULLIF(i.umedida_inventario, 0), 1) AS m_inventario
             FROM insumo i
             LEFT JOIN umedida ur ON i.id_umedida_receta = ur.id_umedida
             LEFT JOIN umedida ui ON i.id_umedida_inventario = ui.id_umedida

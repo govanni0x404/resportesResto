@@ -127,6 +127,20 @@ class Insumos extends CI_Controller
 			return;
 		}
 		$miData['umedida_inventario'] = $umi;
+		// v1.34.0 (pedido del usuario: "si dice 1 kg, se sabe que son 1000 gr"): si las dos unidades tienen equivalencia
+		// (KILOGRAMO y GRAMO, LITRO y MILILITRO), la medida de receta sale de ella y no de lo que se escribió a mano.
+		$this->load->model('MuMedida');
+		$eInv = $this->MuMedida->equivalenciaDe((int)($d['id_umedida_inventario'] ?? 0));
+		$eRec = $this->MuMedida->equivalenciaDe((int)($d['id_umedida_receta'] ?? 0));
+		if ($eInv && $eRec && $eInv[0] === $eRec[0]) {
+			$calc = round((float)$umi * $eInv[1] / $eRec[1], 2);   // la columna guarda 2 decimales
+			if ($calc < 0.01) {
+				echo json_encode(array('success' => false, 'status' => 'error',
+					'msg' => 'La unidad de receta es más grande que la de inventario (ej. inventario en GRAMO y receta en KILOGRAMO): usa en la receta la unidad más chica'));
+				return;
+			}
+			$miData['umedida_receta'] = $calc;
+		}
 		// v1.27.0: stock mínimo para el aviso de la Caja. Solo si viene (otras pantallas también graban insumos) y si la
 		// migración 20261121120000 ya creó la columna
 		if (array_key_exists('stock_minimo', $d)) {

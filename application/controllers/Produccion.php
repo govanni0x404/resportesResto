@@ -66,7 +66,15 @@ class Produccion extends CI_Controller
                         'message' => 'Cantidad inválida para ' . $nombre . ': debe ser un número mayor que 0'));
                     return;
                 }
-                $insumo['cantidad'] = (float)$cant;
+                // v1.34.0: la pantalla manda la cantidad en la unidad de RECETA del insumo (ej. 500 GRAMO); el stock y el
+                // costo van en la unidad de INVENTARIO (0,5 KILOGRAMO). Antes se descontaban 500 kilos.
+                $insumo['cantidad_receta'] = (float)$cant;
+                $insumo['cantidad'] = $this->Mproduccion->recetaAInventario($insumo['id_insumo'], (float)$cant);
+                if ($insumo['cantidad'] === null || $insumo['cantidad'] <= 0) {
+                    $dbTenant->trans_rollback();
+                    echo json_encode(array('success' => false, 'message' => 'El insumo ' . $nombre . ' no existe o su cantidad es muy chica'));
+                    return;
+                }
                 // Costo: el promedio (PPP) del insumo en la base, no el que manda la pantalla
                 $insumo['costo_neto'] = $this->Mproduccion->obtenerCostoPPP($insumo['id_insumo']);
                 $insumo['costo_total'] = round($insumo['costo_neto'] * $insumo['cantidad'], 2);
@@ -158,6 +166,7 @@ class Produccion extends CI_Controller
                     . (!empty($d['observaciones']) ? ' - ' . $d['observaciones'] : ''), 0, 250),
             ));
             if (!$porTrigger) $this->Mproduccion->entradaStock($id_insumo_elaborado, $id_bodega_destino, $cantidad_producida);
+            $this->Mproduccion->marcarElaborado($id_insumo_elaborado);   // v1.34.0: queda como sub receta
             // Después de grabar: el trigger dejó el costo de esta producción (promedio simple); se reemplaza por el ponderado
             $costo_unitario_elaborado = $this->Mproduccion->actualizarCostoElaborado($id_insumo_elaborado, $cantidad_producida,
                 $costoTotalProduccion, $saldo_elaborado_antes, $costo_elaborado_antes);
@@ -228,6 +237,16 @@ class Produccion extends CI_Controller
                 'message' => 'Error al procesar la solicitud: ' . $e->getMessage()
             ));
         }
+    }
+
+    /** v1.34.0: la receta de producción del insumo con sus insumos, para cargarla al producir. */
+    public function recetaParaProducir()
+    {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+            redirect(base_url());
+        }
+        header('Content-Type: application/json');
+        echo json_encode(array('receta' => $this->Mproduccion->recetaParaProducir((int)$this->input->post('id_insumo'))));
     }
 
     public function obtenerStockActual()

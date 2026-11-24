@@ -27,6 +27,20 @@
                                 <label for="nombreUmedida">UNIDAD DE MEDIDA *</label>
                                 <input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreUmedida" id="nombreUmedida" requerido="si" value="" placeholder="Nombre Unidad De Medida" />
                             </div>
+                            <!-- v1.34.0: a cuánto equivale, para que recetas y producción conviertan solas (1 KG = 1000 GR) -->
+                            <div class="col-sm-12">
+                                <label for="equivalenciaUmedida">EQUIVALE A</label>
+                                <select id="equivalenciaUmedida" class="form-control input-sm">
+                                    <option value="auto">Según el nombre (KG, GRAMO, LITRO, ML, UNIDAD…)</option>
+                                    <option value="kilo">Kilo: 1.000 gramos</option>
+                                    <option value="gramo">Gramo</option>
+                                    <option value="litro">Litro: 1.000 mililitros</option>
+                                    <option value="mililitro">Mililitro (cc)</option>
+                                    <option value="unidad">Unidad</option>
+                                    <option value="ninguna">Sin equivalencia (cada insumo dice cuánto es)</option>
+                                </select>
+                                <p class="help-block" style="margin:4px 0 0">Con esto el sistema sabe que 1 kilo son 1.000 gramos y 1 litro son 1.000 mililitros: en recetas y producción puedes escribir en una u otra y se convierte sola.</p>
+                            </div>
                         </fieldset>
                         <!-- FIN CAMPOS DE REGISTRO  -->
                     </div>
@@ -51,6 +65,7 @@
         originUmedida = origin || "";
         $('#idUmedida').val("");
         $('#nombreUmedida').val("");
+        $('#equivalenciaUmedida').val('auto');
         $('#ModalNuevaUmedida').modal({
             backdrop: 'static',
             keyboard: false
@@ -69,6 +84,7 @@
             var miJson = {
                 'id_umedida': idUmedida,
                 'nombre_umedida': NombreUmedida,
+                'equivalencia': $('#equivalenciaUmedida').val() || 'auto'
             };
             console.log(miJson);
             $.post(base_url + "index.php/Umedida/grabarNuevaUmedida", {

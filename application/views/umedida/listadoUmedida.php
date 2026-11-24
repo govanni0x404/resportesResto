@@ -81,6 +81,11 @@ function ListadoDeUmedida() {
                 mData: "nombre_umedida",
                 className: "text-center"
             },
+            {   // v1.34.0
+                mData: "equivale",
+                className: "text-center",
+                render: function (d) { return d ? '1 = ' + d : '<span class="text-muted">Sin equivalencia</span>'; }
+            },
         ],
         'language': {
             // traduce la linea de abajo que quedaba en ingles
@@ -101,6 +106,7 @@ function ListadoDeUmedida() {
 
             $("#idUmedida").val(rowData[0].id_umedida);
             $("#nombreUmedida").val(rowData[0].nombre_umedida);
+            $('#equivalenciaUmedida').val(rowData[0].equivalencia || 'ninguna');
             $('#ModalNuevaUmedida').modal('show');
         })
 }

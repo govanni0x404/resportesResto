@@ -1,4 +1,10 @@
+<?php $this->load->view('umedida/jsEquivalencias.php'); /* v1.34.0 */ ?>
 <style>
+	/* v1.34.0: equivalencia de las unidades del insumo */
+	.ins-equiv { margin: 2px 0 6px; padding: 8px 12px; border-radius: 8px; background: var(--t-primario-suave, #E8F5EC); color: var(--t-texto, #1F2937); font-size: 13px; }
+	.ins-equiv i { margin-right: 4px; color: var(--t-primario, #15803D); }
+	.ins-equiv.aviso { background: #FFF7E6; color: #7A5410; }
+	.ins-equiv.aviso i { color: #B7791F; }
 	/* Formularios en modales (.t-form): filas flexibles en vez de floats + <br>, etiquetas claras y móvil a una columna */
 	.t-form fieldset { display: flex; flex-wrap: wrap; align-items: flex-end; margin: 0 -8px; min-width: 0; }
 	.t-form fieldset > * { flex: 0 0 100%; max-width: 100%; padding-left: 8px; padding-right: 8px; }
@@ -152,6 +158,12 @@
 										<select style="width:100%;" id="cboUnMedReceta" nombre="cboUnMedReceta" class="form-control input-sm" requerido="si">
 											<option value="">--Seleccione--</option>
 										</select>
+									</div>
+								</fieldset>
+								<!-- v1.34.0 (pedido del usuario): el sistema sabe que 1 kilo son 1000 gramos: la medida de receta se calcula sola -->
+								<fieldset>
+									<div class="col-md-12">
+										<div id="equivUnidadesInsumo" class="ins-equiv" hidden></div>
 									</div>
 								</fieldset>
 							</div>
@@ -671,8 +683,40 @@
 			$("#cboUnMedInventario").select2();
 			$("#cboUnMedReceta").html(tblReceta);
 			$("#cboUnMedReceta").select2();
+			pintarEquivalenciaInsumo();
 		});
 	}
+
+	// v1.34.0: al elegir las unidades (o cambiar la medida de inventario), la medida de receta sale de la equivalencia
+	// de las unidades (KILOGRAMO y GRAMO: 1 = 1000). Si las unidades no se pueden convertir (ej. UNIDAD y GRAMO), se
+	// escribe a mano como siempre.
+	function calcularMedidaReceta() {
+		if (!pintarEquivalenciaInsumo.ok) { Unidades.listo(function () { pintarEquivalenciaInsumo.ok = true; calcularMedidaReceta(); }); return; }
+		var inv = $('#cboUnMedInventario').val(), rec = $('#cboUnMedReceta').val();
+		var f = Unidades.factor(inv, rec);
+		if (f !== null && Number(inv) && Number(rec)) {
+			var mInv = Number($('#medInventario').val()) || 1;
+			if (!(Number($('#medInventario').val()) > 0)) $('#medInventario').val(1);
+			$('#medReceta').val(Math.round(mInv * f * 1000) / 1000);
+		}
+		pintarEquivalenciaInsumo();
+	}
+	function pintarEquivalenciaInsumo() {
+		if (!pintarEquivalenciaInsumo.ok) { Unidades.listo(function () { pintarEquivalenciaInsumo.ok = true; pintarEquivalenciaInsumo(); }); return; }
+		var inv = $('#cboUnMedInventario').val(), rec = $('#cboUnMedReceta').val();
+		var mInv = Number($('#medInventario').val()) || 0, mRec = Number($('#medReceta').val()) || 0;
+		var $e = $('#equivUnidadesInsumo');
+		if (!Number(inv) || !Number(rec) || !(mInv > 0) || !(mRec > 0)) { $e.prop('hidden', true); return; }
+		var nInv = $('#cboUnMedInventario option:selected').text(), nRec = $('#cboUnMedReceta option:selected').text();
+		var f = Unidades.factor(inv, rec), auto = f !== null && Math.abs(mInv * f - mRec) < 0.0005;
+		$e.prop('hidden', false).toggleClass('aviso', f !== null && !auto).html('<i class="fa ' + (f !== null && !auto ? 'fa-exclamation-triangle' : 'fa-exchange') + '"></i> '
+			+ Unidades.fmt(mInv) + ' ' + nInv + ' = <b>' + Unidades.fmt(mRec) + ' ' + nRec + '</b>'
+			+ (f !== null && !auto ? ' · Ojo: según las unidades deberían ser ' + Unidades.fmt(mInv * f) + ' ' + nRec + '. Al grabar se corrige.'
+				: (f === null ? ' · Estas unidades no tienen equivalencia: revisa que la medida esté bien.' : ' · Calculado solo.')));
+	}
+	$(document).on('change', '#cboUnMedInventario, #cboUnMedReceta', calcularMedidaReceta)
+		.on('input', '#medInventario', calcularMedidaReceta)
+		.on('input', '#medReceta', pintarEquivalenciaInsumo);
 
 	function llenarRecetaProduccion(id_insumo) {
 		$.post(base_url + "index.php/Insumos/llenarCboRecetaProduccion", {

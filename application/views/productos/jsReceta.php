@@ -1,3 +1,4 @@
+<?php $this->load->view('recetas/jsUnidadesReceta.php'); /* v1.34.0 */ ?>
 <script>
 	var tableInsumoReceta = $("#tableInsumoReceta").on("draw.dt", function() {
 		$(this).find(".dataTables_empty").parents('tbody').empty();
@@ -85,12 +86,7 @@
 			$('#costoInsumoReceta').val(costo_neto_ppp);
 			$('#cBarraI').val(cBarra);
 		}
-	});
-
-	$("#cantidadInsumoReceta").on('keyup', function() {
-		cantidad = $("#cantidadInsumoReceta").val();
-		costo_unitario = $('#costoInsumoReceta').val();
-		$('#costoTotalInsumoReceta').val(cantidad * costo_unitario);
+		recPintarUnidades();   // v1.34.0
 	});
 
 	$("#btnAgregarInsumoTabla").on('click', function() {
@@ -224,7 +220,8 @@
 		var id_insumo = $('#idInsumoReceta').val();
 		var nombre_insumo = $('#nombreInsumoReceta').val();
 		var subreceta = $('#esSubreceta').val();
-		var cantidad_insumo = $('#cantidadInsumoReceta').val();
+		// v1.34.0: la cantidad se guarda en la unidad de receta del insumo (si se escribió en kilos, se pasa a gramos)
+		var cantidad_insumo = $.trim($('#cantidadInsumoReceta').val()) === '' ? '' : recCantidadEnReceta();
 		var uMedida = $('#unMedidaInsumoReceta').val();
 		var costoInsumo = $('#costoInsumoReceta').val();
 		var costoTotal = $('#costoTotalInsumoReceta').val();
@@ -248,7 +245,12 @@
             	duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if (cantidad_insumo == '') {
+		} else if (cantidad_insumo === null) {
+			showAppAlert('error',"- No se puede convertir esa unidad a la del insumo", {
+            	duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+		} else if (cantidad_insumo === '' || !(cantidad_insumo > 0)) {
 			showAppAlert('error',"- Ingrese una cantidad", {
             	duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
@@ -281,7 +283,7 @@
 		tbl = tbl + "<td class='text-left'>" + cbarra + "</td>";
 		tbl = tbl + "<td class='text-left'>" + nombre_insumo + "</td>";
 		tbl = tbl + "<td class='text-left'>" + subreceta + "</td>";
-		tbl = tbl + "<td style='vertical-align:middle; height:50px;' class='text-left'> <a  onclick='aumentarCantidad(" + rnd + ")' href='#'  class='btn_cantidad'><i class='fa fa-plus-square' style='font-size: 18px;'></i></a>   <input style='width:70px; margin-right:4px' class='text-right' onpaste='return false;' ondrop='return false;' autocomplete='off' onkeyup='actualizarCantidadTXT(" + rnd + ")'  id='txt" + rnd + "' type='text' pattern='\d*' maxlength='5' style='width: 100px;  margin: 10px;' class='input-sm' name='' onkeypress='validate(event)' value='" + cantidad_insumo + "'><a  onclick='disminuirCantidad(" + rnd + ")' href='#' class='btn_cantidad'><i class='fa fa-minus-square' style='font-size: 18px;'></i></a></td>";
+		tbl = tbl + "<td style='vertical-align:middle; height:50px;' class='text-left'> <a  onclick='aumentarCantidad(" + rnd + ")' href='#'  class='btn_cantidad'><i class='fa fa-plus-square' style='font-size: 18px;'></i></a>   <input style='width:70px; margin-right:4px' class='text-right' onpaste='return false;' ondrop='return false;' autocomplete='off' onkeyup='actualizarCantidadTXT(" + rnd + ")'  id='txt" + rnd + "' type='text' pattern='\d*' maxlength='10' style='width: 100px;  margin: 10px;' class='input-sm' name='' onkeypress='validate(event)' value='" + cantidad_insumo + "'><a  onclick='disminuirCantidad(" + rnd + ")' href='#' class='btn_cantidad'><i class='fa fa-minus-square' style='font-size: 18px;'></i></a></td>";
 		tbl = tbl + "<td style='vertical-align:middle;' class='text-left'>" + uMedida + "</td>";
 		tbl = tbl + "<td style='vertical-align:middle;' class='text-right'>" + costoInsumo + "</td>";
 		tbl = tbl + "<td style='vertical-align:middle;' class='text-right montoTotal'>" + costoTotal + "</td>";
@@ -338,7 +340,7 @@
 	}
 
 	function calcularDatos(rnd) {
-		var costoUn = parseFloat($('#' + rnd).children('td')[7].innerHTML.replace(/,./g, ''));
+		var costoUn = parseFloat($('#' + rnd).children('td')[7].innerHTML.replace(/,/g, ''));
 		var cantidad = parseFloat($('#txt' + rnd).val());
 
 		if (isNaN(cantidad) || cantidad == null || cantidad == "" || parseFloat(cantidad) < 0) {

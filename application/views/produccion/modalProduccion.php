@@ -1,3 +1,4 @@
+<?php $this->load->view('umedida/jsEquivalencias.php'); /* v1.34.0 */ ?>
 <style>
 	/* Formularios en modales (.t-form): filas flexibles en vez de floats + <br>, etiquetas claras y móvil a una columna */
 	.t-form fieldset { display: flex; flex-wrap: wrap; align-items: flex-end; margin: 0 -8px; min-width: 0; }
@@ -79,8 +80,13 @@
 
                     <!-- SECCION INSUMOS Y COSTOS -->
                     <div class="panel panel-default">
-                        <div class="panel-heading">
+                        <div class="panel-heading prod-cabeza">
                             <h5><strong style="font-weight: bold;">INSUMOS Y COSTOS</strong></h5>
+                            <!-- v1.34.0 (pedido del usuario): carga los insumos de la receta de producción del insumo -->
+                            <button type="button" class="btn btn-success btn-sm" id="btnCargarRecetaProduccion"
+                                    title="Carga los insumos de la receta de producción, según la cantidad a producir (Rend/Real)">
+                                <i class="fa fa-list-alt"></i> Cargar receta de producción
+                            </button>
                         </div>
                         <div class="panel-body">
                             <div class="row">
@@ -120,11 +126,12 @@
                                                    name="umedidaInvProduccion" id="umedidaInvProduccion" value="" />
                                         </div>
                                         <div class="col-md-2">
-                                            <label for="cantidadRecetaProduccion">CANTIDAD (Receta) *</label>
+                                            <label for="cantidadRecetaProduccion">CANTIDAD *</label>
                                             <input type="number" class="form-control input-sm" 
                                                    onkeypress="return soloNumerosDecimales(event)"
                                                    name="cantidadRecetaProduccion" id="cantidadRecetaProduccion" 
                                                    value="" placeholder="0" />
+                                            <div id="equivProduccion" class="prod-equiv" hidden></div>
                                         </div>
                                     </fieldset>
                                 </div>
@@ -135,9 +142,10 @@
                                     <fieldset>
                                         
                                         <div class="col-md-2">
-                                            <label for="umedidaRecetaProduccion">U/MED RECETA</label>
-                                            <input type="text" disabled class="form-control input-sm" 
-                                                   name="umedidaRecetaProduccion" id="umedidaRecetaProduccion" value="" />
+                                            <!-- v1.34.0: se puede escribir en kilos o gramos; se descuenta en la unidad de inventario -->
+                                            <label for="unidadProduccion">UNIDAD</label>
+                                            <select id="unidadProduccion" class="form-control input-sm" disabled></select>
+                                            <input type="hidden" name="umedidaRecetaProduccion" id="umedidaRecetaProduccion" value="" />
                                         </div>
                                         <div class="col-md-2">
                                             <label for="costoNetoProduccion">C/ NETO UN(PPP)</label>
@@ -195,7 +203,7 @@
                                                     <th class="text-left" style="width: 15%;">Insumo</th>
                                                     <th class="text-center" style="width: 7%;">Cant/Receta</th>
                                                     <th class="text-center" style="width: 7%;">U/M Receta</th>
-                                                    <th class="text-center" style="width: 5%;">Conversión</th>
+                                                    <th class="text-center" style="width: 7%;" title="Lo que se descuenta del stock, en la unidad de inventario">Cant/Inv.</th>
                                                     <th class="text-center" style="width: 8%;">U/M Inv.</th>
                                                     <th class="text-right" style="width: 7%;">Costo Neto Un(PPP)</th>
                                                     <th class="text-right" style="width: 10%;">Costo Total</th>
@@ -319,6 +327,12 @@
     </div>
 </div>
 <style>
+    /* v1.34.0 */
+    .prod-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .prod-cabeza h5 { margin: 0; }
+    .prod-equiv { margin-top: 4px; font-size: 12px; color: var(--t-primario, #15803D); }
+    .prod-equiv.mal { color: #C9372C; }
+    #tableInsumosRecetaProduccion tr.sin-stock td { color: #C9372C; }
     .botones-produccion {
     margin-top: 24px;   /* baja los botones */
 }
@@ -336,6 +350,10 @@ var base_url = "<?php echo base_url(); ?>";
 var insumosReceta = [];
 var contadorInsumos = 0;
 var idInsumoElaborado = 0;
+// v1.34.0: unidades del insumo elegido ({id_umedida_receta, id_umedida_inventario, umedida_receta, umedida_inventario,
+// nombre_umedida_receta, nombre_umedida_inventario}) y la receta de producción cargada (para reescalar con Rend/Real)
+var insProd = null;
+var recetaCargada = null;
 
 // Abrir modal de producción
 function AbrirModalProduccion(idInsumo, nombreInsumo) {
@@ -391,8 +409,41 @@ function limpiarModalProduccion() {
     
     insumosReceta = [];
     contadorInsumos = 0;
+    insProd = null;
+    recetaCargada = null;
+    $('#unidadProduccion').empty().prop('disabled', true);
+    $('#equivProduccion').prop('hidden', true);
     actualizarTablaInsumos();
     actualizarCostoTotal();
+}
+
+// v1.34.0: datos de conversión de un insumo (lo que devuelve obtenerDatosInsumoCompleto o la receta de producción)
+function insumoConversion(o) {
+    return { id_umedida_receta: o.id_umedida_receta, id_umedida_inventario: o.id_umedida_inventario,
+        umedida_receta: o.m_receta, umedida_inventario: o.m_inventario,
+        nombre_umedida_receta: o.nombre_umedida_receta || o.umedida_receta || '',
+        nombre_umedida_inventario: o.nombre_umedida_inventario || o.umedida_inventario || '' };
+}
+function pintarUnidadesProduccion() {
+    var $u = $('#unidadProduccion').empty();
+    if (!insProd) { $u.prop('disabled', true); calcularCostoTotal(); return; }
+    Unidades.listo(function () {
+        $u.empty();
+        $.each(Unidades.delInsumo(insProd), function (i, u) { $u.append($('<option>').val(u.id).text(u.nombre || insProd.nombre_umedida_receta)); });
+        if (!$u.children().length) $u.append($('<option>').val(insProd.id_umedida_receta).text(insProd.nombre_umedida_receta));
+        $u.val(String(insProd.id_umedida_receta)).prop('disabled', $u.children().length < 2);
+        calcularCostoTotal();
+    });
+}
+$(document).on('change', '#unidadProduccion', function () { calcularCostoTotal(); });
+/** Lo escrito: {receta: cantidad en la unidad de receta, inv: en la de inventario} o null si no se puede convertir. */
+function cantidadesProduccion() {
+    if (!insProd) return null;
+    var cant = parseFloat($('#cantidadRecetaProduccion').val()) || 0;
+    var rec = Unidades.aReceta(insProd, cant, $('#unidadProduccion').val());
+    if (rec === null) return null;
+    rec = Math.round(rec * 1000) / 1000;
+    return { escrita: cant, receta: rec, inv: Math.round(Unidades.recetaAInventario(insProd, rec) * 1000000) / 1000000 };
 }
 
 // Cargar insumos
@@ -492,6 +543,8 @@ $('#cboInsumoProduccion').on('change', function() {
             if (obj) {
                 $('#umedidaInvProduccion').val(obj.umedida_inventario || '');
                 $('#umedidaRecetaProduccion').val(obj.umedida_receta || '');
+                insProd = insumoConversion(obj);   // v1.34.0
+                pintarUnidadesProduccion();
             }
             
             // Si hay bodega seleccionada, cargar stock y costo
@@ -504,6 +557,8 @@ $('#cboInsumoProduccion').on('change', function() {
             console.error("XHR:", xhr.responseText);
         });
     } else {
+        insProd = null;   // v1.34.0
+        pintarUnidadesProduccion();
         $('#umedidaInvProduccion').val("");
         $('#umedidaRecetaProduccion').val("");
         $('#stockBodegaProduccion').val("0");
@@ -581,16 +636,16 @@ $('#cantidadRecetaProduccion').on('input', function() {
 });
 
 function calcularCostoTotal() {
-    var cantidad = parseFloat($('#cantidadRecetaProduccion').val()) || 0;
-    var costoNeto = parseFloat($('#costoNetoProduccion').val()) || 0;
-    var costoTotal = cantidad * costoNeto;
-    
-    console.log("=== Calculando costo total ===");
-    console.log("Cantidad:", cantidad);
-    console.log("Costo Neto:", costoNeto);
-    console.log("Costo Total:", costoTotal);
-    
-    $('#costoTotalProduccion').val(costoTotal.toFixed(2));
+    // v1.34.0: el costo PPP es por unidad de INVENTARIO (ej. el kilo): se multiplica por lo que se descuenta del stock
+    var c = cantidadesProduccion(), costoNeto = parseFloat($('#costoNetoProduccion').val()) || 0, $h = $('#equivProduccion');
+    $('#costoTotalProduccion').val(c ? (c.inv * costoNeto).toFixed(2) : '0');
+    if (c && c.escrita > 0 && insProd) {
+        var stock = parseFloat($('#stockBodegaProduccion').val()) || 0, falta = c.inv > stock + 0.0000001;
+        $h.toggleClass('mal', falta).html('<i class="fa fa-exchange"></i> Se descuentan <b>' + Unidades.fmt(c.inv) + ' ' + insProd.nombre_umedida_inventario + '</b>'
+            + (falta ? ' (hay ' + Unidades.fmt(stock) + ')' : '')).prop('hidden', false);
+    } else if (insProd && parseFloat($('#cantidadRecetaProduccion').val()) > 0) {
+        $h.addClass('mal').html('No se puede convertir esa unidad a la del insumo').prop('hidden', false);
+    } else $h.prop('hidden', true);
 }
 
 // BOTÓN AGREGAR
@@ -603,7 +658,8 @@ $('.btn-success:contains("Agregar")').on('click', function(e) {
     var nombreInsumo = $('#cboInsumoProduccion option:selected').text();
     var idBodega = $('#cboBodegaOrigenProduccion').val();
     var nombreBodega = $('#cboBodegaOrigenProduccion option:selected').text();
-    var cantidad = parseFloat($('#cantidadRecetaProduccion').val()) || 0;
+    var cant = cantidadesProduccion();   // v1.34.0: {receta, inv}
+    var cantidad = cant ? cant.receta : 0;
     var umedidaReceta = $('#umedidaRecetaProduccion').val();
     var umedidaInv = $('#umedidaInvProduccion').val();
     var costoNeto = parseFloat($('#costoNetoProduccion').val()) || 0;
@@ -647,8 +703,8 @@ $('.btn-success:contains("Agregar")').on('click', function(e) {
         return;
     }
     
-    if (cantidad > stock) {
-        showAppAlert('error', "La cantidad supera el stock disponible (" + stock + ")", {
+    if (cant.inv > stock + 0.0000001) {
+        showAppAlert('error', "Se necesitan " + Unidades.fmt(cant.inv) + " " + umedidaInv + " y en la bodega hay " + Unidades.fmt(stock), {
             duration: 3000,
             image: base_url + 'assets/img/errorGif.gif'
         });
@@ -663,10 +719,11 @@ $('.btn-success:contains("Agregar")').on('click', function(e) {
         nombre_insumo: nombreInsumo,
         id_bodega: idBodega,
         nombre_bodega: nombreBodega,
-        cantidad: cantidad,
+        cantidad: cantidad,                 // en la unidad de receta (lo que recibe el servidor)
+        cantidad_inv: cant.inv,             // lo que se descuenta del stock
+        conv: insProd,
         umedida_receta: umedidaReceta,
         umedida_inv: umedidaInv,
-        conversion: 1,
         costo_neto: costoNeto,
         costo_total: costoTotal,
         stock: stock
@@ -752,12 +809,12 @@ function actualizarTablaInsumos() {
         html = '<tr><td colspan="10" class="text-center">Seleccione un insumo y bodega</td></tr>';
     } else {
         $.each(insumosReceta, function(index, item) {
-            html += '<tr data-id="' + item.id + '" style="cursor: pointer;">';
+            html += '<tr data-id="' + item.id + '" style="cursor: pointer;"' + (item.cantidad_inv > item.stock + 0.0000001 ? ' class="sin-stock" title="No alcanza el stock de la bodega"' : '') + '>';
             html += '<td class="text-center">' + (index + 1) + '</td>';
             html += '<td class="text-left">' + item.nombre_insumo + '</td>';
-            html += '<td class="text-center">' + parseFloat(item.cantidad).toFixed(2) + '</td>';
+            html += '<td class="text-center">' + Unidades.fmt(item.cantidad) + '</td>';
             html += '<td class="text-center">' + (item.umedida_receta || '') + '</td>';
-            html += '<td class="text-center">' + item.conversion + '</td>';
+            html += '<td class="text-center">' + Unidades.fmt(item.cantidad_inv) + '</td>';
             html += '<td class="text-center">' + (item.umedida_inv || '') + '</td>';
             html += '<td class="text-right">' + parseFloat(item.costo_neto).toFixed(2) + '</td>';
             html += '<td class="text-right">' + parseFloat(item.costo_total).toFixed(2) + '</td>';
@@ -780,10 +837,85 @@ function actualizarCostoTotal() {
     });
     
     $('#costoTotalFinal').text(total.toFixed(2));
-    $('#costoUnitarioElaborado').val(total.toFixed(2));
+    // v1.34.0: costo de 1 unidad de lo producido (antes mostraba el costo total)
+    var producido = parseFloat($('#rendimientoReal').val()) || 0;
+    $('#costoUnitarioElaborado').val(producido > 0 ? (total / producido).toFixed(2) : total.toFixed(2));
     
     console.log("Costo total actualizado:", total.toFixed(2));
 }
+
+// ---- v1.34.0 (pedido del usuario): cargar la receta de producción del insumo ----
+// Las cantidades de la receta son para producir receta.cantidad (su rendimiento); se ajustan a Rend/Real.
+function lineaDesdeReceta(l, escala, idBodega, stock, costo) {
+    var conv = insumoConversion(l);
+    var qty = (Number(l.cantidad) || 0) * escala;
+    var rec = Unidades.aReceta(conv, qty, l.id_umedida);
+    if (rec === null) return null;
+    rec = Math.round(rec * 1000) / 1000;
+    var inv = Math.round(Unidades.recetaAInventario(conv, rec) * 1000000) / 1000000;
+    contadorInsumos++;
+    return { id: contadorInsumos, id_insumo: l.id_insumo, nombre_insumo: l.nombre_insumo, id_bodega: idBodega,
+        nombre_bodega: $('#cboBodegaOrigenProduccion option[value="' + idBodega + '"]').text() || ('Bodega ' + idBodega),
+        cantidad: rec, cantidad_inv: inv, conv: conv, umedida_receta: conv.nombre_umedida_receta, umedida_inv: conv.nombre_umedida_inventario,
+        costo_neto: costo, costo_total: Math.round(inv * costo * 100) / 100, stock: stock, de_receta: l };
+}
+function reescalarReceta() {
+    if (!recetaCargada) return;
+    var escala = (parseFloat($('#rendimientoReal').val()) || 0) / (Number(recetaCargada.cantidad) || 1);
+    $.each(insumosReceta, function (i, it) {
+        if (!it.de_receta) return;
+        var n = lineaDesdeReceta(it.de_receta, escala, it.id_bodega, it.stock, it.costo_neto);
+        contadorInsumos--;
+        if (n) { it.cantidad = n.cantidad; it.cantidad_inv = n.cantidad_inv; it.costo_total = n.costo_total; }
+    });
+    actualizarTablaInsumos();
+    actualizarCostoTotal();
+}
+$(document).on('input', '#rendimientoReal', function () { reescalarReceta(); actualizarCostoTotal(); });
+$('#btnCargarRecetaProduccion').on('click', function () {
+    var $b = $(this).prop('disabled', true);
+    $.post(base_url + "index.php/Produccion/recetaParaProducir", { id_insumo: idInsumoElaborado }, null, 'json').done(function (r) {
+        var rec = r && r.receta;
+        if (!rec || !rec.lineas || !rec.lineas.length) {
+            showAppAlert('error', "Este insumo no tiene receta de producción con insumos. Créala en el insumo (pestaña Receta).", { duration: 6000, image: base_url + 'assets/img/errorGif.gif' });
+            return;
+        }
+        var bodegaElegida = Number($('#cboBodegaOrigenProduccion').val()) || 0;
+        if (!bodegaElegida && !Number(rec.id_bodega) && $.grep(rec.lineas, function (l) { return !Number(l.id_bodega); }).length) {
+            showAppAlert('error', "Elige primero la BODEGA ORIGEN de donde salen los insumos", { duration: 5000, image: base_url + 'assets/img/errorGif.gif' });
+            return;
+        }
+        // Rend/Real: si sigue en 1 (lo de siempre), se usa el rendimiento de la receta
+        if ((parseFloat($('#rendimientoReal').val()) || 0) <= 1 && Number(rec.cantidad) > 0) $('#rendimientoReal').val(Number(rec.cantidad));
+        var escala = (parseFloat($('#rendimientoReal').val()) || 0) / (Number(rec.cantidad) || 1);
+        Unidades.listo(function () {
+            var pedidos = [], nuevas = [], malas = [];
+            $.each(rec.lineas, function (i, l) {
+                var idBodega = bodegaElegida || Number(l.id_bodega) || Number(rec.id_bodega);
+                var d = { stock: 0, costo: 0 };
+                pedidos.push($.post(base_url + "index.php/Produccion/obtenerStockActual", { id_insumo: l.id_insumo, id_bodega: idBodega }, null, 'json')
+                    .done(function (x) { d.stock = parseFloat(x && x.stock_actual) || 0; }));
+                pedidos.push($.post(base_url + "index.php/Produccion/obtenerCostoPPP", { id_insumo: l.id_insumo }, null, 'json')
+                    .done(function (x) { d.costo = parseFloat(x && x.costo_ppp) || 0; }));
+                nuevas.push(function () {
+                    var it = lineaDesdeReceta(l, escala, idBodega, d.stock, d.costo);
+                    if (it) insumosReceta.push(it); else malas.push(l.nombre_insumo + ' (' + (l.nombre_umedida || '?') + ')');
+                });
+            });
+            $.when.apply($, pedidos).always(function () {
+                insumosReceta = $.grep(insumosReceta, function (it) { return !it.de_receta; });   // vuelve a cargar: reemplaza la anterior
+                $.each(nuevas, function (i, f) { f(); });
+                recetaCargada = rec;
+                actualizarTablaInsumos();
+                actualizarCostoTotal();
+                showAppAlert('success', "Receta cargada: " + rec.nombre_receta_produccion + " (para " + Unidades.fmt($('#rendimientoReal').val()) + " " + ($('#umedidaInventarioElaborado').val() || '') + ")", { duration: 3500, image: base_url + 'assets/img/success.gif' });
+                if (malas.length) showAppAlert('error', "No se pudo convertir la unidad de: " + malas.join(', ') + ". Revisa la receta de producción.", { duration: 8000, image: base_url + 'assets/img/errorGif.gif' });
+            });
+        });
+    }).fail(function () {
+        showAppAlert('error', "No se pudo cargar la receta de producción", { duration: 5000, image: base_url + 'assets/img/errorGif.gif' });
+    }).always(function () { $b.prop('disabled', false); });
+});
 
 // GRABAR PRODUCCIÓN
 $('#btnGrabarProduccion').on('click', function() {
@@ -797,6 +929,14 @@ $('#btnGrabarProduccion').on('click', function() {
         return;
     }
     
+    if ($.grep(insumosReceta, function (it) { return it.cantidad_inv > it.stock + 0.0000001; }).length) {   // v1.34.0
+        showAppAlert('error', "Hay insumos sin stock suficiente en su bodega (en rojo en la lista)", {
+            duration: 5000,
+            image: base_url + 'assets/img/errorGif.gif'
+        });
+        return;
+    }
+
     if ($('#bodegaDestinoElaborado').val() == 0) {
         showAppAlert('error', "Seleccione una bodega de destino para el producto elaborado", {
             duration: 5000,

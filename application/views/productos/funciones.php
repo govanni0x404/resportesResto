@@ -522,19 +522,7 @@ function llenarCboInsumos(id_insumo) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = "";
         tbl = "<option selected value = 0>Seleccione El Insumo</option>";
-        $.each(obj, function(index, v) { // recorro el array
-            if (v.id_insumo == id_insumo) {
-                tbl = tbl + '<option selected value="' + v.id_insumo + '" cbarra="' + v.cbarra +
-                    '" nombreInsumo="' + v.nombre_insumo + '" esReceta="' + v.esreceta + '" umedida="' +
-                    v.nombre_umedida + '" costoPP="' + v.costo_neto_ppp + '">' + v.cbarra + '/' + v
-                    .nombre_insumo + '</option>';
-            } else {
-                tbl = tbl + '<option value="' + v.id_insumo + '" cbarra="' + v.cbarra +
-                    '"  nombreInsumo="' + v.nombre_insumo + '" esReceta="' + v.esreceta +
-                    '" umedida="' + v.nombre_umedida + '" costoPP="' + v.costo_neto_ppp + '">' + v
-                    .cbarra + '/' + v.nombre_insumo + '</option>';
-            }
-        }); //fin each
+        $.each(obj, function(index, v) { tbl = tbl + recOpcionInsumo(v, v.id_insumo == id_insumo); });   // v1.34.0
 
         $("#cboCodBarraInsumoReceta").html(tbl);
         $("#cboCodBarraInsumoReceta").select2();

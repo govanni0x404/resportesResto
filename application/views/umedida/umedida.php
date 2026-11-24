@@ -64,7 +64,8 @@
                             <thead>
                                 <tr>
                                     <th class="text text-center" style='height:10px'>ID</th>
-                                    <th class="text text-center" style='height:45px'>UNIDAS DE MEDIDA</th>
+                                    <th class="text text-center" style='height:45px'>UNIDAD DE MEDIDA</th>
+                                    <th class="text text-center">EQUIVALE A</th>
                                 </tr>
                             </thead>
                         </table>

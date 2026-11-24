@@ -207,8 +207,7 @@ function listarRecetas() {
                     var rnd = parseInt($("#contador")
                 .val()); //variable que define la row especifica a borrar
                     addToTable(rnd, v.id_detalle_receta, v.id_insumo, v.cbarra, v.nombre_insumo,
-                        es_receta, v.cantidad, v.nombre_umedida, v.costo_neto_ppp, v
-                        .costo_bruto_ppp);
+                        es_receta, v.cantidad, v.nombre_umedida, recRedondear(v.costo_receta, 4), 0);   // v1.34.0: costo de 1 unidad de receta
                 }); //fin each
             }).done(function() {})
 

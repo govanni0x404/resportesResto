@@ -155,13 +155,16 @@
 											<div class="col-md-2">
 												<label for="cantidadInsumoReceta">CANTIDAD</label>
 												<input type="number" class="form-control input-sm input-sm" onkeypress="return soloNumerosDecimales(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="cantidadInsumoReceta" id="cantidadInsumoReceta" requerido="si" value="" />
+												<div id="equivLineaReceta" class="rec-equiv" hidden></div>
 											</div>
 											<div class="col-md-2">
-												<label for="unMedidaInsumoReceta">UN MEDIDA</label>
-												<input type="text" disabled class="form-control input-sm input-sm" onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="unMedidaInsumoReceta" id="unMedidaInsumoReceta" requerido="si" value="" />
+												<!-- v1.34.0: se puede escribir en kilos o gramos (se guarda en la unidad de receta del insumo) -->
+												<label for="unidadLineaReceta">UN MEDIDA</label>
+												<select id="unidadLineaReceta" class="form-control input-sm" disabled></select>
+												<input type="hidden" id="unMedidaInsumoReceta" value="" />
 											</div>
 											<div class="col-md-2">
-												<label for="costoInsumoReceta">COSTO PP UN</label>
+												<label for="costoInsumoReceta" title="Costo neto de 1 unidad de receta (ej. 1 gramo)">COSTO X UN. RECETA</label>
 												<input type="number" disabled class="form-control input-sm input-sm" onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="costoInsumoReceta" id="costoInsumoReceta" requerido="si" value="" />
 											</div>
 											<div class="col-md-2">
@@ -217,6 +220,7 @@
 </div>
 <!-- FIN  MODAL NUEVO REGISTRO  -->
  <?php $this->load->view('umedida/jsNuevaUmedida.php'); ?>
+ <?php $this->load->view('recetas/jsUnidadesReceta.php'); /* v1.34.0 */ ?>
 
 <script>
 	var tableInsumoReceta = $("#tableInsumoReceta").on("draw.dt", function() {
@@ -305,14 +309,7 @@
 			$('#costoInsumoReceta').val(costo_neto_ppp);
 			$('#cBarraI').val(cBarra);
 		}
-	});
-
-	$("#cantidadInsumoReceta").on('keyup', function() {
-		var cantidad = parseFloat($("#cantidadInsumoReceta").val()) || 0;
-		var costo_unitario = parseFloat($('#costoInsumoReceta').val()) || 0;
-
-		var total = cantidad * costo_unitario;
-		$('#costoTotalInsumoReceta').val(total.toFixed(2));
+		recPintarUnidades();   // v1.34.0
 	});
 
 	$("#btnAgregarInsumoTabla").on('click', function() {
@@ -485,8 +482,10 @@
 		var cbarra = $('#cBarraI').val();
 		var id_insumo = $('#idInsumoReceta').val();
 		var nombre_insumo = $('#nombreInsumoReceta').val();
-		var subreceta = $('#esSubreceta').val();
-		var cantidad_insumo = $('#cantidadInsumoReceta').val();
+		// v1.34.0: el campo SUBRECETA está escondido en esta pantalla (salía "undefined" en la tabla)
+		var subreceta = $('#esSubreceta').length ? $('#esSubreceta').val() : ($('#cboCodBarraInsumoReceta option:selected').attr('esReceta') === 't' ? 'SI' : 'NO');
+		// v1.34.0: la cantidad se guarda en la unidad de receta del insumo (si se escribió en kilos, se pasa a gramos)
+		var cantidad_insumo = $.trim($('#cantidadInsumoReceta').val()) === '' ? '' : recCantidadEnReceta();
 		var uMedida = $('#unMedidaInsumoReceta').val();
 		var costoInsumo = parseFloat($('#costoInsumoReceta').val());
 		var costoTotal = 0; // se calculará en la tabla
@@ -510,7 +509,12 @@
                 duration: 6000,
                 image: base_url + 'assets/img/errorGif.gif'
             });
-		} else if (cantidad_insumo == '') {
+		} else if (cantidad_insumo === null) {
+			showAppAlert('error', "No se puede convertir esa unidad a la del insumo", {
+				duration: 6000,
+				image: base_url + 'assets/img/errorGif.gif'
+			});
+		} else if (cantidad_insumo === '' || !(cantidad_insumo > 0)) {
 			showAppAlert('error', "Ingrese una cantidad", {
             	duration: 6000,
                 image: base_url + 'assets/img/errorGif.gif'
@@ -543,7 +547,7 @@
 		tbl = tbl + "<td class='text-left'>" + cbarra + "</td>";
 		tbl = tbl + "<td class='text-left'>" + nombre_insumo + "</td>";
 		tbl = tbl + "<td class='text-left'>" + subreceta + "</td>";
-		tbl = tbl + "<td style='vertical-align:middle; height:50px;' class='text-left'> <a  onclick='aumentarCantidad(" + rnd + ")' href='#'  class='btn_cantidad'><i class='fa fa-plus-square' style='font-size: 18px;'></i></a>   <input style='width:70px; margin-right:4px' class='text-right' onpaste='return false;' ondrop='return false;' autocomplete='off' onkeyup='actualizarCantidadTXT(" + rnd + ")'  id='txt" + rnd + "' type='text' pattern='\d*' maxlength='5' style='width: 100px;  margin: 10px;' class='input-sm' name='' onkeypress='validate(event)' value='" + cantidad_insumo + "'><a  onclick='disminuirCantidad(" + rnd + ")' href='#' class='btn_cantidad'><i class='fa fa-minus-square' style='font-size: 18px;'></i></a></td>";
+		tbl = tbl + "<td style='vertical-align:middle; height:50px;' class='text-left'> <a  onclick='aumentarCantidad(" + rnd + ")' href='#'  class='btn_cantidad'><i class='fa fa-plus-square' style='font-size: 18px;'></i></a>   <input style='width:70px; margin-right:4px' class='text-right' onpaste='return false;' ondrop='return false;' autocomplete='off' onkeyup='actualizarCantidadTXT(" + rnd + ")'  id='txt" + rnd + "' type='text' pattern='\d*' maxlength='10' style='width: 100px;  margin: 10px;' class='input-sm' name='' onkeypress='validate(event)' value='" + cantidad_insumo + "'><a  onclick='disminuirCantidad(" + rnd + ")' href='#' class='btn_cantidad'><i class='fa fa-minus-square' style='font-size: 18px;'></i></a></td>";
 		tbl = tbl + "<td style='vertical-align:middle;' class='text-left'>" + uMedida + "</td>";
 		tbl = tbl + "<td style='vertical-align:middle;' class='text-right'>" + costoInsumo + "</td>";
 		tbl = tbl + "<td style='vertical-align:middle;' class='text-right montoTotal'>" + costoTotal + "</td>";
@@ -621,13 +625,7 @@
 			var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
 			tbl = "";
 			tbl = "<option selected value = 0>Seleccione El Insumo</option>";
-			$.each(obj, function(index, v) { // recorro el array
-				if (v.id_insumo == id_insumo) {
-					tbl = tbl + '<option selected value="' + v.id_insumo + '" cbarra="' + v.cbarra + '" nombreInsumo="' + v.nombre_insumo + '" esReceta="' + v.esreceta + '" umedida="' + v.nombre_umedida + '" costoPP="' + v.costo_neto_ppp + '">' + v.cbarra + '/' +  v.nombre_insumo + '</option>';
-				} else {
-					tbl = tbl + '<option value="' + v.id_insumo + '" cbarra="' + v.cbarra + '"  nombreInsumo="' + v.nombre_insumo + '" esReceta="' + v.esreceta + '" umedida="' + v.nombre_umedida + '" costoPP="' + v.costo_neto_ppp + '">' + v.cbarra +  '/' + v.nombre_insumo + '</option>';
-				}
-			}); //fin each
+			$.each(obj, function(index, v) { tbl = tbl + recOpcionInsumo(v, v.id_insumo == id_insumo); });   // v1.34.0 //fin each
 
 			$("#cboCodBarraInsumoReceta").html(tbl);
 			$("#cboCodBarraInsumoReceta").select2();
@@ -801,7 +799,7 @@
 			cantidad = 0.1;
 		}
 		var totalLinea = costoUn * cantidad;
-		$('#' + rnd).children('td')[8].innerHTML = totalLinea.toFixed(2);
+		$('#' + rnd).children('td')[8].innerHTML = Math.round(totalLinea);   // v1.34.0: como el servidor (pesos enteros)
 	}
 
 	function validate(evt) {
