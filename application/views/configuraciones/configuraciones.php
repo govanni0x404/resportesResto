@@ -103,6 +103,20 @@ if (!function_exists('cfg_opciones')) {
                                             </div>
                                         </div>
 
+                                        <?php if (array_key_exists('agregados_extra_web', $config)) :
+                                            $__onAg = function ($k) use ($config) { return in_array($config[$k] ?? null, array(true, 't', 1, '1'), true); }; ?>
+                                        <!-- v1.35.0: agregados extra con costo y categorías de agregados (migración 20261124140000) -->
+                                        <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"><i class="fa fa-plus-square"></i>Agregados en la Caja</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="cfg-fila"><label><input type="checkbox" name="agregados_extra_web" value="1" <?php echo $__onAg('agregados_extra_web') ? 'checked' : ''; ?>> Agregados extra con costo</label><?php cfg_info("Con el máximo de agregados de un producto lleno (ej. 2 sin costo), el cliente puede sumar más agregados igual, pero esos van con costo: su \"precio extra\".\nEl precio extra y cuántos extras se pueden sumar se ponen en Carta > Agregados del producto.\nSin marcar: el máximo es un tope y no se puede elegir otro."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="agregados_categorias_web" value="1" <?php echo $__onAg('agregados_categorias_web') ? 'checked' : ''; ?>> Categorías de agregados</label><?php cfg_info("Los agregados se ordenan por categoría (Proteína, Verdura, Salsas...): en la Caja sale un cuadro por categoría con su nombre.\nCada producto puede tener un límite por categoría (ej. 2 de Proteína y 2 de Verdura) además del máximo total.\nLas categorías se crean en Tablas > Categorías de agregados, donde también se pueden poner varios agregados de una vez en una categoría."); ?></div>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+
                                         <?php if (array_key_exists('usar_cocina_web', $config)) :
                                             $__activa = function ($k) use ($config) { return in_array($config[$k] ?? null, array(true, 't', 1, '1'), true); }; ?>
                                         <!-- v1.29.0: pantalla de cocina y reservas (migración 20261121140000) -->

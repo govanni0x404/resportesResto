@@ -228,7 +228,7 @@ function ListadoCartaDeProductos() {
 
         $('#ckVigente').prop('checked', rowData[0].vigente == 'SI');
         $('#ckConAgregado').prop('checked', rowData[0].con_agregado == 'SI');
-        conAgregadoEnBase = rowData[0].con_agregado == 'SI';   // v1.34.2
+        conAgregadoEnBase = rowData[0].con_agregado == 'SI';   // v1.34.1
         $('#ckVentaPublico').prop('checked', rowData[0].venta_publico == 'SI');
         $('#ckPermitirFraccion').prop('checked', rowData[0].permite_porcion == 'SI');
         $('#ckVentaPorStock').prop('checked', rowData[0].venta_segun_stock == 'SI');
@@ -278,7 +278,7 @@ function crearNuevoProducto() {
     $('#ckPermitirVentaSiempre').prop('checked', false);
     $('#ckVentaDirecta').prop('checked', false);
     $('#ckConAgregado').prop('checked', false);
-    conAgregadoEnBase = false;   // v1.34.2
+    conAgregadoEnBase = false;   // v1.34.1
     $('#ckPermitirFraccion').prop('checked', false);
     $('#ckVentaPorStock').prop('checked', false);
     $('#ckElaboracionLocal').prop('checked', false);
@@ -299,7 +299,7 @@ function crearNuevoProducto() {
     });
 }
 
-// v1.34.2: delegado. Este archivo se carga antes que la ventana (productos/modals.php), así que el enlace directo no
+// v1.34.1: delegado. Este archivo se carga antes que la ventana (productos/modals.php), así que el enlace directo no
 // encontraba la casilla y marcar "Con Agregado" nunca habilitaba el botón Agregados del producto.
 $(document).on('change', '#ckConAgregado', function() {
     var idProducto = $('#txtID').val();

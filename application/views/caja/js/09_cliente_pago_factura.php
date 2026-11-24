@@ -676,7 +676,7 @@
 				id_delivery: modoDelivery && modoDelivery.id ? modoDelivery.id : 0,
 				// Factura: razón social, giro, dirección, comuna y solicitante elegidos en la ventana Datos de la factura
 				factura: documentoActual().es_factura && cliente && datosFactura && datosFactura.id_cliente === cliente.id_cliente ? datosFactura : null,
-				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [], sushi: l.sushi || null }; }),
+				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, extras: l.extras || [], nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [], sushi: l.sushi || null }; }),
 				pagos: $.map(pagos, function (p) { return p.monto > 0 ? { id_fpago: p.id_fpago, monto: p.monto } : null; }),
 				token: tokenCobro
 			};

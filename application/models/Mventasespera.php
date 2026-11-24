@@ -445,6 +445,8 @@ class Mventasespera extends CI_Model
 				'precio' => max(0, $this->monto($l['precio'] ?? 0)),
 				'cantidad' => $cant,
 				'agregados' => $agregados,
+				// v1.35.0: los agregados que van como extra (con costo); el servidor los valida al cobrar
+				'extras' => array_values(array_intersect(array_map('intval', is_array($l['extras'] ?? null) ? $l['extras'] : array()), $agregados)),
 				'opciones' => $this->texto($l['opciones'] ?? '', 200),
 				// La nota se guarda tal cual (la pantalla junta líneas iguales comparando la nota)
 				'nota' => mb_substr(is_scalar($l['nota'] ?? '') ? (string)($l['nota'] ?? '') : '', 0, 200),

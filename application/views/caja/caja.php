@@ -525,6 +525,20 @@
 	#listaAgregados .ag-item .checkbox label { display: flex; align-items: baseline; gap: 6px; width: 100%; font-weight: 600; line-height: 1.25; cursor: pointer; }
 	#listaAgregados .ag-item .valor { margin-left: auto; white-space: nowrap; font-size: 13px; }
 	.opcion-lista .ag-item .ag-nota, #listaAgregados .ag-item .ag-nota { margin: 6px 0 2px; width: 100%; height: 30px; font-size: 13px; }
+	/* v1.35.0: agregados agrupados por categoría (un cuadro por categoría) y agregados extra con costo */
+	#listaAgregados.con-categorias { display: flex; flex-direction: column; gap: 10px; }
+	#listaAgregados .ag-cat { border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; padding: 8px 10px 10px; background: var(--t-fondo-alt, #FAFAF9); }
+	#listaAgregados .ag-cat.completa { border-color: var(--t-primario-borde, #BBE3C9); }
+	#listaAgregados .ag-cat-titulo { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+	#listaAgregados .ag-cat-titulo span { font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-primario, #15803D); }
+	#listaAgregados .ag-cat-titulo small { color: var(--t-texto-suave, #6B7280); font-size: 12px; white-space: nowrap; }
+	#listaAgregados .ag-cat.completa .ag-cat-titulo small { color: var(--t-primario, #15803D); font-weight: 600; }
+	#listaAgregados .ag-cat-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+	#listaAgregados .ag-extra-tag { display: inline-block; padding: 0 6px; border-radius: 9px; font-size: 11px; font-weight: 700; line-height: 17px;
+		background: #FEF3C7; color: #92400E; text-transform: uppercase; letter-spacing: .3px; }
+	#listaAgregados .ag-item.es-extra { border-color: #F59E0B; background: #FFFBEB; }
+	#listaAgregados .ag-item.seria-extra { border-style: dashed; }
+	.ag-extra-linea { color: #B45309; font-weight: 600; }
 	#listaMensajes .checkbox { margin: 0; padding: 8px 10px 8px 34px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; background: #fff; }
 	#listaMensajes .checkbox:has(input:checked) { border-color: var(--t-primario, #15803D); background: var(--t-primario-suave, #E8F5EC); }
 	#modalAutorizacion { z-index: 1060; }

@@ -155,6 +155,8 @@ class Configuraciones extends CI_Controller {
             'sushi_salsas_web',       // v1.32.0: salsas aparte de los extras
             'esperas_anular_todas_web',  // v1.33.0: Ventas en espera > Anular todas (migración 20261124120000)
             'mesas_anular_varias_web',   // v1.33.0: Mesas > Anular varias mesas
+            'agregados_extra_web',       // v1.35.0: agregados extra con costo (migración 20261124140000)
+            'agregados_categorias_web',  // v1.35.0: categorías de agregados
             'acepta',
             'acierto'
         ];

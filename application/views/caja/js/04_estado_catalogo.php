@@ -207,6 +207,7 @@
 					if (!p) { quitados.push(l.nombre); return false; }
 					l.precio = p.precio;
 					l.agregados = $.grep(l.agregados, function (id) { return !!agregado(id); });
+					l.extras = $.grep(l.extras || [], function (id) { return $.inArray(id, l.agregados) >= 0; });   // v1.35.0
 					return true;
 				});
 				if (quitados.length) toastr.warning('Sin precio en esta lista: ' + quitados.join(', '));
@@ -228,6 +229,12 @@
 		}
 		function agregado(id) {
 			return $.grep(catalogo.agregados, function (a) { return a.id_agregado === id; })[0];
+		}
+		/** v1.35.0: lo que cobra un agregado en una línea: su precio extra si va como extra, si no su valor */
+		function valorAgregadoLinea(l, id) {
+			var a = agregado(id);
+			if (!a) return 0;
+			return l && l.extras && $.inArray(id, l.extras) >= 0 ? (Number(a.valor_extra) || 0) : a.valor;
 		}
 		function mensajesDe(id) {
 			return $.grep(catalogo.mensajes, function (m) { return m.id_producto === id; });
@@ -322,7 +329,7 @@
 		// Precio unitario con agregados (v1.24.0: o con los adicionales del menú)
 		function precioLinea(l) {
 			var precio = l.sushi ? precioBaseSushi(sushiDe(l.id_producto), l.sushi, l.precio) : l.precio;   // v1.32.0
-			$.each(l.agregados, function (i, id) { var a = agregado(id); if (a) precio += a.valor; });
+			$.each(l.agregados, function (i, id) { precio += valorAgregadoLinea(l, id); });   // v1.35.0: los extra con su precio extra
 			return precio + adicionalMenu(l) + adicionalSushi(l);   // v1.25.0
 		}
 

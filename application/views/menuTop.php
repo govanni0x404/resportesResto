@@ -872,6 +872,7 @@
                         $__showProveedor = menu_visible('Proveedor');
 
                         $__showAgregados = menu_visible('Agregados');
+                        $__showCategoriasAgregados = menu_visible('CategoriasAgregados');   // v1.35.0
                         $__showBodegas = menu_visible('Bodegas');
                         $__showCanalDeventa = menu_visible('CanalDeventa');
                         $__showCentroCosto = menu_visible('CentroCosto');
@@ -900,7 +901,7 @@
                         $__showTablasDelivery = $__showDelivery;
                         $__showTablasEventos = $__showGastoEventos || $__showIngresoEventos || $__showTipoEvento;
                         $__showTablasGruposFamilias = $__showFamilias || $__showFamiliasInsumos || $__showFamiliasReceta;
-                        $__showTablas = $__showAgregados || $__showBodegas || $__showCanalDeventa || $__showCentroCosto || $__showComuna || $__showTablasDelivery || $__showDestinoDeImpresion || $__showTablasEventos || $__showTablasGruposFamilias || $__showFormasDePago || $__showPagoElectronico || $__showDocumentosTributarios || $__showImpuestos || $__showMensajesPorProductos || $__showMoneda || $__showProvincias || $__showSubFamilias || $__showTurnos || $__showUmedida || $__showItemGastosMensuales || $__showUsuario;
+                        $__showTablas = $__showAgregados || $__showCategoriasAgregados || $__showBodegas || $__showCanalDeventa || $__showCentroCosto || $__showComuna || $__showTablasDelivery || $__showDestinoDeImpresion || $__showTablasEventos || $__showTablasGruposFamilias || $__showFormasDePago || $__showPagoElectronico || $__showDocumentosTributarios || $__showImpuestos || $__showMensajesPorProductos || $__showMoneda || $__showProvincias || $__showSubFamilias || $__showTurnos || $__showUmedida || $__showItemGastosMensuales || $__showUsuario;
 
                         $__showInsumos = menu_visible('Insumos');
                         $__showRecetas = menu_visible('Recetas');
@@ -1043,6 +1044,9 @@
                                                     <?php if ($__showAgregados) : ?>
                                                         <li class="active"><a href="<?php echo base_url() ?>index.php/Agregados"><i class="fa fa-plus-square"></i>Agregados</a></li>
                                                     <?php endif; ?>
+                                                    <?php if ($__showCategoriasAgregados) : ?>
+                                                        <li class="active"><a href="<?php echo base_url() ?>index.php/CategoriasAgregados"><i class="fa fa-th-large"></i>Categorías de agregados</a></li>
+                                                    <?php endif; ?>
                                                     <?php if ($__showBodegas) : ?>
                                                         <li class="active"><a href="<?php echo base_url() ?>index.php/Bodegas"><i class="fa fa-cubes"></i>Bodegas</a></li>
                                                     <?php endif; ?>
@@ -1118,6 +1122,8 @@
                                         <ul class="dropdown-menu">
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/Agregados"><i
                                                         class="ti-money"></i>Agregados</a></li>
+                                            <li class="active"><a href="<?php echo base_url() ?>index.php/CategoriasAgregados"><i
+                                                        class="ti-money"></i>Categorías de agregados</a></li>
                                             <li class="active"><a href="<?php echo base_url() ?>index.php/Bodegas"><i
                                                         class="ti-money"></i>Bodegas</a></li>
                                             <li class="active"><a

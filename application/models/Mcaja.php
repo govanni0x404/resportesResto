@@ -88,11 +88,13 @@ class Mcaja extends CI_Model
 		$colFavorito = isset($tiene['producto']['favorito']) ? '(p.favorito IS TRUE)' : 'false';
 		// v1.30.3: máximo de agregados a elegir (migración 20261123100000); 0 = sin límite
 		$colMaxAg = isset($tiene['producto']['max_agregados_web']) ? 'COALESCE(p.max_agregados_web, 0)' : '0';
+		// v1.35.0: cuántos agregados extra (con costo) se pueden sumar; 0 = sin tope
+		$colMaxEx = isset($tiene['producto']['max_extras_web']) ? 'COALESCE(p.max_extras_web, 0)' : '0';
 		$usaUm = isset($tiene['producto']['id_umedida']) && isset($tieneUm['umedida']['nombre_umedida']);
 		$q = "SELECT p.id_producto, p.nombre_producto, COALESCE(p.cbarra, '') AS cbarra,
 				COALESCE(p.id_familia, 0) AS id_familia, " . ($conSub ? 'COALESCE(p.id_subfamilia, 0)' : '0') . " AS id_subfamilia,
 				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, " . $this->sqlExento($db, 'p') . " AS exento, " . $this->sqlIla($db, 'p') . " AS ila,
-				$colFraccion AS fraccion, $colPedir AS pedir_cantidad, $colFavorito AS favorito, $colMaxAg AS max_agregados, " . ($usaUm ? "COALESCE(um.nombre_umedida, '')" : "''") . " AS umedida
+				$colFraccion AS fraccion, $colPedir AS pedir_cantidad, $colFavorito AS favorito, $colMaxAg AS max_agregados, $colMaxEx AS max_extras, " . ($usaUm ? "COALESCE(um.nombre_umedida, '')" : "''") . " AS umedida
 			FROM producto p
 			LEFT JOIN detalle_lprecio dl ON dl.id_producto = p.id_producto AND dl.id_lprecio = ?
 			" . ($usaUm ? "LEFT JOIN umedida um ON um.id_umedida = p.id_umedida" : "") . "
@@ -120,6 +122,7 @@ class Mcaja extends CI_Model
 				'pedir_cantidad' => $p->pedir_cantidad === 't' || $p->pedir_cantidad === true,
 				'favorito' => $p->favorito === 't' || $p->favorito === true,
 				'max_agregados' => max(0, (int)$p->max_agregados),   // v1.30.3
+				'max_extras' => max(0, (int)$p->max_extras),   // v1.35.0
 				'umedida' => $this->abreviaturaUmedida($p->umedida),
 				'imagen' => isset($imagenes[(int)$p->id_producto]) ? $imagenes[(int)$p->id_producto] : null,
 			);
@@ -152,7 +155,15 @@ class Mcaja extends CI_Model
 				'id_producto_maestro' => (int)$a->id_producto_maestro,
 				'nombre' => $a->nombre_producto,
 				'valor' => (int)$a->valor,
+				'valor_extra' => self::valorExtraAgregado($a),   // v1.35.0: precio cuando va como extra
+				'id_categoria' => (int)$a->id_categoria,         // v1.35.0
 			);
+		}
+		// v1.35.0: categorías de agregados y el límite de cada una en cada producto
+		$categoriasAg = array_values($this->categoriasAgregados($db));
+		$limitesCat = $this->limitesCategoriasAgregados($db);
+		foreach ($productos as $k => $pc) {
+			$productos[$k]['limites_categoria'] = isset($limitesCat[$pc['id_producto']]) ? (object)$limitesCat[$pc['id_producto']] : new stdClass();
 		}
 
 		$mensajes = array();
@@ -222,6 +233,7 @@ class Mcaja extends CI_Model
 			'documentos' => $documentos,
 			'listas_precio' => $listas,
 			'agregados' => $agregados,
+			'categorias_agregados' => $categoriasAg,   // v1.35.0
 			'menus' => $menusCaja,   // v1.24.0
 			'sushis' => $sushisCaja,   // v1.25.0
 			'mensajes' => $mensajes,
@@ -553,8 +565,12 @@ class Mcaja extends CI_Model
 	{
 		$t = $this->columnas($db, array('agregados'));
 		if (!isset($t['agregados'])) return array();
+		// v1.35.0: precio cuando va como extra y categoría (migración 20261124140000)
+		$selExtra = isset($t['agregados']['valor_extra_web']) ? 'COALESCE(a.valor_extra_web, 0)' : '0';
+		$selCat = isset($t['agregados']['id_categoria_agregado_web']) ? 'COALESCE(a.id_categoria_agregado_web, 0)' : '0';
 		$q = "SELECT a.id_agregado, a.id_producto_maestro, a.id_producto, p.nombre_producto, COALESCE(a.valor, 0) AS valor,
-				COALESCE(p.id_receta, 0) AS id_receta, COALESCE(p.id_bodega, 0) AS id_bodega
+				COALESCE(p.id_receta, 0) AS id_receta, COALESCE(p.id_bodega, 0) AS id_bodega,
+				$selExtra AS valor_extra, $selCat AS id_categoria
 			FROM agregados a JOIN producto p ON p.id_producto = a.id_producto
 			WHERE p.vigente IS TRUE";
 		if (isset($t['agregados']['vigente'])) $q .= " AND a.vigente IS NOT FALSE";
@@ -565,6 +581,93 @@ class Mcaja extends CI_Model
 			$binds[] = (int)$idMaestro;
 		}
 		return $this->q($db, $q . " ORDER BY a.id_producto_maestro, p.nombre_producto", $binds)->result();
+	}
+
+	/**
+	 * v1.35.0: categorías de agregados vigentes (Tablas > Categorías de agregados), en su orden. [id => {id, nombre, orden}].
+	 * Sin la tabla (migración 20261124140000 sin correr) no hay categorías.
+	 */
+	private function categoriasAgregados($db)
+	{
+		$t = $this->columnas($db, array('categoria_agregado_web'));
+		if (!isset($t['categoria_agregado_web'])) return array();
+		$res = array();
+		foreach ($this->q($db, "SELECT id_categoria_agregado, nombre, orden FROM categoria_agregado_web
+				WHERE vigente IS TRUE AND eliminado IS NOT TRUE ORDER BY orden, nombre")->result() as $c) {
+			$res[(int)$c->id_categoria_agregado] = array('id' => (int)$c->id_categoria_agregado, 'nombre' => (string)$c->nombre, 'orden' => (int)$c->orden);
+		}
+		return $res;
+	}
+
+	/** v1.35.0: límite de cada categoría en cada producto (0 = sin límite). [id_producto => [id_categoria => máximo]] */
+	private function limitesCategoriasAgregados($db)
+	{
+		$t = $this->columnas($db, array('producto_categoria_agregado_web'));
+		if (!isset($t['producto_categoria_agregado_web'])) return array();
+		$res = array();
+		foreach ($this->q($db, 'SELECT id_producto, id_categoria_agregado, maximo FROM producto_categoria_agregado_web WHERE maximo > 0')->result() as $r) {
+			$res[(int)$r->id_producto][(int)$r->id_categoria_agregado] = (int)$r->maximo;
+		}
+		return $res;
+	}
+
+	/**
+	 * v1.35.0 (pedido del usuario): revisa los agregados elegidos de un producto contra sus límites y devuelve cuáles van
+	 * como extra (con costo). $elegidos y $extras son filas de agregados(); $prod trae max_agregados y max_extras.
+	 * - Los que NO son extra deben caber en el máximo total y, con categorías, en el máximo de su categoría.
+	 * - Un extra solo vale si su categoría o el total ya están llenos (si no, va gratis) y si los extras están activados.
+	 * - Sin "Agregados extra" activado, los límites son duros (como antes).
+	 * Lanza Exception 400 con el motivo.
+	 */
+	public static function revisarAgregadosElegidos($nombre, $elegidos, $idsExtra, $maxTotal, $maxExtras, $limitesCat, $conExtras, $conCategorias)
+	{
+		$idsExtra = array_values(array_unique(array_map('intval', is_array($idsExtra) ? $idsExtra : array())));
+		$porId = array();
+		foreach ($elegidos as $a) $porId[(int)$a->id_agregado] = $a;
+		foreach ($idsExtra as $id) {
+			if (!isset($porId[$id])) throw new Exception('Un agregado extra de ' . $nombre . ' no está entre los elegidos', 400);
+		}
+		if ($idsExtra && !$conExtras) throw new Exception('Los agregados extra no están activados (Configuraciones)', 400);
+		$maxTotal = max(0, (int)$maxTotal);
+		$maxExtras = max(0, (int)$maxExtras);
+		$limitesCat = $conCategorias && is_array($limitesCat) ? $limitesCat : array();
+		$gratis = 0;
+		$porCat = array();
+		foreach ($elegidos as $a) {
+			if (in_array((int)$a->id_agregado, $idsExtra, true)) continue;
+			$gratis++;
+			$cat = (int)$a->id_categoria;
+			$porCat[$cat] = (isset($porCat[$cat]) ? $porCat[$cat] : 0) + 1;
+		}
+		$s = function ($n) { return $n === 1 ? '' : 's'; };
+		if ($maxTotal > 0 && $gratis > $maxTotal) {
+			throw new Exception($nombre . ' permite elegir hasta ' . $maxTotal . ' agregado' . $s($maxTotal)
+				. ($conExtras ? ' (los demás van como extra)' : ''), 400);
+		}
+		foreach ($porCat as $cat => $n) {
+			if ($cat > 0 && !empty($limitesCat[$cat]) && $n > $limitesCat[$cat]) {
+				throw new Exception($nombre . ' permite elegir hasta ' . $limitesCat[$cat] . ' agregado' . $s($limitesCat[$cat]) . ' de una categoría'
+					. ($conExtras ? ' (los demás van como extra)' : ''), 400);
+			}
+		}
+		if ($maxExtras > 0 && count($idsExtra) > $maxExtras) {
+			throw new Exception($nombre . ' permite sumar hasta ' . $maxExtras . ' agregado' . $s($maxExtras) . ' extra', 400);
+		}
+		foreach ($idsExtra as $id) {
+			$cat = (int)$porId[$id]->id_categoria;
+			$catLlena = $cat > 0 && !empty($limitesCat[$cat]) && (isset($porCat[$cat]) ? $porCat[$cat] : 0) >= $limitesCat[$cat];
+			$totalLleno = $maxTotal > 0 && $gratis >= $maxTotal;
+			if (!$catLlena && !$totalLleno) {
+				throw new Exception($porId[$id]->nombre_producto . ' todavía cabe sin costo en ' . $nombre . ': no va como extra', 400);
+			}
+		}
+		return $idsExtra;
+	}
+
+	/** v1.35.0: precio de un agregado como extra: su precio extra o, si no tiene, su valor de siempre. */
+	public static function valorExtraAgregado($a)
+	{
+		return (int)$a->valor_extra > 0 ? (int)$a->valor_extra : (int)$a->valor;
 	}
 
 	// ====================== Permisos y autorizaciones ======================
@@ -2352,10 +2455,11 @@ class Mcaja extends CI_Model
 		// 14-11-2026: sin la columna, como el catálogo: un producto sin precio no se vende
 		$selSinPrecio = isset($cols['producto']['permitir_venta_sin_precio']) ? '(p.permitir_venta_sin_precio IS TRUE)' : 'false';
 		$selMaxAg = isset($cols['producto']['max_agregados_web']) ? 'COALESCE(p.max_agregados_web, 0)' : '0';   // v1.30.3
+		$selMaxEx = isset($cols['producto']['max_extras_web']) ? 'COALESCE(p.max_extras_web, 0)' : '0';   // v1.35.0
 		$productos = array();
 		$q = "SELECT p.id_producto, p.nombre_producto, COALESCE(p.id_receta, 0) AS id_receta, COALESCE(p.id_bodega, 0) AS id_bodega,
 				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, $selVss AS segun_stock, $selFraccion AS fraccion,
-				$selSinPrecio AS sin_precio_ok, $selMaxAg AS max_agregados,
+				$selSinPrecio AS sin_precio_ok, $selMaxAg AS max_agregados, $selMaxEx AS max_extras,
 				" . $this->sqlExento($db, 'p') . " AS exento
 			FROM producto p
 			LEFT JOIN detalle_lprecio dl ON dl.id_producto = p.id_producto AND dl.id_lprecio = ?
@@ -2367,6 +2471,10 @@ class Mcaja extends CI_Model
 		foreach ($this->agregados($db, null) as $a) {
 			$agregadosPorMaestro[(int)$a->id_producto_maestro][(int)$a->id_agregado] = $a;
 		}
+		// v1.35.0: agregados extra (con costo) y límites por categoría, cada uno con su casilla en Configuraciones
+		$conExtras = !empty($config['agregados_extra']);
+		$conCategorias = !empty($config['agregados_categorias']);
+		$limitesCat = $conCategorias ? $this->limitesCategoriasAgregados($db) : array();
 
 		$lineas = array();
 		$notas = array();
@@ -2540,9 +2648,12 @@ class Mcaja extends CI_Model
 			// Solo un tope técnico alto para que una venta armada a mano no traiga cientos.
 			if (count($elegidos) > 100) throw new Exception('Demasiados agregados en ' . $prod->nombre_producto, 400);
 			// v1.30.3 (pedido del usuario): máximo de agregados de ese producto (Carta > Agregados); 0 = sin límite
-			if ((int)$prod->max_agregados > 0 && count($elegidos) > (int)$prod->max_agregados) {
-				throw new Exception($prod->nombre_producto . ' permite elegir hasta ' . (int)$prod->max_agregados . ' agregado' . ((int)$prod->max_agregados === 1 ? '' : 's'), 400);
-			}
+			// v1.35.0: los que pasan del máximo (total o de su categoría) pueden ir como extra, con su precio extra
+			$idsExtra = self::revisarAgregadosElegidos($prod->nombre_producto, $elegidos, isset($it['extras']) ? $it['extras'] : array(),
+				(int)$prod->max_agregados, (int)$prod->max_extras, isset($limitesCat[$id]) ? $limitesCat[$id] : array(), $conExtras, $conCategorias);
+			$valorDe = function ($a) use ($idsExtra) {
+				return in_array((int)$a->id_agregado, $idsExtra, true) ? self::valorExtraAgregado($a) : (int)$a->valor;
+			};
 
 			// 19-11-2026: la nota del producto llega hasta 150 caracteres, para que en la misma fila quepa el mensaje de su
 			// primer agregado (detalle_cotizacion.mensaje es de 250; antes se cortaba a 200 y en el reenvío se perdía)
@@ -2573,7 +2684,7 @@ class Mcaja extends CI_Model
 				$cabe = max(0, 250 - mb_strlen($sufijo) - 3);
 				$notaFila = $nota !== '' ? mb_substr($nota, 0, $cabe) . ' | ' . $sufijo : mb_substr($sufijo, 0, 250);
 			}
-			$unitario = (int)round((float)$prod->precio) + ($primero ? (int)$primero->valor : 0);
+			$unitario = (int)round((float)$prod->precio) + ($primero ? $valorDe($primero) : 0);
 			$bruto = (int)round($unitario * $cantidad);
 			$subtotal += $bruto;
 			// Bodega de la caja (Control de cajas); sin bodega en la caja, la de cada producto (como antes)
@@ -2588,11 +2699,11 @@ class Mcaja extends CI_Model
 				'con_hijos' => (bool)$elegidos,   // v1.30.3: en la mesa, sus otros agregados apuntan a esta fila
 			);
 			foreach ($elegidos as $a) {
-				$bruto = (int)round((int)$a->valor * $cantidad);
+				$bruto = (int)round($valorDe($a) * $cantidad);
 				$subtotal += $bruto;
 				$lineas[] = array(
 					'id_producto' => (int)$a->id_producto, 'nombre' => $a->nombre_producto, 'cantidad' => $cantidad,
-					'unitario' => (int)$a->valor, 'bruto' => $bruto, 'id_agregado' => 0, 'nota' => $notaDe($a),
+					'unitario' => $valorDe($a), 'bruto' => $bruto, 'id_agregado' => 0, 'nota' => $notaDe($a),
 					'segun_stock' => $segunStock, 'recetas' => array(array((int)$a->id_receta, !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : (int)$a->id_bodega)),
 					'exento' => $exento,
 					'ila_de' => $id,   // v1.20.0: el agregado lleva el ILA de su producto, igual que el exento
@@ -3772,6 +3883,10 @@ class Mcaja extends CI_Model
 				if (is_scalar($t) && trim((string)$t) !== '' && count($na) < 20) $na[(string)(int)$k] = mb_substr(trim((string)$t), 0, 60);
 			}
 			if ($na) $res[count($res) - 1]['notas_agregados'] = $na;
+			// v1.35.0: los agregados que van como extra (con costo)
+			if (!empty($it['extras']) && is_array($it['extras'])) {
+				$res[count($res) - 1]['extras'] = array_values(array_intersect(array_map('intval', $it['extras']), $res[count($res) - 1]['agregados']));
+			}
 			// v1.25.0: lo armado de una promo de sushi (armarLineas lo valida)
 			if (isset($it['sushi']) && is_array($it['sushi'])) $res[count($res) - 1]['sushi'] = $it['sushi'];
 			if (count($res) >= 200) break;
@@ -5203,6 +5318,9 @@ class Mcaja extends CI_Model
 			// v1.33.0: anular varias cosas de una vez (migración 20261124120000; sin la columna = apagada)
 			'esperas_anular_todas_web' => 'anular_todas_esperas',
 			'mesas_anular_varias_web' => 'anular_varias_mesas',
+			// v1.35.0: agregados extra con costo y categorías de agregados (migración 20261124140000; sin la columna = apagada)
+			'agregados_extra_web' => 'agregados_extra',
+			'agregados_categorias_web' => 'agregados_categorias',
 		);
 		// Opciones de texto (impresora del cierre, impresora de documentos, papel 58/80)
 		$textos = array(

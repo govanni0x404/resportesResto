@@ -51,8 +51,11 @@ class Agregados extends CI_Controller
       'id_dimpresion_maestro' => 0,
       'id_dimpresion_agregado' => 0,
     );
+    // v1.35.0: precio cuando va como extra y categoría (solo si llegan: la base puede no tener la migración)
+    if (isset($d['valor_extra']) && $d['valor_extra'] !== '') $miData['valor_extra_web'] = max(0, min(500000, (int)$d['valor_extra']));
+    if (isset($d['id_categoria']) && $d['id_categoria'] !== '') $miData['id_categoria_agregado_web'] = max(0, (int)$d['id_categoria']);
     $r = $this->Magregados->grabarNuevoAgregado($id, $miData);
-    // v1.34.2: el producto queda "Con Agregado" en cuanto tiene uno (Mproductos::marcarConAgregado)
+    // v1.34.1: el producto queda "Con Agregado" en cuanto tiene uno (Mproductos::marcarConAgregado)
     $this->load->model('Mproductos');
     $this->Mproductos->marcarConAgregado((int)$d['id_producto_maestro']);
     echo json_encode($r);

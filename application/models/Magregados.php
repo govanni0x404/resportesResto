@@ -14,10 +14,16 @@ class Magregados extends CI_Model
 			redirect(base_url()); //redireccionar al login
 		}
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$q = "SELECT a.id_agregado, a.id_producto_maestro, a.id_producto, round(a.cantidad) as cantidad, a.valor, a.vigente, p.nombre_producto, pm.nombre_producto as producto_maestro, a.usar_destino_impresion
+		// v1.35.0: precio extra y categoría (migración 20261124140000)
+		$v135 = (bool)$this->db->query("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'categoria_agregado_web'")->row()
+			&& (bool)$this->db->query("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'agregados' AND column_name = 'valor_extra_web'")->row();
+		$q = "SELECT a.id_agregado, a.id_producto_maestro, a.id_producto, round(a.cantidad) as cantidad, a.valor, a.vigente, p.nombre_producto, pm.nombre_producto as producto_maestro, a.usar_destino_impresion,
+			" . ($v135 ? "COALESCE(a.valor_extra_web, 0) AS valor_extra, COALESCE(a.id_categoria_agregado_web, 0) AS id_categoria, COALESCE(c.nombre, '') AS categoria"
+				: "0 AS valor_extra, 0 AS id_categoria, '' AS categoria") . "
         from agregados a
         join producto p on p.id_producto=a.id_producto
         join producto pm on pm.id_producto=a.id_producto_maestro
+        " . ($v135 ? "LEFT JOIN categoria_agregado_web c ON c.id_categoria_agregado = a.id_categoria_agregado_web AND c.eliminado IS NOT TRUE" : "") . "
         order by a.id_agregado asc";
 
 		$consulta = $this->db->query($q);
@@ -35,6 +41,9 @@ class Magregados extends CI_Model
 				"valor" => $key->valor,
 				"vigente" => ($key->vigente == 't' ? 'SI' : 'NO'),
 				"usar_destino_impresion" => ($key->usar_destino_impresion == 't' ? 'SI' : 'NO'),
+				"valor_extra" => (int)$key->valor_extra,      // v1.35.0
+				"id_categoria" => (int)$key->id_categoria,    // v1.35.0
+				"categoria" => (string)$key->categoria,
 			));
 		}
 		$results = array(

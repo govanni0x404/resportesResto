@@ -11,7 +11,8 @@
 		function fmtCant(c) { return String(Math.round(c * 1000) / 1000).replace('.', ','); }
 
 		// cantidad: la del ingreso rápido "cantidad*código"; sin ella se agrega 1
-		function agregar(id, agregados, nota, cantidad, notasAg, menuSel, sushiSel) {
+		function agregar(id, agregados, nota, cantidad, notasAg, menuSel, sushiSel, extras) {
+			extras = (extras || []).slice().sort(function (a, b) { return a - b; });   // v1.35.0: los agregados que van como extra
 			sushiSel = sushiSel || null;   // v1.25.0: lo armado de una promo de sushi {grupos, extras}
 			notasAg = notasAg || {};
 			menuSel = menuSel || [];   // v1.24.0: lo elegido del menú [{id, cantidad}]
@@ -32,7 +33,7 @@
 			// v1.24.8: con "Agrupar productos iguales" apagado (Configuraciones) cada producto va en su propia fila
 			var agrupar = !(catalogo && catalogo.config && catalogo.config.agrupar_productos === false);
 			var l = !agrupar ? null : $.grep(carro, function (x) {
-				return !x.enviada && x.id_producto === id && x.nota === nota && x.agregados.join(',') === agregados.join(',')
+				return !x.enviada && x.id_producto === id && x.nota === nota && x.agregados.join(',') === agregados.join(',') && (x.extras || []).join(',') === extras.join(',')
 					&& JSON.stringify(x.notas_agregados || {}) === JSON.stringify(notasAg) && JSON.stringify(x.menu || []) === JSON.stringify(menuSel)
 					&& JSON.stringify(x.sushi || null) === JSON.stringify(sushiSel);
 			})[0];
@@ -40,10 +41,10 @@
 			// Un pesable ya agregado no suma 1 kg a ciegas: solo suma si se indicó la cantidad.
 			if (dada > 0) {
 				if (l) l.cantidad = ajustarCantidad(id, l.cantidad + dada);
-				else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: dada, agregados: agregados, nota: nota, notas_agregados: notasAg, menu: menuSel, sushi: sushiSel });
+				else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: dada, agregados: agregados, extras: extras, nota: nota, notas_agregados: notasAg, menu: menuSel, sushi: sushiSel });
 			} else if (l) {
 				if (!esFraccion(id)) l.cantidad += 1;
-			} else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: 1, agregados: agregados, nota: nota, notas_agregados: notasAg, menu: menuSel, sushi: sushiSel });
+			} else carro.push({ id_producto: id, nombre: p.nombre, precio: p.precio, cantidad: 1, agregados: agregados, extras: extras, nota: nota, notas_agregados: notasAg, menu: menuSel, sushi: sushiSel });
 			renderCarro();
 		}
 
@@ -74,8 +75,9 @@
 				// v1.20.0: ILA del producto (los agregados llevan el de su producto, como el exento: Mcaja::conIla)
 				var ila = exento ? 0 : Number(p && p.ila) || 0;
 				var primero = l.agregados.length ? agregado(l.agregados[0]) : null;
+				var valorPrimero = primero ? valorAgregadoLinea(l, primero.id_agregado) : 0;   // v1.35.0
 				var precioBase = l.sushi ? precioBaseSushi(sushiDe(l.id_producto), l.sushi, l.precio) : l.precio;   // v1.32.0: precio según el envoltorio
-				res.push({ bruto: Math.round((precioBase + (primero ? primero.valor : 0)) * l.cantidad), exento: exento, ila: ila });
+				res.push({ bruto: Math.round((precioBase + valorPrimero) * l.cantidad), exento: exento, ila: ila });
 				// v1.24.0: cada producto del menú con costo adicional es una línea más (Mcaja::armarLineas)
 				var menuL = l.menu && l.menu.length ? menuDe(l.id_producto) : null;
 				$.each(menuL ? l.menu : [], function (j, e) {
@@ -102,8 +104,7 @@
 					});
 				});
 				$.each(l.agregados.slice(1), function (j, id) {
-					var a = agregado(id);
-					if (a) res.push({ bruto: Math.round(a.valor * l.cantidad), exento: exento, ila: ila });
+					if (agregado(id)) res.push({ bruto: Math.round(valorAgregadoLinea(l, id) * l.cantidad), exento: exento, ila: ila });
 				});
 			});
 			// 18-11-2026: delivery: el envío es una línea más de la boleta (Mcaja::lineaEnvio)
@@ -192,7 +193,8 @@
 				var detalle = l.nota ? ['<i class="nota-producto">» ' + esc(l.nota) + '</i>'] : [];
 				detalle = detalle.concat($.map(l.agregados, function (id) {
 					var a = agregado(id), na = l.notas_agregados && l.notas_agregados[id];
-					return a ? '+ ' + esc(a.nombre) + (na ? ' <i>» ' + esc(na) + '</i>' : '') : null;
+					var ex = l.extras && $.inArray(id, l.extras) >= 0;   // v1.35.0: el extra con su precio
+					return a ? '+ ' + esc(a.nombre) + (ex ? ' <b class="ag-extra-linea">extra +' + fmt(valorAgregadoLinea(l, id)) + '</b>' : '') + (na ? ' <i>» ' + esc(na) + '</i>' : '') : null;
 				}));
 				// v1.24.0: lo elegido del menú
 				var menuL = l.menu && l.menu.length ? menuDe(l.id_producto) : null;

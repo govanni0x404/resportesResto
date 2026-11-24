@@ -420,8 +420,11 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 		 $this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		// v1.30.2: también "Imprimir en su propio destino" y la impresora del producto agregado (su destino o el de su familia),
 		// para marcarlo en un agregado que ya existe y ver a dónde sale
+		// v1.35.0: precio extra y categoría (migración 20261124140000)
+		$v135 = $this->hayColumna($this->db, 'agregados', 'valor_extra_web');
 		$q = "SELECT a.id_agregado, a.id_producto, round(a.cantidad) as cantidad, a.valor, a.vigente, p.nombre_producto, pm.nombre_producto as producto_maestro,
 			(a.usar_destino_impresion IS TRUE) AS destino_propio,
+			" . ($v135 ? 'COALESCE(a.valor_extra_web, 0) AS valor_extra, COALESCE(a.id_categoria_agregado_web, 0) AS id_categoria,' : '0 AS valor_extra, 0 AS id_categoria,') . "
 			COALESCE((SELECT d.nombre_dimpresion FROM dimpresion d LEFT JOIN familia f ON f.id_familia = p.id_familia
 				WHERE d.id_dimpresion = COALESCE(NULLIF(p.id_dimpresion, 0), NULLIF(f.id_dimpresion, 0))), '') AS destino_agregado
         from agregados a
@@ -429,8 +432,105 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
         join producto pm on pm.id_producto=a.id_producto_maestro
       	where a.id_producto_maestro = ? and a.eliminado = false order by p.nombre_producto";
 		$query = $this->db->query($q, array((int)$idProducto))->result();
-		foreach ($query as $f) $f->destino_propio = ($f->destino_propio === 't' || $f->destino_propio === true);
+		foreach ($query as $f) {
+			$f->destino_propio = ($f->destino_propio === 't' || $f->destino_propio === true);
+			$f->valor_extra = (int)$f->valor_extra;
+			$f->id_categoria = (int)$f->id_categoria;
+		}
 		return $query;
+	}
+
+	/** v1.35.0: ¿existe la columna? (las opciones nuevas no rompen una base sin la migración) */
+	private function hayColumna($db, $tabla, $columna)
+	{
+		$r = $db->query("SELECT count(*) AS n FROM information_schema.columns
+			WHERE table_schema = 'public' AND table_name = ? AND column_name = ?", array($tabla, $columna))->row();
+		return $r && (int)$r->n > 0;
+	}
+
+	/**
+	 * v1.35.0 (pedidos del usuario): lo que necesita la ventana Agregados del producto para los extras y las categorías:
+	 * si están activados en Configuraciones, las categorías, el máximo de extras y el límite de cada categoría.
+	 */
+	public function opcionesAgregados($idProducto)
+	{
+		$this->load->helper('tenant'); $db = get_tenant_db($this);
+		if (!$this->hayColumna($db, 'producto', 'max_extras_web')) {
+			return array('ok' => true, 'disponible' => false, 'extras' => false, 'categorias' => false, 'lista_categorias' => array(), 'limites' => new stdClass(), 'max_extras' => 0);
+		}
+		$c = $db->query('SELECT (agregados_extra_web IS TRUE) AS e, (agregados_categorias_web IS TRUE) AS k FROM configuracion LIMIT 1')->row();
+		$p = $db->query('SELECT COALESCE(max_extras_web, 0) AS m FROM producto WHERE id_producto = ?', array((int)$idProducto))->row();
+		$cats = array();
+		foreach ($db->query('SELECT id_categoria_agregado, nombre, vigente FROM categoria_agregado_web WHERE eliminado IS NOT TRUE ORDER BY orden, nombre')->result() as $k) {
+			$cats[] = array('id' => (int)$k->id_categoria_agregado, 'nombre' => (string)$k->nombre, 'vigente' => $k->vigente === 't' || $k->vigente === true);
+		}
+		$lim = array();
+		foreach ($db->query('SELECT id_categoria_agregado, maximo FROM producto_categoria_agregado_web WHERE id_producto = ?', array((int)$idProducto))->result() as $l) {
+			$lim[(string)(int)$l->id_categoria_agregado] = (int)$l->maximo;
+		}
+		$on = function ($v) { return $v === 't' || $v === true; };
+		return array('ok' => true, 'disponible' => true, 'extras' => $c ? $on($c->e) : false, 'categorias' => $c ? $on($c->k) : false,
+			'lista_categorias' => $cats, 'limites' => (object)$lim, 'max_extras' => $p ? (int)$p->m : 0);
+	}
+
+	/** v1.35.0: máximo de agregados extra (con costo) del producto; 0 = sin tope. */
+	public function grabarMaxExtras($idProducto, $max)
+	{
+		$this->load->helper('tenant'); $db = get_tenant_db($this);
+		if (!$this->hayColumna($db, 'producto', 'max_extras_web')) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
+		$max = max(0, min(100, (int)$max));
+		$db->query('UPDATE producto SET max_extras_web = ? WHERE id_producto = ?', array($max, (int)$idProducto));
+		if ($db->affected_rows() < 1) return array('error' => 'El producto ya no existe. Recarga la página.');
+		return array('ok' => true, 'maximo' => $max);
+	}
+
+	/** v1.35.0: límite de una categoría de agregados en un producto; 0 = sin límite. */
+	public function grabarLimiteCategoria($idProducto, $idCategoria, $max)
+	{
+		$this->load->helper('tenant'); $db = get_tenant_db($this);
+		if (!$this->hayColumna($db, 'producto_categoria_agregado_web', 'maximo')) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
+		$max = max(0, min(100, (int)$max));
+		if (!$db->query('SELECT 1 FROM producto WHERE id_producto = ?', array((int)$idProducto))->row()) return array('error' => 'El producto ya no existe. Recarga la página.');
+		if (!$db->query('SELECT 1 FROM categoria_agregado_web WHERE id_categoria_agregado = ? AND eliminado IS NOT TRUE', array((int)$idCategoria))->row()) {
+			return array('error' => 'La categoría ya no existe. Recarga la página.');
+		}
+		$db->query('INSERT INTO producto_categoria_agregado_web (id_producto, id_categoria_agregado, maximo) VALUES (?, ?, ?)
+			ON CONFLICT (id_producto, id_categoria_agregado) DO UPDATE SET maximo = EXCLUDED.maximo', array((int)$idProducto, (int)$idCategoria, $max));
+		return array('ok' => true, 'maximo' => $max);
+	}
+
+	/**
+	 * v1.35.0: cambia un dato de un agregado ya ingresado, desde su fila en la tabla (se guarda solo al cambiarlo).
+	 * $campo: cantidad, valor, valor_extra o categoria. Antes la cantidad y el valor de la tabla no se guardaban.
+	 */
+	public function campoAgregado($idAgregado, $idMaestro, $campo, $valor)
+	{
+		$this->load->helper('tenant'); $db = get_tenant_db($this);
+		$cols = array('cantidad' => 'cantidad', 'valor' => 'valor', 'valor_extra' => 'valor_extra_web', 'categoria' => 'id_categoria_agregado_web');
+		if (!isset($cols[$campo])) return array('error' => 'Dato desconocido');
+		if (!$this->hayColumna($db, 'agregados', $cols[$campo])) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
+		$v = (int)$valor;
+		if ($campo === 'cantidad') $v = max(1, min(1000, $v));
+		elseif ($campo === 'categoria') {
+			$v = max(0, $v);
+			if ($v && !$db->query('SELECT 1 FROM categoria_agregado_web WHERE id_categoria_agregado = ? AND eliminado IS NOT TRUE', array($v))->row()) {
+				return array('error' => 'La categoría ya no existe. Recarga la página.');
+			}
+		} else $v = max(0, min(500000, $v));
+		$db->query('UPDATE agregados SET ' . $cols[$campo] . ' = ? WHERE id_agregado = ? AND id_producto_maestro = ? AND eliminado IS NOT TRUE',
+			array($v, (int)$idAgregado, (int)$idMaestro));
+		if ($db->affected_rows() < 1) return array('error' => 'El agregado ya no existe. Recarga la página.');
+		return array('ok' => true, 'valor' => $v);
+	}
+
+	/** v1.35.0: el mismo precio extra a todos los agregados del producto. */
+	public function valorExtraTodos($idMaestro, $valor)
+	{
+		$this->load->helper('tenant'); $db = get_tenant_db($this);
+		if (!$this->hayColumna($db, 'agregados', 'valor_extra_web')) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
+		$v = max(0, min(500000, (int)$valor));
+		$db->query('UPDATE agregados SET valor_extra_web = ? WHERE id_producto_maestro = ? AND eliminado IS NOT TRUE', array($v, (int)$idMaestro));
+		return array('ok' => true, 'valor' => $v, 'agregados' => $db->affected_rows());
 	}
 
 	/** v1.30.3: ¿ya corrió la migración 20261123100000 (producto.max_agregados_web)? */
@@ -491,10 +591,13 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 		if (!$n || (int)$n->n === 0) return array('error' => 'Este producto no tiene agregados para copiar');
 		$en = 'ARRAY[' . implode(',', $destinos) . ']::int[]';   // solo enteros (intval arriba)
 
+		// v1.35.0: también el precio extra y la categoría (migración 20261124140000)
+		$conV135 = $this->hayColumna($db, 'agregados', 'valor_extra_web') && $this->hayColumna($db, 'agregados', 'id_categoria_agregado_web');
 		$db->trans_begin();
 		$actualizados = 0;
 		if ($actualizar) {
-			$ok = $db->query("UPDATE agregados d SET cantidad = o.cantidad, valor = o.valor
+			$ok = $db->query("UPDATE agregados d SET cantidad = o.cantidad, valor = o.valor"
+				. ($conV135 ? ', valor_extra_web = o.valor_extra_web, id_categoria_agregado_web = o.id_categoria_agregado_web' : '') . "
 				FROM agregados o
 				WHERE o.id_producto_maestro = ? AND o.eliminado IS NOT TRUE
 				  AND d.id_producto = o.id_producto AND d.id_producto_maestro = ANY($en) AND d.eliminado IS NOT TRUE", array($idOrigen));
@@ -502,8 +605,9 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 			$actualizados = $db->affected_rows();
 		}
 		$ok = $db->query("INSERT INTO agregados (id_producto, cantidad, vigente, id_producto_maestro, valor, usar_destino_impresion, eliminado,
-				id_dimpresion_maestro, id_dimpresion_agregado)
-			SELECT o.id_producto, o.cantidad, o.vigente, p.id_producto, o.valor, COALESCE(o.usar_destino_impresion, false), false, 0, 0
+				id_dimpresion_maestro, id_dimpresion_agregado" . ($conV135 ? ', valor_extra_web, id_categoria_agregado_web' : '') . ")
+			SELECT o.id_producto, o.cantidad, o.vigente, p.id_producto, o.valor, COALESCE(o.usar_destino_impresion, false), false, 0, 0"
+				. ($conV135 ? ', o.valor_extra_web, o.id_categoria_agregado_web' : '') . "
 			FROM agregados o JOIN producto p ON p.id_producto = ANY($en)
 			WHERE o.id_producto_maestro = ? AND o.eliminado IS NOT TRUE AND o.id_producto <> p.id_producto
 			  AND NOT EXISTS (SELECT 1 FROM agregados x WHERE x.id_producto_maestro = p.id_producto AND x.id_producto = o.id_producto
@@ -511,6 +615,12 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 			ON CONFLICT DO NOTHING", array($idOrigen));
 		if ($ok === false) { $db->trans_rollback(); return array('error' => 'No se pudieron copiar los agregados'); }
 		$nuevos = $db->affected_rows();
+		if ($conV135 && $this->hayColumna($db, 'producto_categoria_agregado_web', 'maximo')) {
+			$db->query("INSERT INTO producto_categoria_agregado_web (id_producto, id_categoria_agregado, maximo)
+				SELECT p.id_producto, o.id_categoria_agregado, o.maximo FROM producto_categoria_agregado_web o JOIN producto p ON p.id_producto = ANY($en)
+				WHERE o.id_producto = ?
+				ON CONFLICT (id_producto, id_categoria_agregado) DO " . ($actualizar ? 'UPDATE SET maximo = EXCLUDED.maximo' : 'NOTHING'), array($idOrigen));
+		}
 		$ok = $db->query("UPDATE producto p SET con_agregado = true WHERE p.id_producto = ANY($en) AND p.con_agregado IS NOT TRUE
 			AND EXISTS (SELECT 1 FROM agregados a WHERE a.id_producto_maestro = p.id_producto AND a.eliminado IS NOT TRUE)");
 		if ($ok === false || $db->trans_status() === false) { $db->trans_rollback(); return array('error' => 'No se pudieron copiar los agregados'); }
@@ -519,7 +629,7 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 	}
 
 	/**
-	 * v1.34.2 (pedido del usuario en cambios.md): al grabar un agregado, el producto queda "Con Agregado" en la base al
+	 * v1.34.1 (pedido del usuario en cambios.md): al grabar un agregado, el producto queda "Con Agregado" en la base al
 	 * tiro (antes había que volver a grabar el producto, y si no, el agregado no se ofrecía). Solo si tiene alguno vigente.
 	 */
 	public function marcarConAgregado($idMaestro)

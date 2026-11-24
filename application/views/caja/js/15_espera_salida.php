@@ -38,6 +38,7 @@
 				if (l.enviada) return null;
 				var menuL = l.menu && l.menu.length ? menuDe(l.id_producto) : null;   // v1.24.0
 				return { id_producto: l.id_producto, nombre: l.nombre, precio: l.precio, cantidad: l.cantidad, agregados: (l.agregados || []).slice(),
+					extras: (l.extras || []).slice(),   // v1.35.0
 					nota: l.nota || '', notas_agregados: l.notas_agregados || {}, menu: (l.menu || []).slice(), sushi: l.sushi || null,
 					opciones: $.map(l.agregados || [], function (id) { var a = agregado(id); return a ? a.nombre : null; })
 						.concat($.map(menuL ? l.menu : [], function (e) { var o = opcionMenu(menuL, e.id); return o ? o.nombre : null; })).join(', ') };
@@ -255,6 +256,7 @@
 		function aplicarVentaEspera(d) {
 			carro = $.map(d.lineas || [], function (l) {
 				return { id_producto: l.id_producto, nombre: l.nombre, precio: l.precio, cantidad: l.cantidad, agregados: (l.agregados || []).slice(), nota: l.nota || '',
+					extras: $.isArray(l.extras) ? l.extras.map(Number) : [],   // v1.35.0
 					notas_agregados: l.notas_agregados && typeof l.notas_agregados === 'object' ? l.notas_agregados : {},
 					menu: $.isArray(l.menu) ? l.menu : [], sushi: l.sushi && $.isArray(l.sushi.grupos) ? l.sushi : null };   // v1.24.0 / v1.25.0
 			});
