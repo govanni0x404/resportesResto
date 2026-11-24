@@ -46,6 +46,28 @@
 .ps-agregar .form-control, .ps-agregar .btn { height: 38px; }
 .ps-agregar .btn { border-radius: 9px; font-weight: 700; white-space: nowrap; }
 @media (max-width: 600px) { .ps-agregar { grid-template-columns: 1fr; } }
+/* v1.32.0: agregar uno, varios o toda una familia */
+.ps-picker { border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
+.ps-picker-barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; background: var(--t-fondo-alt, #F9FAFB); border-bottom: 1px solid var(--t-borde, #E5E7EB); }
+.ps-picker-barra .ps-buscar { position: relative; flex: 1 1 220px; }
+.ps-picker-barra .ps-buscar i { position: absolute; left: 10px; top: 11px; color: var(--t-texto-tenue, #6B7280); }
+.ps-picker-barra .ps-buscar input { padding-left: 30px; height: 36px; }
+.ps-picker-barra select { flex: 0 1 200px; height: 36px; }
+.ps-picker-lista { max-height: 210px; overflow-y: auto; padding: 4px 0; }
+.ps-picker-lista label { display: flex; align-items: center; gap: 8px; margin: 0; padding: 6px 12px; font-weight: 600; cursor: pointer; }
+.ps-picker-lista label:hover { background: var(--t-primario-suave, #E8F5EC); }
+.ps-picker-lista label small { font-weight: 500; color: var(--t-texto-tenue, #6B7280); }
+.ps-picker-lista .ps-picker-vacio { padding: 12px; text-align: center; color: var(--t-texto-tenue, #6B7280); }
+.ps-picker-pie { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 8px; border-top: 1px solid var(--t-borde, #E5E7EB); }
+.ps-picker-pie .ps-pie-valor { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--t-texto-suave, #4B5563); }
+.ps-picker-pie .ps-pie-valor input { width: 100px; height: 34px; text-align: right; }
+.ps-picker-pie .btn { height: 34px; border-radius: 9px; font-weight: 700; }
+.ps-op .ps-precio-env { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--t-primario, #15803D); }
+.ps-op .ps-precio-env input { width: 100px; height: 30px; text-align: right; }
+.ps-fija { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--t-fondo-alt, #F3F4F6); font-size: 13px; }
+.ps-fija.on { background: var(--t-primario-suave, #E8F5EC); }
+.ps-fija .btn { height: 32px; border-radius: 8px; font-weight: 700; }
+.ps-form label a.ps-nueva-fam { font-weight: 700; margin-left: 6px; cursor: pointer; }
 .ps-copiar { display: flex; gap: 8px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--t-borde-suave, #EEF0F3); }
 .ps-copiar select { flex: 1; height: 36px; }
 .ps-copiar .btn { height: 36px; border-radius: 9px; font-weight: 700; white-space: nowrap; }
@@ -84,11 +106,19 @@
                         <div><label for="psPrecio">Precio <small>(todas las listas)</small></label><input type="text" inputmode="numeric" class="form-control" id="psPrecio" placeholder="9500"></div>
                         <div class="ps-solo-pieza"><label for="psPaso">De a cuántas piezas <small>(1 = libre)</small></label><input type="text" inputmode="numeric" class="form-control" id="psPaso" value="1"></div>
                         <div class="ps-solo-rol"><label for="psPiezasRol">Piezas por roll</label><input type="text" inputmode="numeric" class="form-control" id="psPiezasRol" value="10"></div>
-                        <div><label for="psMaxRellenos">Máx. rellenos <small>(0 = sin límite)</small></label><input type="text" inputmode="numeric" class="form-control" id="psMaxRellenos" value="3"></div>
-                        <div><label for="psFamilia">Familia</label><select class="form-control" id="psFamilia"></select></div>
+                        <div><label for="psMaxRellenos">Máx. rellenos <span class="ps-por-que">por roll</span> <small>(0 = sin límite)</small></label><input type="text" inputmode="numeric" class="form-control" id="psMaxRellenos" value="3"></div>
+                        <!-- v1.32.0: máximos que se ponen al crear la promo -->
+                        <div><label for="psMaxEnvoltorios">Máx. envoltorios <span class="ps-por-que">por roll</span></label><input type="text" inputmode="numeric" class="form-control" id="psMaxEnvoltorios" value="1"></div>
+                        <div><label for="psMaxExtras">Máx. extras <small>(0 = sin límite)</small></label><input type="text" inputmode="numeric" class="form-control" id="psMaxExtras" value="0"></div>
+                        <div class="ps-con-salsas"><label for="psMaxSalsas">Máx. salsas <small>(0 = sin límite)</small></label><input type="text" inputmode="numeric" class="form-control" id="psMaxSalsas" value="0"></div>
+                        <div><label for="psFamilia">Familia <a class="ps-nueva-fam" id="psNuevaFamilia" title="Crear una familia nueva (queda elegida)"><i class="fa fa-plus"></i> Nueva</a></label><select class="form-control" id="psFamilia"></select></div>
                         <div><label for="psDestino">Destino de impresión</label><select class="form-control" id="psDestino"></select></div>
                         <div><label class="ps-check"><input type="checkbox" id="psVigente" checked> Vigente (se vende en la Caja)</label></div>
+                        <!-- v1.32.0: precio según el envoltorio -->
+                        <div class="ps-ancho"><label class="ps-check" title="El precio se pone en cada envoltorio (pestaña Envoltorios). Si se eligen envoltorios distintos, se cobra el más caro."><input type="checkbox" id="psPrecioEnv"> El precio depende del envoltorio</label></div>
                     </div>
+                    <!-- v1.32.0: promo fija (se arma una vez en la Caja y queda así) -->
+                    <div class="ps-fija" id="psFija" style="display:none"></div>
                     <div class="ps-pie-form">
                         <small id="psAyudaForm"><i class="fa fa-info-circle"></i> "De a cuántas piezas": con 10, cada grupo es un roll completo de 10 (10, 20, 30…). Con 1, cualquier cantidad.</small>
                         <button type="button" class="btn btn-success" id="btnPsGrabar"><i class="fa fa-save"></i> Grabar promo</button>
@@ -101,14 +131,26 @@
                         <span class="ps-tab on" data-tipo="relleno">Rellenos <b>0</b></span>
                         <span class="ps-tab" data-tipo="envoltorio">Envoltorios <b>0</b></span>
                         <span class="ps-tab" data-tipo="base">Bases <b>0</b></span>
-                        <span class="ps-tab" data-tipo="extra">Salsas y extras <b>0</b></span>
+                        <span class="ps-tab" data-tipo="salsa">Salsas <b>0</b></span>
+                        <span class="ps-tab" data-tipo="extra">Extras <b>0</b></span>
                     </div>
                     <p class="ps-ayuda-tipo" id="psAyudaTipo"></p>
                     <div class="ps-lista" id="psLista"></div>
-                    <div class="ps-agregar">
-                        <div><label for="psProducto">Agregar un producto que ya existe</label><select class="form-control" id="psProducto"></select></div>
-                        <div><label for="psValorExistente" class="ps-lbl-valor">Valor $</label><input type="text" inputmode="numeric" class="form-control" id="psValorExistente" value="0"></div>
-                        <button type="button" class="btn btn-default" id="btnPsAgregar"><i class="fa fa-plus"></i> Agregar</button>
+                    <!-- v1.32.0: agregar productos que ya existen: uno, varios a la vez (marcándolos) o toda una familia -->
+                    <label style="display:block; margin-bottom:4px; font-size:12px; font-weight:700; color:var(--t-texto-suave, #4B5563)">Agregar productos que ya existen</label>
+                    <div class="ps-picker">
+                        <div class="ps-picker-barra">
+                            <div class="ps-buscar"><i class="fa fa-search"></i><input type="text" class="form-control" id="psBuscar" placeholder="Buscar producto…" autocomplete="off"></div>
+                            <select class="form-control" id="psFiltroFamilia"><option value="0">Todas las familias</option></select>
+                        </div>
+                        <div class="ps-picker-lista" id="psPickerLista"></div>
+                        <div class="ps-picker-pie">
+                            <span class="ps-pie-valor"><span class="ps-lbl-valor">Valor $</span> <input type="text" inputmode="numeric" class="form-control" id="psValorExistente" value="0"></span>
+                            <span>
+                                <button type="button" class="btn btn-default" id="btnPsFamilia" title="Agrega todos los productos vigentes de la familia elegida arriba"><i class="fa fa-folder-open-o"></i> Agregar toda la familia</button>
+                                <button type="button" class="btn btn-success" id="btnPsAgregar" disabled><i class="fa fa-plus"></i> Agregar marcados</button>
+                            </span>
+                        </div>
                     </div>
                     <div class="ps-agregar">
                         <div><label for="psNuevoNombre">…o crear uno nuevo</label><input type="text" class="form-control" id="psNuevoNombre" maxlength="100" placeholder="Ej: POLLO"></div>
@@ -131,21 +173,24 @@
 <script>
 (function () {
     var URL_PS = base_url + 'index.php/Productos/';
-    var ps = { datos: null, promo: null, opciones: null, tipo: 'relleno', modo: 'pieza' };   // v1.26.0: modo = pieza | rol
+    var ps = { datos: null, promo: null, opciones: null, tipo: 'relleno', modo: 'pieza', marcados: {} };   // v1.26.0: modo = pieza | rol; v1.32.0: marcados del buscador
+    var cfgSushi = function () { return (ps.datos && ps.datos.config) || { por_pieza: true, bases: true, salsas: false }; };
     // v1.26.0: en una promo por roll el valor de las opciones es por roll
     var AYUDA_ROL = {
         relleno: 'Lo que va dentro del roll (pollo, kanikama, palta…). El cliente elige hasta el máximo de rellenos por roll. El valor es por roll (0 = no se cobra).',
-        envoltorio: 'Con qué se envuelve (queso, panko, palta, nori…). El cliente elige 1 por roll. El valor es por roll (0 = no se cobra).',
+        envoltorio: 'Con qué se envuelve (queso, panko, palta, nori…). El cliente elige hasta el máximo de envoltorios por roll. El valor es por roll (0 = no se cobra; con «el precio depende del envoltorio» se pone su precio).',
         base: 'Opcional. Si no agregas bases, no se pregunta (ej. siempre arroz). Si hay una sola, se elige sola. El valor es por roll.',
-        extra: 'Salsas y extras aparte de los rolls (soya, teriyaki, jengibre…). El cliente elige cuántas. El valor es por unidad (0 = no se cobra).'
+        extra: 'Opcional. Extras aparte de los rolls (jengibre, palillos, gyozas…). El cliente elige si quiere y cuántos, hasta el máximo de extras de la promo. El valor es por unidad (0 = no se cobra).',
+        salsa: 'Opcional. Salsas aparte de los rolls (soya, teriyaki, agridulce…). El cliente elige si quiere y cuántas, hasta el máximo de salsas de la promo. El valor es por unidad (0 = no se cobra).'
     };
     var esRol = function () { return ps.modo === 'rol'; };
-    var porQue = function () { return ps.tipo === 'extra' ? 'c/u' : (esRol() ? 'x roll' : 'x pieza'); };
+    var porQue = function () { return ps.tipo === 'extra' || ps.tipo === 'salsa' ? 'c/u' : (esRol() ? 'x roll' : 'x pieza'); };
     var AYUDA = {
         relleno: 'Lo que va dentro del roll (pollo, kanikama, palta…). El cliente elige hasta el máximo de rellenos por grupo. El valor es por pieza (0 = no se cobra).',
-        envoltorio: 'Con qué se envuelve (queso, panko, palta, nori…). El cliente elige 1 por grupo. El valor es por pieza (0 = no se cobra).',
+        envoltorio: 'Con qué se envuelve (queso, panko, palta, nori…). El cliente elige hasta el máximo de envoltorios por grupo. El valor es por pieza (0 = no se cobra; con «el precio depende del envoltorio» se pone su precio).',
         base: 'Opcional. Si no agregas bases, no se pregunta (ej. siempre arroz). Si hay una sola, se elige sola. El valor es por pieza.',
-        extra: 'Salsas y extras aparte de las piezas (soya, teriyaki, jengibre…). El cliente elige cuántas. El valor es por unidad (0 = no se cobra).'
+        extra: 'Opcional. Extras aparte de las piezas (jengibre, palillos, gyozas…). El cliente elige si quiere y cuántos, hasta el máximo de extras de la promo. El valor es por unidad (0 = no se cobra).',
+        salsa: 'Opcional. Salsas aparte de las piezas (soya, teriyaki, agridulce…). El cliente elige si quiere y cuántas, hasta el máximo de salsas de la promo. El valor es por unidad (0 = no se cobra).'
     };
     var esc = function (t) { return $('<div>').text(t == null ? '' : t).html(); };
     var pesos = function (n) { return '$' + Number(n || 0).toLocaleString('es-CL'); };
@@ -169,6 +214,10 @@
             $(this).toggleClass('on', m === ps.modo).find('b').text($.grep(d.promos, function (p) { return p.modo === m; }).length);
         });
         $('#psModo button[data-modo="rol"]').toggle(!!d.con_rol);
+        // v1.32.0: por pieza solo si está encendido en Configuraciones (o si ya hay promos por pieza, para editarlas)
+        $('#psModo button[data-modo="pieza"]').toggle(!d.con_rol || piezaVisible());
+        $('#psModo').toggle(!!d.con_rol && piezaVisible());
+        $('.ps-por-que').text(esRol() ? 'por roll' : 'por grupo');
         $('#ModalPromosSushi').toggleClass('modo-rol', esRol());
         $('#psSubtitulo').text(esRol()
             ? 'Promos por roll (3 rolls = 30 piezas, 5 rolls = 50): en la Caja el cliente arma cada roll con base, rellenos y envoltorio'
@@ -195,7 +244,9 @@
             var elegida = elegir ? $.grep(d.promos, function (p) { return p.id_producto === elegir; })[0] : null;
             if (elegida) ps.modo = elegida.modo;
             if (!d.con_rol) ps.modo = 'pieza';
+            else if (!piezaVisible() && ps.modo === 'pieza') ps.modo = 'rol';   // v1.32.0
             pintarListaPromos();
+            pintarFamiliasPicker();
             $('#psFamilia').html('<option value="0">Elige…</option>' + $.map(d.familias, function (f) { return '<option value="' + f.id_familia + '">' + esc(f.nombre_familia) + '</option>'; }).join(''));
             $('#psDestino').html('<option value="0">Según la familia</option>' + $.map(d.destinos, function (x) { return '<option value="' + x.id_dimpresion + '">' + esc(x.nombre_dimpresion) + '</option>'; }).join(''));
             pintarProductos();
@@ -203,17 +254,37 @@
         }).fail(function (x) { error(x, 'No se pudieron cargar las promos'); });
     }
 
+    /** v1.32.0: ¿se muestran las promos por pieza? (Configuraciones, o si ya existe alguna) */
+    function piezaVisible() {
+        return cfgSushi().por_pieza || $.grep(ps.datos ? ps.datos.promos : [], function (p) { return p.modo === 'pieza'; }).length > 0;
+    }
+    function tipoVisible(t) {
+        if (t === 'base') return !!cfgSushi().bases;
+        if (t === 'salsa') return !!cfgSushi().salsas;
+        return true;
+    }
+    function pintarFija() {
+        var $f = $('#psFija');
+        if (!ps.promo || !(ps.datos && ps.datos.con_opciones)) { $f.hide(); return; }
+        $f.show().toggleClass('on', !!ps.promo.fija).html(ps.promo.fija
+            ? '<span><i class="fa fa-lock"></i> <b>Promo fija:</b> en la Caja se agrega ya armada, sin preguntar.</span><button type="button" class="btn btn-default" id="btnPsQuitarFija"><i class="fa fa-unlock"></i> Quitar fija</button>'
+            : '<span><i class="fa fa-unlock-alt"></i> <b>Promo para armar.</b> Para dejarla <b>fija</b> (siempre igual): ármala una vez en la Caja y marca «Dejar esta promo fija».</span>');
+    }
+
     function elegirPromo(id) {
+        ps.marcados = {};   // v1.32.0
         $('#cboPromoSushi').val(String(id));
         if (!id) {
             ps.promo = null; ps.opciones = null;
             $('#psTituloForm').text('Nueva promo');
             $('#psNombre').val(''); $('#psPiezas').val(''); $('#psPrecio').val(''); $('#psPaso').val('1'); $('#psMaxRellenos').val('3');
+            $('#psMaxEnvoltorios').val('1'); $('#psMaxExtras').val('0'); $('#psMaxSalsas').val('0'); $('#psPrecioEnv').prop('checked', false);   // v1.32.0
             $('#psRolls').val(''); $('#psPiezasRol').val('10'); rollsPiezas();
             $('#psNombre').attr('placeholder', esRol() ? 'Ej: PROMO 3 ROLLS' : 'Ej: PROMO 30 PIEZAS MIXTAS');
             var sushi = $.grep(ps.datos.familias, function (f) { return /sushi/i.test(f.nombre_familia); })[0];
             $('#psFamilia').val(sushi ? String(sushi.id_familia) : '0'); $('#psDestino').val('0'); $('#psVigente').prop('checked', true);
             pintarCatalogo();
+            pintarFija();
             setTimeout(function () { $('#psNombre').focus(); }, 300);
             return;
         }
@@ -224,39 +295,66 @@
             $('#psNombre').val(p.nombre); $('#psPiezas').val(p.piezas); $('#psPrecio').val(p.precio); $('#psPaso').val(p.paso); $('#psMaxRellenos').val(p.max_rellenos);
             $('#psRolls').val(p.modo === 'rol' ? p.piezas / p.piezas_rol : ''); $('#psPiezasRol').val(p.piezas_rol || 10); rollsPiezas();
             $('#psFamilia').val(String(p.id_familia)); $('#psDestino').val(String(p.id_dimpresion)); $('#psVigente').prop('checked', p.vigente);
+            // v1.32.0
+            $('#psMaxEnvoltorios').val(p.max_envoltorios || 1); $('#psMaxExtras').val(p.max_extras || 0); $('#psMaxSalsas').val(p.max_salsas || 0);
+            $('#psPrecioEnv').prop('checked', !!p.precio_envoltorio);
             pintarCatalogo();
+            pintarFija();
         }).fail(function (x) { error(x, 'No se pudo abrir la promo'); });
     }
 
     function recargarPromo() { if (ps.promo) elegirPromo(ps.promo.id_producto); }
 
-    function pintarProductos() {
-        var usados = {};
-        $.each(ps.opciones ? ps.opciones[ps.tipo] : [], function (i, o) { usados[o.id_producto] = true; });
-        $('#psProducto').html('<option value="0">Elige un producto…</option>' + $.map(ps.datos ? ps.datos.productos : [], function (p) {
-            if (usados[p.id_producto] || !p.vigente) return null;
-            return '<option value="' + p.id_producto + '">' + esc(p.nombre) + (p.familia ? ' · ' + esc(p.familia) : '') + '</option>';
-        }).join(''));
-        if ($.fn.select2) {
-            if ($('#psProducto').data('select2')) $('#psProducto').select2('destroy');
-            $('#psProducto').select2({ width: '100%', dropdownParent: $('#ModalPromosSushi') });
-        }
+    // v1.32.0 (pedido del usuario): buscador propio (el select2 de antes no dejaba escribir dentro de la ventana) para
+    // marcar uno o varios productos, o agregar toda una familia de una vez
+    function pintarFamiliasPicker() {
+        var $f = $('#psFiltroFamilia'), antes = $f.val() || '0';
+        $f.html('<option value="0">Todas las familias</option>' + $.map(ps.datos ? ps.datos.familias : [], function (f) {
+            return '<option value="' + f.id_familia + '">' + esc(f.nombre_familia) + '</option>';
+        }).join('')).val(antes);
+        if ($f.val() === null) $f.val('0');
     }
+    function pintarProductos() {
+        var usados = {}, texto = $.trim($('#psBuscar').val()).toLowerCase(), fam = Number($('#psFiltroFamilia').val()) || 0, n = 0, MAX = 200;
+        $.each(ps.opciones ? ps.opciones[ps.tipo] : [], function (i, o) { usados[o.id_producto] = true; });
+        var lista = $.grep(ps.datos ? ps.datos.productos : [], function (p) {
+            return p.vigente && !usados[p.id_producto] && (!fam || p.id_familia === fam) && (!texto || p.nombre.toLowerCase().indexOf(texto) >= 0 || String(p.familia).toLowerCase().indexOf(texto) >= 0);
+        });
+        $.each(ps.marcados, function (id) { if (usados[id]) delete ps.marcados[id]; });
+        $('#psPickerLista').html(lista.length ? $.map(lista.slice(0, MAX), function (p) {
+            return '<label><input type="checkbox" class="ps-marca" value="' + p.id_producto + '"' + (ps.marcados[p.id_producto] ? ' checked' : '') + '> ' + esc(p.nombre)
+                + (p.familia ? ' <small>· ' + esc(p.familia) + '</small>' : '') + '</label>';
+        }).join('') + (lista.length > MAX ? '<div class="ps-picker-vacio">Hay ' + lista.length + ': escribe para buscar</div>' : '')
+            : '<div class="ps-picker-vacio">' + (texto || fam ? 'No hay productos con ese filtro' : 'No quedan productos para agregar') + '</div>');
+        $.each(ps.marcados, function () { n++; });
+        $('#btnPsAgregar').prop('disabled', !n || !ps.promo).html('<i class="fa fa-plus"></i> Agregar ' + (n ? n + (n === 1 ? ' marcado' : ' marcados') : 'marcados'));
+        $('#btnPsFamilia').prop('disabled', !fam || !ps.promo);
+    }
+    $('#psBuscar').on('input', pintarProductos);
+    $('#psFiltroFamilia').on('change', pintarProductos);
+    $('#psPickerLista').on('change', '.ps-marca', function () {
+        if (this.checked) ps.marcados[this.value] = true; else delete ps.marcados[this.value];
+        pintarProductos();
+    });
 
     function pintarCatalogo() {
         $('#psCatalogo').toggleClass('ps-bloqueado', !ps.promo);
+        if (!tipoVisible(ps.tipo)) ps.tipo = 'relleno';   // v1.32.0: bases y salsas según Configuraciones
         $('#psTabs .ps-tab').each(function () {
             var t = $(this).data('tipo');
-            $(this).toggleClass('on', t === ps.tipo).find('b').text(ps.opciones ? ps.opciones[t].length : 0);
+            $(this).toggle(tipoVisible(t)).toggleClass('on', t === ps.tipo).find('b').text(ps.opciones && ps.opciones[t] ? ps.opciones[t].length : 0);
         });
+        $('.ps-con-salsas').toggle(tipoVisible('salsa'));
+        var conPrecioEnv = ps.tipo === 'envoltorio' && ps.promo && ps.promo.precio_envoltorio;   // v1.32.0
         $('#psAyudaTipo').text(ps.promo ? (esRol() ? AYUDA_ROL : AYUDA)[ps.tipo] : 'Graba la promo primero; después agrega sus rellenos, envoltorios, bases y extras.');
         $('.ps-lbl-valor').text('Valor $ ' + porQue());
-        var lista = ps.opciones ? ps.opciones[ps.tipo] : [];
+        var lista = ps.opciones && ps.opciones[ps.tipo] ? ps.opciones[ps.tipo] : [];
         $('#psLista').html(lista.length ? $.map(lista, function (o) {
             return '<div class="ps-op" data-id="' + o.id_opcion + '"><span class="nombre">' + esc(o.nombre)
                 + (o.vigente ? '' : ' <small class="text-danger">(producto no vigente: no se ofrece)</small>')
                 + (o.con_receta ? ' <small><i class="fa fa-book"></i> con receta</small>' : '') + '</span>'
-                + '<span class="ps-valor">' + porQue() + ' $<input type="text" inputmode="numeric" class="form-control input-sm ps-valor-input" value="' + o.valor + '"></span>'
+                + (conPrecioEnv ? '<span class="ps-precio-env" title="Precio de la promo con este envoltorio (0 = el precio de la promo)">Precio promo $<input type="text" inputmode="numeric" class="form-control input-sm ps-precio-input" value="' + (o.precio_promo || 0) + '"></span>'
+                    : '<span class="ps-valor">' + porQue() + ' $<input type="text" inputmode="numeric" class="form-control input-sm ps-valor-input" value="' + o.valor + '"></span>')
                 + '<button type="button" class="btn btn-default btn-sm ps-quitar" title="Quitar de la promo"><i class="fa fa-times text-danger"></i></button></div>';
         }).join('') : '<div class="ps-vacio">' + (ps.promo ? 'Todavía no hay nada aquí' : '—') + '</div>');
         $('#psCopiarDe').html('<option value="0">Copiar las opciones de otra promo…</option>' + $.map(ps.datos ? ps.datos.promos : [], function (p) {
@@ -276,18 +374,30 @@
         pintarListaPromos();
         elegirPromo(0);
     });
-    $('#psTabs').on('click', '.ps-tab', function () { ps.tipo = $(this).data('tipo'); pintarCatalogo(); });
-    $('#ModalPromosSushi').on('input', '#psPiezas, #psPrecio, #psPaso, #psMaxRellenos, #psRolls, #psPiezasRol, #psValorExistente, #psValorNuevo, .ps-valor-input', function () {
+    $('#psTabs').on('click', '.ps-tab', function () { ps.tipo = $(this).data('tipo'); ps.marcados = {}; $('#psBuscar').val(''); pintarCatalogo(); });
+    $('#ModalPromosSushi').on('input', '#psPiezas, #psPrecio, #psPaso, #psMaxRellenos, #psMaxEnvoltorios, #psMaxExtras, #psMaxSalsas, #psRolls, #psPiezasRol, #psValorExistente, #psValorNuevo, .ps-valor-input, .ps-precio-input', function () {
         this.value = this.value.replace(/\D/g, '').slice(0, 9);
     });
 
+    var quitarFija = false;   // v1.32.0: "Quitar fija" graba la promo con fija = 0
+    $('#ModalPromosSushi').on('click', '#btnPsQuitarFija', function () {
+        confirmarSistema('¿Quitar la promo fija?', 'En la Caja se volverá a pedir que se arme cada vez.', 'Sí, quitar', function () {
+            quitarFija = true;
+            $('#btnPsGrabar').click();
+        });
+    });
     $('#btnPsGrabar').on('click', function () {
         var datos = {
             id_producto: ps.promo ? ps.promo.id_producto : 0, nombre: $.trim($('#psNombre').val()), piezas: entero($('#psPiezas').val()),
             precio: entero($('#psPrecio').val()), paso: entero($('#psPaso').val()) || 1, max_rellenos: entero($('#psMaxRellenos').val()),
             id_familia: Number($('#psFamilia').val()) || 0, id_dimpresion: Number($('#psDestino').val()) || 0, vigente: $('#psVigente').is(':checked') ? 1 : 0,
-            modo: ps.modo, rolls: entero($('#psRolls').val()), piezas_rol: entero($('#psPiezasRol').val()) || 10   // v1.26.0
+            modo: ps.modo, rolls: entero($('#psRolls').val()), piezas_rol: entero($('#psPiezasRol').val()) || 10,   // v1.26.0
+            // v1.32.0
+            precio_envoltorio: $('#psPrecioEnv').is(':checked') ? 1 : 0, max_envoltorios: entero($('#psMaxEnvoltorios').val()) || 1,
+            max_extras: entero($('#psMaxExtras').val()), max_salsas: entero($('#psMaxSalsas').val())
         };
+        if (quitarFija) datos.fija = 0;
+        quitarFija = false;
         if (esRol()) { datos.piezas = datos.rolls * datos.piezas_rol; datos.paso = datos.piezas_rol; }
         if (!datos.nombre) { showAppAlert('warning', 'Escribe el nombre de la promo', { duration: 4000 }); return; }
         if (esRol() && !datos.rolls) { showAppAlert('warning', 'Indica cuántos rolls trae la promo', { duration: 4000 }); return; }
@@ -296,20 +406,39 @@
         if (!datos.id_familia) { showAppAlert('warning', 'Elige la familia', { duration: 4000 }); return; }
         var $b = $(this).prop('disabled', true);
         post('grabarPromoSushi', datos).done(function (r) {
-            showAppAlert('success', datos.id_producto ? 'Promo actualizada' : 'Promo creada: ahora agrégale sus rellenos y envoltorios', { duration: 4000 });
+            showAppAlert('success', datos.fija === 0 ? 'Listo: la promo ya no es fija' : (datos.id_producto ? 'Promo actualizada' : 'Promo creada: ahora agrégale sus rellenos y envoltorios'), { duration: 4000 });
+            if (datos.precio_envoltorio && datos.id_producto) showAppAlert('info', 'Pon el precio de la promo en cada envoltorio (pestaña Envoltorios)', { duration: 5000 });
             cargarDatos(r.id_producto);
             if (typeof tablaCartaProductos !== 'undefined' && tablaCartaProductos && tablaCartaProductos.ajax) tablaCartaProductos.ajax.reload(null, false);
         }).fail(function (x) { error(x, 'No se pudo grabar la promo'); }).always(function () { $b.prop('disabled', false); });
     });
 
+    // v1.32.0: agrega los marcados (uno o varios) o toda la familia elegida en el filtro
+    function agregarVarias(datos, $b) {
+        $b.prop('disabled', true);
+        return post('agregarVariasSushi', $.extend({ id_promo: ps.promo.id_producto, tipo: ps.tipo, valor: entero($('#psValorExistente').val()) }, datos))
+            .done(function (r) {
+                ps.marcados = {};
+                showAppAlert('success', (r.agregados === 1 ? '1 producto agregado' : r.agregados + ' productos agregados') + (r.saltados ? ' (' + r.saltados + ' ya estaban)' : ''), { duration: 3500 });
+                $('#psValorExistente').val('0');
+                recargarPromo();
+            })
+            .fail(function (x) { error(x, 'No se pudo agregar'); }).always(function () { $b.prop('disabled', false); pintarProductos(); });
+    }
     $('#btnPsAgregar').on('click', function () {
-        var id = Number($('#psProducto').val()) || 0;
+        var ids = $.map(ps.marcados, function (v, id) { return Number(id); });
         if (!ps.promo) return;
-        if (!id) { showAppAlert('warning', 'Elige un producto', { duration: 3000 }); return; }
-        var $b = $(this).prop('disabled', true);
-        post('agregarOpcionSushi', { id_promo: ps.promo.id_producto, tipo: ps.tipo, id_producto: id, valor: entero($('#psValorExistente').val()) })
-            .done(function () { $('#psValorExistente').val('0'); recargarPromo(); })
-            .fail(function (x) { error(x, 'No se pudo agregar'); }).always(function () { $b.prop('disabled', false); });
+        if (!ids.length) { showAppAlert('warning', 'Marca uno o más productos', { duration: 3000 }); return; }
+        agregarVarias({ ids: ids }, $(this));
+    });
+    $('#btnPsFamilia').on('click', function () {
+        var fam = Number($('#psFiltroFamilia').val()) || 0, $b = $(this);
+        if (!ps.promo || !fam) { showAppAlert('warning', 'Elige la familia en el filtro de arriba', { duration: 3000 }); return; }
+        var nombre = $('#psFiltroFamilia option:selected').text(), seccion = $('#psTabs .ps-tab.on').clone().children().remove().end().text().trim();
+        var cuantos = $.grep(ps.datos.productos, function (p) { return p.vigente && p.id_familia === fam; }).length;
+        confirmarSistema('¿Agregar toda la familia ' + nombre + '?', 'Se agregan sus ' + cuantos + ' productos vigentes a ' + seccion + ' (los que ya estén se saltan).', 'Sí, agregar', function () {
+            agregarVarias({ id_familia: fam }, $b);
+        });
     });
 
     $('#btnPsCrear').on('click', function () {
@@ -327,7 +456,12 @@
     });
     $('#psNuevoNombre').on('keydown', function (e) { if (e.which === 13) $('#btnPsCrear').click(); });
 
-    $('#psLista').on('change', '.ps-valor-input', function () {
+    $('#psLista').on('change', '.ps-precio-input', function () {   // v1.32.0
+        var id = Number($(this).closest('.ps-op').data('id'));
+        post('precioOpcionSushi', { id_opcion: id, precio: entero(this.value) })
+            .done(function () { showAppAlert('success', 'Precio con este envoltorio actualizado', { duration: 2000 }); recargarPromo(); })
+            .fail(function (x) { error(x, 'No se pudo cambiar el precio'); recargarPromo(); });
+    }).on('change', '.ps-valor-input', function () {
         var id = Number($(this).closest('.ps-op').data('id'));
         post('valorOpcionSushi', { id_opcion: id, valor: entero(this.value) })
             .done(function () { showAppAlert('success', 'Valor actualizado', { duration: 2000 }); recargarPromo(); })
@@ -335,6 +469,35 @@
     }).on('click', '.ps-quitar', function () {
         var id = Number($(this).closest('.ps-op').data('id'));
         post('quitarOpcionSushi', { id_opcion: id }).done(recargarPromo).fail(function (x) { error(x, 'No se pudo quitar'); });
+    });
+
+    // v1.32.0 (pedido del usuario): crear una familia desde aquí con la ventana de siempre; al grabarla queda elegida
+    var esperaFamilia = false;
+    $('#psNuevaFamilia').on('click', function () {
+        if (typeof crearNuevaFamilia !== 'function') return;
+        esperaFamilia = true;
+        crearNuevaFamilia();
+    });
+    $('#ModalNuevaFamilia').on('show.bs.modal', function () {
+        if (!$('#ModalPromosSushi').hasClass('in')) return;
+        // Encima de la ventana de promos (Bootstrap 3 no apila dos ventanas)
+        var $m = $(this).css('z-index', 1070);
+        setTimeout(function () { $('.modal-backdrop').last().css('z-index', 1065); }, 0);
+    }).on('hidden.bs.modal', function () {
+        $(this).css('z-index', '');
+        if ($('#ModalPromosSushi').hasClass('in')) $('body').addClass('modal-open');
+        setTimeout(function () { esperaFamilia = false; }, 3000);
+    });
+    $(document).on('familia:creada', function (e, nombre) {
+        if (!esperaFamilia || !$('#ModalPromosSushi').hasClass('in')) return;
+        esperaFamilia = false;
+        post('obtenerPromosSushi').done(function (d) {
+            ps.datos.familias = d.familias;
+            var f = $.grep(d.familias, function (x) { return String(x.nombre_familia).toUpperCase() === String(nombre).toUpperCase(); })[0];
+            $('#psFamilia').html('<option value="0">Elige…</option>' + $.map(d.familias, function (x) { return '<option value="' + x.id_familia + '">' + esc(x.nombre_familia) + '</option>'; }).join(''))
+                .val(f ? String(f.id_familia) : '0');
+            pintarFamiliasPicker();
+        });
     });
 
     $('#btnPsCopiar').on('click', function () {

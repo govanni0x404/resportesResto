@@ -1021,6 +1021,9 @@ class Productos extends CI_Controller
 				'paso' => $in->post('paso'), 'max_rellenos' => $in->post('max_rellenos'), 'precio' => $in->post('precio'),
 				'id_familia' => $in->post('id_familia'), 'id_dimpresion' => $in->post('id_dimpresion'), 'vigente' => $in->post('vigente'),
 				'modo' => $in->post('modo'), 'rolls' => $in->post('rolls'), 'piezas_rol' => $in->post('piezas_rol'),   // v1.26.0
+				// v1.32.0: precio según el envoltorio, máximos y quitar "fija"
+				'precio_envoltorio' => $in->post('precio_envoltorio'), 'max_envoltorios' => $in->post('max_envoltorios'),
+				'max_extras' => $in->post('max_extras'), 'max_salsas' => $in->post('max_salsas'), 'fija' => $in->post('fija'),
 			));
 		});
 	}
@@ -1044,7 +1047,21 @@ class Productos extends CI_Controller
 		$this->respuestaSushi(function ($m, $in) { return $m->valorOpcion((int)$in->post('id_opcion'), $in->post('valor')); });
 	}
 
-	public function quitarOpcionSushi()
+	/** v1.32.0: precio de la promo con ese envoltorio */
+	public function precioOpcionSushi()
+	{
+		$this->respuestaSushi(function ($m, $in) { return $m->precioOpcion((int)$in->post('id_opcion'), $in->post('precio')); });
+	}
+
+	/** v1.32.0: agregar varios productos a la vez, o toda una familia */
+	public function agregarVariasSushi()
+	{
+		$this->respuestaSushi(function ($m, $in) {
+			return $m->agregarVarias((int)$in->post('id_promo'), (string)$in->post('tipo'), $in->post('ids'), (int)$in->post('id_familia'), $in->post('valor'));
+		});
+	}
+
+		public function quitarOpcionSushi()
 	{
 		$this->respuestaSushi(function ($m, $in) { return $m->quitarOpcion((int)$in->post('id_opcion')); });
 	}

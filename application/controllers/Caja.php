@@ -455,6 +455,19 @@ class Caja extends CI_Controller
 		}, true);
 	}
 
+	/**
+	 * v1.32.0 (pedido del usuario): dejar una promo de sushi FIJA con lo armado (en la Caja ya no se pregunta), o quitarla.
+	 * Solo un administrador (la carta cambia para todos).
+	 */
+	public function fijarPromoSushi()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			return $this->Mcaja->fijarPromoSushi($this->idUsuario(), $this->idRol(), (int)($b['id_producto'] ?? 0),
+				!empty($b['fija']), isset($b['sushi']) && is_array($b['sushi']) ? $b['sushi'] : array());
+		}, true);
+	}
+
 	private function observacionMesa($mensaje)
 	{
 		$mensaje = trim((string)$mensaje);

@@ -115,6 +115,26 @@ if (!function_exists('cfg_opciones')) {
                                         </div>
                                         <?php endif; ?>
 
+                                        <?php if (array_key_exists('sushi_por_pieza_web', $config)) :
+                                            $__sushi = function ($k) use ($config) { return in_array($config[$k] ?? null, array(true, 't', 1, '1'), true); }; ?>
+                                        <!-- v1.32.0: promos de sushi (migración 20261123110000) -->
+                                        <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"><i class="fa fa-th"></i>Promos de sushi</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="cfg-fila"><label><input type="checkbox" name="sushi_por_pieza_web" value="1" <?php echo $__sushi('sushi_por_pieza_web') ? 'checked' : ''; ?>> Armar promos por pieza</label><?php cfg_info("Además de las promos por roll, permite crear promos por pieza (ej. 30 piezas repartidas como el cliente quiera).
+Pocos locales lo usan.
+Apagada: en Carta > Promos Sushi solo se crean promos por roll. Las promos por pieza que ya existen se siguen vendiendo."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="sushi_bases_web" value="1" <?php echo $__sushi('sushi_bases_web') ? 'checked' : ''; ?>> Preguntar la base (arroz, etc.)</label><?php cfg_info("Marcada: en la promo se pueden agregar bases y en la Caja se pregunta la base de cada roll.
+Sin marcar: no se pregunta la base (las bases que ya tengan las promos no se ofrecen)."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="sushi_salsas_web" value="1" <?php echo $__sushi('sushi_salsas_web') ? 'checked' : ''; ?>> Salsas aparte de los extras</label><?php cfg_info("Marcada: la promo tiene una sección de Salsas (soya, teriyaki…) separada de los Extras, cada una con su propio máximo.
+Sin marcar: solo Extras.
+En la Caja las salsas y los extras siempre son opcionales."); ?></div>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+
                                         <?php if (array_key_exists('delivery_habilitado', $config)) : ?>
                                         <!-- 18-11-2026: Delivery en la Caja (migración 20261118100000; sin ella la tarjeta no aparece) -->
                                         <div class="config-card">

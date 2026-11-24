@@ -66,6 +66,7 @@
                 }).done(function() {
                     $('#ModalNuevaFamilia').modal('hide');
                     ListadoDeFamiliasMantenedor(NombreFamilia);
+                    $(document).trigger('familia:creada', [NombreFamilia]);   // v1.32.0: Promos Sushi la deja elegida
 
                     if (typeof ListadoDeFamilias === 'function') {
                         ListadoDeFamilias(NombreFamilia);

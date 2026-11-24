@@ -150,6 +150,9 @@ class Configuraciones extends CI_Controller {
             'agrupar_productos_web',  // v1.24.8: agrupar productos iguales en la Caja (migración 20261120170000)
             'usar_cocina_web',        // v1.29.0: pantalla de cocina (migración 20261121140000)
             'usar_reservas_web',      // v1.29.0: reservas de mesas
+            'sushi_por_pieza_web',    // v1.32.0: promos de sushi por pieza (migración 20261123110000)
+            'sushi_bases_web',        // v1.32.0: preguntar la base en las promos de sushi
+            'sushi_salsas_web',       // v1.32.0: salsas aparte de los extras
             'acepta',
             'acierto'
         ];
