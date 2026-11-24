@@ -769,6 +769,13 @@
 <!-- v1.24.17: copiar los agregados de un producto a otro o varios (la maneja productos/jsAgregados.php) -->
 <style>
 #ModalCopiarAgregados .modal-dialog { width: 760px; max-width: calc(100vw - 24px); }
+/* v1.33.1 (pedido del usuario): la ventana Agregados del producto más ancha (la tabla de abajo se veía apretada) */
+#ModalAgregadosDelProducto .modal-dialog { width: 1040px; max-width: calc(100vw - 24px); }
+#ModalAgregadosDelProducto #tableAgregados th { white-space: nowrap; vertical-align: bottom; }
+#ModalAgregadosDelProducto #tableAgregados td { vertical-align: middle; }
+#ModalAgregadosDelProducto #tableAgregados .cantidad-agregado-input, #ModalAgregadosDelProducto #tableAgregados .valor-agregado-input { min-width: 80px; }
+#ModalAgregadosDelProducto .ag-destino-propio { min-width: 150px; }
+#ModalAgregadosDelProducto .ag-destino-propio small { white-space: nowrap; }
 #ModalCopiarAgregados .modal-content { border: 0; border-radius: 14px; overflow: hidden; }
 .ca-cab { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--t-borde, #E5E7EB); background: #fff; }
 .ca-cab-icono { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); font-size: 18px; }
@@ -902,31 +909,30 @@
                             </div>
                         </fieldset>
                         <fieldset>
-                            <div class="col-md-6">
-                                <div class="btn-group" role="group" aria-label="...">
-                                    <div class="checkbox checkbox-success checkbox-circle">
+                            <div class="col-md-12">
+                                <!-- v1.33.1 (pedido del usuario): opciones como interruptores en tarjetas, con su explicación.
+                                     v1.30.0: la Caja web ya usa "Imprimir en su propio destino" (antes solo el POS de escritorio) -->
+                                <div class="op-switches">
+                                    <label class="op-switch" title="El agregado sale en la comanda del destino de impresión de SU producto (ej. la SALSA en la BARRA), con el nombre del producto al que va. En la comanda del producto queda anotado dónde salió.">
                                         <input id="ckUsarDestinoDeImpresion" type="checkbox">
-                                        <!-- v1.30.0: la Caja web ya usa esta casilla (antes solo el POS de escritorio) -->
-                                        <label for="ckUsarDestinoDeImpresion" title="El agregado sale en la comanda del destino de impresión de SU producto (ej. la SALSA en la BARRA), con el nombre del producto al que va. En la comanda del producto queda anotado dónde salió.">
-                                            IMPRIMIR EN SU PROPIO DESTINO
-                                        </label>
-                                    </div>
+                                        <span class="op-switch-pista" aria-hidden="true"></span>
+                                        <span class="op-switch-texto">
+                                            <b><i class="fa fa-print"></i> Imprimir en su propio destino</b>
+                                            <small>Sale en la impresora que el agregado tiene en la Carta. Apagado: sale junto con el producto.</small>
+                                        </span>
+                                    </label>
+                                    <label class="op-switch">
+                                        <input id="ckVigenciaAgregado" type="checkbox">
+                                        <span class="op-switch-pista" aria-hidden="true"></span>
+                                        <span class="op-switch-texto">
+                                            <b><i class="fa fa-check-circle"></i> Activo / vigente</b>
+                                            <small>Se ofrece en la Caja. Apagado: queda guardado, pero no se ofrece.</small>
+                                        </span>
+                                    </label>
                                 </div>
                                 <!-- v1.30.1: a qué impresora sale (el destino del producto agregado, el que tiene en la Carta) -->
-                                <div id="infoDestinoAgregado" class="destino-agregado-info" style="display:none; margin:6px 0 4px; padding:7px 10px; border-radius:8px; background:var(--t-primario-suave, #E8F5EC); color:var(--t-texto, #1F2937); font-size:12px; line-height:1.4"></div>
+                                <div id="infoDestinoAgregado" class="destino-agregado-info" style="display:none; margin:8px 0 4px; padding:7px 10px; border-radius:8px; background:var(--t-primario-suave, #E8F5EC); color:var(--t-texto, #1F2937); font-size:12px; line-height:1.4"></div>
                             </div>
-
-                            <div class="col-md-6">
-                                <div class="btn-group" role="group" aria-label="...">
-                                    <div class="checkbox checkbox-success checkbox-circle">
-                                        <input id="ckVigenciaAgregado" type="checkbox">
-                                        <label for="ckVigenciaAgregado">
-                                            ACTIVO/VIGENTE
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
                         </fieldset>
                         <fieldset>
                             <div class="col-md-4">

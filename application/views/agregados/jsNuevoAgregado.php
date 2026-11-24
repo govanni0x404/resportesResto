@@ -47,32 +47,25 @@
 							</div>
 						</fieldset>
 						<div class="t-card-titulo">Opciones</div>
-						<fieldset>
-							<div class="col-sm-6"><div class="t-opciones">
-								<div class="btn-group" role="group" aria-label="...">
-									<div class="checkbox checkbox-success checkbox-circle">
-										<input id="ckUsarDestinoDeImpresion" type="checkbox">
-										<label for="ckUsarDestinoDeImpresion" title="El agregado sale en la comanda del destino de impresión de SU producto (ej. la SALSA en la BARRA), con el nombre del producto al que va.">
-											IMPRIMIR EN SU PROPIO DESTINO
-										</label>
-									</div>
-									<!-- v1.30.1 -->
-									<small class="text-muted" style="display:block; margin-top:4px"><i class="fa fa-print"></i> Sale en el destino de impresión que el producto agregado tiene en la Carta (para cambiarlo, edita ese producto).</small>
-								</div></div>
-							</div>
-
-							<div class="col-sm-6"><div class="t-opciones">
-								<div class="btn-group" role="group" aria-label="...">
-									<div class="checkbox checkbox-success checkbox-circle">
-										<input id="ckVigenciaAgregado" type="checkbox">
-										<label for="ckVigenciaAgregado">
-											ACTIVO/VIGENTE
-										</label>
-									</div>
-								</div></div>
-							</div>
-
-						</fieldset>
+						<!-- v1.33.1 (pedido del usuario): opciones como interruptores en tarjetas, con su explicación -->
+						<div class="op-switches">
+							<label class="op-switch" title="El agregado sale en la comanda del destino de impresión de SU producto (ej. la SALSA en la BARRA), con el nombre del producto al que va.">
+								<input id="ckUsarDestinoDeImpresion" type="checkbox">
+								<span class="op-switch-pista" aria-hidden="true"></span>
+								<span class="op-switch-texto">
+									<b><i class="fa fa-print"></i> Imprimir en su propio destino</b>
+									<small>Sale en la impresora que el agregado tiene en la Carta. Apagado: sale junto con el producto.</small>
+								</span>
+							</label>
+							<label class="op-switch">
+								<input id="ckVigenciaAgregado" type="checkbox">
+								<span class="op-switch-pista" aria-hidden="true"></span>
+								<span class="op-switch-texto">
+									<b><i class="fa fa-check-circle"></i> Activo / vigente</b>
+									<small>Se ofrece en la Caja. Apagado: queda guardado, pero no se ofrece.</small>
+								</span>
+							</label>
+						</div>
 					</div>
 				</div>
 			</div>
