@@ -92,22 +92,6 @@ class McategoriasAgregados extends CI_Model
 		return (int)$r->id;
 	}
 
-	/** Borra la categoría (queda marcada eliminada) y sus productos quedan sin categoría. */
-	public function eliminar($id)
-	{
-		$this->exigir();
-		$id = (int)$id;
-		$db = $this->db();
-		$db->trans_begin();
-		$this->q('UPDATE categoria_agregado_web SET eliminado = true, vigente = false WHERE id_categoria_agregado = ? AND eliminado IS NOT TRUE', array($id));
-		if ($db->affected_rows() < 1) { $db->trans_rollback(); throw new Exception('La categoría ya no existe. Recarga la página.', 404); }
-		$this->q('UPDATE producto SET id_categoria_agregado_web = 0 WHERE id_categoria_agregado_web = ?', array($id));
-		$sueltos = $db->affected_rows();
-		if ($db->trans_status() === false) { $db->trans_rollback(); throw new Exception('No se pudo eliminar la categoría', 500); }
-		$db->trans_commit();
-		return $sueltos;
-	}
-
 	/**
 	 * Los productos vigentes con su categoría y en cuántos productos se usan como agregado (para la ventana
 	 * "Productos de la categoría"; la pantalla muestra primero los que ya son agregados).

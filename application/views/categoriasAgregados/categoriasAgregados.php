@@ -11,6 +11,7 @@
     .ca-tabla table { width: 100%; margin: 0; }
     .ca-tabla th { font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave); white-space: nowrap; }
     .ca-tabla td { vertical-align: middle !important; }
+    .ca-tabla tbody tr[data-id] { cursor: pointer; }
     .ca-tabla tr.ca-no-vigente td { color: var(--t-texto-tenue); background: var(--t-fondo-alt); }
     .ca-nombre { font-weight: 700; color: var(--t-texto-fuerte); text-transform: uppercase; }
     .ca-chip { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
@@ -87,6 +88,7 @@
                     Crea las categorías y con <b>Productos</b> pones varios productos de una vez en una categoría (busca, por ejemplo, <b>pollo</b> y marca todos).
                     La categoría vale para ese producto en todos los productos donde es agregado. El <b>orden</b> es el orden de los cuadros en la Caja.
                     Cuántos se pueden elegir de cada categoría se pone en <b>Configuraciones &rsaquo; Agregados en la Caja</b>.
+                    Toca una fila para editarla; para dejar de usar una categoría, apágale <b>Activa</b>.
                 </p>
                 <div class="table-responsive ca-tabla">
                     <table class="table table-hover">
@@ -97,7 +99,7 @@
                                 <th class="text-center">Productos</th>
                                 <th class="text-center" title="En cuántos productos se ofrecen como agregado">Se ofrecen en</th>
                                 <th class="text-center">Activa</th>
-                                <th class="text-right">Acciones</th>
+                                <th class="text-right"></th>
                             </tr>
                         </thead>
                         <tbody id="cuerpoCategoriasAg">

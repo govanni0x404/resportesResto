@@ -145,14 +145,15 @@ revisar('al retomarla trae solo el extra válido', (json($b)['datos']['lineas'][
 if ($idEsp) postJson(BASE . '/Caja/anularEspera', array('id' => $idEsp, 'motivo' => 'Prueba automática', 'autorizacion' => $aut ? array('id_usuario' => 0, 'clave' => $aut) : null));
 
 echo "Categorías de agregados:\n";
-list($c, $b) = pedir(BASE . '/CategoriasAgregados/guardar', array('id' => 0, 'nombre' => 'Prueba prote ' . date('His'), 'orden' => 0, 'vigente' => 1));
+$suf = date('His') . mt_rand(10, 99);
+list($c, $b) = pedir(BASE . '/CategoriasAgregados/guardar', array('id' => 0, 'nombre' => 'Prueba prote ' . $suf, 'orden' => 0, 'vigente' => 1));
 $idProte = (int)(json($b)['id'] ?? 0);
 revisar('crear la categoría (queda en mayúsculas)', $c === 200 && $idProte > 0 && strpos(json_encode(json($b)['categorias'] ?? array(), JSON_UNESCAPED_UNICODE), 'PRUEBA PROTE') !== false, "código $c: " . substr($b, 0, 200));
-list($c) = pedir(BASE . '/CategoriasAgregados/guardar', array('id' => 0, 'nombre' => 'prueba PROTE ' . date('His'), 'vigente' => 1));
+list($c) = pedir(BASE . '/CategoriasAgregados/guardar', array('id' => 0, 'nombre' => 'prueba PROTE ' . $suf, 'vigente' => 1));
 revisar('no deja dos categorías con el mismo nombre', $c === 409, "código $c");
 list($c) = pedir(BASE . '/CategoriasAgregados/guardar', array('id' => 0, 'nombre' => '   ', 'vigente' => 1));
 revisar('no deja una categoría sin nombre', $c === 400, "código $c");
-list(, $b) = pedir(BASE . '/CategoriasAgregados/guardar', array('id' => 0, 'nombre' => 'Prueba verdu ' . date('His'), 'vigente' => 1));
+list(, $b) = pedir(BASE . '/CategoriasAgregados/guardar', array('id' => 0, 'nombre' => 'Prueba verdu ' . $suf, 'vigente' => 1));
 $idVerdu = (int)(json($b)['id'] ?? 0);
 list($c, $b) = pedir(BASE . '/CategoriasAgregados/asignar', array('id_categoria' => $idProte, 'poner' => array($idA1, $idA2), 'quitar' => array()));
 revisar('poner 2 productos de una vez en la categoría', $c === 200 && (json($b)['puestos'] ?? 0) === 2, "código $c: " . substr($b, 0, 200));
@@ -192,8 +193,17 @@ $anular();
 
 echo "Dejar como estaba:\n";
 list($c, $b) = pedir(BASE . '/CategoriasAgregados/eliminar', array('id' => $idProte));
-revisar('eliminar la categoría deja sus productos sin categoría', $c === 200 && (json($b)['sin_categoria'] ?? 0) === 2, "código $c: " . substr($b, 0, 200));
-pedir(BASE . '/CategoriasAgregados/eliminar', array('id' => $idVerdu));
+revisar('las categorías no se borran (no hay eliminar)', $c === 404, "código $c");
+list($c, $b) = pedir(BASE . '/CategoriasAgregados/guardar', array('id' => $idProte, 'nombre' => 'Prueba prote ' . $suf . ' x', 'vigente' => 0));
+$cp = null;
+foreach (json($b)['categorias'] ?? array() as $x) if ((int)$x['id'] === $idProte) $cp = $x;
+revisar('se deja como no activa', $c === 200 && $cp && $cp['vigente'] === false, "código $c: " . substr($b, 0, 200));
+list(, $b) = pedir(BASE . '/Caja/catalogo?id_lprecio=1');
+$ids = array_map(function ($x) { return (int)$x['id']; }, json($b)['categorias_agregados'] ?? array());
+revisar('una categoría no activa ya no sale en la Caja', !in_array($idProte, $ids, true));
+pedir(BASE . '/CategoriasAgregados/asignar', array('id_categoria' => $idProte, 'quitar' => array($idA1, $idA2)));
+pedir(BASE . '/CategoriasAgregados/asignar', array('id_categoria' => $idVerdu, 'quitar' => array($idA3)));
+pedir(BASE . '/CategoriasAgregados/guardar', array('id' => $idVerdu, 'nombre' => 'Prueba verdu ' . $suf . ' x', 'vigente' => 0));
 opcion($idPrin, array('accion' => 'extras', 'valor' => 0));
 pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => 0));
 pedir(BASE . '/Configuraciones/guardar', array('agregados_extra_web' => '0', 'agregados_categorias_web' => '0', 'agregados_max_extras_web' => '1', 'agregados_max_categoria_web' => '0'));

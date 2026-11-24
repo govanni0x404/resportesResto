@@ -41,14 +41,6 @@ class CategoriasAgregados extends CI_Controller
 		}, true);
 	}
 
-	public function eliminar()
-	{
-		$this->ejecutar(function () {
-			$sueltos = $this->McategoriasAgregados->eliminar((int)$this->input->post('id'));
-			return array('sin_categoria' => $sueltos) + $this->McategoriasAgregados->listar();
-		}, true);
-	}
-
 	public function agregados()
 	{
 		$this->ejecutar(function () {

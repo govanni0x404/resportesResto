@@ -33,7 +33,7 @@
 				return;
 			}
 			$('#cuerpoCategoriasAg').html($.map(cats, function (c) {
-				return '<tr data-id="' + c.id + '" class="' + (c.vigente ? '' : 'ca-no-vigente') + '">'
+				return '<tr data-id="' + c.id + '" class="' + (c.vigente ? '' : 'ca-no-vigente') + '" title="Toca la fila para editarla">'
 					+ '<td class="text-center">' + c.orden + '</td>'
 					+ '<td><span class="ca-nombre">' + esc(c.nombre) + '</span></td>'
 					+ '<td class="text-center">' + c.agregados + '</td>'
@@ -41,8 +41,6 @@
 					+ '<td class="text-center"><span class="ca-chip ' + (c.vigente ? 'si">Sí' : 'no">No') + '</span></td>'
 					+ '<td><div class="ca-botones">'
 					+ '<button type="button" class="btn btn-success btn-sm ca-asignar" title="Poner varios productos en esta categoría"><i class="fa fa-list-ul"></i> Productos</button>'
-					+ '<button type="button" class="btn btn-default btn-sm ca-editar"><i class="fa fa-pencil"></i> Editar</button>'
-					+ '<button type="button" class="btn btn-default btn-sm ca-eliminar" title="Eliminar la categoría"><i class="fa fa-trash"></i></button>'
 					+ '</div></td></tr>';
 			}).join('') + (sinCat ? '<tr><td colspan="6" class="ca-ayuda" style="padding:10px 8px"><i class="fa fa-info-circle"></i> ' + sinCat
 				+ (sinCat === 1 ? ' producto que se usa como agregado no tiene' : ' productos que se usan como agregado no tienen') + ' categoría: en la Caja salen en el cuadro "Otros agregados".</td></tr>' : ''));
@@ -67,7 +65,11 @@
 		}
 		$('#modalCategoriaAg').on('shown.bs.modal', function () { $('#caNombre').focus(); });
 		$('#btnNuevaCategoriaAg').on('click', function () { abrir(null); });
-		$('#cuerpoCategoriasAg').on('click', '.ca-editar', function () { abrir(categoria(+$(this).closest('tr').data('id'))); });
+		// v1.35.2 (pedido del usuario): se edita tocando la fila; no se borra, se deja no activa
+		$('#cuerpoCategoriasAg').on('click', 'tr[data-id]', function (e) {
+			if ($(e.target).closest('.ca-asignar').length) return;
+			abrir(categoria(+$(this).data('id')));
+		});
 		$('#frmCategoriaAg').on('submit', function (e) {
 			e.preventDefault();
 			var d = { id: $('#caId').val(), nombre: $.trim($('#caNombre').val()), orden: $('#caOrden').val(), vigente: $('#caVigente').is(':checked') ? 1 : 0 };
@@ -80,17 +82,6 @@
 			}).fail(function (xhr) { error(xhr, 'No se pudo guardar la categoría'); })
 				.always(function () { $b.prop('disabled', false); });
 		});
-		$('#cuerpoCategoriasAg').on('click', '.ca-eliminar', function () {
-			var c = categoria(+$(this).closest('tr').data('id'));
-			if (!c) return;
-			confirmarSistema('¿Eliminar ' + c.nombre + '?', c.agregados ? 'Sus ' + c.agregados + ' productos quedan sin categoría (no se borran).' : 'No tiene productos.', 'Sí, eliminar', function () {
-				$.ajax({ url: base + 'eliminar', type: 'POST', dataType: 'json', data: { id: c.id } }).done(function (r) {
-					showAppAlert('success', 'Categoría eliminada');
-					aplicar(r);
-				}).fail(function (xhr) { error(xhr, 'No se pudo eliminar la categoría'); });
-			}, true);
-		});
-
 		// ---- Poner varios agregados en una categoría ----
 		function abrirAsignar(c) {
 			actual = c;
