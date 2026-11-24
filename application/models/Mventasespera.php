@@ -178,6 +178,48 @@ class Mventasespera extends CI_Model
 		return array('ok' => true);
 	}
 
+	/**
+	 * v1.33.0 (pedido del usuario): anula de una vez las ventas en espera que se ven en la lista ($ids), con una sola
+	 * justificación que queda en cada una (y su evento espera_anulada en la auditoría, como al anular de a una). Las que
+	 * otra caja ya recuperó o anuló entretanto se saltan y se informan. Todo en una transacción.
+	 */
+	public function anularVarias($caja, $idUsuario, $ids, $motivo)
+	{
+		$this->exigir();
+		$ids = array_values(array_unique(array_filter(array_map('intval', is_array($ids) ? $ids : array()), function ($i) { return $i > 0; })));
+		if (!$ids) throw new Exception('No hay ventas en espera para anular.', 400);
+		if (count($ids) > 200) throw new Exception('Son demasiadas ventas en espera para anularlas de una vez (máximo 200).', 400);
+		$motivo = trim(preg_replace('/\s+/u', ' ', (string)$motivo));
+		if (mb_strlen($motivo) < 5) throw new Exception('Escribe la justificación de la anulación (al menos 5 caracteres).', 400);
+		$motivo = mb_substr($motivo, 0, 250);
+		$res = array('anuladas' => 0, 'monto' => 0, 'saltadas' => 0);
+		$db = $this->db();
+		$db->trans_begin();
+		try {
+			$filas = $this->q("UPDATE caja_venta_espera SET estado = 'anulada', id_caja_cierre = ?, id_usuario_cierre = ?, fecha_cierre = ?, motivo_anulacion = ?
+				WHERE id_venta_espera IN (" . implode(',', $ids) . ") AND estado = 'espera'
+				RETURNING id_venta_espera, nombre, total, unidades, datos",
+				array((int)$caja->id_caja, (int)$idUsuario, date('Y-m-d H:i:s'), $motivo))->result();
+			foreach ($filas as $f) {
+				$datos = json_decode((string)$f->datos, true);
+				$this->insertarEvento($caja, $idUsuario, 'espera_anulada', array(
+					'id_venta_espera' => (int)$f->id_venta_espera, 'monto' => (int)$f->total, 'unidades' => (float)$f->unidades,
+					'motivo' => $motivo, 'todas' => true,
+					'detalle' => array('nombre' => (string)$f->nombre, 'lineas' => isset($datos['lineas']) ? $datos['lineas'] : array()),
+				));
+				$res['anuladas']++;
+				$res['monto'] += (int)$f->total;
+			}
+			if (!$res['anuladas']) throw new Exception('Ninguna de esas ventas sigue en espera: otra caja o usuario las recuperó o anuló.', 409);
+			$res['saltadas'] = count($ids) - $res['anuladas'];
+			$db->trans_commit();
+		} catch (Throwable $e) {
+			$db->trans_rollback();
+			throw $e;
+		}
+		return $res;
+	}
+
 	// ====================== Salida de la Caja y eventos ======================
 
 	/**

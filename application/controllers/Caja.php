@@ -553,6 +553,21 @@ class Caja extends CI_Controller
 		}, true);
 	}
 
+	/** v1.33.0: Mesas > Anular varias (Configuraciones). Una comanda de anulación por mesa. */
+	public function anularVariasMesas()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			$r = $this->Mcaja->anularVariasMesas($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $b);
+			foreach ($r['mesas'] as $i => $m) {
+				$r['mesas'][$i]['comanda_id'] = $this->guardarComanda($m['anuladas'], array('id_mesa' => $m['id_mesa'],
+					'anulacion' => true, 'motivo' => (string)($b['motivo'] ?? '')));
+				unset($r['mesas'][$i]['anuladas']);
+			}
+			return $r;
+		}, true);
+	}
+
 	public function moverMesa()
 	{
 		$this->ejecutar(function () {
@@ -735,6 +750,21 @@ class Caja extends CI_Controller
 			$this->Mcaja->autorizarAnulacionEspera($this->idUsuario(), $this->idRol(), $b['autorizacion'] ?? null);
 			$this->load->model('Mventasespera');
 			return $this->Mventasespera->anular($caja, $this->idUsuario(), (int)($b['id'] ?? 0), $b['motivo'] ?? '');
+		}, true);
+	}
+
+	/** v1.33.0: Ventas en espera > Anular todas (solo con la casilla de Configuraciones; la clave se pide una vez). */
+	public function anularEsperasTodas()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			$caja = $this->cajaRequerida();
+			if (empty($this->Mcaja->opciones()['anular_todas_esperas'])) {
+				throw new Exception('Anular todas las ventas en espera no está habilitado en Configuraciones.', 403);
+			}
+			$this->Mcaja->autorizarAnulacionEspera($this->idUsuario(), $this->idRol(), $b['autorizacion'] ?? null);
+			$this->load->model('Mventasespera');
+			return $this->Mventasespera->anularVarias($caja, $this->idUsuario(), $b['ids'] ?? array(), $b['motivo'] ?? '');
 		}, true);
 	}
 

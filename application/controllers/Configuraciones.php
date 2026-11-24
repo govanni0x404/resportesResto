@@ -153,6 +153,8 @@ class Configuraciones extends CI_Controller {
             'sushi_por_pieza_web',    // v1.32.0: promos de sushi por pieza (migración 20261123110000)
             'sushi_bases_web',        // v1.32.0: preguntar la base en las promos de sushi
             'sushi_salsas_web',       // v1.32.0: salsas aparte de los extras
+            'esperas_anular_todas_web',  // v1.33.0: Ventas en espera > Anular todas (migración 20261124120000)
+            'mesas_anular_varias_web',   // v1.33.0: Mesas > Anular varias mesas
             'acepta',
             'acierto'
         ];

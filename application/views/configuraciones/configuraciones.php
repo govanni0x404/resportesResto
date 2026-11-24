@@ -94,6 +94,12 @@ if (!function_exists('cfg_opciones')) {
                                                 <!-- v1.24.8: agrupar productos iguales (migración 20261120170000) -->
                                                 <div class="cfg-fila"><label><input type="checkbox" name="agrupar_productos_web" value="1" <?php echo ($config['agrupar_productos_web'] ?? true) !== false ? 'checked' : ''; ?>> Juntar productos iguales en una sola fila</label><?php cfg_info("Marcada: si agregas dos pizzas iguales, quedan en una fila con cantidad 2.\nSin marcar: cada pizza va en su propia fila, para ponerle a cada una su propio mensaje (ej. \"sin cebolla\")."); ?></div>
                                                 <?php endif; ?>
+                                                <?php if (array_key_exists('esperas_anular_todas_web', $config)) :
+                                                    $__on = function ($k) use ($config) { return in_array($config[$k] ?? null, array(true, 't', 1, '1'), true); }; ?>
+                                                <!-- v1.33.0: anular varias cosas de una vez (migración 20261124120000) -->
+                                                <div class="cfg-fila"><label><input type="checkbox" name="esperas_anular_todas_web" value="1" <?php echo $__on('esperas_anular_todas_web') ? 'checked' : ''; ?>> Anular todas las ventas en espera de una vez</label><?php cfg_info("Agrega el botón \"Anular todas\" en Opciones > Ventas en espera.\nSe escribe una sola justificación para todas y queda registrada en cada una (Auditoría de caja).\nSi está marcada la clave para anular una venta en espera, se pide una sola vez."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="mesas_anular_varias_web" value="1" <?php echo $__on('mesas_anular_varias_web') ? 'checked' : ''; ?>> Anular varias mesas a la vez</label><?php cfg_info("Agrega el botón \"Anular varias\" en la pestaña Mesas: tocas las mesas con pedido que quieres anular y se anulan todas juntas con un solo motivo.\nLas mesas quedan libres y a cada destino de impresión le sale su comanda de anulación.\nSi está marcada la clave para anular el pedido completo de la mesa, se pide una sola vez."); ?></div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
 

@@ -153,6 +153,15 @@
 	.mesas-vacio { padding: 70px 20px; text-align: center; color: var(--t-texto-suave, #7A6A5E); }
 	html body #mesasOcupadas { background: var(--t-primario, #B4432E) !important; border-color: var(--t-primario, #B4432E) !important; color: #fff !important; }
 	.mesa-card.actual { box-shadow: 0 0 0 3px var(--t-acento, #D9A441); }
+	/* v1.33.0: elegir mesas para anular */
+	.mesas-anular-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 10px; padding: 8px 12px; border: 1px solid #F1C7C2;
+		border-radius: 10px; background: #FDF3F2; color: #7A2A22; font-size: 13px; }
+	.mesas-anular-barra[hidden] { display: none; }
+	.mesas-anular-barra .mab-acciones { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+	.mesas-plano.anulando .mesa-card:not(.con-pedido) { opacity: .4; cursor: not-allowed; }
+	.mesa-card.sel-anular { box-shadow: 0 0 0 4px #C9372C; }
+	.mesa-card.sel-anular::after { content: '\f00c'; font-family: FontAwesome; position: absolute; top: -9px; right: -9px; width: 24px; height: 24px;
+		line-height: 24px; border-radius: 50%; background: #C9372C; color: #fff; font-size: 13px; text-align: center; }
 	.caja-banner-mesa { display: flex; align-items: center; gap: 14px; padding: 10px 18px; background: var(--t-primario, #B4432E); color: #fff; }
 	.caja-banner-mesa .nombre { font-size: 17px; font-weight: 700; }
 	.caja-banner-mesa .caja-mensaje-mesa { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1153,6 +1162,10 @@
 	.esp-vacio { padding: 36px 12px; text-align: center; color: var(--t-texto-tenue, #A89A8C); }
 	.esp-vacio i { display: block; margin-bottom: 8px; font-size: 34px; }
 	.esp-anular-detalle { margin-bottom: 12px; padding: 12px 14px; border-radius: 10px; background: var(--t-fondo-alt, #FBF8F3); }
+	.esp-todas { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; padding: 8px 12px;
+		border: 1px solid #F1C7C2; border-radius: 10px; background: #FDF3F2; color: #7A2A22; font-size: 13px; }
+	.esp-todas[hidden] { display: none; }
+	.esp-anular-detalle ul { margin: 6px 0 0; padding-left: 18px; max-height: 30vh; overflow-y: auto; }
 	.mesa-drawer #opcionesEspera { display: none !important; }   /* en una mesa no hay venta en espera */
 	.salida-bloque { display: flex; gap: 12px; margin-bottom: 12px; padding: 12px 14px; border: 1px solid; border-radius: 12px; }
 	.salida-bloque > i { flex: 0 0 auto; margin-top: 2px; font-size: 22px; }
@@ -1576,6 +1589,8 @@
 								<!-- 14-11-2026: recargar al tiro (pedidos que llegan de la app de garzones u otra caja) -->
 								<button type="button" class="btn btn-default btn-sm" id="btnActualizarMesas" title="Volver a cargar las mesas"><i class="fa fa-refresh"></i> Actualizar</button>
 								<button type="button" class="btn btn-default btn-sm" id="btnOrganizarMesas"><i class="fa fa-arrows"></i> Organizar mesas</button>
+								<!-- v1.33.0: anular varias mesas a la vez (Configuraciones > Modo de la Caja web) -->
+								<button type="button" class="btn btn-default btn-sm" id="btnAnularVariasMesas" style="display:none"><i class="fa fa-ban"></i> Anular varias</button>
 								<button type="button" class="btn btn-default btn-sm" id="btnCancelarPlano" style="display:none">Cancelar</button>
 								<button type="button" class="btn btn-success btn-sm" id="btnGuardarPlano" style="display:none"><i class="fa fa-check"></i> Guardar plano</button>
 							</div>
@@ -1588,6 +1603,16 @@
 							<span><i class="bloqueada"></i> Bloqueada</span>
 							<span class="leyenda-reserva" style="display:none" title="Mesa libre bloqueada por una reserva (Reservas)"><i class="reservada"></i> Reservada</span>
 							<span class="text-muted" id="mesasAyuda">Toca una mesa libre para tomar el pedido, o una con pedido para agregar productos, pedir la precuenta o cobrar.</span>
+						</div>
+						<!-- v1.33.0: barra al elegir mesas para anular -->
+						<div class="mesas-anular-barra" id="mesasAnularBarra" hidden>
+							<i class="fa fa-ban"></i>
+							<span id="mesasAnularTexto">Toca las mesas con pedido que quieres anular</span>
+							<span class="mab-acciones">
+								<button type="button" class="btn btn-default btn-sm" id="btnAnularMesasTodas" title="Elegir todas las mesas con pedido que se ven"><i class="fa fa-check-square-o"></i> Elegir todas</button>
+								<button type="button" class="btn btn-default btn-sm" id="btnAnularMesasCancelar">Cancelar</button>
+								<button type="button" class="btn btn-danger btn-sm" id="btnAnularMesasConfirmar" disabled><i class="fa fa-ban"></i> Anular</button>
+							</span>
 						</div>
 						<div id="mesasGrilla"></div>
 					</div>
@@ -2014,6 +2039,11 @@
 			<div class="modal-body">
 				<div id="esperasVistaLista">
 					<div class="esp-aviso" id="esperasAviso" hidden><i class="fa fa-info-circle"></i><span></span></div>
+					<!-- v1.33.0: Anular todas (Configuraciones > Modo de la Caja web) -->
+					<div class="esp-todas" id="esperasTodas" hidden>
+						<span id="esperasTodasTexto"></span>
+						<button type="button" class="btn btn-danger btn-sm" id="btnAnularEsperasTodas"><i class="fa fa-ban"></i> Anular todas</button>
+					</div>
 					<div class="esp-lista" id="esperasLista"></div>
 				</div>
 				<form id="esperasVistaAnular" autocomplete="off" hidden>

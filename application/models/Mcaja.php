@@ -4992,6 +4992,45 @@ class Mcaja extends CI_Model
 		$motivo = mb_substr(trim((string)(isset($p['motivo']) ? $p['motivo'] : '')), 0, 100);
 		if ($motivo === '') throw new Exception('Indica el motivo de la anulación', 400);
 		$this->claveAnulacion($db, 'admin_anular_pedido_mesa', 'anular el pedido de la mesa', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
+		return array('ok' => true, 'anuladas' => $this->anularPedidoDeUnaMesa($db, $caja, $idUsuario, $idMesa, $motivo));
+	}
+
+	/**
+	 * v1.33.0 (pedido del usuario): anula el pedido de varias mesas con un solo motivo y una sola clave (si Configuraciones
+	 * la pide para anular el pedido de la mesa). Solo con Configuraciones > Anular varias mesas a la vez. Cada mesa va en
+	 * su propia transacción: si una ya no tiene pedido (otra caja la cobró) o está en uso, se informa y las demás se anulan.
+	 * Devuelve {mesas: [{id_mesa, anuladas}], fallidas: [{id_mesa, error}]}.
+	 */
+	public function anularVariasMesas($caja, $idUsuario, $idRol, $p)
+	{
+		$db = $this->conexion();
+		if (empty($this->configuracion($db)['anular_varias_mesas'])) {
+			throw new Exception('Anular varias mesas a la vez no está habilitado en Configuraciones.', 403);
+		}
+		$ids = array_values(array_unique(array_filter(array_map('intval', isset($p['ids']) && is_array($p['ids']) ? $p['ids'] : array()),
+			function ($i) { return $i > 0; })));
+		if (!$ids) throw new Exception('Elige las mesas que quieres anular', 400);
+		if (count($ids) > 100) throw new Exception('Son demasiadas mesas para anularlas de una vez (máximo 100)', 400);
+		$motivo = mb_substr(trim((string)(isset($p['motivo']) ? $p['motivo'] : '')), 0, 100);
+		if ($motivo === '') throw new Exception('Indica el motivo de la anulación', 400);
+		$this->claveAnulacion($db, 'admin_anular_pedido_mesa', 'anular el pedido de las mesas', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
+		$res = array('mesas' => array(), 'fallidas' => array());
+		foreach ($ids as $idMesa) {
+			try {
+				$res['mesas'][] = array('id_mesa' => $idMesa, 'anuladas' => $this->anularPedidoDeUnaMesa($db, $caja, $idUsuario, $idMesa, $motivo));
+			} catch (Throwable $e) {
+				$res['fallidas'][] = array('id_mesa' => $idMesa, 'error' => $e->getMessage());
+			}
+		}
+		if (!$res['mesas']) {
+			throw new Exception('No se anuló ninguna mesa: ' . $res['fallidas'][0]['error'], 409);
+		}
+		return $res;
+	}
+
+	/** Anula el pedido abierto de una mesa y la deja libre (una transacción). Devuelve las líneas para la comanda. */
+	private function anularPedidoDeUnaMesa($db, $caja, $idUsuario, $idMesa, $motivo)
+	{
 		$db->trans_begin();
 		try {
 			$this->q($db, 'SET LOCAL TIME ZONE ' . $db->escape(self::TZ));
@@ -5009,7 +5048,7 @@ class Mcaja extends CI_Model
 			$db->trans_rollback();
 			throw $e;
 		}
-		return array('ok' => true, 'anuladas' => $this->lineasAnulacion($anuladas));
+		return $this->lineasAnulacion($anuladas);
 	}
 
 	/** Líneas anuladas con la forma que espera la comanda. */
@@ -5161,6 +5200,9 @@ class Mcaja extends CI_Model
 			'usar_correo_electronico' => 'correo_cierre',
 			'informar_anulaciones_mail' => 'correo_anulaciones',
 			'delivery_habilitado' => 'delivery',   // 18-11-2026: pestaña Delivery en la Caja
+			// v1.33.0: anular varias cosas de una vez (migración 20261124120000; sin la columna = apagada)
+			'esperas_anular_todas_web' => 'anular_todas_esperas',
+			'mesas_anular_varias_web' => 'anular_varias_mesas',
 		);
 		// Opciones de texto (impresora del cierre, impresora de documentos, papel 58/80)
 		$textos = array(

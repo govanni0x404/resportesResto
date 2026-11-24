@@ -31,9 +31,19 @@
 				$('.leyenda-reserva').toggle($.grep(r.mesas, function (m) { return !!m.reserva; }).length > 0);   // v1.29.0
 				sectoresLista = r.sectores || [];
 				pintarFiltroTipoMesa(r.tipos_mesa || []);
+				$('#btnAnularVariasMesas').toggle(!!(catalogo && catalogo.config && catalogo.config.anular_varias_mesas) && !anularMesas);
+				if (anularMesas) {
+					$.each(anularMesas, function (id) {
+						var m = $.grep(r.mesas, function (x) { return x.id_mesa === Number(id); })[0];
+						if (!m || !m.con_pedido) delete anularMesas[id];   // otra caja la cobró o anuló entretanto
+					});
+					pintarBarraAnular();
+				}
 				renderMesas();
 			});
 		}
+		// v1.33.0: mesas elegidas para anular juntas (null = no se está eligiendo)
+		var anularMesas = null;
 		function nombreMesa(id) {
 			var m = $.grep(mesasLista, function (x) { return x.id_mesa === id; })[0];
 			// 19-11-2026: sin nombre propio, el del tipo de mesa (ej. "Mesa D1")
@@ -104,7 +114,7 @@
 			if (todas.length && !lista.length) $g.append('<div class="mesas-vacio">Este sector no tiene mesas de este tipo. Elige otro tipo arriba o <b>Todos los tipos de mesa</b>.</div>');
 			else if (!lista.length) $g.append('<div class="mesas-vacio">Este sector aún no tiene mesas. Asígnalas en <a href="<?php echo base_url(); ?>index.php/MesasPorRecinto">Mesas por recinto</a>.</div>');
 			$.each(lista, function (i, m) {
-				var $c = $('<button type="button" class="mesa-card">').addClass(m.estado).toggleClass('con-pedido', !!m.con_pedido).toggleClass('actual', !!mesa && mesa.id_mesa === m.id_mesa)
+				var $c = $('<button type="button" class="mesa-card">').addClass(m.estado).toggleClass('con-pedido', !!m.con_pedido).toggleClass('sel-anular', !!(anularMesas && anularMesas[m.id_mesa])).toggleClass('actual', !!mesa && mesa.id_mesa === m.id_mesa)
 					.attr('data-id', m.id_mesa).attr('data-estado', m.estado).css({ left: m.x, top: m.y })
 					.append($('<div class="num">').toggleClass('largo', nombreMesa(m.id_mesa).length > 9).text(nombreMesa(m.id_mesa)).attr('title', nombreMesa(m.id_mesa)));
 				if (m.con_pedido) {
@@ -146,6 +156,8 @@
 		function modoPlano(activo) {
 			editandoPlano = activo;
 			$('#btnOrganizarMesas').toggle(!activo);
+			if (activo) $('#btnAnularVariasMesas').hide();
+			else $('#btnAnularVariasMesas').toggle(!!(catalogo && catalogo.config && catalogo.config.anular_varias_mesas));
 			$('#btnActualizarMesas').toggle(!activo);
 			$('#btnCancelarPlano, #btnGuardarPlano').toggle(activo);
 			$('#mesasGrilla').toggleClass('editando', activo);
@@ -472,7 +484,7 @@
 		}
 		$('#mesasGrilla').on('pointerenter', '.mesa-card', function (e) {
 			if (e.originalEvent && e.originalEvent.pointerType && e.originalEvent.pointerType !== 'mouse') return;
-			if (editandoPlano || !$(this).hasClass('con-pedido')) return;
+			if (editandoPlano || anularMesas || !$(this).hasClass('con-pedido')) return;
 			var $c = $(this), id = Number($c.attr('data-id'));
 			clearTimeout(vm.cerrar);
 			if (vm.id === id && !$vm.attr('hidden')) return;   // ya se está mostrando esta
@@ -489,9 +501,83 @@
 		$(window).on('scroll resize', cerrarVistaMesa);
 		$('a[data-toggle="tab"]').on('show.bs.tab', cerrarVistaMesa);
 
+		// ---- v1.33.0 (pedido del usuario): anular varias mesas a la vez (Configuraciones > Anular varias mesas a la vez) ----
+		function mesasElegidasAnular() {
+			return $.grep(mesasLista, function (m) { return !!(anularMesas && anularMesas[m.id_mesa]); });
+		}
+		function pintarBarraAnular() {
+			var sel = mesasElegidasAnular(), total = 0;
+			$.each(sel, function (i, m) { total += m.total || 0; });
+			$('#mesasAnularTexto').html(sel.length
+				? '<b>' + (sel.length === 1 ? '1 mesa elegida' : sel.length + ' mesas elegidas') + '</b> · ' + fmt(total) + ' · toca otra para sumarla o quitarla'
+				: 'Toca las mesas con pedido que quieres anular (puedes cambiar de sector)');
+			$('#btnAnularMesasConfirmar').prop('disabled', !sel.length)
+				.html('<i class="fa fa-ban"></i> ' + (sel.length > 1 ? 'Anular ' + sel.length + ' mesas' : 'Anular'));
+		}
+		function modoAnularMesas(activo) {
+			anularMesas = activo ? {} : null;
+			cerrarVistaMesa();
+			$('#mesasAnularBarra').prop('hidden', !activo);
+			$('#mesasGrilla').toggleClass('anulando', activo);
+			$('#btnAnularVariasMesas, #btnOrganizarMesas').toggle(!activo);
+			if (activo) pintarBarraAnular();
+			renderMesas();
+		}
+		$('#btnAnularVariasMesas').on('click', function () {
+			if (mesa && pendientesMesa().length) { toastr.warning('Primero envía o quita los productos sin enviar de ' + nombreMesa(mesa.id_mesa)); return; }
+			modoAnularMesas(true);
+		});
+		$('#btnAnularMesasCancelar').on('click', function () { modoAnularMesas(false); });
+		$('#lnkMesas').on('hidden.bs.tab', function () { if (anularMesas) modoAnularMesas(false); });
+		$('#btnAnularMesasTodas').on('click', function () {
+			if (!anularMesas) return;
+			$.each(mesasVisibles(mesasDelSector()), function (i, m) { if (m.con_pedido && m.estado !== 'bloqueada') anularMesas[m.id_mesa] = true; });
+			pintarBarraAnular();
+			renderMesas();
+		});
+		$('#btnAnularMesasConfirmar').on('click', function () {
+			var sel = mesasElegidasAnular();
+			if (!sel.length) return;
+			var nombres = $.map(sel, function (m) { return nombreMesa(m.id_mesa); }), total = 0;
+			$.each(sel, function (i, m) { total += m.total || 0; });
+			swal({ title: 'Anular ' + (sel.length === 1 ? '1 mesa' : sel.length + ' mesas'),
+				text: nombres.join(', ') + ' (' + fmt(total) + ').\nSe anulan todos sus productos y quedan libres. Indica el motivo:',
+				type: 'input', showCancelButton: true, confirmButtonColor: '#C9372C', confirmButtonText: 'Anular y liberar', cancelButtonText: 'Volver', inputPlaceholder: 'Motivo' }, function (motivo) {
+				if (motivo === false) return;
+				if (!$.trim(motivo)) { toastr.warning('Indica el motivo de la anulación'); return; }
+				var ids = $.map(sel, function (m) { return m.id_mesa; });
+				enviarConAutorizacion(function (aut) {
+					return postJson('anularVariasMesas', { ids: ids, motivo: motivo, autorizacion: aut });
+				}, function (r) {
+					var anuladas = $.map(r.mesas || [], function (m) { return m.id_mesa; });
+					// Una comanda de anulación por mesa, una tras otra (cada una a sus destinos de impresión)
+					var comandas = $.map(r.mesas || [], function (m) { return m.comanda_id || null; });
+					if (comandas.length) {
+						var fin = bloquearImpresion('Imprimiendo anulaciones…'), k = 0;
+						(function siguiente() {
+							if (k >= comandas.length) { fin(); return; }
+							imprimirComanda(comandas[k++], 'Anulación', null, siguiente);
+						})();
+					}
+					toastr.success(anuladas.length === 1 ? nombreMesa(anuladas[0]) + ' anulada y libre' : anuladas.length + ' mesas anuladas y libres');
+					$.each(r.fallidas || [], function (i, f) { toastr.error(nombreMesa(f.id_mesa) + ': ' + f.error, '', { timeOut: 9000 }); });
+					if (mesa && $.inArray(mesa.id_mesa, anuladas) >= 0) limpiarVenta();   // la mesa que estaba abierta ya no tiene pedido
+					modoAnularMesas(false);
+					cargarMesas();
+				});
+			});
+		});
+
 		$('#mesasGrilla').on('click', '.mesa-card', function () {
 			if (editandoPlano) return;
 			var id = Number($(this).attr('data-id'));
+			if (anularMesas) {   // v1.33.0: eligiendo mesas para anular
+				if (!$(this).hasClass('con-pedido') || $(this).attr('data-estado') === 'bloqueada') { toastr.info('Solo se anulan mesas con pedido'); return; }
+				if (anularMesas[id]) delete anularMesas[id]; else anularMesas[id] = true;
+				$(this).toggleClass('sel-anular', !!anularMesas[id]);
+				pintarBarraAnular();
+				return;
+			}
 			if ($(this).attr('data-estado') === 'bloqueada') { ofrecerLiberar(id); return; }
 			// v1.29.0: mesa bloqueada por reserva: solo se abre si llegó el cliente
 			if ($(this).attr('data-reserva')) {
