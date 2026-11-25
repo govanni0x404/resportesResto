@@ -109,11 +109,9 @@
                                 <div class="pd-campo pd-num"><label for="costoTotalProduccion">Costo total</label>
                                     <input type="number" disabled class="form-control input-sm" name="costoTotalProduccion" id="costoTotalProduccion" value="0" /></div>
                                 <div class="pd-campo pd-botones botones-produccion">
-                                    <div class="btn-group">
-                                        <button class="btn btn-success btn-sm"><i class=""></i> Agregar</button>
-                                        <button class="btn btn-default btn-sm"><i class=""></i> Nuevo</button>
-                                        <button class="btn btn-danger btn-sm"><i class=""></i> Quitar</button>
-                                    </div>
+                                    <!-- v1.37.7 (pedido del usuario): Agregar y Nuevo aquí; Quitar es la ✕ de cada insumo en la tabla -->
+                                    <button class="btn btn-default btn-sm pd-nuevo" title="Limpia los campos para agregar otro insumo"><i class="fa fa-eraser"></i> Nuevo</button>
+                                    <button class="btn btn-success btn-sm pd-agregar"><i class="fa fa-plus"></i> Agregar</button>
                                 </div>
                             </div>
                         </div>
@@ -136,10 +134,11 @@
                                         <th class="text-right">Costo total</th>
                                         <th class="text-left">Bodega</th>
                                         <th class="text-right">Stock</th>
+                                        <th class="pd-col-quitar"></th>
                                     </tr>
                                 </thead>
                                 <tbody id="detalleInsumosRecetaProduccion">
-                                    <tr><td colspan="10" class="text-center">No hay datos</td></tr>
+                                    <tr><td colspan="11" class="text-center">No hay datos</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -198,8 +197,12 @@
     .pd-num { flex: 1 1 90px; }
     .pd-fecha { flex: 0 0 130px; }
     .pd-botones { flex: 1 1 100%; display: flex; justify-content: flex-end; }
-    .pd-botones .btn-group { display: inline-flex; flex-wrap: nowrap; }
-    .pd-botones .btn { min-width: 84px; float: none; }
+    .pd-botones { gap: 8px; }
+    .pd-botones .btn { min-width: 100px; height: 34px; border-radius: 8px; font-weight: 700; }
+    .pd-botones .btn i { margin-right: 4px; }
+    .pd-col-quitar { width: 36px; }
+    .pd-quitar { width: 28px; height: 28px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #9CA3AF; }
+    .pd-quitar:hover { border-color: #FECACA; background: #FEF2F2; color: #B91C1C; }
     #ModalRealizarProduccion .prod-equiv { min-height: 18px; margin: -2px 0 8px; }
     .pd-tabla { max-height: calc(100vh - 330px); min-height: 160px; overflow-y: auto; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; }
     .pd-tabla table { margin: 0; font-size: 12.5px; }
@@ -640,6 +643,15 @@ $('#ModalRealizarProduccion .btn-default:contains("Nuevo")').on('click', functio
 });
 
 // BOTÓN QUITAR
+// v1.37.7: la ✕ de cada insumo lo quita de la producción
+$(document).on('click', '#tableInsumosRecetaProduccion .pd-quitar', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var idFila = Number($(this).data('id'));
+    insumosReceta = insumosReceta.filter(function (item) { return Number(item.id) !== idFila; });
+    actualizarTablaInsumos();
+    actualizarCostoTotal();
+});
 $('#ModalRealizarProduccion .btn-danger:contains("Quitar")').on('click', function(e) {
     e.preventDefault();
     
@@ -697,7 +709,7 @@ function actualizarTablaInsumos() {
     var html = '';
     
     if (insumosReceta.length === 0) {
-        html = '<tr><td colspan="10" class="text-center">Seleccione un insumo y bodega</td></tr>';
+        html = '<tr><td colspan="11" class="text-center">Seleccione un insumo y bodega</td></tr>';
     } else {
         $.each(insumosReceta, function(index, item) {
             html += '<tr data-id="' + item.id + '" style="cursor: pointer;"' + (item.cantidad_inv > item.stock + 0.0000001 ? ' class="sin-stock" title="No alcanza el stock de la bodega"' : '') + '>';
@@ -711,6 +723,7 @@ function actualizarTablaInsumos() {
             html += '<td class="text-right">' + parseFloat(item.costo_total).toFixed(2) + '</td>';
             html += '<td class="text-center">' + item.nombre_bodega + '</td>';
             html += '<td class="text-center">' + parseFloat(item.stock).toFixed(2) + '</td>';
+            html += '<td class="text-center"><button type="button" class="pd-quitar" data-id="' + item.id + '" title="Quitar este insumo"><i class="fa fa-times"></i></button></td>';
             html += '</tr>';
         });
     }
