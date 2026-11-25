@@ -146,7 +146,7 @@
                             <div class="pd-tot"><small>Insumos</small><input type="number" disabled class="form-control input-sm" id="cantidadTotalProduccion" value="0" /></div>
                             <div class="pd-tot pd-tot-grande"><small>Costo total</small><b>$<span id="costoTotalFinal">0</span></b></div>
                             <div class="pd-tot pd-tot-grande"><small>Costo unitario</small>
-                                <input type="text" disabled class="form-control input-sm" id="costoUnitarioElaborado" value="0.00" /></div>
+                                <input type="text" disabled class="form-control input-sm" id="costoUnitarioElaborado" value="$0" /></div>
                         </div>
                         <div class="pd-leyenda"><span class="pd-punto"></span> En naranjo: insumos que no alcanzan en su bodega.</div>
                     </div>
@@ -291,7 +291,7 @@ function limpiarModalProduccion() {
     $('#nombreInsumoElaborado').val("");
     $('#rendimientoReal').val("1");
     $('#umedidaInventarioElaborado').val("");
-    $('#costoUnitarioElaborado').val("0.00");
+    $('#costoUnitarioElaborado').val("$0");
     $('#cboBodegaOrigenProduccion').val(0);
     $('#bodegaDestinoElaborado').val(0);
     
@@ -701,6 +701,8 @@ function limpiarCamposInsumo() {
 }
 
 /** v1.37.6 (pedido del usuario): lo que se descuenta con al menos 2 decimales (0,20 · 0,50 · 3,00) y 3 si hace falta (0,002) */
+/** v1.37.8: pesos con punto de miles y hasta 2 decimales (16.750 · 1.675 · 12,5) */
+function fmtPesos(n) { return (Number(n) || 0).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
 function fmtInv(n) {
     return (Number(n) || 0).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
 }
@@ -719,8 +721,8 @@ function actualizarTablaInsumos() {
             html += '<td class="text-center">' + (item.umedida_receta || '') + '</td>';
             html += '<td class="text-center">' + fmtInv(item.cantidad_inv) + '</td>';
             html += '<td class="text-center">' + (item.umedida_inv || '') + '</td>';
-            html += '<td class="text-right">' + parseFloat(item.costo_neto).toFixed(2) + '</td>';
-            html += '<td class="text-right">' + parseFloat(item.costo_total).toFixed(2) + '</td>';
+            html += '<td class="text-right">' + fmtPesos(item.costo_neto) + '</td>';
+            html += '<td class="text-right">' + fmtPesos(item.costo_total) + '</td>';
             html += '<td class="text-center">' + item.nombre_bodega + '</td>';
             html += '<td class="text-center">' + parseFloat(item.stock).toFixed(2) + '</td>';
             html += '<td class="text-center"><button type="button" class="pd-quitar" data-id="' + item.id + '" title="Quitar este insumo"><i class="fa fa-times"></i></button></td>';
@@ -741,10 +743,11 @@ function actualizarCostoTotal() {
         total += parseFloat(item.costo_total);
     });
     
-    $('#costoTotalFinal').text(total.toFixed(2));
+    // v1.37.8 (pedido del usuario): con punto de miles ($16.750); los decimales solo si hay
+    $('#costoTotalFinal').text(fmtPesos(total)).data('valor', total);
     // v1.34.0: costo de 1 unidad de lo producido (antes mostraba el costo total)
     var producido = parseFloat($('#rendimientoReal').val()) || 0;
-    $('#costoUnitarioElaborado').val(producido > 0 ? (total / producido).toFixed(2) : total.toFixed(2));
+    $('#costoUnitarioElaborado').val('$' + fmtPesos(producido > 0 ? total / producido : total));
     
     console.log("Costo total actualizado:", total.toFixed(2));
 }
@@ -869,7 +872,7 @@ $('#btnGrabarProduccion').on('click', function() {
         'insumos': insumosReceta,
         'cantidad_producida': parseFloat($('#rendimientoReal').val()) || 1,
         'id_bodega_destino': $('#bodegaDestinoElaborado').val(),
-        'costo_total': parseFloat($('#costoTotalFinal').text()) || 0,
+        'costo_total': Number($('#costoTotalFinal').data('valor')) || 0,   // (el servidor lo vuelve a calcular)
         'observaciones': $('#observacionesProduccion').val(),
         'nombre_insumo_elaborado': $('#nombreInsumoElaborado').val()
     };
