@@ -859,9 +859,11 @@ function lineaDesdeReceta(l, escala, idBodega, stock, costo) {
         cantidad: rec, cantidad_inv: inv, conv: conv, umedida_receta: conv.nombre_umedida_receta, umedida_inv: conv.nombre_umedida_inventario,
         costo_neto: costo, costo_total: Math.round(inv * costo * 100) / 100, stock: stock, de_receta: l };
 }
+/** v1.37.0: lo que rinde la receta, en la unidad de inventario de lo producido (la del campo Rend/Real) */
+function rindeReceta(rec) { return Number(rec.cantidad_inventario) || Number(rec.cantidad) || 1; }
 function reescalarReceta() {
     if (!recetaCargada) return;
-    var escala = (parseFloat($('#rendimientoReal').val()) || 0) / (Number(recetaCargada.cantidad) || 1);
+    var escala = (parseFloat($('#rendimientoReal').val()) || 0) / rindeReceta(recetaCargada);
     $.each(insumosReceta, function (i, it) {
         if (!it.de_receta) return;
         var n = lineaDesdeReceta(it.de_receta, escala, it.id_bodega, it.stock, it.costo_neto);
@@ -886,8 +888,8 @@ $('#btnCargarRecetaProduccion').on('click', function () {
             return;
         }
         // Rend/Real: si sigue en 1 (lo de siempre), se usa el rendimiento de la receta
-        if ((parseFloat($('#rendimientoReal').val()) || 0) <= 1 && Number(rec.cantidad) > 0) $('#rendimientoReal').val(Number(rec.cantidad));
-        var escala = (parseFloat($('#rendimientoReal').val()) || 0) / (Number(rec.cantidad) || 1);
+        if ((parseFloat($('#rendimientoReal').val()) || 0) <= 1 && rindeReceta(rec) > 0) $('#rendimientoReal').val(rindeReceta(rec));
+        var escala = (parseFloat($('#rendimientoReal').val()) || 0) / rindeReceta(rec);
         Unidades.listo(function () {
             var pedidos = [], nuevas = [], malas = [];
             $.each(rec.lineas, function (i, l) {

@@ -227,6 +227,15 @@ class Mproduccion extends CI_Model
             ORDER BY (rp.id_receta_produccion = COALESCE(i.id_receta_produccion_default, 0)) DESC, rp.id_receta_produccion DESC
             LIMIT 1', array((int)$id_insumo))->row_array();
         if (!$r) return null;
+        // v1.37.0: el rendimiento en la unidad de INVENTARIO del insumo producido (la receta puede decir "2000 GRAMO" y el
+        // insumo guardarse en KILOGRAMO). Con eso Producción escala las cantidades y suma el stock en la unidad correcta.
+        $el = $this->db->query('SELECT COALESCE(id_umedida_inventario, 0) AS id_umedida_inventario, COALESCE(id_umedida_receta, 0) AS id_umedida_receta,
+                COALESCE(NULLIF(umedida_inventario, 0), 1) AS m_inventario, COALESCE(NULLIF(umedida_receta, 0), 1) AS m_receta
+            FROM insumo WHERE id_insumo = ?', array((int)$id_insumo))->row();
+        $this->load->model('MrecetaProduccion');
+        $inv = $el ? $this->MrecetaProduccion->aInventario($el, (float)$r['cantidad'], (int)$r['id_umedida']) : null;
+        $r['cantidad_inventario'] = $inv === null ? (float)$r['cantidad'] : round($inv, 6);
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $r['lineas'] = $this->db->query('SELECT d.id_insumo, i.nombre_insumo, d.cantidad, d.id_umedida, um.nombre_umedida, d.id_bodega,
                 i.id_umedida_receta, i.id_umedida_inventario,
                 COALESCE(NULLIF(i.umedida_receta, 0), 1) AS m_receta, COALESCE(NULLIF(i.umedida_inventario, 0), 1) AS m_inventario,
