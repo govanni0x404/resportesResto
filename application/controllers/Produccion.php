@@ -50,6 +50,8 @@ class Produccion extends CI_Controller
             // costo_unitario. Si además se movía aquí, el consumo bajaba el doble y lo producido subía el doble. Solo se
             // mueve a mano si el trigger no está (o está desactivado) en este cliente.
             $porTrigger = $this->Mproduccion->triggerMueveStock();
+            // v1.37.9 (pedido del usuario): con "Producir sin stock" se graba aunque no alcance y el stock queda en negativo
+            $sinStock = $this->Mproduccion->permiteSinStock();
 
             // Procesar cada insumo de la receta
             $costoTotalProduccion = 0;
@@ -79,6 +81,8 @@ class Produccion extends CI_Controller
                 $insumo['costo_neto'] = $this->Mproduccion->obtenerCostoPPP($insumo['id_insumo']);
                 $insumo['costo_total'] = round($insumo['costo_neto'] * $insumo['cantidad'], 2);
 
+                // Sin fila de stock en esa bodega, el descuento se perdía (el trigger solo hace UPDATE): se crea en 0
+                $this->Mproduccion->asegurarFilaStock($insumo['id_insumo'], $insumo['id_bodega']);
                 // Obtener stock actual (fila bloqueada hasta terminar: dos producciones a la vez no pisan el saldo)
                 $stock_actual = $this->Mproduccion->obtenerStockActual(
                     $insumo['id_insumo'], 
@@ -87,7 +91,7 @@ class Produccion extends CI_Controller
                 );
                 
                 // Validar que hay suficiente stock
-                if ($stock_actual < $insumo['cantidad']) {
+                if (!$sinStock && $stock_actual < $insumo['cantidad']) {
                     $dbTenant->trans_rollback();
                     echo json_encode(array(
                         'success' => false,
@@ -237,6 +241,14 @@ class Produccion extends CI_Controller
                 'message' => 'Error al procesar la solicitud: ' . $e->getMessage()
             ));
         }
+    }
+
+    /** v1.37.9: opciones de Configuraciones que usa la ventana Producción. */
+    public function opciones()
+    {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) { set_status_header(401); echo json_encode(array('error' => 'Sesión expirada')); return; }
+        header('Content-Type: application/json');
+        echo json_encode(array('sin_stock' => $this->Mproduccion->permiteSinStock()));
     }
 
     /** v1.34.0: la receta de producción del insumo con sus insumos, para cargarla al producir. */

@@ -145,6 +145,17 @@ class Mproduccion extends CI_Model
             WHERE id_insumo = ? AND id_bodega = ?', array($c, $c, (int)$id_insumo, (int)$id_bodega));
     }
 
+    /** v1.37.9: Configuraciones > "Producir sin stock" (sin la columna: apagado, como antes). */
+    public function permiteSinStock()
+    {
+        $this->load->helper('tenant'); $this->db = get_tenant_db($this);
+        $c = $this->db->query("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'configuracion'
+            AND column_name = 'produccion_sin_stock_web'")->row();
+        if (!$c) return false;
+        $r = $this->db->query('SELECT (produccion_sin_stock_web IS TRUE) AS si FROM configuracion LIMIT 1')->row();
+        return $r && ($r->si === 't' || $r->si === true);
+    }
+
     /** 18-11-2026: crea la fila de stock del insumo en la bodega (en 0) si no existe. */
     public function asegurarFilaStock($id_insumo, $id_bodega)
     {

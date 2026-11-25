@@ -141,4 +141,29 @@ revisar('la masa suma 6 kg en total', $cerca($stock($masa), 6, 0.0001), (string)
 list(, $b) = pedir(BASE . '/RecetaProduccion/editor?id_insumo=' . $masa);
 revisar('y su costo promedio sigue cuadrando ($1.100 el kilo)', $cerca(json($b)['elaborado']['costo'] ?? 0, 1100), substr($b, 0, 200));
 
+echo "Producir sin stock (Configuraciones):\n";
+$sal = grabarInsumo(array('cbarra' => 'RPS' . $suf, 'nombre_insumo' => 'SAL RP ' . $suf, 'costo_neto_ppp' => 1000, 'costo_bruto_ppp' => 1190) + $kgGr);
+$producirSinStock = function () use ($masa, $harina, $sal, $bodega, $suf) {
+	return pedir(BASE . '/Produccion/grabarProduccion', array('produccion' => json_encode(array(
+		'fecha' => date('Y-m-d'), 'id_insumo_elaborado' => $masa, 'cantidad_producida' => 1, 'id_bodega_destino' => $bodega,
+		'observaciones' => 'Prueba sin stock', 'nombre_insumo_elaborado' => 'MASA RP ' . $suf,
+		'insumos' => array(array('id_insumo' => $harina, 'id_bodega' => $bodega, 'cantidad' => 5000, 'nombre_insumo' => 'HARINA'),
+			array('id_insumo' => $sal, 'id_bodega' => $bodega, 'cantidad' => 100, 'nombre_insumo' => 'SAL'))))));
+};
+$harinaAntes = $stock($harina);
+pedir(BASE . '/Configuraciones/guardar', array('produccion_sin_stock_web' => '0'));
+list(, $b) = pedir(BASE . '/Produccion/opciones');
+revisar('apagado: la ventana sabe que no se puede producir sin stock', (json($b)['sin_stock'] ?? null) === false, substr($b, 0, 100));
+list(, $b) = $producirSinStock();
+revisar('apagado: 5 kg de harina sin tenerlos no deja producir', empty(json($b)['success']) && strpos($b, 'Stock insuficiente') !== false, substr($b, 0, 200));
+revisar('y no se descontó nada', $cerca($stock($harina), $harinaAntes, 0.0001));
+pedir(BASE . '/Configuraciones/guardar', array('produccion_sin_stock_web' => '1'));
+list(, $b) = pedir(BASE . '/Produccion/opciones');
+revisar('marcado: la ventana lo sabe', (json($b)['sin_stock'] ?? null) === true, substr($b, 0, 100));
+list(, $b) = $producirSinStock();
+revisar('marcado: se produce igual', !empty(json($b)['success']), substr($b, 0, 200));
+revisar('la harina queda en negativo (' . $harinaAntes . ' - 5 kg)', $cerca($stock($harina), $harinaAntes - 5, 0.0001), (string)$stock($harina));
+revisar('la sal (que nunca tuvo stock en la bodega) queda en -0,1 kg', $cerca($stock($sal), -0.1, 0.0001), (string)$stock($sal));
+pedir(BASE . '/Configuraciones/guardar', array('produccion_sin_stock_web' => '0'));
+
 terminar('receta de producción');

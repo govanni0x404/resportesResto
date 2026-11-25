@@ -239,10 +239,13 @@ var idInsumoElaborado = 0;
 // nombre_umedida_receta, nombre_umedida_inventario}) y la receta de producción cargada (para reescalar con Rend/Real)
 var insProd = null;
 var recetaCargada = null;
+var prodSinStock = false, prodConfirmadoSinStock = false;   // v1.37.9: Configuraciones > Producir sin stock
 
 // Abrir modal de producción
 function AbrirModalProduccion(idInsumo, nombreInsumo, opciones) {
     opciones = opciones || {};   // v1.37.4: {id_receta, veces}: viene de "Cargar receta de producción" y se carga sola
+    prodConfirmadoSinStock = false;
+    $.post(base_url + "index.php/Produccion/opciones", {}, function (o) { prodSinStock = !!(o && o.sin_stock); }, 'json');
     console.log("=== ABRIENDO MODAL DE PRODUCCIÓN ===");
     console.log("ID Insumo:", idInsumo);
     console.log("Nombre Insumo:", nombreInsumo);
@@ -593,7 +596,7 @@ $('#ModalRealizarProduccion .btn-success:contains("Agregar")').on('click', funct
         return;
     }
     
-    if (cant.inv > stock + 0.0000001) {
+    if (cant.inv > stock + 0.0000001 && !prodSinStock) {   // v1.37.9: con "Producir sin stock" se deja agregar
         showAppAlert('error', "Se necesitan " + Unidades.fmt(cant.inv) + " " + umedidaInv + " y en la bodega hay " + Unidades.fmt(stock), {
             duration: 3000,
             image: base_url + 'assets/img/errorGif.gif'
@@ -846,13 +849,25 @@ $('#btnGrabarProduccion').on('click', function() {
         return;
     }
     
-    if ($.grep(insumosReceta, function (it) { return it.cantidad_inv > it.stock + 0.0000001; }).length) {   // v1.34.0
-        showAppAlert('error', "Hay insumos sin stock suficiente en su bodega (en rojo en la lista)", {
-            duration: 5000,
+    var faltan = $.grep(insumosReceta, function (it) { return it.cantidad_inv > it.stock + 0.0000001; });   // v1.34.0
+    if (faltan.length && !prodSinStock) {
+        showAppAlert('error', "Hay insumos sin stock suficiente en su bodega (en naranjo en la lista). Para producir igual, marca "
+            + "\"Producir sin stock\" en Configuraciones > Inventario.", {
+            duration: 7000,
             image: base_url + 'assets/img/errorGif.gif'
         });
         return;
     }
+    // v1.37.9 (pedido del usuario): con "Producir sin stock", se avisa y se graba igual (ese stock queda en negativo)
+    if (faltan.length && !prodConfirmadoSinStock) {
+        confirmarSistema('¿Producir sin stock?', 'No alcanza: ' + $.map(faltan, function (it) { return it.nombre_insumo; }).join(', ')
+            + '. Se graba igual y ese stock queda en negativo.', 'Sí, producir', function () {
+            prodConfirmadoSinStock = true;
+            $('#btnGrabarProduccion').click();
+        });
+        return;
+    }
+    prodConfirmadoSinStock = false;
 
     if ($('#bodegaDestinoElaborado').val() == 0) {
         showAppAlert('error', "Seleccione una bodega de destino para el producto elaborado", {

@@ -502,6 +502,10 @@ En la Caja las salsas y los extras siempre son opcionales."); ?></div>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="cfg-fila"><label><input type="checkbox" name="inventario_cierre_caja" value="1" <?php echo ($config['inventario_cierre_caja'] ?? false) ? 'checked' : ''; ?>> Contar insumos al cerrar la caja</label><?php cfg_info("Al cerrar la caja, el cajero cuenta los insumos marcados \"Inventario en cierre de turno\" (en Insumos) y el stock se ajusta a lo contado."); ?></div>
+                                                <?php if (array_key_exists('produccion_sin_stock_web', $config)) : ?>
+                                                <!-- v1.37.9 (pedido del usuario): producir aunque no alcance el stock (migración 20261125100000) -->
+                                                <div class="cfg-fila"><label><input type="checkbox" name="produccion_sin_stock_web" value="1" <?php echo in_array($config['produccion_sin_stock_web'] ?? null, array(true, 't', 1, '1'), true) ? 'checked' : ''; ?>> Producir sin stock</label><?php cfg_info("Marcada: en Insumos > Realizar producción se puede grabar aunque algún insumo no alcance en su bodega; ese stock queda en negativo (se corrige con una entrada o un inventario).\nSin marcar: si no alcanza, no deja grabar la producción."); ?></div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
