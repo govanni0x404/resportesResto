@@ -688,6 +688,10 @@ function limpiarCamposInsumo() {
     $('#costoTotalProduccion').val("0");
 }
 
+/** v1.37.6 (pedido del usuario): lo que se descuenta con al menos 2 decimales (0,20 · 0,50 · 3,00) y 3 si hace falta (0,002) */
+function fmtInv(n) {
+    return (Number(n) || 0).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+}
 // Actualizar tabla
 function actualizarTablaInsumos() {
     var html = '';
@@ -701,7 +705,7 @@ function actualizarTablaInsumos() {
             html += '<td class="text-left">' + item.nombre_insumo + '</td>';
             html += '<td class="text-center">' + Unidades.fmt(item.cantidad) + '</td>';
             html += '<td class="text-center">' + (item.umedida_receta || '') + '</td>';
-            html += '<td class="text-center">' + Unidades.fmt(item.cantidad_inv) + '</td>';
+            html += '<td class="text-center">' + fmtInv(item.cantidad_inv) + '</td>';
             html += '<td class="text-center">' + (item.umedida_inv || '') + '</td>';
             html += '<td class="text-right">' + parseFloat(item.costo_neto).toFixed(2) + '</td>';
             html += '<td class="text-right">' + parseFloat(item.costo_total).toFixed(2) + '</td>';
