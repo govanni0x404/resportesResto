@@ -255,14 +255,17 @@ class Manalitica extends CI_Model
 		$folioCot = isset($v['folio_cotizacion']) ? 'COALESCE(v.folio_cotizacion, 0)' : '0';
 		$cortesia = isset($v['es_cortesia']) ? 'v.es_cortesia IS TRUE' : 'false';
 		$filtroCaja = $idCaja > 0 ? ' AND v.id_caja = ' . (int)$idCaja : '';
+		// v1.38.2 (pedido del usuario): por el día de cada venta (hora local), no por el día en que se abrió su caja
+		$tz = date_default_timezone_get();
+		if (!in_array($tz, timezone_identifiers_list(), true)) $tz = 'America/Santiago';
 		$sql = "WITH pagos AS (
 				SELECT pv.id_venta, bool_or(f.escortesia IS TRUE) AS cortesia_pago
 				FROM pago_venta pv JOIN fpago f ON f.id_fpago = pv.id_fpago
 				WHERE pv.id_venta IN (SELECT v0.id_venta FROM venta v0 JOIN caja c0 ON c0.id_caja = v0.id_caja
-					WHERE c0.fecha::date BETWEEN ? AND ?" . str_replace('v.id_caja', 'v0.id_caja', $filtroCaja) . ")
+					WHERE (v0.fecha_transaccion AT TIME ZONE '$tz')::date BETWEEN ? AND ?" . str_replace('v.id_caja', 'v0.id_caja', $filtroCaja) . ")
 				GROUP BY pv.id_venta
 			), base AS (
-				SELECT v.id_venta, v.id_caja, v.fecha_transaccion, ca.fecha::date AS dia,
+				SELECT v.id_venta, v.id_caja, v.fecha_transaccion, (v.fecha_transaccion AT TIME ZONE '$tz')::date AS dia,
 					COALESCE(v.total, 0) AS total, COALESCE(v.valor_propina, 0) AS propina, COALESCE(v.monto_descuento, 0) AS descuento,
 					(COALESCE(v.mensaje_pedido, '') LIKE 'ANULADA%') AS anulada,
 					COALESCE(substring(v.mensaje_pedido from '^ANULADA \\(\\$(-{0,1}[0-9]+)'), '0')::numeric AS monto_anulado,
@@ -275,7 +278,7 @@ class Manalitica extends CI_Model
 				FROM venta v
 				JOIN caja ca ON ca.id_caja = v.id_caja
 				LEFT JOIN pagos p ON p.id_venta = v.id_venta
-				WHERE ca.fecha::date BETWEEN ? AND ?$filtroCaja
+				WHERE (v.fecha_transaccion AT TIME ZONE '$tz')::date BETWEEN ? AND ?$filtroCaja
 			)";
 		return array($sql, array($de, $a, $de, $a));
 	}
