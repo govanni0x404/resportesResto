@@ -306,7 +306,7 @@
 			$('#esSubreceta').val(esreceta);
 			$('#idInsumoReceta').val(id_insumo);
 			$('#unMedidaInsumoReceta').val(nombre_umedida);
-			$('#costoInsumoReceta').val(costo_neto_ppp);
+			$('#costoInsumoReceta').val(recDosDecimales(costo_neto_ppp));   // v1.37.13: 0.50 (con su cero)
 			$('#cBarraI').val(cBarra);
 		}
 		recPintarUnidades();   // v1.34.0
@@ -653,7 +653,7 @@
 			$("#nombreInsumoReceta").val(nombre_insumo);
 			$("#esSubreceta").val(es_receta === 't' ? 'SI' : 'NO'); // Asumiendo 't' es true
 			$("#unMedidaInsumoReceta").val(umedida);
-			$("#costoInsumoReceta").val(costoPP);
+			$("#costoInsumoReceta").val(recDosDecimales(costoPP));   // v1.37.13: 0.50 (con su cero)
 			
 			// Inicializar cantidad y calcular el costo total
 			$("#cantidadInsumoReceta").val(1); // Puedes poner 1 como cantidad inicial

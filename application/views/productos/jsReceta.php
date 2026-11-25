@@ -83,7 +83,7 @@
 			$('#esSubreceta').val(esreceta);
 			$('#idInsumoReceta').val(id_insumo);
 			$('#unMedidaInsumoReceta').val(nombre_umedida);
-			$('#costoInsumoReceta').val(costo_neto_ppp);
+			$('#costoInsumoReceta').val(recDosDecimales(costo_neto_ppp));   // v1.37.13: 0.50 (con su cero)
 			$('#cBarraI').val(cBarra);
 		}
 		recPintarUnidades();   // v1.34.0
