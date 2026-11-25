@@ -218,6 +218,10 @@ En la Caja las salsas y los extras siempre son opcionales."); ?></div>
                                                 <h3 class="panel-title"><i class="fa fa-cutlery"></i>Otros del restaurante</h3>
                                             </div>
                                             <div class="panel-body">
+                                                <?php if (array_key_exists('usar_comision_web', $config)) : ?>
+                                                <!-- v1.24.1: comisión opcional en el precio de los productos (Productos y Lista de Precios); v1.38.1: en General (antes estaba escondida en Valores por defecto) -->
+                                                <div class="cfg-fila"><label><input type="checkbox" name="usar_comision_web" value="1" <?php echo in_array($config['usar_comision_web'] ?? null, array(true, 't', 1, '1'), true) ? 'checked' : ''; /* v1.38.1: la base la entrega como 't' (antes salía siempre desmarcada) */ ?>> Recuadro de comisión en los precios</label><?php cfg_info("Marcada: al grabar el precio de un producto (Carta y Lista de precios) aparece el recuadro de comisión.\nSin marcar: el recuadro no aparece y la comisión queda en 0."); ?></div>
+                                                <?php endif; ?>
                                                 <div class="form-group">
                                                     <label class="cfg-titulo">Mesa de venta directa <?php cfg_info("Número de la mesa \"técnica\" que el sistema usa por dentro para la venta directa. No aparece en la lista de mesas de la Caja.\nNo la cambies si no sabes cuál es."); ?></label>
                                                     <input type="text" class="form-control" name="id_mesa_venta_directa" value="<?php echo $config['id_mesa_venta_directa'] ?? ''; ?>">
@@ -456,10 +460,6 @@ En la Caja las salsas y los extras siempre son opcionales."); ?></div>
 <?php cfg_opciones($opciones['lprecio'], $config['id_lpreciopublico'] ?? 0, 'LA PRIMERA LISTA (N° más bajo)'); ?>
 </select>
                                                 </div>
-                                                <?php if (array_key_exists('usar_comision_web', $config)) : ?>
-                                                <!-- v1.24.1: comisión opcional en el precio de los productos (Productos y Lista de Precios) -->
-                                                <div class="cfg-fila"><label><input type="checkbox" name="usar_comision_web" value="1" <?php echo ($config['usar_comision_web'] ?? false) === true ? 'checked' : ''; ?>> Comisión en el precio de los productos</label><?php cfg_info("Marcada: al grabar el precio de un producto (Carta y Lista de precios) aparece el recuadro de comisión.\nSin marcar: el recuadro no aparece y la comisión queda en 0."); ?></div>
-                                                <?php endif; ?>
                                                 <div class="form-group">
                                                     <label class="cfg-titulo">Documento de venta <?php cfg_info("El documento que viene elegido al cobrar (ej. boleta)."); ?></label>
                                                     <select class="form-control" name="id_docventa_defecto">
