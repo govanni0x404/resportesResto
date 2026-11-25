@@ -57,252 +57,100 @@
 
             <!-- CONTENIDO MODAL -->
             <div class="modal-body t-form">
-                <div class="h-panel">
-                    <!-- DATOS DE PRODUCCION -->
-                    <div class="row">
-                        <div class="col-md-12">
-                            <fieldset>
-                                <div class="col-md-3">
-                                    <label for="idProduccion">ID (Automático)</label>
-                                    <input type="number" disabled class="form-control input-sm" 
-                                           name="idProduccion" id="idProduccion" value="" />
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="fechaProduccion">FECHA PROCESO *</label>
-                                    <input type="text" class="form-control input-sm" 
-                                           name="fechaProduccion" id="fechaProduccion" 
-                                           value="<?php echo date('d-m-Y'); ?>" />
-                                </div>
-                            </fieldset>
-                        </div>
-                    </div>
-
-
-                    <!-- SECCION INSUMOS Y COSTOS -->
-                    <div class="panel panel-default">
-                        <div class="panel-heading prod-cabeza">
-                            <h5><strong style="font-weight: bold;">INSUMOS Y COSTOS</strong></h5>
-                            <!-- v1.34.0 (pedido del usuario): carga los insumos de la receta de producción del insumo -->
-                            <button type="button" class="btn btn-success btn-sm" id="btnCargarRecetaProduccion" style="display:none" data-v1374="la receta se carga sola al abrir (Realizar producción)"
-                                    title="Carga los insumos de la receta de producción, según la cantidad a producir (Rend/Real)">
-                                <i class="fa fa-list-alt"></i> Cargar receta de producción
-                            </button>
-                        </div>
-                        <div class="panel-body">
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <fieldset>
-                                        <div class="col-md-4">
-                                            <label for="cboInsumoProduccion">INSUMO *</label>
-                                            <!-- <div class="input-group"> -->
-                                                <select id="cboInsumoProduccion" name="cboInsumoProduccion" 
-                                                        class="form-control input-sm" style="width:100%">
-                                                    <option value="0">-- Seleccione --</option>
-                                                </select>
-                                                <!-- <span class="input-group-btn">
-                                                    <button class="btn btn-success btn-sm" type="button" 
-                                                            style="height: 30px;" title="Buscar Receta"
-                                                            id="btnBuscarRecetaProduccion">
-                                                        <i class="fa fa-search"></i>
-                                                    </button>
-                                                </span> -->
-                                            
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label for="cboBodegaOrigenProduccion">BODEGA ORIGEN *</label>
-                                            <select id="cboBodegaOrigenProduccion" name="cboBodegaOrigenProduccion" 
-                                                    class="form-control input-sm" style="width:100%">
-                                                <option value="0">-- Seleccione --</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label for="stockBodegaProduccion">STOCK BODEGA</label>
-                                            <input type="number" disabled class="form-control input-sm" 
-                                                   name="stockBodegaProduccion" id="stockBodegaProduccion" value="0" />
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label for="umedidaInvProduccion">U/M INV.</label>
-                                            <input type="text" disabled class="form-control input-sm" 
-                                                   name="umedidaInvProduccion" id="umedidaInvProduccion" value="" />
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label for="cantidadRecetaProduccion">CANTIDAD *</label>
-                                            <input type="number" class="form-control input-sm" 
-                                                   onkeypress="return soloNumerosDecimales(event)"
-                                                   name="cantidadRecetaProduccion" id="cantidadRecetaProduccion" 
-                                                   value="" placeholder="0" />
-                                            <div id="equivProduccion" class="prod-equiv" hidden></div>
-                                        </div>
-                                    </fieldset>
-                                </div>
+                <!-- v1.37.5 (pedido del usuario): a lo ancho. Izquierda: qué se produce, agregar insumo y observaciones.
+                     Derecha: los insumos que se descuentan y los totales. Mismos ids que antes. -->
+                <div class="pd-grid">
+                    <div class="pd-izq">
+                        <div class="pd-caja pd-elaborado">
+                            <div class="pd-titulo"><i class="fa fa-flask"></i> Se produce</div>
+                            <div class="pd-fila">
+                                <div class="pd-campo pd-crece"><label>Insumo elaborado</label>
+                                    <input type="text" disabled class="form-control input-sm" id="nombreInsumoElaborado" value="" /></div>
+                                <div class="pd-campo pd-fecha"><label for="fechaProduccion">Fecha *</label>
+                                    <input type="text" class="form-control input-sm" name="fechaProduccion" id="fechaProduccion" value="<?php echo date('d-m-Y'); ?>" /></div>
                             </div>
-
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <fieldset>
-                                        
-                                        <div class="col-md-2">
-                                            <!-- v1.34.0: se puede escribir en kilos o gramos; se descuenta en la unidad de inventario -->
-                                            <label for="unidadProduccion">UNIDAD</label>
-                                            <select id="unidadProduccion" class="form-control input-sm" disabled></select>
-                                            <input type="hidden" name="umedidaRecetaProduccion" id="umedidaRecetaProduccion" value="" />
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label for="costoNetoProduccion">C/ NETO UN(PPP)</label>
-                                            <input type="number" disabled class="form-control input-sm" 
-                                                   name="costoNetoProduccion" id="costoNetoProduccion" value="0" />
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label for="costoTotalProduccion">COSTO TOTAL</label>
-                                            <input type="number" disabled class="form-control input-sm" 
-                                                   name="costoTotalProduccion" id="costoTotalProduccion" value="0" />
-                                        </div>
-                                        <div class="col-md-6 text-right botones-produccion">
-                                            <div class="btn-group">
-                                                <button class="btn btn-success btn-sm">
-                                                    <i class=""></i> Agregar
-                                                </button>
-                                                <button class="btn btn-default btn-sm">
-                                                    <i class=""></i> Nuevo
-                                                </button>
-                                                <button class="btn btn-danger btn-sm">
-                                                    <i class=""></i> Quitar
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </fieldset>
-                                </div>
+                            <div class="pd-fila">
+                                <div class="pd-campo pd-num"><label for="rendimientoReal">Rend/Real</label>
+                                    <input type="text" class="form-control input-sm" id="rendimientoReal" value="1" /></div>
+                                <div class="pd-campo pd-num"><label>U/M inven.</label>
+                                    <input type="text" disabled class="form-control input-sm" id="umedidaInventarioElaborado" value="" /></div>
+                                <div class="pd-campo pd-crece"><label for="bodegaDestinoElaborado">Bodega destino</label>
+                                    <select class="form-control input-sm" id="bodegaDestinoElaborado"><option value="0">-- Seleccione --</option></select></div>
                             </div>
-
-                            <!-- <div class="row">
-                                <div class="col-md-12">
-                                    <fieldset>
-                                        <div class="col-md-3">
-                                            <label for="cboBodegaDestinoProduccion">BODEGA DESTINO</label>
-                                            <select id="cboBodegaDestinoProduccion" name="cboBodegaDestinoProduccion" 
-                                                    class="form-control input-sm" style="width:100%">
-                                                <option value="0">-- Seleccione --</option>
-                                            </select>
-                                        </div>
-                                    </fieldset>
-                                </div>
-                            </div> -->
+                            <input type="hidden" id="idProduccion" value="" />
                         </div>
-                    </div>
-
-                    <!-- TABLA DE INSUMOS DE LA RECETA -->
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="panel panel-default">
-                                <div class="panel-body" style="padding: 5px;">
-                                    <div class="table-responsive">
-                                        <table id="tableInsumosRecetaProduccion" class="table table-bordered table-hover table-sm" style="font-size: 12px;">
-                                            <thead style="background-color: #B4432E; color: white;">
-                                                <tr>
-                                                    <th class="text-center" style="width: 5%;">N</th>
-                                                    <th class="text-left" style="width: 15%;">Insumo</th>
-                                                    <th class="text-center" style="width: 7%;">Cant/Receta</th>
-                                                    <th class="text-center" style="width: 7%;">U/M Receta</th>
-                                                    <th class="text-center" style="width: 7%;" title="Lo que se descuenta del stock, en la unidad de inventario">Cant/Inv.</th>
-                                                    <th class="text-center" style="width: 8%;">U/M Inv.</th>
-                                                    <th class="text-right" style="width: 7%;">Costo Neto Un(PPP)</th>
-                                                    <th class="text-right" style="width: 10%;">Costo Total</th>
-                                                    <th class="text-center" style="width: 10%;">Bodega Origen</th>
-                                                    <th class="text-center" style="width: 5%;">Stock</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="detalleInsumosRecetaProduccion">
-                                                <tr>
-                                                    <td colspan="10" class="text-center">No hay datos</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                        <div class="pd-caja">
+                            <div class="pd-titulo prod-cabeza"><span><i class="fa fa-plus-circle"></i> Agregar insumo</span>
+                                <button type="button" class="btn btn-success btn-sm" id="btnCargarRecetaProduccion" style="display:none"
+                                    title="Carga los insumos de la receta de producción">Cargar receta de producción</button></div>
+                            <div class="pd-fila">
+                                <div class="pd-campo pd-crece"><label for="cboInsumoProduccion">Insumo *</label>
+                                    <select id="cboInsumoProduccion" name="cboInsumoProduccion" class="form-control input-sm" style="width:100%"><option value="0">-- Seleccione --</option></select></div>
+                                <div class="pd-campo pd-crece"><label for="cboBodegaOrigenProduccion">Bodega origen *</label>
+                                    <select id="cboBodegaOrigenProduccion" name="cboBodegaOrigenProduccion" class="form-control input-sm" style="width:100%"><option value="0">-- Seleccione --</option></select></div>
+                            </div>
+                            <div class="pd-fila">
+                                <div class="pd-campo pd-num"><label for="cantidadRecetaProduccion">Cantidad *</label>
+                                    <input type="number" class="form-control input-sm" onkeypress="return soloNumerosDecimales(event)"
+                                        name="cantidadRecetaProduccion" id="cantidadRecetaProduccion" value="" placeholder="0" /></div>
+                                <div class="pd-campo pd-num"><label for="unidadProduccion">Unidad</label>
+                                    <select id="unidadProduccion" class="form-control input-sm" disabled></select>
+                                    <input type="hidden" name="umedidaRecetaProduccion" id="umedidaRecetaProduccion" value="" /></div>
+                                <div class="pd-campo pd-num"><label for="stockBodegaProduccion">Stock bodega</label>
+                                    <input type="number" disabled class="form-control input-sm" name="stockBodegaProduccion" id="stockBodegaProduccion" value="0" /></div>
+                                <div class="pd-campo pd-num"><label for="umedidaInvProduccion">U/M inv.</label>
+                                    <input type="text" disabled class="form-control input-sm" name="umedidaInvProduccion" id="umedidaInvProduccion" value="" /></div>
+                            </div>
+                            <!-- el aviso de la conversión va en su propia línea (antes movía los campos) -->
+                            <div id="equivProduccion" class="prod-equiv" hidden></div>
+                            <div class="pd-fila">
+                                <div class="pd-campo pd-num"><label for="costoNetoProduccion">C/ neto un (PPP)</label>
+                                    <input type="number" disabled class="form-control input-sm" name="costoNetoProduccion" id="costoNetoProduccion" value="0" /></div>
+                                <div class="pd-campo pd-num"><label for="costoTotalProduccion">Costo total</label>
+                                    <input type="number" disabled class="form-control input-sm" name="costoTotalProduccion" id="costoTotalProduccion" value="0" /></div>
+                                <div class="pd-campo pd-botones botones-produccion">
+                                    <div class="btn-group">
+                                        <button class="btn btn-success btn-sm"><i class=""></i> Agregar</button>
+                                        <button class="btn btn-default btn-sm"><i class=""></i> Nuevo</button>
+                                        <button class="btn btn-danger btn-sm"><i class=""></i> Quitar</button>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        <div class="pd-campo"><label for="observacionesProduccion">Observaciones</label>
+                            <textarea class="form-control input-sm" rows="2" id="observacionesProduccion" name="observacionesProduccion" maxlength="300" style="resize: none;"></textarea></div>
                     </div>
-
-                    <!-- CANTIDAD Y OBSERVACIONES -->
-                    <div class="row">
-                        <div class="col-md-12">
-                            <fieldset>
-                                <div class="col-md-2">
-                                    <label>CANTIDAD:</label>
-                                    <input type="number" disabled class="form-control input-sm" 
-                                           id="cantidadTotalProduccion" value="1" />
-                                </div>
-                                <div class="col-md-10 text-right">
-                                    <div class="t-kpi destacado prod-total">
-                                        <small>Costo total</small>
-                                        <b><span id="costoTotalFinal">0</span></b>
-                                    </div>
-                                </div>
-                            </fieldset>
-                            <fieldset>
-                                <div class="col-md-12">
-                                    <label>OBSERVACIONES</label>
-                                    <textarea class="form-control input-sm" rows="2" 
-                                              id="observacionesProduccion" name="observacionesProduccion"
-                                              maxlength="300" style="resize: none;"></textarea>
-                                </div>
-                                
-                            </fieldset>
+                    <div class="pd-der">
+                        <div class="pd-titulo"><i class="fa fa-list-ul"></i> Insumos que se descuentan</div>
+                        <div class="pd-tabla">
+                            <table id="tableInsumosRecetaProduccion" class="table table-hover table-sm">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center">N</th>
+                                        <th class="text-left">Insumo</th>
+                                        <th class="text-right">Cant/Receta</th>
+                                        <th class="text-left">U/M Receta</th>
+                                        <th class="text-right" title="Lo que se descuenta del stock, en la unidad de inventario">Cant/Inv.</th>
+                                        <th class="text-left">U/M Inv.</th>
+                                        <th class="text-right">Costo un (PPP)</th>
+                                        <th class="text-right">Costo total</th>
+                                        <th class="text-left">Bodega</th>
+                                        <th class="text-right">Stock</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detalleInsumosRecetaProduccion">
+                                    <tr><td colspan="10" class="text-center">No hay datos</td></tr>
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
-
-
-                    <!-- INSUMO ELABORADO -->
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="panel panel-default panel-elaborado">
-                                <div class="panel-heading" style="background-color: #B4432E; color: white;">
-                                    <h5><strong>INSUMO ELABORADO</strong></h5>
-                                </div>
-                                <div class="panel-body">
-                                    <div class="row">
-                                        <div class="col-md-3">
-                                            <label>Nombre del Insumo</label>
-                                            <!-- <div class="input-group"> -->
-                                                <input type="text" disabled class="form-control input-sm" 
-                                                       id="nombreInsumoElaborado" value="" />
-                                                <!-- <span class="input-group-btn">
-                                                    <button class="btn btn-success btn-sm" type="button" 
-                                                            style="height: 30px;">
-                                                        <i class="fa fa-check"></i>
-                                                    </button>
-                                                </span> -->
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label>Rend/Real</label>
-                                            <input type="text" class="form-control input-sm" 
-                                                   id="rendimientoReal" value="1" />
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label>U/M Inven.</label>
-                                            <input type="text" disabled class="form-control input-sm" 
-                                                   id="umedidaInventarioElaborado" value="" />
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label>Bodega Destino</label>
-                                            <select class="form-control input-sm" id="bodegaDestinoElaborado">
-                                                <option value="0">-- Seleccione --</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label>Costo Unitario</label>
-                                            <input type="text" disabled class="form-control input-sm" 
-                                                   id="costoUnitarioElaborado" value="0.00" 
-                                                   style="background-color: var(--t-primario-suave, #FBEEE8); color: var(--t-primario, #B4432E); border-color: var(--t-primario-borde, #EFD2C6); font-weight: bold;" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="pd-totales">
+                            <div class="pd-tot"><small>Insumos</small><input type="number" disabled class="form-control input-sm" id="cantidadTotalProduccion" value="0" /></div>
+                            <div class="pd-tot pd-tot-grande"><small>Costo total</small><b>$<span id="costoTotalFinal">0</span></b></div>
+                            <div class="pd-tot pd-tot-grande"><small>Costo unitario</small>
+                                <input type="text" disabled class="form-control input-sm" id="costoUnitarioElaborado" value="0.00" /></div>
                         </div>
+                        <div class="pd-leyenda"><span class="pd-punto"></span> En naranjo: insumos que no alcanzan en su bodega.</div>
                     </div>
-
-                    <!-- COSTO TOTAL -->
-                    
                 </div>
             </div>
             <!-- FIN CONTENIDO MODAL -->
@@ -331,8 +179,42 @@
     .prod-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
     .prod-cabeza h5 { margin: 0; }
     .prod-equiv { margin-top: 4px; font-size: 12px; color: var(--t-primario, #15803D); }
-    .prod-equiv.mal { color: #C9372C; }
-    #tableInsumosRecetaProduccion tr.sin-stock td { color: #C9372C; }
+    .prod-equiv.mal { color: #9A3412; }
+    /* v1.37.5: sin rojo: lo que no alcanza va en naranjo suave */
+    #tableInsumosRecetaProduccion tr.sin-stock td { color: #9A3412; background: #FFF7ED !important; }
+    #ModalRealizarProduccion .modal-dialog { width: 1400px; max-width: calc(100vw - 24px); margin-top: 14px; }
+    #ModalRealizarProduccion .modal-header { background: #fff !important; border-top: 3px solid var(--t-primario, #15803D); }
+    #ModalRealizarProduccion .modal-header .modal-title { color: var(--t-texto-fuerte, #111827) !important; }
+    .pd-grid { display: grid; grid-template-columns: minmax(380px, 5fr) 7fr; gap: 18px; align-items: start; }
+    .pd-caja { padding: 12px 14px; margin-bottom: 12px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; }
+    .pd-elaborado { background: var(--t-primario-suave, #E8F5EC); border-color: var(--t-primario-borde, #BBE3C8); }
+    .pd-titulo { margin-bottom: 8px; font-size: 13.5px; font-weight: 800; color: var(--t-texto-fuerte, #111827); }
+    .pd-titulo i { color: var(--t-primario, #15803D); margin-right: 4px; }
+    .pd-fila { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: flex-end; margin-bottom: 8px; }
+    .pd-fila:last-child { margin-bottom: 0; }
+    .pd-campo { min-width: 0; }
+    .t-form .pd-campo label { display: block; margin-bottom: 4px; font-size: 11px; }
+    .pd-crece { flex: 1 1 160px; }
+    .pd-num { flex: 1 1 90px; }
+    .pd-fecha { flex: 0 0 130px; }
+    .pd-botones { flex: 1 1 100%; display: flex; justify-content: flex-end; }
+    .pd-botones .btn-group { display: inline-flex; flex-wrap: nowrap; }
+    .pd-botones .btn { min-width: 84px; float: none; }
+    #ModalRealizarProduccion .prod-equiv { min-height: 18px; margin: -2px 0 8px; }
+    .pd-tabla { max-height: calc(100vh - 330px); min-height: 160px; overflow-y: auto; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; }
+    .pd-tabla table { margin: 0; font-size: 12.5px; }
+    .pd-tabla thead th { position: sticky; top: 0; z-index: 1; background: var(--t-fondo-alt, #F9FAFB) !important; color: var(--t-texto-suave, #6B7280) !important;
+        font-size: 11px; text-transform: uppercase; letter-spacing: .3px; border-bottom: 1px solid var(--t-borde, #E5E7EB) !important; white-space: nowrap; }
+    .pd-tabla td { vertical-align: middle !important; }
+    .pd-totales { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    .pd-tot { flex: 0 0 110px; padding: 8px 12px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; }
+    .pd-tot small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #6B7280); }
+    .pd-tot input { border: 0 !important; background: transparent !important; padding: 0 !important; height: auto !important; font-size: 16px; font-weight: 700; box-shadow: none !important; }
+    .pd-tot-grande { flex: 1 1 180px; background: var(--t-primario-suave, #E8F5EC); border-color: var(--t-primario-borde, #BBE3C8); }
+    .pd-tot-grande b, .pd-tot-grande input { font-size: 24px !important; font-weight: 800; color: var(--t-primario, #15803D) !important; }
+    .pd-leyenda { margin-top: 8px; font-size: 12px; color: var(--t-texto-suave, #6B7280); }
+    .pd-punto { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #FDBA74; vertical-align: -1px; margin-right: 3px; }
+    @media (max-width: 1100px) { .pd-grid { grid-template-columns: 1fr; } .pd-tabla { max-height: none; } }
     .botones-produccion {
     margin-top: 24px;   /* baja los botones */
 }
@@ -654,7 +536,7 @@ function calcularCostoTotal() {
 }
 
 // BOTÓN AGREGAR
-$('.btn-success:contains("Agregar")').on('click', function(e) {
+$('#ModalRealizarProduccion .btn-success:contains("Agregar")').on('click', function(e) {
     e.preventDefault();
     
     console.log("=== BOTÓN AGREGAR CLICKEADO ===");
@@ -752,13 +634,13 @@ $('.btn-success:contains("Agregar")').on('click', function(e) {
 });
 
 // BOTÓN NUEVO
-$('.btn-default:contains("Nuevo")').on('click', function(e) {
+$('#ModalRealizarProduccion .btn-default:contains("Nuevo")').on('click', function(e) {
     e.preventDefault();
     limpiarCamposInsumo();
 });
 
 // BOTÓN QUITAR
-$('.btn-danger:contains("Quitar")').on('click', function(e) {
+$('#ModalRealizarProduccion .btn-danger:contains("Quitar")').on('click', function(e) {
     e.preventDefault();
     
     var filaSeleccionada = $('#tableInsumosRecetaProduccion tbody tr.selected');
@@ -830,6 +712,7 @@ function actualizarTablaInsumos() {
     }
     
     $('#detalleInsumosRecetaProduccion').html(html);
+    $('#cantidadTotalProduccion').val(insumosReceta.length);   // v1.37.5: cuántos insumos lleva (antes siempre decía 1)
     console.log("Tabla actualizada. Total insumos:", insumosReceta.length);
 }
 
