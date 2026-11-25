@@ -166,12 +166,14 @@ class MlistaDePrecios extends CI_Model
         $pIva = $t ? (float)$t->iva : 0;
         $pIla = $t ? (float)$t->ila : 0;
         $neto = (int)round($total / (1 + ($pIva + $pIla) / 100));
-        $iva = (int)round($neto * $pIva / 100);
+        // v1.38.0: el ILA con su tasa y el IVA lo que queda (antes el ILA era "lo que sobra" y podía quedar en -1 por redondeo)
+        $ila = (int)round($neto * $pIla / 100);
+        $iva = $total - $neto - $ila;
         $dataToSave = array(
             'total' => $total,
             'neto' => $neto,
             'iva' => $iva,
-            'ila' => $total - $neto - $iva,
+            'ila' => $ila,
         );
         // v1.24.1: la comisión con la regla de Configuraciones (apagada = 0; encendida = la escrita, entre 0 y 100)
         if ($tieneComision) {
@@ -184,5 +186,49 @@ class MlistaDePrecios extends CI_Model
         $this->db->update('detalle_lprecio', $dataToSave);
         $consulta = $this->db->query("SELECT id_detalle_lprecio FROM detalle_lprecio WHERE id_detalle_lprecio = ?", array($idDetalleLprecio));
         return $consulta->result();
+    }
+
+    /**
+     * v1.38.0 (pedido del usuario): copia los precios de una lista a otra, de una vez.
+     * $ajuste = % a sumar o restar (10 = 10% más caro, -5 = 5% más barato); $idFamilia > 0 = solo esa familia;
+     * $soloSinPrecio = solo donde la lista de destino no tiene precio (0 o sin fila). Los productos sin precio en la lista de
+     * origen no se tocan. Neto, IVA e ILA se recalculan con los impuestos de cada producto, como al grabar un precio.
+     * Devuelve cuántos precios se actualizaron y cuántos se crearon.
+     */
+    public function copiarPrecios($origen, $destino, $ajuste, $idFamilia, $soloSinPrecio)
+    {
+        $this->load->helper('tenant'); $db = get_tenant_db($this);
+        $origen = (int)$origen; $destino = (int)$destino; $idFamilia = (int)$idFamilia;
+        $ajuste = max(-90, min(500, (float)str_replace(',', '.', (string)$ajuste)));
+        if ($origen <= 0 || $destino <= 0) return array('error' => 'Elige la lista de origen y la de destino');
+        if ($origen === $destino) return array('error' => 'La lista de origen y la de destino deben ser distintas');
+        foreach (array($origen, $destino) as $l) {
+            if (!$db->query('SELECT 1 FROM lprecio WHERE id_lprecio = ?', array($l))->row()) return array('error' => 'Una de las listas ya no existe. Recarga la página.');
+        }
+        $factor = 1 + $ajuste / 100;
+        // Precios de origen (con precio y producto vigente), ya ajustados, con los impuestos del producto
+        $fuente = "SELECT o.id_producto, round(o.total * ?)::int AS total,
+                COALESCE((SELECT i.valor FROM impuesto i WHERE i.id_impuesto = p.impto_iva), 0) AS piva,
+                COALESCE((SELECT i.valor FROM impuesto i WHERE i.id_impuesto = p.impto_ila), 0) AS pila
+            FROM detalle_lprecio o JOIN producto p ON p.id_producto = o.id_producto
+            WHERE o.id_lprecio = ? AND COALESCE(o.total, 0) > 0 AND p.vigente IS TRUE" . ($idFamilia > 0 ? ' AND p.id_familia = ' . $idFamilia : '');
+        $calc = "round(x.total / (1 + (x.piva + x.pila) / 100.0))";
+        $db->trans_begin();
+        // El ILA con su tasa (0 si no tiene) y el IVA lo que queda: neto + IVA + ILA = total, sin negativos por redondeo
+        $ila = "round($calc * x.pila / 100.0)";
+        $db->query("UPDATE detalle_lprecio d SET total = x.total, neto = $calc, ila = $ila, iva = x.total - $calc - $ila
+            FROM ($fuente) x
+            WHERE d.id_lprecio = ? AND d.id_producto = x.id_producto" . ($soloSinPrecio ? ' AND COALESCE(d.total, 0) = 0' : ''),
+            array($factor, $origen, $destino));
+        $actualizados = $db->affected_rows();
+        $db->query("INSERT INTO detalle_lprecio (id_producto, id_lprecio, total, neto, iva, ila)
+            SELECT x.id_producto, ?, x.total, $calc, x.total - $calc - $ila, $ila
+            FROM ($fuente) x
+            WHERE NOT EXISTS (SELECT 1 FROM detalle_lprecio d WHERE d.id_lprecio = ? AND d.id_producto = x.id_producto)",
+            array($destino, $factor, $origen, $destino));
+        $nuevos = $db->affected_rows();
+        if ($db->trans_status() === false) { $db->trans_rollback(); return array('error' => 'No se pudieron copiar los precios'); }
+        $db->trans_commit();
+        return array('ok' => true, 'actualizados' => (int)$actualizados, 'nuevos' => (int)$nuevos, 'ajuste' => $ajuste);
     }
 }
