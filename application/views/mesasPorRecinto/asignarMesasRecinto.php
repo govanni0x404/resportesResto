@@ -54,7 +54,11 @@
                             <h4>Mesas por Recinto</h4>
                         </div>
                     </div>
-                    <p class="t-lista-ayuda"><i class="fa fa-hand-pointer-o"></i> Seleccione una mesa de la tabla para asignarla a un recinto.</p>
+                    <div class="mr-barra">
+                        <p class="t-lista-ayuda" style="margin:0"><i class="fa fa-hand-pointer-o"></i> Seleccione una mesa de la tabla para asignarla a un recinto, o asigne varias de una vez.</p>
+                        <!-- v1.38.3 (pedido del usuario): varias mesas a un recinto de una vez -->
+                        <button type="button" class="btn btn-success" onclick="abrirAsignarVarias()"><i class="fa fa-th"></i> Asignar varias mesas</button>
+                    </div>
                     <div class="table-responsive t-lista-tabla">
                         <table id="tablaMesasSinAsignar" class="display responsive" style="width: 100%">
                             <thead>

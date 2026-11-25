@@ -84,4 +84,13 @@ class MesasPorRecinto extends CI_Controller
     $r = $this->MmesasPorRecinto->asignarMesaARecinto($id_mesa, $miData);
     echo json_encode($r);
   }
+
+  /** v1.38.3: asignar varias mesas a un recinto de una vez. */
+  public function asignarVarias()
+  {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) { set_status_header(401); echo json_encode(array('error' => 'Sesión expirada')); return; }
+    $r = $this->MmesasPorRecinto->asignarVarias($this->input->post('ids'), $this->input->post('id_recinto'));
+    if (isset($r['error'])) set_status_header(400);
+    echo json_encode($r);
+  }
 }
