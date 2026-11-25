@@ -33,6 +33,25 @@
 	#modalReceta #preparacionReceta { border: 1px solid var(--t-borde, #EADFD2); border-radius: var(--t-radio-sm); padding: 10px 12px; }
 	#modalReceta #preparacionReceta:focus { outline: none; border-color: var(--t-primario); box-shadow: 0 0 0 3px rgba(180, 67, 46, .12); }
 	#modalReceta .modal-footer { clear: both; }
+	/* v1.37.15 (pedido del usuario): a lo ancho. Izquierda: datos de la receta y agregar insumo; derecha: la tabla y el resumen */
+	#modalReceta .modal-dialog { width: 1440px; max-width: calc(100vw - 24px); margin-top: 14px; }
+	#modalReceta .h-panel.rec-ancho { display: grid; grid-template-columns: minmax(520px, 6fr) 7fr; gap: 16px; align-items: start; }
+	#modalReceta .rec-ancho > .rec-izq > .panel, #modalReceta .rec-ancho > .panel { margin-bottom: 12px; }
+	#modalReceta .rec-izq .panel > .panel-body { padding: 12px 14px 2px; }
+	#modalReceta .rec-izq fieldset > [class*="col-"] { flex: 1 1 28%; width: auto; max-width: none; margin-bottom: 10px; }
+	/* Datos: nombre solo; rendimiento + unidad; precio + grupo + sección */
+	#modalReceta .rec-izq fieldset > .col-md-7 { flex-basis: 100%; }
+	#modalReceta .rec-izq fieldset > .col-md-2:has(#rendimientoReceta) { flex: 1 1 30%; }
+	#modalReceta .rec-izq fieldset > .col-md-3:has(#cboUnMedida) { flex: 1 1 60%; }
+	/* Agregar insumo: código + nombre; cantidad, unidad, costo y total en una fila; el botón abajo */
+	#modalReceta .rec-izq fieldset > .col-md-3:has(#cboCodBarraInsumoReceta) { flex: 1 1 48%; }
+	#modalReceta .rec-izq fieldset > .col-md-9:has(#nombreInsumoReceta) { flex: 1 1 42%; }
+	#modalReceta .rec-izq fieldset > .col-md-2:has(#idInsumoReceta) { display: none; }
+	#modalReceta .rec-izq fieldset > .col-md-2 { flex: 1 1 20%; }
+	#modalReceta .rec-izq fieldset > .rec-agregar { flex-basis: 100%; }
+	#modalReceta .rec-ancho #tabDetalleInsumosReceta .table-responsive { max-height: calc(100vh - 380px); overflow-y: auto; }
+	#modalReceta #tableInsumoReceta td:nth-child(6) { white-space: nowrap; }
+	@media (max-width: 1100px) { #modalReceta .h-panel.rec-ancho { grid-template-columns: 1fr; } }
 </style>
 <!--  MODAL NUEVO REGISTRO  -->
 <div id="modalReceta" class="modal fade" role="dialog" style="overflow-y: scroll;">
@@ -165,11 +184,11 @@
 											</div>
 											<div class="col-md-2">
 												<label for="costoInsumoReceta" title="Costo neto de 1 unidad de receta (ej. 1 gramo)">COSTO X UN. RECETA</label>
-												<input type="number" disabled class="form-control input-sm input-sm" onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="costoInsumoReceta" id="costoInsumoReceta" requerido="si" value="" />
+												<input type="text" disabled class="form-control input-sm input-sm" onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="costoInsumoReceta" id="costoInsumoReceta" requerido="si" value="" />
 											</div>
 											<div class="col-md-2">
 												<label for="costoTotalInsumoReceta">COSTO TOTAL</label>
-												<input type="number" disabled class="form-control input-sm input-sm" onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="costoTotalInsumoReceta" id="costoTotalInsumoReceta" requerido="si" value="" />
+												<input type="text" disabled class="form-control input-sm input-sm" onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="costoTotalInsumoReceta" id="costoTotalInsumoReceta" requerido="si" value="" />
 											</div>
 											<div class="col-md-2 rec-agregar">
 												<button type="button" class="btn btn-rounded btn-danger" id="btnAgregarInsumoTabla"><i class="fa fa-check-circle"></i> AGREGAR INSUMO</button>
@@ -219,6 +238,20 @@
 	</div>
 </div>
 <!-- FIN  MODAL NUEVO REGISTRO  -->
+<script>
+	// v1.37.15: reparte la ventana a lo ancho moviendo los mismos elementos (no cambian sus ids ni lo que hacen)
+	$(function () {
+		var $hp = $('#modalReceta .h-panel').first();
+		if (!$hp.length || $hp.hasClass('rec-ancho')) return;
+		var $paneles = $hp.children('.panel');
+		if ($paneles.length < 2) return;
+		var $form = $('#tabDetalleInsumosReceta').children('fieldset').slice(0, 2);
+		var $card = $('<div class="panel panel-default"><div class="panel-body"><div class="t-card-titulo">Agregar insumo</div></div></div>');
+		$card.children('.panel-body').append($form);
+		$('<div class="rec-izq"></div>').append($paneles.eq(0)).append($card).prependTo($hp);
+		$hp.addClass('rec-ancho');
+	});
+</script>
  <?php $this->load->view('umedida/jsNuevaUmedida.php'); ?>
  <?php $this->load->view('recetas/jsUnidadesReceta.php'); /* v1.34.0 */ ?>
 

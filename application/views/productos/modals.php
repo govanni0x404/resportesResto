@@ -1715,14 +1715,14 @@
                                             </div>
                                             <div class="col-md-2">
                                                 <label for="costoInsumoReceta" title="Costo neto de 1 unidad de receta (ej. 1 gramo)">COSTO X UN. RECETA</label>
-                                                <input type="number" disabled class="form-control input-sm input-sm"
+                                                <input type="text" disabled class="form-control input-sm input-sm"
                                                     onkeypress="return soloNumeros(event)" onpaste="return false;"
                                                     ondrop="return false;" autocomplete="off" name="costoInsumoReceta"
                                                     id="costoInsumoReceta" requerido="si" value="" />
                                             </div>
                                             <div class="col-md-2">
                                                 <label for="costoTotalInsumoReceta">COSTO TOTAL</label>
-                                                <input type="number" disabled class="form-control input-sm input-sm"
+                                                <input type="text" disabled class="form-control input-sm input-sm"
                                                     onkeypress="return soloNumeros(event)" onpaste="return false;"
                                                     ondrop="return false;" autocomplete="off"
                                                     name="costoTotalInsumoReceta" id="costoTotalInsumoReceta"
