@@ -1,4 +1,5 @@
 <?php $this->load->view('umedida/jsEquivalencias.php'); ?>
+<?php $this->load->view('recetas/buscadorInsumos.php'); /* v1.37.11: buscar insumos como en la Caja */ ?>
 <script>
 /**
  * v1.34.0 (pedido del usuario: "que en las recetas tome los valores correspondientes, gramos, kilogramos"): la cantidad de
@@ -17,7 +18,7 @@ function recOpcionInsumo(v, elegido) {
 	return '<option ' + (elegido ? 'selected ' : '') + 'value="' + v.id_insumo + '" cbarra="' + v.cbarra + '" nombreInsumo="' + v.nombre_insumo
 		+ '" esReceta="' + v.esreceta + '" umedida="' + v.nombre_umedida + '" costoPP="' + recRedondear(v.costo_receta, 4)
 		+ '" idUmRec="' + v.id_umedida_receta + '" idUmInv="' + v.id_umedida_inventario + '" mRec="' + v.umedida_receta
-		+ '" mInv="' + v.umedida_inventario + '">' + v.cbarra + '/' + v.nombre_insumo + '</option>';
+		+ '" mInv="' + v.umedida_inventario + '" grupo="' + $('<div>').text(v.nombre_grupo_insumo || '').html().replace(/"/g, '&quot;') + '">' + v.cbarra + '/' + v.nombre_insumo + '</option>';
 }
 function recRedondear(n, dec) { var p = Math.pow(10, dec || 0); return Math.round((Number(n) || 0) * p) / p; }
 /** Llena el combo de unidades con las que sirven para el insumo elegido (su unidad de receta primero). */

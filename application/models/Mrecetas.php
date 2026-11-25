@@ -65,9 +65,12 @@ class Mrecetas extends CI_Model
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
 		// v1.34.0: costo_receta = costo de 1 unidad de receta (ej. 1 gramo de un insumo comprado por kilo). Antes la pantalla
 		// multiplicaba los gramos por el costo del kilo (200 gr de $10.000/kg daban $2.000.000).
-		$q = "SELECT i.*, um.nombre_umedida, " . self::SQL_COSTO_RECETA . " AS costo_receta
+		// v1.37.11: con el nombre de su familia/grupo, para el buscador de insumos (como en la Caja)
+		$q = "SELECT i.*, um.nombre_umedida, " . self::SQL_COSTO_RECETA . " AS costo_receta, COALESCE(g.nombre_grupo_insumo, '') AS nombre_grupo_insumo
 		from insumo i
-		join umedida um on i.id_umedida_receta = um.id_umedida where i.vigente = true
+		join umedida um on i.id_umedida_receta = um.id_umedida
+		left join grupo_insumo g on g.id_grupo_insumo = i.id_grupo_insumo
+		where i.vigente = true
 		order by i.nombre_insumo";
 		$query = $this->db->query($q)->result();
 		return $query;
