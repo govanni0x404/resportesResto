@@ -246,7 +246,17 @@ class MrecetaProduccion extends CI_Model
         foreach ($db->query($this->sqlInsumo('i.id_insumo <> ? AND i.vigente IS NOT FALSE') . ' ORDER BY i.nombre_insumo', array((int)$idElaborado))->result() as $r) {
             $insumos[] = $this->filaInsumo($r);
         }
-        return array('ok' => true, 'elaborado' => $this->filaInsumo($el), 'recetas' => $recetas, 'insumos' => $insumos);
+        // v1.37.3 (pedido del usuario): de qué bodega sale cada insumo; se muestra el stock que tiene en cada una
+        $bodegas = array();
+        foreach ($db->query('SELECT id_bodega, nombre_bodega FROM bodega ORDER BY nombre_bodega')->result() as $b) {
+            $bodegas[] = array('id' => (int)$b->id_bodega, 'nombre' => (string)$b->nombre_bodega);
+        }
+        $stock = array();
+        foreach ($db->query('SELECT id_insumo, id_bodega, COALESCE(saldo, 0) AS saldo FROM stock_insumo')->result() as $x) {
+            $stock[(string)(int)$x->id_insumo][(string)(int)$x->id_bodega] = round((float)$x->saldo, 3);
+        }
+        return array('ok' => true, 'elaborado' => $this->filaInsumo($el), 'recetas' => $recetas, 'insumos' => $insumos,
+            'bodegas' => $bodegas, 'stock' => (object)$stock);
     }
 
     /** Una receta con sus líneas. */
@@ -257,9 +267,10 @@ class MrecetaProduccion extends CI_Model
             (vigente IS NOT FALSE) AS vigente FROM receta_produccion WHERE id_receta_produccion = ?', array((int)$id))->row();
         if (!$r) return array('error' => 'La receta ya no existe. Recarga la página.');
         $lineas = array();
-        foreach ($db->query('SELECT id_insumo, cantidad, id_umedida FROM detalle_receta_produccion
+        foreach ($db->query('SELECT id_insumo, cantidad, id_umedida, COALESCE(id_bodega, 0) AS id_bodega FROM detalle_receta_produccion
             WHERE id_receta_produccion = ? AND vigente IS NOT FALSE ORDER BY id_detalle_receta_produccion', array((int)$id))->result() as $l) {
-            $lineas[] = array('id_insumo' => (int)$l->id_insumo, 'cantidad' => (float)$l->cantidad, 'id_umedida' => (int)$l->id_umedida);
+            $lineas[] = array('id_insumo' => (int)$l->id_insumo, 'cantidad' => (float)$l->cantidad, 'id_umedida' => (int)$l->id_umedida,
+                'id_bodega' => (int)$l->id_bodega);
         }
         return array('ok' => true, 'receta' => array('id' => (int)$r->id, 'nombre' => (string)$r->nombre, 'id_insumo' => (int)$r->id_insumo,
             'cantidad' => (float)$r->cantidad, 'id_umedida' => (int)$r->id_umedida, 'vigente' => $r->vigente === 't' || $r->vigente === true,
@@ -294,8 +305,11 @@ class MrecetaProduccion extends CI_Model
             if ($ii <= 0) continue;
             if ($ii === $idEl) return array('error' => 'La receta no puede llevar el mismo insumo que produce');
             if (!($q > 0) || $q > 1000000) return array('error' => 'Cada insumo debe tener una cantidad mayor que 0');
-            $lineas[] = array('id_insumo' => $ii, 'cantidad' => $q, 'id_umedida' => (int)($l['id_umedida'] ?? 0));
+            $lineas[] = array('id_insumo' => $ii, 'cantidad' => $q, 'id_umedida' => (int)($l['id_umedida'] ?? 0), 'id_bodega' => (int)($l['id_bodega'] ?? 0));
         }
+        // v1.37.3: cada insumo dice de qué bodega se descuenta al producir
+        $bodegasOk = array();
+        foreach ($db->query('SELECT id_bodega FROM bodega')->result() as $b) $bodegasOk[(int)$b->id_bodega] = true;
         if (!$lineas) return array('error' => 'Agrega al menos un insumo a la receta');
         if (count($lineas) > 100) return array('error' => 'Demasiados insumos en una receta');
         $ins = array();
@@ -308,6 +322,7 @@ class MrecetaProduccion extends CI_Model
             $inv = $this->aInventario($ins[$l['id_insumo']], $l['cantidad'], $l['id_umedida']);
             if ($inv === null) return array('error' => 'La unidad elegida para ' . $ins[$l['id_insumo']]->nombre_insumo . ' no se puede pasar a su unidad');
             if (!$l['id_umedida']) $lineas[$k]['id_umedida'] = (int)$ins[$l['id_insumo']]->id_umedida_inventario;
+            if (!isset($bodegasOk[$l['id_bodega']])) return array('error' => 'Elige de qué bodega sale ' . $ins[$l['id_insumo']]->nombre_insumo);
             $costo += $inv * (float)$ins[$l['id_insumo']]->costo;
         }
         if (!$idUm) $idUm = (int)$el->id_umedida_inventario;
@@ -325,7 +340,7 @@ class MrecetaProduccion extends CI_Model
         }
         foreach ($lineas as $l) {
             $db->query('INSERT INTO detalle_receta_produccion (id_receta_produccion, id_insumo, id_bodega, cantidad, id_umedida, vigente)
-                VALUES (?, ?, 0, ?, ?, true)', array($id, $l['id_insumo'], $l['cantidad'], $l['id_umedida']));
+                VALUES (?, ?, ?, ?, ?, true)', array($id, $l['id_insumo'], $l['id_bodega'], $l['cantidad'], $l['id_umedida']));
         }
         // El insumo producido es una sub receta (sale "SI" en Insumos y Recetas)
         $db->query('UPDATE insumo SET esreceta = true WHERE id_insumo = ? AND esreceta IS NOT TRUE', array($idEl));

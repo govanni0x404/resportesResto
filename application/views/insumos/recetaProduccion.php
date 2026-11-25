@@ -10,9 +10,9 @@
  */
 ?>
 <style>
-#ModalRecetaProduccion .modal-dialog { width: 1100px; max-width: calc(100vw - 24px); margin-top: 16px; }
+#ModalRecetaProduccion .modal-dialog { width: 1320px; max-width: calc(100vw - 24px); margin-top: 16px; }
 #ModalRecetaProduccion .modal-header { border-top: 3px solid var(--t-primario, #15803D); }
-.rp-grid { display: grid; grid-template-columns: minmax(300px, 4fr) 7fr; gap: 18px; align-items: start; }
+.rp-grid { display: grid; grid-template-columns: minmax(250px, 3fr) 9fr; gap: 18px; align-items: start; }
 .rp-caja { padding: 12px 14px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; margin-bottom: 12px; }
 .rp-caja > b { display: block; margin-bottom: 8px; font-size: 13.5px; }
 .rp-campo { margin-bottom: 10px; }
@@ -23,6 +23,12 @@
 .rp-crece { flex: 1 1 160px; min-width: 0; }
 .rp-num { flex: 0 0 110px; }
 .rp-uni { flex: 0 0 140px; }
+.rp-bod { flex: 0 0 190px; }
+.rp-tabla select.rp-b { width: 180px; }
+.rp-stock { display: block; margin-top: 2px; font-size: 11.5px; color: var(--t-texto-suave, #6B7280); }
+.rp-campo .rp-stock { position: absolute; }
+.rp-bod { position: relative; }
+.rp-sin-stock { color: #B91C1C !important; }
 .rp-elaborado { font-size: 15px; font-weight: 800; color: var(--t-texto-fuerte, #111827); }
 .rp-elaborado small { display: block; font-size: 12px; font-weight: 400; color: var(--t-texto-suave, #6B7280); }
 .rp-recetas { display: flex; flex-direction: column; gap: 6px; }
@@ -85,11 +91,14 @@
                                     <input type="number" class="form-control" id="rpCantidad" min="0" step="any" placeholder="0"></div>
                                 <div class="rp-campo rp-uni"><label for="rpUnidad">Unidad</label>
                                     <select class="form-control" id="rpUnidad"></select></div>
+                                <!-- v1.37.3 (pedido del usuario): de qué bodega se descuenta al producir -->
+                                <div class="rp-campo rp-bod"><label for="rpBodega">Sale de la bodega</label>
+                                    <select class="form-control" id="rpBodega"></select><span class="rp-stock" id="rpBodegaStock"></span></div>
                                 <button type="button" class="btn btn-success" id="rpAgregar" style="height:36px"><i class="fa fa-plus"></i> Agregar</button>
                             </div>
-                            <div class="rp-tabla" style="margin-top:10px">
+                            <div class="rp-tabla" style="margin-top:24px">
                                 <table class="table table-hover">
-                                    <thead><tr><th>Insumo</th><th class="text-right">Cantidad</th><th>Unidad</th><th class="text-right">Costo</th><th></th></tr></thead>
+                                    <thead><tr><th>Insumo</th><th class="text-right">Cantidad</th><th>Unidad</th><th>Bodega</th><th class="text-right">Costo</th><th></th></tr></thead>
                                     <tbody id="rpLineas"></tbody>
                                 </table>
                             </div>
@@ -130,9 +139,31 @@
         return $.map(lista, function (u) { return '<option value="' + u.id + '"' + (Number(sel) === u.id ? ' selected' : '') + '>' + esc(u.nombre || Unidades.nombre(u.id)) + '</option>'; }).join('');
     }
 
+    // ---- v1.37.3: bodega de cada insumo (con el stock que tiene ahí) ----
+    function stockDe(idIns, idBod) { var x = ed.stock && ed.stock[idIns]; return x && x[idBod] !== undefined ? Number(x[idBod]) : 0; }
+    /** La bodega que se propone: la que tiene más stock de ese insumo (o la primera) */
+    function bodegaSugerida(idIns) {
+        var mejor = ed.bodegas.length ? ed.bodegas[0].id : 0, max = -Infinity;
+        $.each(ed.bodegas, function (k, b) { var st = stockDe(idIns, b.id); if (st > max) { max = st; mejor = b.id; } });
+        return mejor;
+    }
+    function opcionesBodega(i, sel) {
+        return $.map(ed.bodegas, function (b) {
+            return '<option value="' + b.id + '"' + (Number(sel) === b.id ? ' selected' : '') + '>' + esc(b.nombre) + '</option>';
+        }).join('');
+    }
+
+    /** "Hay 2,6 KILOGRAMO" del insumo en esa bodega */
+    function textoStock(i, idBod) { return 'Hay ' + Unidades.fmt(stockDe(i.id_insumo, idBod)) + ' ' + esc(i.nombre_umedida_inventario || ''); }
+    function pintarStockNuevo() {
+        var i = insumo($('#rpInsumo').val());
+        $('#rpBodegaStock').html(i && Number($('#rpBodega').val()) ? textoStock(i, Number($('#rpBodega').val())) : '');
+    }
+    $(document).on('change', '#rpBodega', pintarStockNuevo);
+
     function abrir(idInsumo, idReceta) {
         if (!Number(idInsumo)) { showAppAlert('error', 'Graba el insumo antes de crear su receta de producción'); return; }
-        $('#rpLineas').html('<tr><td colspan="5" class="rp-vacio"><i class="fa fa-spinner fa-spin"></i> Cargando…</td></tr>');
+        $('#rpLineas').html('<tr><td colspan="6" class="rp-vacio"><i class="fa fa-spinner fa-spin"></i> Cargando…</td></tr>');
         $('#ModalRecetaProduccion').modal({ backdrop: 'static', keyboard: false });
         Unidades.listo(function () {
             $.ajax({ url: url + 'editor', data: { id_insumo: idInsumo }, dataType: 'json', cache: false }).done(function (r) {
@@ -175,7 +206,12 @@
             actual = rec.id;
             $('#rpNombre').val(rec.nombre); $('#rpRinde').val(rec.cantidad); $('#rpVigente').prop('checked', rec.vigente);
             pintarRinde(rec.id_umedida);
-            lineas = $.map(rec.lineas, function (l) { return insumo(l.id_insumo) ? [l] : null; });
+            lineas = $.map(rec.lineas, function (l) {
+                if (!insumo(l.id_insumo)) return null;
+                // v1.37.3: las recetas de antes no tenían bodega: se propone la que tiene más stock (revísala y guarda)
+                if (!l.id_bodega || !$.grep(ed.bodegas, function (b) { return b.id === l.id_bodega; }).length) l.id_bodega = bodegaSugerida(l.id_insumo);
+                return [l];
+            });
             pintarRecetas(); pintarLineas();
         }).fail(function (x) { showAppAlert('error', (x.responseJSON && x.responseJSON.error) || 'No se pudo abrir la receta'); });
     }
@@ -186,15 +222,18 @@
     $('#rpInsumo').on('change', function () {
         var i = insumo($(this).val());
         $('#rpUnidad').html(i ? opcionesUnidad(i, i.id_umedida_receta || i.id_umedida_inventario) : '');
+        $('#rpBodega').html(i ? opcionesBodega(i, bodegaSugerida(i.id_insumo)) : '');
+        pintarStockNuevo();
         if (i) $('#rpCantidad').focus();
     });
     function agregar() {
-        var i = insumo($('#rpInsumo').val()), q = Number(String($('#rpCantidad').val()).replace(',', '.')), u = Number($('#rpUnidad').val());
+        var i = insumo($('#rpInsumo').val()), q = Number(String($('#rpCantidad').val()).replace(',', '.')), u = Number($('#rpUnidad').val()), bo = Number($('#rpBodega').val());
         if (!i) { toastr.warning('Elige el insumo'); return; }
+        if (!bo) { toastr.warning('Elige de qué bodega sale'); return; }
         if (!(q > 0)) { toastr.warning('Escribe la cantidad'); $('#rpCantidad').focus(); return; }
-        var ya = $.grep(lineas, function (l) { return l.id_insumo === i.id_insumo && l.id_umedida === u; })[0];
+        var ya = $.grep(lineas, function (l) { return l.id_insumo === i.id_insumo && l.id_umedida === u && l.id_bodega === bo; })[0];
         if (ya) ya.cantidad = Math.round((ya.cantidad + q) * 1000) / 1000;
-        else lineas.push({ id_insumo: i.id_insumo, cantidad: q, id_umedida: u });
+        else lineas.push({ id_insumo: i.id_insumo, cantidad: q, id_umedida: u, id_bodega: bo });
         $('#rpCantidad').val('');
         $('#rpInsumo').val('0').trigger('change');
         pintarLineas();
@@ -210,9 +249,12 @@
             return '<tr data-k="' + k + '"><td><b>' + esc(i.nombre_insumo) + '</b><small>' + pesos2(i.costo) + ' por ' + esc(i.nombre_umedida_inventario || 'unidad') + '</small></td>'
                 + '<td class="text-right"><input type="number" class="form-control rp-q" min="0" step="any" value="' + l.cantidad + '">' + detalle + '</td>'
                 + '<td><select class="form-control rp-u">' + opcionesUnidad(i, l.id_umedida) + '</select></td>'
+                + '<td><select class="form-control rp-b' + (inv !== null && inv > stockDe(i.id_insumo, l.id_bodega) + 0.0000001 ? ' rp-sin-stock' : '') + '"'
+                + (inv !== null && inv > stockDe(i.id_insumo, l.id_bodega) + 0.0000001 ? ' title="En esta bodega no alcanza para una receta"' : '') + '>' + opcionesBodega(i, l.id_bodega) + '</select>'
+                + '<span class="rp-stock' + (inv !== null && inv > stockDe(i.id_insumo, l.id_bodega) + 0.0000001 ? ' rp-sin-stock' : '') + '">' + textoStock(i, l.id_bodega) + '</span></td>'
                 + '<td class="text-right rp-c">' + pesos(c) + '</td>'
                 + '<td><button type="button" class="rp-quitar" title="Quitar"><i class="fa fa-times"></i></button></td></tr>';
-        }).join('') : '<tr><td colspan="5" class="rp-vacio">Agrega arriba los insumos que lleva la receta.</td></tr>');
+        }).join('') : '<tr><td colspan="6" class="rp-vacio">Agrega arriba los insumos que lleva la receta.</td></tr>');
         pintarTotal();
     }
     function pintarTotal() {
@@ -235,7 +277,10 @@
         l.cantidad = Number(String(this.value).replace(',', '.')) || 0;
         $(this).closest('tr').find('.rp-c').text(pesos(costoLinea(l)));
         pintarTotal();
-    }).on('change', '.rp-q', pintarLineas).on('change', '.rp-u', function () {
+    }).on('change', '.rp-q', pintarLineas).on('change', '.rp-b', function () {
+        lineas[+$(this).closest('tr').data('k')].id_bodega = Number(this.value);
+        pintarLineas();
+    }).on('change', '.rp-u', function () {
         lineas[+$(this).closest('tr').data('k')].id_umedida = Number(this.value);
         pintarLineas();
     }).on('click', '.rp-quitar', function () {
@@ -247,7 +292,7 @@
     $('#rpGuardar').on('click', function () {
         var d = { id: actual, id_insumo: ed.elaborado.id_insumo, nombre: $.trim($('#rpNombre').val()), cantidad: $('#rpRinde').val(),
             id_umedida: $('#rpRindeUnidad').val(), vigente: $('#rpVigente').is(':checked') ? 1 : 0,
-            lineas: $.map(lineas, function (l) { return { id_insumo: l.id_insumo, cantidad: l.cantidad, id_umedida: l.id_umedida }; }) };
+            lineas: $.map(lineas, function (l) { return { id_insumo: l.id_insumo, cantidad: l.cantidad, id_umedida: l.id_umedida, id_bodega: l.id_bodega }; }) };
         if (!d.nombre) { toastr.warning('Escribe el nombre de la receta'); $('#rpNombre').focus(); return; }
         if (!(Number(d.cantidad) > 0)) { toastr.warning('Escribe cuánto rinde la receta'); $('#rpRinde').focus(); return; }
         if (!lineas.length) { toastr.warning('Agrega al menos un insumo'); return; }

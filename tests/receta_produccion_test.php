@@ -60,21 +60,26 @@ revisar('el editor ofrece los insumos con su costo por unidad de inventario', ($
 revisar('y no ofrece el mismo insumo que se produce', !isset($ins[$masa]));
 
 echo "Receta de producción:\n";
+list(, $b) = pedir(BASE . '/Bodegas/ListadoDeBodegas', array());
+$bodega = (int)(json($b)['aaData'][0]['id_bodega'] ?? 0);
+revisar('el editor trae las bodegas', !empty($ed['bodegas']) && $bodega > 0);
 $receta = function ($rinde, $um, $lineas, $idR = 0) use ($masa, $suf) {
 	return pedir(BASE . '/RecetaProduccion/guardarCompleta', array('id' => $idR, 'nombre' => 'masa rp ' . $suf, 'id_insumo' => $masa,
 		'cantidad' => $rinde, 'id_umedida' => $um, 'vigente' => 1, 'lineas' => $lineas));
 };
 list($c, $b) = $receta(2, $id['kg'], array());
 revisar('sin insumos se rechaza', $c === 400, "código $c");
-list($c, $b) = $receta(2, $id['un'], array(array('id_insumo' => $harina, 'cantidad' => 500, 'id_umedida' => $id['gr'])));
+list($c, $b) = $receta(2, $id['un'], array(array('id_insumo' => $harina, 'cantidad' => 500, 'id_umedida' => $id['gr'], 'id_bodega' => $bodega)));
 revisar('rendimiento en UNIDAD para un insumo en kilos se rechaza', $c === 400 && strpos(json($b)['error'] ?? '', 'no se puede pasar') !== false, "código $c: " . substr($b, 0, 150));
-list($c, $b) = $receta(2, $id['kg'], array(array('id_insumo' => $huevo, 'cantidad' => 3, 'id_umedida' => $id['gr'])));
+list($c, $b) = $receta(2, $id['kg'], array(array('id_insumo' => $huevo, 'cantidad' => 3, 'id_umedida' => $id['gr'], 'id_bodega' => $bodega)));
 revisar('huevos en GRAMO se rechaza (no se puede convertir)', $c === 400, "código $c");
-list($c, $b) = $receta(2, $id['kg'], array(array('id_insumo' => $masa, 'cantidad' => 1, 'id_umedida' => $id['kg'])));
+list($c, $b) = $receta(2, $id['kg'], array(array('id_insumo' => $harina, 'cantidad' => 1, 'id_umedida' => $id['kg'])));
+revisar('un insumo sin bodega se rechaza (hay que decir de dónde sale)', $c === 400 && strpos(json($b)['error'] ?? '', 'bodega') !== false, "código $c: " . substr($b, 0, 150));
+list($c, $b) = $receta(2, $id['kg'], array(array('id_insumo' => $masa, 'cantidad' => 1, 'id_umedida' => $id['kg'], 'id_bodega' => $bodega)));
 revisar('la receta no puede llevar lo mismo que produce', $c === 400, "código $c");
 // Rinde 2000 GRAMO (= 2 kg): 1 KILOGRAMO de harina ($2.000) + 4 huevos ($600) = $2.600; $1.300 el kilo de masa
-list($c, $b) = $receta(2000, $id['gr'], array(array('id_insumo' => $harina, 'cantidad' => 1, 'id_umedida' => $id['kg']),
-	array('id_insumo' => $huevo, 'cantidad' => 4, 'id_umedida' => $id['un'])));
+list($c, $b) = $receta(2000, $id['gr'], array(array('id_insumo' => $harina, 'cantidad' => 1, 'id_umedida' => $id['kg'], 'id_bodega' => $bodega),
+	array('id_insumo' => $huevo, 'cantidad' => 4, 'id_umedida' => $id['un'], 'id_bodega' => $bodega)));
 $r = json($b);
 $idR = (int)($r['id'] ?? 0);
 revisar('se graba la receta completa (rinde 2000 gr; 1 kg de harina y 4 huevos)', $c === 200 && $idR > 0, "código $c: " . substr($b, 0, 200));
@@ -82,10 +87,11 @@ revisar('cuesta $2.600 y sale $1.300 el kilo de masa', $cerca($r['costo'] ?? 0, 
 	json_encode($r));
 list(, $b) = pedir(BASE . '/RecetaProduccion/editor?id=' . $idR);
 $rc = json($b)['receta'] ?? array();
-revisar('al abrirla trae sus 2 insumos con su unidad', count($rc['lineas'] ?? array()) === 2 && ($rc['lineas'][0]['id_umedida'] ?? 0) === $id['kg'], substr($b, 0, 300));
+revisar('al abrirla trae sus 2 insumos con su unidad y su bodega', count($rc['lineas'] ?? array()) === 2 && ($rc['lineas'][0]['id_umedida'] ?? 0) === $id['kg']
+	&& ($rc['lineas'][0]['id_bodega'] ?? 0) === $bodega, substr($b, 0, 300));
 // Editar: 800 gr de harina en vez de 1 kg -> $1.600 + $600 = $2.200
-list($c, $b) = $receta(2000, $id['gr'], array(array('id_insumo' => $harina, 'cantidad' => 800, 'id_umedida' => $id['gr']),
-	array('id_insumo' => $huevo, 'cantidad' => 4, 'id_umedida' => $id['un'])), $idR);
+list($c, $b) = $receta(2000, $id['gr'], array(array('id_insumo' => $harina, 'cantidad' => 800, 'id_umedida' => $id['gr'], 'id_bodega' => $bodega),
+	array('id_insumo' => $huevo, 'cantidad' => 4, 'id_umedida' => $id['un'], 'id_bodega' => $bodega)), $idR);
 revisar('editarla (800 gr de harina) recalcula: $2.200', $c === 200 && $cerca(json($b)['costo'] ?? 0, 2200), substr($b, 0, 200));
 list(, $b) = pedir(BASE . '/RecetaProduccion/editor?id=' . $idR);
 revisar('y no quedan insumos repetidos ni viejos', count(json($b)['receta']['lineas'] ?? array()) === 2);
@@ -95,10 +101,10 @@ list(, $b) = pedir(BASE . '/Produccion/recetaParaProducir', array('id_insumo' =>
 $rp = json($b)['receta'] ?? array();
 revisar('el rendimiento llega en la unidad de inventario (2000 gr = 2 kg)', $cerca($rp['cantidad_inventario'] ?? 0, 2, 0.0001) && count($rp['lineas'] ?? array()) === 2,
 	substr($b, 0, 300));
+revisar('y cada insumo con la bodega de donde sale', (int)($rp['lineas'][0]['id_bodega'] ?? 0) === $bodega,
+	substr($b, 0, 300));
 
 echo "Producir:\n";
-list(, $b) = pedir(BASE . '/Bodegas/ListadoDeBodegas', array());
-$bodega = (int)(json($b)['aaData'][0]['id_bodega'] ?? 0);
 list(, $b) = pedir(BASE . '/EntradaBodega/grabarEntradaBodega', array('el_json' => json_encode(array('id_bodega' => $bodega, 'fecha' => date('Y-m-d'), 'observaciones' => 'Prueba'))));
 $es = (int)(json($b)[0]['id_esbodega'] ?? 0);
 pedir(BASE . '/EntradaBodega/grabarDetalleEntradaBodega', array('id' => $es, 'id_bodega_stock' => $bodega,

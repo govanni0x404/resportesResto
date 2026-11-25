@@ -893,7 +893,8 @@ $('#btnCargarRecetaProduccion').on('click', function () {
         Unidades.listo(function () {
             var pedidos = [], nuevas = [], malas = [];
             $.each(rec.lineas, function (i, l) {
-                var idBodega = bodegaElegida || Number(l.id_bodega) || Number(rec.id_bodega);
+                // v1.37.3 (pedido del usuario): cada insumo sale de la bodega que dice su receta; sin bodega, de la bodega origen
+                var idBodega = Number(l.id_bodega) || bodegaElegida || Number(rec.id_bodega);
                 var d = { stock: 0, costo: 0 };
                 pedidos.push($.post(base_url + "index.php/Produccion/obtenerStockActual", { id_insumo: l.id_insumo, id_bodega: idBodega }, null, 'json')
                     .done(function (x) { d.stock = parseFloat(x && x.stock_actual) || 0; }));
