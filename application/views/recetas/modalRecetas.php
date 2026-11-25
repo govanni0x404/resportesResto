@@ -482,17 +482,13 @@
 				console.log('Respuesta del servidor:', response);
 				
 				if (response.status === 'success') {
+					recMensajeGrabada($.trim($('#nombreReceta').val()));   // v1.37.16: confirmación al medio con el resumen
 					// Cerrar el modal
 					$('#modalReceta').modal('hide');
 					
 					// Recargar la tabla
 					tableRecetas.ajax.reload(null, false);
 					
-					// Mostrar mensaje de éxito
-					showAppAlert('success', response.message, {
-                    	duration: 4000,
-                        image: base_url + 'assets/img/success.gif'
-                    });
 				} else {
 					showAppAlert('error', response.message || "Error al guardar la receta", {
                         duration: 6000,

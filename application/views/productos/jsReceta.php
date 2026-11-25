@@ -193,6 +193,7 @@
 						});
 						return;
 					}
+					recMensajeGrabada(nombre_receta);   // v1.37.16: confirmación al medio con el resumen
 					$('#modalReceta').modal('hide');
 					if (typeof ListadoDeReceta === 'function') {
 						ListadoDeReceta(nombre_receta);
@@ -200,10 +201,6 @@
 					if (typeof tableRecetas !== 'undefined') {
 						tableRecetas.ajax.reload();
 					}
-					showAppAlert('success', "Se registro Exitosamente La Receta!", {
-						duration: 4000,
-						image: base_url + 'assets/img/success.gif'
-					});
 				})
 				.fail(function() {
 					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {

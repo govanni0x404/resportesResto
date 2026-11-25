@@ -29,6 +29,7 @@ if ($copia) {
 	$pruebas['agregados_extras_categorias_test.php'] = array($base, 'COPIA');   // v1.35.0: agregados extra con costo y categorías de agregados
 	$pruebas['promos_test.php'] = array($base, 'COPIA');   // v1.36.0: promos normales (Carta > Promos)
 	$pruebas['receta_produccion_test.php'] = array($base, 'COPIA');   // v1.37.0: receta de producción completa, costos y producción
+	$pruebas['unidades_volumen_test.php'] = array($base, 'COPIA');   // v1.37.16: litros y mililitros en insumos, recetas y producción
 	if (is_file(__DIR__ . '/cocina_reservas_test.php')) $pruebas['cocina_reservas_test.php'] = array($base, 'COPIA');   // pantalla de cocina y reservas (rama de prueba)
 }
 

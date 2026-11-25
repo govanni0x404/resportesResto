@@ -68,6 +68,20 @@ try {
             : 'Escribe el precio bruto sugerido para ver el % de costo y la ganancia.');
     }
     window.recCalcularResumen = calcular;
+    /**
+     * v1.37.16 (pedido del usuario): al grabar la receta, una ventana al medio que confirma que se grabó, con su resumen.
+     * Se toman los números antes de cerrar la ventana de la receta.
+     */
+    window.recMensajeGrabada = function (nombre) {
+        calcular();
+        var t = (nombre ? nombre + '\n' : '') + 'Insumos: ' + $('#rrCant').text() + ' · Costo total: ' + $('#rrTotal').text()
+            + '\nCosto por porción: $' + $('#rrPorcion').text()
+            + ($('#rrPCosto').text() !== '—' ? '\n% costo: ' + $('#rrPCosto').text() + ' · Ganancia neta: ' + $('#rrGanancia').text() + ' (' + $('#rrPGanancia').text() + ')' : '');
+        setTimeout(function () {
+            if (window.swal) swal({ title: '¡Receta grabada!', text: t, type: 'success', confirmButtonText: 'Aceptar' });
+            else showAppAlert('success', 'Receta grabada', { duration: 5000 });
+        }, 350);
+    };
     $(function () {
         var $t = $('#tableInsumoReceta');
         if (!$t.length) return;
