@@ -179,7 +179,7 @@ class Mrecetas extends CI_Model
 						'id_insumo' => (int)$l['id_insumo'],
 						'cantidad' => $l['cantidad'],
 						'costo_pp' => $costoPp,
-						'costo_total' => round((float)$l['cantidad'] * $costoPp),
+						'costo_total' => round((float)$l['cantidad'] * $costoPp, 2),   // v1.37.12: con 2 decimales, como se ve en la pantalla
 						'es_receta' => ($c->sub === 't' || $c->sub === true) ? 't' : 'f',
 						'vigente' => 't',
 						'um_receta' => 0,

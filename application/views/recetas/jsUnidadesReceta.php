@@ -41,10 +41,18 @@ function recCantidadEnReceta() {
 	var r = Unidades.aReceta(recInsumoElegido(), cant, $('#unidadLineaReceta').val());
 	return r === null ? null : recRedondear(r, 3);
 }
+/** v1.37.12: costo de 1 unidad de receta del insumo elegido, con todos sus decimales (el campo muestra solo 2) */
+function recCostoElegido() {
+	var c = Number($('#cboCodBarraInsumoReceta').find('option:selected').attr('costoPP'));
+	return isFinite(c) && Number($('#cboCodBarraInsumoReceta').val()) ? c : (Number($('#costoInsumoReceta').val()) || 0);
+}
+/** v1.37.12 (pedido del usuario): costos con 2 decimales, como el sistema de escritorio (0.50 · 150.00) */
+function recDosDecimales(n) { return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2); }
 function recCalcularCostoLinea() {
-	var ins = recInsumoElegido(), costo = Number($('#costoInsumoReceta').val()) || 0, enRec = recCantidadEnReceta();
+	var ins = recInsumoElegido(), costo = recCostoElegido(), enRec = recCantidadEnReceta();
 	var idU = Number($('#unidadLineaReceta').val()), cant = Number(String($('#cantidadInsumoReceta').val()).replace(',', '.')) || 0;
-	$('#costoTotalInsumoReceta').val(enRec === null ? '' : Math.round(enRec * costo));
+	if (Number($('#cboCodBarraInsumoReceta').val())) $('#costoInsumoReceta').val(recDosDecimales(costo));
+	$('#costoTotalInsumoReceta').val(enRec === null ? '' : recDosDecimales(enRec * costo));
 	var $h = $('#equivLineaReceta');
 	if (cant > 0 && enRec !== null && idU && idU !== Number(ins.id_umedida_receta)) {
 		$h.html('<i class="fa fa-exchange"></i> ' + Unidades.fmt(cant) + ' ' + $('#unidadLineaReceta option:selected').text()
