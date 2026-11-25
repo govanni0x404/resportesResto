@@ -469,6 +469,13 @@
 					if (/^\s*IVA\b/i.test(v.nombre_impuesto || '')) { objSelectedIva = v.nombre_impuesto; return false; }
 				});
 			}
+			// v1.37.1 (pedido del usuario): el impuesto adicional viene siempre en EXENTO (insumo nuevo o sin impuesto adicional).
+			// Se puede cambiar si un insumo lleva uno.
+			if (!objSelectedAdicional || objSelectedAdicional === '0') {
+				$.each(obj, function(index, v) {
+					if (/EXENT/i.test(v.nombre_impuesto || '')) { objSelectedAdicional = v.nombre_impuesto; return false; }
+				});
+			}
 			$.each(obj, function(index, v) { // recorro el array
 				if (v.nombre_impuesto == objSelectedIva) {
 					tblIva = tblIva + '<option selected value="' + v.id_impuesto + '">' + v.nombre_impuesto + '</option>';
