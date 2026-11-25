@@ -83,7 +83,7 @@
                         <div class="panel-heading prod-cabeza">
                             <h5><strong style="font-weight: bold;">INSUMOS Y COSTOS</strong></h5>
                             <!-- v1.34.0 (pedido del usuario): carga los insumos de la receta de producción del insumo -->
-                            <button type="button" class="btn btn-success btn-sm" id="btnCargarRecetaProduccion"
+                            <button type="button" class="btn btn-success btn-sm" id="btnCargarRecetaProduccion" style="display:none" data-v1374="la receta se carga sola al abrir (Realizar producción)"
                                     title="Carga los insumos de la receta de producción, según la cantidad a producir (Rend/Real)">
                                 <i class="fa fa-list-alt"></i> Cargar receta de producción
                             </button>
@@ -356,7 +356,8 @@ var insProd = null;
 var recetaCargada = null;
 
 // Abrir modal de producción
-function AbrirModalProduccion(idInsumo, nombreInsumo) {
+function AbrirModalProduccion(idInsumo, nombreInsumo, opciones) {
+    opciones = opciones || {};   // v1.37.4: {id_receta, veces}: viene de "Cargar receta de producción" y se carga sola
     console.log("=== ABRIENDO MODAL DE PRODUCCIÓN ===");
     console.log("ID Insumo:", idInsumo);
     console.log("Nombre Insumo:", nombreInsumo);
@@ -365,7 +366,9 @@ function AbrirModalProduccion(idInsumo, nombreInsumo) {
     limpiarModalProduccion();
     
     // Cargar combos
-    cargarBodegasParaProduccion();
+    cargarBodegasParaProduccion().done(function () {
+        if (opciones.id_receta) cargarRecetaProduccion(opciones.id_receta, opciones.veces);
+    });
     cargarInsumosParaProduccion(idInsumo);
     
     // Configurar datepicker
@@ -477,7 +480,7 @@ function cargarInsumosParaProduccion(idInsumoSeleccionado) {
 
 // Cargar bodegas
 function cargarBodegasParaProduccion() {
-    $.post(base_url + "index.php/Bodegas/ListadoDeBodegas", {}, function (obj) {
+    return $.post(base_url + "index.php/Bodegas/ListadoDeBodegas", {}, function (obj) {
         var tbl = '<option value="0">-- Seleccione --</option>';
         
         $.each(obj.aaData, function (index, v) {
@@ -497,6 +500,8 @@ function cargarBodegasParaProduccion() {
             $("#bodegaDestinoElaborado").select2('destroy');
         }
         $("#bodegaDestinoElaborado").select2();
+        // v1.37.4: con una sola bodega, la de destino viene elegida
+        if (obj.aaData && obj.aaData.length === 1) $("#bodegaDestinoElaborado").val(String(obj.aaData[0].id_bodega)).trigger('change');
     }, 'json');
 }
 
@@ -874,9 +879,14 @@ function reescalarReceta() {
     actualizarCostoTotal();
 }
 $(document).on('input', '#rendimientoReal', function () { reescalarReceta(); actualizarCostoTotal(); });
-$('#btnCargarRecetaProduccion').on('click', function () {
-    var $b = $(this).prop('disabled', true);
-    $.post(base_url + "index.php/Produccion/recetaParaProducir", { id_insumo: idInsumoElaborado }, null, 'json').done(function (r) {
+$('#btnCargarRecetaProduccion').on('click', function () { cargarRecetaProduccion(0, null, $(this)); });
+/**
+ * v1.37.4: carga una receta de producción en la ventana. idReceta 0 = la predeterminada del insumo. veces = cuántas veces la
+ * receta (de "Cargar receta de producción" en Insumos): Rend/Real = veces x lo que rinde; null = como antes.
+ */
+function cargarRecetaProduccion(idReceta, veces, $boton) {
+    var $b = ($boton || $()).prop('disabled', true);
+    $.post(base_url + "index.php/Produccion/recetaParaProducir", { id_insumo: idInsumoElaborado, id_receta: idReceta || 0 }, null, 'json').done(function (r) {
         var rec = r && r.receta;
         if (!rec || !rec.lineas || !rec.lineas.length) {
             showAppAlert('error', "Este insumo no tiene receta de producción con insumos. Créala en el insumo (pestaña Receta).", { duration: 6000, image: base_url + 'assets/img/errorGif.gif' });
@@ -888,7 +898,8 @@ $('#btnCargarRecetaProduccion').on('click', function () {
             return;
         }
         // Rend/Real: si sigue en 1 (lo de siempre), se usa el rendimiento de la receta
-        if ((parseFloat($('#rendimientoReal').val()) || 0) <= 1 && rindeReceta(rec) > 0) $('#rendimientoReal').val(rindeReceta(rec));
+        if (veces > 0) $('#rendimientoReal').val(Math.round(veces * rindeReceta(rec) * 1000000) / 1000000);
+        else if ((parseFloat($('#rendimientoReal').val()) || 0) <= 1 && rindeReceta(rec) > 0) $('#rendimientoReal').val(rindeReceta(rec));
         var escala = (parseFloat($('#rendimientoReal').val()) || 0) / rindeReceta(rec);
         Unidades.listo(function () {
             var pedidos = [], nuevas = [], malas = [];
@@ -918,7 +929,7 @@ $('#btnCargarRecetaProduccion').on('click', function () {
     }).fail(function () {
         showAppAlert('error', "No se pudo cargar la receta de producción", { duration: 5000, image: base_url + 'assets/img/errorGif.gif' });
     }).always(function () { $b.prop('disabled', false); });
-});
+}
 
 // GRABAR PRODUCCIÓN
 $('#btnGrabarProduccion').on('click', function() {

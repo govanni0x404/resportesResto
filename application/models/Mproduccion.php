@@ -215,7 +215,7 @@ class Mproduccion extends CI_Model
      * v1.34.0 (pedido del usuario): la receta de producción del insumo (la elegida en el insumo o, si no, la última vigente)
      * con sus insumos, para cargarla en Producción y no agregarlos de a uno. null si no tiene.
      */
-    public function recetaParaProducir($id_insumo)
+    public function recetaParaProducir($id_insumo, $id_receta = 0)
     {
         $this->load->helper('tenant'); $this->db = get_tenant_db($this);
         $r = $this->db->query('SELECT rp.id_receta_produccion, rp.nombre_receta_produccion, rp.cantidad, rp.id_umedida, rp.id_bodega,
@@ -223,7 +223,7 @@ class Mproduccion extends CI_Model
             FROM receta_produccion rp
             LEFT JOIN umedida um ON um.id_umedida = rp.id_umedida
             LEFT JOIN insumo i ON i.id_insumo = rp.id_insumo
-            WHERE rp.id_insumo = ? AND rp.vigente IS NOT FALSE
+            WHERE rp.id_insumo = ? AND rp.vigente IS NOT FALSE' . ($id_receta > 0 ? ' AND rp.id_receta_produccion = ' . (int)$id_receta : '') . '
             ORDER BY (rp.id_receta_produccion = COALESCE(i.id_receta_produccion_default, 0)) DESC, rp.id_receta_produccion DESC
             LIMIT 1', array((int)$id_insumo))->row_array();
         if (!$r) return null;

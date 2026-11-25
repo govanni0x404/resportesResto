@@ -1091,8 +1091,8 @@ $("#btnRealizarProduccion").on("click", function() {
         return;
     }
     
-    // Abrir modal y cargar datos del insumo
-    AbrirModalProduccion(idInsumo, nombreInsumo);
+    // v1.37.4 (pedido del usuario): primero se pregunta la receta y cuánto producir; después se abre Producción con todo calculado
+    abrirCargarProduccion(idInsumo, nombreInsumo);
 });
 </script>
 <!-- esto va en menu top para quitar las flechas en input type number 

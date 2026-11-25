@@ -246,7 +246,8 @@ class Produccion extends CI_Controller
             redirect(base_url());
         }
         header('Content-Type: application/json');
-        echo json_encode(array('receta' => $this->Mproduccion->recetaParaProducir((int)$this->input->post('id_insumo'))));
+        // v1.37.4: id_receta = la elegida en "Cargar receta de producción" (sin ella, la predeterminada del insumo)
+        echo json_encode(array('receta' => $this->Mproduccion->recetaParaProducir((int)$this->input->post('id_insumo'), (int)$this->input->post('id_receta'))));
     }
 
     public function obtenerStockActual()

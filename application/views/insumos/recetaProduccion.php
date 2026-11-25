@@ -317,3 +317,76 @@
     });
 })();
 </script>
+
+<!-- v1.37.4 (pedido del usuario): al presionar Realizar producción se pregunta la receta y cuánto producir -->
+<div id="ModalCargarProduccion" class="modal fade" role="dialog" style="overflow-y: auto;">
+    <div class="modal-dialog" style="width: 440px; max-width: calc(100vw - 24px); margin-top: 60px;">
+        <div class="modal-content">
+            <div class="modal-header" style="border-top: 3px solid var(--t-primario, #15803D);">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-flask"></i> Cargar receta de producción</h4>
+            </div>
+            <div class="modal-body">
+                <div class="rp-campo"><label for="cpReceta">Receta</label>
+                    <select class="form-control" id="cpReceta"></select></div>
+                <div class="rp-campo"><label for="cpVeces">Cantidad a producir</label>
+                    <input type="number" class="form-control" id="cpVeces" min="1" step="any" value="1" style="font-size:20px; font-weight:800; text-align:right; height:44px"></div>
+                <div class="cp-resumen" id="cpResumen"></div>
+                <!-- Ver stock disponible: el usuario dirá después cómo mostrarlo -->
+                <button type="button" class="btn btn-default btn-sm" id="cpVerStock" style="margin-top:10px"><i class="fa fa-cubes"></i> Ver stock disponible</button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Salir</button>
+                <button type="button" class="btn btn-success" id="cpAceptar"><i class="fa fa-check"></i> Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+.cp-resumen { padding: 10px 12px; border-radius: 10px; background: var(--t-primario-suave, #E8F5EC); border: 1px solid var(--t-primario-borde, #BBE3C8); font-size: 13.5px; }
+.cp-resumen b { font-size: 15px; }
+#ModalCargarProduccion { z-index: 1060; }
+</style>
+<script>
+(function () {
+    var url = '<?php echo base_url(); ?>index.php/RecetaProduccion/';
+    var cp = { id_insumo: 0, nombre: '', recetas: [] };
+    var esc = function (t) { return $('<div>').text(t == null ? '' : String(t)).html(); };
+    function receta() { var id = Number($('#cpReceta').val()); return $.grep(cp.recetas, function (r) { return r.id === id; })[0]; }
+    function resumen() {
+        var r = receta(), v = Number(String($('#cpVeces').val()).replace(',', '.')) || 0;
+        if (!r) { $('#cpResumen').html(''); return; }
+        var u = Unidades.nombre(r.id_umedida) || '';
+        $('#cpResumen').html('La receta rinde ' + Unidades.fmt(r.cantidad) + ' ' + esc(u) + '.<br>Vas a producir <b>' + Unidades.fmt(v * r.cantidad) + ' ' + esc(u)
+            + '</b> de ' + esc(cp.nombre) + (v !== 1 ? ' (' + Unidades.fmt(v) + ' veces la receta)' : '') + '.');
+    }
+    /** Realizar producción: pregunta la receta y cuánto producir; sin recetas, abre Producción para cargar los insumos a mano */
+    window.abrirCargarProduccion = function (idInsumo, nombre) {
+        if (!Number(idInsumo)) { showAppAlert('error', 'Debe seleccionar un insumo primero'); return; }
+        Unidades.listo(function () {
+            $.ajax({ url: url + 'editor', data: { id_insumo: idInsumo }, dataType: 'json', cache: false }).done(function (d) {
+                cp = { id_insumo: Number(idInsumo), nombre: nombre || d.elaborado.nombre_insumo, recetas: $.grep(d.recetas, function (r) { return r.vigente; }) };
+                if (!cp.recetas.length) { AbrirModalProduccion(idInsumo, cp.nombre); return; }
+                var elegida = Number($('#cboMedReceta').val()) || 0;
+                $('#cpReceta').html($.map(cp.recetas, function (r) {
+                    return '<option value="' + r.id + '"' + (r.id === elegida ? ' selected' : '') + '>' + esc(r.nombre) + '</option>';
+                }).join(''));
+                $('#cpVeces').val('1');
+                resumen();
+                $('#ModalCargarProduccion').modal('show');
+            }).fail(function () { showAppAlert('error', 'No se pudieron cargar las recetas de producción'); });
+        });
+    };
+    $('#ModalCargarProduccion').on('shown.bs.modal', function () { $('#cpVeces').focus().select(); });
+    $('#cpReceta').on('change', resumen);
+    $('#cpVeces').on('input', resumen).on('keydown', function (e) { if (e.which === 13) { e.preventDefault(); $('#cpAceptar').click(); } });
+    $('#cpVerStock').on('click', function () { toastr.info('Pronto: aquí se verá el stock disponible de los insumos de la receta.'); });
+    $('#cpAceptar').on('click', function () {
+        var r = receta(), v = Number(String($('#cpVeces').val()).replace(',', '.')) || 0;
+        if (!r) { toastr.warning('Elige la receta'); return; }
+        if (!(v > 0)) { toastr.warning('Escribe cuánto quieres producir'); $('#cpVeces').focus(); return; }
+        $('#ModalCargarProduccion').modal('hide');
+        AbrirModalProduccion(cp.id_insumo, cp.nombre, { id_receta: r.id, veces: v });
+    });
+})();
+</script>
