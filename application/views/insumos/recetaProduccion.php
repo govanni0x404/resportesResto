@@ -163,9 +163,11 @@
     }
     function nueva() {
         actual = 0; lineas = [];
-        $('#rpNombre').val(ed.elaborado.nombre_insumo.slice(0, 50)); $('#rpRinde').val(''); $('#rpVigente').prop('checked', true);
+        // v1.37.2 (pedido del usuario): una receta nueva parte en blanco (antes traía el nombre del insumo)
+        $('#rpNombre').val(''); $('#rpRinde').val(''); $('#rpVigente').prop('checked', true);
+        $('#rpCantidad').val(''); $('#rpInsumo').val('0').trigger('change');
         pintarRinde(); pintarRecetas(); pintarLineas();
-        setTimeout(function () { $('#rpRinde').focus(); }, 300);
+        setTimeout(function () { $('#rpNombre').focus(); }, 300);
     }
     function cargarReceta(id) {
         $.ajax({ url: url + 'editor', data: { id: id }, dataType: 'json', cache: false }).done(function (r) {
