@@ -903,16 +903,21 @@ $('#btnGrabarProduccion').on('click', function() {
         var respuesta = typeof response === 'string' ? JSON.parse(response) : response;
         
         if (respuesta.success) {
-            showAppAlert('success', "Producción registrada exitosamente", {
-                duration: 4000,
-                image: base_url + 'assets/img/success.gif'
-            });
-            
+            // v1.37.10 (pedido del usuario): confirmación al medio con lo que se produjo; al aceptar se cierra Producción
+            var producido = Number(miJson.cantidad_producida) || 0, costo = Number(respuesta.costo_total) || 0;
+            var um = $('#umedidaInventarioElaborado').val() || '', nombre = $('#nombreInsumoElaborado').val() || '';
+            var bodega = $('#bodegaDestinoElaborado option:selected').text() || '';
             limpiarModalProduccion();
-            
-            setTimeout(function() {
-                $('#ModalRealizarProduccion').modal('hide');
-            }, 2000);
+            $('#ModalRealizarProduccion').modal('hide');
+            var texto = 'Se produjeron ' + Unidades.fmt(producido) + ' ' + um + ' de ' + nombre + (bodega ? ' (entraron a ' + bodega + ')' : '') + '.\n'
+                + 'Costo total: $' + fmtPesos(costo) + (producido > 0 ? ' · $' + fmtPesos(costo / producido) + ' por ' + (um || 'unidad') : '') + '.\n'
+                + 'Se descontaron los insumos de sus bodegas.';
+            // Se espera a que termine de cerrarse el aviso anterior ("¿Producir sin stock?"): su animación de cierre lo escondía
+            setTimeout(function () {
+                if (window.swal) swal({ title: '¡Producción grabada!', text: texto, type: 'success', confirmButtonText: 'Aceptar' });
+                else showAppAlert('success', texto, { duration: 6000, image: base_url + 'assets/img/success.gif' });
+            }, 500);
+            if (typeof listarInsumosProduccion === 'function' && idInsumoElaborado) listarInsumosProduccion(idInsumoElaborado);   // VER PRODUCCION al día
         } else {
             showAppAlert('error', respuesta.message || "Error al registrar producción", {
                 duration: 5000,
