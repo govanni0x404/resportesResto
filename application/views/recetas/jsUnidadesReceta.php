@@ -1,5 +1,6 @@
 <?php $this->load->view('umedida/jsEquivalencias.php'); ?>
 <?php $this->load->view('recetas/buscadorInsumos.php'); /* v1.37.11: buscar insumos como en la Caja */ ?>
+<?php $this->load->view('recetas/resumenReceta.php'); /* v1.37.14: costo total, neto y ganancia por porción */ ?>
 <script>
 /**
  * v1.34.0 (pedido del usuario: "que en las recetas tome los valores correspondientes, gramos, kilogramos"): la cantidad de
