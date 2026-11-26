@@ -230,7 +230,7 @@ class Caja extends CI_Controller
 					|| ($body['pagos'] ?? null) != ($tx['venta']['pagos'] ?? null)) {
 					throw new Exception('Los datos de pago no coinciden con los del cobro aprobado.', 409);
 				}
-			} elseif ($this->Mpagoelectronico->montoElectronico($body) > 0) {
+			} elseif ($this->Mpagoelectronico->montoElectronico($body, $caja) > 0) {
 				throw new Exception('La venta tiene un pago electrónico pendiente de aprobación en la máquina.', 409);
 			}
 			$r = $this->Mcaja->registrarVenta($caja, $this->idUsuario(), $this->idRol(), $body);

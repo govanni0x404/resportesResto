@@ -342,8 +342,13 @@ class Mpagoelectronico extends CI_Model
 		return $this->tarjetas = $res;
 	}
 
-	public function montoElectronico(array $venta)
+	/**
+	 * Lo que va a la máquina POS. v1.39.10: solo si la caja tiene una máquina vigente asignada (Herramientas > Control de
+	 * cajas); sin máquina, las tarjetas se cobran a mano como antes y esto es 0. $caja = la caja abierta (con id_control_caja).
+	 */
+	public function montoElectronico(array $venta, $caja = null)
 	{
+		if ($caja !== null && !$this->paraCaja((int)($caja->id_control_caja ?? 0))) return 0;
 		$formas = $this->formasTarjeta();
 		$monto = 0;
 		foreach ((array)($venta['pagos'] ?? array()) as $pago) {

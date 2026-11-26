@@ -21,7 +21,8 @@
 			});
 		}
 		function esFormaMaquina(id) {
-			return pagoPos.formas.indexOf(Number(id)) >= 0;
+			// v1.39.10 (pedido del usuario): sin máquina asignada a esta caja, las tarjetas se cobran como antes (a mano)
+			return !!pagoPos.maquina && pagoPos.formas.indexOf(Number(id)) >= 0;
 		}
 		function montoEnMaquina(lista) {
 			var suma = 0;
