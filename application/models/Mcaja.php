@@ -299,12 +299,15 @@ class Mcaja extends CI_Model
 	private function eleccionMenu($menu, $eleccion, $nombreMenu)
 	{
 		$pedidas = array();
+		$notas = array();   // v1.39.7 (pedido del usuario): comentario de cada producto elegido; sale en la comanda
 		foreach ((is_array($eleccion) ? $eleccion : array()) as $e) {
 			$id = (int)(is_array($e) && isset($e['id']) ? $e['id'] : 0);
 			$q = (int)(is_array($e) && isset($e['cantidad']) ? $e['cantidad'] : 1);
 			if ($id <= 0 || $q <= 0) continue;
 			if ($q > 99) throw new Exception('Cantidad demasiado alta en ' . $nombreMenu, 400);
 			$pedidas[$id] = (isset($pedidas[$id]) ? $pedidas[$id] : 0) + $q;
+			$n = is_array($e) && isset($e['nota']) ? mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)$e['nota'])), 0, 80) : '';
+			if ($n !== '') $notas[$id] = isset($notas[$id]) && $notas[$id] !== $n ? $notas[$id] . '; ' . $n : $n;
 		}
 		$res = array();
 		foreach ($menu['categorias'] as $c) {
@@ -312,7 +315,7 @@ class Mcaja extends CI_Model
 			foreach ($c['opciones'] as $o) {
 				if (!isset($pedidas[$o['id']])) continue;
 				$n += $pedidas[$o['id']];
-				$res[] = array($o, $pedidas[$o['id']]);
+				$res[] = array($o, $pedidas[$o['id']], isset($notas[$o['id']]) ? $notas[$o['id']] : '');
 				unset($pedidas[$o['id']]);
 			}
 			if ($c['max'] > 0 && $n > $c['max']) {
@@ -2587,22 +2590,23 @@ class Mcaja extends CI_Model
 				$nombresMenu = array();
 				foreach ($elegidosMenu as $par) {
 					list($o, $q) = $par;
+					$notaComp = isset($par[2]) ? $par[2] : '';   // v1.39.7
 					$cantComp = round($cantidad * $q, 3);
 					$brutoComp = (int)round($o['adicional'] * $cantComp);
 					$subtotal += $brutoComp;
 					$lineas[] = array(
 						'id_producto' => $o['id_producto'], 'nombre' => $o['nombre'], 'cantidad' => $cantComp,
-						'unitario' => $o['adicional'], 'bruto' => $brutoComp, 'id_agregado' => 0, 'nota' => '',
+						'unitario' => $o['adicional'], 'bruto' => $brutoComp, 'id_agregado' => 0, 'nota' => $notaComp,
 						'segun_stock' => false,
 						'recetas' => array(array($o['id_receta'], !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : $o['id_bodega'])),
 						'exento' => $exento, 'ila_de' => $id,
 						'es_detalle_menu' => true, 'id_menu' => (int)$menus[$id]['id_menu'], 'del_menu' => $idxMenu,
 						'imprimir' => $o['imprimir'],   // "Imprimir" del producto en el menú (no sale en comandas ni anulaciones)
 					);
-					$nombresMenu[] = ($q > 1 ? $q . ' ' : '') . $o['nombre'];
+					$nombresMenu[] = ($q > 1 ? $q . ' ' : '') . $o['nombre'] . ($notaComp !== '' ? ' (' . $notaComp . ')' : '');
 					if ($o['imprimir']) {
 						$comanda[] = array('id_producto' => $o['id_producto'], 'nombre' => $o['nombre'], 'cantidad' => $cantComp,
-							'nota' => $etiqueta, 'agregados' => array());
+							'nota' => ($notaComp !== '' ? $notaComp . ' · ' : '') . $etiqueta, 'agregados' => array());
 					}
 				}
 				$notas[] = $prod->nombre_producto . ($nombresMenu ? ': ' . implode(', ', $nombresMenu) : '') . ($nota !== '' ? ' (' . $nota . ')' : '');

@@ -148,8 +148,8 @@
 			// v1.24.0: menú: por cada categoría sus productos, con la cantidad elegida (lo de la línea al editarla)
 			opcionesMenu = menuDe(id);
 			$('#opcionesMenu').toggle(!!opcionesMenu);
-			menuElegido = {};
-			if (opcionesMenu && linea && linea.menu) $.each(linea.menu, function (i, e) { menuElegido[e.id] = e.cantidad; });
+			menuElegido = {}; menuNotas = {};
+			if (opcionesMenu && linea && linea.menu) $.each(linea.menu, function (i, e) { menuElegido[e.id] = e.cantidad; if (e.nota) menuNotas[e.id] = e.nota; });
 			pintarMenuOpciones();
 
 			var ags = agregadosDe(id);
@@ -205,6 +205,7 @@
 
 		// ---- v1.24.0: armar el menú ----
 		var opcionesMenu = null, menuElegido = {};   // menú del producto abierto en Opciones y {id_detalle: cantidad}
+		var menuNotas = {};   // v1.39.7 (pedido del usuario): comentario de cada producto elegido {id_detalle: texto}; sale en la comanda
 		function reglaCategoria(c) {
 			if (c.max === 1) return 'Elige 1';
 			if (c.min > 0 && c.max > 0) return c.min === c.max ? 'Elige ' + c.max : 'Elige de ' + c.min + ' a ' + c.max;
@@ -227,6 +228,7 @@
 						var q = menuElegido[o.id] || 0;
 						return '<div class="menu-op' + (q ? ' elegida' : '') + '" data-id="' + o.id + '" data-cat="' + c.id + '">'
 							+ '<span class="nombre">' + esc(o.nombre) + (o.adicional ? ' <span class="adicional">+' + fmt(o.adicional) + '</span>' : '') + '</span>'
+							+ (q ? '<input type="text" class="form-control input-sm menu-nota" maxlength="80" placeholder="Comentario (ej: sin cebolla)" value="' + esc(menuNotas[o.id] || '') + '" aria-label="Comentario de ' + esc(o.nombre) + '">' : '')
 							+ (c.max === 1 ? '<i class="fa ' + (q ? 'fa-dot-circle-o' : 'fa-circle-o') + '"></i>'
 								: '<span class="menu-cant"><button type="button" class="btn btn-default btn-xs menu-menos"' + (q ? '' : ' disabled') + '><i class="fa fa-minus"></i></button><b>' + q + '</b>'
 									+ '<button type="button" class="btn btn-default btn-xs menu-mas"><i class="fa fa-plus"></i></button></span>')
@@ -239,7 +241,13 @@
 			return $.grep(opcionesMenu ? opcionesMenu.categorias : [], function (c) { return c.id === idCat; })[0];
 		}
 		// Elegir: en una categoría de "elige 1" se cambia la elección; en las demás se suma, sin pasar del máximo
+		// v1.39.7: el comentario se escribe sin volver a pintar (no pierde el foco) y al tocarlo no cambia la elección
+		$('#listaMenu').on('input', '.menu-nota', function () {
+			var id = Number($(this).closest('.menu-op').data('id')), t = $.trim($(this).val());
+			if (t) menuNotas[id] = t; else delete menuNotas[id];
+		}).on('click keydown', '.menu-nota', function (e) { e.stopPropagation(); });
 		$('#listaMenu').on('click', '.menu-op', function (e) {
+			if ($(e.target).closest('.menu-nota').length) return;
 			var c = categoriaMenu(Number($(this).data('cat'))), id = Number($(this).data('id'));
 			if (!c) return;
 			var menos = $(e.target).closest('.menu-menos').length > 0;
@@ -263,7 +271,12 @@
 				var n = elegidosEn(c);
 				if (!error && c.estricto && n < c.min) error = 'En ' + c.nombre + ' hay que elegir ' + (c.min === 1 ? '1 producto' : 'al menos ' + c.min);
 				if (!error && c.max > 0 && n > c.max) error = 'En ' + c.nombre + ' se pueden elegir hasta ' + c.max;
-				$.each(c.opciones, function (j, o) { if (menuElegido[o.id]) res.push({ id: o.id, cantidad: menuElegido[o.id] }); });
+				$.each(c.opciones, function (j, o) {
+					if (!menuElegido[o.id]) return;
+					var e = { id: o.id, cantidad: menuElegido[o.id] };
+					if (menuNotas[o.id]) e.nota = menuNotas[o.id];   // v1.39.7
+					res.push(e);
+				});
 			});
 			if (error) { toastr.warning(error); return null; }
 			if (!res.length) { toastr.warning('Elige los productos del menú'); return null; }

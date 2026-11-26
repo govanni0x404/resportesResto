@@ -216,6 +216,10 @@
     text-transform: none; letter-spacing: 0; color: var(--t-texto-suave, #4B5563); cursor: pointer; min-height: 0; }
 .t-prod-modal .prod-grid .destino2-check input { margin: 0; accent-color: var(--t-primario, #15803D); }
 .t-prod-modal .prod-grid #cajaDestino2 { margin-top: 6px; }
+/* v1.39.5: casilla del segundo destino en su fila: la casilla a la izquierda y el destino al lado */
+.t-prod-modal .prod-grid .destino2-fila { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; margin-top: -6px; }
+.t-prod-modal .prod-grid .destino2-fila .destino2-check { margin: 0; }
+.t-prod-modal .prod-grid .destino2-fila #cajaDestino2 { margin: 0; flex: 0 1 calc(33.33% - 12px); min-width: 220px; }
 @media (max-width: 991px) { .prod-grid > .pg-2, .prod-grid > .pg-3 { grid-column: span 3; } .prod-grid > .pg-4 { grid-column: span 6; } }
 @media (max-width: 600px) { .prod-grid > .pg-2, .prod-grid > .pg-3, .prod-grid > .pg-4 { grid-column: span 6; } }
 .t-prod-modal [data-seccion="datos"] .t-card-titulo { clear: both; }
@@ -280,7 +284,6 @@
                                 </li>
                             </ul>
                             <div class="tab-pane fade active in" id="tabDatosInsumo">
-                                <br>
                                 <!-- CAMPOS DE REGISTRO  -->
                                 <!-- v1.34.1 (pedido del usuario): datos en una grilla ordenada (antes los selects ocupaban media pantalla
                                      cada uno y quedaban huecos). Sin el impuesto adicional (ILA): ya no va en la Carta. -->
@@ -343,9 +346,12 @@
                                         <label for="cboDestinoDeImpresion">Destino De Impresion </label>
                                         <select id="cboDestinoDeImpresion" nombre="cboDestinoDeImpresion"
                                             class="form-control input-sm" style="width:100%" requerido="si"></select>
-                                        <!-- v1.30.0 (pedido del usuario): el mismo producto en dos comandas (ej. arroz en la cocina y carne en la parrilla) -->
+                                    </div>
+                                    <!-- v1.30.0 (pedido del usuario): el mismo producto en dos comandas (ej. arroz en la cocina y carne en la parrilla).
+                                         v1.39.5: en su propia fila a lo ancho (antes alargaba la columna del destino y dejaba un hueco al lado) -->
+                                    <div class="pg-6 destino2-fila">
                                         <label class="destino2-check" title="El producto sale completo en su destino de impresión y también en este (ej. arroz con carne: el arroz en la cocina y la carne en la parrilla). Cada comanda dice dónde más salió.">
-                                            <input type="checkbox" id="ckDestino2"> Imprimir también en otro destino
+                                            <input type="checkbox" id="ckDestino2"> Imprimir también en otro destino <i class="fa fa-info-circle" style="color:var(--t-primario,#15803D)"></i>
                                         </label>
                                         <div id="cajaDestino2" style="display:none"><select id="cboDestino2" class="form-control input-sm" style="width:100%" aria-label="Segundo destino de impresión"></select></div>
                                     </div>
@@ -659,6 +665,9 @@
                                     id="idFamilia" requerido="no" value="">
                             </div>
                         </fieldset>
+                        <?php /* v1.39.5 (pedido del usuario): solo Familia y Orden. Alias (se graba igual al nombre), Destino de
+                           impresión, Venta directa (queda marcada) e Imprimir en detalle pedido quedan comentados; se
+                           pueden cambiar en Mantención > Grupos/Familias. Para volver a mostrarlos, descomentar esto:
                         <fieldset>
                             <div class="col-sm-6">
                                 <label for="nombreFamilia">FAMILIA *</label>
@@ -712,6 +721,22 @@
                                         </label>
                                     </div>
                                 </div>
+                            </div>
+                        </fieldset>
+
+                        */ ?>
+                        <fieldset>
+                            <div class="col-sm-8">
+                                <label for="nombreFamilia">FAMILIA *</label>
+                                <input type="text" class="form-control input-sm input-sm" maxlength='28'
+                                    onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
+                                    ondrop="return false;" autocomplete="off" name="nombreFamilia" id="nombreFamilia"
+                                    requerido="si" value="" placeholder="Ej: BEBIDAS" />
+                            </div>
+                            <div class="col-sm-4">
+                                <label for="ordenFamilia">ORDEN <i class="fa fa-info-circle" style="color:var(--t-primario,#15803D);cursor:help" title="Posición de la familia en la Caja: las de número más bajo salen primero."></i></label>
+                                <input type="number" min="0" class="form-control input-sm input-sm" autocomplete="off" name="ordenFamilia" id="ordenFamilia"
+                                    requerido="si" value="" placeholder="0" />
                             </div>
                         </fieldset>
 
@@ -1563,228 +1588,9 @@
     </div>
 </div>
 
-<div id="modalReceta" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <!-- TITULO  MODAL  -->
-            <div id="tituloModalReceta" class="modal-header btn-success">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                        aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title text text-center">REGISTRO RECETAS
-                </h4>
-            </div>
-            <!-- FIN TITULO  MODAL  -->
-
-            <!-- CONTENIDO  MODAL  -->
-            <div class="right">
-                <input type="number" class="form-control" style="display: none;" name="cant_lineas" id="cant_lineas"
-                    value="0" min="0" oninput="validity.valid||(value='');">
-            </div>
-            <div class="col-md-12">
-                <div class="modal-body">
-                    <div class="h-panel">
-                        <div class="panel panel-default">
-                            <div class="panel-body">
-                                <div>
-                                    <!-- CAMPOS DE REGISTRO  -->
-                                    <fieldset>
-                                        <div class="col-md-1" style="display:none" data-id-auto="1">
-                                            <input disabled class="form-control input-sm input-sm"
-                                                style="display: none;" name="contador" id="contador" requerido="no"
-                                                value="0">
-                                            <label for="idReceta">ID</label>
-                                            <input type="number" disabled class="form-control input-sm input-sm"
-                                                name="idReceta" id="idReceta" requerido="no" value="">
-                                        </div>
-                                        <div class="col-md-7">
-                                            <label for="nombreReceta">NOMBRE RECETA</label>
-                                            <input type="text" class="form-control input-sm input-sm"
-                                                name="nombreReceta" id="nombreReceta" maxlength='50'
-                                                onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
-                                                ondrop="return false;" autocomplete="off" requerido="no" value="">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label for="rendimientoReceta">RENDIMIENTO</label>
-                                            <input type="text" class="form-control input-sm input-sm" maxlength='50'
-                                                onkeypress="return soloNumeros(event)" onpaste="return false;"
-                                                ondrop="return false;" autocomplete="off" name="rendimientoReceta"
-                                                id="rendimientoReceta" requerido="si" value="" />
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label for="brutoSugerido">PRECIO BRUTO SUG/VEN</label>
-                                            <input type="text" class="form-control input-sm input-sm" maxlength='50'
-                                                onkeypress="return soloNumeros(event)" onpaste="return false;"
-                                                ondrop="return false;" autocomplete="off" name="brutoSugerido"
-                                                id="brutoSugerido" requerido="si" value="" />
-                                        </div>
-                                    </fieldset>
-                                    <br>
-                                    <fieldset>
-                                        <div class="col-md-3">
-                                            <label for="cboUnMedida">UNIDAD MEDIDA</label>
-                                            <select style="width:100%;" id="cboUnMedida" nombre="cboUnMedida"
-                                                class="form-control input-sm" requerido="si">
-                                                <option value="">--Seleccione--</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="cboGrupoReceta">GRUPO/FAMILIA
-                                                <sup><a onclick="crearNuevaFamiliaReceta()">Nuevo</a></sup>
-                                            </label>
-                                            <select style="width:100%;" id="cboGrupoReceta" nombre="cboGrupoReceta"
-                                                class="form-control input-sm" requerido="si">
-                                                <option value="">--Seleccione--</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label for="cboSeccionReceta">SECCION
-                                                <sup><a onclick="crearNuevaSeccion()">Nuevo</a></sup>
-                                            </label>
-                                            <select style="width:100%;" id="cboSeccionReceta" nombre="cboSeccionReceta"
-                                                class="form-control input-sm" requerido="si">
-                                                <option value="">--Seleccione--</option>
-                                            </select>
-                                        </div>
-                                    </fieldset>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="panel panel-default">
-                            <div class="panel-body">
-                                <div class="col-md-12">
-                                    <br>
-                                    <ul id="myTab" class="nav nav-tabs title font">
-                                        <li class="active" id="tabDetallesReceta">
-                                            <a href="#tabDetalleInsumosReceta" data-toggle="tab" id="tab1"
-                                                class="text color1">DETALLE DE INSUMOS DE LA RECETA</a>
-                                        </li>
-                                        <li class="" id="tabPreparacionRecetas">
-                                            <a href="#tabPreparacionReceta" data-toggle="tab" id="tab2"
-                                                class="text color1">PREPARACION DE LA RECETA</a>
-                                        </li>
-                                    </ul>
-                                    <div class="tab-pane fade active in" id="tabDetalleInsumosReceta">
-                                        <br>
-                                        <!-- CAMPOS DE REGISTRO  -->
-                                        <fieldset>
-                                            <div class="col-md-3">
-                                                <label for="cboCodBarraInsumoReceta">COD BARRA/COD INTERNO</label>
-                                                <select style="width:100%;" id="cboCodBarraInsumoReceta"
-                                                    nombre="cboCodBarraInsumoReceta" class="form-control input-sm"
-                                                    requerido="si">
-                                                    <option value="0">--Seleccione--</option>
-                                                </select>
-                                                <input type="hidden" disabled class="form-control input-sm input-sm"
-                                                    name="cBarraI" id="cBarraI" requerido="si" value="">
-
-                                            </div>
-                                            <div class="col-md-7">
-                                                <label for="nombreInsumoReceta">NOMBRE INSUMO</label>
-                                                <input type="text" disabled class="form-control input-sm input-sm"
-                                                    name="nombreInsumoReceta" id="nombreInsumoReceta" requerido="si"
-                                                    value="">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label for="esSubreceta">SUBRECETA</label>
-                                                <input type="text" disabled class="form-control input-sm input-sm"
-                                                    name="esSubreceta" id="esSubreceta" requerido="si" value="">
-                                            </div>
-                                        </fieldset>
-                                        <br>
-                                        <fieldset>
-                                            <div class="col-md-2">
-                                                <label for="idInsumoReceta">ID INSUMO</label>
-                                                <input type="number" disabled class="form-control input-sm input-sm"
-                                                    name="idInsumoReceta" id="idInsumoReceta" requerido="no" value="">
-                                            </div>
-
-                                            <div class="col-md-2">
-                                                <label for="cantidadInsumoReceta">CANTIDAD</label>
-                                                <input type="number" class="form-control input-sm input-sm"
-                                                    onkeypress="return soloNumerosDecimales(event)"
-                                                    onpaste="return false;" ondrop="return false;" autocomplete="off"
-                                                    name="cantidadInsumoReceta" id="cantidadInsumoReceta" requerido="si"
-                                                    value="" />
-                                                <div id="equivLineaReceta" class="rec-equiv" hidden></div>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <!-- v1.34.0: se puede escribir en kilos o gramos (se guarda en la unidad de receta del insumo) -->
-                                                <label for="unidadLineaReceta">UN MEDIDA</label>
-                                                <select id="unidadLineaReceta" class="form-control input-sm" disabled></select>
-                                                <input type="hidden" id="unMedidaInsumoReceta" value="" />
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label for="costoInsumoReceta" title="Costo neto de 1 unidad de receta (ej. 1 gramo)">COSTO X UN. RECETA</label>
-                                                <input type="text" disabled class="form-control input-sm input-sm"
-                                                    onkeypress="return soloNumeros(event)" onpaste="return false;"
-                                                    ondrop="return false;" autocomplete="off" name="costoInsumoReceta"
-                                                    id="costoInsumoReceta" requerido="si" value="" />
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label for="costoTotalInsumoReceta">COSTO TOTAL</label>
-                                                <input type="text" disabled class="form-control input-sm input-sm"
-                                                    onkeypress="return soloNumeros(event)" onpaste="return false;"
-                                                    ondrop="return false;" autocomplete="off"
-                                                    name="costoTotalInsumoReceta" id="costoTotalInsumoReceta"
-                                                    requerido="si" value="" />
-                                            </div>
-                                            <div class="col-md-2">
-                                                <br>
-                                                <button type="button" class="btn btn-rounded btn-danger"
-                                                    id="btnAgregarInsumoTabla"><i class="fa fa-check-circle"></i>
-                                                    AGREGAR INSUMO</button>
-                                            </div>
-                                        </fieldset>
-                                        <br>
-                                        <fieldset>
-                                            <div class="table-responsive" style="margin-top:10px; padding:5px;">
-                                                <table id="tableInsumoReceta" class="display responsive"
-                                                    style="width: 100%;">
-                                                    <thead>
-                                                        <tr>
-                                                            <th style='display:none;' hidden scope="col">ID DETALLE</th>
-                                                            <th style='display:none;' hidden scope="col">ID INSUMO</th>
-                                                            <th scope="col">COD/BARRA</th>
-                                                            <th scope="col">NOMBRE DEL INSUMO</th>
-                                                            <th scope="col">SUBRECETA</th>
-                                                            <th scope="col">CANTIDAD</th>
-                                                            <th scope="col">UN. MEDIDA</th>
-                                                            <th scope="col">COSTO PP</th>
-                                                            <th scope="col">COSTO TOTAL</th>
-                                                            <th scope="col"></th>
-                                                        </tr>
-                                                    </thead>
-                                                </table>
-                                            </div>
-                                        </fieldset>
-                                        <!-- FIN CAMPOS DE REGISTRO  -->
-                                    </div>
-                                    <div class="tab-pane fade" id="tabPreparacionReceta">
-                                        <br>
-                                        <textarea
-                                            style="resize:none;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box; width:100%; height:500px;"
-                                            type='text' cols="200" maxlength='10000' name="preparacionReceta"
-                                            onkeypress="return sololetrasyNumeros(event)" id="preparacionReceta"
-                                            rows="20"></textarea>
-                                    </div>
-                                </div>
-                                <!-- FIN CAMPOS DE REGISTRO  -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- CONTENIDO  MODAL  -->
-
-            <!-- BOTONES  -->
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" id="btnGrabarInsumo"><i class="fa fa-check"></i> GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
-            </div>
-            <!-- FIN BOTONES  -->
-        </div>
-    </div>
-</div>
+<?php /* v1.39.6 (pedido del usuario): la misma ventana de receta que en Recetas (antes había aquí una copia vieja) */ ?>
+<?php $this->load->view('recetas/modalRecetaHtml.php'); ?>
+<?php $this->load->view('umedida/jsNuevaUmedida.php'); /* el botón Nuevo de la unidad de medida de la receta */ ?>
 <script>
 // Manejar el clic del botón según el contexto
 $(document).ready(function() {

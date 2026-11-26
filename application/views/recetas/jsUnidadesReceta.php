@@ -48,6 +48,18 @@ function recCostoElegido() {
 	return isFinite(c) && Number($('#cboCodBarraInsumoReceta').val()) ? c : (Number($('#costoInsumoReceta').val()) || 0);
 }
 /** v1.37.12 (pedido del usuario): costos con 2 decimales, como el sistema de escritorio (0.50 · 150.00) */
+/**
+ * v1.39.6: lee un número escrito a mano: "0,5" y "0.5" son medio; "1.234,5" y "1,234.5" son mil doscientos... Antes se
+ * borraban las comas ("0,5" quedaba "05" = 5) y en la tabla se usaba parseFloat ("0,5" = 0). Devuelve NaN si está vacío.
+ */
+function recNumero(v) {
+	var s = String(v == null ? '' : v).replace(/\s/g, '');
+	if (s === '') return NaN;
+	if (s.indexOf(',') >= 0 && s.indexOf('.') >= 0) s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+	else if (s.indexOf(',') >= 0) s = (s.match(/,/g).length === 1) ? s.replace(',', '.') : s.replace(/,/g, '');
+	var n = Number(s);
+	return isFinite(n) ? n : NaN;
+}
 function recDosDecimales(n) { return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2); }
 function recCalcularCostoLinea() {
 	var ins = recInsumoElegido(), costo = recCostoElegido(), enRec = recCantidadEnReceta();

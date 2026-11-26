@@ -4,6 +4,7 @@
 		var base = "<?php echo base_url(); ?>index.php/PagoElectronico/";
 		var datos = { maquinas: [], modelos: [], tarjetas: [], credenciales: {} };
 		var editando = null;
+		var pruebaEnCurso = false;
 		if (window.toastr) toastr.options.escapeHtml = true;
 
 		// Qué es el terminal ID y la API key en cada tipo de máquina (la clave del panel del programa)
@@ -91,6 +92,9 @@
 			$('#modalPagoElectronico').modal('show');
 		}
 		$('#modalPagoElectronico').on('shown.bs.modal', function () { $('#peModelo').focus(); });
+		$('#modalPagoElectronico').on('hide.bs.modal', function (e) {
+			if (pruebaEnCurso) e.preventDefault();
+		});
 		$('#btnNuevaMaquina').on('click', function () { abrir(null); });
 		$('#cuerpoPagoElectronico').on('click', 'tr[data-id]', function () {
 			var id = +$(this).data('id');
@@ -103,6 +107,7 @@
 
 		$('#frmPagoElectronico').on('submit', function (e) {
 			e.preventDefault();
+			if (pruebaEnCurso) return;
 			// La casilla desmarcada no viaja: vigente se manda siempre (1 o 0)
 			var d = $.grep($(this).serializeArray(), function (x) { return x.name !== 'vigente'; });
 			d.push({ name: 'vigente', value: $('#peVigente').is(':checked') ? 1 : 0 });
@@ -117,40 +122,82 @@
 				.always(function () { $b.prop('disabled', false); });
 		});
 
-		// ---- Probar conexión: desde ESTE equipo (debe ser el de la caja) con los datos del formulario ----
+		// La prueba usa los datos del formulario y queda en el historial de ApiPagoElectronico.
 		function aviso(tipo, html) {
 			$('#resultadoPrueba').html('<div class="alert alert-' + tipo + '" style="margin:0;text-align:left">' + html + '</div>');
 		}
-		$('#btnProbarPos').on('click', function () {
+		function mostrarResultadoPrueba(r, txId) {
+			var resultado = PagoPos.interpretar(r);
+			var referencia = '<br>Referencia del intento: <strong>' + esc((r.json && r.json.transaction_id) || txId) + '</strong>';
+			var mensaje = resultado.mensaje ? '<br>' + esc(resultado.mensaje) : '';
+			if (resultado.resultado === 'aprobado') {
+				aviso('success', '<strong>Cobro de $100 aprobado.</strong>'
+					+ (resultado.codigo ? '<br>Autorización: ' + esc(resultado.codigo) : '') + referencia);
+			} else if (r.red || resultado.resultado === 'pendiente' || (r.status >= 500 && r.status !== 503)
+				|| (r.json && r.json.estado === 'TIMEOUT')) {
+				aviso('warning', '<strong>ApiPagoElectronico no confirmó el cobro de $100.</strong>' + mensaje + referencia
+					+ '<br>Revisa el terminal o el historial de ApiPagoElectronico antes de repetir la prueba.');
+			} else {
+				aviso('danger', '<strong>Cobro de $100 no aprobado.</strong>' + mensaje + referencia);
+			}
+		}
+
+		$('#btnProbarPos').on('click', async function () {
+			var $guardar = $('#btnGuardarPos');
+			if (pruebaEnCurso || $guardar.prop('disabled') || !$('#frmPagoElectronico')[0].reportValidity()) return;
 			var c = datos.credenciales || {};
 			var m = {
 				tipo: tipoElegido(), url_servicio: 'http://localhost:5005', usuario_api: c.usuario_api, clave_api: c.clave_api,
 				id_sucursal_pos: $.trim($('#peSucursal').val()), nombre_caja_pos: $.trim($('#peCaja').val()).toUpperCase(),
-				terminal_id: $.trim($('#peTerminal').val())
+				terminal_id: $.trim($('#peTerminal').val()), timeout_seg: Number($('#peTimeout').val()),
+				api_key: $.trim($('#peApiKey').val())
 			};
-			if (!m.tipo) { aviso('warning', '<i class="fa fa-hand-pointer-o"></i> Elige la máquina para probar.'); return; }
-			if (!m.usuario_api || !m.clave_api) {
-				aviso('warning', '<i class="fa fa-key"></i> Falta el usuario o la clave de la API en <b>Configuraciones &rsaquo; General &rsaquo; Pago electrónico</b>.');
+			if (!m.tipo || !m.id_sucursal_pos || !m.nombre_caja_pos || !m.terminal_id) {
+				aviso('warning', 'Completa la máquina, el ID de sucursal, el nombre de caja y el terminal.');
 				return;
 			}
-			var $b = $(this).prop('disabled', true);
-			aviso('info', '<i class="fa fa-spinner fa-spin"></i> Probando el programa de pago de este equipo…');
-			PagoPos.status(m).then(function (s) {
-				if (s.red || s.status !== 200) { aviso('danger', '<i class="fa fa-times-circle"></i> ' + esc(PagoPos.sinPrograma(m))); return null; }
-				var dif = $.map(PagoPos.comparar(m, s.json), esc);
-				return PagoPos.online(m).then(function (o) {
-					var lineas = [];
-					if (o.red) lineas.push('<i class="fa fa-times-circle"></i> El programa no respondió la consulta de la máquina.');
-					else if (o.status === 401) lineas.push('<i class="fa fa-times-circle"></i> El <b>usuario o la clave API</b> de Configuraciones no coinciden con los del programa.');
-					else lineas.push('<i class="fa ' + (o.json.online === false || o.status >= 400 ? 'fa-exclamation-triangle' : 'fa-check-circle') + '"></i> ' +
-						esc(o.json.message || (o.status < 400 ? 'Máquina disponible' : 'La máquina no está disponible')));
-					$.each(dif, function (i, x) { lineas.push('<i class="fa fa-times-circle"></i> ' + x); });
-					var ok = !o.red && o.status < 400 && o.json.online !== false && !dif.length;
-					aviso(ok ? 'success' : 'warning', (ok ? '<b>Todo bien.</b> ' : '') + lineas.join('<br>'));
-				});
-			}).then(function () { $b.prop('disabled', false); }, function () { $b.prop('disabled', false); });
+			var $b = $(this);
+			pruebaEnCurso = true;
+			$b.add($guardar).prop('disabled', true);
+			aviso('info', '<i class="fa fa-spinner fa-spin"></i> Verificando ApiPagoElectronico en el puerto 5005…');
+			try {
+				var s = await PagoPos.status(m);
+				if (s.red || s.status !== 200 || s.json.status !== 'ok') {
+					aviso('danger', '<i class="fa fa-times-circle"></i> ' + esc(s.mensaje || PagoPos.sinPrograma(m))
+						+ '<p style="margin-top:8px"><a class="alert-link" href="' + esc(PagoPos.url(m, '/status')) + '" target="_blank" rel="noopener noreferrer">Abrir el estado de ApiPagoElectronico</a></p>');
+					return;
+				}
+				if (!m.usuario_api || !m.clave_api) {
+					aviso('warning', 'ApiPagoElectronico está iniciado. Completa el usuario y la clave API en <b>Configuraciones &rsaquo; General &rsaquo; Pago electrónico</b> para enviar el cobro.');
+					return;
+				}
+				if (!window.confirm('ApiPagoElectronico está iniciado. ¿Enviar un cobro real de $100 al terminal ' + m.terminal_id + '?')) {
+					aviso('info', 'ApiPagoElectronico está iniciado. Prueba cancelada.');
+					return;
+				}
+				if (!m.api_key && editando && editando.tipo === m.tipo && editando.tiene_api_key && !$('#btnBorrarApiKey').data('borrar')) {
+					var clave = await $.ajax({ url: base + 'clavePrueba', type: 'POST', dataType: 'json', data: { id: editando.id, tipo: m.tipo } });
+					m.api_key = clave.api_key;
+				}
+				var txId = 'PRUEBA-' + Array.from(window.crypto.getRandomValues(new Uint8Array(12)), function (byte) {
+					return byte.toString(16).padStart(2, '0');
+				}).join('');
+				aviso('info', '<i class="fa fa-spinner fa-spin"></i> Enviando $100 al terminal ' + esc(m.terminal_id) + '…');
+				var r = await PagoPos.cobrar(m, 100, txId, false, undefined, (m.timeout_seg + 30) * 1000);
+				mostrarResultadoPrueba(r, txId);
+			} catch (xhr) {
+				aviso('danger', esc((xhr.responseJSON && xhr.responseJSON.error) || 'No se pudo completar la prueba. Revisa el estado en ApiPagoElectronico.'));
+			} finally {
+				pruebaEnCurso = false;
+				$b.add($guardar).prop('disabled', false);
+			}
 		});
 
 		cargar();
 	})();
+	// v1.39.x: la ayuda que cambia según la máquina (Terminal ID, API key) se ve en su (i)
+	$(document).on('mouseenter focus', '#modalPagoElectronico .pe-i[data-de]', function () {
+		var t = $.trim($($(this).data('de')).text());
+		$(this).attr('title', t || 'Sin ayuda para esta máquina');
+	});
 </script>

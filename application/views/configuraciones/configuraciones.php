@@ -358,7 +358,7 @@ En la Caja las salsas y los extras siempre son opcionales."); ?></div>
                                         <?php if (array_key_exists('pago_electronico_usuario_api', $config)) : ?>
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-credit-card"></i>Pago electrónico <?php cfg_info("Usuario y clave del programa de pago de las cajas. Van en cada cobro a la máquina POS (Mantención › Pago electrónico)."); ?></h3>
+                                                <h3 class="panel-title"><i class="fa fa-credit-card"></i>Pago electrónico <?php cfg_info("Usuario y clave del programa de pago de las cajas. Van en cada cobro a la máquina POS (menú Pago electrónico)."); ?></h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">

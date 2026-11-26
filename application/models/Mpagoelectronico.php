@@ -7,12 +7,11 @@ defined('BASEPATH') or exit('No direct script access allowed');
  *
  * - Mantención > Pago electrónico (tabla pago_electronico_web): cada máquina se elige de una lista de modelos (MODELOS;
  *   del modelo sale el tipo que va en la petición) con los datos de la petición: id de sucursal, nombre de caja,
- *   terminal ID, API key (Mercado Pago y TUU) y tiempo de espera. Se cobran en ella las tarjetas de débito y crédito
- *   (formasTarjeta, por el nombre de la forma de pago). El
+ *   terminal ID, API key (Mercado Pago y TUU) y tiempo de espera. Se cobran en ella las tarjetas habilitadas en
+ *   Mantención > Formas de pago. El
  *   programa compara esos datos con los de su panel: si alguno no es igual, responde cuál y la Caja lo muestra.
  * - Configuraciones > General: el usuario y la clave de la API del programa (los mismos para todas las cajas).
- * - Herramientas > Control de cajas (control_caja.id_pago_electronico_web): la máquina que usa cada caja (sin máquina, la
- *   caja cobra como antes).
+ * - Herramientas > Control de cajas (control_caja.id_pago_electronico_web): la máquina que usa cada caja.
  * - Cada cobro queda en pago_electronico_web_tx con la venta (para registrarla cuando se aprueba). Los que no terminaron
  *   (enviando, pendiente o aprobado sin registrar) se muestran arriba en la Caja: cancelar, volver a enviar o aprobar.
  *
@@ -28,18 +27,12 @@ class Mpagoelectronico extends CI_Model
 		'MERCADOPAGO' => 'Mercado Pago',
 		'HAULMER' => 'TUU / Haulmer',
 	);
-	/**
-	 * Máquinas que se usan en Chile y que el programa sabe cobrar (19-11-2026). clave => [type, nombre visible]. La
-	 * clave queda guardada en pago_electronico_web.modelo: no cambiarla; para otra máquina, agregar una fila.
-	 */
+	/** Un modelo por proveedor. La clave se guarda en pago_electronico_web.modelo. */
 	const MODELOS = array(
-		'TRANSBANK_DESK3500' => array('TRANSBANK', 'Transbank POS Integrado · Ingenico Desk 3500'),
-		'TRANSBANK_VX520' => array('TRANSBANK', 'Transbank POS Integrado · Verifone VX520 / VX520C'),
 		'GETNET_A920PRO' => array('GETNET', 'Getnet · PAX A920 Pro'),
-		'MERCADOPAGO_SMART' => array('MERCADOPAGO', 'Mercado Pago · Point Smart'),
-		'MERCADOPAGO_SMART2' => array('MERCADOPAGO', 'Mercado Pago · Point Smart 2'),
-		'MERCADOPAGO_PRO2' => array('MERCADOPAGO', 'Mercado Pago · Point Pro 2'),
-		'TUU_PRO2' => array('HAULMER', 'TUU (Haulmer) · PRO2 / Kozen'),
+		'TRANSBANK_DESK3500' => array('TRANSBANK', 'Transbank · Ingenico Desk/3500'),
+		'TUU_PRO2' => array('HAULMER', 'TUU · Pro 2'),
+		'MERCADOPAGO_N950' => array('MERCADOPAGO', 'Mercado Pago · Newland N950'),
 	);
 	const URL_PROGRAMA = 'http://localhost:5005';
 	/** Cobros que no terminaron: se muestran arriba en la Caja */
@@ -131,11 +124,8 @@ class Mpagoelectronico extends CI_Model
 		if ($terminal === '') throw new Exception('Escribe el terminal ID (el mismo del panel del programa)', 400);
 		$timeout = (int)($d['timeout_seg'] ?? 120);
 		if ($timeout < 30 || $timeout > 300) throw new Exception('El tiempo de espera debe estar entre 30 y 300 segundos', 400);
-		// Las formas de pago no se eligen: son las de tarjeta (formasTarjeta). La columna queda como registro.
+		// La casilla en Formas de pago controla qué tarjetas se envían a cualquier máquina.
 		$formas = $this->formasTarjeta();
-		if (!$formas) {
-			throw new Exception('No hay formas de pago de tarjeta: crea "TARJETA DEBITO" y "TARJETA CREDITO" en Mantención > Formas De Pago', 400);
-		}
 		$apiKey = trim((string)($d['api_key'] ?? ''));
 		if (strlen($apiKey) > 300) throw new Exception('La API key es demasiado larga', 400);
 		$usaKey = in_array($tipo, array('MERCADOPAGO', 'HAULMER'), true);
@@ -163,6 +153,16 @@ class Mpagoelectronico extends CI_Model
 		return array('ok' => true, 'id' => $id);
 	}
 
+	/** Devuelve la API key solo al pedir una prueba de una máquina guardada del mismo proveedor. */
+	public function clavePrueba($id, $tipo)
+	{
+		$this->exigir();
+		if (!in_array($tipo, array('MERCADOPAGO', 'HAULMER'), true)) return '';
+		$f = $this->q('SELECT api_key FROM pago_electronico_web WHERE id_pago_electronico_web = ? AND tipo = ?',
+			array($id, $tipo))->row();
+		return $f ? (string)$f->api_key : '';
+	}
+
 	/** Para el selector de Control de cajas (también las no vigentes, para mostrar la elegida). */
 	public function opciones()
 	{
@@ -170,7 +170,8 @@ class Mpagoelectronico extends CI_Model
 		$res = array();
 		foreach ($this->q('SELECT id_pago_electronico_web, nombre, tipo, nombre_caja_pos, terminal_id, vigente FROM pago_electronico_web
 				ORDER BY vigente DESC, nombre, nombre_caja_pos')->result() as $f) {
-			$res[] = array('id' => (int)$f->id_pago_electronico_web, 'nombre' => $f->nombre, 'caja' => $f->nombre_caja_pos, 'terminal' => $f->terminal_id,
+			$modelo = $this->modeloPorTipo($f->tipo);
+			$res[] = array('id' => (int)$f->id_pago_electronico_web, 'nombre' => self::MODELOS[$modelo][1] ?? $f->nombre, 'caja' => $f->nombre_caja_pos, 'terminal' => $f->terminal_id,
 				'tipo' => isset(self::TIPOS[$f->tipo]) ? self::TIPOS[$f->tipo] : $f->tipo, 'vigente' => $this->bool($f->vigente));
 		}
 		return $res;
@@ -211,15 +212,18 @@ class Mpagoelectronico extends CI_Model
 	}
 
 	/** Registra el cobro antes de mandarlo a la máquina (así, si algo se corta, queda arriba en la Caja). */
-	public function crearTx($caja, $idUsuario, $monto, $descripcion, $venta)
+	public function crearTx($caja, $idUsuario, $monto, $descripcion, $venta, $idMaquina)
 	{
 		$this->exigir();
 		$idControl = (int)($caja->id_control_caja ?? 0);
 		$m = $this->paraCaja($idControl);
-		if (!$m) throw new Exception('Esta caja no usa pago electrónico (Herramientas > Control de cajas)', 409);
+		if (!$m || $m['id'] !== $idMaquina) throw new Exception('La máquina de esta caja cambió. Revisa Herramientas > Control de cajas.', 409);
 		$monto = (int)$monto;
 		if ($monto <= 0) throw new Exception('El monto a cobrar en la máquina debe ser mayor que cero', 400);
 		if (!is_array($venta) || empty($venta['token'])) throw new Exception('Faltan los datos de la venta', 400);
+		if ($monto !== $this->montoElectronico($venta)) {
+			throw new Exception('Las formas de pago electrónico cambiaron. Revisa los pagos de la venta antes de volver a cobrar.', 409);
+		}
 		$txId = 'WEB-' . bin2hex(random_bytes(12));
 		$this->q('INSERT INTO pago_electronico_web_tx (tx_id, id_pago_electronico_web, id_control_caja, id_caja, id_usuario, monto, estado, descripcion, venta)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', array($txId, $m['id'], $idControl, (int)$caja->id_caja, (int)$idUsuario, $monto, 'enviando',
@@ -267,15 +271,25 @@ class Mpagoelectronico extends CI_Model
 
 	// ---------------- Apoyo ----------------
 
+	/** Abre las máquinas guardadas con el modelo que hoy ofrece su proveedor. */
+	private function modeloPorTipo($tipo)
+	{
+		foreach (self::MODELOS as $id => $modelo) {
+			if ($modelo[0] === $tipo) return $id;
+		}
+		return null;
+	}
+
 	private function fila($f, $conSecretos)
 	{
+		$modelo = $this->modeloPorTipo($f->tipo);
 		$m = array(
-			'id' => (int)$f->id_pago_electronico_web, 'nombre' => $f->nombre, 'tipo' => $f->tipo,
+			'id' => (int)$f->id_pago_electronico_web, 'nombre' => self::MODELOS[$modelo][1] ?? $f->nombre, 'tipo' => $f->tipo,
 			'tipo_nombre' => isset(self::TIPOS[$f->tipo]) ? self::TIPOS[$f->tipo] : $f->tipo,
-			'modelo' => (string)$f->modelo, 'url_servicio' => (string)$f->url_servicio !== '' ? $f->url_servicio : self::URL_PROGRAMA,
+			'modelo' => $modelo ?? (string)$f->modelo, 'url_servicio' => (string)$f->url_servicio !== '' ? $f->url_servicio : self::URL_PROGRAMA,
 			'id_sucursal_pos' => $f->id_sucursal_pos, 'nombre_caja_pos' => $f->nombre_caja_pos, 'terminal_id' => $f->terminal_id,
 			'timeout_seg' => (int)$f->timeout_seg,
-			'formas_pago' => $this->formasTarjeta(),   // siempre las de tarjeta (también las creadas después)
+			'formas_pago' => $this->formasTarjeta(),
 			'vigente' => $this->bool($f->vigente),
 			'tiene_api_key' => (string)$f->api_key !== '',
 		);
@@ -307,29 +321,37 @@ class Mpagoelectronico extends CI_Model
 		return $res;
 	}
 
-	/**
-	 * 19-11-2026 (pedido del usuario): el pago electrónico es solo para tarjetas de débito y crédito, y esas formas de
-	 * pago se reconocen solas por el nombre: "TARJETA ..." o "...DEBITO...". El crédito a clientes (fiado, "CREDITO DE
-	 * CONFIANZA" o la forma de crédito de Configuraciones) no es tarjeta. Las cortesías ya vienen fuera (formasPago).
-	 * @return int[] id_fpago
-	 */
+	/** IDs vigentes de tarjetas habilitadas para enviar al POS. */
 	private $tarjetas = null;
 	public function formasTarjeta()
 	{
 		if ($this->tarjetas !== null) return $this->tarjetas;
+		if (!$this->db()->field_exists('pago_electronico_web', 'fpago')) return $this->tarjetas = array();
 		$fiado = 0;
 		if ($this->q("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'configuracion'
 				AND column_name = 'id_fpago_creditodirecto'")->row()) {
 			$c = $this->q('SELECT COALESCE(id_fpago_creditodirecto, 0) AS id FROM configuracion LIMIT 1')->row();
 			$fiado = $c ? (int)$c->id : 0;
 		}
+		$this->load->model('MformasDePago');
 		$res = array();
-		foreach ($this->formasPago() as $f) {
-			$n = strtoupper(strtr($f['nombre'], array('É' => 'E', 'é' => 'E', 'Í' => 'I', 'í' => 'I')));
-			if ($f['id_fpago'] === $fiado || strpos($n, 'CONFIANZA') !== false) continue;
-			if (strpos($n, 'TARJETA') !== false || strpos($n, 'DEBITO') !== false) $res[] = $f['id_fpago'];
+		foreach ($this->q('SELECT id_fpago, nombre_fpago FROM fpago WHERE pago_electronico_web IS TRUE
+				AND vigente IS NOT FALSE AND escortesia IS NOT TRUE AND id_fpago <> ?', array($fiado))->result() as $f) {
+			if (MformasDePago::esTarjeta($f->nombre_fpago)) $res[] = (int)$f->id_fpago;
 		}
 		return $this->tarjetas = $res;
+	}
+
+	public function montoElectronico(array $venta)
+	{
+		$formas = $this->formasTarjeta();
+		$monto = 0;
+		foreach ((array)($venta['pagos'] ?? array()) as $pago) {
+			if (in_array((int)($pago['id_fpago'] ?? 0), $formas, true)) {
+				$monto += max(0, (int)($pago['monto'] ?? 0));
+			}
+		}
+		return $monto;
 	}
 
 	private function texto($d, $campo, $largo)

@@ -102,6 +102,92 @@ $esta = false;
 foreach (json($b)['productos'] ?? array() as $x) if ((int)$x['id_producto'] === $idPromo) $esta = true;
 revisar('inactiva: la Caja ya no la ofrece', !$esta);
 
+echo "Promo a elegir (v1.39.5):\n";
+$cc = $prods[2] ?? $prods[0];
+$itemsElegir = array(array('id_producto' => $a['id_producto'], 'cantidad' => 1), array('id_producto' => $bb['id_producto'], 'cantidad' => 1),
+	array('id_producto' => $cc['id_producto'], 'cantidad' => 1));
+list($c, $b) = pedir(BASE . '/Productos/grabarPromo', array('id_producto' => 0, 'nombre' => $nombre . ' E', 'precio' => 5000, 'id_familia' => $fam, 'vigente' => 1,
+	'elegir' => 0, 'items' => $itemsElegir));
+$idE = (int)(json($b)['id_producto'] ?? 0);
+revisar('crear como fija con 3 productos', $c === 200 && $idE > 0, "código $c: " . substr($b, 0, 200));
+list($c, $b) = pedir(BASE . '/Productos/grabarPromo', array('id_producto' => $idE, 'nombre' => $nombre . ' E', 'precio' => 5000, 'id_familia' => $fam, 'vigente' => 1,
+	'elegir' => 51, 'items' => $itemsElegir));
+revisar('elegir 51 se rechaza', $c === 400, "código $c");
+list($c, $b) = pedir(BASE . '/Productos/grabarPromo', array('id_producto' => $idE, 'nombre' => $nombre . ' E', 'precio' => 5000, 'id_familia' => $fam, 'vigente' => 1,
+	'elegir' => 2, 'items' => $itemsElegir));
+revisar('cambiarla a "el cliente elige 2"', $c === 200, "código $c: " . substr($b, 0, 200));
+list(, $b) = pedir(BASE . '/Productos/promos?id=' . $idE);
+$p = json($b)['promo'] ?? array();
+revisar('al abrirla dice elegir 2 y trae los 3 productos', ($p['elegir'] ?? 0) === 2 && count($p['items'] ?? array()) === count(array_unique(array_column($itemsElegir, 'id_producto'))), substr($b, 0, 300));
+list(, $b) = pedir(BASE . '/Productos/promos');
+$det = '';
+foreach (json($b)['promos'] ?? array() as $x) if ((int)$x['id_producto'] === $idE) $det = $x['detalle'];
+revisar('en la lista dice "Elige 2: ..."', strpos($det, 'Elige 2:') === 0, $det);
+list(, $b) = pedir(BASE . '/Caja/catalogo?id_lprecio=1');
+$menuE = null;
+foreach (json($b)['menus'] ?? array() as $m) if ((int)$m['id_producto'] === $idE) $menuE = $m;
+$k0 = $menuE['categorias'][0] ?? array();
+revisar('la Caja la ofrece como menú: 1 categoría, elige 2 de los productos', $menuE && count($menuE['categorias']) === 1 && ($k0['min'] ?? 0) === 2 && ($k0['max'] ?? 0) === 2
+	&& count($k0['opciones'] ?? array()) === count(array_unique(array_column($itemsElegir, 'id_producto'))), json_encode($menuE));
+list(, $b) = pedir(BASE . '/Caja/mesas');
+$mesa = 0;
+foreach ((json($b)['mesas'] ?? array()) as $m) if ($m['estado'] === 'libre' && empty($m['con_pedido']) && empty($m['reserva'])) { $mesa = (int)$m['id_mesa']; break; }
+if ($mesa && $menuE) {
+	list($c, , $b) = postJson(BASE . '/Caja/enviarMesa', array('id_mesa' => $mesa, 'id_lprecio' => 1, 'observacion' => '', 'detalle' => array(array(
+		'id_producto' => $idE, 'cantidad' => 1, 'agregados' => array(), 'nota' => '', 'menu' => array(array('id' => $k0['opciones'][0]['id'], 'cantidad' => 1)), 'sushi' => null))));
+	revisar('elegir 1 solo se rechaza (hay que elegir 2)', $c >= 400, "código $c: " . substr($b, 0, 200));
+	list($c, , $b) = postJson(BASE . '/Caja/enviarMesa', array('id_mesa' => $mesa, 'id_lprecio' => 1, 'observacion' => '', 'detalle' => array(array(
+		'id_producto' => $idE, 'cantidad' => 1, 'agregados' => array(), 'nota' => '', 'menu' => array(array('id' => $k0['opciones'][0]['id'], 'cantidad' => 2)), 'sushi' => null))));
+	revisar('elegir 2 veces el mismo producto sí se puede', $c === 200, "código $c: " . substr($b, 0, 200));
+	list(, $b) = pedir(BASE . '/Caja/detalleMesa?id_mesa=' . $mesa);
+	$l = array();
+	foreach (json($b)['lineas'] ?? array() as $x) $l[(int)$x['id_producto']] = array((float)$x['cantidad'], (int)$x['unitario']);
+	revisar('la promo lleva su precio y el elegido sale x2 en $0', ($l[$idE][1] ?? 0) === 5000 && ($l[(int)$k0['opciones'][0]['id_producto']] ?? $l[(int)$a['id_producto']] ?? null) !== null, json_encode($l));
+	postJson(BASE . '/Caja/anularPedidoMesa', array('id_mesa' => $mesa, 'motivo' => 'Prueba automática', 'autorizacion' => $aut));
+}
+list($c, $b) = pedir(BASE . '/Productos/grabarPromo', array('id_producto' => $idE, 'nombre' => $nombre . ' E', 'precio' => 5000, 'id_familia' => $fam, 'vigente' => 0,
+	'elegir' => 0, 'items' => array(array('id_producto' => $a['id_producto'], 'cantidad' => 1), array('id_producto' => $bb['id_producto'], 'cantidad' => 2))));
+list(, $b) = pedir(BASE . '/Productos/promos?id=' . $idE);
+$p = json($b)['promo'] ?? array();
+revisar('volver a fija: trae sus 2 productos con su cantidad (1 y 2)', $c === 200 && ($p['elegir'] ?? -1) === 0 && count($p['items'] ?? array()) === 2
+	&& ($p['items'][1]['cantidad'] ?? 0) === 2, substr($b, 0, 300));
+
+echo "Subfamilia y comentarios (v1.39.7):\n";
+list(, $b) = pedir(BASE . '/Productos/promos');
+$dd = json($b);
+$subs = array_values(array_filter($dd['subfamilias'] ?? array(), function ($x) use ($fam) { return (int)$x['id_familia'] === $fam; }));
+$otra = array_values(array_filter($dd['subfamilias'] ?? array(), function ($x) use ($fam) { return (int)$x['id_familia'] > 0 && (int)$x['id_familia'] !== $fam; }));
+if ($subs) {
+	list($c, $b) = pedir(BASE . '/Productos/grabarPromo', array('id_producto' => $idE, 'nombre' => $nombre . ' E', 'precio' => 5000, 'id_familia' => $fam,
+		'id_subfamilia' => $subs[0]['id_subfamilia'], 'vigente' => 1, 'elegir' => 2, 'items' => $itemsElegir));
+	list(, $b2) = pedir(BASE . '/Productos/promos?id=' . $idE);
+	revisar('grabar con subfamilia y al abrirla la trae', $c === 200 && (int)(json($b2)['promo']['id_subfamilia'] ?? 0) === (int)$subs[0]['id_subfamilia'], substr($b . $b2, 0, 300));
+} else echo "  (sin subfamilias en la familia " . $fam . ": no se probó grabar con subfamilia)\n";
+if ($otra) {
+	list($c, $b) = pedir(BASE . '/Productos/grabarPromo', array('id_producto' => $idE, 'nombre' => $nombre . ' E', 'precio' => 5000, 'id_familia' => $fam,
+		'id_subfamilia' => $otra[0]['id_subfamilia'], 'vigente' => 1, 'elegir' => 2, 'items' => $itemsElegir));
+	revisar('una subfamilia de otra familia se rechaza', $c === 400, "código $c");
+}
+pedir(BASE . '/Productos/grabarPromo', array('id_producto' => $idE, 'nombre' => $nombre . ' E', 'precio' => 5000, 'id_familia' => $fam, 'id_subfamilia' => 0,
+	'vigente' => 1, 'elegir' => 2, 'items' => $itemsElegir));
+list(, $b) = pedir(BASE . '/Caja/catalogo?id_lprecio=1');
+$menuE = null;
+foreach (json($b)['menus'] ?? array() as $m) if ((int)$m['id_producto'] === $idE) $menuE = $m;
+list(, $b) = pedir(BASE . '/Caja/mesas');
+$mesa = 0;
+foreach ((json($b)['mesas'] ?? array()) as $m) if ($m['estado'] === 'libre' && empty($m['con_pedido']) && empty($m['reserva'])) { $mesa = (int)$m['id_mesa']; break; }
+if ($mesa && $menuE) {
+	$op = $menuE['categorias'][0]['opciones'][0];
+	list($c, , $b) = postJson(BASE . '/Caja/enviarMesa', array('id_mesa' => $mesa, 'id_lprecio' => 1, 'observacion' => '', 'detalle' => array(array(
+		'id_producto' => $idE, 'cantidad' => 1, 'agregados' => array(), 'nota' => '', 'menu' => array(array('id' => $op['id'], 'cantidad' => 2, 'nota' => 'sin cebolla')), 'sushi' => null))));
+	revisar('enviar la promo con un comentario en su producto', $c === 200, "código $c: " . substr($b, 0, 200));
+	list(, $b) = pedir(BASE . '/Caja/detalleMesa?id_mesa=' . $mesa);
+	$conNota = false;
+	foreach (json($b)['lineas'] ?? array() as $x) if ((int)$x['id_producto'] === (int)$op['id_producto'] && strpos((string)($x['nota'] ?? ''), 'sin cebolla') !== false) $conNota = true;
+	revisar('el producto de la promo guarda su comentario', $conNota, substr($b, 0, 400));
+	postJson(BASE . '/Caja/anularPedidoMesa', array('id_mesa' => $mesa, 'motivo' => 'Prueba automática', 'autorizacion' => $aut));
+}
+
 echo "Botones de la Carta:\n";
 pedir(BASE . '/Configuraciones/guardar', array('promos_sushi_web' => '0'));
 list(, $h) = pedir(BASE . '/Productos', null, false);

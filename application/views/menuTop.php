@@ -901,7 +901,7 @@
                         $__showTablasDelivery = $__showDelivery;
                         $__showTablasEventos = $__showGastoEventos || $__showIngresoEventos || $__showTipoEvento;
                         $__showTablasGruposFamilias = $__showFamilias || $__showFamiliasInsumos || $__showFamiliasReceta;
-                        $__showTablas = $__showAgregados || $__showCategoriasAgregados || $__showBodegas || $__showCanalDeventa || $__showCentroCosto || $__showComuna || $__showTablasDelivery || $__showDestinoDeImpresion || $__showTablasEventos || $__showTablasGruposFamilias || $__showFormasDePago || $__showPagoElectronico || $__showDocumentosTributarios || $__showImpuestos || $__showMensajesPorProductos || $__showMoneda || $__showProvincias || $__showSubFamilias || $__showTurnos || $__showUmedida || $__showItemGastosMensuales || $__showUsuario;
+                        $__showTablas = $__showAgregados || $__showCategoriasAgregados || $__showBodegas || $__showCanalDeventa || $__showCentroCosto || $__showComuna || $__showTablasDelivery || $__showDestinoDeImpresion || $__showTablasEventos || $__showTablasGruposFamilias || $__showFormasDePago || $__showDocumentosTributarios || $__showImpuestos || $__showMensajesPorProductos || $__showMoneda || $__showProvincias || $__showSubFamilias || $__showTurnos || $__showUmedida || $__showItemGastosMensuales || $__showUsuario;
 
                         $__showInsumos = menu_visible('Insumos');
                         $__showRecetas = menu_visible('Recetas');
@@ -1065,9 +1065,11 @@
                                                     <?php if ($__showFormasDePago) : ?>
                                                         <li class="active"><a href="<?php echo base_url() ?>index.php/FormasDePago"><i class="fa fa-credit-card"></i>Formas De Pago</a></li>
                                                     <?php endif; ?>
+                                                    <?php /* v1.39.6 (pedido del usuario): Pago electrónico pasó a ser un módulo propio (en la raíz, después de Mantención)
                                                     <?php if ($__showPagoElectronico) : ?>
                                                         <li class="active"><a href="<?php echo base_url() ?>index.php/PagoElectronico"><i class="fa fa-calculator"></i>Pago Electronico</a></li>
                                                     <?php endif; ?>
+                                                    */ ?>
                                                     <?php if ($__showDocumentosTributarios) : ?>
                                                         <li class="active"><a href="<?php echo base_url() ?>index.php/DocumentosTributarios"><i class="fa fa-file-text-o"></i>Documentos Tributarios</a></li>
                                                     <?php endif; ?>
@@ -1218,6 +1220,10 @@
 
                                     </ul>
                                 </li>
+                            <?php endif; ?>
+
+                            <?php if ($__showPagoElectronico) : /* v1.39.6 (pedido del usuario): módulo propio, fuera de Mantención */ ?>
+                                <li class="active"><a href="<?php echo base_url() ?>index.php/PagoElectronico"><i class="fa fa-credit-card"></i>Pago Electrónico</a></li>
                             <?php endif; ?>
 
                             <?php if ($__showBodega) : ?>

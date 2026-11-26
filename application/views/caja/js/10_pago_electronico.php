@@ -9,18 +9,19 @@
 		//  4. Aprobado: se registra la venta (Caja::vender con pago_electronico_tx). Rechazado: se avisa y se puede
 		//     cobrar de otra forma. Sin confirmar (se canceló la espera, se cortó la conexión): queda arriba, en la barra de
 		//     cobros sin terminar, con Cancelar, Volver a enviar y Aprobar.
-		var pagoPos = { maquina: null, pendientes: [], usuario: '', cobrando: null, ocupado: false };
+		var pagoPos = { maquina: null, formas: [], pendientes: [], usuario: '', cobrando: null, ocupado: false };
 
 		function cargarPagoElectronico() {
 			return $.ajax({ url: base + 'pagoElectronico', dataType: 'json', cache: false, global: false }).done(function (r) {
 				pagoPos.maquina = r.maquina || null;
+				pagoPos.formas = r.formas_electronicas || [];
 				pagoPos.pendientes = r.pendientes || [];
 				pagoPos.usuario = r.usuario || '';
 				pintarPendientesPos();
 			});
 		}
 		function esFormaMaquina(id) {
-			return !!(pagoPos.maquina && pagoPos.maquina.formas_pago.indexOf(Number(id)) >= 0);
+			return pagoPos.formas.indexOf(Number(id)) >= 0;
 		}
 		function montoEnMaquina(lista) {
 			var suma = 0;
@@ -130,7 +131,16 @@
 		 */
 		function cobrarEnMaquina(venta, monto, ctx) {
 			var m = pagoPos.maquina;
-			if (!m || pagoPos.cobrando) return;
+			if (pagoPos.cobrando) return;
+			if (!m) {
+				avisoHtml('Falta asignar una máquina POS', 'Asigna una máquina vigente a esta caja en <b>Herramientas &rsaquo; Control de cajas</b>.', 'warning');
+				return;
+			}
+			var credito = esCreditoPos(venta.pagos);
+			if (m.tipo === 'HAULMER' && credito && esDebitoPos(venta.pagos)) {
+				avisoHtml('TUU requiere un tipo de tarjeta por cobro', 'Elige débito o crédito para el monto que se envía a la máquina.', 'warning');
+				return;
+			}
 			if (!ctx.replay && pagoPos.pendientes.length) {
 				avisoHtml('Hay un cobro con tarjeta sin terminar', 'Arriba de la venta quedó un cobro de <b>' + fmt(pagoPos.pendientes[0].monto) + '</b> sin terminar ('
 					+ esc(pagoPos.pendientes[0].descripcion) + ').<br>Resuélvelo (Cancelar, Volver a enviar o Aprobar) antes de cobrar otra venta con tarjeta.', 'warning');
@@ -152,23 +162,30 @@
 				return;
 			}
 			PagoPos.status(m).then(function (s) {
-				if (s.red || s.status !== 200) { fallarAntes(esc(PagoPos.sinPrograma(m))); return; }
+				if (s.red || s.status !== 200) { fallarAntes(esc(s.mensaje || PagoPos.sinPrograma(m))); return; }
 				var dif = PagoPos.comparar(m, s.json);
 				if (dif.length) {
-					fallarAntes('Estos datos de <b>Mantención &rsaquo; Pago electrónico</b> no son iguales a los del programa de pago:<br><br>'
+					fallarAntes('Estos datos de <b>Pago electrónico</b> (menú) no son iguales a los del programa de pago:<br><br>'
 						+ $.map(dif, function (x) { return '&bull; ' + esc(x); }).join('<br>'));
 					return;
 				}
 				var desc = descripcionVenta(venta);
-				postJson('pagoElectronicoIniciar', { monto: monto, descripcion: desc, venta: venta }).done(function (r) {
+				postJson('pagoElectronicoIniciar', { monto: monto, descripcion: desc, venta: venta, id_maquina: m.id }).done(function (r) {
 					// La venta (con su token) quedó guardada en el cobro: la próxima venta lleva otro token
 					if (!ctx.replay) tokenCobro = null;
 					pagoPos.pendientes.push({ tx_id: r.tx_id, tx_programa: r.tx_id, monto: monto, estado: 'enviando', descripcion: desc, fecha: '', mensaje: '' });
-					enviarAMaquina(m, r.tx_id, monto, esCreditoPos(venta.pagos), venta, ctx);
+					enviarAMaquina(r.maquina, r.tx_id, monto, credito, venta, ctx);
 				}).fail(function (xhr) {
 					fallarAntes(esc((xhr.responseJSON && xhr.responseJSON.error) || 'No se pudo registrar el cobro. Revisa la conexión.'));
 				});
 			});
+		}
+
+		function esDebitoPos(lista) {
+			return $.grep(lista || [], function (p) {
+				var f = catalogo ? fpago(p.id_fpago) : null;
+				return esFormaMaquina(p.id_fpago) && f && /D[EÉ]BITO/i.test(f.nombre);
+			}).length > 0;
 		}
 
 		function enviarAMaquina(m, txId, monto, credito, venta, ctx) {
@@ -182,12 +199,13 @@
 				if (res.resultado === 'red') {
 					res = { resultado: 'pendiente', mensaje: r.dejado ? 'Se dejó de esperar la respuesta de la máquina.' : 'Se cortó la conexión con el programa de pago mientras cobraba.' };
 				}
-				pagoPos.cobrando = null;
-				ocultarBloqueoPos();
-				enviando = false;
-				actualizarResumenPago();
+				mostrarBloqueoPos(monto, 'Guardando el resultado…', '', false);
 				var j = r.json || null;
 				informarCobro(txId, res.resultado, res.mensaje, j, res.codigo).always(function () {
+					pagoPos.cobrando = null;
+					ocultarBloqueoPos();
+					enviando = false;
+					actualizarResumenPago();
 					alTerminarCobro(res, txId, venta, ctx);
 				});
 			};
@@ -228,11 +246,12 @@
 
 		/** Venta registrada desde la barra de pendientes: sale el documento (y la comanda de la venta directa). */
 		function ventaPendienteRegistrada(r, ctx) {
-			cargarPagoElectronico();
 			toastr.success((r.documento || 'Venta') + (r.folio ? ' N° ' + r.folio : '') + ' · ' + fmt(r.total), 'Venta registrada', { timeOut: 6000 });
 			if (r.dte && !r.dte.ok) toastr.warning(r.dte.mensaje || '', 'Pendiente de envío al SII: reenvíalo desde Ventas', { timeOut: 15000, closeButton: true });
 			var comandaVenta = imprimeComanda() && !ctx.idMesa ? r.comanda_id : null;
-			var listo = (imprimeTicket() || comandaVenta) ? bloquearImpresion('Imprimiendo…') : function () {};
+			var listoImp = (imprimeTicket() || comandaVenta) ? bloquearImpresion('Imprimiendo…') : function () {};
+			// v1.39.4: la barra de cobros se recarga después de imprimir, no al mismo tiempo
+			var listo = function () { listoImp(); setTimeout(cargarPagoElectronico, 300); };
 			var conComanda = function () { if (comandaVenta) imprimirComanda(comandaVenta, 'Comanda', null, listo); else listo(); };
 			if (imprimeTicket()) imprimirTicket(r.id_venta, conComanda);
 			else conComanda();
@@ -360,11 +379,15 @@
 					return;
 				}
 				conVentaPos(p, function (venta) {
-					informarCobro(p.tx_id, 'cancelado', 'Se volvió a enviar con otro cobro', null, '').always(function () {
+					if (montoEnMaquina(venta.pagos) !== p.monto) {
+						avisoHtml('Cambió la configuración de las tarjetas', 'Revisa el estado en la máquina y resuelve el cobro antes de iniciar otro.', 'warning');
+						return;
+					}
+					informarCobro(p.tx_id, 'cancelado', 'Se volvió a enviar con otro cobro', null, '').done(function () {
 						pagoPos.pendientes = $.grep(pagoPos.pendientes, function (x) { return x.tx_id !== p.tx_id; });
 						pintarPendientesPos();
 						cobrarEnMaquina(venta, p.monto, { replay: true, idMesa: venta.id_mesa || 0 });
-					});
+					}).fail(error);
 				});
 			});
 		});

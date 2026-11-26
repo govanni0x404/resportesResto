@@ -20,7 +20,8 @@
         if ($('#nombreFamilia').val() == 0) {
             msg = "Nombre Familia\n";
         }
-        if ($('#AliasFamilia').val().trim() === '') {
+        // v1.39.5: Alias, Destino, Venta directa y Detalle pedido pueden no estar en la ventana (comentados): valores por defecto
+        if ($('#AliasFamilia').length && $('#AliasFamilia').val().trim() === '') {
             $('#AliasFamilia').val($('#nombreFamilia').val().trim());
         }
         if (msg.length) {
@@ -32,11 +33,11 @@
             //grabar datos
             IdFamilia = $('#idFamilia').val();
             NombreFamilia = $('#nombreFamilia').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
-            AliasFamilia = $('#AliasFamilia').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
+            AliasFamilia = ($('#AliasFamilia').length ? $('#AliasFamilia').val() : $('#nombreFamilia').val()).toUpperCase().replace(/[,.'"$#%&]+/g, '');
             let IdDimpresion = $('#cboDestinoDeImpresionFamilia').val();
             IdDimpresion = (IdDimpresion === "" || IdDimpresion === null) ? null : IdDimpresion;
 
-            if ($('#ckVentaDirectaFamilia').is(":checked")) {
+            if (!$('#ckVentaDirectaFamilia').length || $('#ckVentaDirectaFamilia').is(":checked")) {
                 var VentaDirectaFamilia = 1
             } else {
                 var VentaDirectaFamilia = 0

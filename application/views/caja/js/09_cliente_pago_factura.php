@@ -681,11 +681,23 @@
 				token: tokenCobro
 			};
 			var ctx = { t: t, idMesa: idMesa, dcEnCobro: dcEnCobro };
-			// 19-11-2026: pago electrónico. Lo que va con las formas de pago de la máquina POS de esta caja se cobra
-			// primero en la máquina; la venta se registra cuando la máquina lo aprueba (sección pago electrónico)
-			var montoPos = montoEnMaquina(venta.pagos);
-			if (montoPos > 0) { cobrarEnMaquina(venta, montoPos, ctx); return; }
-			enviarVenta(venta, ctx);
+			// v1.39.4 (demora al imprimir): solo se vuelve a preguntar por la máquina si la venta lleva algún pago que no es
+			// efectivo (una tarjeta puede ser de pago electrónico); en efectivo se cobra directo, como antes
+			var conTarjeta = $.grep(venta.pagos || [], function (p) { var f = fpago(Number(p.id_fpago)); return !f || !f.efectivo || esFormaMaquina(p.id_fpago); }).length > 0;
+			if (!conTarjeta) { enviarVenta(venta, ctx); return; }
+			enviando = true;
+			actualizarResumenPago();
+			cargarPagoElectronico().done(function () {
+				enviando = false;
+				actualizarResumenPago();
+				var montoPos = montoEnMaquina(venta.pagos);
+				if (montoPos > 0) cobrarEnMaquina(venta, montoPos, ctx);
+				else enviarVenta(venta, ctx);
+			}).fail(function (xhr) {
+				enviando = false;
+				actualizarResumenPago();
+				error(xhr);
+			});
 		});
 
 		/**
@@ -770,7 +782,9 @@
 			abrirGavetaVenta(r && r.id_venta);
 			if (ctx.replay) { ventaPendienteRegistrada(r, ctx); return; }
 			var t = ctx.t, idMesa = ctx.idMesa, dcEnCobro = ctx.dcEnCobro;
-			if (ctx.pagoElectronico) cargarPagoElectronico();   // el cobro con tarjeta ya no está pendiente
+			// v1.39.4: el cobro con tarjeta ya no está pendiente; la barra se recarga DESPUÉS de imprimir (antes iba al mismo
+			// tiempo que la boleta y la hacía esperar)
+			var recargarPos = !!ctx.pagoElectronico;
 			tokenCobro = null;   // venta registrada: el próximo cobro lleva otro token
 			if (dcEnCobro) dcRegistrarPago(dcEnCobro, r);
 			$('#txtRetira').val('');   // el nombre es de esta venta
@@ -812,6 +826,7 @@
 				: function () {};
 			// v1.23.0: con la ventana del vuelto abierta, ella misma avisa cuando terminó de imprimir
 			if (sinVentana && r.vuelto > 0) { var listoSinVuelto = listoVenta; listoVenta = function () { listoSinVuelto(); vueltoImpreso(); }; }
+			if (recargarPos) { var listoSinPos = listoVenta; listoVenta = function () { listoSinPos(); setTimeout(cargarPagoElectronico, 300); }; }
 			var conComanda = function () {
 				if (comandaVenta) {
 					if (imprimeTicket()) $bloqueo.find('.bloqueo-texto').text('Imprimiendo comanda…');

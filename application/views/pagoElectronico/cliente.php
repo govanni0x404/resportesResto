@@ -5,7 +5,7 @@
 	 * electrónico (probar la conexión). `m` = una máquina de Mpagoelectronico::paraCaja (con el usuario y la clave de la
 	 * API de Configuraciones).
 	 *
-	 * Rutas del programa: GET /status (sin clave), POST /online, POST /pago (la petición queda abierta hasta que la
+	 * Rutas del programa: GET /status (sin clave), POST /pago (la petición queda abierta hasta que la
 	 * máquina responde), GET /pago/estado/<tx>, POST /pago/cancelar/<tx> y POST /pago/resolver/<tx>, con Basic Auth.
 	 * El programa compara id_sucursal y terminal_id con los de su panel y, si no son iguales, responde cuál no calza.
 	 */
@@ -33,18 +33,34 @@
 			if (cuerpo !== undefined) h['Content-Type'] = 'application/json';
 			return fetch(url(m, ruta), {
 				method: metodo, headers: h, body: cuerpo !== undefined ? JSON.stringify(cuerpo) : undefined,
-				signal: ctrl ? ctrl.signal : undefined, cache: 'no-store', mode: 'cors', credentials: 'omit'
+				signal: ctrl ? ctrl.signal : undefined, cache: 'no-store', mode: 'cors', credentials: 'omit',
+				targetAddressSpace: 'loopback'
 			}).then(function (r) {
-				clearTimeout(tope);
 				return r.text().then(function (t) {
 					var j = null;
 					try { j = t ? JSON.parse(t) : null; } catch (e) {}
 					return { status: r.status, json: j || {} };
 				});
-			}, function (e) {
-				clearTimeout(tope);
+			}).catch(function (e) {
 				return { red: true, abortado: !!(e && e.name === 'AbortError'), error: e };
-			});
+			}).finally(function () { clearTimeout(tope); });
+		}
+
+		async function status(m) {
+			if (window.isSecureContext === false) {
+				return { red: true, mensaje: 'El navegador bloqueó el acceso a ApiPagoElectronico (puerto 5005). Abre esta página por HTTPS o, si la web está instalada en este mismo equipo, por localhost.' };
+			}
+			if (navigator.permissions && navigator.permissions.query) {
+				try {
+					var permiso = await navigator.permissions.query({ name: 'loopback-network' });
+					if (permiso.state === 'denied') {
+						return { red: true, mensaje: 'El navegador bloqueó el acceso a ApiPagoElectronico. Habilita el acceso a la red local o a este equipo en los permisos del sitio.' };
+					}
+				} catch (e) {
+					// Los navegadores que no reconocen el permiso pueden intentar la conexión normalmente.
+				}
+			}
+			return llamar(m, 'GET', '/status', undefined, { sinClave: true, timeoutMs: 5000 });
 		}
 
 		/** Lo que va en la petición /pago: los datos configurados en Mantención > Pago electrónico. */
@@ -146,14 +162,15 @@
 		}
 
 		function sinPrograma(m) {
-			return 'No se encontró el programa de pago electrónico en este equipo (' + url(m, '') + '). Revisa que ApiPagoElectronico esté abierto (ícono junto al reloj de Windows).';
+			return 'ApiPagoElectronico no respondió en ' + url(m, '') + '. Revisa que el programa esté iniciado y que el navegador permita acceder a este equipo.';
 		}
 
 		return {
 			url: url,
-			status: function (m) { return llamar(m, 'GET', '/status', undefined, { sinClave: true, timeoutMs: 5000 }); },
-			online: function (m) { return llamar(m, 'POST', '/online', { type: m.tipo }, { timeoutMs: 15000 }); },
-			cobrar: function (m, monto, txId, credito, signal) { return llamar(m, 'POST', '/pago', cuerpoPago(m, monto, txId, credito), { signal: signal }); },
+			status: status,
+			cobrar: function (m, monto, txId, credito, signal, timeoutMs) {
+				return llamar(m, 'POST', '/pago', cuerpoPago(m, monto, txId, credito), { signal: signal, timeoutMs: timeoutMs });
+			},
 			estado: function (m, txId) { return llamar(m, 'GET', '/pago/estado/' + encodeURIComponent(txId), undefined, { timeoutMs: 10000 }); },
 			cancelar: function (m, txId) { return llamar(m, 'POST', '/pago/cancelar/' + encodeURIComponent(txId), {}, { timeoutMs: 40000 }); },
 			resolver: function (m, txId, estado, por, nota) {

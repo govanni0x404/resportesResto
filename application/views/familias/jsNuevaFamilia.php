@@ -23,21 +23,23 @@
 								<label for="idFamilia">ID</label>
 								<input type="number" disabled class="form-control input-sm input-sm" name="idFamilia" id="idFamilia" requerido="no" value="">
 							</div>
-							<div class="col-sm-12">
+							<div class="col-sm-8">
 								<label for="nombreFamilia">FAMILIA *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="nombreFamilia" id="nombreFamilia" requerido="si" value="" placeholder="Nombre Familia" />
 							</div>
-							<div class="col-sm-8">
+							<?php /* v1.39.6 (pedido del usuario): solo Familia y Orden a la vista. Alias, Venta público e Imprimir pie
+							   pedido quedan OCULTOS (no borrados): así, al editar una familia, se conservan sus valores. Para volver
+							   a mostrarlos, quitar el style="display:none" de estos dos bloques. */ ?>
+							<div class="col-sm-8" style="display:none">
 								<label for="AliasFamilia">ALIAS FAMILIA *</label>
 								<input type="text" class="form-control input-sm input-sm" maxlength='50' onkeypress="return sololetrasyNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="AliasFamilia" id="AliasFamilia" requerido="si" value="" placeholder="Alias Familia" />
 							</div>
 							<div class="col-sm-4">
-								<label for="ordenFamilia">ORDEN FAMILIA</label>
+								<label for="ordenFamilia">ORDEN <i class="fa fa-info-circle" style="color:var(--t-primario,#15803D);cursor:help" title="Posición de la familia en la Caja: las de número más bajo salen primero."></i></label>
 								<input min="0" type="text" class="form-control input-sm input-sm" maxlength='4' onkeypress="return soloNumeros(event)" onpaste="return false;" ondrop="return false;" autocomplete="off" name="ordenFamilia" id="ordenFamilia" requerido="si" value="" placeholder="Orden Familia" />
 							</div>
 						</fieldset>
-						<div class="t-card-titulo">Opciones</div>
-						<fieldset>
+						<fieldset style="display:none">
 							<div class="col-sm-6">
 								<div class="t-opciones">
 									<div class="btn-group" role="group" aria-label="...">
@@ -83,6 +85,7 @@
 		$('#idFamilia').val("");
 		$('#nombreFamilia').val("");
 		$('#AliasFamilia').val("");
+		$('#nombreFamilia').data('original', '');
 		$('#ckVentaDirectaFamilia').prop('checked', true);
 		$('#ordenFamilia').val("0");
 		$('#ckPiePedido').prop('checked', false);
@@ -101,7 +104,9 @@
 			return;
 		} 
 		
-		if ($('#AliasFamilia').val().trim() === '') {
+		// v1.39.6: el alias está oculto: si estaba vacío o era igual al nombre de antes, sigue al nombre nuevo
+		var aliasAntes = $('#AliasFamilia').val().trim().toUpperCase(), nombreAntes = String($('#nombreFamilia').data('original') || '').trim().toUpperCase();
+		if (aliasAntes === '' || aliasAntes === nombreAntes) {
         	$('#AliasFamilia').val($('#nombreFamilia').val().trim());
     	}
 		

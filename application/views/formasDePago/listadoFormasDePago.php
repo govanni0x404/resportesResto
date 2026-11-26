@@ -97,6 +97,10 @@ function ListadoDeFormasDePago() {
                 mData: "permite_propina",
                 className: "text-center"
             },
+            {
+                mData: "pago_electronico",
+                className: "text-center"
+            },
 
         ],
         'language': {
@@ -141,6 +145,7 @@ function ListadoDeFormasDePago() {
             } else {
                 $('#ckPermitePropina').prop('checked', false);
             }
+            $('#ckPagoElectronico').prop('checked', rowData[0].pago_electronico === 'SI');
             $('#ModalNuevaFormaDePago').modal('show');
         })
 }

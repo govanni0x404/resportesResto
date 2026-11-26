@@ -222,8 +222,22 @@
 	.caja-venta-lateral .form-control::placeholder { font-weight: 400; color: var(--t-texto-tenue, #A89A8C); }
 	.caja-venta-lateral .caja-cliente .btn { height: 44px; flex-basis: 44px; font-size: 15px; }
 	/* El resumen ocupa el resto del alto y deja Cobrar al fondo, alineado con el total de la venta */
-	.caja-venta-lateral .caja-resumen { flex: 1; display: flex; flex-direction: column; }
+	/* v1.39.7 (pedido del usuario: el recuadro grande "se ve horrible"): el resumen ya no se estira; queda abajo con su alto,
+	   pegado a Cobrar, y el espacio libre queda arriba, fuera de la tarjeta */
+	.caja-venta-lateral .caja-resumen { flex: 0 0 auto; margin-top: auto; display: flex; flex-direction: column; }
+	.caja-resumen .fila.total-pagar { margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--t-borde-suave, #EEF0F3); font-size: 19px; }
+	.caja-resumen .fila.total-pagar span:first-child { font-weight: 700; color: var(--t-texto-fuerte, #111827); }
+	.caja-resumen .fila.total-pagar span:last-child { font-size: 24px; font-weight: 800; color: var(--t-primario, #15803D); }
 	.caja-resumen .caja-acciones { margin-top: auto; padding-top: 14px; }
+	/* v1.39.6: total a pagar en grande, centrado en el espacio libre del resumen */
+	.caja-total-grande { margin: auto 0; padding: 22px 16px; border-radius: 14px; text-align: center; background: var(--t-primario-suave, #E8F5EC);
+		border: 1px dashed var(--t-primario-borde, #BBE3C8); display: flex; flex-direction: column; gap: 4px; }
+	.caja-total-grande + .caja-acciones { margin-top: 0; }
+	.caja-total-grande small { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--t-texto-suave, #6B7280); }
+	.caja-total-grande b { font-size: 42px; line-height: 1.1; font-weight: 800; color: var(--t-primario, #15803D); }
+	.caja-total-grande span { font-size: 14px; color: var(--t-texto-suave, #4B5563); }
+	.caja-total-grande.vacio b { color: var(--t-texto-tenue, #9CA3AF); }
+	@media (max-height: 760px) { .caja-total-grande { padding: 12px; } .caja-total-grande b { font-size: 32px; } }
 	.caja-venta-lateral .form-group { margin-bottom: 10px; }
 	.caja-venta-lateral .form-group:last-child { margin-bottom: 0; }
 	.caja-venta-lateral label { font-size: 12px; color: var(--t-texto-suave, #7A6A5E); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 5px; font-weight: 700; }
@@ -575,6 +589,8 @@
 	.menu-op .menu-cant { display: inline-flex; align-items: center; gap: 4px; }
 	.menu-op .menu-cant b { min-width: 18px; text-align: center; }
 	.menu-op .menu-cant .btn { padding: 1px 7px; }
+	/* v1.39.7: comentario de cada producto elegido del menú o promo */
+	.menu-op .menu-nota { flex: 0 1 260px; min-width: 120px; height: 30px; font-size: 13px; background: #fff; }
 	.caja-linea .detalle-linea.del-menu { color: var(--t-texto-suave, #4B5563); }
 	/* v1.25.0: armar una promo de sushi (#modalSushi, js.php abrirSushi) */
 	#modalSushi .modal-dialog { width: 1080px; max-width: calc(100vw - 24px); }
@@ -1519,10 +1535,22 @@
 								<div class="fila" id="filaEnvio" style="display:none"><span>Incluye envío</span><span id="lblEnvio">$0</span></div>
 								<div class="fila descuento" id="filaDescuento" style="display:none"><span>Descuento</span><span id="lblDescuento">$0</span></div>
 								<div class="fila con-descuento" id="filaConDescuento" style="display:none"><span>Total con descuento</span><span id="lblConDescuento">$0</span></div>
+								<?php /* v1.39.5 (pedido del usuario): Neto e IVA no se muestran en la Caja (venta directa y mesas); se dejan
+								   comentados para volver a mostrarlos. En el documento impreso siguen saliendo igual.
 								<div class="fila"><span>Neto</span><span id="lblNeto">$0</span></div>
 								<div class="fila"><span>IVA (19%)</span><span id="lblIva">$0</span></div>
+								*/ ?>
 								<div class="fila" id="filaIla" style="display:none"><span>Impuesto adicional (ILA)</span><span id="lblIla">$0</span></div>
 								<div class="fila" id="filaExento" style="display:none"><span>Exento</span><span id="lblExento">$0</span></div>
+								<div class="fila total-pagar"><span>Total a pagar</span><span id="lblTotalGrande">$0</span></div>
+								<?php /* v1.39.7: el recuadro grande del total (v1.39.6) se quitó por pedido del usuario; queda aquí comentado:
+								<!-- v1.39.6 (pedido del usuario: "se ve muy vacío"): el total a pagar en grande en el espacio libre -->
+								<div class="caja-total-grande" id="cajaTotalGrande">
+									<small>Total a pagar</small>
+									<b id="lblTotalGrandeX">$0</b>
+									<span id="lblCuentaItems">Agrega productos a la venta</span>
+								</div>
+								*/ ?>
 								<div class="caja-acciones">
 									<button class="btn btn-default btn-lg" id="btnLimpiar" title="Vaciar venta"><i class="fa fa-trash"></i></button>
 									<button class="btn btn-default btn-lg" id="btnPrecuenta" style="display:none" title="Precuenta: imprime el detalle para que el cliente lo revise antes de pagar" aria-label="Precuenta"><i class="fa fa-print"></i></button>

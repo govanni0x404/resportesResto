@@ -132,6 +132,9 @@ class Ticket_impresion
 	 */
 	public function cierre($d, $papel = 80)
 	{
+		// v1.39.4 (pedido del usuario: "mejora el diseño del impreso"): encabezado con los datos de la empresa, títulos de
+		// sección en negativo, formas de pago en columnas (sistema / rendido / diferencia), cuadre del efectivo y la
+		// diferencia en grande con SOBRA / FALTA / CUADRADA. Mismos datos y mismas opciones de Configuraciones que antes.
 		$W = $papel == 58 ? 32 : 42;
 		$c = $d['caja'];
 		$r = $d['resumen'];
@@ -140,62 +143,132 @@ class Ticket_impresion
 		$ver = function ($k) use ($cfg) { return !isset($cfg[$k]) || $cfg[$k]; };
 		$m = function ($n) { return ($n < 0 ? '-' : '') . '$' . number_format(abs((float)$n), 0, ',', '.'); };
 		$cerrada = !empty($d['cerrada']);
-		$centro = "\x1ba\x01"; $izq = "\x1ba\x00"; $normal = "\x1d!\x00\x1bE\x00"; $neg = "\x1bE\x01"; $alto = "\x1d!\x01";
+		$centro = "\x1ba\x01"; $izq = "\x1ba\x00"; $normal = "\x1d!\x00\x1bE\x00"; $neg = "\x1bE\x01";
+		$alto = "\x1d!\x01"; $grande = "\x1d!\x11";
+		$doble = str_repeat('=', $W) . "\n";
 		$linea = str_repeat('-', $W) . "\n";
+		// Título de sección: en negativo (blanco sobre negro) a todo el ancho
+		$seccion = function ($t) use ($W, $izq, $neg, $normal) {
+			$t = ' ' . $t . ' ';
+			$l = mb_strlen($t);
+			$pad = max(0, $W - $l);
+			$txt = str_repeat(' ', intdiv($pad, 2)) . $t . str_repeat(' ', $pad - intdiv($pad, 2));
+			return $izq . $neg . "\x1dB\x01" . $this->t($txt) . "\x1dB\x00" . $normal . "\n";
+		};
+		// Etiqueta a la izquierda y dato a la derecha
+		$dato = function ($k, $v) use ($W) { return $this->fila($k, (string)$v, $W); };
+		// Tres columnas a la derecha (sistema / rendido / diferencia), cada una de igual ancho
+		$cols = function ($a, $b, $c3, $sangria = 0) use ($W) {
+			$cw = intdiv($W - $sangria, 3);
+			$fit = mb_strlen($a) < $cw && mb_strlen($b) < $cw && mb_strlen($c3) < $cw;
+			if (!$fit) return null;
+			$izqPad = $W - 3 * $cw;
+			return $this->t(str_repeat(' ', $izqPad) . str_pad($a, $cw, ' ', STR_PAD_LEFT) . str_pad($b, $cw, ' ', STR_PAD_LEFT)
+				. str_pad($c3, $cw, ' ', STR_PAD_LEFT)) . "\n";
+		};
 
 		$b = "\x1b@\x1bt\x13" . $normal;
-		if ($e) $b .= $centro . $neg . $this->lineas($e->nombre_fantasia ?: $e->razon_social, $W) . $normal;
-		$b .= $centro . $linea . $neg . $alto . $this->t($cerrada ? 'CIERRE DE CAJA' : 'INFORME X') . $normal . "\n";
-		$b .= $centro . $this->t('Caja N° ' . (int)$c->id_caja) . "\n" . $linea;
+		// ---- Encabezado: la empresa ----
+		if ($e) {
+			$nombre = trim((string)($e->nombre_fantasia ?: $e->razon_social));
+			$b .= $centro . $neg . $alto . $this->lineas($nombre, $W) . $normal;
+			if ($e->nombre_fantasia && $e->razon_social && strcasecmp(trim($e->razon_social), $nombre) !== 0) $b .= $centro . $this->lineas($e->razon_social, $W);
+			if (!empty($e->rut_empresa)) $b .= $centro . $this->t('RUT ' . number_format((float)$e->rut_empresa, 0, ',', '.') . '-' . $e->dv_empresa) . "\n";
+			$dir = trim((string)(!empty($e->direccion_sucursal) ? $e->direccion_sucursal : $e->direccion_empresa));
+			if ($dir !== '') $b .= $centro . $this->lineas($dir, $W);
+		}
+		// ---- Título ----
+		$b .= $centro . $doble . $neg . $grande . $this->t($cerrada ? 'CIERRE DE CAJA' : 'INFORME X') . $normal . "\n";
+		$b .= $centro . $neg . $this->t('Caja N° ' . (int)$c->id_caja) . $normal . "\n";
 		if (!$cerrada) $b .= $centro . $this->t('Caja abierta - resumen parcial') . "\n";
-		$b .= $izq . $this->lineas('Cajero: ' . $c->nombre_usuario, $W);
-		$b .= $this->t('Apertura: ' . $c->apertura) . "\n";
-		$b .= $this->t($cerrada ? 'Cierre: ' . $c->cierre_texto : 'Emitido: ' . date('d/m/Y H:i')) . "\n" . $linea;
+		$b .= $doble . $izq;
+		$b .= $dato('Cajero', $c->nombre_usuario);
+		$b .= $dato('Apertura', $c->apertura);
+		$b .= $cerrada ? $dato('Cierre', $c->cierre_texto) : $dato('Emitido', date('d/m/Y H:i'));
+		$b .= "\n";
 
-		$b .= $this->fila('Ventas (' . (int)$r['cantidad_ventas'] . ')', $m($r['ventas'] + $r['devoluciones']), $W);
-		if ($r['cantidad_devoluciones']) $b .= $this->fila('Devoluciones (' . (int)$r['cantidad_devoluciones'] . ')', $m(-$r['devoluciones']), $W);
-		$b .= $neg . $this->fila('Venta neta', $m($r['ventas']), $W) . $normal;
-		if ($r['descuentos']) $b .= $this->fila('Descuentos otorgados', $m($r['descuentos']), $W);
-		if ($ver('cierre_creditos') && !empty($r['creditos'])) $b .= $this->fila('Créditos a clientes', $m($r['creditos']), $W);
-		if ($ver('cierre_cortesias') && $r['cortesias']) $b .= $this->fila('Cortesías', $m($r['cortesias']), $W);
-		if ($ver('cierre_anulaciones') && $r['anuladas']) $b .= $this->fila('Ventas anuladas', (string)(int)$r['anuladas'], $W);
-		if ($r['propinas']) $b .= $this->fila('Propinas (a garzones)', $m($r['propinas']), $W);
-		if (!empty($r['pagos_credito'])) $b .= $this->fila('Pagos de créditos', $m($r['pagos_credito']), $W);
-		if ($ver('cierre_ingresos') && $r['ingresos']) $b .= $this->fila('Ingresos de caja', $m($r['ingresos']), $W);
-		if ($ver('cierre_ingresos') && $r['egresos']) $b .= $this->fila('Retiros de caja', $m(-$r['egresos']), $W);
-		$b .= $linea;
+		// ---- Ventas ----
+		$b .= $seccion('RESUMEN DE VENTAS');
+		$b .= $dato('Ventas (' . (int)$r['cantidad_ventas'] . ')', $m($r['ventas'] + $r['devoluciones']));
+		if ($r['cantidad_devoluciones']) $b .= $dato('Devoluciones (' . (int)$r['cantidad_devoluciones'] . ')', $m(-$r['devoluciones']));
+		$b .= $neg . $alto . $dato('VENTA NETA', $m($r['ventas'])) . $normal;
+		$extras = '';
+		if ($r['descuentos']) $extras .= $dato('Descuentos otorgados', $m($r['descuentos']));
+		if ($ver('cierre_creditos') && !empty($r['creditos'])) $extras .= $dato('Créditos a clientes', $m($r['creditos']));
+		if ($ver('cierre_cortesias') && $r['cortesias']) $extras .= $dato('Cortesías', $m($r['cortesias']));
+		if ($ver('cierre_anulaciones') && $r['anuladas']) $extras .= $dato('Ventas anuladas', (string)(int)$r['anuladas']);
+		if ($r['propinas']) $extras .= $dato('Propinas (a garzones)', $m($r['propinas']));
+		if (!empty($r['pagos_credito'])) $extras .= $dato('Pagos de créditos', $m($r['pagos_credito']));
+		if ($ver('cierre_ingresos') && $r['ingresos']) $extras .= $dato('Ingresos de caja', $m($r['ingresos']));
+		if ($ver('cierre_ingresos') && $r['egresos']) $extras .= $dato('Retiros de caja', $m(-$r['egresos']));
+		if ($extras !== '') $b .= $linea . $extras;
+		$b .= "\n";
 
-		$b .= $neg . $this->fila('Forma de pago', $cerrada ? 'Sistema / Rendido' : 'Sistema', $W) . $normal;
-		foreach ($d['formas'] as $f) {
-			$b .= $this->lineas($f['nombre'] . ($f['efectivo'] ? ' (en caja, con fondo)' : ''), $W);
-			$b .= $this->fila('', $m($f['esperado']) . ($cerrada ? ' / ' . $m($f['rendido']) : ''), $W);
-		}
-		$b .= $linea;
-		$b .= $this->fila('Fondo inicial', $m($r['fondo']), $W);
+		// ---- Formas de pago ----
+		$b .= $seccion('FORMAS DE PAGO');
 		if ($cerrada) {
-			$b .= $this->fila('Fondo próximo turno', $m($c->fondo_fijo), $W);
-			$b .= $this->fila('Efectivo entregado', $m($c->efectivo_entregado), $W);
-			$b .= $neg . $alto . $this->fila('DIFERENCIA', $m($c->diferencia), $W) . $normal;
+			$cab = $cols('Sistema', 'Rendido', 'Dif.');
+			$b .= $neg . ($cab !== null ? $cab : $this->fila('', 'Sistema / Rendido / Dif.', $W)) . $normal;
+			$tS = 0; $tR = 0;
+			foreach ($d['formas'] as $f) {
+				$dif = (int)$f['rendido'] - (int)$f['esperado'];
+				$tS += (int)$f['esperado']; $tR += (int)$f['rendido'];
+				$b .= $neg . $this->lineas($f['nombre'] . ($f['efectivo'] ? ' (con fondo)' : ''), $W) . $normal;
+				$fila = $cols($m($f['esperado']), $m($f['rendido']), $dif ? ($dif > 0 ? '+' : '') . $m($dif) : '0');
+				$b .= $fila !== null ? $fila : $dato('  Sistema', $m($f['esperado'])) . $dato('  Rendido', $m($f['rendido'])) . $dato('  Diferencia', $m($dif));
+			}
+			$b .= $linea;
+			$tD = $tR - $tS;
+			$tot = $cols($m($tS), $m($tR), $tD ? ($tD > 0 ? '+' : '') . $m($tD) : '0');
+			$b .= $neg . 'TOTAL' . "\n" . ($tot !== null ? $tot : $dato('  Sistema', $m($tS)) . $dato('  Rendido', $m($tR)) . $dato('  Diferencia', ($tD > 0 ? '+' : '') . $m($tD))) . $normal;
 		} else {
-			$b .= $neg . $alto . $this->fila('EFECTIVO EN CAJA', $m($r['efectivo_esperado']), $W) . $normal;
+			foreach ($d['formas'] as $f) $b .= $dato($f['nombre'] . ($f['efectivo'] ? ' (con fondo)' : ''), $m($f['esperado']));
 		}
+		$b .= "\n";
+
+		// ---- Efectivo ----
+		$b .= $seccion('EFECTIVO');
+		$b .= $dato('Fondo inicial', $m($r['fondo']));
+		if ($cerrada) {
+			$b .= $dato('Efectivo esperado', $m($r['efectivo_esperado']));
+			$b .= $dato('Efectivo entregado', $m($c->efectivo_entregado));
+			$b .= $dato('Fondo próximo turno', $m($c->fondo_fijo));
+			$dif = (int)$c->diferencia;
+			$estado = $dif > 0 ? 'SOBRA ' . $m($dif) : ($dif < 0 ? 'FALTA ' . $m(-$dif) : 'CAJA CUADRADA');
+			$b .= "\n" . $centro . $doble . $this->t('DIFERENCIA') . "\n" . $neg . $grande . $this->t($m($dif)) . $normal . "\n";
+			$b .= $neg . $this->t($estado) . $normal . "\n" . $doble . $izq;
+		} else {
+			$b .= "\n" . $centro . $doble . $this->t('EFECTIVO EN CAJA') . "\n" . $neg . $grande . $this->t($m($r['efectivo_esperado'])) . $normal . "\n" . $doble . $izq;
+		}
+
+		// ---- Inventario ----
 		if ($cerrada && !empty($d['inventario'])) {
 			$cn = function ($n) { return rtrim(rtrim(number_format((float)$n, 3, ',', '.'), '0'), ','); };
-			$b .= $linea . $centro . $neg . $this->t('INVENTARIO DE CIERRE') . $normal . "\n" . $izq;
-			$bodega = null;
+			$b .= "\n" . $seccion('INVENTARIO DE CIERRE');
+			$cab = $cols('Sistema', 'Contado', 'Dif.');
+			if ($cab !== null) $b .= $neg . $cab . $normal;
+			$bodega = null; $conDif = 0;
 			foreach ($d['inventario'] as $iv) {
-				if ($iv['bodega'] !== $bodega) { $bodega = $iv['bodega']; $b .= $neg . $this->lineas($bodega, $W) . $normal; }
+				if ($iv['bodega'] !== $bodega) { $bodega = $iv['bodega']; $b .= $neg . $this->lineas('> ' . $bodega, $W) . $normal; }
 				$b .= $this->lineas($iv['nombre'] . ($iv['umedida'] ? ' (' . $iv['umedida'] . ')' : ''), $W);
-				$dif = abs($iv['diferencia']) <= 0.0005 ? '0' : ($iv['diferencia'] > 0 ? '+' : '') . $cn($iv['diferencia']);
-				$b .= $this->fila('  Sist. ' . $cn($iv['stock']) . '  Cont. ' . $cn($iv['contado']), 'Dif. ' . $dif, $W);
+				$hayDif = abs($iv['diferencia']) > 0.0005;
+				if ($hayDif) $conDif++;
+				$dif = $hayDif ? ($iv['diferencia'] > 0 ? '+' : '') . $cn($iv['diferencia']) : '0';
+				$fila = $cols($cn($iv['stock']), $cn($iv['contado']), $dif);
+				$b .= $fila !== null ? $fila : $this->fila('  Sist. ' . $cn($iv['stock']) . '  Cont. ' . $cn($iv['contado']), 'Dif. ' . $dif, $W);
 			}
+			$b .= $linea . $centro . $this->t(count($d['inventario']) . ' insumo(s) - ' . ($conDif ? $conDif . ' con diferencia' : 'sin diferencias')) . "\n" . $izq;
 		}
+
+		// ---- Firmas ----
 		if ($cerrada) {
-			$b .= "\n\n\n" . $centro . $this->t(str_repeat('_', 24)) . "\n" . $this->t('Firma cajero') . "\n";
-			$b .= "\n\n" . $this->t(str_repeat('_', 24)) . "\n" . $this->t('Firma supervisor') . "\n";
+			$ancho = intdiv($W - 2, 2);
+			$b .= "\n\n\n\n" . $izq . $this->t(str_repeat('_', $ancho) . '  ' . str_repeat('_', $ancho)) . "\n";
+			$b .= $this->t(str_pad('Cajero', $ancho, ' ', STR_PAD_BOTH) . '  ' . str_pad('Supervisor', $ancho, ' ', STR_PAD_BOTH)) . "\n";
 		} else {
-			$b .= $centro . $this->t('Informe parcial: no cierra la caja.') . "\n";
+			$b .= "\n" . $centro . $neg . $this->t('Informe parcial: no cierra la caja.') . $normal . "\n";
 		}
+		$b .= "\n" . $centro . $this->t('Impreso el ' . date('d/m/Y H:i')) . "\n";
 		return $b . $izq . "\n\n\n\n\x1dVB\x00";
 	}
 

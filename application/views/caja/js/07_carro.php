@@ -201,7 +201,8 @@
 				var menuL = l.menu && l.menu.length ? menuDe(l.id_producto) : null;
 				$.each(menuL ? l.menu : [], function (j, e) {
 					var o = opcionMenu(menuL, e.id);
-					if (o) detalle.push('<span class="del-menu">+ ' + (e.cantidad > 1 ? e.cantidad + ' ' : '') + esc(o.nombre) + (o.adicional ? ' <b>+' + fmt(o.adicional * e.cantidad) + '</b>' : '') + '</span>');
+					if (o) detalle.push('<span class="del-menu">+ ' + (e.cantidad > 1 ? e.cantidad + ' ' : '') + esc(o.nombre) + (o.adicional ? ' <b>+' + fmt(o.adicional * e.cantidad) + '</b>' : '')
+						+ (e.nota ? ' <i>» ' + esc(e.nota) + '</i>' : '') + '</span>');   // v1.39.7: su comentario
 				});
 				if (menuDe(l.id_producto) && !(l.menu && l.menu.length)) detalle.push('<span class="text-danger">Falta elegir los productos del menú</span>');
 				// v1.25.0: lo armado de la promo de sushi
@@ -257,6 +258,14 @@
 			$('#lblExento').text(fmt(t.exento));
 			$('#filaExento').toggle(t.exento > 0);
 			$('#lblTotal').text(fmt(t.total));
+			// v1.39.6: total en grande y cuántos productos lleva la venta
+			var nUnid = 0;
+			$.each(carro, function (i, l) { nUnid += Number(l.cantidad) || 0; });
+			nUnid = Math.round(nUnid * 1000) / 1000;
+			$('#lblTotalGrande').text(fmt(t.total));
+			$('#cajaTotalGrande').toggleClass('vacio', !carro.length);
+			$('#lblCuentaItems').text(carro.length ? carro.length + (carro.length === 1 ? ' producto' : ' productos') + (nUnid !== carro.length ? ' · ' + String(nUnid).replace('.', ',') + ' unidades' : '')
+				+ (t.descuento > 0 ? ' · ahorro ' + fmt(t.descuento) : '') : 'Agrega productos a la venta');
 			$('#lblCobrar').text(carro.length ? fmt(t.total) : '');
 			$('#barraTotal').text(fmt(t.total));
 			$('#btnCobrar').prop('disabled', !carro.length || t.subtotal <= 0);

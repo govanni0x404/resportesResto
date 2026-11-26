@@ -74,7 +74,7 @@
                 <p class="cc-ayuda"><i class="fa fa-info-circle"></i>
                     <span id="ayudaControlCaja">Las cajas, su número, nombre y terminal vienen de la intranet.</span> Aquí se elige la lista de precios y la bodega de cada caja;
                     los cambios se guardan al instante. Al abrir la Caja, el cajero elige una de las cajas vigentes y se usan su lista y su bodega.
-                    En <b>Pago electrónico</b> se elige la máquina POS de la caja (Mantención &rsaquo; Pago electrónico): con una máquina, la Caja cobra las tarjetas en ella.
+                    En <b>Pago electrónico</b> se elige la máquina POS de la caja (menú Pago electrónico): con una máquina, la Caja cobra las tarjetas en ella.
                 </p>
                 <div class="table-responsive cc-tabla">
                     <table class="table table-hover" id="tablaControlCaja">
