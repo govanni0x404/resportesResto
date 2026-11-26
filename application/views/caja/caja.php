@@ -1330,8 +1330,11 @@
 
 	.pe-pendientes { margin: 0 0 10px; }
 	.pe-pendiente { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; padding: 10px 14px; margin-bottom: 6px; border-radius: 10px;
-		background: #fff7e0; border: 1px solid #f0dc9c; color: #5c4300; }
-	.pe-pendiente.aprobado { background: #e7f6ec; border-color: #b7e2c4; color: #14532d; }
+		background: #eef4ff; border: 1px solid #c7d7f5; border-left: 5px solid #3b6fd4; color: #1e3a6e; }   /* v1.39.11: azul suave (antes amarillo) */
+	.pe-pendiente .pe-ico { color: #3b6fd4; }
+	.pe-pendiente .pe-detalle { cursor: help; text-decoration: underline dotted; }
+	.pe-pendiente.aprobado { background: #e7f6ec; border-color: #b7e2c4; border-left-color: #15803d; color: #14532d; }
+	.pe-pendiente.aprobado .pe-ico { color: #15803d; }
 	.pe-pendiente .pe-ico { font-size: 22px; }
 	.pe-pendiente .pe-info { flex: 1 1 260px; min-width: 0; line-height: 1.35; }
 	.pe-pendiente .pe-info b { font-size: 15px; }
