@@ -107,8 +107,12 @@ foreach ($d['lineas'] ?? array() as $l) {
 revisar('la mesa tiene el producto y su segundo agregado', $padre && $hijo);
 revisar('el segundo agregado queda unido a su producto (no es un producto aparte)', $padre && $hijo && (int)$hijo['menu_de'] === (int)$padre['id_detalle'],
 	json_encode(array($padre['id_detalle'] ?? null, $hijo['menu_de'] ?? null)));
-revisar('el mensaje del producto y el del agregado vienen separados', ($padre['nota_producto'] ?? '') === 'SIN SAL' && ($padre['nota_agregado'] ?? '') === 'PICANTE',
-	json_encode(array($padre['nota'] ?? null, $padre['nota_producto'] ?? null, $padre['nota_agregado'] ?? null)));
+// v1.42.0: con varios agregados el 1.º también va en su fila: el mensaje del producto en el producto y el del agregado en el agregado
+$hijo1 = null;
+foreach ($d['lineas'] ?? array() as $l) if ((int)$l['id_producto'] === (int)$extras[0]['id_producto']) $hijo1 = $l;
+revisar('el mensaje del producto y el del agregado vienen separados', ($padre['nota_producto'] ?? '') === 'SIN SAL' && ($hijo1['nota'] ?? '') === 'PICANTE'
+	&& $hijo1 && (int)$hijo1['menu_de'] === (int)$padre['id_detalle'],
+	json_encode(array($padre['nota'] ?? null, $padre['nota_producto'] ?? null, $hijo1['nota'] ?? null)));
 
 list($c, , $b) = postJson(BASE . '/Caja/anularLineaMesa', array('id_mesa' => $mesa, 'id_detalle' => (int)$padre['id_detalle'], 'cantidad' => 1, 'motivo' => 'Prueba automática', 'autorizacion' => $aut));
 $r = json($b);

@@ -3,12 +3,13 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
  * v1.36.0 (pedido del usuario): promos normales (Carta > Promos), ej. "Completo + Bebida a $3.990".
- *
- * Una promo es un producto de la Carta (con su precio, en todas las listas) más un MENÚ con sus productos fijos
- * (tablas del POS: menu, categoria_menu, detalle_categoria_menu): una categoría por producto, con su cantidad como mínimo y
- * máximo (obligatoria) y una sola opción. En la Caja una promo así entra al tiro, sin preguntar (todo es fijo), y la venta la
- * arma Mcaja::armarLineas como cualquier menú: la línea de la promo con su precio y una línea por producto en $0, que
- * descuenta su stock y sale en la impresora de ese producto. promo_web marca cuáles son promos (migración 20261124160000).
+ * v1.39.5: fijas o "el cliente elige N" (promo_web.elegir).
+ * v1.41.0 (pedido del usuario: "que tengan su tabla y no esté sobre el menú"): una promo es un producto de la Carta (con
+ * su precio, en todas las listas) + promo_web (cuál es promo y si el cliente elige) + promo_producto_web (sus productos:
+ * fija = cada uno con su cantidad; "elige N" = la lista, cantidad 1). Ya no usa menu / categoria_menu / detalle_categoria_menu
+ * (migración 20261126120000, que pasó las promos que había). En la Caja, Mcaja::promosNormales la arma con la misma forma
+ * que un menú y la venta queda como antes: la línea de la promo con su precio y una línea por producto en $0 (stock e
+ * impresora de cada producto), unidas en detalle_promo_web.
  */
 class Mpromos extends CI_Model
 {
@@ -26,10 +27,16 @@ class Mpromos extends CI_Model
 		return $r;
 	}
 
+	private function hayTabla($db, $t)
+	{
+		return (bool)$db->query("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = ?", array($t))->row();
+	}
+
+	/** Las promos funcionan con promo_web y promo_producto_web (migraciones 20261124160000 y 20261126120000). */
 	public function disponible($db = null)
 	{
 		$db = $db ?: $this->db();
-		return (bool)$db->query("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'promo_web'")->row();
+		return $this->hayTabla($db, 'promo_web') && $this->hayTabla($db, 'promo_producto_web');
 	}
 
 	/** v1.39.5: promo_web.elegir (migración 20261126100000): N > 0 = el cliente elige N productos de la lista. */
@@ -38,7 +45,7 @@ class Mpromos extends CI_Model
 		return (bool)$db->query("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'promo_web' AND column_name = 'elegir'")->row();
 	}
 
-	/** Promos, productos que se pueden poner en una promo y familias. */
+	/** Promos, productos que se pueden poner en una promo, familias y subfamilias. */
 	public function datos()
 	{
 		$db = $this->db();
@@ -48,19 +55,18 @@ class Mpromos extends CI_Model
 		foreach ($db->query("SELECT w.id_producto, p.nombre_producto AS nombre, COALESCE(p.precio_bruto, 0) AS precio, (p.vigente IS TRUE) AS vigente,
 				$elegir AS elegir,
 				CASE WHEN $elegir > 0 THEN 'Elige ' || $elegir || ': ' || COALESCE(string_agg(pd.nombre_producto, ' / ' ORDER BY pd.nombre_producto), '')
-				ELSE COALESCE(string_agg(CASE WHEN c.cantidad_minima > 1 THEN c.cantidad_minima || ' ' ELSE '' END || pd.nombre_producto, ' + ' ORDER BY c.orden, c.id_categoria_menu), '') END AS detalle
+				ELSE COALESCE(string_agg(CASE WHEN pp.cantidad > 1 THEN pp.cantidad || ' ' ELSE '' END || pd.nombre_producto, ' + ' ORDER BY pp.orden, pp.id_promo_producto_web), '') END AS detalle
 			FROM promo_web w JOIN producto p ON p.id_producto = w.id_producto
-			LEFT JOIN categoria_menu c ON c.id_menu = w.id_menu AND c.vigente IS NOT FALSE
-			LEFT JOIN detalle_categoria_menu d ON d.id_categoria_menu = c.id_categoria_menu AND d.vigente IS NOT FALSE
-			LEFT JOIN producto pd ON pd.id_producto = d.id_producto
+			LEFT JOIN promo_producto_web pp ON pp.id_producto_promo = w.id_producto AND pp.vigente IS TRUE
+			LEFT JOIN producto pd ON pd.id_producto = pp.id_producto
 			GROUP BY w.id_producto, p.nombre_producto, p.precio_bruto, p.vigente" . ($elegir === '0' ? '' : ', w.elegir') . "
 			ORDER BY p.nombre_producto")->result() as $r) {
 			$promos[] = array('id_producto' => (int)$r->id_producto, 'nombre' => (string)$r->nombre, 'precio' => (int)$r->precio,
 				'vigente' => $r->vigente === 't' || $r->vigente === true, 'detalle' => (string)$r->detalle, 'elegir' => (int)$r->elegir);
 		}
-		$sushi = (bool)$db->query("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'promo_sushi_web'")->row();
+		$sushi = $this->hayTabla($db, 'promo_sushi_web');
 		$productos = array();
-		// El precio de la lista pública (Configuraciones), o el del producto
+		// El precio de la lista pública (Configuraciones), o el del producto. Ni menús ni promos dentro de una promo.
 		foreach ($db->query("SELECT p.id_producto, p.nombre_producto AS nombre, COALESCE(f.nombre_familia, '') AS familia,
 				COALESCE(NULLIF((SELECT dl.total FROM detalle_lprecio dl WHERE dl.id_producto = p.id_producto
 					AND dl.id_lprecio = (SELECT id_lpreciopublico FROM configuracion LIMIT 1) LIMIT 1), 0), p.precio_bruto, 0) AS precio
@@ -81,24 +87,24 @@ class Mpromos extends CI_Model
 	public function promo($id)
 	{
 		$db = $this->db();
-		$p = $db->query('SELECT w.id_producto, w.id_menu, ' . ($this->conElegir($db) ? 'COALESCE(w.elegir, 0)' : '0') . ' AS elegir,
+		if (!$this->disponible($db)) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
+		$p = $db->query('SELECT w.id_producto, ' . ($this->conElegir($db) ? 'COALESCE(w.elegir, 0)' : '0') . ' AS elegir,
 				p.nombre_producto AS nombre, COALESCE(p.precio_bruto, 0) AS precio,
 				COALESCE(p.id_familia, 0) AS id_familia, COALESCE(p.id_subfamilia, 0) AS id_subfamilia, (p.vigente IS TRUE) AS vigente
 			FROM promo_web w JOIN producto p ON p.id_producto = w.id_producto WHERE w.id_producto = ?', array((int)$id))->row();
 		if (!$p) return array('error' => 'La promo ya no existe. Recarga la página.');
 		$items = array();
-		foreach ($db->query('SELECT d.id_producto, pd.nombre_producto AS nombre, GREATEST(c.cantidad_minima, 1) AS cantidad
-			FROM categoria_menu c JOIN detalle_categoria_menu d ON d.id_categoria_menu = c.id_categoria_menu AND d.vigente IS NOT FALSE
-			JOIN producto pd ON pd.id_producto = d.id_producto
-			WHERE c.id_menu = ? AND c.vigente IS NOT FALSE ORDER BY c.orden, c.id_categoria_menu', array((int)$p->id_menu))->result() as $r) {
+		foreach ($db->query('SELECT pp.id_producto, pd.nombre_producto AS nombre, GREATEST(pp.cantidad, 1) AS cantidad
+			FROM promo_producto_web pp JOIN producto pd ON pd.id_producto = pp.id_producto
+			WHERE pp.id_producto_promo = ? AND pp.vigente IS TRUE ORDER BY pp.orden, pp.id_promo_producto_web', array((int)$p->id_producto))->result() as $r) {
 			$items[] = array('id_producto' => (int)$r->id_producto, 'nombre' => (string)$r->nombre, 'cantidad' => (int)$p->elegir > 0 ? 1 : (int)$r->cantidad);
 		}
 		return array('ok' => true, 'promo' => array('id_producto' => (int)$p->id_producto, 'nombre' => (string)$p->nombre, 'precio' => (int)$p->precio,
-			'id_familia' => (int)$p->id_familia, 'id_subfamilia' => (int)$p->id_subfamilia, 'vigente' => $p->vigente === 't' || $p->vigente === true, 'items' => $items,
-			'elegir' => (int)$p->elegir));
+			'id_familia' => (int)$p->id_familia, 'id_subfamilia' => (int)$p->id_subfamilia, 'vigente' => $p->vigente === 't' || $p->vigente === true,
+			'items' => $items, 'elegir' => (int)$p->elegir));
 	}
 
-	/** Crea o edita una promo: {id_producto, nombre, precio, id_familia, vigente, items: [{id_producto, cantidad}]}. */
+	/** Crea o edita una promo: {id_producto, nombre, precio, id_familia, id_subfamilia, vigente, elegir, items: [{id_producto, cantidad}]}. */
 	public function grabar($d)
 	{
 		$db = $this->db();
@@ -121,13 +127,13 @@ class Mpromos extends CI_Model
 			if (!$sf) return array('error' => 'La subfamilia ya no existe. Recarga la página.');
 			if ((int)$sf->id_familia > 0 && (int)$sf->id_familia !== $idFamilia) return array('error' => 'Esa subfamilia es de otra familia');
 		}
-		// Los productos de la promo (el mismo producto dos veces se junta)
+		// Los productos de la promo (el mismo producto dos veces se junta; en "elige" cada uno va una vez)
 		$items = array();
 		foreach (is_array($d['items'] ?? null) ? $d['items'] : array() as $it) {
 			$ip = (int)($it['id_producto'] ?? 0);
 			$q = (int)($it['cantidad'] ?? 0);
 			if ($ip <= 0) continue;
-			if ($elegir > 0) $q = 1;   // a elegir: la lista de opciones, sin cantidad por producto
+			if ($elegir > 0) $q = 1;
 			if ($q < 1 || $q > 50) return array('error' => 'La cantidad de cada producto debe ser de 1 a 50');
 			$items[$ip] = $elegir > 0 ? 1 : (isset($items[$ip]) ? $items[$ip] : 0) + $q;
 		}
@@ -135,9 +141,10 @@ class Mpromos extends CI_Model
 		if (count($items) > self::MAX_ITEMS) return array('error' => 'Una promo puede tener hasta ' . self::MAX_ITEMS . ' productos distintos');
 		if (isset($items[$id])) return array('error' => 'La promo no puede llevarse a sí misma');
 		$nombres = array();
-		foreach ($db->query('SELECT id_producto, nombre_producto, COALESCE(id_menu, 0) AS id_menu FROM producto
+		foreach ($db->query('SELECT id_producto, nombre_producto, COALESCE(id_menu, 0) AS id_menu,
+				(id_producto IN (SELECT id_producto FROM promo_web)) AS es_promo FROM producto
 			WHERE vigente IS TRUE AND id_producto IN (' . implode(',', array_map('intval', array_keys($items))) . ')')->result() as $r) {
-			if ((int)$r->id_menu > 0) return array('error' => $r->nombre_producto . ' es un menú o una promo: no puede ir dentro de otra promo');
+			if ((int)$r->id_menu > 0 || $r->es_promo === 't' || $r->es_promo === true) return array('error' => $r->nombre_producto . ' es un menú o una promo: no puede ir dentro de otra promo');
 			$nombres[(int)$r->id_producto] = (string)$r->nombre_producto;
 		}
 		if (count($nombres) !== count($items)) return array('error' => 'Algún producto de la promo ya no existe o no está vigente. Recarga la página.');
@@ -145,64 +152,32 @@ class Mpromos extends CI_Model
 		$db->trans_begin();
 		try {
 			if ($id > 0) {
-				$w = $db->query('SELECT id_menu, ' . ($this->conElegir($db) ? 'COALESCE(elegir, 0)' : '0') . ' AS elegir FROM promo_web WHERE id_producto = ? FOR UPDATE', array($id))->row();
-				if (!$w) throw new Exception('La promo ya no existe. Recarga la página.');
-				$idMenu = (int)$w->id_menu;
-				$elegirAntes = (int)$w->elegir;
-				$this->ok($db->query('UPDATE producto SET nombre_producto = ?, id_familia = ?, id_subfamilia = ?, vigente = ?, precio_bruto = ?, es_menu = true, id_menu = ?
-					WHERE id_producto = ?', array($nombre, $idFamilia, $idSub, $vigente ? 't' : 'f', $precio, $idMenu, $id)));
-				$this->ok($db->query('UPDATE menu SET nombre_menu = ?, vigente = true WHERE id_menu = ?', array($nombre, $idMenu)));
+				if (!$db->query('SELECT 1 FROM promo_web WHERE id_producto = ? FOR UPDATE', array($id))->row()) throw new Exception('La promo ya no existe. Recarga la página.');
+				$this->ok($db->query('UPDATE producto SET nombre_producto = ?, id_familia = ?, id_subfamilia = ?, vigente = ?, precio_bruto = ?, es_menu = false, id_menu = 0
+					WHERE id_producto = ?', array($nombre, $idFamilia, $idSub, $vigente ? 't' : 'f', $precio, $id)));
 			} else {
-				$m = $this->ok($db->query('INSERT INTO menu (nombre_menu, vigente) VALUES (?, true) RETURNING id_menu', array($nombre)))->row();
-				$idMenu = (int)$m->id_menu;
-				$id = $this->crearProducto($db, $nombre, $idFamilia, $precio, $vigente, $idMenu);
+				$id = $this->crearProducto($db, $nombre, $idFamilia, $precio, $vigente);
 				if ($idSub > 0) $this->ok($db->query('UPDATE producto SET id_subfamilia = ? WHERE id_producto = ?', array($idSub, $id)));
-				$this->ok($db->query('INSERT INTO promo_web (id_producto, id_menu) VALUES (?, ?)', array($id, $idMenu)));
-				$elegirAntes = 0;
+				$this->ok($db->query('INSERT INTO promo_web (id_producto, id_menu) VALUES (?, 0)', array($id)));
 			}
-			if ($this->conElegir($db)) {
-				$this->ok($db->query('UPDATE promo_web SET elegir = ? WHERE id_producto = ?', array($elegir > 0 ? $elegir : null, $id)));
-			}
-			// Cambió el tipo (fija <-> a elegir): las categorías de antes no sirven; quedan no vigentes y se arman de nuevo
-			if (($elegirAntes > 0) !== ($elegir > 0)) {
-				$this->ok($db->query('UPDATE detalle_categoria_menu SET vigente = false WHERE id_categoria_menu IN (SELECT id_categoria_menu FROM categoria_menu WHERE id_menu = ?)', array($idMenu)));
-				$this->ok($db->query('UPDATE categoria_menu SET vigente = false WHERE id_menu = ?', array($idMenu)));
-			}
-			if ($elegir > 0) {
-				$this->grabarElegir($db, $idMenu, $elegir, $items, $nombres);
-				$this->precioEnTodasLasListas($db, $id, $precio);
-				if ($db->trans_status() === false) throw new Exception('No se pudo grabar la promo');
-				$db->trans_commit();
-				return array('ok' => true, 'id_producto' => $id);
-			}
-			// Una categoría por producto: se reusa la que ya tenía ese producto; las que sobran quedan no vigentes
+			if ($this->conElegir($db)) $this->ok($db->query('UPDATE promo_web SET elegir = ? WHERE id_producto = ?', array($elegir > 0 ? $elegir : null, $id)));
+			// Sus productos: se reusa la fila que ya tenía cada producto; las que sobran quedan no vigentes (no se borran)
 			$antes = array();
-			foreach ($db->query('SELECT c.id_categoria_menu, d.id_detalle_categoria_menu, d.id_producto FROM categoria_menu c
-				JOIN detalle_categoria_menu d ON d.id_categoria_menu = c.id_categoria_menu WHERE c.id_menu = ? AND (c.vigente IS NOT FALSE OR ? = 0)
-				ORDER BY (c.vigente IS NOT FALSE) DESC, c.id_categoria_menu', array($idMenu, $elegirAntes > 0 ? 1 : 0))->result() as $r) {
-				if (!isset($antes[(int)$r->id_producto])) $antes[(int)$r->id_producto] = $r;
+			foreach ($db->query('SELECT id_promo_producto_web, id_producto FROM promo_producto_web WHERE id_producto_promo = ? ORDER BY id_promo_producto_web', array($id))->result() as $r) {
+				if (!isset($antes[(int)$r->id_producto])) $antes[(int)$r->id_producto] = (int)$r->id_promo_producto_web;
+				else $this->ok($db->query('UPDATE promo_producto_web SET vigente = false WHERE id_promo_producto_web = ?', array((int)$r->id_promo_producto_web)));
 			}
 			$orden = 0;
 			foreach ($items as $ip => $q) {
 				$orden++;
-				$nom = mb_substr($nombres[$ip], 0, 50);
 				if (isset($antes[$ip])) {
-					$this->ok($db->query('UPDATE categoria_menu SET nombre_categoria_menu = ?, cantidad_minima = ?, cantidad_maxima = ?, estricto = true,
-						orden = ?, vigente = true WHERE id_categoria_menu = ?', array($nom, $q, $q, $orden, (int)$antes[$ip]->id_categoria_menu)));
-					$this->ok($db->query('UPDATE detalle_categoria_menu SET vigente = true, costo_adicional_venta = 0, imprimir = true WHERE id_detalle_categoria_menu = ?',
-						array((int)$antes[$ip]->id_detalle_categoria_menu)));
+					$this->ok($db->query('UPDATE promo_producto_web SET cantidad = ?, orden = ?, vigente = true WHERE id_promo_producto_web = ?', array($q, $orden, $antes[$ip])));
 					unset($antes[$ip]);
 				} else {
-					$c = $this->ok($db->query('INSERT INTO categoria_menu (id_menu, nombre_categoria_menu, cantidad_minima, cantidad_maxima, orden, vigente, estricto)
-						VALUES (?, ?, ?, ?, ?, true, true) RETURNING id_categoria_menu', array($idMenu, $nom, $q, $q, $orden)))->row();
-					$this->ok($db->query('INSERT INTO detalle_categoria_menu (id_categoria_menu, id_producto, costo_adicional_venta, vigente, imprimir)
-						VALUES (?, ?, 0, true, true)', array((int)$c->id_categoria_menu, $ip)));
+					$this->ok($db->query('INSERT INTO promo_producto_web (id_producto_promo, id_producto, cantidad, orden, vigente) VALUES (?, ?, ?, ?, true)', array($id, $ip, $q, $orden)));
 				}
 			}
-			foreach ($antes as $r) {
-				$this->ok($db->query('UPDATE categoria_menu SET vigente = false WHERE id_categoria_menu = ?', array((int)$r->id_categoria_menu)));
-				$this->ok($db->query('UPDATE detalle_categoria_menu SET vigente = false WHERE id_detalle_categoria_menu = ?', array((int)$r->id_detalle_categoria_menu)));
-			}
+			foreach ($antes as $idFila) $this->ok($db->query('UPDATE promo_producto_web SET vigente = false WHERE id_promo_producto_web = ?', array($idFila)));
 			$this->precioEnTodasLasListas($db, $id, $precio);
 			if ($db->trans_status() === false) throw new Exception('No se pudo grabar la promo');
 			$db->trans_commit();
@@ -213,43 +188,8 @@ class Mpromos extends CI_Model
 		return array('ok' => true, 'id_producto' => $id);
 	}
 
-	/**
-	 * v1.39.5: promo a elegir: UNA categoría "ELIGE N" (mínimo = máximo = N, obligatoria) con todos los productos de la lista
-	 * como opciones. En la Caja se abre la ventana del menú y el cliente elige N (puede repetir uno).
-	 */
-	private function grabarElegir($db, $idMenu, $n, $items, $nombres)
-	{
-		$c = $db->query('SELECT id_categoria_menu FROM categoria_menu WHERE id_menu = ? AND vigente IS NOT FALSE ORDER BY id_categoria_menu LIMIT 1', array($idMenu))->row();
-		$nom = 'ELIGE ' . $n;
-		if ($c) {
-			$idCat = (int)$c->id_categoria_menu;
-			$this->ok($db->query('UPDATE categoria_menu SET nombre_categoria_menu = ?, cantidad_minima = ?, cantidad_maxima = ?, estricto = true, orden = 1, vigente = true
-				WHERE id_categoria_menu = ?', array($nom, $n, $n, $idCat)));
-			$this->ok($db->query('UPDATE categoria_menu SET vigente = false WHERE id_menu = ? AND id_categoria_menu <> ?', array($idMenu, $idCat)));
-		} else {
-			$c = $this->ok($db->query('INSERT INTO categoria_menu (id_menu, nombre_categoria_menu, cantidad_minima, cantidad_maxima, orden, vigente, estricto)
-				VALUES (?, ?, ?, ?, 1, true, true) RETURNING id_categoria_menu', array($idMenu, $nom, $n, $n)))->row();
-			$idCat = (int)$c->id_categoria_menu;
-		}
-		$antes = array();
-		foreach ($db->query('SELECT id_detalle_categoria_menu, id_producto FROM detalle_categoria_menu WHERE id_categoria_menu = ? ORDER BY id_detalle_categoria_menu', array($idCat))->result() as $r) {
-			if (!isset($antes[(int)$r->id_producto])) $antes[(int)$r->id_producto] = (int)$r->id_detalle_categoria_menu;
-			else $this->ok($db->query('UPDATE detalle_categoria_menu SET vigente = false WHERE id_detalle_categoria_menu = ?', array((int)$r->id_detalle_categoria_menu)));
-		}
-		foreach ($items as $ip => $q) {
-			if (isset($antes[$ip])) {
-				$this->ok($db->query('UPDATE detalle_categoria_menu SET vigente = true, costo_adicional_venta = 0, imprimir = true WHERE id_detalle_categoria_menu = ?', array($antes[$ip])));
-				unset($antes[$ip]);
-			} else {
-				$this->ok($db->query('INSERT INTO detalle_categoria_menu (id_categoria_menu, id_producto, costo_adicional_venta, vigente, imprimir)
-					VALUES (?, ?, 0, true, true)', array($idCat, $ip)));
-			}
-		}
-		foreach ($antes as $idDet) $this->ok($db->query('UPDATE detalle_categoria_menu SET vigente = false WHERE id_detalle_categoria_menu = ?', array($idDet)));
-	}
-
 	/** Producto nuevo para la promo (IVA, unidad y bodega del producto más común, como las promos de sushi). */
-	private function crearProducto($db, $nombre, $idFamilia, $precio, $vigente, $idMenu)
+	private function crearProducto($db, $nombre, $idFamilia, $precio, $vigente)
 	{
 		$base = $db->query('SELECT impto_iva, impto_ila, COALESCE(valor_ila, 0) AS valor_ila, id_umedida, id_bodega FROM producto
 			WHERE vigente IS TRUE AND impto_iva IS NOT NULL AND id_umedida IS NOT NULL
@@ -260,9 +200,9 @@ class Mpromos extends CI_Model
 		$r = $db->query('INSERT INTO producto (nombre_producto, cbarra, impto_iva, impto_ila, valor_ila, id_familia, id_umedida, precio_bruto,
 				id_dimpresion, id_bodega, vigente, venta_publico, inventariable, permitir_venta_sin_precio, elaboracion_propia, con_agregado,
 				es_menu, id_menu, id_subfamilia, id_receta)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, true, false, false, true, false, true, ?, 0, 0) RETURNING id_producto',
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, true, false, false, true, false, false, 0, 0, 0) RETURNING id_producto',
 			array($nombre, $cbarra, (int)$base->impto_iva, (int)$base->impto_ila, (float)$base->valor_ila, $idFamilia,
-				(int)$base->id_umedida, $precio, (int)$base->id_bodega, $vigente ? 't' : 'f', $idMenu))->row();
+				(int)$base->id_umedida, $precio, (int)$base->id_bodega, $vigente ? 't' : 'f'))->row();
 		if (!$r) throw new Exception('No se pudo crear el producto ' . $nombre);
 		return (int)$r->id_producto;
 	}

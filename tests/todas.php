@@ -30,6 +30,7 @@ if ($copia) {
 	$pruebas['promos_test.php'] = array($base, 'COPIA');   // v1.36.0: promos normales (Carta > Promos)
 	$pruebas['receta_produccion_test.php'] = array($base, 'COPIA');   // v1.37.0: receta de producción completa, costos y producción
 	$pruebas['unidades_volumen_test.php'] = array($base, 'COPIA');   // v1.37.16: litros y mililitros en insumos, recetas y producción
+	$pruebas['tablas_union_test.php'] = array($base, 'COPIA');   // v1.41.0: tablas de agregados varios y promos (revisa la base con PRUEBA_PSQL)
 	if (is_file(__DIR__ . '/cocina_reservas_test.php')) $pruebas['cocina_reservas_test.php'] = array($base, 'COPIA');   // pantalla de cocina y reservas (rama de prueba)
 }
 

@@ -103,7 +103,8 @@ revisar('apagado: un extra se rechaza', $c === 400 && strpos($err($b), 'no tiene
 list($c, , $b) = $enviar(array($ags[0], $ags[1]), array());
 revisar('apagado: 2 agregados se envían', $c === 200, "código $c: " . substr($b, 0, 200));
 $pr = $precios();
-revisar('apagado: cada agregado cobra su valor como siempre ($100 y $200)', ($pr[$idPrin] ?? 0) === (int)$prin['precio'] + 100 && ($pr[$idA2] ?? 0) === 200, json_encode($pr));
+// v1.42.0: con varios agregados cada uno va en su fila (también el 1.º): el producto a su precio y cada agregado con su valor
+revisar('apagado: cada agregado cobra su valor como siempre ($100 y $200)', ($pr[$idPrin] ?? 0) === (int)$prin['precio'] && ($pr[$idA1] ?? 0) === 100 && ($pr[$idA2] ?? 0) === 200, json_encode($pr));
 $anular();
 
 echo "Agregados extra con cobro:\n";
