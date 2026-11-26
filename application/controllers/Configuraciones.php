@@ -142,6 +142,7 @@ class Configuraciones extends CI_Controller {
             'enviar_dte_sii',
             'imprimir_comandas_app_forzar',  // 16-11-2026: también los que el celular manda sin pedir impresión
             'imprimir_comandas_app',  // 14-11-2026: la Caja web imprime las comandas de la app de garzones (solo si la columna existe)
+            'impresion_texto_web',    // v1.40.0: imprimir en modo texto, más rápido (migración 20261126110000)
             // 18-11-2026: impresion_local_caja y documentos_en_navegador ya no se graban: siempre encendidas (Mcaja::configuracion)
             'delivery_habilitado',    // 18-11-2026: pestaña Delivery en la Caja (migración 20261118100000)
             'usar_propina_web',       // v1.23.0: sin propina en nada (migración 20261120140000)

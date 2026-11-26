@@ -31,9 +31,13 @@ class Comanda_local
 
 		$this->op('fontsize', 1);
 		$this->op('fontbold', false);
+		$this->op('feed', 2);   // papel más largo (la comanda no se pierde)
 		$this->op('textaling', 'center');
 		// Cabecera: destino y tipo de comanda
-		$this->grande(mb_strtoupper($grupo['nombre']), $W2);
+		// v1.40.0 modo texto: el destino enmarcado con líneas dobles (en la página va en un recuadro)
+		$this->linea($W, '=');
+		$this->grande(mb_strtoupper($grupo['nombre']), $W2, 36);
+		$this->linea($W, '=');
 		if ($anula) {
 			$this->grande('ANULACION', $W2);
 			$this->negrita(array('NO PREPARAR'));
@@ -43,15 +47,14 @@ class Comanda_local
 		} elseif ($tipo === 'reenvio') {
 			$this->grande('REENVIO', $W2);
 			$this->negrita(array('YA SE HABIA PEDIDO'));
-		} else {
-			$this->negrita(array('C O M A N D A'));
-		}
+		}   // v1.40.0 modo texto: sin "C O M A N D A" (la comanda de la página no lo lleva)
 		if ($mesa !== '' && $mesa !== 0) {
 			$this->grande(mb_strtoupper($mesa), $W2);
 			if ($tipo === 'traslado') $this->negrita($this->lineasTexto('Antes: ' . mb_strtoupper($aviso['desde']), $W));
 		} elseif ($venta) {
-			$this->grande('N ' . $venta->folio, $W2);
-			$this->texto((string)$venta->nombre_tdocumento);
+			// v1.40.0 modo texto: documento y número grandes, como la página
+			$this->grande(mb_strtoupper((string)$venta->nombre_tdocumento), $W2);
+			$this->grande('N. ' . $venta->folio, $W2);
 		}
 		// Quien retira el pedido (venta directa)
 		if ($venta && !empty($venta->nombre_retira)) $this->grande('RETIRA: ' . mb_strtoupper($venta->nombre_retira), $W2);
@@ -84,6 +87,7 @@ class Comanda_local
 			foreach ($this->lineasTexto($observacion, $W) as $f) $this->texto($f);
 		}
 		$this->linea($W, '=');
+		$this->op('feed', 1);
 
 		// Productos (destacados para leerlos de lejos), agregados y nota del garzón
 		$total = 0;
@@ -92,18 +96,20 @@ class Comanda_local
 			$total += (float)$l['cantidad'];
 			$cant = rtrim(rtrim(number_format((float)$l['cantidad'], 3, ',', ''), '0'), ',');
 			// 19-11-2026: productos grandes, agregados y nota en texto normal (como la comanda de la página), sin negrita
-			$this->grande($cant . ' x ' . mb_strtoupper($l['nombre']), $W2);
-			if ($l['nota'] !== '') foreach ($this->lineasTexto(' >> ' . mb_strtoupper($l['nota']), $W) as $f) $this->texto($f);   // v1.30.3: junto al producto
+			$this->grande($cant . ' x ' . mb_strtoupper($l['nombre']), $W2, 30);
+			// v1.40.0 modo texto: el mensaje grande y con sangría, como en la comanda de la página
+			if ($l['nota'] !== '') $this->grande('> ' . mb_strtoupper($l['nota']), $W2, 24);
 			foreach ($l['agregados'] as $a) foreach ($this->lineasTexto('   + ' . $a, $W) as $f) $this->texto($f);
-			if ($i < $n - 1) $this->linea($W);
+			if ($i < $n - 1) { $this->op('feed', 1); $this->linea($W); }
 		}
+		$this->op('feed', 1);
 		$this->linea($W, '=');
 		$cantTxt = rtrim(rtrim(number_format($total, 3, ',', ''), '0'), ',');
 		$this->texto(($anula ? 'ANULADO: ' : ($tipo === 'traslado' ? 'CAMBIAN DE MESA: ' : 'TOTAL: ')) . $cantTxt . ($total == 1 ? ' producto' : ' productos'));
 		if ($anula && $aviso['motivo'] !== '') foreach ($this->lineasTexto('Motivo: ' . $aviso['motivo'], $W) as $f) $this->texto($f);
 		$this->op('textaling', 'center');
 		$this->texto('Impresa el ' . date('d/m/Y H:i:s'));
-		$this->op('feed', 4);
+		$this->op('feed', 6);
 		$this->op('cut', '');
 		return $this->ops;
 	}
@@ -146,11 +152,16 @@ class Comanda_local
 		foreach ((array)$lineas as $l) $this->texto($l);
 	}
 
-	/** Texto destacado (fontsize 2, sin negrita desde el 19-11-2026), cortado a la mitad del ancho */
-	private function grande($s, $W2)
+	/**
+	 * v1.40.0 (Configuraciones > Imprimir en modo texto): lo destacado de la comanda en letra alta (fontsize 2 = doble alto;
+	 * este agente no tiene letra más ancha ni dibuja texto) y en negrita. $tam queda solo como referencia del diseño.
+	 */
+	private function grande($s, $W2, $tam = 28, $negrita = true)
 	{
 		$this->op('fontsize', 2);
+		$this->op('fontbold', true);
 		foreach ($this->lineasTexto($s, $W2) as $l) $this->texto($l);
+		$this->op('fontbold', false);
 		$this->op('fontsize', 1);
 	}
 
@@ -162,7 +173,13 @@ class Comanda_local
 	/** Corta por palabras contando caracteres (no bytes) */
 	private function lineasTexto($s, $W)
 	{
-		$s = trim($this->limpiar($s));
+		// v1.40.0 modo texto: respeta la sangría del comienzo ("   + agregado", "  > mensaje")
+		$s = rtrim($this->limpiar($s));
+		$sangria = (string)substr($s, 0, strlen($s) - strlen(ltrim($s, ' ')));
+		if ($sangria !== '' && strlen($sangria) < $W - 8) {
+			return array_map(function ($l) use ($sangria) { return $sangria . $l; }, $this->lineasTexto(ltrim($s, ' '), $W - strlen($sangria)));
+		}
+		$s = trim($s);
 		if ($s === '') return array();
 		$out = array();
 		$linea = '';
@@ -196,4 +213,6 @@ class Comanda_local
 		));
 		return preg_replace('/[^\x20-\x7E]/u', '', $s);
 	}
+
+
 }

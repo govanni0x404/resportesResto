@@ -37,9 +37,7 @@ class Ticket_local
 			$this->op('textaling', 'center');
 			if ($e) {
 				// 16-11-2026: nombre del local en doble alto y negrita, centrado
-				$this->op('fontsize', 2);
-				$this->negrita($this->lineasTexto(mb_strtoupper($e->nombre_fantasia ?: $e->razon_social), $W));
-				$this->op('fontsize', 1);
+				$this->destacado(mb_strtoupper($e->nombre_fantasia ?: $e->razon_social), 30);
 				if ($e->nombre_fantasia && $e->razon_social) $this->lineas($e->razon_social, $W);
 				$this->texto('RUT ' . $rut($e->rut_empresa, $e->dv_empresa));
 				if (!empty($e->giro)) $this->lineas($e->giro, $W);
@@ -47,23 +45,19 @@ class Ticket_local
 				if ($dir !== '') $this->lineas($dir, $W);
 				if (!empty($e->telefono)) $this->texto('Fono ' . $e->telefono);
 			}
-			// Recuadro del documento
-			$this->linea($W);
+			// Recuadro del documento (v1.40.0 modo texto: líneas dobles, como el recuadro del diseño de la página)
+			$this->linea($W, '=');
 			$recuadro = array();
 			if ($sii && $e) $recuadro[] = 'R.U.T.: ' . $rut($e->rut_empresa, $e->dv_empresa);
 			$this->op('textaling', 'center');
 			if ($recuadro) $this->negrita($recuadro);
-			$this->op('fontsize', 2);
-			$this->negrita($this->lineasTexto(mb_strtoupper($v->nombre_tdocumento), $W));
-			$this->negrita(array('N. ' . (int)$v->folio));
-			$this->op('fontsize', 1);
-			$this->linea($W);
+			$this->destacado(mb_strtoupper($v->nombre_tdocumento), 26);   
+			$this->destacado('N. ' . (int)$v->folio, 26);
+			$this->linea($W, '=');
 			if ($sii && !empty($sii['oficina'])) $this->negrita(array($sii['oficina']));
 			$this->op('textaling', 'left');
 			if (!empty($doc['anulada'])) {
-				$this->op('fontsize', 2);
-				$this->negrita(array('ANULADA'));
-				$this->op('fontsize', 1);
+				$this->destacado('ANULADA', 30);
 			}
 			if ($nc) $this->negrita($this->lineasTexto('Devolución de ' . $doc['referencia'], $W));
 
@@ -72,9 +66,7 @@ class Ticket_local
 			$this->texto('Cajero: ' . $v->nombre_usuario);
 			if (!empty($v->nombre_retira)) {
 				// Quien retira el pedido (venta directa): destacado para llamarlo al entregar
-				$this->op('fontsize', 2);
-				$this->negrita($this->lineasTexto('Retira: ' . $v->nombre_retira, (int)floor($W / 2)));
-				$this->op('fontsize', 1);
+				$this->destacado('RETIRA: ' . mb_strtoupper($v->nombre_retira), 26, true, 'center');   // texto.3: solo centrado
 			}
 			if ($v->rut) {
 				$this->lineas('Cliente: ' . $v->nombre_cliente, $W);
@@ -88,12 +80,13 @@ class Ticket_local
 			$this->linea($W);
 			foreach ($doc['detalle'] as $d) {
 				// v1.24.0: producto elegido de un menú: "+ nombre" debajo del menú; sin precio si no tiene costo adicional
-				if (!empty($d->del_menu)) {
+				// v1.40.0 modo texto: igual que caja/ticket.php (lo del menú sin costo: solo "+ nombre"; con costo:
+				// "+ nombre" y debajo "cant x precio ... total", como un producto)
+				if (!empty($d->del_menu) && (int)round((float)$d->monto_mostrar) === 0) {
 					$this->lineas('  + ' . ($cant($d->cantidad) !== '1' ? $cant($d->cantidad) . ' ' : '') . $d->nombre, $W);
-					if ((int)round((float)$d->monto_mostrar) !== 0) $this->fila('    adicional', $m($d->monto_mostrar), $W);
 					continue;
 				}
-				$this->lineas($d->nombre . ($d->exento ? ' (EXENTO)' : ''), $W);
+				$this->lineas((!empty($d->del_menu) ? '  + ' : '') . $d->nombre . ($d->exento ? ' (EXENTO)' : ''), $W);
 				$this->fila('  ' . $cant($d->cantidad) . ' x ' . $m($d->precio_mostrar), $m($d->monto_mostrar), $W);
 			}
 			$this->linea($W);
@@ -103,9 +96,7 @@ class Ticket_local
 			$this->fila('IVA (19%)', $m($v->iva), $W);
 			if ((int)abs((int)($v->ila ?? 0)) > 0) $this->fila('ILA', $m($v->ila), $W);   // v1.20.1
 			if ($v->monto_exento > 0) $this->fila('Monto exento', $m($v->monto_exento), $W);
-			$this->op('fontsize', 2);
-			$this->op('fontbold', true);
-			$this->fila($nc ? 'TOTAL DEVUELTO' : 'TOTAL', $m($v->total), $W);
+			$this->destacado(($nc ? 'TOTAL DEVUELTO ' : 'TOTAL ') . $m($v->total), 30, true, 'right');   
 			$this->op('fontbold', false);
 			$this->op('fontsize', 1);
 			$propina = isset($v->valor_propina) ? (int)$v->valor_propina : 0;
@@ -160,9 +151,7 @@ class Ticket_local
 					. 'y la letra c) del Art. 5° de la Ley 19.983, acredita que la entrega de mercaderías o servicio(s) prestado(s) '
 					. 'ha(n) sido recibido(s).', $W);
 				$this->op('textaling', 'center');
-				$this->op('fontsize', 2);
-				$this->negrita(array('CEDIBLE'));
-				$this->op('fontsize', 1);
+				$this->destacado('CEDIBLE', 26);
 			}
 			$this->op('textaling', 'left');
 			$this->op('feed', 4);
@@ -196,16 +185,12 @@ class Ticket_local
 		$this->op('fontbold', false);
 		$this->op('textaling', 'center');
 		if ($e) {
-			$this->op('fontsize', 2);
-			$this->negrita($this->lineasTexto(mb_strtoupper($e->nombre_fantasia ?: $e->razon_social), $W));
-			$this->op('fontsize', 1);
+			$this->destacado(mb_strtoupper($e->nombre_fantasia ?: $e->razon_social), 30);
 			if (!empty($e->direccion_empresa)) $this->lineas($e->direccion_empresa, $W);
 		}
 		$this->linea($W);
 		$this->negrita(array('PRECUENTA'));
-		$this->op('fontsize', 2);
-		$this->negrita($this->lineasTexto(mb_strtoupper((string)$d['nombre_mesa']), $W));
-		$this->op('fontsize', 1);
+		$this->destacado(mb_strtoupper((string)$d['nombre_mesa']), 28);
 		if (!empty($d['titulo'])) $this->negrita($this->lineasTexto(mb_strtoupper($d['titulo']), $W));
 		$this->linea($W);
 		$this->op('textaling', 'left');
@@ -232,9 +217,7 @@ class Ticket_local
 			$this->fila('Subtotal', $m($subtotal), $W);
 			$this->fila('Descuento', '-' . $m($descuento), $W);
 		}
-		$this->op('fontsize', 2);
-		$this->op('fontbold', true);
-		$this->fila('TOTAL', $m($total), $W);
+		$this->destacado('TOTAL ' . $m($total), 30, true, 'right');
 		$this->op('fontbold', false);
 		$this->op('fontsize', 1);
 		if ($propina) {
@@ -336,7 +319,13 @@ class Ticket_local
 	/** Corta por palabras contando caracteres (no bytes), como Ticket_impresion::lineas() */
 	private function lineasTexto($s, $W)
 	{
-		$s = trim($this->limpiar($s));
+		// v1.40.0 modo texto: respeta la sangría del comienzo ("  + agregado") en todas sus líneas
+		$s = rtrim($this->limpiar($s));
+		$sangria = (string)substr($s, 0, strlen($s) - strlen(ltrim($s, ' ')));
+		if ($sangria !== '' && strlen($sangria) < $W - 8) {
+			return array_map(function ($l) use ($sangria) { return $sangria . $l; }, $this->lineasTexto(ltrim($s, ' '), $W - strlen($sangria)));
+		}
+		$s = trim($s);
 		if ($s === '') return array();
 		$out = array();
 		$linea = '';
@@ -360,4 +349,30 @@ class Ticket_local
 		// 16-11-2026: el símbolo de grado sale como "ø" en este agente ("Nø 80068")
 		return str_replace(array('N°', 'Nº', '°', 'º'), array('N.', 'N.', 'o', 'o'), $s);
 	}
+
+	private function destacado($texto, $tam, $negrita = true, $alinea = 'center')
+	{
+		// v1.40.0 (modo texto): lo destacado (local, documento, TOTAL...) en letra alta (tamaño 2) y negrita; el agente no
+		// dibuja texto. A la derecha (TOTAL) = etiqueta y monto en una fila en letra normal negrita (con letra alta se descuadra).
+		$t = trim((string)$texto);
+		if ($t === '') return;
+		$this->op('fontsize', 2);
+		$this->op('fontbold', true);
+		if ($alinea === 'right' && preg_match('/^(.*\S)\s+(\S+)$/u', $t, $m)) {
+			// con la letra alta los espacios no miden lo mismo y el monto salía al medio: TOTAL en letra normal negrita
+			$this->op('fontsize', 1);
+			$antes = $this->centrado;
+			$this->op('textaling', 'left');
+			$this->fila($m[1], $m[2], $this->ancho);
+			$this->op('textaling', $antes ? 'center' : 'left');
+		} else {
+			$antes = $this->centrado;
+			$this->op('textaling', 'center');
+			foreach ($this->lineasTexto($t, $this->ancho) as $l) $this->texto($l);
+			$this->op('textaling', $antes ? 'center' : 'left');
+		}
+		$this->op('fontbold', false);
+		$this->op('fontsize', 1);
+	}
+
 }

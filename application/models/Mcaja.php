@@ -5370,6 +5370,11 @@ class Mcaja extends CI_Model
 		// Boletas, precuentas y comandas con el diseño de la página, como imagen por el agente. 18-11-2026: siempre encendida
 		// (se quitó la casilla; documentos_en_navegador ya no se lee). Si la imagen falla, sale con el formato del agente.
 		$config['documentos_navegador'] = true;
+		// v1.40.0: Configuraciones > "Imprimir en modo texto (más rápido)" (migración 20261126110000): en texto por el agente
+		if (in_array('impresion_texto_web', $existentes, true)) {
+			$it = $this->q($db, 'SELECT (impresion_texto_web IS TRUE) AS ok FROM configuracion LIMIT 1')->row();
+			if ($it && ($it->ok === 't' || $it->ok === true)) $config['documentos_navegador'] = false;
+		}
 		// 16-11-2026: también los pedidos que el celular manda con "imprimir": 0 (migración 20261116110000; NULL = apagada)
 		$config['comandas_app_forzar'] = false;
 		if ($config['comandas_app'] && in_array('imprimir_comandas_app_forzar', $existentes, true)) {
