@@ -56,6 +56,19 @@
 .pr-resumen b { color: var(--t-texto-fuerte, #111827); }
 .pr-resumen .pr-ahorro { color: var(--t-primario, #15803D); font-weight: 700; }
 .pr-ayuda { margin-top: 10px; font-size: 12px; color: var(--t-texto-tenue, #6B7280); }
+/* v1.39.8: grilla de datos sin huecos */
+.pr-datos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 12px; align-items: end; }
+.pr-datos .pr-d2 { grid-column: span 2; }
+.pr-datos .pr-d4 { grid-column: 1 / -1; }
+.pr-datos .form-control { width: 100%; }
+.t-modal-form .pr-datos .pr-campo label.pr-activa { display: flex; align-items: center; gap: 8px; height: 36px; margin: 0; padding: 0 12px;
+    border: 1px solid var(--t-borde, #D1D5DB); border-radius: 8px; width: 100%; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--t-texto, #374151); }
+.pr-datos .pr-tipo-btns { display: flex; width: 100%; }
+.pr-datos .pr-tipo-btns button { flex: 1 1 50%; height: 36px; padding: 0 10px; }
+.t-modal-form .pr-datos label.pr-elegir { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--t-primario-suave, #E8F5EC);
+    align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+.pr-datos .pr-elegir input.form-control { width: 80px; flex: 0 0 80px; height: 34px; text-align: center; }
+@media (max-width: 700px) { .pr-datos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .pr-tipo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
 .pr-tipo-btns { display: inline-flex; border: 1px solid var(--t-borde, #D1D5DB); border-radius: 10px; overflow: hidden; }
 .pr-tipo-btns button { border: 0; background: #fff; padding: 8px 14px; font-size: 13px; font-weight: 600; color: var(--t-texto-suave, #4B5563); }
@@ -82,26 +95,28 @@
                         <div class="pr-lista" id="prLista"></div>
                     </div>
                     <div class="pr-editor">
-                        <div class="pr-fila">
-                            <div class="pr-campo pr-nombre"><label for="prNombre">Nombre</label>
+                        <!-- v1.39.8 (pedido del usuario: "que no queden espacios en blanco"): los datos en una grilla de 4 columnas.
+                             Fila 1: nombre (doble), precio y activa. Fila 2: familia, subfamilia y el tipo de promo (doble).
+                             Fila 3 (solo "El cliente elige"): cuántos elige. -->
+                        <div class="pr-datos">
+                            <div class="pr-campo pr-d2"><label for="prNombre">Nombre</label>
                                 <input type="text" class="form-control" id="prNombre" maxlength="50" placeholder="Ej: Completo + Bebida"></div>
-                            <div class="pr-campo pr-precio"><label for="prPrecio">Precio $</label>
+                            <div class="pr-campo"><label for="prPrecio">Precio $</label>
                                 <input type="number" class="form-control" id="prPrecio" min="1" max="9999999" placeholder="0"></div>
-                            <div class="pr-campo pr-familia"><label for="prFamilia">Familia</label>
+                            <div class="pr-campo"><label>Estado</label>
+                                <label class="pr-activa" title="Activa: se vende en la Caja"><input type="checkbox" id="prActiva" checked> Activa</label></div>
+                            <div class="pr-campo"><label for="prFamilia">Familia</label>
                                 <select class="form-control" id="prFamilia"></select></div>
                             <!-- v1.39.7 (pedido del usuario): subfamilia de la promo (opcional; las de su familia) -->
-                            <div class="pr-campo pr-familia"><label for="prSubfamilia">Subfamilia</label>
+                            <div class="pr-campo"><label for="prSubfamilia">Subfamilia</label>
                                 <select class="form-control" id="prSubfamilia"><option value="0">Sin subfamilia</option></select></div>
-                            <label class="pr-activa" title="Activa: se vende en la Caja"><input type="checkbox" id="prActiva" checked> Activa</label>
-                        </div>
-                        <!-- v1.39.5 (pedido del usuario): promo fija o el cliente elige N productos de la lista (como las de sushi) -->
-                        <div class="pr-tipo">
-                            <div class="pr-tipo-btns" role="group" aria-label="Tipo de promo">
-                                <button type="button" data-tipo="fija" class="activo"><i class="fa fa-lock"></i> Fija</button>
-                                <button type="button" data-tipo="elegir"><i class="fa fa-hand-pointer-o"></i> El cliente elige</button>
-                            </div>
-                            <i class="fa fa-info-circle pr-i" title="Fija: siempre los mismos productos y cantidades; en la Caja entra al tiro.&#10;El cliente elige: en la Caja se abre una ventana y se eligen los productos de la lista (se puede repetir uno), como las promos de sushi."></i>
-                            <label class="pr-elegir" id="prElegirCaja">Elige <input type="number" class="form-control" id="prElegir" min="1" max="50" value="2"> productos de la lista</label>
+                            <!-- v1.39.5 (pedido del usuario): promo fija o el cliente elige N productos de la lista (como las de sushi) -->
+                            <div class="pr-campo pr-d2"><label>Tipo de promo <i class="fa fa-info-circle pr-i" title="Fija: siempre los mismos productos y cantidades; en la Caja entra al tiro.&#10;El cliente elige: en la Caja se abre una ventana y se eligen los productos de la lista (se puede repetir uno), como las promos de sushi."></i></label>
+                                <div class="pr-tipo-btns" role="group" aria-label="Tipo de promo">
+                                    <button type="button" data-tipo="fija" class="activo"><i class="fa fa-lock"></i> Fija</button>
+                                    <button type="button" data-tipo="elegir"><i class="fa fa-hand-pointer-o"></i> El cliente elige</button>
+                                </div></div>
+                            <label class="pr-elegir pr-d4" id="prElegirCaja">El cliente elige <input type="number" class="form-control" id="prElegir" min="1" max="50" value="2"> productos de la lista de abajo</label>
                         </div>
                         <div class="pr-subt" id="prSubt">Productos de la promo</div>
                         <div class="pr-buscar">
