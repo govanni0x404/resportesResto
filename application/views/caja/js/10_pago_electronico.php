@@ -243,7 +243,10 @@
 				}
 				// v1.39.11 (pedido del usuario): sin el texto técnico del programa de pago; se explica dónde quedó y qué hacer
 				avisoHtml('Cobro sin confirmar', 'La máquina no confirmó si el pago se hizo.<br><br>La venta quedó <b>arriba</b>, en <b>cobros sin terminar</b>. '
-					+ 'Ahí usa <b>Consultar estado</b> para saber si se aprobó; si ves el comprobante aprobado, <b>Aprobar</b>; si el cliente no pagó, <b>Cancelar</b>.', 'warning');
+					+ 'Ahí usa <b>Consultar estado</b> para saber si se aprobó; si ves el comprobante aprobado, <b>Aprobar</b>; si el cliente no pagó, <b>Cancelar</b>.'
+					// v1.39.12 (pedido del usuario): la máquina tarda en informar el pago aprobado
+					+ '<br><br><i class="fa fa-clock-o"></i> <b>Ojo:</b> la máquina puede tardar <b>unos segundos</b> en informar el pago. Si al consultar dice que '
+					+ 'aún no confirma, espera un momento y vuelve a presionar <b>Consultar estado</b>.', 'warning');
 			}
 		}
 
@@ -372,7 +375,8 @@
 				}
 				if (c.resultado === 'pendiente') {
 					avisoHtml('La máquina aún no confirma', esc(c.mensaje || 'El cobro sigue sin confirmar en la máquina.')
-						+ '<br><br>Espera unos segundos y vuelve a intentar. Si ves el comprobante aprobado usa <b>Aprobar</b>; si el cliente no pagó, <b>Cancelar</b>.', 'warning');
+						+ '<br><br>La máquina puede tardar <b>unos segundos</b> en informar el pago: espera un momento y vuelve a presionar <b>Consultar estado</b>. '
+						+ 'Si ves el comprobante aprobado usa <b>Aprobar</b>; si el cliente no pagó, <b>Cancelar</b>.', 'warning');
 					return;
 				}
 				// Transbank no usa nuestro número de cobro: si el programa nunca respondió, no se sabe si se cobró
