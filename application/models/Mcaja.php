@@ -86,8 +86,8 @@ class Mcaja extends CI_Model
 		$colPedir = isset($tiene['producto']['pedir_cantidad_en_venta']) ? '(p.pedir_cantidad_en_venta IS TRUE)' : 'false';
 		// Favoritos marcados en la Carta (migración 20261110190000); sin la columna no hay favoritos
 		$colFavorito = isset($tiene['producto']['favorito']) ? '(p.favorito IS TRUE)' : 'false';
-		// v1.30.3: máximo de agregados a elegir (migración 20261123100000); 0 = sin límite
-		$colMaxAg = isset($tiene['producto']['max_agregados_web']) ? 'COALESCE(p.max_agregados_web, 0)' : '0';
+		// v1.30.3: máximo de agregados a elegir (migración 20261123100000). v1.43.0: -1 = sin límite, 0 = ninguno (ver sqlMaxAgregados)
+		$colMaxAg = self::sqlMaxAgregados(isset($tiene['producto']['max_agregados_web']), isset($tiene['producto']['varios_agregados_web']));
 		// v1.35.1: "Extras con cobro" del producto (migración 20261124150000)
 		$colMaxEx = isset($tiene['producto']['extras_web']) ? '(p.extras_web IS TRUE)' : 'false';
 		$usaUm = isset($tiene['producto']['id_umedida']) && isset($tieneUm['umedida']['nombre_umedida']);
@@ -121,7 +121,7 @@ class Mcaja extends CI_Model
 				'fraccion' => $p->fraccion === 't' || $p->fraccion === true,
 				'pedir_cantidad' => $p->pedir_cantidad === 't' || $p->pedir_cantidad === true,
 				'favorito' => $p->favorito === 't' || $p->favorito === true,
-				'max_agregados' => max(0, (int)$p->max_agregados),   // v1.30.3
+				'max_agregados' => max(-1, (int)$p->max_agregados),   // v1.30.3 / v1.43.0: -1 = sin límite, 0 = ninguno, N = hasta N
 				'extras' => $p->extras === 't' || $p->extras === true,   // v1.35.1: Extras con cobro
 				'umedida' => $this->abreviaturaUmedida($p->umedida),
 				'imagen' => isset($imagenes[(int)$p->id_producto]) ? $imagenes[(int)$p->id_producto] : null,
@@ -649,6 +649,20 @@ class Mcaja extends CI_Model
 	 *   (Configuraciones; 0 = sin tope).
 	 * Lanza Exception 400 con el motivo.
 	 */
+	/**
+	 * v1.43.0: el máximo de agregados que se pueden elegir en la Caja, con la casilla de la Carta "Permite varios agregados"
+	 * (producto.varios_agregados_web; NULL = sí) y "0 es 0" (producto.max_agregados_web: NULL = sin límite, 0 = ninguno):
+	 * -1 = sin límite, 0 = ninguno, N = hasta N. Sin la casilla marcada: uno solo (o ninguno si el máximo es 0).
+	 * Sin la migración 20261126140000, como antes (0 = sin límite).
+	 */
+	public static function sqlMaxAgregados($hayMax, $hayVarios)
+	{
+		if (!$hayMax) return '-1';
+		if (!$hayVarios) return 'CASE WHEN COALESCE(p.max_agregados_web, 0) <= 0 THEN -1 ELSE p.max_agregados_web END';
+		return 'CASE WHEN p.varios_agregados_web IS FALSE THEN (CASE WHEN p.max_agregados_web = 0 THEN 0 ELSE 1 END)
+			ELSE COALESCE(p.max_agregados_web, -1) END';
+	}
+
 	public static function revisarAgregadosElegidos($nombre, $elegidos, $idsExtra, $maxTotal, $maxCat, $maxExtras, $modoExtras)
 	{
 		$idsExtra = array_values(array_unique(array_map('intval', is_array($idsExtra) ? $idsExtra : array())));
@@ -658,7 +672,7 @@ class Mcaja extends CI_Model
 			if (!isset($porId[$id])) throw new Exception('Un agregado extra de ' . $nombre . ' no está entre los elegidos', 400);
 		}
 		if ($idsExtra && !$modoExtras) throw new Exception($nombre . ' no tiene agregados extra con cobro', 400);
-		$maxTotal = max(0, (int)$maxTotal);
+		$maxTotal = max(-1, (int)$maxTotal);   // v1.43.0: -1 = sin límite, 0 = ninguno
 		$maxCat = max(0, (int)$maxCat);
 		$maxExtras = max(0, (int)$maxExtras);
 		$s = function ($n) { return $n === 1 ? '' : 's'; };
@@ -672,6 +686,7 @@ class Mcaja extends CI_Model
 			}
 		}
 		$gratis = count($elegidos) - count($idsExtra);
+		if ($maxTotal === 0 && $elegidos) throw new Exception($nombre . ' no lleva agregados', 400);   // v1.43.0: 0 es 0
 		if ($maxTotal > 0 && $gratis > $maxTotal) {
 			throw new Exception($nombre . ' permite elegir hasta ' . $maxTotal . ' agregado' . $s($maxTotal) . ($modoExtras ? ' (los demás van como extra)' : ''), 400);
 		}
@@ -2480,7 +2495,7 @@ class Mcaja extends CI_Model
 		$selFraccion = isset($cols['producto']['permite_porcion']) ? '(p.permite_porcion IS TRUE)' : 'false';
 		// 14-11-2026: sin la columna, como el catálogo: un producto sin precio no se vende
 		$selSinPrecio = isset($cols['producto']['permitir_venta_sin_precio']) ? '(p.permitir_venta_sin_precio IS TRUE)' : 'false';
-		$selMaxAg = isset($cols['producto']['max_agregados_web']) ? 'COALESCE(p.max_agregados_web, 0)' : '0';   // v1.30.3
+		$selMaxAg = self::sqlMaxAgregados(isset($cols['producto']['max_agregados_web']), isset($cols['producto']['varios_agregados_web']));   // v1.30.3 / v1.43.0
 		$selMaxEx = isset($cols['producto']['extras_web']) ? '(p.extras_web IS TRUE)' : 'false';   // v1.35.1
 		$productos = array();
 		$q = "SELECT p.id_producto, p.nombre_producto, COALESCE(p.id_receta, 0) AS id_receta, COALESCE(p.id_bodega, 0) AS id_bodega,

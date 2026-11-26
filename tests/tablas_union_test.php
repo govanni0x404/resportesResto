@@ -70,7 +70,7 @@ foreach ($extras as $k => $e) {
 	pedir(BASE . '/Agregados/grabarNuevoAgregado', array('prod' => array('id_agregado' => $idEx, 'id_producto' => (int)$e['id_producto'],
 		'cantidad' => 1, 'vigente' => 'true', 'id_producto_maestro' => $idPrin, 'valor' => 0, 'usar_destino_impresion' => 'false')));
 }
-pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => 0));
+pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => -1));   // v1.43.0: sin límite (0 es 0)
 list(, $b) = pedir(BASE . '/Productos/promos');
 $fam = (int)((json($b)['familias'][0]['id_familia']) ?? 0);
 $suf = date('His') . mt_rand(10, 99);

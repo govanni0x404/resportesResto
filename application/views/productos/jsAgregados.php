@@ -151,10 +151,15 @@ function pintarTextoExtras() {
 function pintarResumenReglas() {
     var v = maxAg.valor, n = maxAg.activos, mx = Number(agOpc.max_extras) || 0;
     var ex = agOpc.extras && agOpc.extras_producto;
-    var t = v > 0 ? 'En la Caja elige <b>hasta ' + v + '</b>' + (ex ? ' sin costo' : '') + ' de ' + n + (n === 1 ? ' agregado' : ' agregados')
+    // v1.43.0: uno solo (sin "Permite varios agregados"), 0 = ninguno, ∞ = todos
+    var uno = !maxAg.varios;
+    if (uno) ex = false;
+    var t = v === 0 ? 'En la Caja <b>no lleva agregados</b>'
+        : uno ? 'En la Caja elige <b>1</b> de ' + n + (n === 1 ? ' agregado' : ' agregados')
+        : v > 0 ? 'En la Caja elige <b>hasta ' + v + '</b>' + (ex ? ' sin costo' : '') + ' de ' + n + (n === 1 ? ' agregado' : ' agregados')
         : 'En la Caja puede elegir <b>todos</b> (' + n + ')';
     if (ex && v > 0) t += ', y ' + (mx ? (mx === 1 ? '<b>1 extra</b>' : '<b>hasta ' + mx + ' extras</b>') : '<b>extras</b>') + ' con cobro';
-    if (ex && v === 0) t += '. <span class="text-danger">Pon un máximo para que haya extras</span>';
+    if (ex && v < 0) t += '. <span class="text-danger">Pon un máximo para que haya extras</span>';
     $('#lblMaxAgregados').html(t + '.');
     $('#lblNotaExtras').toggle(!!ex);   // v1.35.4: de dónde salen el máximo de extras y su costo
 }
@@ -872,33 +877,39 @@ $(document).on('change', '.ck-destino-propio', function () {
         .always(function () { $c.prop('disabled', false); });
 });
 
-// v1.30.3 (pedido del usuario): máximo de agregados que se pueden elegir en la Caja para este producto (0 = sin límite).
+// v1.30.3 (pedido del usuario): máximo de agregados que se pueden elegir en la Caja para este producto.
 // v1.32.2: contador - / + y botón "Sin límite"; se guarda solo al cambiar (sin botón Guardar)
-var maxAg = { id: 0, valor: 0, activos: 0, timer: null };
+// v1.43.0 (pedido del usuario): "0 es 0" (valor: -1 = sin límite ∞, 0 = ninguno, N = hasta N) y la casilla
+// "Permite varios agregados" (apagada = uno solo: el máximo y los extras no aplican y no se muestran)
+var maxAg = { id: 0, valor: -1, activos: 0, varios: true, timer: null };
 function pintarMaxAgregados() {
-    var v = maxAg.valor, n = maxAg.activos;
-    $('#txtMaxAgregados').val(v > 0 ? v : '').attr('placeholder', '∞');
-    $('#btnSinLimiteAg').toggleClass('activo', v === 0);
-    $('#bloqueMaxAgregados .ag-cont-btn[data-paso="-1"]').prop('disabled', v === 0);
+    var v = maxAg.valor;
+    $('#txtMaxAgregados').val(v >= 0 ? v : '').attr('placeholder', '∞');
+    $('#btnSinLimiteAg').toggleClass('activo', v < 0);
+    $('#bloqueMaxAgregados .ag-cont-btn[data-paso="-1"]').prop('disabled', v <= 0);
     $('#bloqueMaxAgregados .ag-cont-btn[data-paso="1"]').prop('disabled', v >= 100);
+    $('#ckPermiteVariosAg').prop('checked', maxAg.varios);
+    $('#bloqueMaxAgregados').toggleClass('sin-varios', !maxAg.varios);
     pintarResumenReglas();
     if (typeof pintarTextoExtras === 'function') pintarTextoExtras();   // v1.35.1: el texto de los extras depende del máximo
 }
 function cargarMaxAgregados(idProducto) {
-    maxAg = { id: idProducto, valor: 0, activos: 0, timer: null };
+    maxAg = { id: idProducto, valor: -1, activos: 0, varios: true, timer: null };
     $('#estadoMaxAgregados').text('').removeClass('error');
     pintarMaxAgregados();
     $.post(base_url + 'index.php/Productos/maxAgregados', { id_producto: idProducto }, null, 'json').done(function (r) {
         if (!r || !r.ok || maxAg.id !== idProducto) return;
-        maxAg.valor = r.maximo > 0 ? r.maximo : 0;
+        maxAg.valor = typeof r.maximo === 'number' ? r.maximo : -1;
+        maxAg.varios = r.varios !== false;
         maxAg.activos = r.agregados || 0;
+        $('#bloqueVariosAg').toggle(r.disponible_varios !== false);
         pintarMaxAgregados();
     });
 }
 function guardarMaxAgregados(valor) {
     var id = $('#txtID').val();
     if (!id || id === '0') return;
-    maxAg.valor = Math.max(0, Math.min(100, valor | 0));
+    maxAg.valor = Math.max(-1, Math.min(100, valor | 0));
     pintarMaxAgregados();
     clearTimeout(maxAg.timer);
     $('#estadoMaxAgregados').text('Guardando…').removeClass('error');
@@ -911,10 +922,27 @@ function guardarMaxAgregados(valor) {
         });
     }, 500);
 }
-$(document).on('click', '#bloqueMaxAgregados .ag-cont-btn', function () { guardarMaxAgregados(maxAg.valor + Number($(this).data('paso'))); });
-$(document).on('click', '#btnSinLimiteAg', function () { guardarMaxAgregados(0); });
+$(document).on('click', '#bloqueMaxAgregados .ag-cont-btn', function () {
+    var paso = Number($(this).data('paso'));
+    if (maxAg.valor < 0) { if (paso > 0) guardarMaxAgregados(1); return; }   // desde ∞: + parte en 1
+    guardarMaxAgregados(maxAg.valor + paso);
+});
+$(document).on('click', '#btnSinLimiteAg', function () { guardarMaxAgregados(-1); });
 $(document).on('input', '#txtMaxAgregados', function () { this.value = this.value.replace(/\D/g, '').slice(0, 3); });
-$(document).on('change', '#txtMaxAgregados', function () { guardarMaxAgregados(parseInt(this.value, 10) || 0); });
+$(document).on('change', '#txtMaxAgregados', function () { guardarMaxAgregados(this.value === '' ? -1 : parseInt(this.value, 10)); });
+// v1.43.0: "Permite varios agregados" (se guarda al tocarla, como Extras con cobro)
+$(document).on('change', '#ckPermiteVariosAg', function () {
+    var $c = $(this), on = $c.is(':checked');
+    $c.prop('disabled', true);
+    $.post(base_url + 'index.php/Productos/opcionesAgregados', { id_producto: $('#txtID').val(), accion: 'varios', valor: on ? 1 : 0 }, null, 'json').done(function () {
+        maxAg.varios = on;
+        pintarMaxAgregados();
+        toastr.success(on ? 'Este producto permite varios agregados' : 'Este producto lleva un solo agregado', '', { timeOut: 1800 });
+    }).fail(function (x) {
+        $c.prop('checked', !on);
+        showAppAlert('error', (x.responseJSON && x.responseJSON.error) || 'No se pudo guardar');
+    }).always(function () { $c.prop('disabled', false); });
+});
 $(document).on('keydown', '#txtMaxAgregados', function (e) {
     if (e.which === 13) { e.preventDefault(); $(this).trigger('change').blur(); }
     else if (e.which === 38 || e.which === 40) { e.preventDefault(); guardarMaxAgregados(maxAg.valor + (e.which === 38 ? 1 : -1)); }

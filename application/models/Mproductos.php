@@ -506,28 +506,50 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 		return $r && (int)$r->n > 0;
 	}
 
-	/** v1.30.3: máximo de agregados a elegir en la Caja (0 = sin límite) y cuántos agregados vigentes tiene. */
+	/**
+	 * v1.30.3: máximo de agregados a elegir en la Caja y cuántos agregados vigentes tiene.
+	 * v1.43.0: "0 es 0" (-1 = sin límite, 0 = ninguno, N = hasta N) y la casilla "Permite varios agregados"
+	 * (producto.varios_agregados_web; NULL = sí). Sin la migración 20261126140000, como antes (0 = sin límite).
+	 */
 	public function maxAgregados($idProducto)
 	{
 		$this->load->helper('tenant'); $db = get_tenant_db($this);
 		$n = $db->query('SELECT count(*) AS n FROM agregados WHERE id_producto_maestro = ? AND eliminado IS NOT TRUE AND vigente IS NOT FALSE', array((int)$idProducto))->row();
-		$max = 0;
+		$max = -1;
+		$varios = true;
 		$hay = $this->hayMaxAgregados($db);
+		$hayVarios = $this->hayColumna($db, 'producto', 'varios_agregados_web');
 		if ($hay) {
-			$r = $db->query('SELECT COALESCE(max_agregados_web, 0) AS m FROM producto WHERE id_producto = ?', array((int)$idProducto))->row();
-			$max = $r ? (int)$r->m : 0;
+			$r = $db->query('SELECT max_agregados_web AS m' . ($hayVarios ? ', (varios_agregados_web IS NOT FALSE) AS v' : '') . ' FROM producto WHERE id_producto = ?', array((int)$idProducto))->row();
+			if ($r) {
+				if ($r->m === null) $max = -1;
+				else $max = (int)$r->m === 0 && !$hayVarios ? -1 : max(0, (int)$r->m);   // antes de la migración el 0 era "sin límite"
+				if ($hayVarios) $varios = $r->v === 't' || $r->v === true;
+			}
 		}
-		return array('ok' => true, 'maximo' => max(0, $max), 'agregados' => $n ? (int)$n->n : 0, 'disponible' => $hay);
+		return array('ok' => true, 'maximo' => $max, 'varios' => $varios, 'agregados' => $n ? (int)$n->n : 0, 'disponible' => $hay, 'disponible_varios' => $hayVarios);
 	}
 
+	/** $max: -1 = sin límite (NULL), 0 = ninguno, N = hasta N (v1.43.0: 0 es 0) */
 	public function grabarMaxAgregados($idProducto, $max)
 	{
 		$this->load->helper('tenant'); $db = get_tenant_db($this);
 		if (!$this->hayMaxAgregados($db)) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
-		$max = max(0, min(100, (int)$max));
+		$max = (int)$max < 0 ? null : min(100, (int)$max);
+		if ($max === 0 && !$this->hayColumna($db, 'producto', 'varios_agregados_web')) $max = null;   // sin la migración: 0 era "sin límite"
 		$db->query('UPDATE producto SET max_agregados_web = ? WHERE id_producto = ?', array($max, (int)$idProducto));
 		if ($db->affected_rows() < 1) return array('error' => 'El producto ya no existe. Recarga la página.');
-		return array('ok' => true, 'maximo' => $max);
+		return array('ok' => true, 'maximo' => $max === null ? -1 : $max);
+	}
+
+	/** v1.43.0: casilla "Permite varios agregados" del producto (como producto.es_menu). */
+	public function grabarVariosAgregados($idProducto, $activo)
+	{
+		$this->load->helper('tenant'); $db = get_tenant_db($this);
+		if (!$this->hayColumna($db, 'producto', 'varios_agregados_web')) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
+		$db->query('UPDATE producto SET varios_agregados_web = ? WHERE id_producto = ?', array($activo ? 't' : 'f', (int)$idProducto));
+		if ($db->affected_rows() < 1) return array('error' => 'El producto ya no existe. Recarga la página.');
+		return array('ok' => true, 'varios' => (bool)$activo);
 	}
 
 	/** v1.30.2: marca o desmarca "Imprimir en su propio destino" en un agregado que ya existe (de ese producto). */

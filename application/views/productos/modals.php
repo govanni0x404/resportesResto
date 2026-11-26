@@ -63,6 +63,8 @@
 .agx-switch input:checked + .op-switch-pista { background: var(--t-primario, #15803D); }
 .agx-switch input:checked + .op-switch-pista::after { transform: translateX(18px); }
 .agx-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+/* v1.43.0: sin "Permite varios agregados", el máximo y los extras no aplican (uno solo): no se muestran */
+#bloqueMaxAgregados.sin-varios #reglaMaxAg, #bloqueMaxAgregados.sin-varios #bloqueExtrasProducto, #bloqueMaxAgregados.sin-varios #lblNotaExtras { display: none !important; }
 .agx-nota { margin-top: -8px !important; color: var(--t-texto-tenue, #6B7280) !important; }
 .agx-nota i { margin-right: 3px; }
 .agx-resumen { flex: 1 1 100%; margin-top: -4px; font-size: 12px; color: var(--t-texto-suave, #4B5563); }
@@ -972,8 +974,14 @@
                         <div class="agx-izq">
                         <!-- 1. Reglas en la Caja: máximo y extras con cobro (se guardan solos) -->
                         <div class="agx-reglas" id="bloqueMaxAgregados">
-                            <div class="agx-regla">
-                                <span class="agx-etq">Máximo a elegir <i class="fa fa-info-circle" title="Cuántos agregados puede elegir el cliente de este producto en la Caja. ∞ = todos."></i></span>
+                            <!-- v1.43.0 (pedido del usuario): como producto.es_menu, el producto dice si permite VARIOS agregados -->
+                            <label class="agx-regla agx-switch" id="bloqueVariosAg">
+                                <input id="ckPermiteVariosAg" type="checkbox">
+                                <span class="op-switch-pista" aria-hidden="true"></span>
+                                <span class="agx-etq">Permite varios agregados <i class="fa fa-info-circle" title="Encendido: el cliente puede elegir varios agregados de este producto (hasta el máximo de al lado).&#10;Apagado: un solo agregado; en la Caja, al tocar otro se cambia."></i></span>
+                            </label>
+                            <div class="agx-regla" id="reglaMaxAg">
+                                <span class="agx-etq">Máximo a elegir <i class="fa fa-info-circle" title="Cuántos agregados puede elegir el cliente de este producto en la Caja.&#10;∞ = todos. 0 = ninguno."></i></span>
                                 <div class="ag-contador ag-contador-sm" role="group" aria-label="Máximo de agregados">
                                     <button type="button" class="ag-cont-btn" data-paso="-1" title="Uno menos" aria-label="Uno menos"><i class="fa fa-minus"></i></button>
                                     <input type="text" id="txtMaxAgregados" inputmode="numeric" maxlength="3" aria-label="Máximo de agregados" autocomplete="off">

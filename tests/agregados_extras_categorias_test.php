@@ -164,7 +164,7 @@ $catDe = array();
 foreach (json($b)['agregados'] ?? array() as $a) $catDe[(int)$a['id']] = $a;
 revisar('la lista trae la categoría del producto y dónde se usa', ($catDe[$idA1]['id_categoria'] ?? 0) === $idProte && ($catDe[$idA3]['id_categoria'] ?? 0) === $idVerdu
 	&& ($catDe[$idA1]['usado'] ?? 0) >= 1);
-pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => 0));
+pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => -1));   // v1.43.0: sin límite (0 es 0)
 pedir(BASE . '/Configuraciones/guardar', array('agregados_categorias_web' => '1', 'agregados_max_categoria_web' => '1'));
 list(, $b) = pedir(BASE . '/Productos/opcionesAgregados', array('id_producto' => $idPrin));
 $o = json($b);
@@ -213,7 +213,7 @@ pedir(BASE . '/CategoriasAgregados/asignar', array('id_categoria' => $idProte, '
 pedir(BASE . '/CategoriasAgregados/asignar', array('id_categoria' => $idVerdu, 'quitar' => array($idA3)));
 pedir(BASE . '/CategoriasAgregados/guardar', array('id' => $idVerdu, 'nombre' => 'Prueba verdu ' . $suf . ' x', 'vigente' => 0));
 opcion($idPrin, array('accion' => 'extras', 'valor' => 0));
-pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => 0));
+pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => -1));   // v1.43.0: sin límite (0 es 0)
 pedir(BASE . '/Configuraciones/guardar', array('agregados_extra_web' => '0', 'agregados_categorias_web' => '0', 'agregados_max_extras_web' => '1', 'agregados_max_categoria_web' => '0'));
 list(, $b) = pedir(BASE . '/Caja/catalogo?id_lprecio=1');
 revisar('las 2 opciones quedan apagadas', (json($b)['config']['agregados_extra'] ?? null) === false && (json($b)['config']['agregados_categorias'] ?? null) === false);

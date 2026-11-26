@@ -500,6 +500,7 @@ class Productos extends CI_Controller
 		$id = (int)$this->input->post('id_producto');
 		switch ((string)$this->input->post('accion')) {
 			case 'extras': $r = $this->Mproductos->grabarExtrasProducto($id, (string)$this->input->post('valor') === '1'); break;
+			case 'varios': $r = $this->Mproductos->grabarVariosAgregados($id, (string)$this->input->post('valor') === '1'); break;   // v1.43.0
 			case 'campo': $r = $this->Mproductos->campoAgregado((int)$this->input->post('id_agregado'), $id, (string)$this->input->post('campo'), $this->input->post('valor')); break;
 			default: $r = $this->Mproductos->opcionesAgregados($id);
 		}
