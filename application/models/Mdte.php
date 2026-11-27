@@ -220,7 +220,10 @@ class Mdte extends CI_Model
 		// producto si es esa misma tasa; si no (se cambió después), el primero con esa tasa y código
 		// v1.24.0: productos elegidos de un menú (es_detalle_menu)
 		$conMenu = (bool)$db->query("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'detalle_venta' AND column_name = 'es_detalle_menu'")->row();
-		$q = $db->query("SELECT " . ($conMenu ? '(dv.es_detalle_menu IS TRUE)' : 'false') . " AS del_menu,
+		// v1.45.0: los productos de una promo (normal o de sushi) tienen sus propias marcas
+		$conPromo = (bool)$db->query("SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'detalle_venta' AND column_name = 'es_detalle_promo_web'")->row();
+		$q = $db->query("SELECT " . ($conMenu ? '(dv.es_detalle_menu IS TRUE)' : 'false')
+				. ($conPromo ? ' OR (dv.es_detalle_promo_web IS TRUE) OR (dv.es_detalle_promo_sushi_web IS TRUE)' : '') . " AS del_menu,
 				COALESCE(p.nombre_producto, 'Producto') || COALESCE(' + ' || pa.nombre_producto, '') AS nombre,
 				abs(dv.cantidad) AS cantidad, abs(dv.subtotal) AS subtotal, (COALESCE(dv.poriva, 1) = 0) AS exento,
 				COALESCE(dv.porila, 0) AS porila,

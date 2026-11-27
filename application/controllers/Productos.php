@@ -261,6 +261,16 @@ class Productos extends CI_Controller
 				$miData['id_dimpresion2_web'] = $d2 === (int)$producto['id_dimpresion'] ? 0 : $d2;   // el mismo destino no se imprime dos veces
 			}
 		}
+		// v1.44.0 (pedido del usuario): "Con Varios Agregados" (producto.varios_agregados_web), aparte de "Con Agregado" (1 a 1);
+		// son excluyentes: con varios, con_agregado queda en false. Solo si la pantalla lo mandó y la columna existe.
+		if (array_key_exists('varios_agregados_web', $producto)) {
+			$this->load->helper('tenant');
+			if (get_tenant_db($this)->field_exists('varios_agregados_web', 'producto')) {
+				$varios = (string)$producto['varios_agregados_web'] === '1';
+				$miData['varios_agregados_web'] = $varios ? 't' : 'f';
+				if ($varios) $miData['con_agregado'] = 'f';
+			}
+		}
 		// Favorito de la Caja: solo si llegó del formulario y la base ya tiene la columna (migración 20261110190000)
 		if (isset($producto['favorito']) && $this->Mproductos->tieneColumnaFavorito()) {
 			$miData['favorito'] = ((string)$producto['favorito'] === '1') ? 'true' : 'false';

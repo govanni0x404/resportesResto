@@ -411,7 +411,6 @@
                                             </div>
                                         </div>
                                     </div>
-
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
@@ -438,17 +437,6 @@
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
-                                                <input id="ckConAgregado" type="checkbox">
-                                                <label for="ckConAgregado">
-                                                    Con Agregado
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-4">
-                                        <div class="btn-group" role="group" aria-label="...">
-                                            <div class="checkbox checkbox-success checkbox-circle">
                                                 <input id="ckPermitirFraccion" type="checkbox">
                                                 <label for="ckPermitirFraccion">
                                                     Permitir Fraccion
@@ -456,9 +444,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                </fieldset>
-                                <br>
-                                <fieldset>
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
@@ -469,6 +454,9 @@
                                             </div>
                                         </div>
                                     </div>
+                                </fieldset>
+                                <br>
+                                <fieldset>
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
@@ -479,7 +467,6 @@
                                             </div>
                                         </div>
                                     </div>
-
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
@@ -490,9 +477,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                </fieldset>
-                                <br>
-                                <fieldset>
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
@@ -503,6 +487,9 @@
                                             </div>
                                         </div>
                                     </div>
+                                </fieldset>
+                                <br>
+                                <fieldset>
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
@@ -520,6 +507,31 @@
                                                 <input id="ckFavorito" type="checkbox">
                                                 <label for="ckFavorito" title="Aparece en el botón Favoritos (★) de la Caja">
                                                     Favorito En Caja
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <br>
+                                <div class="t-card-titulo" style="margin-top:6px"><i class="fa fa-plus-square"></i> Agregados <small style="font-weight:400;text-transform:none;letter-spacing:0">· marca uno u otro</small></div>
+                                <fieldset>
+                                    <div class="col-md-4">
+                                        <div class="btn-group" role="group" aria-label="...">
+                                            <div class="checkbox checkbox-success checkbox-circle">
+                                                <input id="ckConAgregado" type="checkbox">
+                                                <label for="ckConAgregado">
+                                                    Con Agregado (1 a 1) <i class="fa fa-info-circle" style="color:var(--t-primario,#15803D);cursor:help" title="Uno a uno, como siempre: en la Caja el cliente elige UN agregado de este producto (se guarda en el mismo producto).&#10;No se puede marcar junto con Con Varios Agregados."></i>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- v1.44.0 (pedido del usuario): parámetro aparte de "Con Agregado" (1 a 1); excluyentes -->
+                                    <div class="col-md-4">
+                                        <div class="btn-group" role="group" aria-label="...">
+                                            <div class="checkbox checkbox-success checkbox-circle">
+                                                <input id="ckConVariosAgregados" type="checkbox">
+                                                <label for="ckConVariosAgregados">
+                                                    Con Varios Agregados <i class="fa fa-info-circle" style="color:var(--t-primario,#15803D);cursor:help" title="En la Caja el cliente elige VARIOS agregados de este producto, hasta el máximo que pongas en Agregados del producto (también extras con cobro y categorías). Se guardan en sus propias tablas.&#10;No se puede marcar junto con Con Agregado (1 a 1)."></i>
                                                 </label>
                                             </div>
                                         </div>
@@ -974,12 +986,7 @@
                         <div class="agx-izq">
                         <!-- 1. Reglas en la Caja: máximo y extras con cobro (se guardan solos) -->
                         <div class="agx-reglas" id="bloqueMaxAgregados">
-                            <!-- v1.43.0 (pedido del usuario): como producto.es_menu, el producto dice si permite VARIOS agregados -->
-                            <label class="agx-regla agx-switch" id="bloqueVariosAg">
-                                <input id="ckPermiteVariosAg" type="checkbox">
-                                <span class="op-switch-pista" aria-hidden="true"></span>
-                                <span class="agx-etq">Permite varios agregados <i class="fa fa-info-circle" title="Encendido: el cliente puede elegir varios agregados de este producto (hasta el máximo de al lado).&#10;Apagado: un solo agregado; en la Caja, al tocar otro se cambia."></i></span>
-                            </label>
+                            <!-- v1.44.0: "Con Varios Agregados" es un parámetro del producto (Parámetros de venta); aquí solo su máximo y extras -->
                             <div class="agx-regla" id="reglaMaxAg">
                                 <span class="agx-etq">Máximo a elegir <i class="fa fa-info-circle" title="Cuántos agregados puede elegir el cliente de este producto en la Caja.&#10;∞ = todos. 0 = ninguno."></i></span>
                                 <div class="ag-contador ag-contador-sm" role="group" aria-label="Máximo de agregados">

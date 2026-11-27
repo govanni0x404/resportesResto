@@ -589,6 +589,13 @@
 	.menu-op .menu-cant { display: inline-flex; align-items: center; gap: 4px; }
 	.menu-op .menu-cant b { min-width: 18px; text-align: center; }
 	.menu-op .menu-cant .btn { padding: 1px 7px; }
+	/* v1.44.2 (pedido del usuario: "el máximo a elegir está muy pequeño"): el máximo de agregados en una etiqueta visible */
+	.ag-encabezado { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 15px; }
+	.ag-max-pill { display: inline-flex; align-items: center; padding: 3px 12px; border-radius: 999px; font-size: 14px; font-weight: 700;
+		background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); border: 1px solid var(--t-primario-borde, #BBE3C8); }
+	.ag-max-pill:empty { display: none; }
+	#modalOpciones .ag-encabezado, .ag-encabezado { font-size: 16px; }
+	h5.ag-encabezado #opcionesMaxAgregados.ag-max-pill { font-size: 15px; line-height: 1.3; padding: 5px 14px; }
 	/* v1.39.7: comentario de cada producto elegido del menú o promo */
 	.menu-op .menu-nota { flex: 0 1 260px; min-width: 120px; height: 30px; font-size: 13px; background: #fff; }
 	.caja-linea .detalle-linea.del-menu { color: var(--t-texto-suave, #4B5563); }
@@ -2439,7 +2446,7 @@
 					<hr>
 				</div>
 				<div id="opcionesAgregados" style="display:none">
-					<h5><b>Agregados</b> <small id="opcionesMaxAgregados" class="text-muted"></small></h5>
+					<h5 class="ag-encabezado"><b>Agregados</b> <span id="opcionesMaxAgregados" class="ag-max-pill"></span></h5>
 					<div class="opcion-lista" id="listaAgregados"></div>
 					<hr>
 				</div>

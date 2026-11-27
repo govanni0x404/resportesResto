@@ -60,6 +60,7 @@ foreach (json($b) ?: array() as $a) foreach ($extras as $k => $e) if ((int)$a['i
 ksort($ags);
 revisar('el producto tiene sus 3 agregados', count($ags) === 3, json_encode($ags));
 if (count($ags) < 3) terminar('agregados extra y categorías');
+pedir(BASE . '/Productos/opcionesAgregados', array('id_producto' => $idPrin, 'accion' => 'varios', 'valor' => 1));   // v1.44.0: Con Varios Agregados
 pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => 2));
 
 echo "Carta > Agregados del producto:\n";

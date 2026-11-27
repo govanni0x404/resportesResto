@@ -74,7 +74,8 @@ class Mproductos extends CI_Model
         p.vigente, p.con_agregado, p.venta_publico, p.permite_porcion, p.venta_segun_stock, p.elaboracion_propia, p.permitir_venta_sin_precio, p.venta_uno_a_uno, p.pedir_cantidad_en_venta,
         p.ver_en_dispositivos_moviles,p.permite_cortesia,
         " . ($tieneFavorito ? "(p.favorito IS TRUE)" : "false") . " AS favorito,
-        " . ($tieneDestino2 ? "COALESCE(p.id_dimpresion2_web, 0)" : "0") . " AS id_dimpresion2_web
+        " . ($tieneDestino2 ? "COALESCE(p.id_dimpresion2_web, 0)" : "0") . " AS id_dimpresion2_web,
+        " . ($this->hayColumna($this->db, 'producto', 'varios_agregados_web') ? "(p.varios_agregados_web IS TRUE)" : "false") . " AS varios_agregados
         from producto p
         join familia f on p.id_familia=f.id_familia
         join umedida u on p.id_umedida=u.id_umedida
@@ -108,6 +109,7 @@ class Mproductos extends CI_Model
 				"receta" => $key->receta,
 				'vigente' => ($key->vigente == 't' ? 'SI' : 'NO'),
 				'con_agregado' => ($key->con_agregado == 't' ? 'SI' : 'NO'),
+				'varios_agregados' => ($key->varios_agregados === 't' || $key->varios_agregados === true ? 'SI' : 'NO'),   // v1.44.0
 				'venta_publico' => ($key->venta_publico == 't' ? 'SI' : 'NO'),
 				'permite_porcion' => ($key->permite_porcion == 't' ? 'SI' : 'NO'),
 				'venta_segun_stock' => ($key->venta_segun_stock == 't' ? 'SI' : 'NO'),
@@ -509,7 +511,7 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 	/**
 	 * v1.30.3: máximo de agregados a elegir en la Caja y cuántos agregados vigentes tiene.
 	 * v1.43.0: "0 es 0" (-1 = sin límite, 0 = ninguno, N = hasta N) y la casilla "Permite varios agregados"
-	 * (producto.varios_agregados_web; NULL = sí). Sin la migración 20261126140000, como antes (0 = sin límite).
+	 * (producto.varios_agregados_web; v1.43.1: NULL = no, parte apagada en los productos nuevos). Sin la migración 20261126140000, como antes (0 = sin límite).
 	 */
 	public function maxAgregados($idProducto)
 	{
@@ -520,7 +522,7 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 		$hay = $this->hayMaxAgregados($db);
 		$hayVarios = $this->hayColumna($db, 'producto', 'varios_agregados_web');
 		if ($hay) {
-			$r = $db->query('SELECT max_agregados_web AS m' . ($hayVarios ? ', (varios_agregados_web IS NOT FALSE) AS v' : '') . ' FROM producto WHERE id_producto = ?', array((int)$idProducto))->row();
+			$r = $db->query('SELECT max_agregados_web AS m' . ($hayVarios ? ', (varios_agregados_web IS TRUE) AS v' : '') . ' FROM producto WHERE id_producto = ?', array((int)$idProducto))->row();
 			if ($r) {
 				if ($r->m === null) $max = -1;
 				else $max = (int)$r->m === 0 && !$hayVarios ? -1 : max(0, (int)$r->m);   // antes de la migración el 0 era "sin límite"
@@ -547,7 +549,8 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 	{
 		$this->load->helper('tenant'); $db = get_tenant_db($this);
 		if (!$this->hayColumna($db, 'producto', 'varios_agregados_web')) return array('error' => 'Falta actualizar la base: cierra sesión y vuelve a entrar.');
-		$db->query('UPDATE producto SET varios_agregados_web = ? WHERE id_producto = ?', array($activo ? 't' : 'f', (int)$idProducto));
+		// v1.44.0: "Con Varios Agregados" y "Con Agregado" (1 a 1) son excluyentes
+		$db->query('UPDATE producto SET varios_agregados_web = ?' . ($activo ? ', con_agregado = false' : '') . ' WHERE id_producto = ?', array($activo ? 't' : 'f', (int)$idProducto));
 		if ($db->affected_rows() < 1) return array('error' => 'El producto ya no existe. Recarga la página.');
 		return array('ok' => true, 'varios' => (bool)$activo);
 	}
@@ -598,7 +601,8 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 			ON CONFLICT DO NOTHING", array($idOrigen));
 		if ($ok === false) { $db->trans_rollback(); return array('error' => 'No se pudieron copiar los agregados'); }
 		$nuevos = $db->affected_rows();
-		$ok = $db->query("UPDATE producto p SET con_agregado = true WHERE p.id_producto = ANY($en) AND p.con_agregado IS NOT TRUE
+		$ok = $db->query("UPDATE producto p SET con_agregado = true WHERE p.id_producto = ANY($en) AND p.con_agregado IS NOT TRUE"
+			. ($this->hayColumna($db, 'producto', 'varios_agregados_web') ? ' AND p.varios_agregados_web IS NOT TRUE' : '') . "   -- v1.44.0: excluyentes
 			AND EXISTS (SELECT 1 FROM agregados a WHERE a.id_producto_maestro = p.id_producto AND a.eliminado IS NOT TRUE)");
 		if ($ok === false || $db->trans_status() === false) { $db->trans_rollback(); return array('error' => 'No se pudieron copiar los agregados'); }
 		$db->trans_commit();
@@ -612,7 +616,8 @@ if (strlen((string)$this->session->userdata("nombre_usuario")) == 0) { return ar
 	public function marcarConAgregado($idMaestro)
 	{
 		$this->load->helper('tenant'); $db = get_tenant_db($this);
-		$db->query('UPDATE producto p SET con_agregado = true WHERE p.id_producto = ? AND p.con_agregado IS NOT TRUE
+		$db->query('UPDATE producto p SET con_agregado = true WHERE p.id_producto = ? AND p.con_agregado IS NOT TRUE'
+			. ($this->hayColumna($db, 'producto', 'varios_agregados_web') ? ' AND p.varios_agregados_web IS NOT TRUE' : '') . '   -- v1.44.0: excluyentes
 			AND EXISTS (SELECT 1 FROM agregados a WHERE a.id_producto_maestro = p.id_producto AND a.eliminado IS NOT TRUE AND a.vigente IS NOT FALSE)',
 			array((int)$idMaestro));
 		return $db->affected_rows() > 0;

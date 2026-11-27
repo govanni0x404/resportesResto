@@ -139,6 +139,52 @@ list($c, , $b) = $vender($selA, 17799);
 revisar('pagar $17.799 no alcanza (el total es $17.800)', $c >= 400, "código $c: " . substr($b, 0, 200));
 list($c, $r, $b) = $vender($selA, 17800);
 revisar('cada roll con el precio de su envoltorio: $9.500 + $8.000 + salsa $300 = $17.800', $c === 200 && !empty($r['id_venta']), "código $c: " . substr($b, 0, 300));
+// v1.45.0 (pedido del usuario: "el menú déjalo como estaba; las promos en tablas aparte"): la promo de sushi se graba con sus
+// propias marcas (es_promo_sushi_web / es_detalle_promo_sushi_web) y se une en detalle_promo_sushi_web, no con las del menú
+$psqlSu = getenv('PRUEBA_PSQL') ?: '';
+$uno = function ($q) use ($psqlSu) { return trim((string)shell_exec($psqlSu . ' -At -c ' . escapeshellarg($q) . ' 2>&1')); };
+if ($psqlSu !== '') {
+	$idVsu = (int)($r['id_venta'] ?? 0);
+	$m = $uno("SELECT sum((es_promo_sushi_web IS TRUE)::int) || ',' || sum((es_detalle_promo_sushi_web IS TRUE)::int) || ',' || sum((es_menu IS TRUE OR es_detalle_menu IS TRUE)::int) || ',' || count(*) FROM detalle_venta WHERE id_venta = $idVsu");
+	$t = $uno("SELECT count(*) FROM detalle_promo_sushi_web WHERE id_venta = $idVsu AND id_producto_promo = $idPromo");
+	list($padres, $hijos, $menu, $filas) = array_map('intval', explode(',', $m . ',,,'));
+	revisar('venta directa: la promo de sushi con es_promo_sushi_web (1) y sus productos con es_detalle_promo_sushi_web, sin marcas del menú',
+		$padres === 1 && $hijos === $filas - 1 && $hijos > 0 && $menu === 0, "marcas $m");
+	revisar('y cada producto unido a la promo en detalle_promo_sushi_web', (int)$t === $hijos, "tabla $t, hijos $hijos");
+	$bolSu = html_entity_decode(strip_tags(pedir(BASE . '/Caja/ticket/' . $idVsu, null, false)[1]));
+	revisar('en la boleta los productos de la promo salen debajo con "+", como antes', mb_substr_count($bolSu, '+ ') >= $hijos, substr($bolSu, 0, 300));
+
+	// En una mesa: enviar, ver unida, cobrar
+	list(, $b) = pedir(BASE . '/Caja/mesas');
+	$mesaSu = 0;
+	foreach ((json($b)['mesas'] ?? array()) as $mm) if ($mm['estado'] === 'libre' && empty($mm['con_pedido']) && empty($mm['reserva'])) { $mesaSu = (int)$mm['id_mesa']; break; }
+	if ($mesaSu) {
+		list($c, , $b) = postJson(BASE . '/Caja/enviarMesa', array('id_mesa' => $mesaSu, 'id_lprecio' => 1, 'observacion' => '', 'detalle' => array(
+			array('id_producto' => $idPromo, 'cantidad' => 1, 'agregados' => array(), 'nota' => '', 'notas_agregados' => new stdClass(), 'menu' => array(), 'sushi' => $selA))));
+		revisar('enviar la promo de sushi a una mesa', $c === 200, "código $c: " . substr($b, 0, 200));
+		$cotSu = (int)$uno("SELECT id_cotizacion FROM mesa WHERE id_mesa = $mesaSu");
+		$m = $uno("SELECT sum((es_promo_sushi_web IS TRUE)::int) || ',' || sum((es_detalle_promo_sushi_web IS TRUE)::int) || ',' || sum((es_menu IS TRUE OR es_detalle_menu IS TRUE)::int) || ',' || sum((COALESCE(id_detalle_menu_web,0) > 0)::int) FROM detalle_cotizacion WHERE id_cotizacion = $cotSu AND vigente IS NOT FALSE");
+		$hijosMesa = (int)explode(',', $m)[1];
+		revisar('en el pedido: con sus marcas, sin las del menú ni la columna id_detalle_menu_web', strpos($m, '1,') === 0 && $hijosMesa > 0 && substr($m, -4) === ',0,0', "marcas $m");
+		revisar('y unidos en detalle_promo_sushi_web', (int)$uno("SELECT count(*) FROM detalle_promo_sushi_web d JOIN detalle_cotizacion c ON c.id_detalle_cotizacion = d.id_detalle_cotizacion_producto WHERE c.id_cotizacion = $cotSu") === $hijosMesa);
+		list(, $b) = pedir(BASE . '/Caja/detalleMesa?id_mesa=' . $mesaSu);
+		$ls = json($b)['lineas'] ?? array();
+		$padreSu = 0; $unidos = 0;
+		foreach ($ls as $l) if (!empty($l['es_menu'])) $padreSu = (int)$l['id_detalle'];
+		foreach ($ls as $l) if (!empty($l['es_detalle_menu']) && (int)$l['menu_de'] === $padreSu) $unidos++;
+		revisar('la mesa la muestra como antes: la promo y sus productos unidos debajo', $padreSu > 0 && $unidos === $hijosMesa, "unidos $unidos de $hijosMesa");
+		$totalMesa = (int)$uno("SELECT COALESCE(sum(total_bruto),0) FROM detalle_cotizacion WHERE id_cotizacion = $cotSu AND vigente IS NOT FALSE AND esanulado IS NOT TRUE AND eseliminado IS NOT TRUE");
+		list($c, $r2, $b) = postJson(BASE . '/Caja/vender', array('id_mesa' => $mesaSu, 'parcial' => null, 'id_tdocumento' => (int)$doc['id_tdocumento'], 'id_lprecio' => 1,
+			'id_cliente' => 0, 'descuento' => 0, 'propina' => 0, 'observacion' => 'PRUEBA AUTOMATICA', 'retira' => '', 'delivery' => null, 'id_delivery' => 0, 'factura' => null,
+			'detalle' => array(), 'pagos' => array(array('id_fpago' => (int)$efectivo['id_fpago'], 'monto' => $totalMesa)), 'token' => bin2hex(random_bytes(16))));
+		$idVm = (int)($r2['id_venta'] ?? 0);
+		$m = $uno("SELECT sum((es_promo_sushi_web IS TRUE)::int) || ',' || sum((es_detalle_promo_sushi_web IS TRUE)::int) || ',' || sum((es_menu IS TRUE OR es_detalle_menu IS TRUE)::int) FROM detalle_venta WHERE id_venta = $idVm");
+		revisar('cobrar la mesa ($17.800): la venta con sus marcas y unida en detalle_promo_sushi_web', $c === 200 && $totalMesa === 17800 && $m === '1,' . $hijosMesa . ',0'
+			&& (int)$uno("SELECT count(*) FROM detalle_promo_sushi_web WHERE id_venta = $idVm") === $hijosMesa, "código $c, total $totalMesa, marcas $m: " . substr($b, 0, 200));
+	} else {
+		echo "  (no hay mesa libre: no se probó la promo de sushi en la mesa)\n";
+	}
+}
 $tempura = $idEnv('TEMPURA');
 list($c, , $b) = $vender(array('grupos' => array($grupo(array($tempura)), $grupo(array($panko))), 'extras' => array(), 'salsas' => array()), 13999);
 revisar('roll con envoltorio sin precio = su parte de la promo: $4.500 + $9.500 = $14.000 ($13.999 no alcanza)', $c >= 400, "código $c");

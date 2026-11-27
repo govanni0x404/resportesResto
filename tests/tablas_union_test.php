@@ -70,6 +70,7 @@ foreach ($extras as $k => $e) {
 	pedir(BASE . '/Agregados/grabarNuevoAgregado', array('prod' => array('id_agregado' => $idEx, 'id_producto' => (int)$e['id_producto'],
 		'cantidad' => 1, 'vigente' => 'true', 'id_producto_maestro' => $idPrin, 'valor' => 0, 'usar_destino_impresion' => 'false')));
 }
+pedir(BASE . '/Productos/opcionesAgregados', array('id_producto' => $idPrin, 'accion' => 'varios', 'valor' => 1));   // v1.44.0: Con Varios Agregados
 pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => -1));   // v1.43.0: sin límite (0 es 0)
 list(, $b) = pedir(BASE . '/Productos/promos');
 $fam = (int)((json($b)['familias'][0]['id_familia']) ?? 0);
@@ -159,6 +160,10 @@ revisar('detalle_promo_web: la promo fija con sus 2 productos (1 y 2) y la "elig
 	count($deFija) === 2 && (float)$deFija[1][3] === 2.0 && count($deElige) === 2 && $deElige[0][4] === 'sin cebolla', json_encode($pr));
 $colPromo = (int)uno("SELECT count(*) FROM detalle_cotizacion WHERE id_detalle_cotizacion IN (SELECT id_detalle_cotizacion_producto FROM detalle_promo_web) AND id_cotizacion = $cot AND COALESCE(id_detalle_menu_web,0) > 0");
 revisar('los productos de la promo ya no usan la columna id_detalle_menu_web', $colPromo === 0);
+// v1.45.0: la promo con sus propias marcas, no las del menú
+$mc = uno("SELECT sum((es_promo_web IS TRUE)::int) || ',' || sum((es_detalle_promo_web IS TRUE)::int) || ',' || sum((es_menu IS TRUE OR es_detalle_menu IS TRUE)::int)
+	FROM detalle_cotizacion WHERE id_cotizacion = $cot AND (id_producto IN ($idFija, $idElige) OR id_detalle_cotizacion IN (SELECT id_detalle_cotizacion_producto FROM detalle_promo_web))");
+revisar('en el pedido: 2 filas es_promo_web, 4 es_detalle_promo_web y ninguna con es_menu / es_detalle_menu (el menú queda solo para el menú)', $mc === '2,4,0', "marcas $mc");
 
 list(, $b) = pedir(BASE . '/Caja/detalleMesa?id_mesa=' . $mesa);
 $porId = array();
@@ -204,6 +209,8 @@ $okV = (int)uno("SELECT count(*) FROM detalle_agregado_web a JOIN detalle_venta 
 $flagsV = uno("SELECT (sum((es_con_agregados_web IS TRUE)::int))::text || ',' || (sum((es_agregado_web IS TRUE)::int))::text FROM detalle_venta WHERE id_venta = $idVenta");
 revisar('la venta cobrada también queda anotada: 2 agregados y 4 productos de promos, apuntando a sus filas de detalle_venta, con sus marcas',
 	$agV === 2 && $prV === 4 && $okV === 2 && $flagsV === '1,2', "agregados $agV, promos $prV, unidos $okV, marcas $flagsV");
+$mv = uno("SELECT sum((es_promo_web IS TRUE)::int) || ',' || sum((es_detalle_promo_web IS TRUE)::int) || ',' || sum((es_menu IS TRUE OR es_detalle_menu IS TRUE)::int) FROM detalle_venta WHERE id_venta = $idVenta");
+revisar('en la venta cobrada: 2 es_promo_web, 4 es_detalle_promo_web y nada con las marcas del menú', $mv === '2,4,0', "marcas $mv");
 
 echo "Venta directa:\n";
 list($c, $r, $b) = postJson(BASE . '/Caja/vender', array('id_mesa' => 0, 'parcial' => null, 'id_tdocumento' => (int)$doc['id_tdocumento'], 'id_lprecio' => 1,
@@ -219,6 +226,9 @@ revisar('en la boleta los agregados salen debajo del producto con "+"', mb_subst
 revisar('quedan anotados 3 agregados (orden 1, 2 y 3) y 1 producto de la promo con cantidad 2',
 	uno("SELECT string_agg(orden::text, ',' ORDER BY orden) FROM detalle_agregado_web WHERE id_venta = $idV2") === '1,2,3'
 	&& uno("SELECT string_agg(cantidad::int::text, ',') FROM detalle_promo_web WHERE id_venta = $idV2") === '2');
+$mv2 = uno("SELECT sum((es_promo_web IS TRUE)::int) || ',' || sum((es_detalle_promo_web IS TRUE)::int) || ',' || sum((es_menu IS TRUE OR es_detalle_menu IS TRUE)::int) FROM detalle_venta WHERE id_venta = $idV2");
+revisar('venta directa: la promo con es_promo_web / es_detalle_promo_web, sin las marcas del menú', $mv2 === '1,1,0', "marcas $mv2");
+revisar('en la boleta el producto de la promo sale debajo con "+"', mb_strpos(html_entity_decode(strip_tags($bol)), '+ ' . $op[2]['nombre']) !== false || mb_substr_count(html_entity_decode(strip_tags($bol)), '+ ') >= 4);
 
 pedir(BASE . '/Productos/grabarPromo', array('id_producto' => $idFija, 'nombre' => 'UNION FIJA ' . $suf, 'precio' => 3000, 'id_familia' => $fam, 'vigente' => 0, 'elegir' => 0,
 	'items' => array(array('id_producto' => $a['id_producto'], 'cantidad' => 1))));

@@ -219,7 +219,9 @@ class Manalitica extends CI_Model
 		$dm = $this->columnasDe('detalle_venta');
 		$prod = "(SELECT string_agg(trim(to_char(dv.cantidad, 'FM999990.999'), '.') || ' x ' || COALESCE(p.nombre_producto, 'Producto ' || dv.id_producto), ' · ' ORDER BY dv.id_detalle_venta)
 			FROM detalle_venta dv LEFT JOIN producto p ON p.id_producto = dv.id_producto WHERE dv.id_venta = b.id_venta"
-			. (isset($dm['es_detalle_menu']) ? ' AND dv.es_detalle_menu IS NOT TRUE' : '') . ")";
+			. (isset($dm['es_detalle_menu']) ? ' AND dv.es_detalle_menu IS NOT TRUE' : '')
+			// v1.45.0: los productos de una promo, con sus propias marcas, tampoco se listan (sale la promo)
+			. (isset($dm['es_detalle_promo_web']) ? ' AND dv.es_detalle_promo_web IS NOT TRUE AND dv.es_detalle_promo_sushi_web IS NOT TRUE' : '') . ")";
 		$filas = $this->q("$cte SELECT b.id_venta, COALESCE(v.folio, 0) AS folio, COALESCE(td.nombre_tdocumento, 'Venta') AS documento,
 				to_char(b.fecha_transaccion, 'DD-MM-YYYY HH24:MI') AS fecha, COALESCE($nombre, 'Mesa ' || b.id_mesa) AS mesa,
 				" . ($rec ? "COALESCE(r.nombre_recinto, 'Sin recinto')" : "'Sin recinto'::text") . " AS recinto,

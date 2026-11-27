@@ -228,7 +228,8 @@ function ListadoCartaDeProductos() {
 
         $('#ckVigente').prop('checked', rowData[0].vigente == 'SI');
         $('#ckConAgregado').prop('checked', rowData[0].con_agregado == 'SI');
-        conAgregadoEnBase = rowData[0].con_agregado == 'SI';   // v1.34.1
+        $('#ckConVariosAgregados').prop('checked', rowData[0].varios_agregados == 'SI');   // v1.44.0
+        conAgregadoEnBase = rowData[0].con_agregado == 'SI' || rowData[0].varios_agregados == 'SI';   // v1.34.1
         $('#ckVentaPublico').prop('checked', rowData[0].venta_publico == 'SI');
         $('#ckPermitirFraccion').prop('checked', rowData[0].permite_porcion == 'SI');
         $('#ckVentaPorStock').prop('checked', rowData[0].venta_segun_stock == 'SI');
@@ -240,7 +241,7 @@ function ListadoCartaDeProductos() {
         $('#ckPermiteCortesia').prop('checked', rowData[0].permite_cortesia == 'SI');
         $('#ckFavorito').prop('checked', rowData[0].favorito == 'SI');
         
-        if (rowData[0].con_agregado == 'SI') {
+        if (rowData[0].con_agregado == 'SI' || rowData[0].varios_agregados == 'SI') {
             $("#btnAgregados").attr("disabled", false);
         } else {
             $("#btnAgregados").attr("disabled", true);
@@ -278,6 +279,7 @@ function crearNuevoProducto() {
     $('#ckPermitirVentaSiempre').prop('checked', false);
     $('#ckVentaDirecta').prop('checked', false);
     $('#ckConAgregado').prop('checked', false);
+    $('#ckConVariosAgregados').prop('checked', false);   // v1.44.0: parte apagado
     conAgregadoEnBase = false;   // v1.34.1
     $('#ckPermitirFraccion').prop('checked', false);
     $('#ckVentaPorStock').prop('checked', false);
@@ -301,10 +303,12 @@ function crearNuevoProducto() {
 
 // v1.34.1: delegado. Este archivo se carga antes que la ventana (productos/modals.php), así que el enlace directo no
 // encontraba la casilla y marcar "Con Agregado" nunca habilitaba el botón Agregados del producto.
-$(document).on('change', '#ckConAgregado', function() {
+// v1.44.0 (pedido del usuario): "Con Agregado" (1 a 1) y "Con Varios Agregados" son excluyentes: marcar uno desmarca el otro
+$(document).on('change', '#ckConAgregado, #ckConVariosAgregados', function() {
     var idProducto = $('#txtID').val();
+    if (this.checked) $(this.id === 'ckConAgregado' ? '#ckConVariosAgregados' : '#ckConAgregado').prop('checked', false);
     
-    if ($('#ckConAgregado').prop('checked') && idProducto && idProducto != "") {
+    if (($('#ckConAgregado').prop('checked') || $('#ckConVariosAgregados').prop('checked')) && idProducto && idProducto != "") {
         $("#btnAgregados").attr("disabled", false);
     } else {
         $("#btnAgregados").attr("disabled", true);
@@ -470,7 +474,7 @@ function GrabarProducto() {
         return;
     }
 
-    debeAbrirAgregados = $('#ckConAgregado').is(":checked");
+    debeAbrirAgregados = $('#ckConAgregado').is(":checked") || $('#ckConVariosAgregados').is(":checked");
     console.log("¿Debe abrir agregados?:", debeAbrirAgregados);
 
     // Preparar datos del producto
@@ -495,6 +499,7 @@ function GrabarProducto() {
         'stock_minimo': 0,
         'cbarra_balanza': 0,
         'con_agregado': $('#ckConAgregado').is(":checked") ? 1 : 0,
+        'varios_agregados_web': $('#ckConVariosAgregados').is(":checked") ? 1 : 0,   // v1.44.0
         'venta_publico': $('#ckVentaPublico').is(":checked") ? 1 : 0,
         'descripcion_corta': "",
         'permite_porcion': $('#ckPermitirFraccion').is(":checked") ? 1 : 0,

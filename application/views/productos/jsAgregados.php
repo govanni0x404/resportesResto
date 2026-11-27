@@ -155,7 +155,7 @@ function pintarResumenReglas() {
     var uno = !maxAg.varios;
     if (uno) ex = false;
     var t = v === 0 ? 'En la Caja <b>no lleva agregados</b>'
-        : uno ? 'En la Caja elige <b>1</b> de ' + n + (n === 1 ? ' agregado' : ' agregados')
+        : uno ? '<b>Con Agregado (1 a 1)</b>: en la Caja elige <b>1</b> de ' + n + (n === 1 ? ' agregado' : ' agregados')
         : v > 0 ? 'En la Caja elige <b>hasta ' + v + '</b>' + (ex ? ' sin costo' : '') + ' de ' + n + (n === 1 ? ' agregado' : ' agregados')
         : 'En la Caja puede elegir <b>todos</b> (' + n + ')';
     if (ex && v > 0) t += ', y ' + (mx ? (mx === 1 ? '<b>1 extra</b>' : '<b>hasta ' + mx + ' extras</b>') : '<b>extras</b>') + ' con cobro';
@@ -645,7 +645,8 @@ function DeshabilitarAgregado(id) {
 var conAgregadoEnBase = false;
 function agregadoGrabadoEnProducto() {
     conAgregadoEnBase = true;
-    $('#ckConAgregado').prop('checked', true);
+    // v1.44.0: un producto "Con Varios Agregados" no se marca "Con Agregado" (son excluyentes)
+    if (!$('#ckConVariosAgregados').is(':checked')) $('#ckConAgregado').prop('checked', true);
     $('#btnAgregados').attr('disabled', false);
     if (typeof tablaCartaProductos !== 'undefined') tablaCartaProductos.ajax.reload(null, false);
 }
@@ -657,7 +658,7 @@ $(document).ready(function() {
         if (typeof debeAbrirAgregados !== 'undefined' && debeAbrirAgregados) return;
         if (!conAgregadoEnBase) {
             $('#ckConAgregado').prop('checked', false);
-            $('#btnAgregados').attr('disabled', true);
+            if (!$('#ckConVariosAgregados').is(':checked')) $('#btnAgregados').attr('disabled', true);
         }
     });
     $('#ModalAgregadosDelProducto').on('hidden.bs.modal', function(e) {
@@ -881,28 +882,32 @@ $(document).on('change', '.ck-destino-propio', function () {
 // v1.32.2: contador - / + y botón "Sin límite"; se guarda solo al cambiar (sin botón Guardar)
 // v1.43.0 (pedido del usuario): "0 es 0" (valor: -1 = sin límite ∞, 0 = ninguno, N = hasta N) y la casilla
 // "Permite varios agregados" (apagada = uno solo: el máximo y los extras no aplican y no se muestran)
-var maxAg = { id: 0, valor: -1, activos: 0, varios: true, timer: null };
+var maxAg = { id: 0, valor: -1, activos: 0, varios: false, timer: null };   // v1.43.1: parte apagada
 function pintarMaxAgregados() {
     var v = maxAg.valor;
     $('#txtMaxAgregados').val(v >= 0 ? v : '').attr('placeholder', '∞');
     $('#btnSinLimiteAg').toggleClass('activo', v < 0);
     $('#bloqueMaxAgregados .ag-cont-btn[data-paso="-1"]').prop('disabled', v <= 0);
     $('#bloqueMaxAgregados .ag-cont-btn[data-paso="1"]').prop('disabled', v >= 100);
-    $('#ckPermiteVariosAg').prop('checked', maxAg.varios);
     $('#bloqueMaxAgregados').toggleClass('sin-varios', !maxAg.varios);
+    // v1.44.1 (pedido del usuario): "Con Agregado (1 a 1)" es el original: sin máximo ni recuadro (siempre elige uno)
+    $('#bloqueMaxAgregados').toggle(!!maxAg.varios);
     pintarResumenReglas();
     if (typeof pintarTextoExtras === 'function') pintarTextoExtras();   // v1.35.1: el texto de los extras depende del máximo
 }
 function cargarMaxAgregados(idProducto) {
-    maxAg = { id: idProducto, valor: -1, activos: 0, varios: true, timer: null };
+    maxAg = { id: idProducto, valor: -1, activos: 0, varios: false, timer: null };
     $('#estadoMaxAgregados').text('').removeClass('error');
     pintarMaxAgregados();
     $.post(base_url + 'index.php/Productos/maxAgregados', { id_producto: idProducto }, null, 'json').done(function (r) {
         if (!r || !r.ok || maxAg.id !== idProducto) return;
         maxAg.valor = typeof r.maximo === 'number' ? r.maximo : -1;
-        maxAg.varios = r.varios !== false;
+        maxAg.varios = r.varios === true;
+        // v1.44.1: manda lo marcado en la ficha del producto (aunque aún no se grabe): Con Agregado (1 a 1) o Con Varios Agregados
+        if ($('#ckConVariosAgregados').length && ($('#ckConVariosAgregados').is(':checked') || $('#ckConAgregado').is(':checked'))) {
+            maxAg.varios = $('#ckConVariosAgregados').is(':checked');
+        }
         maxAg.activos = r.agregados || 0;
-        $('#bloqueVariosAg').toggle(r.disponible_varios !== false);
         pintarMaxAgregados();
     });
 }
@@ -930,19 +935,7 @@ $(document).on('click', '#bloqueMaxAgregados .ag-cont-btn', function () {
 $(document).on('click', '#btnSinLimiteAg', function () { guardarMaxAgregados(-1); });
 $(document).on('input', '#txtMaxAgregados', function () { this.value = this.value.replace(/\D/g, '').slice(0, 3); });
 $(document).on('change', '#txtMaxAgregados', function () { guardarMaxAgregados(this.value === '' ? -1 : parseInt(this.value, 10)); });
-// v1.43.0: "Permite varios agregados" (se guarda al tocarla, como Extras con cobro)
-$(document).on('change', '#ckPermiteVariosAg', function () {
-    var $c = $(this), on = $c.is(':checked');
-    $c.prop('disabled', true);
-    $.post(base_url + 'index.php/Productos/opcionesAgregados', { id_producto: $('#txtID').val(), accion: 'varios', valor: on ? 1 : 0 }, null, 'json').done(function () {
-        maxAg.varios = on;
-        pintarMaxAgregados();
-        toastr.success(on ? 'Este producto permite varios agregados' : 'Este producto lleva un solo agregado', '', { timeOut: 1800 });
-    }).fail(function (x) {
-        $c.prop('checked', !on);
-        showAppAlert('error', (x.responseJSON && x.responseJSON.error) || 'No se pudo guardar');
-    }).always(function () { $c.prop('disabled', false); });
-});
+// v1.44.0: "Con Varios Agregados" se marca en Parámetros de venta del producto (jsProductos); aquí solo se lee
 $(document).on('keydown', '#txtMaxAgregados', function (e) {
     if (e.which === 13) { e.preventDefault(); $(this).trigger('change').blur(); }
     else if (e.which === 38 || e.which === 40) { e.preventDefault(); guardarMaxAgregados(maxAg.valor + (e.which === 38 ? 1 : -1)); }
