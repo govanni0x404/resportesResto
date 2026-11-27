@@ -8,6 +8,18 @@ class Mdashboard extends CI_Model
         parent::__construct();
     }
 
+    /**
+     * v1.38.2 (pedido del usuario): las ventas del Dashboard se cuentan por el DÍA DE CADA VENTA (hora de Chile o la de
+     * RESTO_ZONA_HORARIA), no por el día en que se abrió su caja. Antes, lo vendido hoy en una caja abierta otro día no salía
+     * "hoy". Los resúmenes propios de cada caja (fondo, ingresos, retiros, PDF) siguen por la caja.
+     */
+    private function diaVenta($alias)
+    {
+        $tz = date_default_timezone_get();
+        if (!in_array($tz, timezone_identifiers_list(), true)) $tz = 'America/Santiago';
+        return "(" . preg_replace('/[^a-z0-9_]/i', '', $alias) . ".fecha_transaccion AT TIME ZONE '" . $tz . "')::date";
+    }
+
     public function empresa()
     {
         if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
@@ -37,7 +49,7 @@ class Mdashboard extends CI_Model
         $q = "SELECT coalesce(sum(v.total), 0) as total
 			from venta v
 			join caja c on v.id_caja = c.id_caja
-			where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and c.fecha between ? and ?";
+			where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and {$this->diaVenta('v')} between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and c.id_caja = " . (int)$id_caja;
         }
@@ -100,7 +112,7 @@ class Mdashboard extends CI_Model
         from venta v
         join tdocumento td on v.id_tdocumento = td.id_tdocumento
         join caja c on v.id_caja = c.id_caja
-        where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and c.fecha between ? and ?";
+        where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and {$this->diaVenta('v')} between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and c.id_caja = " . (int)$id_caja . "
             group by td.id_tdocumento";
@@ -130,7 +142,7 @@ class Mdashboard extends CI_Model
 			join fpago fp on pv.id_fpago = fp.id_fpago
 			join venta v on pv.id_venta = v.id_venta
 			join caja c on v.id_caja = c.id_caja
-			where COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and fp.escortesia = false and c.fecha between ? and ?";
+			where COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and fp.escortesia = false and {$this->diaVenta('v')} between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and c.id_caja = " . (int)$id_caja . "
 			group by fp.id_fpago
@@ -162,7 +174,7 @@ class Mdashboard extends CI_Model
 			join fpago fp on pv.id_fpago = fp.id_fpago
 			join venta v on pv.id_venta = v.id_venta
 			join caja c on v.id_caja = c.id_caja
-			where COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and fp.escortesia = true and c.fecha between ? and ?";
+			where COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and fp.escortesia = true and {$this->diaVenta('v')} between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and c.id_caja = " . (int)$id_caja . "
 			group by fp.id_fpago
@@ -287,7 +299,7 @@ class Mdashboard extends CI_Model
         join usuario u on co.id_usuario = u.id_usuario
         join venta v on co.id_venta = v.id_venta
         join caja ca on v.id_caja = ca.id_caja
-        where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and ca.fecha  between ? and ?";
+        where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and {$this->diaVenta('v')} between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and v.id_caja = " . (int)$id_caja . "
             group by u.nombre_usuario, co.venta_directa";
@@ -347,7 +359,7 @@ class Mdashboard extends CI_Model
                 join detalle_venta dv on p.id_producto = dv.id_producto
                 join venta v on dv.id_venta = v.id_venta
                 join caja ca on v.id_caja = ca.id_caja
-                where ca.fecha between ? and ?" . $filtroCaja . "
+                where {$this->diaVenta('v')} between ? and ?" . $filtroCaja . "
                     and COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%'
                     and EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago
                         WHERE pv.id_venta = v.id_venta AND fp.escortesia = false)
@@ -382,7 +394,7 @@ class Mdashboard extends CI_Model
 			join producto p on dv.id_producto = p.id_producto
 			join familia f on p.id_familia = f.id_familia
 			join caja ca on v.id_caja = ca.id_caja
-			where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and ca.fecha between ? and ?";
+			where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and {$this->diaVenta('v')} between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and ca.id_caja = " . (int)$id_caja . "
 			group by f.id_familia";
@@ -436,7 +448,7 @@ class Mdashboard extends CI_Model
         join detalle_venta dv on p.id_producto = dv.id_producto
         join venta v on dv.id_venta = v.id_venta
         join caja ca on v.id_caja = ca.id_caja
-        where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and ca.fecha between ? and ? and f.id_familia = " . (int)$id_familia;
+        where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and {$this->diaVenta('v')} between ? and ? and f.id_familia = " . (int)$id_familia;
         if ($id_caja > 0) {
             $q = $q . " and ca.id_caja = " . (int)$id_caja . "
                 group by p.nombre_producto";
@@ -485,7 +497,7 @@ class Mdashboard extends CI_Model
             round(sum(v.total)) as monto_total
             from venta v
 			join caja c on v.id_caja = c.id_caja
-			where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and c.fecha between ? and ?";
+			where EXISTS (SELECT 1 FROM pago_venta pv JOIN fpago fp ON fp.id_fpago = pv.id_fpago WHERE pv.id_venta = v.id_venta AND fp.escortesia = false) AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and {$this->diaVenta('v')} between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and c.id_caja = " . (int)$id_caja . "
 				group by v.id_mesa
@@ -785,7 +797,7 @@ class Mdashboard extends CI_Model
         from venta vee 
         join caja caa on vee.id_caja = caa.id_caja
         join cliente c on vee.id_cliente = c.id_cliente 
-        where vee.monto_descuento>0 and caa.fecha between ? and ?";
+        where vee.monto_descuento>0 and {$this->diaVenta('vee')} between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and vee.id_caja = " . (int)$id_caja . " 
 			order by vee.id_venta asc";
@@ -813,8 +825,8 @@ class Mdashboard extends CI_Model
         JOIN usuario u ON V.id_usuario_garzon=u.id_usuario
         JOIN fpago fp ON V.id_fpagopropina=fp.id_fpago
         JOIN caja ca ON ca.id_caja = v.id_caja
-        -- 16-11-2026: por la fecha de la caja, como el resto del Dashboard (antes venta.fecha: 17.637 vs 22.266)
-        where COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and ca.fecha between ? and ?";
+        -- v1.38.2: por el día de cada venta, como el resto de las ventas del Dashboard
+        where COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' and {$this->diaVenta('v')} between ? and ?";
         if ($id_caja > 0) {
             $q = $q . " and v.id_caja = " . (int)$id_caja . " ";
         }

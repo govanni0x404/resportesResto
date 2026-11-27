@@ -148,8 +148,8 @@
 			// v1.24.0: menú: por cada categoría sus productos, con la cantidad elegida (lo de la línea al editarla)
 			opcionesMenu = menuDe(id);
 			$('#opcionesMenu').toggle(!!opcionesMenu);
-			menuElegido = {};
-			if (opcionesMenu && linea && linea.menu) $.each(linea.menu, function (i, e) { menuElegido[e.id] = e.cantidad; });
+			menuElegido = {}; menuNotas = {};
+			if (opcionesMenu && linea && linea.menu) $.each(linea.menu, function (i, e) { menuElegido[e.id] = e.cantidad; if (e.nota) menuNotas[e.id] = e.nota; });
 			pintarMenuOpciones();
 
 			var ags = agregadosDe(id);
@@ -158,16 +158,23 @@
 			// v1.24.9: con muchos agregados (o un menú) la ventana se ensancha y van en cuadrícula hacia el lado
 			$('#modalOpciones').toggleClass('opciones-ancho', ags.length > 4 || mensajesDe(id).length > 6 || !!opcionesMenu);
 			// v1.30.3: máximo de agregados de este producto (Carta > Agregados); 0 = sin límite
-			var maxAg = Number(p.max_agregados) || 0;
-			$('#opcionesMaxAgregados').text(maxAg > 0 && ags.length > maxAg ? 'Elige hasta ' + maxAg : '');
-			$('#listaAgregados').html($.map(ags, function (a) {
+			// v1.35.0: el orden en que se marcan importa: los primeros (hasta el máximo) van sin costo y los que siguen,
+			// si "Agregados extra" está activado, van como extra con su precio extra. Al editar: primero los sin costo.
+			agOrden = linea ? $.grep(linea.agregados, function (x) { return $.inArray(x, linea.extras || []) < 0; }).concat(linea.extras || []) : [];
+			var itemAg = function (a) {
 				var marcado = linea && $.inArray(a.id_agregado, linea.agregados) >= 0;
 				// 19-11-2026: cada agregado marcado puede llevar su propio mensaje para la comanda (ej. Palta: sin sal)
 				var notaAg = linea && linea.notas_agregados ? (linea.notas_agregados[a.id_agregado] || '') : '';
 				// Estructura del tema (checkbox-success): el input va antes del label
-				return '<div class="ag-item' + (marcado ? ' marcado' : '') + '"><div class="checkbox checkbox-success"><input type="checkbox" class="chk-agregado" id="ag' + a.id_agregado + '" value="' + a.id_agregado + '"' + (marcado ? ' checked' : '') + '>'
-					+ '<label for="ag' + a.id_agregado + '">' + esc(a.nombre) + (a.valor ? ' <span class="valor">+' + fmt(a.valor) + '</span>' : '') + '</label></div>'
+				return '<div class="ag-item' + (marcado ? ' marcado' : '') + '" data-id="' + a.id_agregado + '"><div class="checkbox checkbox-success"><input type="checkbox" class="chk-agregado" id="ag' + a.id_agregado + '" value="' + a.id_agregado + '"' + (marcado ? ' checked' : '') + '>'
+					+ '<label for="ag' + a.id_agregado + '">' + esc(a.nombre) + ' <span class="valor"></span></label></div>'
 					+ '<input type="text" class="form-control input-sm ag-nota" data-id="' + a.id_agregado + '" maxlength="60" placeholder="Mensaje para ' + esc(a.nombre) + ' (opcional)" value="' + esc(notaAg) + '"' + (marcado ? '' : ' style="display:none"') + '></div>';
+			};
+			// v1.35.0 (pedido del usuario): con "Categorías de agregados" activado, cada categoría en su cuadro con su nombre
+			var grupos = gruposAgregados(ags);
+			$('#listaAgregados').toggleClass('con-categorias', !!grupos).html(!grupos ? $.map(ags, itemAg).join('') : $.map(grupos, function (g) {
+				return '<div class="ag-cat ag-color-' + g.color + '" data-cat="' + g.id + '"><div class="ag-cat-titulo"><span>' + esc(g.nombre) + '</span><small class="ag-cat-regla"></small></div>'
+					+ '<div class="ag-cat-lista">' + $.map(g.agregados, itemAg).join('') + '</div></div>';
 			}).join(''));
 			limitarAgregados();
 
@@ -189,7 +196,8 @@
 		function precioOpciones() {
 			var p = producto(opcionEdicion.id_producto);
 			var precio = p.precio;
-			$('#listaAgregados .chk-agregado:checked').each(function () { precio += agregado(Number(this.value)).valor; });
+			var cl = clasificarAgregados(p, agOrden);   // v1.35.1: con extras con cobro, solo los extra cobran
+			$('#listaAgregados .chk-agregado:checked').each(function () { precio += valorAgregadoOpciones(p, cl, agregado(Number(this.value))); });
 			// v1.24.0: adicionales de lo elegido del menú
 			if (opcionesMenu) $.each(menuElegido, function (idDet, q) { var o = opcionMenu(opcionesMenu, Number(idDet)); if (o) precio += o.adicional * q; });
 			$('#opcionesPrecio').text(fmt(precio));
@@ -197,6 +205,7 @@
 
 		// ---- v1.24.0: armar el menú ----
 		var opcionesMenu = null, menuElegido = {};   // menú del producto abierto en Opciones y {id_detalle: cantidad}
+		var menuNotas = {};   // v1.39.7 (pedido del usuario): comentario de cada producto elegido {id_detalle: texto}; sale en la comanda
 		function reglaCategoria(c) {
 			if (c.max === 1) return 'Elige 1';
 			if (c.min > 0 && c.max > 0) return c.min === c.max ? 'Elige ' + c.max : 'Elige de ' + c.min + ' a ' + c.max;
@@ -219,6 +228,7 @@
 						var q = menuElegido[o.id] || 0;
 						return '<div class="menu-op' + (q ? ' elegida' : '') + '" data-id="' + o.id + '" data-cat="' + c.id + '">'
 							+ '<span class="nombre">' + esc(o.nombre) + (o.adicional ? ' <span class="adicional">+' + fmt(o.adicional) + '</span>' : '') + '</span>'
+							+ (q ? '<input type="text" class="form-control input-sm menu-nota" maxlength="80" placeholder="Comentario (ej: sin cebolla)" value="' + esc(menuNotas[o.id] || '') + '" aria-label="Comentario de ' + esc(o.nombre) + '">' : '')
 							+ (c.max === 1 ? '<i class="fa ' + (q ? 'fa-dot-circle-o' : 'fa-circle-o') + '"></i>'
 								: '<span class="menu-cant"><button type="button" class="btn btn-default btn-xs menu-menos"' + (q ? '' : ' disabled') + '><i class="fa fa-minus"></i></button><b>' + q + '</b>'
 									+ '<button type="button" class="btn btn-default btn-xs menu-mas"><i class="fa fa-plus"></i></button></span>')
@@ -231,7 +241,13 @@
 			return $.grep(opcionesMenu ? opcionesMenu.categorias : [], function (c) { return c.id === idCat; })[0];
 		}
 		// Elegir: en una categoría de "elige 1" se cambia la elección; en las demás se suma, sin pasar del máximo
+		// v1.39.7: el comentario se escribe sin volver a pintar (no pierde el foco) y al tocarlo no cambia la elección
+		$('#listaMenu').on('input', '.menu-nota', function () {
+			var id = Number($(this).closest('.menu-op').data('id')), t = $.trim($(this).val());
+			if (t) menuNotas[id] = t; else delete menuNotas[id];
+		}).on('click keydown', '.menu-nota', function (e) { e.stopPropagation(); });
 		$('#listaMenu').on('click', '.menu-op', function (e) {
+			if ($(e.target).closest('.menu-nota').length) return;
 			var c = categoriaMenu(Number($(this).data('cat'))), id = Number($(this).data('id'));
 			if (!c) return;
 			var menos = $(e.target).closest('.menu-menos').length > 0;
@@ -255,7 +271,12 @@
 				var n = elegidosEn(c);
 				if (!error && c.estricto && n < c.min) error = 'En ' + c.nombre + ' hay que elegir ' + (c.min === 1 ? '1 producto' : 'al menos ' + c.min);
 				if (!error && c.max > 0 && n > c.max) error = 'En ' + c.nombre + ' se pueden elegir hasta ' + c.max;
-				$.each(c.opciones, function (j, o) { if (menuElegido[o.id]) res.push({ id: o.id, cantidad: menuElegido[o.id] }); });
+				$.each(c.opciones, function (j, o) {
+					if (!menuElegido[o.id]) return;
+					var e = { id: o.id, cantidad: menuElegido[o.id] };
+					if (menuNotas[o.id]) e.nota = menuNotas[o.id];   // v1.39.7
+					res.push(e);
+				});
 			});
 			if (error) { toastr.warning(error); return null; }
 			if (!res.length) { toastr.warning('Elige los productos del menú'); return null; }
@@ -265,26 +286,132 @@
 		// v1.24.9: tocar cualquier parte de la tarjeta del agregado lo marca o desmarca (menos su mensaje)
 		$('#listaAgregados').on('click', '.ag-item', function (e) {
 			if ($(e.target).closest('input, label, .ag-nota').length) return;
-			if ($(this).hasClass('bloqueado')) { toastr.warning('Este producto permite elegir hasta ' + maxAgregadosAbierto() + ' agregados: quita uno para elegir otro'); return; }
+			if ($(this).hasClass('bloqueado')) { toastr.warning(motivoBloqueoAgregado(Number($(this).data('id')))); return; }
 			$(this).find('.chk-agregado').trigger('click');
 		});
 		// v1.30.3: con el máximo del producto alcanzado, los demás agregados quedan sin poder marcarse
-		function maxAgregadosAbierto() { var p = opcionEdicion ? producto(opcionEdicion.id_producto) : null; return p ? Number(p.max_agregados) || 0 : 0; }
-		function limitarAgregados() {
-			var max = maxAgregadosAbierto(), n = $('#listaAgregados .chk-agregado:checked').length, lleno = max > 0 && n >= max;
-			$('#listaAgregados .chk-agregado').each(function () {
-				var bloquear = lleno && !this.checked;
-				$(this).prop('disabled', bloquear).closest('.ag-item').toggleClass('bloqueado', bloquear);
+		// v1.35.0 (pedido del usuario): ...salvo que "Agregados extra" esté activado: entonces se pueden sumar como extra,
+		// con su precio extra, hasta el máximo de extras del producto. Con "Categorías de agregados", cada categoría tiene
+		// además su propio máximo (Carta > Agregados del producto).
+		var agOrden = [];   // ids de los agregados marcados, en el orden en que se marcaron
+		var plural = function (n, t) { return n + ' ' + t + (n === 1 ? '' : 's'); };
+		function cfgAg() { return (catalogo && catalogo.config) || {}; }
+		function conCategoriasAg() { return !!cfgAg().agregados_categorias; }
+		function categoriaAg(a) { return conCategoriasAg() ? Number(a.id_categoria) || 0 : 0; }
+		// v1.35.1: el máximo por categoría es uno solo (Configuraciones); 0 = sin límite
+		function limiteCategoriaAg(p, cat) { return cat && conCategoriasAg() ? Number(cfgAg().max_categoria_agregados) || 0 : 0; }
+		/** v1.35.2: el producto cobra solo los extras (su casilla "Extras con cobro" + la opción encendida + un máximo) */
+		function modoExtrasAg(p) { return !!(p && p.extras && cfgAg().agregados_extra && (Number(p.max_agregados) || 0) > 0); }
+		/** v1.43.0: máximo del producto: -1 = sin límite, 0 = ninguno (0 es 0), N = hasta N (Carta > Agregados) */
+		function maxAg(p) { var m = p ? Number(p.max_agregados) : -1; return isNaN(m) ? -1 : m; }
+		/** v1.43.0: un solo agregado (sin "Permite varios agregados" o máximo 1): al tocar otro se cambia, no se bloquea */
+		function unoSoloAg(p) { return maxAg(p) === 1 && !modoExtrasAg(p); }
+		/** Grupos [{id, nombre, color, agregados}] en el orden de las categorías (los sin categoría al final); null = sin cuadros */
+		function gruposAgregados(ags) {
+			if (!conCategoriasAg()) return null;
+			var cats = (catalogo && catalogo.categorias_agregados) || [], grupos = [], sinCat = [];
+			$.each(cats, function (i, c) {
+				var de = $.grep(ags, function (a) { return Number(a.id_categoria) === c.id; });
+				if (de.length) grupos.push({ id: c.id, nombre: c.nombre, color: i % 6, agregados: de });
 			});
-			if (max > 0 && $('#listaAgregados .chk-agregado').length > max) $('#opcionesMaxAgregados').text('Elige hasta ' + max + ' · ' + n + '/' + max);
+			$.each(ags, function (i, a) { if (!$.grep(grupos, function (g) { return g.id === Number(a.id_categoria); }).length) sinCat.push(a); });
+			if (!grupos.length) return null;
+			if (sinCat.length) grupos.push({ id: 0, nombre: 'Otros agregados', color: 'otros', agregados: sinCat });
+			return grupos;
+		}
+		/**
+		 * v1.35.2 (pedido del usuario): de los marcados (en su orden), van como extra los que llegan con el máximo total ya
+		 * lleno. El máximo por categoría es un tope fijo (cuenta también los extras) y nunca hace que uno vaya como extra.
+		 */
+		function clasificarAgregados(p, orden) {
+			var max = maxAg(p), r = { extra: {}, gratis: 0, porCat: {}, extras: 0 };
+			$.each(orden, function (i, id) {
+				var a = agregado(id);
+				if (!a) return;
+				var c = categoriaAg(a);
+				r.porCat[c] = (r.porCat[c] || 0) + 1;
+				if (max >= 0 && r.gratis >= max) { r.extra[id] = true; r.extras++; }
+				else r.gratis++;
+			});
+			return r;
+		}
+		/** Si este agregado (sin marcar) entraría como extra con lo ya marcado */
+		function seriaExtra(p, cl, a) { var max = maxAg(p); return max >= 0 && cl.gratis >= max; }
+		/** Si la categoría de este agregado ya llegó a su máximo */
+		function categoriaLlena(p, cl, a) { var c = categoriaAg(a), lc = limiteCategoriaAg(p, c); return lc > 0 && (cl.porCat[c] || 0) >= lc; }
+		function puedeSumarExtra(p, cl) { var mx = Number(cfgAg().max_extras_agregados) || 0; return modoExtrasAg(p) && (mx === 0 || cl.extras < mx); }
+		/** Lo que cobra un agregado marcado: con extras con cobro, solo los extra (su valor); si no, su valor */
+		function valorAgregadoOpciones(p, cl, a) { return !modoExtrasAg(p) ? a.valor : (cl.extra[a.id_agregado] ? a.valor : 0); }
+		function motivoBloqueoAgregado(id) {
+			var p = producto(opcionEdicion.id_producto), a = agregado(id), cl = clasificarAgregados(p, agOrden);
+			var max = maxAg(p), c = categoriaAg(a), lc = limiteCategoriaAg(p, c);
+			if (max === 0) return 'Este producto no lleva agregados';   // v1.43.0: 0 es 0
+			if (categoriaLlena(p, cl, a)) {
+				var g0 = $.grep((catalogo.categorias_agregados || []), function (x) { return x.id === c; })[0];
+				return 'En ' + (g0 ? g0.nombre : 'esta categoría') + ' se pueden elegir hasta ' + lc + ': quita uno para elegir otro';
+			}
+			if (modoExtrasAg(p)) return 'Ya se sumaron ' + plural(Number(cfgAg().max_extras_agregados) || 0, 'agregado') + ' extra, el máximo: quita uno para elegir otro';
+			if (lc > 0 && (cl.porCat[c] || 0) >= lc) {
+				var g = $.grep((catalogo.categorias_agregados || []), function (x) { return x.id === c; })[0];
+				return 'En ' + (g ? g.nombre : 'esta categoría') + ' se pueden elegir hasta ' + lc + ': quita uno para elegir otro';
+			}
+			return 'Este producto permite elegir hasta ' + plural(max, 'agregado') + ': quita uno para elegir otro';
+		}
+		function limitarAgregados() {
+			var p = opcionEdicion ? producto(opcionEdicion.id_producto) : null;
+			if (!p) return;
+			var cl = clasificarAgregados(p, agOrden), extraOk = puedeSumarExtra(p, cl), modo = modoExtrasAg(p), max = maxAg(p), uno = unoSoloAg(p);
+			$('#listaAgregados .chk-agregado').each(function () {
+				var a = agregado(Number(this.value)), $it = $(this).closest('.ag-item');
+				var esExtra = this.checked ? !!cl.extra[a.id_agregado] : seriaExtra(p, cl, a);
+				var catLlena = !this.checked && categoriaLlena(p, cl, a);
+				if (catLlena) esExtra = false;   // la categoría llena es un tope: no se ofrece como extra
+				var bloquear = catLlena || (!this.checked && esExtra && !extraOk && !uno);   // v1.43.0: con uno solo se cambia, no se bloquea
+				$(this).prop('disabled', bloquear);
+				$it.toggleClass('bloqueado', bloquear).toggleClass('es-extra', this.checked && esExtra).toggleClass('seria-extra', !this.checked && esExtra && extraOk);
+				// v1.35.1: con extras con cobro, lo que cabe va sin costo y el extra cobra su valor
+				var html = '';
+				if (modo && esExtra && (extraOk || this.checked)) html = '<span class="ag-extra-tag">Extra</span>' + (a.valor ? ' +' + fmt(a.valor) : '');
+				else if (!modo && a.valor) html = '+' + fmt(a.valor);
+				$it.find('.valor').html(html);
+			});
+			var total = $('#listaAgregados .chk-agregado').length, textos = [];
+			if (max === 0) textos.push('Este producto no lleva agregados');
+			else if (uno) textos.push('Elige 1');
+			else if (max > 0 && (total > max || modo)) textos.push('Elige hasta ' + max + (modo ? ' sin costo' : '') + ' · ' + cl.gratis + '/' + max);
+			if (modo) {
+				var mx = Number(cfgAg().max_extras_agregados) || 0;
+				textos.push(cl.extras ? plural(cl.extras, 'extra') + (mx ? ' de ' + mx : '') + ' con cobro' : 'después ' + (mx ? (mx === 1 ? '1 extra' : 'hasta ' + mx + ' extras') : 'extras') + ' con cobro');
+			}
+			$('#opcionesMaxAgregados').text(textos.join(' · '));
+			$('#listaAgregados .ag-cat').each(function () {
+				var c = Number($(this).data('cat')), lc = limiteCategoriaAg(p, c), n = cl.porCat[c] || 0;
+				var nEx = $(this).find('.ag-item.es-extra').length;
+				$(this).toggleClass('completa', lc > 0 && n >= lc).find('.ag-cat-regla')
+					.text((lc > 0 ? 'Elige hasta ' + lc + ' · ' + n + '/' + lc : (n ? n + ' elegido' + (n === 1 ? '' : 's') : 'Opcional')) + (nEx ? ' · ' + plural(nEx, 'extra') : ''));
+			});
 		}
 		$('#listaAgregados').on('change', '.chk-agregado', function () {
-			var max = maxAgregadosAbierto();
-			if (this.checked && max > 0 && $('#listaAgregados .chk-agregado:checked').length > max) {
-				this.checked = false;
-				toastr.warning('Este producto permite elegir hasta ' + max + ' agregado' + (max === 1 ? '' : 's'));
-				return;
-			}
+			var p = producto(opcionEdicion.id_producto), id = Number(this.value);
+			if (this.checked) {
+				// v1.43.0: un solo agregado: el nuevo reemplaza al que estaba marcado (como elegir una opción)
+				if (unoSoloAg(p)) {
+					var este = this;
+					$('#listaAgregados .chk-agregado:checked').each(function () {
+						if (this === este) return;
+						this.checked = false;
+						$(this).closest('.ag-item').removeClass('marcado').find('.ag-nota').hide();
+					});
+					agOrden = [];
+				}
+				var cl = clasificarAgregados(p, agOrden);
+				if (categoriaLlena(p, cl, agregado(id)) || (seriaExtra(p, cl, agregado(id)) && !puedeSumarExtra(p, cl))) {
+					this.checked = false;
+					toastr.warning(motivoBloqueoAgregado(id));
+					return;
+				}
+				if ($.inArray(id, agOrden) < 0) agOrden.push(id);
+			} else agOrden = $.grep(agOrden, function (x) { return x !== id; });
 			$(this).closest('.ag-item').toggleClass('marcado', this.checked).find('.ag-nota').toggle(this.checked);
 			limitarAgregados();
 			precioOpciones();
@@ -295,8 +422,10 @@
 			var menuSel = eleccionMenuOpciones();   // v1.24.0
 			if (menuSel === null) return;
 			var ags = $('#listaAgregados .chk-agregado:checked').map(function () { return Number(this.value); }).get();
-			var maxAg = Number((producto(id) || {}).max_agregados) || 0;   // v1.30.3
-			if (maxAg > 0 && ags.length > maxAg) { toastr.warning('Este producto permite elegir hasta ' + maxAg + ' agregado' + (maxAg === 1 ? '' : 's')); return; }
+			// v1.30.3 / v1.35.0: lo que pasa del máximo (total o de su categoría) va como extra, si está activado
+			agOrden = $.grep(agOrden, function (x) { return $.inArray(x, ags) >= 0; }).concat($.grep(ags, function (x) { return $.inArray(x, agOrden) < 0; }));
+			var clAg = clasificarAgregados(producto(id), agOrden), extras = $.grep(ags, function (x) { return !!clAg.extra[x]; });
+			if (extras.length && !puedeSumarExtra(producto(id), { extras: extras.length - 1 })) { toastr.warning(motivoBloqueoAgregado(extras[extras.length - 1])); return; }
 			var msgs = mensajesDe(id);
 			var partes = $('#listaMensajes .chk-mensaje:checked').map(function () { return msgs[$(this).data('i')].mensaje; }).get();
 			var libre = $.trim($('#txtNotaProducto').val());
@@ -308,9 +437,10 @@
 				if (t) notasAg[this.value] = t.slice(0, 60);
 			});
 			if (opcionEdicion.indice === null) {
-				agregar(id, ags, nota, undefined, notasAg, menuSel);
+				agregar(id, ags, nota, undefined, notasAg, menuSel, undefined, extras);
 			} else {
-				carro[opcionEdicion.indice].agregados = ags;
+				carro[opcionEdicion.indice].agregados = ags.slice().sort(function (a, b) { return a - b; });
+				carro[opcionEdicion.indice].extras = extras.sort(function (a, b) { return a - b; });   // v1.35.0
 				carro[opcionEdicion.indice].nota = nota;
 				carro[opcionEdicion.indice].notas_agregados = notasAg;
 				carro[opcionEdicion.indice].menu = menuSel;

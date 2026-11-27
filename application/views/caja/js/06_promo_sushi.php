@@ -10,8 +10,8 @@
 			var ok = true, total = 0;
 			$.each(f.grupos, function (i, g) {
 				total += g.piezas;
-				if (g.base && !opcionSushi(promo, 'base', g.base)) ok = false;
-				if (promo.bases.length && !g.base) ok = false;
+				$.each(suBases(g), function (j, id) { if (!opcionSushi(promo, 'base', id)) ok = false; });   // v1.32.1
+				if (promo.bases.length && !suBases(g).length) ok = false;
 				$.each(suEnvs(g), function (j, id) { if (!opcionSushi(promo, 'envoltorio', id)) ok = false; });
 				$.each(g.rellenos || [], function (j, id) { if (!opcionSushi(promo, 'relleno', id)) ok = false; });
 			});
@@ -20,6 +20,7 @@
 			return JSON.parse(JSON.stringify({ grupos: f.grupos, extras: f.extras || [], salsas: f.salsas || [] }));
 		}
 		function suMaxEnv() { return Math.max(1, Number(su.promo.max_envoltorios) || 1); }
+		function suMaxBases() { return Math.max(1, Number(su.promo.max_bases) || 1); }   // v1.32.1
 		function suConfiguradas(excepto) {
 			var t = 0;
 			$.each(su.grupos, function (i, g) { if (i !== excepto) t += g.piezas; });
@@ -31,7 +32,7 @@
 		}
 		function suGrupoNuevo(piezas) {
 			var p = su.promo;
-			return { piezas: piezas, base: p.bases.length === 1 ? p.bases[0].id : 0, envoltorios: p.envoltorios.length === 1 ? [p.envoltorios[0].id] : [], rellenos: [], nota: '' };
+			return { piezas: piezas, bases: p.bases.length === 1 ? [p.bases[0].id] : [], envoltorios: p.envoltorios.length === 1 ? [p.envoltorios[0].id] : [], rellenos: [], nota: '' };
 		}
 		/** Piezas sugeridas para un grupo nuevo: un "roll" (el paso, o 10 si va de a 1) o lo que falte si es menos */
 		function suPiezasSugeridas() {
@@ -50,7 +51,7 @@
 			var linea = indice === null ? null : carro[indice];
 			su = { id_producto: id, promo: promo, indice: indice, grupos: [], extras: {}, salsas: {}, ed: null };
 			if (linea && linea.sushi) {
-				su.grupos = $.map(linea.sushi.grupos, function (g) { return { piezas: g.piezas, base: g.base || 0, envoltorios: suEnvs(g).slice(), rellenos: (g.rellenos || []).slice(), nota: g.nota || '' }; });
+				su.grupos = $.map(linea.sushi.grupos, function (g) { return { piezas: g.piezas, bases: suBases(g).slice(), envoltorios: suEnvs(g).slice(), rellenos: (g.rellenos || []).slice(), nota: g.nota || '' }; });
 				$.each(linea.sushi.extras || [], function (i, e) { su.extras[e.id] = e.cantidad; });
 				$.each(linea.sushi.salsas || [], function (i, e) { su.salsas[e.id] = e.cantidad; });   // v1.32.0
 			}
@@ -84,9 +85,10 @@
 			$('#suBarra').css('width', Math.min(100, pct) + '%');
 			$('#suPorcentaje').text(pct + '% configurado' + (pend === 0 ? ' · ¡listo!' : ''));
 
-			// Grupos
+			// Grupos (v1.32.1: con "cada roll según su envoltorio", el precio de cada roll)
+			var prRollM = promo.precio_envoltorio ? preciosRollSushi(promo, su.grupos) : null;
 			$('#suGrupos').html(su.grupos.length ? $.map(su.grupos, function (g, i) {
-				var tx = textoGrupoSushi(promo, g), v = unidadesGrupoSushi(promo, g) * valorPiezaSushi(promo, g);
+				var tx = textoGrupoSushi(promo, g), v = prRollM ? prRollM[i] : unidadesGrupoSushi(promo, g) * valorPiezaSushi(promo, g);
 				var editando = su.ed && su.ed.idx === i;
 				return '<div class="su-grupo' + (editando ? ' editando' : '') + '" data-i="' + i + '"><div class="su-grupo-cab">'
 					+ '<span class="su-pz">' + textoCantSushi(promo, g.piezas) + '</span><span class="su-env">' + esc(tx.titulo) + '</span>'
@@ -94,7 +96,7 @@
 					+ '<button type="button" class="btn btn-default btn-xs su-duplicar" title="Duplicar"><i class="fa fa-clone"></i></button>'
 					+ '<button type="button" class="btn btn-default btn-xs su-eliminar" title="Eliminar"><i class="fa fa-trash text-danger"></i></button></div>'
 					+ '<div class="su-grupo-det">' + (tx.rellenos ? esc(tx.rellenos) : '<i>Sin relleno</i>') + (tx.base ? ' · Base ' + esc(tx.base) : '')
-					+ (v ? ' · <b>+' + fmt(v) + '</b>' : '') + '</div>'
+					+ (v ? ' · <b>' + (prRollM ? '' : '+') + fmt(v) + '</b>' : '') + '</div>'
 					+ (g.nota ? '<div class="su-grupo-nota"><i class="fa fa-comment-o"></i> ' + esc(g.nota) + '</div>' : '') + '</div>';   // v1.26.1
 			}).join('') : '<div class="su-vacio">Todavía no hay ' + (suEsRol(promo) ? 'rolls' : 'grupos') + '. Arma el primero a la derecha.</div>');
 			$('#btnSushiNuevo').prop('disabled', pend <= 0 || !!(su.ed && su.ed.idx === null));
@@ -102,12 +104,12 @@
 			// Extras y (v1.32.0) salsas: opcionales, con su máximo total (0 = sin límite)
 			$.each([['extra', 'extras', '#suExtras', '#suExtrasMax'], ['salsa', 'salsas', '#suSalsas', '#suSalsasMax']], function (i, c) {
 				var elegido = su[c[1]], max = Number(promo['max_' + c[1]]) || 0, n = suSuma(elegido);
-				$(c[3]).text(max ? n + '/' + max : '');
+				$(c[3]).text(max > 0 ? n + '/' + max : '');
 				$(c[2]).html($.map(promo[c[1]] || [], function (o) {
 					var q = elegido[o.id] || 0;
 					return '<div class="su-extra" data-id="' + o.id + '"><span class="nombre">' + esc(o.nombre) + (o.valor ? ' <small class="text-muted">+' + fmt(o.valor) + '</small>' : '') + '</span>'
 						+ '<button type="button" class="btn btn-default btn-xs su-ex-menos"' + (q ? '' : ' disabled') + '><i class="fa fa-minus"></i></button>'
-						+ '<b class="q">' + q + '</b><button type="button" class="btn btn-default btn-xs su-ex-mas"' + (max && n >= max ? ' disabled' : '') + '><i class="fa fa-plus"></i></button></div>';
+						+ '<b class="q">' + q + '</b><button type="button" class="btn btn-default btn-xs su-ex-mas"' + (max > 0 && n >= max ? ' disabled' : '') + '><i class="fa fa-plus"></i></button></div>';
 				}).join(''));
 			});
 
@@ -147,17 +149,17 @@
 				$sec.toggle(lista.length > 0);
 				if (!lista.length) return;
 				// v1.32.0: el envoltorio también puede ser más de uno (máximo de la promo)
-				var maxEnv = suMaxEnv(), multiple = tipo === 'relleno' || (tipo === 'envoltorio' && maxEnv > 1);
-				var elegidos = tipo === 'relleno' ? g.rellenos : (tipo === 'envoltorio' ? g.envoltorios : (g.base ? [g.base] : []));
-				var max = tipo === 'relleno' ? promo.max_rellenos : (tipo === 'envoltorio' ? maxEnv : 1), n = elegidos.length;
+				var maxEnv = suMaxEnv(), maxBas = suMaxBases(), multiple = tipo === 'relleno' || (tipo === 'envoltorio' && maxEnv > 1) || (tipo === 'base' && maxBas > 1);
+				var elegidos = tipo === 'relleno' ? g.rellenos : (tipo === 'envoltorio' ? g.envoltorios : g.bases);
+				var max = tipo === 'relleno' ? promo.max_rellenos : (tipo === 'envoltorio' ? maxEnv : maxBas), n = elegidos.length;
 				var tope = multiple && max > 0 && n >= max;
 				var ayuda = multiple ? (max > 0 ? n + '/' + max : n + ' elegidos') : 'Elige 1';
 				$sec.find('.su-sec-tit small').text(ayuda).toggleClass('falta', n === 0);
 				$sec.find('.su-chips').html($.map(lista, function (o) {
 					var on = $.inArray(o.id, elegidos) >= 0;
-					var precioEnv = tipo === 'envoltorio' && promo.precio_envoltorio && o.precio_promo ? ' <small>' + fmt(o.precio_promo) + '</small>' : '';
+					var precioEnv = tipo === 'envoltorio' && promo.precio_envoltorio && o.precio_promo ? ' <small>' + fmt(o.precio_promo) + '/roll</small>' : '';
 					return '<span class="su-chip' + (on ? ' on' : (tope ? ' off' : '')) + '" data-id="' + o.id + '">' + esc(o.nombre) + precioEnv
-						+ (o.valor && !(tipo === 'envoltorio' && promo.precio_envoltorio) ? ' <small>+' + fmt(o.valor) + (rol ? '/roll' : '/pz') + '</small>' : '') + '</span>';
+						+ (o.valor && !promo.precio_envoltorio ? ' <small>+' + fmt(o.valor) + (rol ? '/roll' : '/pz') + '</small>' : '') + '</span>';
 				}).join(''));
 			});
 		}
@@ -199,7 +201,13 @@
 				else if (g.envoltorios.length >= maxE) { toastr.warning('Máximo ' + maxE + ' envoltorios' + porQue); return; }
 				else g.envoltorios.push(id);
 			} else {
-				g[tipo] = g[tipo] === id ? 0 : id;
+				// v1.32.0/v1.32.1: envoltorios y bases hasta su máximo; con máximo 1 se cambia el elegido
+				var lista = tipo === 'envoltorio' ? 'envoltorios' : 'bases', maxE = tipo === 'envoltorio' ? suMaxEnv() : suMaxBases();
+				var ke = $.inArray(id, g[lista]);
+				if (ke >= 0) g[lista].splice(ke, 1);
+				else if (maxE === 1) g[lista] = [id];
+				else if (g[lista].length >= maxE) { toastr.warning('Máximo ' + maxE + (tipo === 'envoltorio' ? ' envoltorios' : ' bases') + porQue); return; }
+				else g[lista].push(id);
 			}
 			pintarSushi();
 		});
@@ -211,7 +219,7 @@
 		});
 		$('#suGrupos').on('click', '.su-editar', function () {
 			var i = Number($(this).closest('.su-grupo').data('i')), g = su.grupos[i];
-			su.ed = { idx: i, g: { piezas: g.piezas, base: g.base, envoltorios: suEnvs(g).slice(), rellenos: g.rellenos.slice(), nota: g.nota || '' } };
+			su.ed = { idx: i, g: { piezas: g.piezas, bases: suBases(g).slice(), envoltorios: suEnvs(g).slice(), rellenos: g.rellenos.slice(), nota: g.nota || '' } };
 			pintarSushi();
 		}).on('click', '.su-duplicar', function () {
 			// Copia base, rellenos y envoltorio en un grupo nuevo (independiente) con las piezas que alcancen
@@ -220,7 +228,7 @@
 			var paso = su.promo.paso, piezas = Math.min(g.piezas, falta);
 			if (paso > 1) piezas = Math.floor(piezas / paso) * paso;
 			if (piezas <= 0) { toastr.warning('No quedan piezas suficientes para duplicar este grupo'); return; }
-			su.ed = { idx: null, g: { piezas: piezas, base: g.base, envoltorios: suEnvs(g).slice(), rellenos: g.rellenos.slice(), nota: g.nota || '' } };
+			su.ed = { idx: null, g: { piezas: piezas, bases: suBases(g).slice(), envoltorios: suEnvs(g).slice(), rellenos: g.rellenos.slice(), nota: g.nota || '' } };
 			pintarSushi();
 			toastr.info('Grupo duplicado: cambia lo que quieras y guárdalo');
 		}).on('click', '.su-eliminar', function () {
@@ -236,11 +244,12 @@
 			if (g.piezas < 1) { toastr.warning(rolG ? 'Indica cuántos rolls' : 'Indica cuántas piezas lleva el grupo'); return; }
 			if (g.piezas % promo.paso !== 0) { toastr.warning(rolG ? 'Los rolls van completos' : 'Las piezas van de a ' + promo.paso); return; }
 			if (g.piezas > max) { toastr.warning('Solo quedan ' + textoCantSushi(promo, max).replace(' pz', ' piezas')); return; }
-			if (promo.bases.length && !g.base) { toastr.warning('Elige la base'); return; }
+			if (promo.bases.length && !g.bases.length) { toastr.warning('Elige la base'); return; }
+			if (g.bases.length > suMaxBases()) { toastr.warning('Máximo ' + suMaxBases() + ' bases'); return; }
 			if (promo.rellenos.length && !g.rellenos.length) { toastr.warning('Elige al menos un relleno'); return; }
 			if (promo.envoltorios.length && !g.envoltorios.length) { toastr.warning('Elige con qué se envuelve'); return; }
 			if (g.envoltorios.length > suMaxEnv()) { toastr.warning('Máximo ' + suMaxEnv() + ' envoltorios'); return; }
-			var copia = { piezas: g.piezas, base: g.base, envoltorios: g.envoltorios.slice(), rellenos: g.rellenos.slice(), nota: $.trim(g.nota || '').slice(0, 100) };
+			var copia = { piezas: g.piezas, bases: g.bases.slice(), envoltorios: g.envoltorios.slice(), rellenos: g.rellenos.slice(), nota: $.trim(g.nota || '').slice(0, 100) };
 			if (su.ed.idx === null) su.grupos.push(copia); else su.grupos[su.ed.idx] = copia;
 			su.ed = null;
 			// Si aún faltan piezas se abre el siguiente grupo, para seguir rápido
@@ -253,7 +262,8 @@
 			var tipo = $(this).closest('[data-tipo]').data('tipo'), clave = tipo === 'salsa' ? 'salsas' : 'extras', lista = su[clave];
 			var id = Number($(this).closest('.su-extra').data('id')), q = lista[id] || 0, mas = $(this).hasClass('su-ex-mas');
 			var max = Number(su.promo['max_' + clave]) || 0;
-			if (mas && max && suSuma(lista) >= max) { toastr.warning('Máximo ' + max + (tipo === 'salsa' ? ' salsas' : ' extras') + ' en esta promo'); return; }
+			if (mas && max > 0 && suSuma(lista) >= max) {   // v1.32.5: -1 = sin límite
+				 toastr.warning('Máximo ' + max + (tipo === 'salsa' ? ' salsas' : ' extras') + ' en esta promo'); return; }
 			q += mas ? 1 : -1;
 			if (q > 99) q = 99;
 			if (q > 0) lista[id] = q; else delete lista[id];
@@ -263,7 +273,7 @@
 		function suSeleccion() {
 			var lista = function (tipo, clave) { return $.map(su.promo[clave] || [], function (o) { return su[clave][o.id] ? { id: o.id, cantidad: su[clave][o.id] } : null; }); };
 			return {
-				grupos: $.map(su.grupos, function (g) { var e = suEnvs(g); return { piezas: g.piezas, base: g.base || 0, envoltorio: e[0] || 0, envoltorios: e.slice(), rellenos: g.rellenos.slice(), nota: g.nota || '' }; }),
+				grupos: $.map(su.grupos, function (g) { var e = suEnvs(g), b = suBases(g); return { piezas: g.piezas, base: b[0] || 0, bases: b.slice(), envoltorio: e[0] || 0, envoltorios: e.slice(), rellenos: g.rellenos.slice(), nota: g.nota || '' }; }),
 				extras: lista('extra', 'extras'), salsas: lista('salsa', 'salsas')
 			};
 		}

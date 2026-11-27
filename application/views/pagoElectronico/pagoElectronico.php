@@ -17,9 +17,22 @@
     .pe-chip.si { background: var(--t-primario-suave); color: var(--t-primario-osc); border: 1px solid var(--t-primario-borde); }
     .pe-chip.no { background: #f6f7f9; color: var(--t-texto-tenue); border: 1px solid var(--t-borde); }
     .pe-chip.fp { background: #eef4ff; color: #2c4f8a; border: 1px solid #cfdcf3; }
+    .pe-i-titulo { margin-left: 8px; color: var(--t-primario, #15803D); cursor: help; font-size: 15px; }
     .pe-vacio { padding: 30px 10px; text-align: center; color: var(--t-texto-tenue); }
     .pe-vacio i { display: block; font-size: 30px; margin-bottom: 8px; }
-    #modalPagoElectronico .modal-dialog { max-width: 760px; width: auto; }
+    #modalPagoElectronico .modal-dialog { width: 1100px; max-width: calc(100vw - 24px); }
+    /* v1.39.x: a lo ancho (grilla de 6) y la ayuda en el (i) */
+    #modalPagoElectronico .pe-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px 14px; align-items: end; }
+    #modalPagoElectronico .pe-c1 { grid-column: span 1; } #modalPagoElectronico .pe-c2 { grid-column: span 2; }
+    #modalPagoElectronico .pe-c3 { grid-column: span 3; } #modalPagoElectronico .pe-c4 { grid-column: span 4; }
+    #modalPagoElectronico .pe-c6 { grid-column: 1 / -1; }
+    #modalPagoElectronico .pe-sep { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--t-borde-suave); font-size: 13px; font-weight: 700;
+        color: var(--t-texto-fuerte); text-transform: uppercase; letter-spacing: .3px; }
+    #modalPagoElectronico .pe-i { color: var(--t-primario, #15803D); cursor: help; margin-left: 3px; font-size: 13px; }
+    #modalPagoElectronico .pe-oculta { display: none; }
+    #modalPagoElectronico .pe-c .pe-formas label { height: 36px; }
+    @media (max-width: 860px) { #modalPagoElectronico .pe-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        #modalPagoElectronico .pe-c3, #modalPagoElectronico .pe-c4 { grid-column: 1 / -1; } }
     #modalPagoElectronico fieldset { margin: 0 -8px; }
     #modalPagoElectronico fieldset::after { content: ""; display: table; clear: both; }
     #modalPagoElectronico fieldset > [class*="col-"] { padding: 0 8px; margin-bottom: 14px; }
@@ -55,7 +68,7 @@
         <h1>Pago electrónico</h1>
         <small>Máquinas POS y los datos que la Caja envía al programa de pago</small>
         <ol class="breadcrumb">
-            <li><a href="<?php echo base_url() ?>index.php/Dashboard"><i class="pe-7s-home"></i> Mantencion</a></li>
+            <li><a href="<?php echo base_url() ?>index.php/Dashboard"><i class="pe-7s-home"></i> Inicio</a></li>
             <li class="active">Pago electrónico</li>
         </ol>
     </div>
@@ -69,16 +82,12 @@
                     <div class="panel-title">
                         <i class="fa fa-credit-card"></i>
                         <h4>Máquinas de pago</h4>
+                        <i class="fa fa-info-circle pe-i-titulo" title="Cada máquina tiene los datos que la Caja envía al programa de pago del equipo de la caja (localhost:5005/panel); si alguno no es igual, la Caja muestra cuál.&#10;&#10;1. En Herramientas › Control de cajas, elige qué máquina usa cada caja.&#10;2. En Mantención › Formas de pago, marca Pago electrónico en cada tarjeta de débito o crédito que quieras cobrar en el POS.&#10;&#10;Haz clic en una máquina para editarla."></i>
                     </div>
                     <div class="pe-acciones">
                         <button id="btnNuevaMaquina" type="button" class="btn btn-primary"><i class="fa fa-plus"></i> Nueva máquina</button>
                     </div>
                 </div>
-                <p class="pe-ayuda"><i class="fa fa-info-circle"></i>
-                    Cada máquina tiene los datos que la Caja envía al programa de pago del equipo de la caja. El programa los compara con los de su
-                    panel (<code>localhost:5005/panel</code>): si alguno no es igual, la Caja muestra cuál. Después, en <b>Herramientas &rsaquo; Control de cajas</b>, elige qué
-                    máquina usa cada caja. En la Caja se cobran en la máquina solo las formas de pago de <b>tarjeta de débito y crédito</b>. Haz clic en una fila para editarla.
-                </p>
                 <div class="alert alert-warning" id="avisoCredenciales" style="display:none;margin:12px 18px 0">
                     <i class="fa fa-key"></i> Falta el <b>usuario</b> o la <b>clave de la API</b> del programa de pago. Configúralos en
                     <a href="<?php echo base_url() ?>index.php/Configuraciones">Configuraciones &rsaquo; General &rsaquo; Pago electrónico</a>.
@@ -114,55 +123,47 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="id" id="peId" value="0">
-                    <div class="pe-titulo">Máquina</div>
-                    <fieldset>
-                        <div class="col-sm-12">
+                    <!-- v1.39.x (pedido del usuario): a lo ancho y con las explicaciones en el (i) en vez de texto bajo cada campo -->
+                    <div class="pe-grid">
+                        <div class="pe-c pe-c4">
                             <label for="peModelo">Máquina de pago</label>
                             <select class="form-control" name="modelo" id="peModelo" required></select>
                         </div>
-                    </fieldset>
-
-                    <div class="pe-titulo">Datos de la petición <small>· deben ser iguales a los del panel del programa de pago</small></div>
-                    <fieldset>
-                        <div class="col-sm-4">
-                            <label for="peSucursal">ID de sucursal</label>
+                        <div class="pe-c pe-c2">
+                            <label>Estado <i class="fa fa-info-circle pe-i" title="Para cobrar con una tarjeta marcada como Pago electrónico, la caja necesita una máquina vigente."></i></label>
+                            <div class="pe-formas"><label><input type="checkbox" name="vigente" id="peVigente" value="1" checked> Vigente</label></div>
+                        </div>
+                        <div class="pe-c pe-c6 pe-sep">Datos de la petición <i class="fa fa-info-circle pe-i" title="Deben ser iguales a los del panel del programa de pago (ApiPagoElectronico). Si alguno no es igual, la Caja muestra cuál."></i></div>
+                        <div class="pe-c pe-c1">
+                            <label for="peSucursal">ID de sucursal <i class="fa fa-info-circle pe-i" title="El ID_SUCURSAL del programa."></i></label>
                             <input type="text" class="form-control" name="id_sucursal_pos" id="peSucursal" maxlength="30" required>
-                            <p class="help-block">El <code>ID_SUCURSAL</code> del programa.</p>
                         </div>
-                        <div class="col-sm-4">
-                            <label for="peCaja">Nombre de caja</label>
+                        <div class="pe-c pe-c1">
+                            <label for="peCaja">Nombre de caja <i class="fa fa-info-circle pe-i" title="El NOMBRE_CAJA del programa."></i></label>
                             <input type="text" class="form-control" name="nombre_caja_pos" id="peCaja" maxlength="60" placeholder="CAJA1" style="text-transform:uppercase" required>
-                            <p class="help-block">El <code>NOMBRE_CAJA</code> del programa.</p>
                         </div>
-                        <div class="col-sm-4">
-                            <label for="peTimeout">Espera (segundos)</label>
+                        <div class="pe-c pe-c1">
+                            <label for="peTimeout">Espera (seg) <i class="fa fa-info-circle pe-i" title="Cuántos segundos espera la Caja la respuesta de la máquina. Entre 30 y 300."></i></label>
                             <input type="number" class="form-control" name="timeout_seg" id="peTimeout" min="30" max="300" step="1" value="120" required>
-                            <p class="help-block">Entre 30 y 300.</p>
                         </div>
-                        <div class="col-sm-12">
-                            <label for="peTerminal">Terminal ID</label>
+                        <div class="pe-c pe-c3">
+                            <label for="peTerminal">Terminal ID <i class="fa fa-info-circle pe-i" data-de="#ayudaTerminal"></i></label>
                             <input type="text" class="form-control" name="terminal_id" id="peTerminal" maxlength="100" required>
-                            <p class="help-block" id="ayudaTerminal"></p>
+                            <p class="help-block pe-oculta" id="ayudaTerminal"></p>
                         </div>
-                        <div class="col-sm-12" id="grupoApiKey" style="display:none">
-                            <label for="peApiKey">API key</label>
+                        <div class="pe-c pe-c6" id="grupoApiKey" style="display:none">
+                            <label for="peApiKey">API key <i class="fa fa-info-circle pe-i" data-de="#ayudaApiKey"></i></label>
                             <div class="pe-clave">
                                 <input type="password" class="form-control" name="api_key" id="peApiKey" maxlength="300" autocomplete="new-password">
                                 <button type="button" class="btn btn-default" id="btnBorrarApiKey" style="display:none" title="Quitar la API key guardada"><i class="fa fa-eraser"></i></button>
                             </div>
-                            <p class="help-block" id="ayudaApiKey"></p>
+                            <p class="help-block pe-oculta" id="ayudaApiKey"></p>
                         </div>
-                    </fieldset>
-
-                    <div class="pe-titulo">Estado</div>
-                    <div class="pe-formas">
-                        <label><input type="checkbox" name="vigente" id="peVigente" value="1" checked> Vigente</label>
                     </div>
-                    <p class="help-block">Una máquina no vigente no se usa: las cajas que la tienen cobran como antes.</p>
                 </div>
                 <div class="modal-footer">
-                    <div id="resultadoPrueba" style="width:100%"></div>
-                    <button type="button" class="btn btn-default" id="btnProbarPos" title="Prueba desde este equipo: debe ser el equipo de la caja"><i class="fa fa-plug"></i> Probar conexión</button>
+                    <div id="resultadoPrueba" role="status" style="width:100%"></div>
+                    <button type="button" class="btn btn-default" id="btnProbarPos" title="Comprueba ApiPagoElectronico y permite enviar un cobro real de $100 desde este equipo"><i class="fa fa-plug"></i> Probar máquina</button>
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-success" id="btnGuardarPos"><i class="fa fa-save"></i> Guardar</button>
                 </div>

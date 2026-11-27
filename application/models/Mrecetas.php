@@ -3,6 +3,12 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Mrecetas extends CI_Model
 {
+	/**
+	 * v1.34.0: costo neto de 1 unidad de receta del insumo (alias i), igual que el trigger del POS al comprar
+	 * (actualizar_costo_insumo_receta: costo_pp = costo_neto_ppp / umedida_receta).
+	 */
+	const SQL_COSTO_RECETA = 'COALESCE(i.costo_neto_ppp, 0) / COALESCE(NULLIF(i.umedida_receta, 0), 1)';
+
 	function __construct()
 	{
 		parent::__construct();
@@ -57,9 +63,15 @@ class Mrecetas extends CI_Model
 		}
 
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$q = "SELECT i.*, um.nombre_umedida
+		// v1.34.0: costo_receta = costo de 1 unidad de receta (ej. 1 gramo de un insumo comprado por kilo). Antes la pantalla
+		// multiplicaba los gramos por el costo del kilo (200 gr de $10.000/kg daban $2.000.000).
+		// v1.37.11: con el nombre de su familia/grupo, para el buscador de insumos (como en la Caja)
+		$q = "SELECT i.*, um.nombre_umedida, " . self::SQL_COSTO_RECETA . " AS costo_receta, COALESCE(g.nombre_grupo_insumo, '') AS nombre_grupo_insumo
 		from insumo i
-		join umedida um on i.id_umedida_receta = um.id_umedida where i.vigente = true";
+		join umedida um on i.id_umedida_receta = um.id_umedida
+		left join grupo_insumo g on g.id_grupo_insumo = i.id_grupo_insumo
+		where i.vigente = true
+		order by i.nombre_insumo";
 		$query = $this->db->query($q)->result();
 		return $query;
 	}
@@ -107,7 +119,7 @@ class Mrecetas extends CI_Model
 		}
 
 		$this->load->helper('tenant'); $this->db = get_tenant_db($this);
-		$q = "SELECT dr.*, i.*, um.*, r.preparacion
+		$q = "SELECT dr.*, i.*, um.*, r.preparacion, " . self::SQL_COSTO_RECETA . " AS costo_receta
 		from detalle_receta dr
 		join receta r on dr.id_receta = r.id_receta
 		join insumo i on dr.id_insumo = i.id_insumo
@@ -157,18 +169,26 @@ class Mrecetas extends CI_Model
 			if ($reemplazar) {
 				$ok($db->query('UPDATE detalle_receta SET vigente = false WHERE id_receta = ?', array($idReceta)));
 				foreach ($lineas as $l) {
+					// v1.34.0: el costo sale del insumo en la base (por unidad de receta), no de lo que mandó la pantalla
+					$c = $ok($db->query('SELECT ' . self::SQL_COSTO_RECETA . ' AS costo, (i.esreceta IS TRUE) AS sub FROM insumo i WHERE i.id_insumo = ?',
+						array((int)$l['id_insumo'])))->row();
+					if (!$c) throw new Exception('Un insumo de la receta ya no existe (id ' . (int)$l['id_insumo'] . ')');
+					$costoPp = (float)$c->costo;
 					$ok($db->insert('detalle_receta', array(
 						'id_receta' => $idReceta,
 						'id_insumo' => (int)$l['id_insumo'],
 						'cantidad' => $l['cantidad'],
-						'costo_pp' => $l['costo_pp'],
-						'costo_total' => $l['costo_total'],
-						'es_receta' => $l['es_receta'] ? 't' : 'f',
+						'costo_pp' => $costoPp,
+						'costo_total' => round((float)$l['cantidad'] * $costoPp, 2),   // v1.37.12: con 2 decimales, como se ve en la pantalla
+						'es_receta' => ($c->sub === 't' || $c->sub === true) ? 't' : 'f',
 						'vigente' => 't',
 						'um_receta' => 0,
 					)));
 				}
 			}
+			// v1.34.0: costo de la receta, de la porción y margen, igual que el POS (recalculo_rendimiento_insumo). Antes la
+			// web no los calculaba: la lista de recetas mostraba el costo viejo hasta la próxima compra de un insumo.
+			$this->recalcularCostosReceta($db, $idReceta, $ok);
 			$db->trans_commit();
 			$db->db_debug = $debug;
 			return $idReceta;
@@ -178,6 +198,19 @@ class Mrecetas extends CI_Model
 			log_message('error', 'Recetas: ' . $e->getMessage());
 			throw new Exception(strpos($e->getMessage(), 'Error de base de datos') === 0 ? 'No se pudo guardar la receta. Intenta de nuevo.' : $e->getMessage());
 		}
+	}
+
+	/** v1.34.0: costo de insumos, costo de la porción, margen y porcentajes de la receta (fórmulas del POS). */
+	private function recalcularCostosReceta($db, $idReceta, $ok)
+	{
+		$ok($db->query('UPDATE receta r SET costo_insumos = COALESCE((SELECT sum(d.costo_total) FROM detalle_receta d
+				WHERE d.id_receta = r.id_receta AND d.vigente = true), 0) WHERE r.id_receta = ?', array((int)$idReceta)));
+		$ok($db->query('UPDATE receta SET costo_porcion = costo_insumos / NULLIF(rendimiento, 0) WHERE id_receta = ?', array((int)$idReceta)));
+		$iva = '(1 + COALESCE((SELECT c.por_iva FROM configuracion c LIMIT 1), 19) / 100.0)';
+		$ok($db->query("UPDATE receta SET margen_ganancia = precio_venta / $iva - costo_porcion,
+				por_ganancia = CASE WHEN precio_venta > 0 AND costo_porcion > 0 THEN 100 - (costo_porcion / (precio_venta / $iva)) * 100 ELSE por_ganancia END
+			WHERE id_receta = ?", array((int)$idReceta)));
+		$ok($db->query('UPDATE receta SET por_costo = 100 - por_ganancia WHERE id_receta = ? AND por_ganancia IS NOT NULL', array((int)$idReceta)));
 	}
 
 	public function grabarDetalleReceta($idDetalle, $data)

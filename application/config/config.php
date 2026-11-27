@@ -32,7 +32,10 @@ $hostsPermitidos = array('localhost:8001', '127.0.0.1:8001', '192.168.100.163:80
 $esHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
 	|| (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
 $hostPedido = isset($_SERVER['HTTP_HOST']) ? strtolower($_SERVER['HTTP_HOST']) : '';
-$hostUsado = in_array($hostPedido, $hostsPermitidos, true) ? $hostPedido : $hostsPermitidos[0];
+// v1.38.4 (pedido del usuario): también cualquier IP de la red local (192.168.x.x, 10.x.x.x, 172.16-31.x.x) con su puerto, para
+// probar desde otro equipo aunque el router le cambie la IP a este (antes solo 192.168.100.163 y volvía a localhost).
+$esIpLocal = (bool)preg_match('/^(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d{1,5})?$/', $hostPedido);
+$hostUsado = (in_array($hostPedido, $hostsPermitidos, true) || $esIpLocal) ? $hostPedido : $hostsPermitidos[0];
 $rutaSitio = isset($_SERVER['SCRIPT_NAME']) ? str_replace(basename($_SERVER['SCRIPT_NAME']), '', $_SERVER['SCRIPT_NAME']) : '/';
 $config['base_url'] = getenv('RESTO_BASE_URL') ?: (($esHttps ? 'https' : 'http') . '://' . $hostUsado . $rutaSitio);
 unset($hostsPermitidos, $hostPedido, $hostUsado, $rutaSitio);

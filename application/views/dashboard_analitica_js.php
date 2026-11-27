@@ -94,88 +94,124 @@
 			recintosMesas(r.por_mesa || []);
 		}
 
-		// ---------- v1.30.3: ventas por recinto y mesa ----------
+		// ---------- v1.32.1: ventas por recinto, tipo de mesa y mesa ----------
+		// Filtros (recinto, tipo y mesa) que se combinan; "Ver por" elige cómo se agrupan el gráfico y la tabla.
+		// Tocar una barra o una fila filtra por ella; "Ver las ventas" muestra cada documento con sus productos.
 		var rmFilas = [];
+		function opciones($s, lista, todos) {
+			var antes = Number($s.val()) || 0, hay = false;
+			$s.html('<option value="0">' + todos + '</option>' + $.map(lista, function (x) { if (x.id === antes) hay = true; return '<option value="' + x.id + '">' + h(x.nombre) + '</option>'; }).join(''));
+			$s.val(String(hay ? antes : 0));
+		}
+		function unicos(filas, id, nombre) {
+			var vistos = {}, res = [];
+			$.each(filas, function (i, f) { if (!vistos[f[id]]) { vistos[f[id]] = true; res.push({ id: f[id], nombre: f[nombre] }); } });
+			return res.sort(function (x, y) { return String(x.nombre).localeCompare(String(y.nombre), 'es', { numeric: true }); });
+		}
+		function filtroRm() { return { rec: Number($('#dsaRmRecinto').val()) || 0, tipo: Number($('#dsaRmTipo').val()) || 0, mesa: Number($('#dsaRmMesa').val()) || 0 }; }
+		function filasFiltradas(sinMesa) {
+			var f = filtroRm();
+			return $.grep(rmFilas, function (x) { return (!f.rec || x.id_recinto === f.rec) && (!f.tipo || x.id_tipo === f.tipo) && (sinMesa || !f.mesa || x.id_mesa === f.mesa); });
+		}
 		function recintosMesas(filas) {
-			rmFilas = filas;
-			var $r = $('#dsaRmRecinto'), elegido = Number($r.val()) || 0, recs = {}, orden = [];
-			$.each(filas, function (i, f) { if (!recs[f.id_recinto]) { recs[f.id_recinto] = f.recinto; orden.push(f.id_recinto); } });
-			orden.sort(function (x, y) { return String(recs[x]).localeCompare(String(recs[y])); });
-			$r.html('<option value="0">Todos los recintos</option>' + $.map(orden, function (id) { return '<option value="' + id + '">' + h(recs[id]) + '</option>'; }).join(''))
-				.val(String(recs[elegido] !== undefined ? elegido : 0));
+			// "Sin recinto" / "Sin tipo" llegan con 0 (= "Todos" en los filtros): aquí van como -1 (el servidor lo entiende)
+			rmFilas = $.map(filas, function (x) { return $.extend({}, x, { id_recinto: x.id_recinto || -1, id_tipo: x.id_tipo || -1 }); });
+			filas = rmFilas;
+			opciones($('#dsaRmRecinto'), unicos(filas, 'id_recinto', 'recinto'), 'Todos');
+			opciones($('#dsaRmTipo'), unicos(filas, 'id_tipo', 'tipo'), 'Todos');
 			opcionesMesaRm();
+			$('#dsaRmVentas').empty();
 			pintarRm();
 		}
 		function opcionesMesaRm() {
-			var rec = Number($('#dsaRmRecinto').val()) || 0, $m = $('#dsaRmMesa'), elegida = Number($m.val()) || 0, hay = false;
-			var mesas = $.grep(rmFilas, function (f) { return !rec || f.id_recinto === rec; }).slice()
-				.sort(function (x, y) { return String(x.mesa).localeCompare(String(y.mesa), 'es', { numeric: true }); });
-			$m.html('<option value="0">Todas las mesas</option>' + $.map(mesas, function (f) {
-				if (f.id_mesa === elegida) hay = true;
-				return '<option value="' + f.id_mesa + '">' + h(f.mesa + (rec ? '' : ' · ' + f.recinto)) + '</option>';
-			}).join('')).val(String(hay ? elegida : 0));
+			var f = filtroRm();
+			var mesas = $.grep(rmFilas, function (x) { return (!f.rec || x.id_recinto === f.rec) && (!f.tipo || x.id_tipo === f.tipo); });
+			opciones($('#dsaRmMesa'), $.map(mesas, function (x) { return { id: x.id_mesa, nombre: x.mesa + (f.rec ? '' : ' · ' + x.recinto) }; })
+				.sort(function (x, y) { return String(x.nombre).localeCompare(String(y.nombre), 'es', { numeric: true }); }), 'Todas');
 		}
 		function pintarRm() {
-			var rec = Number($('#dsaRmRecinto').val()) || 0, mesaSel = Number($('#dsaRmMesa').val()) || 0;
-			var total = sumar(rmFilas, 'venta');
-			$('#dsaRecintosCard .dsa-rm-chart, #dsaRmKpis, #dsaRecintosCard .dsa-rm-filtros').toggle(rmFilas.length > 0);
+			var ver = $('#dsaRmVer').val() || 'recinto', f = filtroRm(), total = sumar(rmFilas, 'venta');
+			$('#dsaRecintosCard .dsa-rm-chart, #dsaRmKpis, #dsaRecintosCard .dsa-rm-filtros, #dsaRmVentasCaja').toggle(rmFilas.length > 0);
 			if (!rmFilas.length) {
 				$('#dsaRmKpis').html('');
 				grafico('dsaChartRm', { type: 'bar', data: { labels: [], datasets: [] } });
 				$('#dsaRmTabla').html(vacio('Sin ventas de mesa en el período'));
 				return;
 			}
-			// Filas a mostrar: por recinto (todos) o por mesa (un recinto, o todas si se eligió una mesa sin recinto)
-			var porRecinto = !rec && !mesaSel, filas = [];
-			if (porRecinto) {
-				var idx = {};
-				$.each(rmFilas, function (i, f) {
-					if (!idx[f.id_recinto]) { idx[f.id_recinto] = { id: f.id_recinto, nombre: f.recinto, venta: 0, docs: 0, propina: 0, pedidos: 0, mesas: 0 }; filas.push(idx[f.id_recinto]); }
-					var x = idx[f.id_recinto];
-					x.venta += f.venta; x.docs += f.docs; x.propina += f.propina; x.pedidos += f.pedidos; x.mesas++;
-				});
-			} else {
-				filas = $.map($.grep(rmFilas, function (f) { return !rec || f.id_recinto === rec || f.id_mesa === mesaSel; }), function (f) {
-					return { id: f.id_mesa, nombre: f.mesa + (rec ? '' : ' · ' + f.recinto), venta: f.venta, docs: f.docs, propina: f.propina, pedidos: f.pedidos, mesas: 1 };
-				});
-			}
+			var base = filasFiltradas(false), idx = {}, filas = [];
+			var clave = ver === 'mesa' ? ['id_mesa', 'mesa'] : (ver === 'tipo' ? ['id_tipo', 'tipo'] : ['id_recinto', 'recinto']);
+			$.each(base, function (i, x) {
+				var k = x[clave[0]];
+				if (!idx[k]) { idx[k] = { id: k, nombre: x[clave[1]] + (ver === 'mesa' && !f.rec ? ' · ' + x.recinto : ''), venta: 0, docs: 0, propina: 0, pedidos: 0, mesas: 0 }; filas.push(idx[k]); }
+				var y = idx[k];
+				y.venta += x.venta; y.docs += x.docs; y.propina += x.propina; y.pedidos += x.pedidos; y.mesas++;
+			});
 			filas.sort(function (x, y) { return y.venta - x.venta; });
-			var base = sumar(filas, 'venta');
-			var sel = mesaSel ? $.grep(rmFilas, function (f) { return f.id_mesa === mesaSel; })[0] : null;
-			var ambito = sel ? { venta: sel.venta, docs: sel.docs, propina: sel.propina, pedidos: sel.pedidos }
-				: { venta: base, docs: sumar(filas, 'docs'), propina: sumar(filas, 'propina'), pedidos: sumar(filas, 'pedidos') };
-			$('#dsaRmSub').text(sel ? sel.mesa + ' · ' + sel.recinto : (rec ? $('#dsaRmRecinto option:selected').text() + ' · cada mesa' : 'Cada recinto · solo ventas de mesa'));
-			$('#dsaRmKpis').html('<div><small>' + (sel ? 'Venta de la mesa' : 'Venta') + '</small><b>' + plata(ambito.venta) + '</b></div>'
-				+ '<div><small>' + (sel ? 'Del total de mesas' : 'Pedidos atendidos') + '</small><b>' + (sel ? pct(sel.venta, total) : num(ambito.pedidos)) + '</b></div>'
-				+ '<div><small>Ticket por pedido</small><b>' + plata(ambito.pedidos ? ambito.venta / ambito.pedidos : (ambito.docs ? ambito.venta / ambito.docs : 0)) + '</b></div>'
-				+ '<div><small>Propinas</small><b>' + plata(ambito.propina) + '</b></div>');
+			var suma = { venta: sumar(filas, 'venta'), docs: sumar(filas, 'docs'), propina: sumar(filas, 'propina'), pedidos: sumar(filas, 'pedidos') };
+			var partes = [];
+			if (f.rec) partes.push($('#dsaRmRecinto option:selected').text());
+			if (f.tipo) partes.push($('#dsaRmTipo option:selected').text());
+			if (f.mesa) partes.push($('#dsaRmMesa option:selected').text());
+			var nombreVer = { recinto: 'recinto', tipo: 'tipo de mesa', mesa: 'mesa' }[ver];
+			$('#dsaRmSub').text((partes.length ? partes.join(' · ') : 'Todas las mesas') + ' · por ' + nombreVer + ' · solo ventas de mesa');
+			$('#dsaRmKpis').html('<div><small>Venta</small><b>' + plata(suma.venta) + '</b></div>'
+				+ '<div><small>Del total de mesas</small><b>' + pct(suma.venta, total) + '</b></div>'
+				+ '<div><small>Pedidos · ticket</small><b>' + num(suma.pedidos) + ' · ' + plata(suma.pedidos ? suma.venta / suma.pedidos : 0) + '</b></div>'
+				+ '<div><small>Propinas</small><b>' + plata(suma.propina) + '</b></div>');
 			var max = 25, vista = filas.slice(0, max);
 			var tt = tooltipBase();
-			tt.callbacks = { label: function (it) { var f = vista[it.dataIndex]; return plata(f.venta) + ' · ' + pct(f.venta, total) + ' · ' + num(f.docs) + ' doc.'; } };
+			tt.callbacks = { label: function (it) { var x = vista[it.dataIndex]; return plata(x.venta) + ' · ' + pct(x.venta, suma.venta) + ' · ' + num(x.docs) + ' doc.'; } };
 			grafico('dsaChartRm', {
 				type: 'bar',
-				data: { labels: $.map(vista, function (f) { return f.nombre; }), datasets: [{ data: $.map(vista, function (f) { return f.venta; }),
-					backgroundColor: $.map(vista, function (f) { return sel && f.id === mesaSel ? NARANJO : AZUL; }), borderRadius: 4, borderSkipped: 'start', maxBarThickness: 34 }] },
+				data: { labels: $.map(vista, function (x) { return x.nombre; }), datasets: [{ data: $.map(vista, function (x) { return x.venta; }),
+					backgroundColor: $.map(vista, function (x) { return ver === 'mesa' && f.mesa === x.id ? NARANJO : AZUL; }), borderRadius: 4, borderSkipped: 'start', maxBarThickness: 34 }] },
 				options: { maintainAspectRatio: false, animation: { duration: 250 }, plugins: { legend: { display: false }, tooltip: tt }, scales: ejes(),
 					onClick: function (e, el) { if (el && el.length) elegirRm(vista[el[0].index]); } }
 			});
-			var tabla = '<table><thead><tr><th>' + (porRecinto ? 'Recinto' : 'Mesa') + '</th>' + (porRecinto ? '<th>Mesas</th>' : '') + '<th>Pedidos</th><th>Documentos</th><th>Venta</th><th>%</th><th>Ticket</th><th>Propina</th></tr></thead><tbody>'
-				+ $.map(filas, function (f, i) {
-					return '<tr data-i="' + i + '"' + (sel && f.id === mesaSel ? ' class="activa"' : '') + '><td>' + h(f.nombre) + '</td>' + (porRecinto ? '<td>' + num(f.mesas) + '</td>' : '')
-						+ '<td>' + num(f.pedidos) + '</td><td>' + num(f.docs) + '</td><td>' + plata(f.venta) + '</td><td>' + pct(f.venta, base) + '</td>'
-						+ '<td>' + plata(f.pedidos ? f.venta / f.pedidos : (f.docs ? f.venta / f.docs : 0)) + '</td><td>' + plata(f.propina) + '</td></tr>';
-				}).join('') + '</tbody></table>' + (filas.length > max ? '<small class="text-muted">El gráfico muestra las ' + max + ' con más venta; la tabla, todas.</small>' : '');
-			$('#dsaRmTabla').html(tabla).data('filas', filas).data('recinto', porRecinto);
+			var titulo = { recinto: 'Recinto', tipo: 'Tipo de mesa', mesa: 'Mesa' }[ver];
+			$('#dsaRmTabla').html('<table><thead><tr><th>' + titulo + '</th>' + (ver !== 'mesa' ? '<th>Mesas</th>' : '') + '<th>Pedidos</th><th>Documentos</th><th>Venta</th><th>%</th><th>Ticket</th><th>Propina</th></tr></thead><tbody>'
+				+ $.map(filas, function (x, i) {
+					return '<tr data-i="' + i + '"' + (ver === 'mesa' && f.mesa === x.id ? ' class="activa"' : '') + ' title="Toca para filtrar y ver sus ventas"><td>' + h(x.nombre) + '</td>' + (ver !== 'mesa' ? '<td>' + num(x.mesas) + '</td>' : '')
+						+ '<td>' + num(x.pedidos) + '</td><td>' + num(x.docs) + '</td><td>' + plata(x.venta) + '</td><td>' + pct(x.venta, suma.venta) + '</td>'
+						+ '<td>' + plata(x.pedidos ? x.venta / x.pedidos : (x.docs ? x.venta / x.docs : 0)) + '</td><td>' + plata(x.propina) + '</td></tr>';
+				}).join('') + '</tbody></table>' + (filas.length > max ? '<small class="text-muted">El gráfico muestra los ' + max + ' con más venta; la tabla, todos.</small>' : ''))
+				.data('filas', filas).data('ver', ver);
+			$('#dsaRmVentasSub').text(partes.length ? '· ' + partes.join(' · ') : '· todas las mesas del período');
 		}
-		// Tocar una barra o una fila: un recinto abre sus mesas; una mesa queda elegida
-		function elegirRm(f) {
-			if (!f) return;
-			if ($('#dsaRmTabla').data('recinto')) { $('#dsaRmRecinto').val(String(f.id)); $('#dsaRmMesa').val('0'); opcionesMesaRm(); }
-			else { $('#dsaRmMesa').val(String(f.id)); }
+		// Tocar una barra o fila: filtra por ella (recinto, tipo o mesa) y muestra sus ventas
+		function elegirRm(x) {
+			if (!x) return;
+			var ver = $('#dsaRmTabla').data('ver');
+			if (ver === 'recinto') { $('#dsaRmRecinto').val(String(x.id)); $('#dsaRmVer').val('mesa'); }
+			else if (ver === 'tipo') { $('#dsaRmTipo').val(String(x.id)); $('#dsaRmVer').val('mesa'); }
+			else $('#dsaRmMesa').val(String(x.id));
+			opcionesMesaRm();
+			if (ver === 'mesa') $('#dsaRmMesa').val(String(x.id));
 			pintarRm();
+			cargarVentasRm();
 		}
-		$(document).on('change', '#dsaRmRecinto', function () { $('#dsaRmMesa').val('0'); opcionesMesaRm(); pintarRm(); });
-		$(document).on('change', '#dsaRmMesa', pintarRm);
+		var pedidoVentas = 0;
+		function cargarVentasRm() {
+			var f = filtroRm(), mio = ++pedidoVentas, $v = $('#dsaRmVentas').html(vacio('Cargando ventas…'));
+			$.ajax({ url: URL.replace(/analitica$/, 'ventasMesas'), type: 'POST', dataType: 'json',
+				data: $.extend(filtros(), { id_recinto: f.rec, id_tipo: f.tipo, id_mesa: f.mesa }) }).done(function (r) {
+				if (mio !== pedidoVentas) return;
+				var v = r.ventas || [];
+				if (!v.length) { $v.html(vacio('Sin ventas con este filtro')); return; }
+				$v.html('<div class="dsa-rm-ventas-scroll"><table><thead><tr><th>Fecha</th><th>Documento</th><th>Mesa</th><th>Garzón</th><th>Productos</th><th class="num">Descuento</th><th class="num">Propina</th><th class="num">Total</th></tr></thead><tbody>'
+					+ $.map(v, function (x) {
+						return '<tr><td>' + h(x.fecha) + '</td><td>' + h(x.documento) + ' N° ' + h(x.folio) + '</td><td>' + h(x.mesa) + '<br><small class="text-muted">' + h(x.recinto + ' · ' + x.tipo) + '</small></td>'
+							+ '<td>' + h(x.garzon) + '</td><td class="prods">' + h(x.productos) + '</td><td class="num">' + (x.descuento ? plata(-x.descuento) : '') + '</td>'
+							+ '<td class="num">' + (x.propina ? plata(x.propina) : '') + '</td><td class="num"><b>' + plata(x.total) + '</b></td></tr>';
+					}).join('') + '</tbody></table></div>' + (v.length >= 500 ? '<small class="text-muted">Se muestran las 500 más nuevas: acota el período o el filtro.</small>' : ''));
+			}).fail(function (x) {
+				if (mio === pedidoVentas) $v.html(vacio((x.responseJSON && x.responseJSON.error) || 'No se pudieron cargar las ventas'));
+			});
+		}
+		$(document).on('change', '#dsaRmVer', pintarRm);
+		$(document).on('change', '#dsaRmRecinto, #dsaRmTipo', function () { opcionesMesaRm(); pintarRm(); if ($('#dsaRmVentas').children().length) cargarVentasRm(); });
+		$(document).on('change', '#dsaRmMesa', function () { if (Number(this.value)) $('#dsaRmVer').val('mesa'); pintarRm(); cargarVentasRm(); });
+		$(document).on('click', '#dsaRmVerVentas', cargarVentasRm);
 		$(document).on('click', '#dsaRmTabla tbody tr', function () { elegirRm(($('#dsaRmTabla').data('filas') || [])[$(this).data('i')]); });
 		function sumar(lista, campo) { var t = 0; $.each(lista || [], function (i, x) { t += Number(x[campo]) || 0; }); return t; }
 

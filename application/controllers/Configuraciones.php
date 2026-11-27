@@ -144,6 +144,7 @@ class Configuraciones extends CI_Controller {
             'enviar_dte_sii',
             'imprimir_comandas_app_forzar',  // 16-11-2026: también los que el celular manda sin pedir impresión
             'imprimir_comandas_app',  // 14-11-2026: la Caja web imprime las comandas de la app de garzones (solo si la columna existe)
+            'impresion_texto_web',    // v1.40.0: imprimir en modo texto, más rápido (migración 20261126110000)
             // 18-11-2026: impresion_local_caja y documentos_en_navegador ya no se graban: siempre encendidas (Mcaja::configuracion)
             'delivery_habilitado',    // 18-11-2026: pestaña Delivery en la Caja (migración 20261118100000)
             'usar_propina_web',       // v1.23.0: sin propina en nada (migración 20261120140000)
@@ -152,9 +153,15 @@ class Configuraciones extends CI_Controller {
             'agrupar_productos_web',  // v1.24.8: agrupar productos iguales en la Caja (migración 20261120170000)
             'usar_cocina_web',        // v1.29.0: pantalla de cocina (migración 20261121140000)
             'usar_reservas_web',      // v1.29.0: reservas de mesas
+            'produccion_sin_stock_web',  // v1.37.9: producir aunque no alcance el stock (migración 20261125100000)
+            'promos_sushi_web',       // v1.36.0: botón Promos Sushi en la Carta (migración 20261124160000)
             'sushi_por_pieza_web',    // v1.32.0: promos de sushi por pieza (migración 20261123110000)
             'sushi_bases_web',        // v1.32.0: preguntar la base en las promos de sushi
             'sushi_salsas_web',       // v1.32.0: salsas aparte de los extras
+            'esperas_anular_todas_web',  // v1.33.0: Ventas en espera > Anular todas (migración 20261124120000)
+            'mesas_anular_varias_web',   // v1.33.0: Mesas > Anular varias mesas
+            'agregados_extra_web',       // v1.35.0: agregados extra con costo (migración 20261124140000)
+            'agregados_categorias_web',  // v1.35.0: categorías de agregados
             'acepta',
             'acierto'
         ];
@@ -207,6 +214,9 @@ class Configuraciones extends CI_Controller {
             'minutos_bloqueo_reserva_web'   // v1.29.0: minutos antes de la reserva en que se bloquea la mesa
         ];
 
+        // v1.35.1: cuántos agregados extra con cobro y máximo por categoría de agregados (migración 20261124150000)
+        $numeric_fields[] = 'agregados_max_extras_web';
+        $numeric_fields[] = 'agregados_max_categoria_web';
         foreach ($numeric_fields as $f) {
             if (isset($post[$f]) && $post[$f] !== '') {
                 $update_config[$f] = intval($post[$f]);
@@ -214,6 +224,9 @@ class Configuraciones extends CI_Controller {
         }
         // v1.30.3: descuento máximo entre 0 (no se permite descuento) y 100 (sin límite)
         if (isset($update_config['por_maximodescuento'])) $update_config['por_maximodescuento'] = max(0, min(100, $update_config['por_maximodescuento']));
+        foreach (array('agregados_max_extras_web', 'agregados_max_categoria_web') as $f) {
+            if (isset($update_config[$f])) $update_config[$f] = max(0, min(20, $update_config[$f]));
+        }
         // 18-11-2026: el costo de envío no puede ser negativo
         if (isset($update_config['delivery_costo_envio'])) $update_config['delivery_costo_envio'] = max(0, $update_config['delivery_costo_envio']);
         if (isset($update_config['delivery_limite_rendicion'])) $update_config['delivery_limite_rendicion'] = max(0, $update_config['delivery_limite_rendicion']);

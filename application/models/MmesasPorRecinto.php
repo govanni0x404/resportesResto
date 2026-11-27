@@ -129,4 +129,21 @@ class MmesasPorRecinto extends CI_Model
       return array('success' => false, 'message' => 'Mesa no encontrada');
     }
   }
+
+  /**
+   * v1.38.3 (pedido del usuario): asigna varias mesas a un recinto de una vez (antes de a una). Igual que de a una:
+   * id_recinto y pos = id_mesa - 1. Devuelve cuántas quedaron asignadas.
+   */
+  public function asignarVarias($ids, $idRecinto)
+  {
+    $this->load->helper('tenant'); $db = get_tenant_db($this);
+    $idRecinto = (int)$idRecinto;
+    $ids = array_values(array_unique(array_filter(array_map('intval', is_array($ids) ? $ids : array()), function ($x) { return $x > 0; })));
+    if ($idRecinto <= 0) return array('error' => 'Elige el recinto');
+    if (!$ids) return array('error' => 'Marca al menos una mesa');
+    if (count($ids) > 1000) return array('error' => 'Demasiadas mesas de una vez');
+    if (!$db->query('SELECT 1 FROM recinto WHERE id_recinto = ?', array($idRecinto))->row()) return array('error' => 'El recinto ya no existe. Recarga la página.');
+    $db->query('UPDATE mesa SET id_recinto = ?, pos = id_mesa - 1 WHERE id_mesa IN (' . implode(',', $ids) . ')', array($idRecinto));
+    return array('ok' => true, 'asignadas' => (int)$db->affected_rows());
+  }
 }

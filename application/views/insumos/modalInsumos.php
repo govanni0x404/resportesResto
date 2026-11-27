@@ -1,4 +1,10 @@
+<?php $this->load->view('umedida/jsEquivalencias.php'); /* v1.34.0 */ ?>
 <style>
+	/* v1.34.0: equivalencia de las unidades del insumo */
+	.ins-equiv { margin: 2px 0 6px; padding: 8px 12px; border-radius: 8px; background: var(--t-primario-suave, #E8F5EC); color: var(--t-texto, #1F2937); font-size: 13px; }
+	.ins-equiv i { margin-right: 4px; color: var(--t-primario, #15803D); }
+	.ins-equiv.aviso { background: #FFF7E6; color: #7A5410; }
+	.ins-equiv.aviso i { color: #B7791F; }
 	/* Formularios en modales (.t-form): filas flexibles en vez de floats + <br>, etiquetas claras y móvil a una columna */
 	.t-form fieldset { display: flex; flex-wrap: wrap; align-items: flex-end; margin: 0 -8px; min-width: 0; }
 	.t-form fieldset > * { flex: 0 0 100%; max-width: 100%; padding-left: 8px; padding-right: 8px; }
@@ -154,6 +160,12 @@
 										</select>
 									</div>
 								</fieldset>
+								<!-- v1.34.0 (pedido del usuario): el sistema sabe que 1 kilo son 1000 gramos: la medida de receta se calcula sola -->
+								<fieldset>
+									<div class="col-md-12">
+										<div id="equivUnidadesInsumo" class="ins-equiv" hidden></div>
+									</div>
+								</fieldset>
 							</div>
 							<div class="tab-pane fade" id="tabStock">
 								<fieldset>
@@ -226,7 +238,12 @@
 												id="btnCrearRecetaProduccion" 
 												title="Crear nueva receta de producción" style="color: #B4432E; text-decoration: underline;
 												background: none; border: none; background-color: transparent;">
-											<i class=""></i> Nueva
+											<i class="fa fa-plus"></i> Nueva
+										</button>
+										<!-- v1.37.0: editar la receta elegida (sus insumos, rendimiento y costo) -->
+										<button type="button" class="btn btn-sm" id="btnEditarRecetaProduccion" title="Ver y editar la receta elegida: sus insumos y cuánto cuesta"
+												style="color: #B4432E; text-decoration: underline; background: none; border: none; background-color: transparent;">
+											<i class="fa fa-pencil"></i> Editar
 										</button>
 									</div>
 								</fieldset>
@@ -384,181 +401,7 @@
 <!-- FIN  MODAL NUEVO REGISTRO  -->
 
 <!-- MODAL NUEVA RECETA DE PRODUCCION -->
-<div id="ModalNuevaRecetaProduccion" class="modal fade" role="dialog" style="overflow-y: scroll;">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <!-- TITULO MODAL -->
-            <div class="modal-header btn-success">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-                <h4 class="modal-title text-center">REGISTRO DE RECETA DE PRODUCCIÓN</h4>
-            </div>
-
-            <!-- CONTENIDO MODAL -->
-            <div class="modal-body t-form">
-                <div class="h-panel">
-                    <!-- CAMPOS DE REGISTRO -->
-                    <div class="row">
-                        <div class="col-md-12">
-                            <fieldset>
-                                <div class="col-md-4" style="display:none" data-id-auto="1">
-                                    <label for="idRecetaProduccion">ID</label>
-                                    <input type="number" disabled class="form-control input-sm" 
-                                           name="idRecetaProduccion" id="idRecetaProduccion" value="" />
-                                </div>
-                            </fieldset>
-                        </div>
-                    </div>                    
-                    <div class="row">
-                        <div class="col-md-12">
-                            <fieldset>
-                                <div class="col-md-8">
-                                    <label for="nombreRecetaProduccion">NOMBRE DE LA RECETA *</label>
-                                    <input type="text" class="form-control input-sm" maxlength='50' 
-                                           onkeypress="return sololetrasyNumeros(event)" 
-                                           onpaste="return false;" ondrop="return false;" 
-                                           autocomplete="off" name="nombreRecetaProduccion" 
-                                           id="nombreRecetaProduccion" requerido="si" value="" 
-                                           placeholder="Nombre de la Receta" />
-                                </div>
-								<div class="col-md-3">
-                                    <div class="checkbox checkbox-success">
-                                            <input type="checkbox" id="ckVigenteReceta">
-                                        <label for='ckVigenteReceta'>
-											Vigente
-										</label>
-                                    </div>
-                                </div>
-                            </fieldset>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-12">
-                            <fieldset>
-                                <div class="col-md-4">
-                                    <label for="cboInsumoElaborado">INSUMO ELABORADO *</label>
-                                    <select id="cboInsumoElaborado" name="cboInsumoElaborado" 
-                                            class="form-control input-sm" style="width:100%" requerido="si">
-                                        <option value="0">-- Seleccione un Insumo --</option>
-                                    </select>
-                                </div>
-								<div class="col-md-4">
-                                    <label for="rendimientoReceta">RENDIMIENTO *</label>
-                                    <input type="number" class="form-control input-sm" 
-                                           onkeypress="return soloNumerosDecimales(event)" 
-                                           name="rendimientoReceta" id="rendimientoReceta" 
-                                           requerido="si" value="" placeholder="Ej: 1" />
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="cboUnidadMedidaReceta">U/MEDIDA INVENTARIO *</label>
-                                    <select id="cboUnidadMedidaReceta" name="cboUnidadMedidaReceta" 
-                                            class="form-control input-sm" style="width:100%" requerido="si">
-                                        <option value="0">-- Seleccione U/Medida --</option>
-                                    </select>
-                                </div>
-                            </fieldset>
-                        </div>
-                    </div>
-                    
-                    <!-- BOTON VER/AGREGAR INSUMOS -->
-                    <!-- <div class="row">
-                        <div class="col-md-12 text-center">
-                            <button type="button" class="btn btn-info" id="btnVerAgregarInsumos">
-                                <i class="fa fa-list"></i> Ver/Agregar Insumos
-                            </button>
-                        </div>
-                    </div> -->
-                    
-                    
-                    <!-- TABLA DE INSUMOS -->
-                    <div class="row">
-                        <div class="col-md-12">
-                            <fieldset>
-                                <div class="col-md-12">
-                                    <div class="table-responsive">
-                                        <table id="tableInsumosReceta" class="table table-bordered table-hover table-striped">
-                                            <thead class="btn-success">
-                                                <tr>
-                                                    <th class="text-center">ID</th>
-                                                    <th class="text-center">Nombre de la receta</th>
-                                                    <th class="text-center">Insumo</th>
-                                                    <th class="text-center">Cantidad</th>
-                                                    <th class="text-center">U/Medida Inv.</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="detalleInsumosReceta">
-                                                <!-- Las filas se llenarán dinámicamente -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </fieldset>
-                        </div>
-                    </div>
-                    
-                    <!-- SECCION PARA AGREGAR INSUMOS (OCULTA INICIALMENTE) -->
-                    <div id="seccionAgregarInsumos" style="display:none; margin-top: 20px;">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <h5><strong>Agregar Insumo a la Receta</strong></h5>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-12">
-                                <fieldset>
-                                    <div class="col-md-5">
-                                        <label for="cboInsumoDetalle">Insumo</label>
-                                        <select id="cboInsumoDetalle" name="cboInsumoDetalle" 
-                                                class="form-control input-sm" style="width:100%">
-                                            <option value="0">-- Seleccione --</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="cantidadInsumoDetalle">Cantidad</label>
-                                        <input type="number" class="form-control input-sm" 
-                                               onkeypress="return soloNumerosDecimales(event)" 
-                                               name="cantidadInsumoDetalle" id="cantidadInsumoDetalle" 
-                                               value="" placeholder="0" />
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="cboUmedidaDetalle">U/Medida</label>
-                                        <select id="cboUmedidaDetalle" name="cboUmedidaDetalle" 
-                                                class="form-control input-sm" style="width:100%">
-                                            <option value="0">-- Seleccione --</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-1">
-                                        <label style="visibility: hidden;">+</label>
-                                        <button type="button" class="btn btn-success btn-sm btn-block" 
-                                                id="btnAgregarInsumoDetalle">
-                                            <i class="fa fa-plus"></i>
-                                        </button>
-                                    </div>
-                                </fieldset>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- FIN CONTENIDO MODAL -->
-
-            <!-- BOTONES -->
-            <div class="modal-footer">
-                <button onclick="grabarNuevaRecetaProduccion()" type="button" class="btn btn-primary">
-                    <i class=""></i> GRABAR
-                </button>
-                <button type="button" class="btn btn-default" data-dismiss="modal">
-                    <i class=""></i> SALIR
-                </button>
-            </div>
-            <!-- FIN BOTONES -->
-        </div>
-    </div>
-</div>
-<!-- FIN MODAL NUEVA RECETA DE PRODUCCION -->
+<?php $this->load->view('insumos/recetaProduccion.php'); // v1.37.0: receta de producción completa ?>
 <?php $this->load->view('familiasInsumo/jsNuevaFamilia.php'); ?>
 <?php $this->load->view('umedida/jsNuevaUmedida.php'); ?>
 
@@ -626,6 +469,13 @@
 					if (/^\s*IVA\b/i.test(v.nombre_impuesto || '')) { objSelectedIva = v.nombre_impuesto; return false; }
 				});
 			}
+			// v1.37.1 (pedido del usuario): el impuesto adicional viene siempre en EXENTO (insumo nuevo o sin impuesto adicional).
+			// Se puede cambiar si un insumo lleva uno.
+			if (!objSelectedAdicional || objSelectedAdicional === '0') {
+				$.each(obj, function(index, v) {
+					if (/EXENT/i.test(v.nombre_impuesto || '')) { objSelectedAdicional = v.nombre_impuesto; return false; }
+				});
+			}
 			$.each(obj, function(index, v) { // recorro el array
 				if (v.nombre_impuesto == objSelectedIva) {
 					tblIva = tblIva + '<option selected value="' + v.id_impuesto + '">' + v.nombre_impuesto + '</option>';
@@ -671,8 +521,40 @@
 			$("#cboUnMedInventario").select2();
 			$("#cboUnMedReceta").html(tblReceta);
 			$("#cboUnMedReceta").select2();
+			pintarEquivalenciaInsumo();
 		});
 	}
+
+	// v1.34.0: al elegir las unidades (o cambiar la medida de inventario), la medida de receta sale de la equivalencia
+	// de las unidades (KILOGRAMO y GRAMO: 1 = 1000). Si las unidades no se pueden convertir (ej. UNIDAD y GRAMO), se
+	// escribe a mano como siempre.
+	function calcularMedidaReceta() {
+		if (!pintarEquivalenciaInsumo.ok) { Unidades.listo(function () { pintarEquivalenciaInsumo.ok = true; calcularMedidaReceta(); }); return; }
+		var inv = $('#cboUnMedInventario').val(), rec = $('#cboUnMedReceta').val();
+		var f = Unidades.factor(inv, rec);
+		if (f !== null && Number(inv) && Number(rec)) {
+			var mInv = Number($('#medInventario').val()) || 1;
+			if (!(Number($('#medInventario').val()) > 0)) $('#medInventario').val(1);
+			$('#medReceta').val(Math.round(mInv * f * 1000) / 1000);
+		}
+		pintarEquivalenciaInsumo();
+	}
+	function pintarEquivalenciaInsumo() {
+		if (!pintarEquivalenciaInsumo.ok) { Unidades.listo(function () { pintarEquivalenciaInsumo.ok = true; pintarEquivalenciaInsumo(); }); return; }
+		var inv = $('#cboUnMedInventario').val(), rec = $('#cboUnMedReceta').val();
+		var mInv = Number($('#medInventario').val()) || 0, mRec = Number($('#medReceta').val()) || 0;
+		var $e = $('#equivUnidadesInsumo');
+		if (!Number(inv) || !Number(rec) || !(mInv > 0) || !(mRec > 0)) { $e.prop('hidden', true); return; }
+		var nInv = $('#cboUnMedInventario option:selected').text(), nRec = $('#cboUnMedReceta option:selected').text();
+		var f = Unidades.factor(inv, rec), auto = f !== null && Math.abs(mInv * f - mRec) < 0.0005;
+		$e.prop('hidden', false).toggleClass('aviso', f !== null && !auto).html('<i class="fa ' + (f !== null && !auto ? 'fa-exclamation-triangle' : 'fa-exchange') + '"></i> '
+			+ Unidades.fmt(mInv) + ' ' + nInv + ' = <b>' + Unidades.fmt(mRec) + ' ' + nRec + '</b>'
+			+ (f !== null && !auto ? ' · Ojo: según las unidades deberían ser ' + Unidades.fmt(mInv * f) + ' ' + nRec + '. Al grabar se corrige.'
+				: (f === null ? ' · Estas unidades no tienen equivalencia: revisa que la medida esté bien.' : ' · Calculado solo.')));
+	}
+	$(document).on('change', '#cboUnMedInventario, #cboUnMedReceta', calcularMedidaReceta)
+		.on('input', '#medInventario', calcularMedidaReceta)
+		.on('input', '#medReceta', pintarEquivalenciaInsumo);
 
 	function llenarRecetaProduccion(id_insumo) {
 		$.post(base_url + "index.php/Insumos/llenarCboRecetaProduccion", {
@@ -1196,298 +1078,6 @@
 // ========================================
 
 // Abrir modal para crear receta de producción
-$("#btnCrearRecetaProduccion").on("click", function() {
-    AbrirModalNuevaRecetaProduccion();
-});
-
-function AbrirModalNuevaRecetaProduccion() {
-    // Limpiar campos
-    $('#idRecetaProduccion').val("");
-    $('#nombreRecetaProduccion').val("");
-    $('#cboInsumoElaborado').val("0");
-    $('#rendimientoReceta').val("");
-    $('#cboUnidadMedidaReceta').val("0");
-    $('#detalleInsumosReceta').html("");
-    $('#seccionInsumosReceta').hide();
-    
-    // Cargar combos
-    cargarInsumosParaReceta();
-    cargarUnidadesMedidaParaReceta();
-    
-    // Abrir modal
-    $('#ModalNuevaRecetaProduccion').modal({
-        backdrop: 'static',
-        keyboard: false
-    });
-}
-
-function cargarInsumosParaReceta() {
-    $.post(base_url + "index.php/Insumos/ListarInsumos", {}, function(datos) {
-        var obj = jQuery.parseJSON(datos);
-        
-        // Para el combo de insumo elaborado
-        var tblElaborado = '<option value="0">-- Seleccione un Insumo --</option>';
-        // Para el combo de insumos del detalle
-        var tblDetalle = '<option value="0">-- Seleccione --</option>';
-        
-        $.each(obj, function(index, v) {
-            tblElaborado += '<option value="' + v.id_insumo + '">' + v.nombre_insumo + '</option>';
-            tblDetalle += '<option value="' + v.id_insumo + '">' + v.nombre_insumo + '</option>';
-        });
-        
-        $("#cboInsumoElaborado").html(tblElaborado);
-        $("#cboInsumoElaborado").select2();
-        
-        $("#cboInsumoDetalle").html(tblDetalle);
-        $("#cboInsumoDetalle").select2();
-    });
-}
-
-function cargarUnidadesMedidaParaReceta(selectedUmedida) {
-    $.post(base_url + "index.php/Insumos/llenarCboUnMedida", {}, function(datos) {
-        var obj = jQuery.parseJSON(datos);
-        
-        var tbl = '<option value="0">-- Seleccione --</option>';
-        
-        $.each(obj, function(index, v) {
-            if (v.nombre_umedida == selectedUmedida || v.id_umedida == selectedUmedida) {
-                tbl += '<option selected value="' + v.id_umedida + '">' + v.nombre_umedida + '</option>';
-            } else {
-                tbl += '<option value="' + v.id_umedida + '">' + v.nombre_umedida + '</option>';
-            }
-        });
-        
-        $("#cboUnidadMedidaReceta").html(tbl);
-        $("#cboUnidadMedidaReceta").select2();
-        
-        $("#cboUmedidaDetalle").html(tbl);
-        $("#cboUmedidaDetalle").select2();
-    });
-}
-
-function AbrirModalNuevaRecetaProduccion() {
-    // Limpiar campos
-    $('#idRecetaProduccion').val("");
-    $('#nombreRecetaProduccion').val("");
-    $('#cboInsumoElaborado').val("0");
-    $('#rendimientoReceta').val("");
-    $('#cboUnidadMedidaReceta').val("0");
-    $('#detalleInsumosReceta').html("");
-    $('#seccionAgregarInsumos').hide();
-    $('#ckVigenteReceta').prop('checked', true);
-    
-    // Cargar combos
-    cargarInsumosParaReceta();
-    cargarUnidadesMedidaParaReceta();
-    
-    // Cargar listado de recetas existentes en la tabla
-    cargarListadoRecetasEnTabla();
-    
-    // Abrir modal
-    $('#ModalNuevaRecetaProduccion').modal({
-        backdrop: 'static',
-        keyboard: false
-    });
-}
-
-// Función para cargar el listado de recetas en la tabla
-function cargarListadoRecetasEnTabla() {
-    $.post(base_url + "index.php/RecetaProduccion/ListadoRecetasProduccion", {}, function(datos) {
-        var obj = jQuery.parseJSON(datos);
-        
-        $('#detalleInsumosReceta').html("");
-        
-        if (obj.aaData && obj.aaData.length > 0) {
-            $.each(obj.aaData, function(index, v) {
-                var fila = "<tr>";
-                fila += "<td class='text-center'>" + v.id_receta_produccion + "</td>";
-                fila += "<td class='text-left'>" + v.nombre_receta_produccion + "</td>";
-                fila += "<td class='text-left'>" + (v.insumo_elaborado || '-') + "</td>";
-                fila += "<td class='text-center'>" + v.cantidad + "</td>";
-                fila += "<td class='text-center'>" + (v.nombre_umedida || '-') + "</td>";
-                fila += "</tr>";
-                
-                $('#detalleInsumosReceta').append(fila);
-            });
-        } else {
-            $('#detalleInsumosReceta').html("<tr><td colspan='5' class='text-center'>No hay recetas registradas</td></tr>");
-        }
-    }).fail(function() {
-        console.error("Error al cargar el listado de recetas");
-    });
-}
-
-// Toggle para mostrar/ocultar sección de agregar insumos
-$('#btnVerAgregarInsumos').on('click', function() {
-    $('#seccionAgregarInsumos').toggle();
-});
-
-function cargarInsumosParaReceta() {
-    $.post(base_url + "index.php/Insumos/ListarInsumos", {}, function(datos) {
-        var obj = jQuery.parseJSON(datos);
-        
-        var tblElaborado = '<option value="0">-- Seleccione un Insumo --</option>';
-        var tblDetalle = '<option value="0">-- Seleccione --</option>';
-        
-        $.each(obj, function(index, v) {
-            tblElaborado += '<option value="' + v.id_insumo + '">' + v.nombre_insumo + '</option>';
-            tblDetalle += '<option value="' + v.id_insumo + '">' + v.nombre_insumo + '</option>';
-        });
-        
-        $("#cboInsumoElaborado").html(tblElaborado);
-        $("#cboInsumoElaborado").select2();
-        
-        $("#cboInsumoDetalle").html(tblDetalle);
-        $("#cboInsumoDetalle").select2();
-    });
-}
-
-function cargarUnidadesMedidaParaReceta() {
-    $.post(base_url + "index.php/Insumos/llenarCboUnMedida", {}, function(datos) {
-        var obj = jQuery.parseJSON(datos);
-        
-        var tbl = '<option value="0">-- Seleccione --</option>';
-        
-        $.each(obj, function(index, v) {
-            tbl += '<option value="' + v.id_umedida + '">' + v.nombre_umedida + '</option>';
-        });
-        
-        $("#cboUnidadMedidaReceta").html(tbl);
-        $("#cboUnidadMedidaReceta").select2();
-        
-        $("#cboUmedidaDetalle").html(tbl);
-        $("#cboUmedidaDetalle").select2();
-    });
-}
-
-function grabarNuevaRecetaProduccion() {
-    if ($('#nombreRecetaProduccion').val() === '') {
-        showAppAlert('error', "Ingrese el nombre de la receta", {
-            duration: 5000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-        return;
-    }
-    
-    if ($('#cboInsumoElaborado').val() == 0) {
-        showAppAlert('error', "Seleccione el insumo elaborado", {
-            duration: 5000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-        return;
-    }
-    
-    if ($('#rendimientoReceta').val() === '' || $('#rendimientoReceta').val() == 0) {
-        showAppAlert('error', "Ingrese el rendimiento de la receta", {
-            duration: 5000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-        return;
-    }
-    
-    if ($('#cboUnidadMedidaReceta').val() == 0) {
-        showAppAlert('error', "Seleccione la unidad de medida", {
-            duration: 5000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-        return;
-    }
-    
-    var id_receta = $('#idRecetaProduccion').val();
-    var nombre_receta = $('#nombreRecetaProduccion').val().toUpperCase().replace(/[,.'"$#%&]+/g, '');
-    var id_insumo = $('#cboInsumoElaborado').val();
-    var cantidad = $('#rendimientoReceta').val();
-    var id_umedida = $('#cboUnidadMedidaReceta').val();
-    var id_bodega = 0;
-    
-    var miJson = {
-        'id_receta_produccion': id_receta,
-        'nombre_receta_produccion': nombre_receta,
-        'id_insumo': id_insumo,
-        'cantidad': cantidad,
-        'id_umedida': id_umedida,
-        'id_bodega': id_bodega
-    };
-    
-    console.log("=== DATOS A ENVIAR ===");
-    console.log(miJson);
-    
-    $.post(base_url + "index.php/RecetaProduccion/grabarRecetaProduccion", {
-        'receta': miJson
-    })
-    .done(function(response) {
-        console.log("=== RESPUESTA DEL SERVIDOR ===");
-        console.log(response);
-        
-        try {
-            var respuesta = typeof response === 'string' ? JSON.parse(response) : response;
-            
-            if (respuesta.error) {
-                showAppAlert('error', respuesta.message || "Error al grabar la receta", {
-                    duration: 5000,
-                    image: base_url + 'assets/img/errorGif.gif'
-                });
-                return;
-            }
-            
-            var idRecetaNueva = null;
-            
-            if (Array.isArray(respuesta) && respuesta.length > 0) {
-                idRecetaNueva = respuesta[0].id_receta_produccion;
-            } else if (respuesta.id_receta_produccion) {
-                idRecetaNueva = respuesta.id_receta_produccion;
-            }
-            
-            console.log("ID de receta nueva:", idRecetaNueva);
-            
-            showAppAlert('success', "Se registró exitosamente la receta de producción", {
-                duration: 4000,
-                image: base_url + 'assets/img/success.gif'
-            });
-            
-            // Recargar la tabla de recetas
-            cargarListadoRecetasEnTabla();
-            
-            // Limpiar campos
-            $('#nombreRecetaProduccion').val("");
-            $('#cboInsumoElaborado').val("0").trigger('change');
-            $('#rendimientoReceta').val("");
-            $('#cboUnidadMedidaReceta').val("0").trigger('change');
-            
-            // Si estamos en el modal de insumos, recargar el combo
-            if ($('#cboMedReceta').length > 0) {
-                var idInsumoActual = $('#idInsumo').val();
-                if (idInsumoActual && idInsumoActual > 0) {
-                    llenarRecetaProduccion(idInsumoActual);
-                    
-                    if (idRecetaNueva) {
-                        setTimeout(function() {
-                            $('#cboMedReceta').val(idRecetaNueva).trigger('change');
-                        }, 800);
-                    }
-                }
-            }
-        } catch (e) {
-            console.error("Error al parsear respuesta:", e);
-            showAppAlert('error', "Error al procesar la respuesta del servidor", {
-                duration: 5000,
-                image: base_url + 'assets/img/errorGif.gif'
-            });
-        }
-    })
-    .fail(function(xhr, status, error) {
-        console.error("=== ERROR EN LA PETICIÓN ===");
-        console.error("Status:", status);
-        console.error("Error:", error);
-        console.error("Response:", xhr.responseText);
-        
-        showAppAlert('error', "Se produjo un error al grabar la receta", {
-            duration: 5000,
-            image: base_url + 'assets/img/errorGif.gif'
-        });
-    });
-}
-
 // Botón para realizar producción - CON DATOS DEL INSUMO
 $("#btnRealizarProduccion").on("click", function() {
     var idInsumo = $("#idInsumo").val();
@@ -1501,8 +1091,8 @@ $("#btnRealizarProduccion").on("click", function() {
         return;
     }
     
-    // Abrir modal y cargar datos del insumo
-    AbrirModalProduccion(idInsumo, nombreInsumo);
+    // v1.37.4 (pedido del usuario): primero se pregunta la receta y cuánto producir; después se abre Producción con todo calculado
+    abrirCargarProduccion(idInsumo, nombreInsumo);
 });
 </script>
 <!-- esto va en menu top para quitar las flechas en input type number 

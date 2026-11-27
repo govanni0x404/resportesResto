@@ -86,13 +86,15 @@ class Mcaja extends CI_Model
 		$colPedir = isset($tiene['producto']['pedir_cantidad_en_venta']) ? '(p.pedir_cantidad_en_venta IS TRUE)' : 'false';
 		// Favoritos marcados en la Carta (migración 20261110190000); sin la columna no hay favoritos
 		$colFavorito = isset($tiene['producto']['favorito']) ? '(p.favorito IS TRUE)' : 'false';
-		// v1.30.3: máximo de agregados a elegir (migración 20261123100000); 0 = sin límite
-		$colMaxAg = isset($tiene['producto']['max_agregados_web']) ? 'COALESCE(p.max_agregados_web, 0)' : '0';
+		// v1.30.3: máximo de agregados a elegir (migración 20261123100000). v1.43.0: -1 = sin límite, 0 = ninguno (ver sqlMaxAgregados)
+		$colMaxAg = self::sqlMaxAgregados(isset($tiene['producto']['max_agregados_web']), isset($tiene['producto']['varios_agregados_web']));
+		// v1.35.1: "Extras con cobro" del producto (migración 20261124150000)
+		$colMaxEx = isset($tiene['producto']['extras_web']) ? '(p.extras_web IS TRUE)' : 'false';
 		$usaUm = isset($tiene['producto']['id_umedida']) && isset($tieneUm['umedida']['nombre_umedida']);
 		$q = "SELECT p.id_producto, p.nombre_producto, COALESCE(p.cbarra, '') AS cbarra,
 				COALESCE(p.id_familia, 0) AS id_familia, " . ($conSub ? 'COALESCE(p.id_subfamilia, 0)' : '0') . " AS id_subfamilia,
 				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, " . $this->sqlExento($db, 'p') . " AS exento, " . $this->sqlIla($db, 'p') . " AS ila,
-				$colFraccion AS fraccion, $colPedir AS pedir_cantidad, $colFavorito AS favorito, $colMaxAg AS max_agregados, " . ($usaUm ? "COALESCE(um.nombre_umedida, '')" : "''") . " AS umedida
+				$colFraccion AS fraccion, $colPedir AS pedir_cantidad, $colFavorito AS favorito, $colMaxAg AS max_agregados, $colMaxEx AS extras, " . ($usaUm ? "COALESCE(um.nombre_umedida, '')" : "''") . " AS umedida
 			FROM producto p
 			LEFT JOIN detalle_lprecio dl ON dl.id_producto = p.id_producto AND dl.id_lprecio = ?
 			" . ($usaUm ? "LEFT JOIN umedida um ON um.id_umedida = p.id_umedida" : "") . "
@@ -119,7 +121,8 @@ class Mcaja extends CI_Model
 				'fraccion' => $p->fraccion === 't' || $p->fraccion === true,
 				'pedir_cantidad' => $p->pedir_cantidad === 't' || $p->pedir_cantidad === true,
 				'favorito' => $p->favorito === 't' || $p->favorito === true,
-				'max_agregados' => max(0, (int)$p->max_agregados),   // v1.30.3
+				'max_agregados' => max(-1, (int)$p->max_agregados),   // v1.30.3 / v1.43.0: -1 = sin límite, 0 = ninguno, N = hasta N
+				'extras' => $p->extras === 't' || $p->extras === true,   // v1.35.1: Extras con cobro
 				'umedida' => $this->abreviaturaUmedida($p->umedida),
 				'imagen' => isset($imagenes[(int)$p->id_producto]) ? $imagenes[(int)$p->id_producto] : null,
 			);
@@ -152,8 +155,10 @@ class Mcaja extends CI_Model
 				'id_producto_maestro' => (int)$a->id_producto_maestro,
 				'nombre' => $a->nombre_producto,
 				'valor' => (int)$a->valor,
+				'id_categoria' => (int)$a->id_categoria,   // v1.35.1: la del producto agregado
 			);
 		}
+		$categoriasAg = array_values($this->categoriasAgregados($db));   // v1.35.0
 
 		$mensajes = array();
 		$tieneMsg = $this->columnas($db, array('mensaje_producto'));
@@ -192,7 +197,7 @@ class Mcaja extends CI_Model
 			$sushisCaja[] = array('id_producto' => $idP, 'piezas' => $sp['piezas'], 'paso' => $sp['paso'], 'max_rellenos' => $sp['max_rellenos'],
 				'modo' => $sp['modo'], 'piezas_rol' => $sp['piezas_rol'],   // v1.26.0
 				// v1.32.0: promo fija (lo armado), precio según el envoltorio, máximos y salsas
-				'fijo' => $sp['fijo'], 'precio_envoltorio' => $sp['precio_envoltorio'], 'max_envoltorios' => $sp['max_envoltorios'],
+				'fijo' => $sp['fijo'], 'precio_envoltorio' => $sp['precio_envoltorio'], 'max_envoltorios' => $sp['max_envoltorios'], 'max_bases' => $sp['max_bases'],
 				'max_extras' => $sp['max_extras'], 'max_salsas' => $sp['max_salsas'],
 				'bases' => $ops['base'], 'rellenos' => $ops['relleno'], 'envoltorios' => $ops['envoltorio'], 'extras' => $ops['extra'], 'salsas' => $ops['salsa']);
 		}
@@ -222,6 +227,7 @@ class Mcaja extends CI_Model
 			'documentos' => $documentos,
 			'listas_precio' => $listas,
 			'agregados' => $agregados,
+			'categorias_agregados' => $categoriasAg,   // v1.35.0
 			'menus' => $menusCaja,   // v1.24.0
 			'sushis' => $sushisCaja,   // v1.25.0
 			'mensajes' => $mensajes,
@@ -265,6 +271,7 @@ class Mcaja extends CI_Model
 			JOIN detalle_categoria_menu d ON d.id_categoria_menu = c.id_categoria_menu" . (isset($det['vigente']) ? ' AND d.vigente IS NOT FALSE' : '') . "
 			JOIN producto pd ON pd.id_producto = d.id_producto AND pd.vigente IS TRUE
 			WHERE p.vigente IS TRUE AND COALESCE(p.id_menu, 0) > 0
+			  " . ($this->columnas($db, array('promo_producto_web')) ? 'AND p.id_producto NOT IN (SELECT id_producto FROM promo_web)' : '') . "
 			ORDER BY p.id_producto, " . (isset($cat['orden']) ? 'COALESCE(c.orden, 0), ' : '') . "c.id_categoria_menu, pd.nombre_producto")->result();   // categorías en el orden en que se crearon
 		$si = function ($v) { return $v === true || $v === 't'; };
 		foreach ($rows as $r) {
@@ -283,7 +290,48 @@ class Mcaja extends CI_Model
 				'imprimir' => $si($r->imprimir), 'id_receta' => (int)$r->id_receta, 'id_bodega' => (int)$r->id_bodega);
 			unset($cats);
 		}
+		// v1.41.0: promos normales (Carta > Promos) desde sus tablas (promo_web + promo_producto_web, migración
+		// 20261126120000), con la misma forma de un menú para la Caja: fija = una categoría por producto con su cantidad
+		// obligatoria; "el cliente elige N" = una categoría "ELIGE N" con todos. Las opciones usan id_promo_producto_web.
+		foreach ($this->promosNormales($db) as $idP => $pr) {
+			unset($this->menusCache[$idP]);   // por si aún tiene un menú antiguo
+			$this->menusCache[$idP] = $pr;
+		}
 		return $this->menusCache;
+	}
+
+	/** v1.41.0: [id del producto-promo => promo con forma de menú (+ 'promo' => true)] desde promo_producto_web. */
+	private function promosNormales($db)
+	{
+		$t = $this->columnas($db, array('promo_web', 'promo_producto_web'));
+		if (!isset($t['promo_web'], $t['promo_producto_web'])) return array();
+		$elegir = isset($t['promo_web']['elegir']) ? 'COALESCE(w.elegir, 0)' : '0';
+		$rows = $this->q($db, "SELECT w.id_producto AS id_promo, $elegir AS elegir, pp.id_promo_producto_web, pp.id_producto, pp.cantidad,
+				pd.nombre_producto, COALESCE(pd.id_receta, 0) AS id_receta, COALESCE(pd.id_bodega, 0) AS id_bodega, p.nombre_producto AS nombre_promo
+			FROM promo_web w
+			JOIN producto p ON p.id_producto = w.id_producto AND p.vigente IS TRUE
+			JOIN promo_producto_web pp ON pp.id_producto_promo = w.id_producto AND pp.vigente IS TRUE
+			JOIN producto pd ON pd.id_producto = pp.id_producto AND pd.vigente IS TRUE
+			ORDER BY w.id_producto, pp.orden, pp.id_promo_producto_web")->result();
+		$res = array();
+		foreach ($rows as $r) {
+			$idP = (int)$r->id_promo;
+			$n = (int)$r->elegir;
+			if (!isset($res[$idP])) $res[$idP] = array('id_menu' => 0, 'promo' => true, 'elegir' => $n, 'nombre' => (string)$r->nombre_promo, 'categorias' => array());
+			$op = array('id' => (int)$r->id_promo_producto_web, 'id_producto' => (int)$r->id_producto, 'nombre' => (string)$r->nombre_producto,
+				'adicional' => 0, 'imprimir' => true, 'id_receta' => (int)$r->id_receta, 'id_bodega' => (int)$r->id_bodega);
+			if ($n > 0) {
+				if (!isset($res[$idP]['categorias'][0])) {
+					$res[$idP]['categorias'][0] = array('id' => -$idP, 'nombre' => 'ELIGE ' . $n, 'min' => $n, 'max' => $n, 'estricto' => true, 'opciones' => array());
+				}
+				$res[$idP]['categorias'][0]['opciones'][$op['id']] = $op;
+			} else {
+				$q = max(1, (int)$r->cantidad);
+				$res[$idP]['categorias'][$op['id']] = array('id' => $op['id'], 'nombre' => (string)$r->nombre_producto, 'min' => $q, 'max' => $q,
+					'estricto' => true, 'opciones' => array($op['id'] => $op));
+			}
+		}
+		return $res;
 	}
 
 	/**
@@ -293,12 +341,15 @@ class Mcaja extends CI_Model
 	private function eleccionMenu($menu, $eleccion, $nombreMenu)
 	{
 		$pedidas = array();
+		$notas = array();   // v1.39.7 (pedido del usuario): comentario de cada producto elegido; sale en la comanda
 		foreach ((is_array($eleccion) ? $eleccion : array()) as $e) {
 			$id = (int)(is_array($e) && isset($e['id']) ? $e['id'] : 0);
 			$q = (int)(is_array($e) && isset($e['cantidad']) ? $e['cantidad'] : 1);
 			if ($id <= 0 || $q <= 0) continue;
 			if ($q > 99) throw new Exception('Cantidad demasiado alta en ' . $nombreMenu, 400);
 			$pedidas[$id] = (isset($pedidas[$id]) ? $pedidas[$id] : 0) + $q;
+			$n = is_array($e) && isset($e['nota']) ? mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)$e['nota'])), 0, 80) : '';
+			if ($n !== '') $notas[$id] = isset($notas[$id]) && $notas[$id] !== $n ? $notas[$id] . '; ' . $n : $n;
 		}
 		$res = array();
 		foreach ($menu['categorias'] as $c) {
@@ -306,7 +357,7 @@ class Mcaja extends CI_Model
 			foreach ($c['opciones'] as $o) {
 				if (!isset($pedidas[$o['id']])) continue;
 				$n += $pedidas[$o['id']];
-				$res[] = array($o, $pedidas[$o['id']]);
+				$res[] = array($o, $pedidas[$o['id']], isset($notas[$o['id']]) ? $notas[$o['id']] : '');
 				unset($pedidas[$o['id']]);
 			}
 			if ($c['max'] > 0 && $n > $c['max']) {
@@ -322,7 +373,7 @@ class Mcaja extends CI_Model
 
 	/**
 	 * v1.25.0: promos de sushi (migración 20261120180000): [id del producto-promo => promo]. Sin las tablas, ninguna.
-	 * Promo: piezas, paso (de a cuántas piezas va cada grupo), max_rellenos (0 = sin límite) y sus opciones por tipo
+	 * Promo: piezas, paso (de a cuántas piezas va cada grupo), max_rellenos (-1 = sin límite, 0 = no se ofrece) y sus opciones por tipo
 	 * (base, relleno, envoltorio, extra), cada una con su producto vigente y su valor adicional.
 	 */
 	private $sushisCache = null;
@@ -338,7 +389,8 @@ class Mcaja extends CI_Model
 		// v1.32.0: promo fija, precio según el envoltorio, máximos y salsas (migración 20261123110000)
 		$conOp = isset($t['promo_sushi_web']['fija_web'], $t['promo_sushi_web']['max_salsas_web'], $t['promo_sushi_opcion_web']['precio_promo_web']);
 		$selOp = $conOp ? 's.fija_web, s.armado_fijo_web, s.precio_envoltorio_web, s.max_envoltorios_web, s.max_extras_web, s.max_salsas_web'
-			: 'false AS fija_web, NULL AS armado_fijo_web, false AS precio_envoltorio_web, 1 AS max_envoltorios_web, 0 AS max_extras_web, 0 AS max_salsas_web';
+			: 'false AS fija_web, NULL AS armado_fijo_web, false AS precio_envoltorio_web, 1 AS max_envoltorios_web, -1 AS max_extras_web, -1 AS max_salsas_web';
+		$selOp .= isset($t['promo_sushi_web']['max_bases_web']) ? ', s.max_bases_web' : ', 1 AS max_bases_web';   // v1.32.1
 		$cfg = $this->opcionesSushi($db);
 		$si = function ($v) { return $v === true || $v === 't'; };
 		foreach ($this->q($db, "SELECT s.id_producto, s.piezas, s.paso, s.max_rellenos, $selRol, $selOp FROM promo_sushi_web s
@@ -347,11 +399,12 @@ class Mcaja extends CI_Model
 			$pr = max(1, (int)$r->piezas_rol);
 			$fijo = $si($r->fija_web) && $r->armado_fijo_web ? json_decode((string)$r->armado_fijo_web, true) : null;
 			$this->sushisCache[(int)$r->id_producto] = array('piezas' => (int)$r->piezas, 'paso' => $rol ? $pr : max(1, (int)$r->paso),
-				'max_rellenos' => max(0, (int)$r->max_rellenos),
+				'max_rellenos' => max(-1, (int)$r->max_rellenos),   // v1.32.5: -1 = sin límite, 0 = no se ofrece
 				// v1.26.0: por roll, cada grupo va de a un roll (paso = piezas del roll) y lo elegido se cobra por roll
 				'modo' => $rol ? 'rol' : 'pieza', 'piezas_rol' => $pr,
-				'fijo' => is_array($fijo) ? $fijo : null, 'precio_envoltorio' => $si($r->precio_envoltorio_web),
-				'max_envoltorios' => max(1, (int)$r->max_envoltorios_web), 'max_extras' => max(0, (int)$r->max_extras_web), 'max_salsas' => max(0, (int)$r->max_salsas_web),
+				// v1.32.1: precio según el envoltorio solo en promos por roll (cada roll se cobra con el precio de su envoltorio)
+				'fijo' => is_array($fijo) ? $fijo : null, 'precio_envoltorio' => $rol && $si($r->precio_envoltorio_web), 'max_bases' => max(1, (int)$r->max_bases_web),
+				'max_envoltorios' => max(1, (int)$r->max_envoltorios_web), 'max_extras' => max(-1, (int)$r->max_extras_web), 'max_salsas' => max(-1, (int)$r->max_salsas_web),
 				'opciones' => array('base' => array(), 'relleno' => array(), 'envoltorio' => array(), 'extra' => array(), 'salsa' => array()));
 		}
 		if (!$this->sushisCache) return array();
@@ -364,6 +417,9 @@ class Mcaja extends CI_Model
 			if (!isset($this->sushisCache[$idP]['opciones'][$r->tipo])) continue;
 			// v1.32.0: bases y salsas se usan solo si están encendidas en Configuraciones > Promos de sushi
 			if (($r->tipo === 'base' && !$cfg['bases']) || ($r->tipo === 'salsa' && !$cfg['salsas'])) continue;
+			// v1.32.5 (pedido del usuario): máximo 0 = esa sección no se ofrece (0 es 0; sin límite es -1)
+			$maxDe = array('relleno' => 'max_rellenos', 'extra' => 'max_extras', 'salsa' => 'max_salsas');
+			if (isset($maxDe[$r->tipo]) && $this->sushisCache[$idP][$maxDe[$r->tipo]] === 0) continue;
 			$this->sushisCache[$idP]['opciones'][$r->tipo][(int)$r->id_opcion] = array('id' => (int)$r->id_opcion,
 				'id_producto' => (int)$r->id_producto, 'nombre' => (string)$r->nombre_producto, 'valor' => max(0, (int)$r->valor),
 				'precio_promo' => max(0, (int)$r->precio_promo),
@@ -392,12 +448,36 @@ class Mcaja extends CI_Model
 		$ids = function ($o) { return $o ? (int)$o['id'] : 0; };
 		$guardar = array('grupos' => array(), 'extras' => array(), 'salsas' => array());
 		foreach ($r['grupos'] as $g) {
-			$guardar['grupos'][] = array('piezas' => $g['piezas'], 'base' => $ids($g['base']), 'envoltorio' => $ids($g['envoltorio']),
+			$guardar['grupos'][] = array('piezas' => $g['piezas'], 'base' => $ids($g['base']), 'bases' => array_map($ids, $g['bases']), 'envoltorio' => $ids($g['envoltorio']),
 				'envoltorios' => array_map($ids, $g['envoltorios']), 'rellenos' => array_map($ids, $g['rellenos']), 'nota' => $g['nota']);
 		}
 		foreach (array('extras', 'salsas') as $k) foreach ($r[$k] as $par) $guardar[$k][] = array('id' => (int)$par[0]['id'], 'cantidad' => (int)$par[1]);
 		$this->q($db, 'UPDATE promo_sushi_web SET fija_web = true, armado_fijo_web = ? WHERE id_producto = ?', array(json_encode($guardar), (int)$idPromo));
 		return array('ok' => true, 'fija' => true, 'armado' => $guardar);
+	}
+
+	/**
+	 * v1.32.1: precio de cada roll (grupo) de una promo con precio según el envoltorio. Un grupo cuyo envoltorio tiene
+	 * precio vale ese precio por roll (el más caro si lleva varios); el que no, su parte del precio de la promo (repartida
+	 * por rolls con redondeo acumulado, para que la suma cuadre). Igual en la Caja (preciosRollSushi en 04_estado_catalogo).
+	 */
+	public static function preciosRollSushi($promo, $grupos, $precioPromo)
+	{
+		$totalRolls = max(1, intdiv((int)$promo['piezas'], max(1, (int)$promo['piezas_rol'])));
+		$res = array();
+		$acum = 0;
+		$antes = 0;
+		foreach ($grupos as $i => $g) {
+			$rolls = isset($g['rolls']) && $g['rolls'] ? (int)$g['rolls'] : intdiv((int)$g['piezas'], max(1, (int)$promo['piezas_rol']));
+			$acum += $rolls;
+			$hasta = (int)round($precioPromo * $acum / $totalRolls);
+			$parte = $hasta - $antes;
+			$antes = $hasta;
+			$p = 0;
+			foreach ($g['envoltorios'] as $o) $p = max($p, (int)$o['precio_promo']);
+			$res[$i] = $p > 0 ? $p * $rolls : $parte;
+		}
+		return $res;
 	}
 
 	/** v1.32.0: Configuraciones > Promos de sushi (sin las columnas: como antes, con bases y sin salsas aparte). */
@@ -406,8 +486,9 @@ class Mcaja extends CI_Model
 		$db = $db ?: $this->conexion();
 		$c = $this->columnas($db, array('configuracion'));
 		$c = isset($c['configuracion']) ? $c['configuracion'] : array();
-		$res = array('por_pieza' => true, 'bases' => true, 'salsas' => false);
-		$mapa = array('por_pieza' => 'sushi_por_pieza_web', 'bases' => 'sushi_bases_web', 'salsas' => 'sushi_salsas_web');
+		// v1.36.0: activas = botón Promos Sushi en la Carta (sin la columna: como antes, encendido)
+		$res = array('por_pieza' => true, 'bases' => true, 'salsas' => false, 'activas' => true);
+		$mapa = array('por_pieza' => 'sushi_por_pieza_web', 'bases' => 'sushi_bases_web', 'salsas' => 'sushi_salsas_web', 'activas' => 'promos_sushi_web');
 		$sel = array();
 		foreach ($mapa as $k => $col) if (isset($c[$col])) $sel[$k] = "($col IS TRUE) AS $k";
 		if ($sel) {
@@ -447,11 +528,19 @@ class Mcaja extends CI_Model
 				throw new Exception($nombre . ', grupo ' . $num . ': ' . ($rol ? 'los rolls van completos (de ' . $promo['paso'] . ' piezas)' : 'las piezas van de a ' . $promo['paso']), 400);
 			}
 			$total += $piezas;
-			$base = null;
-			if ($op['base']) {
-				if (empty($g['base'])) throw new Exception($nombre . ', grupo ' . $num . ': elige la base', 400);
-				$base = $opcion('base', $g['base']);
+			// v1.32.1: puede llevar más de una base (hasta max_bases); llega "bases" [ids] o "base" (una)
+			$idsBase = isset($g['bases']) && is_array($g['bases']) ? $g['bases'] : (!empty($g['base']) ? array($g['base']) : array());
+			$bases = array();
+			foreach ($idsBase as $idB) {
+				$o = $opcion('base', $idB);
+				if (isset($bases[$o['id']])) throw new Exception($nombre . ', grupo ' . $num . ': ' . $o['nombre'] . ' está repetido', 400);
+				$bases[$o['id']] = $o;
 			}
+			$bases = array_values($bases);
+			if ($op['base'] && !$bases) throw new Exception($nombre . ', grupo ' . $num . ': elige la base', 400);
+			$maxBases = isset($promo['max_bases']) ? max(1, (int)$promo['max_bases']) : 1;
+			if (count($bases) > $maxBases) throw new Exception($nombre . ', grupo ' . $num . ': se pueden elegir hasta ' . $maxBases . ($maxBases === 1 ? ' base' : ' bases'), 400);
+			$base = $bases ? $bases[0] : null;
 			// v1.32.0: puede llevar más de un envoltorio (hasta max_envoltorios); llega "envoltorios" [ids] o "envoltorio" (uno)
 			$idsEnv = isset($g['envoltorios']) && is_array($g['envoltorios']) ? $g['envoltorios'] : (!empty($g['envoltorio']) ? array($g['envoltorio']) : array());
 			$envs = array();
@@ -480,7 +569,7 @@ class Mcaja extends CI_Model
 			// v1.26.1: nota del roll / grupo (sin caracteres de control, hasta 100)
 			$notaG = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', isset($g['nota']) && is_scalar($g['nota']) ? (string)$g['nota'] : '')), 0, 100);
 			$res['grupos'][] = array('piezas' => $piezas, 'rolls' => $rol ? intdiv($piezas, $promo['piezas_rol']) : 0,
-				'base' => $base, 'envoltorio' => $env, 'envoltorios' => $envs, 'rellenos' => array_values($rellenos), 'nota' => $notaG);
+				'base' => $base, 'bases' => $bases, 'envoltorio' => $env, 'envoltorios' => $envs, 'rellenos' => array_values($rellenos), 'nota' => $notaG);
 		}
 		if ($total !== $promo['piezas']) {
 			// v1.26.0: por roll, el aviso en rolls
@@ -516,8 +605,12 @@ class Mcaja extends CI_Model
 	{
 		$t = $this->columnas($db, array('agregados'));
 		if (!isset($t['agregados'])) return array();
+		// v1.35.1: la categoría es la del producto agregado (migración 20261124150000)
+		$tp = $this->columnas($db, array('producto'));
+		$selCat = isset($tp['producto']['id_categoria_agregado_web']) ? 'COALESCE(p.id_categoria_agregado_web, 0)' : '0';
 		$q = "SELECT a.id_agregado, a.id_producto_maestro, a.id_producto, p.nombre_producto, COALESCE(a.valor, 0) AS valor,
-				COALESCE(p.id_receta, 0) AS id_receta, COALESCE(p.id_bodega, 0) AS id_bodega
+				COALESCE(p.id_receta, 0) AS id_receta, COALESCE(p.id_bodega, 0) AS id_bodega,
+				$selCat AS id_categoria
 			FROM agregados a JOIN producto p ON p.id_producto = a.id_producto
 			WHERE p.vigente IS TRUE";
 		if (isset($t['agregados']['vigente'])) $q .= " AND a.vigente IS NOT FALSE";
@@ -528,6 +621,88 @@ class Mcaja extends CI_Model
 			$binds[] = (int)$idMaestro;
 		}
 		return $this->q($db, $q . " ORDER BY a.id_producto_maestro, p.nombre_producto", $binds)->result();
+	}
+
+	/**
+	 * v1.35.0: categorías de agregados vigentes (Tablas > Categorías de agregados), en su orden. [id => {id, nombre, orden}].
+	 * Sin la tabla (migración 20261124140000 sin correr) no hay categorías.
+	 */
+	private function categoriasAgregados($db)
+	{
+		$t = $this->columnas($db, array('categoria_agregado_web'));
+		if (!isset($t['categoria_agregado_web'])) return array();
+		$res = array();
+		foreach ($this->q($db, "SELECT id_categoria_agregado, nombre, orden FROM categoria_agregado_web
+				WHERE vigente IS TRUE AND eliminado IS NOT TRUE ORDER BY orden, nombre")->result() as $c) {
+			$res[(int)$c->id_categoria_agregado] = array('id' => (int)$c->id_categoria_agregado, 'nombre' => (string)$c->nombre, 'orden' => (int)$c->orden);
+		}
+		return $res;
+	}
+
+	/**
+	 * v1.35.0 / v1.35.2 (pedido del usuario): revisa los agregados elegidos de un producto contra sus límites y devuelve
+	 * cuáles van como extra. $elegidos son filas de agregados() (con id_categoria = la del producto agregado).
+	 * - Máximo del producto ($maxTotal): cuántos sin costo en total, de todas las categorías.
+	 * - Máximo por categoría ($maxCat, Configuraciones): tope fijo de cada categoría, contando también los extras; nunca
+	 *   hace que uno vaya como extra. Los sin categoría solo cuentan para el total.
+	 * - Extras: solo con "Extras con cobro" en el producto ($modoExtras) y con el máximo total ya lleno; hasta $maxExtras
+	 *   (Configuraciones; 0 = sin tope).
+	 * Lanza Exception 400 con el motivo.
+	 */
+	/**
+	 * v1.43.0: el máximo de agregados que se pueden elegir en la Caja, con la casilla de la Carta "Permite varios agregados"
+	 * (producto.varios_agregados_web; v1.43.1: NULL = no, parte apagada) y "0 es 0" (producto.max_agregados_web: NULL = sin límite, 0 = ninguno):
+	 * -1 = sin límite, 0 = ninguno, N = hasta N. Sin la casilla marcada: uno solo (o ninguno si el máximo es 0).
+	 * Sin la migración 20261126140000, como antes (0 = sin límite).
+	 */
+	public static function sqlMaxAgregados($hayMax, $hayVarios)
+	{
+		if (!$hayMax) return '-1';
+		if (!$hayVarios) return 'CASE WHEN COALESCE(p.max_agregados_web, 0) <= 0 THEN -1 ELSE p.max_agregados_web END';
+		// v1.44.0: "Con Agregado" (1 a 1, o sin marcar) = uno solo; el máximo es de "Con Varios Agregados"
+		return 'CASE WHEN p.varios_agregados_web IS TRUE THEN COALESCE(p.max_agregados_web, -1) ELSE 1 END';
+	}
+
+	public static function revisarAgregadosElegidos($nombre, $elegidos, $idsExtra, $maxTotal, $maxCat, $maxExtras, $modoExtras)
+	{
+		$idsExtra = array_values(array_unique(array_map('intval', is_array($idsExtra) ? $idsExtra : array())));
+		$porId = array();
+		foreach ($elegidos as $a) $porId[(int)$a->id_agregado] = $a;
+		foreach ($idsExtra as $id) {
+			if (!isset($porId[$id])) throw new Exception('Un agregado extra de ' . $nombre . ' no está entre los elegidos', 400);
+		}
+		if ($idsExtra && !$modoExtras) throw new Exception($nombre . ' no tiene agregados extra con cobro', 400);
+		$maxTotal = max(-1, (int)$maxTotal);   // v1.43.0: -1 = sin límite, 0 = ninguno
+		$maxCat = max(0, (int)$maxCat);
+		$maxExtras = max(0, (int)$maxExtras);
+		$s = function ($n) { return $n === 1 ? '' : 's'; };
+		$porCat = array();
+		foreach ($elegidos as $a) {
+			$cat = (int)$a->id_categoria;
+			if ($cat <= 0) continue;
+			$porCat[$cat] = (isset($porCat[$cat]) ? $porCat[$cat] : 0) + 1;
+			if ($maxCat > 0 && $porCat[$cat] > $maxCat) {
+				throw new Exception($nombre . ' permite elegir hasta ' . $maxCat . ' agregado' . $s($maxCat) . ' de cada categoría', 400);
+			}
+		}
+		$gratis = count($elegidos) - count($idsExtra);
+		if ($maxTotal === 0 && $elegidos) throw new Exception($nombre . ' no lleva agregados', 400);   // v1.43.0: 0 es 0
+		if ($maxTotal > 0 && $gratis > $maxTotal) {
+			throw new Exception($nombre . ' permite elegir hasta ' . $maxTotal . ' agregado' . $s($maxTotal) . ($modoExtras ? ' (los demás van como extra)' : ''), 400);
+		}
+		if ($maxExtras > 0 && count($idsExtra) > $maxExtras) {
+			throw new Exception($nombre . ' permite sumar hasta ' . $maxExtras . ' agregado' . $s($maxExtras) . ' extra', 400);
+		}
+		if ($idsExtra && !($maxTotal > 0 && $gratis >= $maxTotal)) {
+			throw new Exception($porId[$idsExtra[0]]->nombre_producto . ' todavía cabe sin costo en ' . $nombre . ': no va como extra', 400);
+		}
+		return $idsExtra;
+	}
+
+	/** v1.35.2: ¿el producto cobra solo los extras? Con su casilla, la opción encendida y un máximo de agregados. */
+	public static function modoExtras($config, $extrasProducto, $maxTotal)
+	{
+		return !empty($config['agregados_extra']) && $extrasProducto && (int)$maxTotal > 0;
 	}
 
 	// ====================== Permisos y autorizaciones ======================
@@ -1293,7 +1468,12 @@ class Mcaja extends CI_Model
 		$detalle = $this->q($db, "SELECT COALESCE(p.nombre_producto, 'Producto ' || dv.id_producto)
 					|| COALESCE(' + ' || pa.nombre_producto, '') AS nombre,
 				dv.cantidad, dv.bruto_un, dv.subtotal, (COALESCE(dv.poriva, 1) = 0) AS exento, COALESCE(dv.porila, 0) AS porila,
-				" . (isset($this->columnas($db, array('detalle_venta'))['detalle_venta']['es_detalle_menu']) ? '(dv.es_detalle_menu IS TRUE)' : 'false') . " AS del_menu
+				" . (isset($this->columnas($db, array('detalle_venta'))['detalle_venta']['es_detalle_menu']) ? '(dv.es_detalle_menu IS TRUE)' : 'false')
+					// v1.42.0: los agregados de un producto con varios salen igual: "+ PALTA" debajo del producto
+					. (isset($this->columnas($db, array('detalle_venta'))['detalle_venta']['es_agregado_web']) ? ' OR (dv.es_agregado_web IS TRUE)' : '')
+					// v1.45.0: los productos de una promo (normal o de sushi), con sus propias marcas
+					. (isset($this->columnas($db, array('detalle_venta'))['detalle_venta']['es_detalle_promo_web'])
+						? ' OR (dv.es_detalle_promo_web IS TRUE) OR (dv.es_detalle_promo_sushi_web IS TRUE)' : '') . " AS del_menu
 			FROM detalle_venta dv
 			LEFT JOIN producto p ON p.id_producto = dv.id_producto
 			LEFT JOIN producto pa ON pa.id_producto = dv.id_agregado AND dv.id_agregado > 0
@@ -2207,13 +2387,14 @@ class Mcaja extends CI_Model
 			if ($tokenVenta !== '') $this->q($db, 'UPDATE caja_venta_token SET id_venta = ? WHERE token = ?', array((int)$idVenta, $tokenVenta));
 
 			// El descuento global se reparte entre las líneas según su monto (montos())
+			$idsVenta = array();   // v1.41.0: índice de la línea => id_detalle_venta (para detalle_agregado_web / detalle_promo_web)
 			foreach ($lineas as $i => $l) {
 				$ml = $m['lineas'][$i];
 				$descLinea = $ml['descuento'];
 				$conDesc = $ml['con_descuento'];
 				$netoLinea = $ml['neto'];
 				$netoConDesc = $ml['neto_con_descuento'];
-				$this->insertar($db, $cols, 'detalle_venta', array(
+				$idsVenta[$i] = $this->insertar($db, $cols, 'detalle_venta', self::marcasFila($l, $cols['detalle_venta']) + array(
 					'id_venta' => $idVenta,
 					'id_producto' => $l['id_producto'],
 					'nombre_producto' => mb_substr($l['nombre'], 0, 200),
@@ -2239,8 +2420,9 @@ class Mcaja extends CI_Model
 					'es_merma' => false,
 					'esmerma' => false,
 					'id_agregado' => $l['id_agregado'],
-					// v1.24.0: menú y productos elegidos del menú (mismas columnas que usa el POS de escritorio)
-					'es_menu' => !empty($l['es_menu']), 'es_detalle_menu' => !empty($l['es_detalle_menu']),
+					// v1.24.0: menú y productos elegidos del menú: van en marcasFila() (v1.45.0: las promos con sus propias marcas)
+					// v1.42.0: producto con VARIOS agregados y cada uno de sus agregados
+					'es_con_agregados_web' => !empty($l['con_agregados']) ? true : null, 'es_agregado_web' => isset($l['agregado_de']) ? true : null,
 					'id_menu' => isset($l['id_menu']) ? (int)$l['id_menu'] : 0,
 					'id_lprecio' => $idLprecio,
 					'nombre_computador' => self::COMPUTADOR,
@@ -2259,8 +2441,9 @@ class Mcaja extends CI_Model
 					'total_bruto_con_descuento' => $conDesc,
 					'monto_exento' => $ml['exento'] ? $conDesc : 0,
 				// Bodega de la caja (Control de cajas), si detalle_venta tiene la columna; sin bodega en la caja no se informa (como antes)
-				) + ((int)$config['id_bodega_caja'] > 0 ? array('id_bodega' => (int)$config['id_bodega_caja']) : array()), null);
+				) + ((int)$config['id_bodega_caja'] > 0 ? array('id_bodega' => (int)$config['id_bodega_caja']) : array()), 'id_detalle_venta');
 			}
+			$this->anotarUniones($db, $lineas, $idsVenta, (int)$idVenta);   // v1.41.0
 
 			if (!$this->tieneTriggerStock($db)) {
 				$this->descontarStock($db, $cols, $idVenta, (int)$config['id_bodega_caja']);
@@ -2383,11 +2566,12 @@ class Mcaja extends CI_Model
 		$selFraccion = isset($cols['producto']['permite_porcion']) ? '(p.permite_porcion IS TRUE)' : 'false';
 		// 14-11-2026: sin la columna, como el catálogo: un producto sin precio no se vende
 		$selSinPrecio = isset($cols['producto']['permitir_venta_sin_precio']) ? '(p.permitir_venta_sin_precio IS TRUE)' : 'false';
-		$selMaxAg = isset($cols['producto']['max_agregados_web']) ? 'COALESCE(p.max_agregados_web, 0)' : '0';   // v1.30.3
+		$selMaxAg = self::sqlMaxAgregados(isset($cols['producto']['max_agregados_web']), isset($cols['producto']['varios_agregados_web']));   // v1.30.3 / v1.43.0
+		$selMaxEx = isset($cols['producto']['extras_web']) ? '(p.extras_web IS TRUE)' : 'false';   // v1.35.1
 		$productos = array();
 		$q = "SELECT p.id_producto, p.nombre_producto, COALESCE(p.id_receta, 0) AS id_receta, COALESCE(p.id_bodega, 0) AS id_bodega,
 				COALESCE(NULLIF(dl.total, 0), p.precio_bruto, 0) AS precio, $selVss AS segun_stock, $selFraccion AS fraccion,
-				$selSinPrecio AS sin_precio_ok, $selMaxAg AS max_agregados,
+				$selSinPrecio AS sin_precio_ok, $selMaxAg AS max_agregados, $selMaxEx AS extras,
 				" . $this->sqlExento($db, 'p') . " AS exento
 			FROM producto p
 			LEFT JOIN detalle_lprecio dl ON dl.id_producto = p.id_producto AND dl.id_lprecio = ?
@@ -2399,6 +2583,8 @@ class Mcaja extends CI_Model
 		foreach ($this->agregados($db, null) as $a) {
 			$agregadosPorMaestro[(int)$a->id_producto_maestro][(int)$a->id_agregado] = $a;
 		}
+		// v1.35.1: extras con cobro (por producto) y máximo por categoría, cada uno con su casilla en Configuraciones
+		$maxCat = !empty($config['agregados_categorias']) ? (int)$config['max_categoria_agregados'] : 0;
 
 		$lineas = array();
 		$notas = array();
@@ -2445,14 +2631,12 @@ class Mcaja extends CI_Model
 				$nota = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', isset($it['nota']) ? (string)$it['nota'] : '')), 0, 150);
 				$bodegaCaja = !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : 0;
 				$unitario = (int)round((float)$prod->precio);
-				// v1.32.0: precio según el envoltorio: el del envoltorio elegido (el más caro si hay varios); su valor
-				// adicional no se suma aparte. Un envoltorio sin precio deja el de la promo.
+				// v1.32.1 (pedido del usuario): precio según el envoltorio (solo por roll). Cada roll va en su línea con el precio
+				// de su envoltorio (el más caro si lleva varios), sin sumar lo adicional de rellenos ni bases; un roll cuyo
+				// envoltorio no tiene precio lleva su parte del precio de la promo. La línea de la promo queda en $0.
 				$porEnv = !empty($sushis[$id]['precio_envoltorio']);
-				if ($porEnv) {
-					$pEnv = 0;
-					foreach ($sel['grupos'] as $g) foreach ($g['envoltorios'] as $o) $pEnv = max($pEnv, (int)$o['precio_promo']);
-					if ($pEnv > 0) $unitario = $pEnv;
-				}
+				$preciosGrupo = $porEnv ? self::preciosRollSushi($sushis[$id], $sel['grupos'], $unitario) : array();
+				if ($porEnv) $unitario = 0;
 				$bruto = (int)round($unitario * $cantidad);
 				$subtotal += $bruto;
 				$idxPromo = count($lineas);
@@ -2461,9 +2645,11 @@ class Mcaja extends CI_Model
 					'unitario' => $unitario, 'bruto' => $bruto, 'id_agregado' => 0, 'nota' => $nota, 'segun_stock' => $segunStock,
 					'recetas' => array(array((int)$prod->id_receta, $bodegaCaja ?: (int)$prod->id_bodega)), 'exento' => $exento,
 					'es_menu' => true, 'id_menu' => 0,
+					'promo_sushi' => true, 'id_producto_promo' => $id,   // v1.45.0: se graba con sus marcas y en detalle_promo_sushi_web
 				);
 				$hijo = function ($o, $cant, $notaLinea, $imprimir) use (&$lineas, &$subtotal, $exento, $id, $idxPromo, $bodegaCaja) {
 					$b = (int)round($o['valor'] * $cant);
+					$o['valor'] = is_float($o['valor']) ? (int)round($o['valor']) : $o['valor'];   // v1.32.1: unitario entero (el total ya va exacto)
 					$subtotal += $b;
 					$lineas[] = array(
 						'id_producto' => $o['id_producto'], 'nombre' => $o['nombre'], 'cantidad' => $cant,
@@ -2471,6 +2657,7 @@ class Mcaja extends CI_Model
 						'segun_stock' => false, 'recetas' => array(array($o['id_receta'], $bodegaCaja ?: $o['id_bodega'])),
 						'exento' => $exento, 'ila_de' => $id,
 						'es_detalle_menu' => true, 'id_menu' => 0, 'del_menu' => $idxPromo, 'imprimir' => $imprimir,
+						'promo_sushi' => true, 'id_producto_promo' => $id,   // v1.45.0
 					);
 				};
 				$resumen = array();
@@ -2483,12 +2670,18 @@ class Mcaja extends CI_Model
 					$nombresRellenos = array_map(function ($o) { return $o['nombre']; }, $g['rellenos']);
 					$titulo = $g['envoltorios'] ? implode(' + ', array_map(function ($o) { return $o['nombre']; }, $g['envoltorios']))
 						: ($g['base'] ? $g['base']['nombre'] : $nombresRellenos[0]);
-					$desc = ($porRol ? 'Roll: ' : '') . ($nombresRellenos ? implode(', ', $nombresRellenos) : 'Sin relleno') . ($g['base'] ? ' · Base ' . $g['base']['nombre'] : '');
+					$nombresBases = implode(' + ', array_map(function ($o) { return $o['nombre']; }, $g['bases']));   // v1.32.1: varias bases
+					$desc = ($porRol ? 'Roll: ' : '') . ($nombresRellenos ? implode(', ', $nombresRellenos) : 'Sin relleno') . ($g['bases'] ? ' · Base ' . $nombresBases : '');
 					// La primera línea del grupo lleva la descripción completa y es la que sale en comandas, reenvíos y anulaciones
 					$partes = array();
-					foreach ($g['envoltorios'] as $o) $partes[] = $porEnv ? array_merge($o, array('valor' => 0)) : $o;   // v1.32.0: varios envoltorios
-					if ($g['base']) $partes[] = $g['base'];
+					foreach ($g['envoltorios'] as $o) $partes[] = $o;   // v1.32.0: varios envoltorios
+					foreach ($g['bases'] as $o) $partes[] = $o;
 					foreach ($g['rellenos'] as $o) $partes[] = $o;
+					// v1.32.1: precio según el envoltorio: el primer producto del roll lleva el precio del roll; los demás, $0
+					if ($porEnv) {
+						foreach ($partes as $k => $o) $partes[$k]['valor'] = 0;
+						$partes[0]['valor'] = $g['rolls'] > 0 ? $preciosGrupo[$ng] / $g['rolls'] : $preciosGrupo[$ng];
+					}
 					$notaG = $g['nota'] !== '' ? ' · Nota: ' . $g['nota'] : '';
 					$notaPromo = $ng === 0 && $nota !== '' ? ' · Nota promo: ' . $nota : '';
 					// Lo guardado en la línea (sale así en reenvíos y anulaciones)
@@ -2528,27 +2721,30 @@ class Mcaja extends CI_Model
 					'unitario' => $unitario, 'bruto' => $bruto, 'id_agregado' => 0, 'nota' => $nota, 'segun_stock' => $segunStock,
 					'recetas' => array(array((int)$prod->id_receta, $bodega)), 'exento' => $exento,
 					'es_menu' => true, 'id_menu' => (int)$menus[$id]['id_menu'],
+					'promo' => !empty($menus[$id]['promo']),   // v1.41.0: promo normal: la unión va en detalle_promo_web
 				);
 				$etiqueta = 'Menú: ' . $prod->nombre_producto . ($nota !== '' ? ' · ' . $nota : '');
 				$nombresMenu = array();
 				foreach ($elegidosMenu as $par) {
 					list($o, $q) = $par;
+					$notaComp = isset($par[2]) ? $par[2] : '';   // v1.39.7
 					$cantComp = round($cantidad * $q, 3);
 					$brutoComp = (int)round($o['adicional'] * $cantComp);
 					$subtotal += $brutoComp;
 					$lineas[] = array(
 						'id_producto' => $o['id_producto'], 'nombre' => $o['nombre'], 'cantidad' => $cantComp,
-						'unitario' => $o['adicional'], 'bruto' => $brutoComp, 'id_agregado' => 0, 'nota' => '',
+						'unitario' => $o['adicional'], 'bruto' => $brutoComp, 'id_agregado' => 0, 'nota' => $notaComp,
 						'segun_stock' => false,
 						'recetas' => array(array($o['id_receta'], !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : $o['id_bodega'])),
 						'exento' => $exento, 'ila_de' => $id,
 						'es_detalle_menu' => true, 'id_menu' => (int)$menus[$id]['id_menu'], 'del_menu' => $idxMenu,
 						'imprimir' => $o['imprimir'],   // "Imprimir" del producto en el menú (no sale en comandas ni anulaciones)
+						'promo' => !empty($menus[$id]['promo']), 'id_producto_promo' => $id,   // v1.41.0
 					);
-					$nombresMenu[] = ($q > 1 ? $q . ' ' : '') . $o['nombre'];
+					$nombresMenu[] = ($q > 1 ? $q . ' ' : '') . $o['nombre'] . ($notaComp !== '' ? ' (' . $notaComp . ')' : '');
 					if ($o['imprimir']) {
 						$comanda[] = array('id_producto' => $o['id_producto'], 'nombre' => $o['nombre'], 'cantidad' => $cantComp,
-							'nota' => $etiqueta, 'agregados' => array());
+							'nota' => ($notaComp !== '' ? $notaComp . ' · ' : '') . $etiqueta, 'agregados' => array());
 					}
 				}
 				$notas[] = $prod->nombre_producto . ($nombresMenu ? ': ' . implode(', ', $nombresMenu) : '') . ($nota !== '' ? ' (' . $nota . ')' : '');
@@ -2567,9 +2763,15 @@ class Mcaja extends CI_Model
 			// Solo un tope técnico alto para que una venta armada a mano no traiga cientos.
 			if (count($elegidos) > 100) throw new Exception('Demasiados agregados en ' . $prod->nombre_producto, 400);
 			// v1.30.3 (pedido del usuario): máximo de agregados de ese producto (Carta > Agregados); 0 = sin límite
-			if ((int)$prod->max_agregados > 0 && count($elegidos) > (int)$prod->max_agregados) {
-				throw new Exception($prod->nombre_producto . ' permite elegir hasta ' . (int)$prod->max_agregados . ' agregado' . ((int)$prod->max_agregados === 1 ? '' : 's'), 400);
-			}
+			// v1.35.1 (pedido del usuario): con "Extras con cobro" en el producto, los que caben en el máximo (total o de su
+			// categoría) van sin costo y los que pasan van como extra cobrando el valor de su agregado
+			$modoEx = self::modoExtras($config, $prod->extras === 't' || $prod->extras === true, (int)$prod->max_agregados);
+			$idsExtra = self::revisarAgregadosElegidos($prod->nombre_producto, $elegidos, isset($it['extras']) ? $it['extras'] : array(),
+				(int)$prod->max_agregados, $maxCat, (int)$config['max_extras_agregados'], $modoEx);
+			$valorDe = function ($a) use ($idsExtra, $modoEx) {
+				if (!$modoEx) return (int)$a->valor;
+				return in_array((int)$a->id_agregado, $idsExtra, true) ? (int)$a->valor : 0;
+			};
 
 			// 19-11-2026: la nota del producto llega hasta 150 caracteres, para que en la misma fila quepa el mensaje de su
 			// primer agregado (detalle_cotizacion.mensaje es de 250; antes se cortaba a 200 y en el reenvío se perdía)
@@ -2591,41 +2793,56 @@ class Mcaja extends CI_Model
 
 			$comanda[] = array('id_producto' => $id, 'nombre' => $prod->nombre_producto, 'cantidad' => $cantidad, 'nota' => $nota,
 				'agregados' => array_map(function ($a) use ($notaDe) { return $a->nombre_producto . ($notaDe($a) !== '' ? ' » ' . $notaDe($a) : ''); }, $elegidos));
-			$primero = $elegidos ? array_shift($elegidos) : null;
-			// El primer agregado va en la misma fila del producto: su mensaje se guarda junto al del producto
-			$notaFila = $nota;
-			if ($primero && $notaDe($primero) !== '') {
-				// El mensaje del agregado siempre cabe entero: si no alcanza, se acorta la nota del producto (250 = la columna)
-				$sufijo = $primero->nombre_producto . ': ' . $notaDe($primero);
-				$cabe = max(0, 250 - mb_strlen($sufijo) - 3);
-				$notaFila = $nota !== '' ? mb_substr($nota, 0, $cabe) . ' | ' . $sufijo : mb_substr($sufijo, 0, 250);
-			}
-			$unitario = (int)round((float)$prod->precio) + ($primero ? (int)$primero->valor : 0);
-			$bruto = (int)round($unitario * $cantidad);
-			$subtotal += $bruto;
 			// Bodega de la caja (Control de cajas); sin bodega en la caja, la de cada producto (como antes)
 			$bodega = !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : (int)$prod->id_bodega;
-			$recetas = array(array((int)$prod->id_receta, $bodega));
-			if ($primero) $recetas[] = array((int)$primero->id_receta, $bodega);
+			// v1.42.0 (pedido del usuario: "como el menú, pero con sus propias tablas"):
+			//  - 1 agregado: como siempre, en id_agregado de la fila del producto (su valor y su receta van en esa fila);
+			//  - VARIOS: la fila del producto queda SIN id_agregado y marcada es_con_agregados_web; CADA agregado (también el
+			//    1.º) va en su fila marcada es_agregado_web, unido al producto en detalle_agregado_web (orden, mensaje, valor).
+			if (count($elegidos) <= 1) {
+				$primero = $elegidos ? $elegidos[0] : null;
+				// El agregado va en la misma fila del producto: su mensaje se guarda junto al del producto
+				$notaFila = $nota;
+				if ($primero && $notaDe($primero) !== '') {
+					// El mensaje del agregado siempre cabe entero: si no alcanza, se acorta la nota del producto (250 = la columna)
+					$sufijo = $primero->nombre_producto . ': ' . $notaDe($primero);
+					$cabe = max(0, 250 - mb_strlen($sufijo) - 3);
+					$notaFila = $nota !== '' ? mb_substr($nota, 0, $cabe) . ' | ' . $sufijo : mb_substr($sufijo, 0, 250);
+				}
+				$unitario = (int)round((float)$prod->precio) + ($primero ? $valorDe($primero) : 0);
+				$bruto = (int)round($unitario * $cantidad);
+				$subtotal += $bruto;
+				$recetas = array(array((int)$prod->id_receta, $bodega));
+				if ($primero) $recetas[] = array((int)$primero->id_receta, $bodega);
+				$lineas[] = array(
+					'id_producto' => $id, 'nombre' => $prod->nombre_producto, 'cantidad' => $cantidad,
+					'unitario' => $unitario, 'bruto' => $bruto, 'id_agregado' => $primero ? (int)$primero->id_producto : 0,
+					'nota' => $notaFila, 'segun_stock' => $segunStock, 'recetas' => $recetas, 'exento' => $exento,
+				);
+				continue;
+			}
+			$unitario = (int)round((float)$prod->precio);
+			$bruto = (int)round($unitario * $cantidad);
+			$subtotal += $bruto;
 			$idxProd = count($lineas);
 			$lineas[] = array(
 				'id_producto' => $id, 'nombre' => $prod->nombre_producto, 'cantidad' => $cantidad,
-				'unitario' => $unitario, 'bruto' => $bruto, 'id_agregado' => $primero ? (int)$primero->id_producto : 0,
-				'nota' => $notaFila, 'segun_stock' => $segunStock, 'recetas' => $recetas, 'exento' => $exento,
-				'con_hijos' => (bool)$elegidos,   // v1.30.3: en la mesa, sus otros agregados apuntan a esta fila
+				'unitario' => $unitario, 'bruto' => $bruto, 'id_agregado' => 0,
+				'nota' => $nota, 'segun_stock' => $segunStock, 'recetas' => array(array((int)$prod->id_receta, $bodega)), 'exento' => $exento,
+				'con_hijos' => true,        // en la mesa, sus agregados apuntan a esta fila
+				'con_agregados' => true,    // v1.42.0: es_con_agregados_web
 			);
-			foreach ($elegidos as $a) {
-				$bruto = (int)round((int)$a->valor * $cantidad);
+			foreach (array_values($elegidos) as $kAg => $a) {
+				$bruto = (int)round($valorDe($a) * $cantidad);
 				$subtotal += $bruto;
 				$lineas[] = array(
 					'id_producto' => (int)$a->id_producto, 'nombre' => $a->nombre_producto, 'cantidad' => $cantidad,
-					'unitario' => (int)$a->valor, 'bruto' => $bruto, 'id_agregado' => 0, 'nota' => $notaDe($a),
+					'unitario' => $valorDe($a), 'bruto' => $bruto, 'id_agregado' => 0, 'nota' => $notaDe($a),
 					'segun_stock' => $segunStock, 'recetas' => array(array((int)$a->id_receta, !empty($config['id_bodega_caja']) ? (int)$config['id_bodega_caja'] : (int)$a->id_bodega)),
 					'exento' => $exento,
 					'ila_de' => $id,   // v1.20.0: el agregado lleva el ILA de su producto, igual que el exento
-					// v1.30.3: en la mesa queda unido a su producto (id_detalle_menu_web, sin marcarlo como menú): se ve debajo
-					// del producto y se anula, mueve y cobra junto con él (antes quedaba como un producto aparte)
-					'del_menu' => $idxProd,
+					'del_menu' => $idxProd,   // índice de su producto (para unirlo al grabar)
+					'agregado_de' => array('orden' => $kAg + 1, 'mensaje' => $notaDe($a), 'valor' => $valorDe($a)),   // es_agregado_web + detalle_agregado_web
 				);
 			}
 		}
@@ -3803,6 +4020,10 @@ class Mcaja extends CI_Model
 				if (is_scalar($t) && trim((string)$t) !== '' && count($na) < 20) $na[(string)(int)$k] = mb_substr(trim((string)$t), 0, 60);
 			}
 			if ($na) $res[count($res) - 1]['notas_agregados'] = $na;
+			// v1.35.0: los agregados que van como extra (con costo)
+			if (!empty($it['extras']) && is_array($it['extras'])) {
+				$res[count($res) - 1]['extras'] = array_values(array_intersect(array_map('intval', $it['extras']), $res[count($res) - 1]['agregados']));
+			}
 			// v1.25.0: lo armado de una promo de sushi (armarLineas lo valida)
 			if (isset($it['sushi']) && is_array($it['sushi'])) $res[count($res) - 1]['sushi'] = $it['sushi'];
 			if (count($res) >= 200) break;
@@ -4232,6 +4453,113 @@ class Mcaja extends CI_Model
 		return array($nota, '');
 	}
 
+	/**
+	 * v1.41.0 (pedido del usuario: "una tabla intermedia para llevar todo ordenado", migración 20261126120000): después de
+	 * grabar las filas, anota qué va con qué en detalle_agregado_web (VARIOS agregados de un producto; con uno solo no se
+	 * anota nada, queda como antes en id_agregado) y en detalle_promo_web (los productos de cada promo normal vendida).
+	 * $ids = [índice de la línea => id de su fila]; $idVenta > 0 = filas de detalle_venta (venta cobrada), si no, del pedido.
+	 * El padre de una línea: su 'del_menu' (índice, venta nueva) o su 'menu_de' (id del pedido, al cobrar una mesa).
+	 */
+	/**
+	 * v1.45.0 (pedido del usuario: "el menú déjalo como estaba; las promos en tablas aparte", migración 20261127120000):
+	 * marcas de la fila al grabar. El menú usa es_menu / es_detalle_menu como siempre; la promo normal, es_promo_web /
+	 * es_detalle_promo_web, y la de sushi, es_promo_sushi_web / es_detalle_promo_sushi_web. Si la tabla aún no tiene las
+	 * columnas (migración pendiente), todo va como antes. Por dentro la Caja las sigue tratando como un menú.
+	 * $c = columnas de la tabla (detalle_cotizacion o detalle_venta).
+	 */
+	private static function marcasFila($l, $c)
+	{
+		$tipo = '';
+		if (!empty($l['promo']) && isset($c['es_promo_web'])) $tipo = 'promo';
+		elseif (!empty($l['promo_sushi']) && isset($c['es_promo_sushi_web'])) $tipo = 'promo_sushi';
+		$padre = !empty($l['es_menu']);
+		$hijo = !empty($l['es_detalle_menu']);
+		$m = array('es_menu' => $padre && $tipo === '', 'es_detalle_menu' => $hijo && $tipo === '');
+		if ($tipo === 'promo') $m += array('es_promo_web' => $padre ? true : null, 'es_detalle_promo_web' => $hijo ? true : null);
+		if ($tipo === 'promo_sushi') $m += array('es_promo_sushi_web' => $padre ? true : null, 'es_detalle_promo_sushi_web' => $hijo ? true : null);
+		return $m;
+	}
+
+	private function anotarUniones($db, $lineas, $ids, $idVenta = 0)
+	{
+		$t = $this->columnas($db, array('detalle_agregado_web', 'detalle_promo_web', 'detalle_promo_sushi_web'));
+		if (!$t) return;
+		$venta = $idVenta > 0;
+		// v1.45.0: la fila del hijo quedó con las marcas propias de la promo de sushi solo si la tabla del pedido/venta las tiene
+		$colsFila = $this->columnas($db, array($venta ? 'detalle_venta' : 'detalle_cotizacion'));
+		$sushiPorTabla = isset($t['detalle_promo_sushi_web']) && isset($colsFila[$venta ? 'detalle_venta' : 'detalle_cotizacion']['es_promo_sushi_web']);
+		$pos = array();
+		foreach ($lineas as $i => $l) if (!empty($l['id_detalle'])) $pos[(int)$l['id_detalle']] = $i;
+		$padreDe = function ($l) use ($pos) {
+			if (isset($l['del_menu'])) return $l['del_menu'];
+			if (!empty($l['menu_de']) && isset($pos[(int)$l['menu_de']])) return $pos[(int)$l['menu_de']];
+			return null;
+		};
+		$agregado = function ($padre, $hijo, $idProducto, $a) use ($db, $venta, $idVenta) {
+			$this->q($db, 'INSERT INTO detalle_agregado_web (' . ($venta ? 'id_venta, id_detalle_venta, id_detalle_venta_agregado' : 'id_detalle_cotizacion, id_detalle_cotizacion_agregado')
+				. ', id_producto, orden, mensaje, valor) VALUES (' . ($venta ? '?, ' : '') . '?, ?, ?, ?, ?, ?)',
+				array_merge($venta ? array((int)$idVenta) : array(), array((int)$padre, $hijo ? (int)$hijo : null, (int)$idProducto,
+					(int)$a['orden'], mb_substr((string)$a['mensaje'], 0, 250) ?: null, (int)$a['valor'])));
+		};
+		foreach ($lineas as $i => $l) {
+			if (!isset($ids[$i]) || !$ids[$i]) continue;
+			if (isset($t['detalle_agregado_web'])) {
+				foreach (isset($l['agregados_tabla']) ? $l['agregados_tabla'] : array() as $a) $agregado($ids[$i], null, $a['id_producto'], $a);
+				if (isset($l['agregado_de'])) {
+					$pi = $padreDe($l);
+					if ($pi !== null && !empty($ids[$pi])) $agregado($ids[$pi], $ids[$i], $l['id_producto'], $l['agregado_de']);
+				}
+			}
+			$tablaPromo = isset($t['detalle_promo_web']) && !empty($l['promo']) ? 'detalle_promo_web'
+				: ($sushiPorTabla && !empty($l['promo_sushi']) ? 'detalle_promo_sushi_web' : '');   // v1.45.0
+			if ($tablaPromo !== '' && !empty($l['es_detalle_menu'])) {
+				$pi = $padreDe($l);
+				if ($pi === null || empty($ids[$pi])) continue;
+				$this->q($db, 'INSERT INTO ' . $tablaPromo . ' (' . ($venta ? 'id_venta, id_detalle_venta, id_detalle_venta_producto' : 'id_detalle_cotizacion, id_detalle_cotizacion_producto')
+					. ', id_producto_promo, id_producto, cantidad, mensaje) VALUES (' . ($venta ? '?, ' : '') . '?, ?, ?, ?, ?, ?)',
+					array_merge($venta ? array((int)$idVenta) : array(), array((int)$ids[$pi], (int)$ids[$i],
+						(int)(isset($l['id_producto_promo']) ? $l['id_producto_promo'] : $lineas[$pi]['id_producto']), (int)$l['id_producto'],
+						(float)$l['cantidad'], mb_substr((string)$l['nota'], 0, 250) ?: null)));
+			}
+		}
+	}
+
+	/**
+	 * v1.41.0: al pasar parte de una mesa a otro pedido (cobrar una parte, mover, anular parte) se crean copias de las filas:
+	 * sus uniones de detalle_agregado_web / detalle_promo_web se copian para las filas nuevas. $nuevos = [id viejo => id nuevo].
+	 */
+	private function copiarUniones($db, $sel, $nuevos)
+	{
+		$t = $this->columnas($db, array('detalle_agregado_web', 'detalle_promo_web', 'detalle_promo_sushi_web'));
+		if (!$t) return;
+		foreach ($sel as $l) {
+			$viejo = (int)$l['id_detalle'];
+			$nuevo = isset($nuevos[$viejo]) ? (int)$nuevos[$viejo] : $viejo;
+			$padreViejo = (int)(isset($l['menu_de']) ? $l['menu_de'] : 0);
+			$padreNuevo = $padreViejo && isset($nuevos[$padreViejo]) ? (int)$nuevos[$padreViejo] : $padreViejo;
+			if (isset($t['detalle_agregado_web'])) {
+				if ($nuevo !== $viejo && !empty($l['agregados_tabla'])) {
+					$this->q($db, 'INSERT INTO detalle_agregado_web (id_detalle_cotizacion, id_detalle_cotizacion_agregado, id_producto, orden, mensaje, valor)
+						SELECT ?, NULL, id_producto, orden, mensaje, valor FROM detalle_agregado_web
+						WHERE id_detalle_cotizacion = ? AND id_detalle_cotizacion_agregado IS NULL', array($nuevo, $viejo));
+				}
+				if (isset($l['agregado_de']) && $padreViejo && ($nuevo !== $viejo || $padreNuevo !== $padreViejo)) {
+					$this->q($db, 'INSERT INTO detalle_agregado_web (id_detalle_cotizacion, id_detalle_cotizacion_agregado, id_producto, orden, mensaje, valor)
+						SELECT ?, ?, id_producto, orden, mensaje, valor FROM detalle_agregado_web WHERE id_detalle_cotizacion_agregado = ? LIMIT 1',
+						array($padreNuevo, $nuevo, $viejo));
+				}
+			}
+			// v1.45.0: la promo de sushi, en su tabla (solo las filas que ya se unieron por tabla: 'sushi_tabla')
+			$tablaPromo = isset($t['detalle_promo_web']) && !empty($l['promo']) ? 'detalle_promo_web'
+				: (isset($t['detalle_promo_sushi_web']) && !empty($l['sushi_tabla']) ? 'detalle_promo_sushi_web' : '');
+			if ($tablaPromo !== '' && !empty($l['es_detalle_menu']) && $padreViejo && ($nuevo !== $viejo || $padreNuevo !== $padreViejo)) {
+				$this->q($db, 'INSERT INTO ' . $tablaPromo . ' (id_detalle_cotizacion, id_detalle_cotizacion_producto, id_producto_promo, id_producto, cantidad, mensaje)
+					SELECT ?, ?, id_producto_promo, id_producto, ?, mensaje FROM ' . $tablaPromo . ' WHERE id_detalle_cotizacion_producto = ? LIMIT 1',
+					array($padreNuevo, $nuevo, (float)$l['cantidad'], $viejo));
+			}
+		}
+	}
+
 	/** Líneas vigentes de un pedido, con la misma forma que armarLineas(). El stock se descuenta al cobrar (trigger de venta). */
 	private function lineasDeCotizacion($db, $idCotizacion)
 	{
@@ -4242,7 +4570,13 @@ class Mcaja extends CI_Model
 			. (isset($cd['es_detalle_menu']) ? '(d.es_detalle_menu IS TRUE)' : 'false') . ' AS es_detalle_menu, '
 			. (isset($cd['id_menu']) ? 'COALESCE(d.id_menu, 0)' : '0') . ' AS id_menu, '
 			. (isset($cd['id_detalle_menu_web']) ? 'COALESCE(d.id_detalle_menu_web, 0)' : '0') . ' AS menu_de, '
-			. (isset($cd['imprimir']) ? '(d.imprimir IS NOT FALSE)' : 'true') . ' AS imprimir, ';
+			. (isset($cd['imprimir']) ? '(d.imprimir IS NOT FALSE)' : 'true') . ' AS imprimir, '
+			. (isset($cd['es_con_agregados_web']) ? '(d.es_con_agregados_web IS TRUE)' : 'false') . ' AS con_agregados, '   // v1.42.0
+			// v1.45.0: promos con sus propias marcas (por dentro se tratan como un menú)
+			. (isset($cd['es_promo_web']) ? '(d.es_promo_web IS TRUE)' : 'false') . ' AS promo_padre, '
+			. (isset($cd['es_detalle_promo_web']) ? '(d.es_detalle_promo_web IS TRUE)' : 'false') . ' AS promo_hijo, '
+			. (isset($cd['es_promo_sushi_web']) ? '(d.es_promo_sushi_web IS TRUE)' : 'false') . ' AS sushi_padre, '
+			. (isset($cd['es_detalle_promo_sushi_web']) ? '(d.es_detalle_promo_sushi_web IS TRUE)' : 'false') . ' AS sushi_hijo, ';
 		$rows = $this->q($db, "SELECT $selMenu d.id_detalle_cotizacion, d.id_producto, COALESCE(p.nombre_producto, 'Producto ' || d.id_producto) AS nombre,
 				pa.nombre_producto AS agregado, d.cantidad, COALESCE(d.bruto_un, 0) AS bruto_un, COALESCE(d.total_bruto, 0) AS total_bruto,
 				COALESCE(d.id_agregado, 0) AS id_agregado, COALESCE(d.mensaje, '') AS nota, " . $this->sqlExento($db, 'p') . " AS exento, " . $this->sqlIla($db, 'p') . " AS ila,
@@ -4257,15 +4591,70 @@ class Mcaja extends CI_Model
 		$ultimoMenu = 0;
 		$vigentes = array();
 		foreach ($rows as $r) $vigentes[(int)$r->id_detalle_cotizacion] = true;
+		// v1.41.0: uniones de las tablas detalle_agregado_web y detalle_promo_web (los pedidos antiguos siguen con la columna)
+		$agHijo = array(); $agPrimeros = array(); $prHijo = array(); $prPadre = array(); $suHijo = array();
+		$tu = $this->columnas($db, array('detalle_agregado_web', 'detalle_promo_web', 'detalle_promo_sushi_web'));
+		$idsPedido = array_keys($vigentes);
+		if ($idsPedido && isset($tu['detalle_agregado_web'])) {
+			foreach ($this->q($db, 'SELECT id_detalle_cotizacion AS padre, id_detalle_cotizacion_agregado AS hijo, id_producto, orden, COALESCE(mensaje, \'\') AS mensaje, valor
+					FROM detalle_agregado_web WHERE id_detalle_cotizacion_agregado IN ? OR (id_detalle_cotizacion IN ? AND id_detalle_cotizacion_agregado IS NULL)
+					ORDER BY orden, id_detalle_agregado_web', array($idsPedido, $idsPedido))->result() as $u) {
+				$a = array('id_producto' => (int)$u->id_producto, 'orden' => (int)$u->orden, 'mensaje' => (string)$u->mensaje, 'valor' => (int)$u->valor);
+				if ($u->hijo) $agHijo[(int)$u->hijo] = array('padre' => (int)$u->padre) + $a;
+				else $agPrimeros[(int)$u->padre][] = $a;
+			}
+		}
+		if ($idsPedido && isset($tu['detalle_promo_web'])) {
+			foreach ($this->q($db, 'SELECT id_detalle_cotizacion AS padre, id_detalle_cotizacion_producto AS hijo, id_producto_promo
+					FROM detalle_promo_web WHERE id_detalle_cotizacion_producto IN ?', array($idsPedido))->result() as $u) {
+				$prHijo[(int)$u->hijo] = array('padre' => (int)$u->padre, 'id_producto_promo' => (int)$u->id_producto_promo);
+				$prPadre[(int)$u->padre] = true;
+			}
+		}
+		if ($idsPedido && isset($tu['detalle_promo_sushi_web'])) {   // v1.45.0
+			foreach ($this->q($db, 'SELECT id_detalle_cotizacion AS padre, id_detalle_cotizacion_producto AS hijo, id_producto_promo
+					FROM detalle_promo_sushi_web WHERE id_detalle_cotizacion_producto IN ?', array($idsPedido))->result() as $u) {
+				$suHijo[(int)$u->hijo] = array('padre' => (int)$u->padre, 'id_producto_promo' => (int)$u->id_producto_promo);
+			}
+		}
 		foreach ($rows as $r) {
 			$cantidad = (float)$r->cantidad;
 			$bruto = (float)$r->total_bruto > 0 ? (int)round((float)$r->total_bruto) : (int)round((float)$r->bruto_un * $cantidad);
 			// v1.24.0: el menú de un producto elegido; sin la columna (o de otro sistema), el último menú anterior
 			$esMenu = $si($r->es_menu);
 			$esDetMenu = $si($r->es_detalle_menu);
+			$idFila = (int)$r->id_detalle_cotizacion;
+			$extra = array();   // v1.41.0: datos de las tablas de unión (para cobrar y mover)
+			if (isset($prPadre[$idFila]) || $si($r->promo_padre)) { $esMenu = true; $extra['promo'] = true; }
+			if ($si($r->sushi_padre)) { $esMenu = true; $extra['promo_sushi'] = true; $extra['id_producto_promo'] = (int)$r->id_producto; }   // v1.45.0
 			if ($esMenu) $ultimoMenu = (int)$r->id_detalle_cotizacion;
 			$menuDe = 0;
-			if ($esDetMenu) {
+			if (isset($prHijo[$idFila])) {
+				// v1.41.0: producto de una promo normal (detalle_promo_web)
+				$esDetMenu = true;
+				$menuDe = isset($vigentes[$prHijo[$idFila]['padre']]) ? $prHijo[$idFila]['padre'] : 0;
+				$extra['promo'] = true;
+				$extra['id_producto_promo'] = $prHijo[$idFila]['id_producto_promo'];
+			} elseif (isset($suHijo[$idFila]) || $si($r->sushi_hijo)) {
+				// v1.45.0: producto de una promo de sushi (detalle_promo_sushi_web)
+				$esDetMenu = true;
+				$padreSu = isset($suHijo[$idFila]) ? $suHijo[$idFila]['padre'] : $ultimoMenu;
+				$menuDe = isset($vigentes[$padreSu]) ? $padreSu : 0;
+				$extra['promo_sushi'] = true;
+				$extra['sushi_tabla'] = isset($suHijo[$idFila]);
+				if (isset($suHijo[$idFila])) $extra['id_producto_promo'] = $suHijo[$idFila]['id_producto_promo'];
+			} elseif ($si($r->promo_hijo)) {
+				// v1.45.0: producto de promo normal sin su fila en detalle_promo_web (no debería pasar): el último padre
+				$esDetMenu = true;
+				$menuDe = isset($vigentes[$ultimoMenu]) ? $ultimoMenu : 0;
+				$extra['promo'] = true;
+			} elseif (isset($agHijo[$idFila])) {
+				// v1.41.0: agregado (2.º en adelante) de un producto (detalle_agregado_web)
+				$esDetMenu = false;
+				$ultimoMenu = 0;
+				$menuDe = isset($vigentes[$agHijo[$idFila]['padre']]) ? $agHijo[$idFila]['padre'] : 0;
+				$extra['agregado_de'] = array('orden' => $agHijo[$idFila]['orden'], 'mensaje' => $agHijo[$idFila]['mensaje'], 'valor' => $agHijo[$idFila]['valor']);
+			} elseif ($esDetMenu) {
 				$menuDe = (int)$r->menu_de > 0 ? (int)$r->menu_de : $ultimoMenu;
 				if (!isset($vigentes[$menuDe])) $menuDe = 0;   // su menú ya no está (anulado): queda suelto
 			} elseif (!$esMenu) {
@@ -4273,8 +4662,10 @@ class Mcaja extends CI_Model
 				// v1.30.3: agregado unido a su producto (segundo agregado en adelante; ver armarLineas)
 				if ((int)$r->menu_de > 0 && isset($vigentes[(int)$r->menu_de])) $menuDe = (int)$r->menu_de;
 			}
+			if (isset($agPrimeros[$idFila])) $extra['agregados_tabla'] = $agPrimeros[$idFila];
+			if ($si($r->con_agregados)) $extra['con_agregados'] = true;   // v1.42.0: producto con varios agregados
 			$notaPartida = self::partirNotaFila((string)$r->nota, (string)$r->agregado);
-			$lineas[] = array(
+			$lineas[] = $extra + array(
 				'es_menu' => $esMenu, 'es_detalle_menu' => $esDetMenu, 'id_menu' => (int)$r->id_menu, 'menu_de' => $menuDe,
 				'imprimir' => $si($r->imprimir),
 				'id_detalle' => (int)$r->id_detalle_cotizacion, 'id_producto' => (int)$r->id_producto, 'nombre' => $r->nombre,
@@ -4678,12 +5069,18 @@ class Mcaja extends CI_Model
 				$this->q($db, 'UPDATE mesa SET disponible = false, id_cotizacion = ?, id_garzon = ? WHERE id_mesa = ?', array($idCot, (int)$idUsuario, $idMesa));
 			}
 			$idsMenu = array();   // v1.24.0: índice de la línea del menú => su id_detalle_cotizacion
+			$conTablasUnion = (bool)$this->columnas($db, array('detalle_agregado_web', 'detalle_promo_web'));   // v1.41.0
 			foreach ($lineas as $iLin => $l) {
-				$idsMenu[$iLin] = $this->insertar($db, $cols, 'detalle_cotizacion', array(
-					// v1.24.0: menú y productos elegidos del menú (cada uno apunta a la línea de su menú)
-					'es_menu' => !empty($l['es_menu']), 'es_detalle_menu' => !empty($l['es_detalle_menu']),
+				$sushiPorTabla = !empty($l['promo_sushi']) && isset($cols['detalle_cotizacion']['es_promo_sushi_web']);   // v1.45.0
+				$idsMenu[$iLin] = $this->insertar($db, $cols, 'detalle_cotizacion', self::marcasFila($l, $cols['detalle_cotizacion']) + array(
+					// v1.24.0: menú y productos elegidos del menú (cada uno apunta a la línea de su menú); marcas en marcasFila()
 					'id_menu' => isset($l['id_menu']) ? (int)$l['id_menu'] : 0,
-					'id_detalle_menu_web' => isset($l['del_menu'], $idsMenu[$l['del_menu']]) ? $idsMenu[$l['del_menu']] : null,
+					// v1.41.0: los agregados (varios) y los productos de una promo normal se unen en sus tablas (anotarUniones)
+					'id_detalle_menu_web' => isset($l['del_menu'], $idsMenu[$l['del_menu']]) && !$sushiPorTabla
+						&& !(($conTablasUnion) && (isset($l['agregado_de']) || !empty($l['promo'])))
+						? $idsMenu[$l['del_menu']] : null,
+					// v1.42.0: producto con VARIOS agregados y cada uno de sus agregados (como es_menu / es_detalle_menu)
+					'es_con_agregados_web' => !empty($l['con_agregados']) ? true : null, 'es_agregado_web' => isset($l['agregado_de']) ? true : null,
 					'id_cotizacion' => $idCot, 'id_producto' => $l['id_producto'], 'cantidad' => $l['cantidad'],
 					'bruto_un' => $l['unitario'], 'subtotal' => 0, 'descuento' => 0, 'descuento_porcentual' => 0, 'total_bruto' => $l['bruto'],
 					'poriva' => 0, 'id_agregado' => $l['id_agregado'], 'mensaje' => mb_substr($l['nota'], 0, 250),
@@ -4692,8 +5089,9 @@ class Mcaja extends CI_Model
 					'desde_android' => !empty($p['desde_app']),
 					'id_garzon' => (int)$idUsuario, 'nombre_computador' => !empty($p['desde_app']) ? 'APP MOVIL' : self::COMPUTADOR,
 					'id_dimpresion' => isset($destinos[$l['id_producto']]) ? $destinos[$l['id_producto']]['id'] : 0,
-				), !empty($l['es_menu']) || !empty($l['con_hijos']) ? 'id_detalle_cotizacion' : null);
+				), !empty($l['es_menu']) || !empty($l['con_hijos']) || isset($l['del_menu']) ? 'id_detalle_cotizacion' : null);
 			}
+			if ($conTablasUnion) $this->anotarUniones($db, $lineas, $idsMenu);   // v1.41.0
 			// 19-11-2026: mensaje general de la mesa escrito ANTES del primer envío (mesa sin pedido). Con el pedido ya abierto el
 			// mensaje se cambia solo con guardarMensajeMesa: aquí no se pisa (auditoría: otra caja o el POS de escritorio pudo
 			// escribir una alergia mientras esta pantalla tenía la mesa abierta, y el envío la borraba).
@@ -4864,9 +5262,12 @@ class Mcaja extends CI_Model
 		$nuevos = array();
 		foreach ($sel as $l) {
 			$c = $cambios;
-			if (!empty($l['menu_de']) && isset($nuevos[$l['menu_de']])) $c['id_detalle_menu_web'] = $nuevos[$l['menu_de']];
+			// v1.41.0: los unidos por tabla (agregados varios, promo normal) no usan la columna: se copian con copiarUniones
+			$porTabla = isset($l['agregado_de']) || (!empty($l['promo']) && !empty($l['es_detalle_menu'])) || !empty($l['sushi_tabla']);   // v1.45.0
+			if (!$porTabla && !empty($l['menu_de']) && isset($nuevos[$l['menu_de']])) $c['id_detalle_menu_web'] = $nuevos[$l['menu_de']];
 			$nuevos[$l['id_detalle']] = $this->partirLinea($db, $l['id_detalle'], $l['cantidad'], $idCotDestino, $c);
 		}
+		$this->copiarUniones($db, $sel, $nuevos);
 		return $nuevos;
 	}
 
@@ -5143,6 +5544,45 @@ class Mcaja extends CI_Model
 		$motivo = mb_substr(trim((string)(isset($p['motivo']) ? $p['motivo'] : '')), 0, 100);
 		if ($motivo === '') throw new Exception('Indica el motivo de la anulación', 400);
 		$this->claveAnulacion($db, 'admin_anular_pedido_mesa', 'anular el pedido de la mesa', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
+		return array('ok' => true, 'anuladas' => $this->anularPedidoDeUnaMesa($db, $caja, $idUsuario, $idMesa, $motivo));
+	}
+
+	/**
+	 * v1.33.0 (pedido del usuario): anula el pedido de varias mesas con un solo motivo y una sola clave (si Configuraciones
+	 * la pide para anular el pedido de la mesa). Solo con Configuraciones > Anular varias mesas a la vez. Cada mesa va en
+	 * su propia transacción: si una ya no tiene pedido (otra caja la cobró) o está en uso, se informa y las demás se anulan.
+	 * Devuelve {mesas: [{id_mesa, anuladas}], fallidas: [{id_mesa, error}]}.
+	 */
+	public function anularVariasMesas($caja, $idUsuario, $idRol, $p)
+	{
+		$db = $this->conexion();
+		if (empty($this->configuracion($db)['anular_varias_mesas'])) {
+			throw new Exception('Anular varias mesas a la vez no está habilitado en Configuraciones.', 403);
+		}
+		$ids = array_values(array_unique(array_filter(array_map('intval', isset($p['ids']) && is_array($p['ids']) ? $p['ids'] : array()),
+			function ($i) { return $i > 0; })));
+		if (!$ids) throw new Exception('Elige las mesas que quieres anular', 400);
+		if (count($ids) > 100) throw new Exception('Son demasiadas mesas para anularlas de una vez (máximo 100)', 400);
+		$motivo = mb_substr(trim((string)(isset($p['motivo']) ? $p['motivo'] : '')), 0, 100);
+		if ($motivo === '') throw new Exception('Indica el motivo de la anulación', 400);
+		$this->claveAnulacion($db, 'admin_anular_pedido_mesa', 'anular el pedido de las mesas', $idUsuario, $idRol, isset($p['autorizacion']) ? $p['autorizacion'] : null);
+		$res = array('mesas' => array(), 'fallidas' => array());
+		foreach ($ids as $idMesa) {
+			try {
+				$res['mesas'][] = array('id_mesa' => $idMesa, 'anuladas' => $this->anularPedidoDeUnaMesa($db, $caja, $idUsuario, $idMesa, $motivo));
+			} catch (Throwable $e) {
+				$res['fallidas'][] = array('id_mesa' => $idMesa, 'error' => $e->getMessage());
+			}
+		}
+		if (!$res['mesas']) {
+			throw new Exception('No se anuló ninguna mesa: ' . $res['fallidas'][0]['error'], 409);
+		}
+		return $res;
+	}
+
+	/** Anula el pedido abierto de una mesa y la deja libre (una transacción). Devuelve las líneas para la comanda. */
+	private function anularPedidoDeUnaMesa($db, $caja, $idUsuario, $idMesa, $motivo)
+	{
 		$db->trans_begin();
 		try {
 			$this->q($db, 'SET LOCAL TIME ZONE ' . $db->escape(self::TZ));
@@ -5160,7 +5600,7 @@ class Mcaja extends CI_Model
 			$db->trans_rollback();
 			throw $e;
 		}
-		return array('ok' => true, 'anuladas' => $this->lineasAnulacion($anuladas));
+		return $this->lineasAnulacion($anuladas);
 	}
 
 	/** Líneas anuladas con la forma que espera la comanda. */
@@ -5192,7 +5632,7 @@ class Mcaja extends CI_Model
 		$sushi = array();   // v1.25.1: promo de sushi (menú sin id_menu) => su producto
 		foreach ($lineas as $l) {
 			if (!empty($l['es_menu'])) $nombres[$l['id_detalle']] = $l['nombre'];
-			if (!empty($l['es_menu']) && empty($l['id_menu'])) $sushi[$l['id_detalle']] = (int)$l['id_producto'];
+			if (!empty($l['es_menu']) && empty($l['id_menu']) && empty($l['promo'])) $sushi[$l['id_detalle']] = (int)$l['id_producto'];   // v1.41.0: una promo normal no es de sushi
 			if (!empty($l['menu_de'])) $conHijos[$l['menu_de']] = true;
 		}
 		$res = array();
@@ -5275,6 +5715,9 @@ class Mcaja extends CI_Model
 			'delivery_id_producto_envio' => 'delivery_producto_envio',
 			'delivery_costo_envio' => 'delivery_costo_envio',
 			'delivery_limite_rendicion' => 'delivery_limite_rendicion',
+			// v1.35.1: cuántos extras con cobro y máximo por categoría de agregados (migración 20261124150000)
+			'agregados_max_extras_web' => 'max_extras_agregados',
+			'agregados_max_categoria_web' => 'max_categoria_agregados',
 		);
 		// Opciones on/off de Configuraciones
 		$flags = array(
@@ -5313,6 +5756,12 @@ class Mcaja extends CI_Model
 			'usar_correo_electronico' => 'correo_cierre',
 			'informar_anulaciones_mail' => 'correo_anulaciones',
 			'delivery_habilitado' => 'delivery',   // 18-11-2026: pestaña Delivery en la Caja
+			// v1.33.0: anular varias cosas de una vez (migración 20261124120000; sin la columna = apagada)
+			'esperas_anular_todas_web' => 'anular_todas_esperas',
+			'mesas_anular_varias_web' => 'anular_varias_mesas',
+			// v1.35.0: agregados extra con costo y categorías de agregados (migración 20261124140000; sin la columna = apagada)
+			'agregados_extra_web' => 'agregados_extra',
+			'agregados_categorias_web' => 'agregados_categorias',
 		);
 		// Opciones de texto (impresora del cierre, impresora de documentos, papel 58/80)
 		$textos = array(
@@ -5379,6 +5828,11 @@ class Mcaja extends CI_Model
 		// Boletas, precuentas y comandas con el diseño de la página, como imagen por el agente. 18-11-2026: siempre encendida
 		// (se quitó la casilla; documentos_en_navegador ya no se lee). Si la imagen falla, sale con el formato del agente.
 		$config['documentos_navegador'] = true;
+		// v1.40.0: Configuraciones > "Imprimir en modo texto (más rápido)" (migración 20261126110000): en texto por el agente
+		if (in_array('impresion_texto_web', $existentes, true)) {
+			$it = $this->q($db, 'SELECT (impresion_texto_web IS TRUE) AS ok FROM configuracion LIMIT 1')->row();
+			if ($it && ($it->ok === 't' || $it->ok === true)) $config['documentos_navegador'] = false;
+		}
 		// 16-11-2026: también los pedidos que el celular manda con "imprimir": 0 (migración 20261116110000; NULL = apagada)
 		$config['comandas_app_forzar'] = false;
 		if ($config['comandas_app'] && in_array('imprimir_comandas_app_forzar', $existentes, true)) {

@@ -72,6 +72,15 @@
                             </div>
                         </fieldset>
 
+                        <fieldset>
+                            <div class="col-sm-12">
+                                <div class="checkbox checkbox-success checkbox-circle">
+                                    <input id="ckPagoElectronico" type="checkbox" aria-describedby="ayudaPagoElectronico">
+                                    <label for="ckPagoElectronico">PAGO ELECTRÓNICO</label>
+                                </div>
+                                <p class="help-block" id="ayudaPagoElectronico">Para tarjetas de débito y crédito. Envía el cobro al terminal POS de la caja.</p>
+                            </div>
+                        </fieldset>
                         <!-- FIN CAMPOS DE REGISTRO  -->
                     </div>
                 </div>
@@ -95,6 +104,7 @@
         $('#ckBoletaElectronica').prop('checked', false);
         $('#ckVigente').prop('checked', true);
         $('#ckPermitePropina').prop('checked', false);
+        $('#ckPagoElectronico').prop('checked', false);
         $('#ModalNuevaFormaDePago').modal({
             backdrop: 'static',
             keyboard: false
@@ -136,7 +146,8 @@
                 'escortesia': EsCortesia,
                 'boleta_electronica': BoletaElectronica,
                 'vigente': Vigente,
-                'permite_propina': PermitePropina
+                'permite_propina': PermitePropina,
+                'pago_electronico': $('#ckPagoElectronico').is(':checked') ? 1 : 0
             };
             $.post(base_url + "index.php/FormasDePago/grabarNuevaFormaDePago", {
                     'prod': miJson

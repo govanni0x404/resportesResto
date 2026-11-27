@@ -377,6 +377,12 @@
 
         /* Enlace "¿Olvidaste tu contraseña?" */
         .login-opts { text-align: center; margin-top: 18px; }
+        /* v1.39.5: botón del ojo para ver la contraseña */
+        #password { padding-right: 50px; }
+        .lg-ver-clave { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 38px; height: 38px; border: 0; border-radius: 10px;
+            background: transparent; color: #718096; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .lg-ver-clave:hover, .lg-ver-clave:focus-visible { background: #edf2f7; color: #2d3748; outline: none; }
+        .lg-ver-clave.activo { color: #568c30; }
         .lg-recordar { display: flex; align-items: center; gap: 10px; margin: -4px 0 18px; font-size: 14px; font-weight: 500; color: #4a5568; cursor: pointer; user-select: none; }
         .lg-recordar input { width: 18px; height: 18px; margin: 0; accent-color: #568c30; cursor: pointer; flex: 0 0 auto; }
         .lg-forgot { border: 0; background: none; padding: 6px 10px; border-radius: 8px; color: #3d6b20; font-size: 14px; font-weight: 600; cursor: pointer; }
@@ -519,6 +525,8 @@
                             required
                         >
                         <i class="fa fa-key input-icon"></i>
+                        <!-- v1.39.5 (pedido del usuario): ver la contraseña que se escribe -->
+                        <button type="button" class="lg-ver-clave" id="lgVerClave" aria-label="Mostrar contraseña" title="Mostrar contraseña"><i class="fa fa-eye"></i></button>
                     </div>
                     <span class="help-text">Ingresa tu contraseña del sistema</span>
                 </div>
@@ -672,44 +680,87 @@
     <script src="<?php echo base_url() ?>assets/plugins/jQuery/jquery-1.12.4.min.js"></script>
     <script src="<?php echo base_url() ?>assets/bootstrap/js/bootstrap.min.js"></script>
     <script>
-    /* v1.30.3: "Recordar mi usuario y contraseña". El usuario queda en este navegador (localStorage) y la contraseña la
-       guarda el administrador de contraseñas del propio navegador (Chrome/Edge: PasswordCredential; los demás ofrecen
-       "¿Guardar contraseña?" al entrar). La contraseña nunca se guarda en texto en la página. Solo se rellena: no entra solo. */
+    /* v1.30.3 / v1.39.5: "Recordar mi usuario y contraseña" en este equipo.
+       Antes la contraseña la guardaba el navegador (PasswordCredential), pero Firefox no lo tiene y había que escribirla
+       otra vez (pedido del usuario). Ahora la guarda la página CIFRADA (AES-GCM, WebCrypto): la llave se crea en este
+       navegador, no se puede sacar de él (IndexedDB, no exportable) y lo cifrado queda en localStorage. Sin WebCrypto
+       (página http fuera de localhost) se guarda solo ofuscada. Se rellena sola, pero no entra sola. Al desmarcar la
+       casilla se borra todo. */
     (function () {
         var CLAVE = 'restoWeb.login.recordar';
         var form = document.getElementById('loginForm');
         var u = document.getElementById('username'), pw = document.getElementById('password'), chk = document.getElementById('lgRecordar');
+        var ojo = document.getElementById('lgVerClave');
+        if (ojo && pw) ojo.addEventListener('click', function () {
+            var ver = pw.type === 'password';
+            pw.type = ver ? 'text' : 'password';
+            ojo.classList.toggle('activo', ver);
+            ojo.innerHTML = ver ? '<i class="fa fa-eye-slash"></i>' : '<i class="fa fa-eye"></i>';
+            ojo.setAttribute('aria-label', ver ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            ojo.title = ver ? 'Ocultar contraseña' : 'Mostrar contraseña';
+            pw.focus();
+        });
         if (!form || !u || !pw || !chk) return;
         var leer = function () { try { return JSON.parse(localStorage.getItem(CLAVE) || 'null'); } catch (e) { return null; } };
+        var escribir = function (o) { try { if (o) localStorage.setItem(CLAVE, JSON.stringify(o)); else localStorage.removeItem(CLAVE); } catch (e) {} };
+        var sutil = window.crypto && window.crypto.subtle && window.indexedDB ? window.crypto.subtle : null;
+        var b64 = function (buf) { var s = '', a = new Uint8Array(buf); for (var i = 0; i < a.length; i++) s += String.fromCharCode(a[i]); return btoa(s); };
+        var desdeB64 = function (t) { var s = atob(t), a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; };
+        // Llave AES de este navegador, guardada en IndexedDB sin poder exportarla
+        function llave(crear) {
+            return new Promise(function (ok, mal) {
+                var req = indexedDB.open('restoWebLogin', 1);
+                req.onupgradeneeded = function () { req.result.createObjectStore('llaves'); };
+                req.onerror = function () { mal(req.error); };
+                req.onsuccess = function () {
+                    var db = req.result, tx = db.transaction('llaves', 'readonly'), g = tx.objectStore('llaves').get('aes');
+                    g.onsuccess = function () {
+                        if (g.result || !crear) { ok(g.result || null); return; }
+                        sutil.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']).then(function (k) {
+                            var t2 = db.transaction('llaves', 'readwrite');
+                            t2.objectStore('llaves').put(k, 'aes');
+                            t2.oncomplete = function () { ok(k); };
+                            t2.onerror = function () { mal(t2.error); };
+                        }, mal);
+                    };
+                    g.onerror = function () { mal(g.error); };
+                };
+            });
+        }
+        function cifrar(texto) {
+            if (!sutil) return Promise.resolve({ o: btoa(unescape(encodeURIComponent(texto))).split('').reverse().join('') });
+            var iv = crypto.getRandomValues(new Uint8Array(12));
+            return llave(true).then(function (k) {
+                return sutil.encrypt({ name: 'AES-GCM', iv: iv }, k, new TextEncoder().encode(texto));
+            }).then(function (c) { return { iv: b64(iv), c: b64(c) }; });
+        }
+        function descifrar(g) {
+            if (g.o) { try { return Promise.resolve(decodeURIComponent(escape(atob(g.o.split('').reverse().join(''))))); } catch (e) { return Promise.reject(e); } }
+            if (!sutil || !g.c) return Promise.reject(new Error('sin cifrado'));
+            return llave(false).then(function (k) {
+                if (!k) throw new Error('sin llave');
+                return sutil.decrypt({ name: 'AES-GCM', iv: desdeB64(g.iv) }, k, desdeB64(g.c));
+            }).then(function (b) { return new TextDecoder().decode(b); });
+        }
         var guardado = leer();
         if (guardado && guardado.usuario) {
             chk.checked = true;
             if (!u.value) u.value = guardado.usuario;
-            // Contraseña desde el navegador (si el usuario la dejó guardada); sin preguntar si hay una sola
-            if (window.PasswordCredential && navigator.credentials && navigator.credentials.get) {
-                navigator.credentials.get({ password: true, mediation: 'optional' }).then(function (c) {
-                    if (!c || !c.password) return;
-                    if (!u.value || u.value === c.id) { u.value = c.id; if (!pw.value) pw.value = c.password; }
-                }).catch(function () {});
+            if (guardado.clave && !pw.value) {
+                descifrar(guardado.clave).then(function (t) { if (!pw.value && u.value === guardado.usuario) pw.value = t; }, function () {});
             }
         }
         var enviando = false;
         form.addEventListener('submit', function (e) {
             if (enviando) return;
-            if (!chk.checked) {
-                try { localStorage.removeItem(CLAVE); } catch (er) {}
-                if (navigator.credentials && navigator.credentials.preventSilentAccess) navigator.credentials.preventSilentAccess().catch(function () {});
-                return;
-            }
-            try { localStorage.setItem(CLAVE, JSON.stringify({ usuario: u.value.trim() })); } catch (er) {}
-            if (!(window.PasswordCredential && navigator.credentials && navigator.credentials.store) || !u.value || !pw.value) return;
-            // Guardar en el navegador y recién entonces enviar (máximo 1,5 s de espera)
+            if (!chk.checked) { escribir(null); return; }
+            if (!u.value || !pw.value) { escribir({ usuario: u.value.trim() }); return; }
+            // Se guarda (cifrada) y recién entonces se envía (máximo 1,5 s de espera)
             e.preventDefault();
             enviando = true;
             var listo = false, seguir = function () { if (listo) return; listo = true; form.submit(); };
-            try {
-                navigator.credentials.store(new PasswordCredential({ id: u.value.trim(), password: pw.value, name: u.value.trim() })).then(seguir, seguir);
-            } catch (er) { seguir(); }
+            var usuario = u.value.trim();
+            cifrar(pw.value).then(function (c) { escribir({ usuario: usuario, clave: c }); }, function () { escribir({ usuario: usuario }); }).then(seguir, seguir);
             setTimeout(seguir, 1500);
         });
     })();

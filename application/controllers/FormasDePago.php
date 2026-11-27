@@ -65,7 +65,8 @@ class FormasDePago extends CI_Controller
             'comision' => 0,
             'permite_propina' => $d['permite_propina'],
         );
-        $r = $this->MformasDePago->grabarNuevaFormaDePago($id, $miData);
+        $pagoElectronico = isset($d['pago_electronico']) ? (string)$d['pago_electronico'] === '1' : null;
+        $r = $this->MformasDePago->grabarNuevaFormaDePago($id, $miData, $pagoElectronico);
         echo json_encode($r);
     }
 }

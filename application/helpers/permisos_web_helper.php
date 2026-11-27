@@ -54,6 +54,7 @@ function permisos_web_catalogo()
 		),
 		'Mantención' => array(
 			'Agregados' => 'Agregados',
+			'CategoriasAgregados' => 'Categorías de agregados',   // v1.35.0
 			'Bodegas' => 'Bodegas',
 			'CanalDeVenta' => 'Canal de venta',
 			'CentroCosto' => 'Centro de costo',

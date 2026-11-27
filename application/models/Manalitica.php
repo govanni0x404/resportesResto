@@ -172,9 +172,12 @@ class Manalitica extends CI_Model
 		$nombre = $this->Mtipomesa->nombreSql('m', 'tmw');
 		$nombre = isset($pl['nombre']) ? "COALESCE(NULLIF(trim(pl.nombre), ''), $nombre)" : $nombre;
 		$rec = isset($m['id_recinto']) && $this->columnasDe('recinto') ? true : false;
+		// v1.32.1: también el tipo de mesa (Mantención > Recintos > Tipos de mesa)
+		$conTipo = $this->Mtipomesa->conMesa();
 		$filas = $this->q("$cte SELECT b.id_mesa, " . ($rec ? 'COALESCE(r.id_recinto, 0)' : '0') . " AS id_recinto,
 				" . ($rec ? "COALESCE(r.nombre_recinto, 'Sin recinto')" : "'Sin recinto'::text") . " AS recinto,
 				COALESCE($nombre, 'Mesa ' || b.id_mesa) AS mesa,
+				" . ($conTipo ? $this->Mtipomesa->idSql('m') : '0') . " AS id_tipo, " . ($conTipo ? "COALESCE(tmw.nombre, 'Sin tipo')" : "'Sin tipo'::text") . " AS tipo,
 				round(sum(b.total)) AS venta, count(*) AS docs, round(sum(b.propina)) AS propina,
 				count(DISTINCT NULLIF(b.folio_cotizacion, 0)) AS pedidos
 			FROM base b
@@ -183,8 +186,59 @@ class Manalitica extends CI_Model
 			$joinPl
 			" . ($rec ? 'LEFT JOIN recinto r ON r.id_recinto = m.id_recinto' : '') . "
 			WHERE $valida AND b.es_mesa
-			GROUP BY 1, 2, 3, 4 ORDER BY venta DESC", $binds);
-		return $this->numeros($filas, array('recinto', 'mesa'));
+			GROUP BY 1, 2, 3, 4, 5, 6 ORDER BY venta DESC", $binds);
+		return $this->numeros($filas, array('recinto', 'mesa', 'tipo'));
+	}
+
+	/**
+	 * v1.32.1 (pedido del usuario): detalle de las ventas de mesa del período (cada documento con sus productos), de un
+	 * recinto, un tipo de mesa o una mesa. Máximo 500, las más nuevas primero.
+	 */
+	public function ventasMesas($idCaja, $desde, $hasta, $idRecinto, $idTipo, $idMesa)
+	{
+		$this->load->helper('tenant');
+		$this->db2 = get_tenant_db($this);
+		$this->db2->db_debug = false;
+		$de = $this->fecha($desde);
+		$a = $this->fecha($hasta);
+		if ($a < $de) { $t = $de; $de = $a; $a = $t; }
+		list($cte, $binds) = $this->base($de, $a, (int)$idCaja);
+		$m = $this->columnasDe('mesa');
+		if (!isset($m['id_mesa'])) return array('ventas' => array());
+		$this->load->model('Mtipomesa');
+		$pl = $this->columnasDe('mesa_plano');
+		$joinPl = isset($pl['nombre']) ? 'LEFT JOIN mesa_plano pl ON pl.id_mesa = m.id_mesa' : '';
+		$nombre = $this->Mtipomesa->nombreSql('m', 'tmw');
+		$nombre = isset($pl['nombre']) ? "COALESCE(NULLIF(trim(pl.nombre), ''), $nombre)" : $nombre;
+		$rec = isset($m['id_recinto']);
+		$conTipo = $this->Mtipomesa->conMesa();
+		$filtro = '';
+		if ((int)$idMesa > 0) $filtro .= ' AND b.id_mesa = ' . (int)$idMesa;
+		if ($rec && (int)$idRecinto !== 0) $filtro .= ' AND COALESCE(m.id_recinto, 0) = ' . max(0, (int)$idRecinto);
+		if ($conTipo && (int)$idTipo !== 0) $filtro .= ' AND ' . $this->Mtipomesa->idSql('m') . ' = ' . max(0, (int)$idTipo);
+		$dm = $this->columnasDe('detalle_venta');
+		$prod = "(SELECT string_agg(trim(to_char(dv.cantidad, 'FM999990.999'), '.') || ' x ' || COALESCE(p.nombre_producto, 'Producto ' || dv.id_producto), ' · ' ORDER BY dv.id_detalle_venta)
+			FROM detalle_venta dv LEFT JOIN producto p ON p.id_producto = dv.id_producto WHERE dv.id_venta = b.id_venta"
+			. (isset($dm['es_detalle_menu']) ? ' AND dv.es_detalle_menu IS NOT TRUE' : '')
+			// v1.45.0: los productos de una promo, con sus propias marcas, tampoco se listan (sale la promo)
+			. (isset($dm['es_detalle_promo_web']) ? ' AND dv.es_detalle_promo_web IS NOT TRUE AND dv.es_detalle_promo_sushi_web IS NOT TRUE' : '') . ")";
+		$filas = $this->q("$cte SELECT b.id_venta, COALESCE(v.folio, 0) AS folio, COALESCE(td.nombre_tdocumento, 'Venta') AS documento,
+				to_char(b.fecha_transaccion, 'DD-MM-YYYY HH24:MI') AS fecha, COALESCE($nombre, 'Mesa ' || b.id_mesa) AS mesa,
+				" . ($rec ? "COALESCE(r.nombre_recinto, 'Sin recinto')" : "'Sin recinto'::text") . " AS recinto,
+				" . ($conTipo ? "COALESCE(tmw.nombre, 'Sin tipo')" : "'Sin tipo'::text") . " AS tipo,
+				COALESCE(u.nombre_usuario, '') AS garzon, round(b.total) AS total, round(b.propina) AS propina, round(b.descuento) AS descuento,
+				COALESCE($prod, '') AS productos
+			FROM base b
+			JOIN venta v ON v.id_venta = b.id_venta
+			LEFT JOIN tdocumento td ON td.id_tdocumento = v.id_tdocumento
+			LEFT JOIN usuario u ON u.id_usuario = b.id_garzon
+			LEFT JOIN mesa m ON m.id_mesa = b.id_mesa
+			" . $this->Mtipomesa->joinSql('m', 'tmw') . "
+			$joinPl
+			" . ($rec ? 'LEFT JOIN recinto r ON r.id_recinto = m.id_recinto' : '') . "
+			WHERE NOT b.anulada AND NOT b.cortesia AND NOT b.es_nc AND b.es_mesa $filtro
+			ORDER BY b.fecha_transaccion DESC NULLS LAST, b.id_venta DESC LIMIT 500", $binds);
+		return array('ventas' => $this->numeros($filas, array('documento', 'fecha', 'mesa', 'recinto', 'tipo', 'garzon', 'productos')));
 	}
 
 	/**
@@ -203,14 +257,17 @@ class Manalitica extends CI_Model
 		$folioCot = isset($v['folio_cotizacion']) ? 'COALESCE(v.folio_cotizacion, 0)' : '0';
 		$cortesia = isset($v['es_cortesia']) ? 'v.es_cortesia IS TRUE' : 'false';
 		$filtroCaja = $idCaja > 0 ? ' AND v.id_caja = ' . (int)$idCaja : '';
+		// v1.38.2 (pedido del usuario): por el día de cada venta (hora local), no por el día en que se abrió su caja
+		$tz = date_default_timezone_get();
+		if (!in_array($tz, timezone_identifiers_list(), true)) $tz = 'America/Santiago';
 		$sql = "WITH pagos AS (
 				SELECT pv.id_venta, bool_or(f.escortesia IS TRUE) AS cortesia_pago
 				FROM pago_venta pv JOIN fpago f ON f.id_fpago = pv.id_fpago
 				WHERE pv.id_venta IN (SELECT v0.id_venta FROM venta v0 JOIN caja c0 ON c0.id_caja = v0.id_caja
-					WHERE c0.fecha::date BETWEEN ? AND ?" . str_replace('v.id_caja', 'v0.id_caja', $filtroCaja) . ")
+					WHERE (v0.fecha_transaccion AT TIME ZONE '$tz')::date BETWEEN ? AND ?" . str_replace('v.id_caja', 'v0.id_caja', $filtroCaja) . ")
 				GROUP BY pv.id_venta
 			), base AS (
-				SELECT v.id_venta, v.id_caja, v.fecha_transaccion, ca.fecha::date AS dia,
+				SELECT v.id_venta, v.id_caja, v.fecha_transaccion, (v.fecha_transaccion AT TIME ZONE '$tz')::date AS dia,
 					COALESCE(v.total, 0) AS total, COALESCE(v.valor_propina, 0) AS propina, COALESCE(v.monto_descuento, 0) AS descuento,
 					(COALESCE(v.mensaje_pedido, '') LIKE 'ANULADA%') AS anulada,
 					COALESCE(substring(v.mensaje_pedido from '^ANULADA \\(\\$(-{0,1}[0-9]+)'), '0')::numeric AS monto_anulado,
@@ -223,7 +280,7 @@ class Manalitica extends CI_Model
 				FROM venta v
 				JOIN caja ca ON ca.id_caja = v.id_caja
 				LEFT JOIN pagos p ON p.id_venta = v.id_venta
-				WHERE ca.fecha::date BETWEEN ? AND ?$filtroCaja
+				WHERE (v.fecha_transaccion AT TIME ZONE '$tz')::date BETWEEN ? AND ?$filtroCaja
 			)";
 		return array($sql, array($de, $a, $de, $a));
 	}

@@ -221,11 +221,17 @@ class Caja extends CI_Controller
 			// 19-11-2026: venta cobrada en la máquina POS: solo con el cobro aprobado, y una sola vez
 			$txPago = isset($body['pago_electronico_tx']) ? (string)$body['pago_electronico_tx'] : '';
 			unset($body['pago_electronico_tx']);
+			$this->load->model('Mpagoelectronico');
 			if ($txPago !== '') {
-				$this->load->model('Mpagoelectronico');
 				$tx = $this->Mpagoelectronico->txDeCaja($caja, $txPago);
 				if ($tx['estado'] === 'registrada') throw new Exception('Esa venta ya quedó registrada', 409);
 				if ($tx['estado'] !== 'aprobado') throw new Exception('El pago en la máquina no está aprobado: no se puede registrar la venta', 409);
+				if (($body['token'] ?? null) !== ($tx['venta']['token'] ?? null)
+					|| ($body['pagos'] ?? null) != ($tx['venta']['pagos'] ?? null)) {
+					throw new Exception('Los datos de pago no coinciden con los del cobro aprobado.', 409);
+				}
+			} elseif ($this->Mpagoelectronico->montoElectronico($body, $caja) > 0) {
+				throw new Exception('La venta tiene un pago electrónico pendiente de aprobación en la máquina.', 409);
 			}
 			$r = $this->Mcaja->registrarVenta($caja, $this->idUsuario(), $this->idRol(), $body);
 			if ($txPago !== '') {
@@ -260,11 +266,15 @@ class Caja extends CI_Controller
 	public function pagoElectronico()
 	{
 		$this->ejecutar(function () {
+			// v1.39.4: solo lee la sesión: suelta su candado para no hacer esperar a la boleta que se imprime a la vez
+			$usuario = (string)$this->session->userdata('nombre_usuario');
+			$this->soltarSesion();
 			$caja = $this->Mcaja->cajaAbierta($this->idUsuario());
 			$this->load->model('Mpagoelectronico');
 			$idControl = $caja && isset($caja->id_control_caja) ? (int)$caja->id_control_caja : 0;
 			return array('maquina' => $this->Mpagoelectronico->paraCaja($idControl), 'pendientes' => $this->Mpagoelectronico->pendientes($idControl),
-				'usuario' => (string)$this->session->userdata('nombre_usuario'));
+				'formas_electronicas' => $this->Mpagoelectronico->formasTarjeta(),
+				'usuario' => $usuario);
 		});
 	}
 
@@ -275,7 +285,7 @@ class Caja extends CI_Controller
 			$b = $this->cuerpoJson();
 			$this->load->model('Mpagoelectronico');
 			return $this->Mpagoelectronico->crearTx($this->cajaRequerida(), $this->idUsuario(), isset($b['monto']) ? $b['monto'] : 0,
-				isset($b['descripcion']) ? $b['descripcion'] : '', isset($b['venta']) ? $b['venta'] : null);
+				isset($b['descripcion']) ? $b['descripcion'] : '', isset($b['venta']) ? $b['venta'] : null, (int)($b['id_maquina'] ?? 0));
 		}, true);
 	}
 
@@ -643,6 +653,21 @@ class Caja extends CI_Controller
 		}, true);
 	}
 
+	/** v1.33.0: Mesas > Anular varias (Configuraciones). Una comanda de anulación por mesa. */
+	public function anularVariasMesas()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			$r = $this->Mcaja->anularVariasMesas($this->cajaRequerida(), $this->idUsuario(), $this->idRol(), $b);
+			foreach ($r['mesas'] as $i => $m) {
+				$r['mesas'][$i]['comanda_id'] = $this->guardarComanda($m['anuladas'], array('id_mesa' => $m['id_mesa'],
+					'anulacion' => true, 'motivo' => (string)($b['motivo'] ?? '')));
+				unset($r['mesas'][$i]['anuladas']);
+			}
+			return $r;
+		}, true);
+	}
+
 	public function moverMesa()
 	{
 		$this->ejecutar(function () {
@@ -827,6 +852,21 @@ class Caja extends CI_Controller
 			$this->Mcaja->autorizarAnulacionEspera($this->idUsuario(), $this->idRol(), $b['autorizacion'] ?? null);
 			$this->load->model('Mventasespera');
 			return $this->Mventasespera->anular($caja, $this->idUsuario(), (int)($b['id'] ?? 0), $b['motivo'] ?? '');
+		}, true);
+	}
+
+	/** v1.33.0: Ventas en espera > Anular todas (solo con la casilla de Configuraciones; la clave se pide una vez). */
+	public function anularEsperasTodas()
+	{
+		$this->ejecutar(function () {
+			$b = $this->cuerpoJson();
+			$caja = $this->cajaRequerida();
+			if (empty($this->Mcaja->opciones()['anular_todas_esperas'])) {
+				throw new Exception('Anular todas las ventas en espera no está habilitado en Configuraciones.', 403);
+			}
+			$this->Mcaja->autorizarAnulacionEspera($this->idUsuario(), $this->idRol(), $b['autorizacion'] ?? null);
+			$this->load->model('Mventasespera');
+			return $this->Mventasespera->anularVarias($caja, $this->idUsuario(), $b['ids'] ?? array(), $b['motivo'] ?? '');
 		}, true);
 	}
 

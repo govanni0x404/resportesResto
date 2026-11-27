@@ -97,4 +97,23 @@ class RecetaProduccion extends CI_Controller
         $r = $this->MrecetaProduccion->eliminarDetalleReceta($id);
         echo json_encode(array('success' => $r));
     }
+
+    /** v1.37.0: editor de la receta de producción (Insumos > Producción). Sin id: recetas e insumos; con id: una receta. */
+    public function editor()
+    {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) { set_status_header(401); echo json_encode(array('error' => 'Sesión expirada')); return; }
+        $id = (int)$this->input->get_post('id');
+        $r = $id > 0 ? $this->MrecetaProduccion->completa($id) : $this->MrecetaProduccion->datosEditor((int)$this->input->get_post('id_insumo'));
+        if (isset($r['error'])) set_status_header(400);
+        echo json_encode($r);
+    }
+
+    /** v1.37.0: graba la receta de producción con todos sus insumos de una vez. */
+    public function guardarCompleta()
+    {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) { set_status_header(401); echo json_encode(array('error' => 'Sesión expirada')); return; }
+        $r = $this->MrecetaProduccion->guardarCompleta($this->input->post());
+        if (isset($r['error'])) set_status_header(400);
+        echo json_encode($r);
+    }
 }

@@ -119,7 +119,7 @@ function ListadoDeFamilias() {
             var rowData = tablaFamilias.rows(indexes).data().toArray();
 
             $("#idFamilia").val(rowData[0].id_familia);
-            $("#nombreFamilia").val(rowData[0].nombre_familia);
+            $("#nombreFamilia").val(rowData[0].nombre_familia).data('original', rowData[0].nombre_familia);   // v1.39.6: el alias sigue al nombre
             $("#AliasFamilia").val(rowData[0].alias);
             $("#ordenFamilia").val(rowData[0].orden_familia);
             if (rowData[0].venta_directa == 'SI') {

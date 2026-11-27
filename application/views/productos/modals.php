@@ -22,10 +22,109 @@
 .ag-op.ya-esta small { font-weight: 600; color: var(--t-texto-tenue, #6B7280); }
 .ag-varios-vacio { grid-column: 1 / -1; padding: 18px; text-align: center; color: var(--t-texto-tenue, #6B7280); }
 /* v1.30.3: máximo de agregados por producto */
-.ag-maximo { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; background: var(--t-fondo-alt, #F9FAFB); }
-.ag-maximo label { display: block; margin-bottom: 6px; font-weight: 600; }
-.ag-maximo-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-.ag-maximo-fila input { width: 110px; text-align: center; font-weight: 700; }
+.ag-maximo { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 14px; padding: 14px 16px; border: 1px solid var(--t-primario-borde, #BBE3C8); border-radius: 12px; background: var(--t-primario-suave, #E8F5EC); }
+.ag-maximo-icono { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #fff; color: var(--t-primario, #15803D); font-size: 18px; box-shadow: 0 1px 2px rgba(17, 24, 39, .08); }
+.ag-maximo-texto { flex: 1 1 220px; min-width: 0; line-height: 1.35; }
+.ag-maximo-texto > b { display: block; font-size: 14px; color: var(--t-texto-fuerte, #111827); }
+.ag-maximo-texto small { display: block; margin-top: 2px; font-size: 12.5px; color: var(--t-texto-suave, #4B5563); }
+.ag-maximo-control { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.ag-contador { display: inline-flex; align-items: center; height: 40px; border: 1px solid var(--t-borde, #D1D5DB); border-radius: 10px; background: #fff; overflow: hidden; }
+.ag-cont-btn { width: 38px; height: 100%; border: 0; background: transparent; color: var(--t-texto-suave, #4B5563); font-size: 12px; }
+.ag-cont-btn:hover:not(:disabled) { background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); }
+.ag-cont-btn:disabled { opacity: .35; cursor: not-allowed; }
+.ag-contador input { width: 52px; height: 100%; border: 0; border-left: 1px solid var(--t-borde-suave, #EEF0F3); border-right: 1px solid var(--t-borde-suave, #EEF0F3); text-align: center; font-size: 17px; font-weight: 800; color: var(--t-texto-fuerte, #111827); outline: none; }
+.ag-contador input::placeholder { font-size: 20px; color: var(--t-primario, #15803D); }
+.ag-sin-limite { height: 40px; padding: 0 12px; border: 1px solid var(--t-borde, #D1D5DB); border-radius: 10px; background: #fff; font-size: 13px; font-weight: 700; color: var(--t-texto-suave, #4B5563); }
+.ag-sin-limite .ag-inf { font-size: 17px; line-height: 0; vertical-align: -1px; margin-right: 2px; }
+.ag-sin-limite.activo { border-color: var(--t-primario, #15803D); background: var(--t-primario, #15803D); color: #fff; }
+.ag-maximo-estado { min-width: 74px; font-size: 12px; font-weight: 700; color: var(--t-primario, #15803D); }
+.ag-maximo-estado.error { color: #B91C1C; }
+/* v1.35.4: ventana de agregados más simple */
+.agx-grid { display: grid; grid-template-columns: minmax(380px, 5fr) 7fr; gap: 18px; align-items: start; }
+.agx-izq > :last-child { margin-bottom: 0; }
+.agx-der { min-width: 0; }
+.agx-der .agx-tabla { max-height: calc(100vh - 230px); overflow-y: auto; }
+.agx-der .agx-tabla thead th { position: sticky; top: 0; z-index: 2; }
+.agx-izq .agx-producto { flex-basis: 100%; }
+.agx-izq .agx-num { flex: 1 1 90px; }
+.agx-izq .agx-grabar { flex: 1 1 120px; }
+#ModalAgregadosDelProducto .agx-izq .ag-varios-lista { max-height: calc(100vh - 610px); min-height: 150px; }
+@media (max-width: 991px) { .agx-grid { grid-template-columns: 1fr; } .agx-der .agx-tabla { max-height: none; } }
+.agx-reglas { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding: 10px 14px; margin-bottom: 14px; border-radius: 10px;
+    background: var(--t-primario-suave, #E8F5EC); border: 1px solid var(--t-primario-borde, #BBE3C8); }
+.agx-regla { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-weight: 400; }
+.agx-etq { font-size: 13px; font-weight: 700; color: var(--t-texto-fuerte, #111827); white-space: nowrap; }
+.agx-etq i { color: var(--t-texto-tenue, #9CA3AF); font-size: 12px; margin-left: 2px; cursor: help; }
+.ag-contador-sm { height: 32px; }
+.ag-contador-sm .ag-cont-btn { width: 30px; }
+.ag-contador-sm input { width: 40px; font-size: 15px; }
+.ag-sin-limite.agx-sm { height: 32px; padding: 0 10px; }
+.agx-switch { cursor: pointer; position: relative; }
+.agx-switch input:checked + .op-switch-pista { background: var(--t-primario, #15803D); }
+.agx-switch input:checked + .op-switch-pista::after { transform: translateX(18px); }
+.agx-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+/* v1.43.0: sin "Permite varios agregados", el máximo y los extras no aplican (uno solo): no se muestran */
+#bloqueMaxAgregados.sin-varios #reglaMaxAg, #bloqueMaxAgregados.sin-varios #bloqueExtrasProducto, #bloqueMaxAgregados.sin-varios #lblNotaExtras { display: none !important; }
+.agx-nota { margin-top: -8px !important; color: var(--t-texto-tenue, #6B7280) !important; }
+.agx-nota i { margin-right: 3px; }
+.agx-resumen { flex: 1 1 100%; margin-top: -4px; font-size: 12px; color: var(--t-texto-suave, #4B5563); }
+.agx-caja { padding: 12px 14px; margin-bottom: 14px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; }
+.agx-caja-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.agx-caja-cab .ag-modo { margin: 0; }
+.agx-caja-cab { flex-wrap: wrap; }
+.agx-caja-cab .ag-modo { display: inline-flex; flex-wrap: nowrap; }
+.agx-caja-cab .ag-modo-btn { white-space: nowrap; display: inline-flex; flex-direction: row; align-items: center; gap: 6px; }
+.agx-copiar { color: var(--t-texto-suave, #4B5563) !important; font-weight: 600; }
+.agx-fila { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.agx-campo label { display: block; margin-bottom: 4px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #6B7280); }
+.agx-producto { flex: 1 1 260px; min-width: 0; }
+.agx-num { flex: 0 0 100px; }
+.agx-grabar { height: 32px; padding: 0 16px; }
+#bloqueVariosAgregados + .agx-fila { margin-top: 10px; }
+.agx-opciones { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-top: 10px; font-size: 13px; }
+.agx-opciones label { margin: 0; font-weight: 400; cursor: pointer; color: var(--t-texto, #374151); }
+.agx-opciones input { margin: 0 3px 0 0; vertical-align: -2px; accent-color: var(--t-primario, #15803D); }
+.agx-destino { font-size: 12px; color: var(--t-texto-suave, #4B5563); }
+.agx-lista-cab { display: flex; align-items: baseline; gap: 8px; margin: 2px 0 6px; font-size: 14px; }
+.agx-lista-cab span { font-size: 12px; color: var(--t-texto-suave, #6B7280); }
+.agx-tabla { border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; }
+.agx-tabla table { margin: 0; }
+.agx-tabla th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #6B7280); background: var(--t-fondo-alt, #F9FAFB); border-bottom: 1px solid var(--t-borde, #E5E7EB) !important; }
+.agx-tabla td { vertical-align: middle !important; padding: 5px 8px !important; }
+.agx-tabla .ag-nombre { font-weight: 600; }
+.agx-tabla tr.ag-inactivo td { color: var(--t-texto-tenue, #9CA3AF); }
+.agx-tabla tr.ag-inactivo .ag-nombre { text-decoration: line-through; }
+.agx-tabla input.campo-agregado { height: 30px; padding: 2px 6px; text-align: center; }
+.agx-mini-switch { position: relative; display: inline-block; width: 36px; height: 20px; margin: 0; cursor: pointer; vertical-align: middle; }
+.agx-mini-switch input { opacity: 0; width: 0; height: 0; }
+.agx-mini-switch span { position: absolute; inset: 0; border-radius: 20px; background: #D1D5DB; transition: background .15s; }
+.agx-mini-switch span::before { content: ""; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.agx-mini-switch input:checked + span { background: var(--t-primario, #15803D); }
+.agx-mini-switch input:checked + span::before { transform: translateX(16px); }
+.agx-dest { display: block; font-size: 11px; color: var(--t-texto-suave, #6B7280); white-space: nowrap; }
+.t-modal-form .agx-opciones label, .t-modal-form label.agx-switch, .t-modal-form .agx-switch .agx-etq { text-transform: none; letter-spacing: 0; font-size: 13px; }
+.t-modal-form label.agx-switch .agx-etq { font-weight: 700; color: var(--t-texto-fuerte, #111827); }
+.agx-fila .form-control, .agx-fila .select2-container .select2-selection--single { height: 36px !important; }
+.agx-fila .select2-container .select2-selection--single .select2-selection__rendered { line-height: 34px !important; }
+.agx-grabar { height: 36px; }
+@media (max-width: 600px) { .agx-num { flex: 1 1 80px; } .agx-grabar { flex: 1 1 100%; } }
+/* v1.35.1: casilla "Extras con cobro" en el recuadro del máximo y categorías en cuadros de color */
+.ag-extras-producto { display: flex; align-items: center; gap: 12px; flex: 1 1 100%; margin-top: 4px; padding-top: 12px; border-top: 1px dashed var(--t-primario-borde, #BBE3C8); }
+.ag-extras-producto .op-switch { flex: 1 1 auto; margin: 0; background: #fff; }
+.ag-color-0 { --ag-c: #15803D; --ag-f: #F0FDF4; }
+.ag-color-1 { --ag-c: #C2410C; --ag-f: #FFF7ED; }
+.ag-color-2 { --ag-c: #1D4ED8; --ag-f: #EFF6FF; }
+.ag-color-3 { --ag-c: #7E22CE; --ag-f: #FAF5FF; }
+.ag-color-4 { --ag-c: #BE123C; --ag-f: #FFF1F2; }
+.ag-color-5 { --ag-c: #0E7490; --ag-f: #ECFEFF; }
+.ag-color-otros { --ag-c: #6B7280; --ag-f: #F9FAFB; }
+.ag-varios-lista.con-categorias { display: flex; flex-direction: column; gap: 10px; max-height: 340px; }
+.ag-varios-cat { position: relative; border: 2px solid var(--ag-c); border-radius: 10px; background: var(--ag-f); padding: 16px 8px 8px; margin-top: 8px; }
+.ag-varios-cat-titulo { position: absolute; top: -11px; left: 10px; padding: 1px 10px; border-radius: 8px; background: var(--ag-c); color: #fff; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; }
+.ag-varios-cat-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px; }
+.ag-varios-cat .ag-op { background: #fff; }
+#tableAgregados tr.ag-grupo td { background: var(--ag-f, #E8F5EC); color: var(--ag-c, #15803D); font-weight: 800; text-transform: uppercase; letter-spacing: .3px; font-size: 12.5px; padding: 6px 10px; border-top: 2px solid var(--ag-c, #BBE3C8); }
+@media (max-width: 520px) { .ag-maximo-control { width: 100%; } }
 .ag-varios-pie { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; justify-content: space-between; padding: 8px 12px; border-top: 1px solid var(--t-borde, #E5E7EB); background: var(--t-fondo-alt, #F3F4F6); }
 .ag-varios-pie span { font-weight: 700; color: var(--t-primario-osc, #116632); }
 .ag-varios-pie small { color: var(--t-texto-tenue, #6B7280); }
@@ -88,7 +187,7 @@
 }
 /* v1.24.12: ficha del producto en secciones (Datos / Parámetros / Imagen), una a la vez y a todo el ancho, con letras y
    campos más grandes (antes dos columnas y todo muy chico) */
-.prod-secciones { display: flex; gap: 6px; padding: 10px 18px 0; background: #fff; border-bottom: 1px solid var(--t-borde, #E5E7EB); overflow-x: auto; }
+.prod-secciones { flex: 0 0 auto; position: relative; z-index: 2; display: flex; gap: 6px; padding: 10px 18px 0; background: #fff; border-bottom: 1px solid var(--t-borde, #E5E7EB); overflow-x: auto; }
 .prod-sec-btn { flex: 0 0 auto; border: 0; border-bottom: 3px solid transparent; background: transparent; padding: 10px 16px 11px; font-size: 15px; font-weight: 700; color: var(--t-texto-suave, #4B5563); white-space: nowrap; }
 .prod-sec-btn i { margin-right: 6px; }
 .prod-sec-btn:hover { color: var(--t-texto-fuerte, #111827); }
@@ -108,11 +207,23 @@
 .t-prod-modal .select2-container .select2-selection--single .select2-selection__rendered { line-height: 42px; font-size: 15px; padding-left: 12px; }
 .t-prod-modal .select2-container .select2-selection--single .select2-selection__arrow { height: 42px; }
 .t-prod-modal fieldset > [class*="col-"] { margin-bottom: 16px; }
-/* Datos: código y nombre lado a lado (cada uno su columna) */
-@media (min-width: 992px) {
-    .t-prod-modal [data-seccion="datos"] fieldset:has(#txtCbarra), .t-prod-modal [data-seccion="datos"] fieldset:has(#txtNombre) { width: 50%; float: left; margin: 0; }
-    .t-prod-modal [data-seccion="datos"] fieldset:has(#txtCbarra) > .col-sm-12, .t-prod-modal [data-seccion="datos"] fieldset:has(#txtNombre) > .col-md-12 { width: 100%; }
-}
+/* v1.34.1 (pedido del usuario): Datos del producto en una grilla de 6 columnas: 3 campos por fila (o 2 anchos), sin huecos */
+.prod-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0 18px; margin-bottom: 6px; }
+.prod-grid > div { grid-column: span 6; min-width: 0; margin-bottom: 16px; }
+.prod-grid > .pg-2 { grid-column: span 2; }
+.prod-grid > .pg-3 { grid-column: span 3; }
+.prod-grid > .pg-4 { grid-column: span 4; }
+.prod-grid > [data-id-auto] { display: none; }
+.t-prod-modal .prod-grid .destino2-check { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-size: 12.5px; font-weight: 600;
+    text-transform: none; letter-spacing: 0; color: var(--t-texto-suave, #4B5563); cursor: pointer; min-height: 0; }
+.t-prod-modal .prod-grid .destino2-check input { margin: 0; accent-color: var(--t-primario, #15803D); }
+.t-prod-modal .prod-grid #cajaDestino2 { margin-top: 6px; }
+/* v1.39.5: casilla del segundo destino en su fila: la casilla a la izquierda y el destino al lado */
+.t-prod-modal .prod-grid .destino2-fila { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; margin-top: -6px; }
+.t-prod-modal .prod-grid .destino2-fila .destino2-check { margin: 0; }
+.t-prod-modal .prod-grid .destino2-fila #cajaDestino2 { margin: 0; flex: 0 1 calc(33.33% - 12px); min-width: 220px; }
+@media (max-width: 991px) { .prod-grid > .pg-2, .prod-grid > .pg-3 { grid-column: span 3; } .prod-grid > .pg-4 { grid-column: span 6; } }
+@media (max-width: 600px) { .prod-grid > .pg-2, .prod-grid > .pg-3, .prod-grid > .pg-4 { grid-column: span 6; } }
 .t-prod-modal [data-seccion="datos"] .t-card-titulo { clear: both; }
 /* Parámetros: casillas grandes */
 .t-prod-modal #tabUnidadMedidaInsumo .btn-group { padding: 14px 16px; }
@@ -175,101 +286,88 @@
                                 </li>
                             </ul>
                             <div class="tab-pane fade active in" id="tabDatosInsumo">
-                                <br>
                                 <!-- CAMPOS DE REGISTRO  -->
+                                <!-- v1.34.1 (pedido del usuario): datos en una grilla ordenada (antes los selects ocupaban media pantalla
+                                     cada uno y quedaban huecos). Sin el impuesto adicional (ILA): ya no va en la Carta. -->
                                 <div class="t-card-titulo"><i class="fa fa-tag"></i> Datos del producto</div>
-                                <fieldset>
-                                    <div class="col-sm-3" style="display:none" data-id-auto="1">
+                                <div class="prod-grid">
+                                    <div style="display:none" data-id-auto="1">
                                         <label for="txtID">ID</label>
                                         <input type="text" disabled class="form-control input-sm input-sm" name="txtID"
                                             id="txtID" requerido="no" value="">
                                     </div>
-                                    <div class="col-sm-12">
+                                    <div class="pg-2">
                                         <label for="txtCbarra">Cód. Barra</label>
                                         <input type="text" autocomplete="off" class="form-control input-sm input-sm"
                                             name="txtCbarra" id="txtCbarra" requerido="no" value="">
                                     </div>
-                                </fieldset>
-                                <br>
-                                <fieldset>
-                                    <div class="col-md-12">
+                                    <div class="pg-4">
                                         <label for="txtNombre">Nombre Producto</label>
                                         <input type="text" autocomplete="off" maxlength="100"
                                             class="form-control input-sm input-sm" name="txtNombre" id="txtNombre"
                                             requerido="si" value="">
                                     </div>
-
-                                </fieldset>
-                                <br>
+                                </div>
                                 <div class="t-card-titulo"><i class="fa fa-sitemap"></i> Clasificación</div>
-                                <fieldset>
-                                    <div class="col-md-6">
+                                <div class="prod-grid">
+                                    <div class="pg-2">
                                         <label for="cboFamilia">Familia
                                             <sup><a onclick="crearNuevaFamilia()">Nuevo</a></sup>
                                         </label>
                                         <select id="cboFamilia" nombre="cboFamilia" class="form-control input-sm"
                                             style="width:100%" requerido="si"></select>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="pg-2">
                                         <label for="cboSubFamilia">Sub Familia
                                             <sup><a onclick="crearNuevaSubFamilia()">Nuevo</a></sup>
                                         </label>
                                         <select id="cboSubFamilia" nombre="cboSubFamilia" class="form-control input-sm"
                                             style="width:100%" requerido="si"></select>
                                     </div>
-                                </fieldset>
-                                <br>
-                                <fieldset>
-                                    <div class="col-md-6">
+                                    <div class="pg-2">
                                         <label for="cboUmedida">U/Medida</label>
                                         <select id="cboUmedida" nombre="cboUmedida" class="form-control input-sm"
                                             style="width:100%" requerido="si"></select>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="cboDestinoDeImpresion">Destino De Impresion </label>
-                                        <select id="cboDestinoDeImpresion" nombre="cboDestinoDeImpresion"
-                                            class="form-control input-sm" style="width:100%" requerido="si"></select>
-                                    </div>
-                                    <!-- v1.30.0 (pedido del usuario): el mismo producto en dos comandas (ej. arroz en la cocina y carne en la parrilla) -->
-                                    <div class="col-md-12 destino2-fila">
-                                        <label class="destino2-check" title="El producto sale completo en su destino de impresión y también en este (ej. arroz con carne: el arroz en la cocina y la carne en la parrilla). Cada comanda dice dónde más salió.">
-                                            <input type="checkbox" id="ckDestino2"> Imprimir también en otro destino
-                                        </label>
-                                        <div id="cajaDestino2" style="display:none"><select id="cboDestino2" class="form-control input-sm" style="width:100%" aria-label="Segundo destino de impresión"></select></div>
-                                    </div>
-
-                                </fieldset>
-                                <br>
-                                <div class="t-card-titulo"><i class="fa fa-cubes"></i> Inventario, impuesto y receta</div>
-                                <fieldset>
-                                    <div class="col-md-6">
+                                </div>
+                                <div class="t-card-titulo"><i class="fa fa-cubes"></i> Venta e impresión</div>
+                                <div class="prod-grid">
+                                    <div class="pg-2">
                                         <label for="cboBodega">Bodega
                                             <sup><a onclick="crearNuevaBodega()">Nuevo</a></sup>
                                         </label>
                                         <select id="cboBodega" nombre="cboBodega" class="form-control input-sm"
                                             style="width:100%" requerido="si"></select>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="pg-2">
                                         <label for="cboImpuestoIva">Impuesto Iva</label>
                                         <select id="cboImpuestoIva" class="form-control input-sm" style="width:100%"
                                             requerido="si"></select>
                                     </div>
-                                    <div class="col-md-6">
-                                        <!-- v1.20.0: impuesto adicional (ILA): bebidas, cervezas, vinos y licores -->
-                                        <label for="cboImpuestoIla">Impuesto adicional (ILA)</label>
-                                        <select id="cboImpuestoIla" class="form-control input-sm" style="width:100%"></select>
+                                    <div class="pg-2">
+                                        <label for="cboDestinoDeImpresion">Destino De Impresion </label>
+                                        <select id="cboDestinoDeImpresion" nombre="cboDestinoDeImpresion"
+                                            class="form-control input-sm" style="width:100%" requerido="si"></select>
                                     </div>
-                                </fieldset>
-                                <br>
-                                <fieldset>
-                                    <div class="col-md-6">
+                                    <!-- v1.30.0 (pedido del usuario): el mismo producto en dos comandas (ej. arroz en la cocina y carne en la parrilla).
+                                         v1.39.5: en su propia fila a lo ancho (antes alargaba la columna del destino y dejaba un hueco al lado) -->
+                                    <div class="pg-6 destino2-fila">
+                                        <label class="destino2-check" title="El producto sale completo en su destino de impresión y también en este (ej. arroz con carne: el arroz en la cocina y la carne en la parrilla). Cada comanda dice dónde más salió.">
+                                            <input type="checkbox" id="ckDestino2"> Imprimir también en otro destino <i class="fa fa-info-circle" style="color:var(--t-primario,#15803D)"></i>
+                                        </label>
+                                        <div id="cajaDestino2" style="display:none"><select id="cboDestino2" class="form-control input-sm" style="width:100%" aria-label="Segundo destino de impresión"></select></div>
+                                    </div>
+                                </div>
+                                <div class="t-card-titulo"><i class="fa fa-book"></i> Receta y menú</div>
+                                <div class="prod-grid">
+                                    <div class="pg-3">
                                         <label for="cboReceta">Receta
                                             <sup><a onclick="AbrirModalNuevoReceta()">Nuevo</a></sup>
                                         </label>
                                         <select id="cboReceta" class="form-control input-sm" style="width:100%"
                                             requerido="si"></select>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="pg-3">
                                         <label for="cboMenu">Menu
                                             <sup><a onclick="AbrirModalListadoMenu()" style="color: var(--t-primario, #B4432E); cursor: pointer;">Nuevo</a></sup>
                                             <sup><a onclick="QuitarMenuDeProducto()" style="color: var(--t-peligro, #C9372C); cursor: pointer;">Quitar</a></sup>
@@ -277,7 +375,7 @@
                                         <select id="cboMenu" class="form-control input-sm" style="width:100%"
                                             requerido="no"></select>
                                     </div>
-                                </fieldset>
+                                </div>
 
                                 <!-- FIN CAMPOS DE REGISTRO  -->
                             </div>
@@ -313,7 +411,6 @@
                                             </div>
                                         </div>
                                     </div>
-
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
@@ -340,17 +437,6 @@
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
-                                                <input id="ckConAgregado" type="checkbox">
-                                                <label for="ckConAgregado">
-                                                    Con Agregado
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-4">
-                                        <div class="btn-group" role="group" aria-label="...">
-                                            <div class="checkbox checkbox-success checkbox-circle">
                                                 <input id="ckPermitirFraccion" type="checkbox">
                                                 <label for="ckPermitirFraccion">
                                                     Permitir Fraccion
@@ -358,9 +444,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                </fieldset>
-                                <br>
-                                <fieldset>
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
@@ -371,6 +454,9 @@
                                             </div>
                                         </div>
                                     </div>
+                                </fieldset>
+                                <br>
+                                <fieldset>
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
@@ -381,7 +467,6 @@
                                             </div>
                                         </div>
                                     </div>
-
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
@@ -392,9 +477,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                </fieldset>
-                                <br>
-                                <fieldset>
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
@@ -405,6 +487,9 @@
                                             </div>
                                         </div>
                                     </div>
+                                </fieldset>
+                                <br>
+                                <fieldset>
                                     <div class="col-md-4">
                                         <div class="btn-group" role="group" aria-label="...">
                                             <div class="checkbox checkbox-success checkbox-circle">
@@ -422,6 +507,31 @@
                                                 <input id="ckFavorito" type="checkbox">
                                                 <label for="ckFavorito" title="Aparece en el botón Favoritos (★) de la Caja">
                                                     Favorito En Caja
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <br>
+                                <div class="t-card-titulo" style="margin-top:6px"><i class="fa fa-plus-square"></i> Agregados <small style="font-weight:400;text-transform:none;letter-spacing:0">· marca uno u otro</small></div>
+                                <fieldset>
+                                    <div class="col-md-4">
+                                        <div class="btn-group" role="group" aria-label="...">
+                                            <div class="checkbox checkbox-success checkbox-circle">
+                                                <input id="ckConAgregado" type="checkbox">
+                                                <label for="ckConAgregado">
+                                                    Con Agregado (1 a 1) <i class="fa fa-info-circle" style="color:var(--t-primario,#15803D);cursor:help" title="Uno a uno, como siempre: en la Caja el cliente elige UN agregado de este producto (se guarda en el mismo producto).&#10;No se puede marcar junto con Con Varios Agregados."></i>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- v1.44.0 (pedido del usuario): parámetro aparte de "Con Agregado" (1 a 1); excluyentes -->
+                                    <div class="col-md-4">
+                                        <div class="btn-group" role="group" aria-label="...">
+                                            <div class="checkbox checkbox-success checkbox-circle">
+                                                <input id="ckConVariosAgregados" type="checkbox">
+                                                <label for="ckConVariosAgregados">
+                                                    Con Varios Agregados <i class="fa fa-info-circle" style="color:var(--t-primario,#15803D);cursor:help" title="En la Caja el cliente elige VARIOS agregados de este producto, hasta el máximo que pongas en Agregados del producto (también extras con cobro y categorías). Se guardan en sus propias tablas.&#10;No se puede marcar junto con Con Agregado (1 a 1)."></i>
                                                 </label>
                                             </div>
                                         </div>
@@ -569,6 +679,9 @@
                                     id="idFamilia" requerido="no" value="">
                             </div>
                         </fieldset>
+                        <?php /* v1.39.5 (pedido del usuario): solo Familia y Orden. Alias (se graba igual al nombre), Destino de
+                           impresión, Venta directa (queda marcada) e Imprimir en detalle pedido quedan comentados; se
+                           pueden cambiar en Mantención > Grupos/Familias. Para volver a mostrarlos, descomentar esto:
                         <fieldset>
                             <div class="col-sm-6">
                                 <label for="nombreFamilia">FAMILIA *</label>
@@ -622,6 +735,22 @@
                                         </label>
                                     </div>
                                 </div>
+                            </div>
+                        </fieldset>
+
+                        */ ?>
+                        <fieldset>
+                            <div class="col-sm-8">
+                                <label for="nombreFamilia">FAMILIA *</label>
+                                <input type="text" class="form-control input-sm input-sm" maxlength='28'
+                                    onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
+                                    ondrop="return false;" autocomplete="off" name="nombreFamilia" id="nombreFamilia"
+                                    requerido="si" value="" placeholder="Ej: BEBIDAS" />
+                            </div>
+                            <div class="col-sm-4">
+                                <label for="ordenFamilia">ORDEN <i class="fa fa-info-circle" style="color:var(--t-primario,#15803D);cursor:help" title="Posición de la familia en la Caja: las de número más bajo salen primero."></i></label>
+                                <input type="number" min="0" class="form-control input-sm input-sm" autocomplete="off" name="ordenFamilia" id="ordenFamilia"
+                                    requerido="si" value="" placeholder="0" />
                             </div>
                         </fieldset>
 
@@ -755,6 +884,13 @@
 <!-- v1.24.17: copiar los agregados de un producto a otro o varios (la maneja productos/jsAgregados.php) -->
 <style>
 #ModalCopiarAgregados .modal-dialog { width: 760px; max-width: calc(100vw - 24px); }
+/* v1.33.1 (pedido del usuario): la ventana Agregados del producto más ancha (la tabla de abajo se veía apretada) */
+#ModalAgregadosDelProducto .modal-dialog { width: 1360px; max-width: calc(100vw - 24px); margin-top: 16px; }
+#ModalAgregadosDelProducto #tableAgregados th { white-space: nowrap; vertical-align: bottom; }
+#ModalAgregadosDelProducto #tableAgregados td { vertical-align: middle; }
+#ModalAgregadosDelProducto #tableAgregados .cantidad-agregado-input, #ModalAgregadosDelProducto #tableAgregados .valor-agregado-input { min-width: 80px; }
+#ModalAgregadosDelProducto .ag-destino-propio { min-width: 150px; }
+#ModalAgregadosDelProducto .ag-destino-propio small { white-space: nowrap; }
 #ModalCopiarAgregados .modal-content { border: 0; border-radius: 14px; overflow: hidden; }
 .ca-cab { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--t-borde, #E5E7EB); background: #fff; }
 .ca-cab-icono { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); font-size: 18px; }
@@ -841,125 +977,105 @@
                     </ul>
                     <div class="tab-pane fade active in" id="tabDatosUsuarios">
                         <!-- CAMPOS DE REGISTRO  -->
-                        <fieldset>
-                            <!-- v1.24.5: modo de agregar: de a uno (como siempre) o varios a la vez (lista con buscador) -->
-                            <div class="col-md-12">
+                        <!-- v1.35.4 (pedido del usuario): ventana más simple, en 3 partes: reglas en la Caja, agregar y la lista.
+                             Las explicaciones largas quedan en el (i) / al pasar el mouse. Mismos ids que antes. -->
+                        <input id="ckVariosAgregados" type="checkbox" hidden>
+
+                        <!-- v1.35.4: a lo ancho: a la izquierda reglas y agregar, a la derecha la lista -->
+                        <div class="agx-grid">
+                        <div class="agx-izq">
+                        <!-- 1. Reglas en la Caja: máximo y extras con cobro (se guardan solos) -->
+                        <div class="agx-reglas" id="bloqueMaxAgregados">
+                            <!-- v1.44.0: "Con Varios Agregados" es un parámetro del producto (Parámetros de venta); aquí solo su máximo y extras -->
+                            <div class="agx-regla" id="reglaMaxAg">
+                                <span class="agx-etq">Máximo a elegir <i class="fa fa-info-circle" title="Cuántos agregados puede elegir el cliente de este producto en la Caja.&#10;∞ = todos. 0 = ninguno."></i></span>
+                                <div class="ag-contador ag-contador-sm" role="group" aria-label="Máximo de agregados">
+                                    <button type="button" class="ag-cont-btn" data-paso="-1" title="Uno menos" aria-label="Uno menos"><i class="fa fa-minus"></i></button>
+                                    <input type="text" id="txtMaxAgregados" inputmode="numeric" maxlength="3" aria-label="Máximo de agregados" autocomplete="off">
+                                    <button type="button" class="ag-cont-btn" data-paso="1" title="Uno más" aria-label="Uno más"><i class="fa fa-plus"></i></button>
+                                </div>
+                                <button type="button" class="ag-sin-limite agx-sm" id="btnSinLimiteAg" title="Que se puedan elegir todos"><span class="ag-inf">∞</span></button>
+                                <span class="ag-maximo-estado" id="estadoMaxAgregados" aria-live="polite"></span>
+                            </div>
+                            <!-- v1.35.1: extras con cobro (solo si está activado en Configuraciones) -->
+                            <label class="agx-regla agx-switch" id="bloqueExtrasProducto" style="display:none">
+                                <input id="ckExtrasProducto" type="checkbox">
+                                <span class="op-switch-pista" aria-hidden="true"></span>
+                                <span class="agx-etq">Extras con cobro <i class="fa fa-info-circle" id="lblExtrasProducto" title=""></i></span>
+                            </label>
+                            <small class="agx-resumen" id="lblMaxAgregados"></small>
+                            <small class="agx-resumen agx-nota" id="lblNotaExtras" style="display:none"><i class="fa fa-info-circle"></i>
+                                Cuántos extras se pueden sumar se define en <b>Configuraciones &rsaquo; Agregados en la Caja</b>. Cada extra cobra el <b>Valor $</b> de su agregado (columna de la lista).</small>
+                        </div>
+
+                        <!-- 2. Agregar -->
+                        <div class="agx-caja">
+                            <div class="agx-caja-cab">
                                 <div class="ag-modo" role="tablist" aria-label="Cómo agregar">
                                     <button type="button" class="ag-modo-btn activo" data-modo="uno" role="tab" aria-selected="true"><i class="fa fa-plus"></i> De a uno</button>
                                     <button type="button" class="ag-modo-btn" data-modo="varios" role="tab" aria-selected="false"><i class="fa fa-th-list"></i> Varios a la vez</button>
                                 </div>
-                                <!-- v1.24.17: copiar estos agregados a otro u otros productos -->
-                                <button type="button" class="btn btn-default" id="btnCopiarAgregados" onclick="abrirCopiarAgregados()" title="Copiar los agregados de este producto a otro o varios"><i class="fa fa-clone"></i> Copiar a otros productos</button>
-                                <input id="ckVariosAgregados" type="checkbox" hidden>
+                                <button type="button" class="btn btn-link btn-sm agx-copiar" id="btnCopiarAgregados" onclick="abrirCopiarAgregados()" title="Copiar los agregados de este producto a otro o varios"><i class="fa fa-clone"></i> Copiar a otros productos</button>
                             </div>
-                            <div class="col-md-12" id="bloqueUnAgregado">
-                                <label for="cboProductoAgregadoProductos" id="lblProductoAgregado">PRODUCTO DE AGREGADO</label>
-                                <select id="cboProductoAgregadoProductos" nombre="cboProductoAgregadoProductos"
-                                    class="form-control input-sm" style="width:100%" requerido="si"></select>
-                            </div>
-                            <div class="col-md-12" id="bloqueVariosAgregados" style="display:none">
+                            <div id="bloqueVariosAgregados" style="display:none">
                                 <div class="ag-varios">
                                     <div class="ag-varios-barra">
                                         <div class="ag-buscar"><i class="fa fa-search"></i><input type="text" id="txtBuscarVariosAgregados" class="form-control input-sm" placeholder="Buscar producto…" autocomplete="off"></div>
-                                        <button type="button" class="btn btn-default btn-sm" id="btnMarcarVisiblesAg"><i class="fa fa-check-square-o"></i> Marcar los que se ven</button>
-                                        <button type="button" class="btn btn-default btn-sm" id="btnLimpiarAg"><i class="fa fa-eraser"></i> Limpiar</button>
+                                        <button type="button" class="btn btn-default btn-sm" id="btnMarcarVisiblesAg" title="Marcar los que se ven"><i class="fa fa-check-square-o"></i> Marcar todos</button>
+                                        <button type="button" class="btn btn-default btn-sm" id="btnLimpiarAg" title="Desmarcar"><i class="fa fa-eraser"></i></button>
                                     </div>
                                     <div class="ag-varios-lista" id="listaVariosAgregados"></div>
-                                    <div class="ag-varios-pie"><span id="lblElegidosAg">Ningún producto elegido</span><small>La cantidad, el valor adicional y las opciones de abajo se aplican a todos.</small></div>
+                                    <div class="ag-varios-pie"><span id="lblElegidosAg">Ningún producto elegido</span></div>
                                 </div>
                             </div>
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-6 ">
-                                <label for="cantidadAgregado">CANTIDAD</label>
-                                <input type="number" min="0" max="50000"
-                                    class="form-control input-sm input-sm" maxlength='28'
-                                    onkeypress="return soloNumeros(event)" onpaste="return false;"
-                                    ondrop="return false;" autocomplete="off" name="cantidadAgregado"
-                                    id="cantidadAgregado" requerido="si" value="" />
-                            </div>
-                            <div class="col-md-6 ">
-                                <label for="valorAdicionalAgregado">VALOR ADICIONAL</label>
-                                <input type="number" min="0" max="50000"
-                                    class="form-control input-sm input-sm" maxlength='28'
-                                    onkeypress="return soloNumeros(event)" onpaste="return false;"
-                                    ondrop="return false;" autocomplete="off" name="valorAdicionalAgregado"
-                                    id="valorAdicionalAgregado" requerido="si" value="" />
-                            </div>
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-6">
-                                <div class="btn-group" role="group" aria-label="...">
-                                    <div class="checkbox checkbox-success checkbox-circle">
-                                        <input id="ckUsarDestinoDeImpresion" type="checkbox">
-                                        <!-- v1.30.0: la Caja web ya usa esta casilla (antes solo el POS de escritorio) -->
-                                        <label for="ckUsarDestinoDeImpresion" title="El agregado sale en la comanda del destino de impresión de SU producto (ej. la SALSA en la BARRA), con el nombre del producto al que va. En la comanda del producto queda anotado dónde salió.">
-                                            IMPRIMIR EN SU PROPIO DESTINO
-                                        </label>
-                                    </div>
+                            <div class="agx-fila">
+                                <div class="agx-campo agx-producto" id="bloqueUnAgregado">
+                                    <label for="cboProductoAgregadoProductos" id="lblProductoAgregado">Producto</label>
+                                    <select id="cboProductoAgregadoProductos" nombre="cboProductoAgregadoProductos" class="form-control input-sm" style="width:100%" requerido="si"></select>
                                 </div>
-                                <!-- v1.30.1: a qué impresora sale (el destino del producto agregado, el que tiene en la Carta) -->
-                                <div id="infoDestinoAgregado" class="destino-agregado-info" style="display:none; margin:6px 0 4px; padding:7px 10px; border-radius:8px; background:var(--t-primario-suave, #E8F5EC); color:var(--t-texto, #1F2937); font-size:12px; line-height:1.4"></div>
+                                <div class="agx-campo agx-num">
+                                    <label for="cantidadAgregado">Cantidad</label>
+                                    <input type="number" min="0" max="50000" class="form-control input-sm" onkeypress="return soloNumeros(event)" onpaste="return false;"
+                                        ondrop="return false;" autocomplete="off" name="cantidadAgregado" id="cantidadAgregado" requerido="si" value="" />
+                                </div>
+                                <div class="agx-campo agx-num">
+                                    <label for="valorAdicionalAgregado">Valor $</label>
+                                    <input type="number" min="0" max="50000" class="form-control input-sm" onkeypress="return soloNumeros(event)" onpaste="return false;"
+                                        ondrop="return false;" autocomplete="off" name="valorAdicionalAgregado" id="valorAdicionalAgregado" requerido="si" value="" />
+                                </div>
+                                <button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-success agx-grabar" id="btnGrabarAgregado"><i class="fa fa-plus"></i> Agregar</button>
                             </div>
+                            <div class="agx-opciones">
+                                <label title="El agregado sale en la impresora que tiene en la Carta (ej. la salsa en la barra). Apagado: sale junto con el producto.">
+                                    <input id="ckUsarDestinoDeImpresion" type="checkbox"> <i class="fa fa-print"></i> Imprimir en su propio destino</label>
+                                <label title="Se ofrece en la Caja. Apagado: queda guardado, pero no se ofrece.">
+                                    <input id="ckVigenciaAgregado" type="checkbox"> Activo</label>
+                                <!-- v1.30.1: a qué impresora sale -->
+                                <span id="infoDestinoAgregado" class="agx-destino" style="display:none"></span>
+                            </div>
+                        </div>
 
-                            <div class="col-md-6">
-                                <div class="btn-group" role="group" aria-label="...">
-                                    <div class="checkbox checkbox-success checkbox-circle">
-                                        <input id="ckVigenciaAgregado" type="checkbox">
-                                        <label for="ckVigenciaAgregado">
-                                            ACTIVO/VIGENTE
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </fieldset>
-                        <fieldset>
-                            <div class="col-md-4">
-                                <button onclick="GrabarNuevoAgregados()" type="button" class="btn btn-success" id="btnGrabarAgregado"><i class="fa fa-check"></i> GRABAR AGREGADO</button>
-                            </div>
-                            <!--<div class="col-md-4">
-                                <button type="button" class="btn btn-warning"><i class="fa fa-plus"></i>NUEVO AGREGADO</button>
-                            </div>-->
-                        </fieldset>
-                        <!-- v1.30.3: máximo de agregados que se pueden elegir en la Caja para este producto -->
-                        <fieldset>
-                            <div class="col-md-12">
-                                <div class="ag-maximo" id="bloqueMaxAgregados">
-                                    <label for="txtMaxAgregados"><i class="fa fa-sliders"></i> Máximo de agregados a elegir en la Caja</label>
-                                    <div class="ag-maximo-fila">
-                                        <input type="number" id="txtMaxAgregados" class="form-control input-sm" min="0" max="100" step="1" placeholder="Sin límite" inputmode="numeric">
-                                        <button type="button" class="btn btn-success btn-sm" id="btnGrabarMaxAgregados"><i class="fa fa-check"></i> Guardar máximo</button>
-                                        <small id="lblMaxAgregados" class="text-muted"></small>
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
-                        <br>
-                        <fieldset>
-                            <div class="col-md-12">
-                                <div class="panel panel-default">
-                                    <div class="panel-body table-responsive">
-                                        <table id="tableAgregados" class="table table-hover display" style="width:100%">
-                                            <thead>
-                                                <tr>
-                                                    <th>CODIGO</th>
-                                                    <th>PRODUCTO DE VENTA C/AGREGADO</th>
-                                                    <th>AGREGADO</th>
-                                                    <th>CANTIDAD</th>
-                                                    <th>VALOR ADICIONAL</th>
-                                                    <th title="Imprimir en su propio destino: el agregado sale en la impresora de su producto">SALE EN SU DESTINO</th>
-                                                    <th>ACTIVO</th>
-                                                    <th style="width:10%">ACCION</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="detalleAgregadosDelProducto">
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
+                        </div>
+                        <div class="agx-der">
+                        <!-- 3. Lista de agregados del producto (cantidad y valor se guardan al cambiarlos) -->
+                        <div class="agx-lista-cab"><b>Agregados de este producto</b> <span id="lblCuantosAg"></span></div>
+                        <div class="table-responsive agx-tabla">
+                            <table id="tableAgregados" class="table table-hover" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Agregado</th>
+                                        <th class="text-center" style="width:90px">Cantidad</th>
+                                        <th class="text-center" style="width:110px">Valor $</th>
+                                        <th class="text-center" style="width:120px" title="Imprimir en su propio destino">Su impresora</th>
+                                        <th class="text-center" style="width:80px">Activo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detalleAgregadosDelProducto">
+                                </tbody>
+                            </table>
+                        </div>
+                        </div>
+                        </div>
 
                         <!-- FIN CAMPOS DE REGISTRO  -->
                     </div>
@@ -1487,229 +1603,9 @@
     </div>
 </div>
 
-<div id="modalReceta" class="modal fade t-modal-form" role="dialog" style="overflow-y: scroll;">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <!-- TITULO  MODAL  -->
-            <div id="tituloModalReceta" class="modal-header btn-success">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                        aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title text text-center">REGISTRO RECETAS
-                </h4>
-            </div>
-            <!-- FIN TITULO  MODAL  -->
-
-            <!-- CONTENIDO  MODAL  -->
-            <div class="right">
-                <input type="number" class="form-control" style="display: none;" name="cant_lineas" id="cant_lineas"
-                    value="0" min="0" oninput="validity.valid||(value='');">
-            </div>
-            <div class="col-md-12">
-                <div class="modal-body">
-                    <div class="h-panel">
-                        <div class="panel panel-default">
-                            <div class="panel-body">
-                                <div>
-                                    <!-- CAMPOS DE REGISTRO  -->
-                                    <fieldset>
-                                        <div class="col-md-1" style="display:none" data-id-auto="1">
-                                            <input disabled class="form-control input-sm input-sm"
-                                                style="display: none;" name="contador" id="contador" requerido="no"
-                                                value="0">
-                                            <label for="idReceta">ID</label>
-                                            <input type="number" disabled class="form-control input-sm input-sm"
-                                                name="idReceta" id="idReceta" requerido="no" value="">
-                                        </div>
-                                        <div class="col-md-7">
-                                            <label for="nombreReceta">NOMBRE RECETA</label>
-                                            <input type="text" class="form-control input-sm input-sm"
-                                                name="nombreReceta" id="nombreReceta" maxlength='50'
-                                                onkeypress="return sololetrasyNumeros(event)" onpaste="return false;"
-                                                ondrop="return false;" autocomplete="off" requerido="no" value="">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label for="rendimientoReceta">RENDIMIENTO</label>
-                                            <input type="text" class="form-control input-sm input-sm" maxlength='50'
-                                                onkeypress="return soloNumeros(event)" onpaste="return false;"
-                                                ondrop="return false;" autocomplete="off" name="rendimientoReceta"
-                                                id="rendimientoReceta" requerido="si" value="" />
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label for="brutoSugerido">PRECIO BRUTO SUG/VEN</label>
-                                            <input type="text" class="form-control input-sm input-sm" maxlength='50'
-                                                onkeypress="return soloNumeros(event)" onpaste="return false;"
-                                                ondrop="return false;" autocomplete="off" name="brutoSugerido"
-                                                id="brutoSugerido" requerido="si" value="" />
-                                        </div>
-                                    </fieldset>
-                                    <br>
-                                    <fieldset>
-                                        <div class="col-md-3">
-                                            <label for="cboUnMedida">UNIDAD MEDIDA</label>
-                                            <select style="width:100%;" id="cboUnMedida" nombre="cboUnMedida"
-                                                class="form-control input-sm" requerido="si">
-                                                <option value="">--Seleccione--</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="cboGrupoReceta">GRUPO/FAMILIA
-                                                <sup><a onclick="crearNuevaFamiliaReceta()">Nuevo</a></sup>
-                                            </label>
-                                            <select style="width:100%;" id="cboGrupoReceta" nombre="cboGrupoReceta"
-                                                class="form-control input-sm" requerido="si">
-                                                <option value="">--Seleccione--</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label for="cboSeccionReceta">SECCION
-                                                <sup><a onclick="crearNuevaSeccion()">Nuevo</a></sup>
-                                            </label>
-                                            <select style="width:100%;" id="cboSeccionReceta" nombre="cboSeccionReceta"
-                                                class="form-control input-sm" requerido="si">
-                                                <option value="">--Seleccione--</option>
-                                            </select>
-                                        </div>
-                                    </fieldset>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="panel panel-default">
-                            <div class="panel-body">
-                                <div class="col-md-12">
-                                    <br>
-                                    <ul id="myTab" class="nav nav-tabs title font">
-                                        <li class="active" id="tabDetallesReceta">
-                                            <a href="#tabDetalleInsumosReceta" data-toggle="tab" id="tab1"
-                                                class="text color1">DETALLE DE INSUMOS DE LA RECETA</a>
-                                        </li>
-                                        <li class="" id="tabPreparacionRecetas">
-                                            <a href="#tabPreparacionReceta" data-toggle="tab" id="tab2"
-                                                class="text color1">PREPARACION DE LA RECETA</a>
-                                        </li>
-                                    </ul>
-                                    <div class="tab-pane fade active in" id="tabDetalleInsumosReceta">
-                                        <br>
-                                        <!-- CAMPOS DE REGISTRO  -->
-                                        <fieldset>
-                                            <div class="col-md-3">
-                                                <label for="cboCodBarraInsumoReceta">COD BARRA/COD INTERNO</label>
-                                                <select style="width:100%;" id="cboCodBarraInsumoReceta"
-                                                    nombre="cboCodBarraInsumoReceta" class="form-control input-sm"
-                                                    requerido="si">
-                                                    <option value="0">--Seleccione--</option>
-                                                </select>
-                                                <input type="hidden" disabled class="form-control input-sm input-sm"
-                                                    name="cBarraI" id="cBarraI" requerido="si" value="">
-
-                                            </div>
-                                            <div class="col-md-7">
-                                                <label for="nombreInsumoReceta">NOMBRE INSUMO</label>
-                                                <input type="text" disabled class="form-control input-sm input-sm"
-                                                    name="nombreInsumoReceta" id="nombreInsumoReceta" requerido="si"
-                                                    value="">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label for="esSubreceta">SUBRECETA</label>
-                                                <input type="text" disabled class="form-control input-sm input-sm"
-                                                    name="esSubreceta" id="esSubreceta" requerido="si" value="">
-                                            </div>
-                                        </fieldset>
-                                        <br>
-                                        <fieldset>
-                                            <div class="col-md-2">
-                                                <label for="idInsumoReceta">ID INSUMO</label>
-                                                <input type="number" disabled class="form-control input-sm input-sm"
-                                                    name="idInsumoReceta" id="idInsumoReceta" requerido="no" value="">
-                                            </div>
-
-                                            <div class="col-md-2">
-                                                <label for="cantidadInsumoReceta">CANTIDAD</label>
-                                                <input type="number" class="form-control input-sm input-sm"
-                                                    onkeypress="return soloNumerosDecimales(event)"
-                                                    onpaste="return false;" ondrop="return false;" autocomplete="off"
-                                                    name="cantidadInsumoReceta" id="cantidadInsumoReceta" requerido="si"
-                                                    value="" />
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label for="unMedidaInsumoReceta">UN MEDIDA</label>
-                                                <input type="text" disabled class="form-control input-sm input-sm"
-                                                    onkeypress="return soloNumeros(event)" onpaste="return false;"
-                                                    ondrop="return false;" autocomplete="off"
-                                                    name="unMedidaInsumoReceta" id="unMedidaInsumoReceta" requerido="si"
-                                                    value="" />
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label for="costoInsumoReceta">COSTO PP UN</label>
-                                                <input type="number" disabled class="form-control input-sm input-sm"
-                                                    onkeypress="return soloNumeros(event)" onpaste="return false;"
-                                                    ondrop="return false;" autocomplete="off" name="costoInsumoReceta"
-                                                    id="costoInsumoReceta" requerido="si" value="" />
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label for="costoTotalInsumoReceta">COSTO TOTAL</label>
-                                                <input type="number" disabled class="form-control input-sm input-sm"
-                                                    onkeypress="return soloNumeros(event)" onpaste="return false;"
-                                                    ondrop="return false;" autocomplete="off"
-                                                    name="costoTotalInsumoReceta" id="costoTotalInsumoReceta"
-                                                    requerido="si" value="" />
-                                            </div>
-                                            <div class="col-md-2">
-                                                <br>
-                                                <button type="button" class="btn btn-rounded btn-danger"
-                                                    id="btnAgregarInsumoTabla"><i class="fa fa-check-circle"></i>
-                                                    AGREGAR INSUMO</button>
-                                            </div>
-                                        </fieldset>
-                                        <br>
-                                        <fieldset>
-                                            <div class="table-responsive" style="margin-top:10px; padding:5px;">
-                                                <table id="tableInsumoReceta" class="display responsive"
-                                                    style="width: 100%;">
-                                                    <thead>
-                                                        <tr>
-                                                            <th style='display:none;' hidden scope="col">ID DETALLE</th>
-                                                            <th style='display:none;' hidden scope="col">ID INSUMO</th>
-                                                            <th scope="col">COD/BARRA</th>
-                                                            <th scope="col">NOMBRE DEL INSUMO</th>
-                                                            <th scope="col">SUBRECETA</th>
-                                                            <th scope="col">CANTIDAD</th>
-                                                            <th scope="col">UN. MEDIDA</th>
-                                                            <th scope="col">COSTO PP</th>
-                                                            <th scope="col">COSTO TOTAL</th>
-                                                            <th scope="col"></th>
-                                                        </tr>
-                                                    </thead>
-                                                </table>
-                                            </div>
-                                        </fieldset>
-                                        <!-- FIN CAMPOS DE REGISTRO  -->
-                                    </div>
-                                    <div class="tab-pane fade" id="tabPreparacionReceta">
-                                        <br>
-                                        <textarea
-                                            style="resize:none;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box; width:100%; height:500px;"
-                                            type='text' cols="200" maxlength='10000' name="preparacionReceta"
-                                            onkeypress="return sololetrasyNumeros(event)" id="preparacionReceta"
-                                            rows="20"></textarea>
-                                    </div>
-                                </div>
-                                <!-- FIN CAMPOS DE REGISTRO  -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- CONTENIDO  MODAL  -->
-
-            <!-- BOTONES  -->
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" id="btnGrabarInsumo"><i class="fa fa-check"></i> GRABAR</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> SALIR</button>
-            </div>
-            <!-- FIN BOTONES  -->
-        </div>
-    </div>
-</div>
+<?php /* v1.39.6 (pedido del usuario): la misma ventana de receta que en Recetas (antes había aquí una copia vieja) */ ?>
+<?php $this->load->view('recetas/modalRecetaHtml.php'); ?>
+<?php $this->load->view('umedida/jsNuevaUmedida.php'); /* el botón Nuevo de la unidad de medida de la receta */ ?>
 <script>
 // Manejar el clic del botón según el contexto
 $(document).ready(function() {

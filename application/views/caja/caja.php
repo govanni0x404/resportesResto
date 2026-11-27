@@ -153,6 +153,15 @@
 	.mesas-vacio { padding: 70px 20px; text-align: center; color: var(--t-texto-suave, #7A6A5E); }
 	html body #mesasOcupadas { background: var(--t-primario, #B4432E) !important; border-color: var(--t-primario, #B4432E) !important; color: #fff !important; }
 	.mesa-card.actual { box-shadow: 0 0 0 3px var(--t-acento, #D9A441); }
+	/* v1.33.0: elegir mesas para anular */
+	.mesas-anular-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 10px; padding: 8px 12px; border: 1px solid #F1C7C2;
+		border-radius: 10px; background: #FDF3F2; color: #7A2A22; font-size: 13px; }
+	.mesas-anular-barra[hidden] { display: none; }
+	.mesas-anular-barra .mab-acciones { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+	.mesas-plano.anulando .mesa-card:not(.con-pedido) { opacity: .4; cursor: not-allowed; }
+	.mesa-card.sel-anular { box-shadow: 0 0 0 4px #C9372C; }
+	.mesa-card.sel-anular::after { content: '\f00c'; font-family: FontAwesome; position: absolute; top: -9px; right: -9px; width: 24px; height: 24px;
+		line-height: 24px; border-radius: 50%; background: #C9372C; color: #fff; font-size: 13px; text-align: center; }
 	.caja-banner-mesa { display: flex; align-items: center; gap: 14px; padding: 10px 18px; background: var(--t-primario, #B4432E); color: #fff; }
 	.caja-banner-mesa .nombre { font-size: 17px; font-weight: 700; }
 	.caja-banner-mesa .caja-mensaje-mesa { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -213,8 +222,22 @@
 	.caja-venta-lateral .form-control::placeholder { font-weight: 400; color: var(--t-texto-tenue, #A89A8C); }
 	.caja-venta-lateral .caja-cliente .btn { height: 44px; flex-basis: 44px; font-size: 15px; }
 	/* El resumen ocupa el resto del alto y deja Cobrar al fondo, alineado con el total de la venta */
-	.caja-venta-lateral .caja-resumen { flex: 1; display: flex; flex-direction: column; }
+	/* v1.39.7 (pedido del usuario: el recuadro grande "se ve horrible"): el resumen ya no se estira; queda abajo con su alto,
+	   pegado a Cobrar, y el espacio libre queda arriba, fuera de la tarjeta */
+	.caja-venta-lateral .caja-resumen { flex: 0 0 auto; margin-top: auto; display: flex; flex-direction: column; }
+	.caja-resumen .fila.total-pagar { margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--t-borde-suave, #EEF0F3); font-size: 19px; }
+	.caja-resumen .fila.total-pagar span:first-child { font-weight: 700; color: var(--t-texto-fuerte, #111827); }
+	.caja-resumen .fila.total-pagar span:last-child { font-size: 24px; font-weight: 800; color: var(--t-primario, #15803D); }
 	.caja-resumen .caja-acciones { margin-top: auto; padding-top: 14px; }
+	/* v1.39.6: total a pagar en grande, centrado en el espacio libre del resumen */
+	.caja-total-grande { margin: auto 0; padding: 22px 16px; border-radius: 14px; text-align: center; background: var(--t-primario-suave, #E8F5EC);
+		border: 1px dashed var(--t-primario-borde, #BBE3C8); display: flex; flex-direction: column; gap: 4px; }
+	.caja-total-grande + .caja-acciones { margin-top: 0; }
+	.caja-total-grande small { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--t-texto-suave, #6B7280); }
+	.caja-total-grande b { font-size: 42px; line-height: 1.1; font-weight: 800; color: var(--t-primario, #15803D); }
+	.caja-total-grande span { font-size: 14px; color: var(--t-texto-suave, #4B5563); }
+	.caja-total-grande.vacio b { color: var(--t-texto-tenue, #9CA3AF); }
+	@media (max-height: 760px) { .caja-total-grande { padding: 12px; } .caja-total-grande b { font-size: 32px; } }
 	.caja-venta-lateral .form-group { margin-bottom: 10px; }
 	.caja-venta-lateral .form-group:last-child { margin-bottom: 0; }
 	.caja-venta-lateral label { font-size: 12px; color: var(--t-texto-suave, #7A6A5E); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 5px; font-weight: 700; }
@@ -516,6 +539,31 @@
 	#listaAgregados .ag-item .checkbox label { display: flex; align-items: baseline; gap: 6px; width: 100%; font-weight: 600; line-height: 1.25; cursor: pointer; }
 	#listaAgregados .ag-item .valor { margin-left: auto; white-space: nowrap; font-size: 13px; }
 	.opcion-lista .ag-item .ag-nota, #listaAgregados .ag-item .ag-nota { margin: 6px 0 2px; width: 100%; height: 30px; font-size: 13px; }
+	/* v1.35.0: agregados agrupados por categoría (un cuadro por categoría) y agregados extra con costo */
+	#listaAgregados.con-categorias { display: flex; flex-direction: column; gap: 10px; }
+	#listaAgregados .ag-cat { border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; padding: 8px 10px 10px; background: var(--t-fondo-alt, #FAFAF9); }
+	#listaAgregados .ag-cat.completa { border-color: var(--t-primario-borde, #BBE3C9); }
+	#listaAgregados .ag-cat-titulo { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+	#listaAgregados .ag-cat-titulo span { font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-primario, #15803D); }
+	#listaAgregados .ag-cat-titulo small { color: var(--t-texto-suave, #6B7280); font-size: 12px; white-space: nowrap; }
+	#listaAgregados .ag-cat.completa .ag-cat-titulo small { color: var(--t-primario, #15803D); font-weight: 600; }
+	/* v1.35.1: cada categoría en un cuadro de color, con su nombre */
+	#listaAgregados .ag-cat { border-width: 2px; }
+	#listaAgregados .ag-cat-titulo span { display: inline-block; padding: 2px 10px; border-radius: 8px; color: #fff !important; background: var(--ag-c); }
+	#listaAgregados .ag-cat { border-color: var(--ag-c) !important; background: var(--ag-f); }
+	.ag-color-0 { --ag-c: #15803D; --ag-f: #F0FDF4; }
+	.ag-color-1 { --ag-c: #C2410C; --ag-f: #FFF7ED; }
+	.ag-color-2 { --ag-c: #1D4ED8; --ag-f: #EFF6FF; }
+	.ag-color-3 { --ag-c: #7E22CE; --ag-f: #FAF5FF; }
+	.ag-color-4 { --ag-c: #BE123C; --ag-f: #FFF1F2; }
+	.ag-color-5 { --ag-c: #0E7490; --ag-f: #ECFEFF; }
+	.ag-color-otros { --ag-c: #6B7280; --ag-f: #F9FAFB; }
+	#listaAgregados .ag-cat-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+	#listaAgregados .ag-extra-tag { display: inline-block; padding: 0 6px; border-radius: 9px; font-size: 11px; font-weight: 700; line-height: 17px;
+		background: #FEF3C7; color: #92400E; text-transform: uppercase; letter-spacing: .3px; }
+	#listaAgregados .ag-item.es-extra { border-color: #F59E0B; background: #FFFBEB; }
+	#listaAgregados .ag-item.seria-extra { border-style: dashed; }
+	.ag-extra-linea { color: #B45309; font-weight: 600; }
 	#listaMensajes .checkbox { margin: 0; padding: 8px 10px 8px 34px; border: 1px solid var(--t-borde, #E5E7EB); border-radius: 10px; background: #fff; }
 	#listaMensajes .checkbox:has(input:checked) { border-color: var(--t-primario, #15803D); background: var(--t-primario-suave, #E8F5EC); }
 	#modalAutorizacion { z-index: 1060; }
@@ -541,6 +589,15 @@
 	.menu-op .menu-cant { display: inline-flex; align-items: center; gap: 4px; }
 	.menu-op .menu-cant b { min-width: 18px; text-align: center; }
 	.menu-op .menu-cant .btn { padding: 1px 7px; }
+	/* v1.44.2 (pedido del usuario: "el máximo a elegir está muy pequeño"): el máximo de agregados en una etiqueta visible */
+	.ag-encabezado { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 15px; }
+	.ag-max-pill { display: inline-flex; align-items: center; padding: 3px 12px; border-radius: 999px; font-size: 14px; font-weight: 700;
+		background: var(--t-primario-suave, #E8F5EC); color: var(--t-primario, #15803D); border: 1px solid var(--t-primario-borde, #BBE3C8); }
+	.ag-max-pill:empty { display: none; }
+	#modalOpciones .ag-encabezado, .ag-encabezado { font-size: 16px; }
+	h5.ag-encabezado #opcionesMaxAgregados.ag-max-pill { font-size: 15px; line-height: 1.3; padding: 5px 14px; }
+	/* v1.39.7: comentario de cada producto elegido del menú o promo */
+	.menu-op .menu-nota { flex: 0 1 260px; min-width: 120px; height: 30px; font-size: 13px; background: #fff; }
 	.caja-linea .detalle-linea.del-menu { color: var(--t-texto-suave, #4B5563); }
 	/* v1.25.0: armar una promo de sushi (#modalSushi, js.php abrirSushi) */
 	#modalSushi .modal-dialog { width: 1080px; max-width: calc(100vw - 24px); }
@@ -1153,6 +1210,10 @@
 	.esp-vacio { padding: 36px 12px; text-align: center; color: var(--t-texto-tenue, #A89A8C); }
 	.esp-vacio i { display: block; margin-bottom: 8px; font-size: 34px; }
 	.esp-anular-detalle { margin-bottom: 12px; padding: 12px 14px; border-radius: 10px; background: var(--t-fondo-alt, #FBF8F3); }
+	.esp-todas { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; padding: 8px 12px;
+		border: 1px solid #F1C7C2; border-radius: 10px; background: #FDF3F2; color: #7A2A22; font-size: 13px; }
+	.esp-todas[hidden] { display: none; }
+	.esp-anular-detalle ul { margin: 6px 0 0; padding-left: 18px; max-height: 30vh; overflow-y: auto; }
 	.mesa-drawer #opcionesEspera { display: none !important; }   /* en una mesa no hay venta en espera */
 	.salida-bloque { display: flex; gap: 12px; margin-bottom: 12px; padding: 12px 14px; border: 1px solid; border-radius: 12px; }
 	.salida-bloque > i { flex: 0 0 auto; margin-top: 2px; font-size: 22px; }
@@ -1276,8 +1337,11 @@
 
 	.pe-pendientes { margin: 0 0 10px; }
 	.pe-pendiente { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; padding: 10px 14px; margin-bottom: 6px; border-radius: 10px;
-		background: #fff7e0; border: 1px solid #f0dc9c; color: #5c4300; }
-	.pe-pendiente.aprobado { background: #e7f6ec; border-color: #b7e2c4; color: #14532d; }
+		background: #eef4ff; border: 1px solid #c7d7f5; border-left: 5px solid #3b6fd4; color: #1e3a6e; }   /* v1.39.11: azul suave (antes amarillo) */
+	.pe-pendiente .pe-ico { color: #3b6fd4; }
+	.pe-pendiente .pe-detalle { cursor: help; text-decoration: underline dotted; }
+	.pe-pendiente.aprobado { background: #e7f6ec; border-color: #b7e2c4; border-left-color: #15803d; color: #14532d; }
+	.pe-pendiente.aprobado .pe-ico { color: #15803d; }
 	.pe-pendiente .pe-ico { font-size: 22px; }
 	.pe-pendiente .pe-info { flex: 1 1 260px; min-width: 0; line-height: 1.35; }
 	.pe-pendiente .pe-info b { font-size: 15px; }
@@ -1486,10 +1550,22 @@
 								<div class="fila" id="filaEnvio" style="display:none"><span>Incluye envío</span><span id="lblEnvio">$0</span></div>
 								<div class="fila descuento" id="filaDescuento" style="display:none"><span>Descuento</span><span id="lblDescuento">$0</span></div>
 								<div class="fila con-descuento" id="filaConDescuento" style="display:none"><span>Total con descuento</span><span id="lblConDescuento">$0</span></div>
+								<?php /* v1.39.5 (pedido del usuario): Neto e IVA no se muestran en la Caja (venta directa y mesas); se dejan
+								   comentados para volver a mostrarlos. En el documento impreso siguen saliendo igual.
 								<div class="fila"><span>Neto</span><span id="lblNeto">$0</span></div>
 								<div class="fila"><span>IVA (19%)</span><span id="lblIva">$0</span></div>
+								*/ ?>
 								<div class="fila" id="filaIla" style="display:none"><span>Impuesto adicional (ILA)</span><span id="lblIla">$0</span></div>
 								<div class="fila" id="filaExento" style="display:none"><span>Exento</span><span id="lblExento">$0</span></div>
+								<div class="fila total-pagar"><span>Total a pagar</span><span id="lblTotalGrande">$0</span></div>
+								<?php /* v1.39.7: el recuadro grande del total (v1.39.6) se quitó por pedido del usuario; queda aquí comentado:
+								<!-- v1.39.6 (pedido del usuario: "se ve muy vacío"): el total a pagar en grande en el espacio libre -->
+								<div class="caja-total-grande" id="cajaTotalGrande">
+									<small>Total a pagar</small>
+									<b id="lblTotalGrandeX">$0</b>
+									<span id="lblCuentaItems">Agrega productos a la venta</span>
+								</div>
+								*/ ?>
 								<div class="caja-acciones">
 									<button class="btn btn-default btn-lg" id="btnLimpiar" title="Vaciar venta"><i class="fa fa-trash"></i></button>
 									<button class="btn btn-default btn-lg" id="btnPrecuenta" style="display:none" title="Precuenta: imprime el detalle para que el cliente lo revise antes de pagar" aria-label="Precuenta"><i class="fa fa-print"></i></button>
@@ -1581,6 +1657,10 @@
 								<!-- 14-11-2026: recargar al tiro (pedidos que llegan de la app de garzones u otra caja) -->
 								<button type="button" class="btn btn-default btn-sm" id="btnActualizarMesas" title="Volver a cargar las mesas"><i class="fa fa-refresh"></i> Actualizar</button>
 								<button type="button" class="btn btn-default btn-sm" id="btnOrganizarMesas"><i class="fa fa-arrows"></i> Organizar mesas</button>
+								<!-- v1.33.0: anular varias mesas a la vez (Configuraciones > Modo de la Caja web) -->
+								<button type="button" class="btn btn-default btn-sm" id="btnAnularVariasMesas" style="display:none"><i class="fa fa-ban"></i> Anular varias</button>
+								<!-- v1.34.1 (pedido del usuario): ordena las mesas en filas parejas cuando el plano quedó desordenado -->
+								<button type="button" class="btn btn-default btn-sm" id="btnAlinearMesas" style="display:none" title="Ordena las mesas de este sector en filas parejas, respetando el orden en que están"><i class="fa fa-th"></i> Alinear mesas</button>
 								<button type="button" class="btn btn-default btn-sm" id="btnCancelarPlano" style="display:none">Cancelar</button>
 								<button type="button" class="btn btn-success btn-sm" id="btnGuardarPlano" style="display:none"><i class="fa fa-check"></i> Guardar plano</button>
 							</div>
@@ -1593,6 +1673,16 @@
 							<span><i class="bloqueada"></i> Bloqueada</span>
 							<span class="leyenda-reserva" style="display:none" title="Mesa libre bloqueada por una reserva (Reservas)"><i class="reservada"></i> Reservada</span>
 							<span class="text-muted" id="mesasAyuda">Toca una mesa libre para tomar el pedido, o una con pedido para agregar productos, pedir la precuenta o cobrar.</span>
+						</div>
+						<!-- v1.33.0: barra al elegir mesas para anular -->
+						<div class="mesas-anular-barra" id="mesasAnularBarra" hidden>
+							<i class="fa fa-ban"></i>
+							<span id="mesasAnularTexto">Toca las mesas con pedido que quieres anular</span>
+							<span class="mab-acciones">
+								<button type="button" class="btn btn-default btn-sm" id="btnAnularMesasTodas" title="Elegir todas las mesas con pedido que se ven"><i class="fa fa-check-square-o"></i> Elegir todas</button>
+								<button type="button" class="btn btn-default btn-sm" id="btnAnularMesasCancelar">Cancelar</button>
+								<button type="button" class="btn btn-danger btn-sm" id="btnAnularMesasConfirmar" disabled><i class="fa fa-ban"></i> Anular</button>
+							</span>
 						</div>
 						<div id="mesasGrilla"></div>
 					</div>
@@ -2022,6 +2112,11 @@
 			<div class="modal-body">
 				<div id="esperasVistaLista">
 					<div class="esp-aviso" id="esperasAviso" hidden><i class="fa fa-info-circle"></i><span></span></div>
+					<!-- v1.33.0: Anular todas (Configuraciones > Modo de la Caja web) -->
+					<div class="esp-todas" id="esperasTodas" hidden>
+						<span id="esperasTodasTexto"></span>
+						<button type="button" class="btn btn-danger btn-sm" id="btnAnularEsperasTodas"><i class="fa fa-ban"></i> Anular todas</button>
+					</div>
 					<div class="esp-lista" id="esperasLista"></div>
 				</div>
 				<form id="esperasVistaAnular" autocomplete="off" hidden>
@@ -2359,7 +2454,7 @@
 					<hr>
 				</div>
 				<div id="opcionesAgregados" style="display:none">
-					<h5><b>Agregados</b> <small id="opcionesMaxAgregados" class="text-muted"></small></h5>
+					<h5 class="ag-encabezado"><b>Agregados</b> <span id="opcionesMaxAgregados" class="ag-max-pill"></span></h5>
 					<div class="opcion-lista" id="listaAgregados"></div>
 					<hr>
 				</div>

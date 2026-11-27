@@ -69,6 +69,8 @@ $fechaActual = date('Y-m-d');
 
                 <div class="col-xs-12 col-sm-6 col-md-4 lista-precios-filtros__item lista-precios-filtros__item--accion">
                     <br>
+                    <!-- v1.38.0 (pedido del usuario): copiar los precios de una lista a otra -->
+                    <button onclick="abrirCopiarPrecios()" type="button" class="btn btn-default lista-precios-btn-copiar" title="Copia los precios de una lista a otra (con un % de ajuste si quieres)"><i class="fa fa-clone"></i> Copiar precios</button>
                     <button onclick="crearNuevaLprecio()" type="button" class="btn btn-primary lista-precios-btn-crear"><i class="fa fa-plus"></i> Crear Nueva Lista De Precios</button>
                 </div>
                 </div>
@@ -337,4 +339,46 @@ $fechaActual = date('Y-m-d');
             padding: 7px 5px;
         }
     }
+</style>
+
+<!-- v1.38.0 (pedido del usuario): copiar los precios de una lista a otra -->
+<div id="ModalCopiarPrecios" class="modal fade" role="dialog" style="overflow-y: auto;">
+    <div class="modal-dialog" style="width: 520px; max-width: calc(100vw - 24px); margin-top: 60px;">
+        <div class="modal-content">
+            <div class="modal-header" style="border-top: 3px solid var(--t-primario, #15803D);">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-clone"></i> Copiar precios entre listas</h4>
+            </div>
+            <div class="modal-body">
+                <div class="cp-fila2">
+                    <div><label class="cp-etq" for="cpOrigen">Copiar desde</label><select class="form-control" id="cpOrigen"></select></div>
+                    <i class="fa fa-arrow-right cp-flecha"></i>
+                    <div><label class="cp-etq" for="cpDestino">Hacia</label><select class="form-control" id="cpDestino"></select></div>
+                </div>
+                <div class="cp-fila2">
+                    <div><label class="cp-etq" for="cpAjuste">Ajuste %</label>
+                        <input type="number" class="form-control" id="cpAjuste" value="0" step="any" title="10 = 10% más caro · -5 = 5% más barato · 0 = igual"></div>
+                    <div><label class="cp-etq" for="cpFamilia">Familia</label><select class="form-control" id="cpFamilia"></select></div>
+                </div>
+                <label class="cp-check"><input type="checkbox" id="cpSoloSinPrecio"> Solo los productos que no tienen precio en la lista de destino</label>
+                <div class="cp-resumen" id="cpResumenPrecios"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnCopiarPrecios"><i class="fa fa-check"></i> Copiar precios</button>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+.lista-precios-btn-copiar { margin-right: 6px; }
+.cp-fila2 { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 12px; }
+.cp-fila2 > div { flex: 1 1 0; min-width: 0; }
+.cp-flecha { margin-bottom: 11px; color: var(--t-texto-tenue, #9CA3AF); }
+.cp-etq { display: block; margin-bottom: 4px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; color: var(--t-texto-suave, #6B7280); }
+.cp-check { display: block; margin: 2px 0 12px; font-weight: 400; cursor: pointer; }
+.cp-check input { margin-right: 6px; accent-color: var(--t-primario, #15803D); }
+.cp-resumen { padding: 10px 12px; border-radius: 10px; background: var(--t-primario-suave, #E8F5EC); border: 1px solid var(--t-primario-borde, #BBE3C8); font-size: 13px; }
+#tablePrecios tr.lp-elegida td, #detallePrecioVenta tr.lp-elegida td { background: var(--t-primario-suave, #E8F5EC); font-weight: 700; }
+.lp-etq-elegida { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 9px; background: var(--t-primario, #15803D); color: #fff; font-size: 10.5px; font-weight: 700; }
 </style>

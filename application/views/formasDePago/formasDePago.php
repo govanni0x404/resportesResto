@@ -71,6 +71,7 @@
                                     <th class="text text-center">BOL. ELECTRONICA</th>
                                     <th class="text text-center">VIGENTE</th>
                                     <th class="text text-center">PROPINA</th>
+                                    <th class="text text-center">PAGO ELECTRÓNICO</th>
                                 </tr>
                             </thead>
                         </table>

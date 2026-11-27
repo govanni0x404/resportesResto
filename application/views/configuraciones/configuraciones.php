@@ -94,8 +94,40 @@ if (!function_exists('cfg_opciones')) {
                                                 <!-- v1.24.8: agrupar productos iguales (migración 20261120170000) -->
                                                 <div class="cfg-fila"><label><input type="checkbox" name="agrupar_productos_web" value="1" <?php echo ($config['agrupar_productos_web'] ?? true) !== false ? 'checked' : ''; ?>> Juntar productos iguales en una sola fila</label><?php cfg_info("Marcada: si agregas dos pizzas iguales, quedan en una fila con cantidad 2.\nSin marcar: cada pizza va en su propia fila, para ponerle a cada una su propio mensaje (ej. \"sin cebolla\")."); ?></div>
                                                 <?php endif; ?>
+                                                <?php if (array_key_exists('esperas_anular_todas_web', $config)) :
+                                                    $__on = function ($k) use ($config) { return in_array($config[$k] ?? null, array(true, 't', 1, '1'), true); }; ?>
+                                                <!-- v1.33.0: anular varias cosas de una vez (migración 20261124120000) -->
+                                                <div class="cfg-fila"><label><input type="checkbox" name="esperas_anular_todas_web" value="1" <?php echo $__on('esperas_anular_todas_web') ? 'checked' : ''; ?>> Anular todas las ventas en espera de una vez</label><?php cfg_info("Agrega el botón \"Anular todas\" en Opciones > Ventas en espera.\nSe escribe una sola justificación para todas y queda registrada en cada una (Auditoría de caja).\nSi está marcada la clave para anular una venta en espera, se pide una sola vez."); ?></div>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="mesas_anular_varias_web" value="1" <?php echo $__on('mesas_anular_varias_web') ? 'checked' : ''; ?>> Anular varias mesas a la vez</label><?php cfg_info("Agrega el botón \"Anular varias\" en la pestaña Mesas: tocas las mesas con pedido que quieres anular y se anulan todas juntas con un solo motivo.\nLas mesas quedan libres y a cada destino de impresión le sale su comanda de anulación.\nSi está marcada la clave para anular el pedido completo de la mesa, se pide una sola vez."); ?></div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
+
+                                        <?php if (array_key_exists('agregados_extra_web', $config)) :
+                                            $__onAg = function ($k) use ($config) { return in_array($config[$k] ?? null, array(true, 't', 1, '1'), true); }; ?>
+                                        <!-- v1.35.0: agregados extra con costo y categorías de agregados (migración 20261124140000) -->
+                                        <div class="config-card">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"><i class="fa fa-plus-square"></i>Agregados en la Caja</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="cfg-fila"><label><input type="checkbox" name="agregados_extra_web" value="1" <?php echo $__onAg('agregados_extra_web') ? 'checked' : ''; ?>> Agregados extra con cobro</label><?php cfg_info("En la Carta, cada producto tiene la casilla \"Permitir agregados extra con cobro\" junto a su máximo de agregados.\nEn esos productos, los agregados hasta el máximo (ej. 2) van sin costo, y se pueden sumar más cobrando el valor adicional de cada agregado.\nSin marcar: el máximo es un tope y no se puede elegir otro."); ?></div>
+                                                <?php if (array_key_exists('agregados_max_extras_web', $config)) : ?>
+                                                <div class="form-group cfg-numero-ag">
+                                                    <label class="cfg-titulo" for="txtMaxExtrasAg">Cuántos extras se pueden sumar <?php cfg_info("Con el máximo del producto lleno (ej. 4), cuántos agregados más puede pedir el cliente, opcionales y con cobro (ej. 1 = el 5.º). Casi siempre 1 o 2.\n0 = sin tope."); ?></label>
+                                                    <input type="number" class="form-control" id="txtMaxExtrasAg" name="agregados_max_extras_web" min="0" max="20" value="<?php echo (int)($config['agregados_max_extras_web'] ?? 1); ?>">
+                                                </div>
+                                                <?php endif; ?>
+                                                <div class="cfg-fila"><label><input type="checkbox" name="agregados_categorias_web" value="1" <?php echo $__onAg('agregados_categorias_web') ? 'checked' : ''; ?>> Categorías de agregados</label><?php cfg_info("Los agregados se ordenan por categoría (Proteína, Verdura, Salsas...): en la Caja y en la Carta sale un cuadro de color por categoría, con su nombre.\nLas categorías se crean en Mantención > Categorías de agregados, donde se ponen varios productos de una vez en una categoría."); ?></div>
+                                                <?php if (array_key_exists('agregados_max_categoria_web', $config)) : ?>
+                                                <div class="form-group cfg-numero-ag">
+                                                    <label class="cfg-titulo" for="txtMaxCategoriaAg">Máximo por categoría <?php cfg_info("Tope de agregados que puede elegir el cliente de cada categoría. Ej: máximo del producto 4 y máximo por categoría 2: elige hasta 2 de Proteína, 1 de Verdura y 1 sin categoría (4 en total).\nEs un tope fijo: también el extra con cobro lo respeta. Los sin categoría solo cuentan para el máximo del producto.\n0 = sin límite."); ?></label>
+                                                    <input type="number" class="form-control" id="txtMaxCategoriaAg" name="agregados_max_categoria_web" min="0" max="20" value="<?php echo (int)($config['agregados_max_categoria_web'] ?? 0); ?>">
+                                                </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
 
                                         <?php if (array_key_exists('usar_cocina_web', $config)) :
                                             $__activa = function ($k) use ($config) { return in_array($config[$k] ?? null, array(true, 't', 1, '1'), true); }; ?>
@@ -123,6 +155,10 @@ if (!function_exists('cfg_opciones')) {
                                                 <h3 class="panel-title"><i class="fa fa-th"></i>Promos de sushi</h3>
                                             </div>
                                             <div class="panel-body">
+                                                <?php if (array_key_exists('promos_sushi_web', $config)) : ?>
+                                                <!-- v1.36.0: botón Promos Sushi en la Carta (las promos normales salen siempre) -->
+                                                <div class="cfg-fila"><label><input type="checkbox" name="promos_sushi_web" value="1" <?php echo $__sushi('promos_sushi_web') ? 'checked' : ''; ?>> Usar promos de sushi por roll</label><?php cfg_info("Marcada: en la Carta sale el botón \"Promos Sushi\" para armar promos de sushi por roll.\nSin marcar: ese botón no sale. Las promos normales (botón \"Promos\", ej. Completo + Bebida a un precio) salen siempre."); ?></div>
+                                                <?php endif; ?>
                                                 <div class="cfg-fila"><label><input type="checkbox" name="sushi_por_pieza_web" value="1" <?php echo $__sushi('sushi_por_pieza_web') ? 'checked' : ''; ?>> Armar promos por pieza</label><?php cfg_info("Además de las promos por roll, permite crear promos por pieza (ej. 30 piezas repartidas como el cliente quiera).
 Pocos locales lo usan.
 Apagada: en Carta > Promos Sushi solo se crean promos por roll. Las promos por pieza que ya existen se siguen vendiendo."); ?></div>
@@ -209,6 +245,10 @@ En la Caja las salsas y los extras siempre son opcionales."); ?></div>
                                                 <h3 class="panel-title"><i class="fa fa-cutlery"></i>Otros del restaurante</h3>
                                             </div>
                                             <div class="panel-body">
+                                                <?php if (array_key_exists('usar_comision_web', $config)) : ?>
+                                                <!-- v1.24.1: comisión opcional en el precio de los productos (Productos y Lista de Precios); v1.38.1: en General (antes estaba escondida en Valores por defecto) -->
+                                                <div class="cfg-fila"><label><input type="checkbox" name="usar_comision_web" value="1" <?php echo in_array($config['usar_comision_web'] ?? null, array(true, 't', 1, '1'), true) ? 'checked' : ''; /* v1.38.1: la base la entrega como 't' (antes salía siempre desmarcada) */ ?>> Recuadro de comisión en los precios</label><?php cfg_info("Marcada: al grabar el precio de un producto (Carta y Lista de precios) aparece el recuadro de comisión.\nSin marcar: el recuadro no aparece y la comisión queda en 0."); ?></div>
+                                                <?php endif; ?>
                                                 <div class="form-group">
                                                     <label class="cfg-titulo">Mesa de venta directa <?php cfg_info("Número de la mesa \"técnica\" que el sistema usa por dentro para la venta directa. No aparece en la lista de mesas de la Caja.\nNo la cambies si no sabes cuál es."); ?></label>
                                                     <input type="text" class="form-control" name="id_mesa_venta_directa" value="<?php echo $config['id_mesa_venta_directa'] ?? ''; ?>">
@@ -236,6 +276,10 @@ En la Caja las salsas y los extras siempre son opcionales."); ?></div>
                                                 </div>
                                                 <!-- 18-11-2026: se quitaron "Imprimir documentos en el equipo de la caja" y "con el diseño de la página":
                                                      todos los locales imprimen por el agente (impresionWeb.exe) y como imagen, siempre encendidas -->
+                                                <?php if (array_key_exists('impresion_texto_web', $config)) : ?>
+                                                <!-- v1.40.0 (pedido del usuario): para el local que reclame que imprime lento -->
+                                                <div class="cfg-fila"><label><input type="checkbox" name="impresion_texto_web" value="1" <?php echo in_array($config['impresion_texto_web'] ?? null, array(true, 't', 1, '1'), true) ? 'checked' : ''; ?>> Imprimir en modo texto (más rápido)</label><?php cfg_info("Sin marcar (lo normal): boletas, precuentas y comandas salen como imagen, con el diseño de la página (letra grande, recuadros).\nMarcada: salen en texto, directo al agente de impresión. Es más rápido, pero con letra normal o alta (sin letra grande ni recuadros).\nÚsala solo si el local reclama que imprime lento."); ?></div>
+                                                <?php endif; ?>
                                                 <?php if (array_key_exists('imprimir_comandas_app', $config)) : ?>
                                                 <!-- 14-11-2026: comandas de la app de garzones impresas por la Caja web (solo locales sin POS de escritorio) -->
                                                 <div class="cfg-fila"><label><input type="checkbox" name="imprimir_comandas_app" value="1" <?php echo ($config['imprimir_comandas_app'] ?? null) === true || ($config['imprimir_comandas_app'] ?? null) === 't' ? 'checked' : ''; ?>> Imprimir las comandas de la app de garzones</label><?php cfg_info("La Caja web imprime los pedidos que llegan desde la app de garzones, cada producto en su destino de impresión (cocina, barra…).\nMárcala solo si el local NO usa el POS de escritorio: si no, cada comanda sale dos veces."); ?></div>
@@ -345,7 +389,7 @@ En la Caja las salsas y los extras siempre son opcionales."); ?></div>
                                         <?php if (array_key_exists('pago_electronico_usuario_api', $config)) : ?>
                                         <div class="config-card">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><i class="fa fa-credit-card"></i>Pago electrónico <?php cfg_info("Usuario y clave del programa de pago de las cajas. Van en cada cobro a la máquina POS (Mantención › Pago electrónico)."); ?></h3>
+                                                <h3 class="panel-title"><i class="fa fa-credit-card"></i>Pago electrónico <?php cfg_info("Usuario y clave del programa de pago de las cajas. Van en cada cobro a la máquina POS (menú Pago electrónico)."); ?></h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="form-group">
@@ -447,10 +491,6 @@ En la Caja las salsas y los extras siempre son opcionales."); ?></div>
 <?php cfg_opciones($opciones['lprecio'], $config['id_lpreciopublico'] ?? 0, 'LA PRIMERA LISTA (N° más bajo)'); ?>
 </select>
                                                 </div>
-                                                <?php if (array_key_exists('usar_comision_web', $config)) : ?>
-                                                <!-- v1.24.1: comisión opcional en el precio de los productos (Productos y Lista de Precios) -->
-                                                <div class="cfg-fila"><label><input type="checkbox" name="usar_comision_web" value="1" <?php echo ($config['usar_comision_web'] ?? false) === true ? 'checked' : ''; ?>> Comisión en el precio de los productos</label><?php cfg_info("Marcada: al grabar el precio de un producto (Carta y Lista de precios) aparece el recuadro de comisión.\nSin marcar: el recuadro no aparece y la comisión queda en 0."); ?></div>
-                                                <?php endif; ?>
                                                 <div class="form-group">
                                                     <label class="cfg-titulo">Documento de venta <?php cfg_info("El documento que viene elegido al cobrar (ej. boleta)."); ?></label>
                                                     <select class="form-control" name="id_docventa_defecto">
@@ -493,6 +533,10 @@ En la Caja las salsas y los extras siempre son opcionales."); ?></div>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="cfg-fila"><label><input type="checkbox" name="inventario_cierre_caja" value="1" <?php echo ($config['inventario_cierre_caja'] ?? false) ? 'checked' : ''; ?>> Contar insumos al cerrar la caja</label><?php cfg_info("Al cerrar la caja, el cajero cuenta los insumos marcados \"Inventario en cierre de turno\" (en Insumos) y el stock se ajusta a lo contado."); ?></div>
+                                                <?php if (array_key_exists('produccion_sin_stock_web', $config)) : ?>
+                                                <!-- v1.37.9 (pedido del usuario): producir aunque no alcance el stock (migración 20261125100000) -->
+                                                <div class="cfg-fila"><label><input type="checkbox" name="produccion_sin_stock_web" value="1" <?php echo in_array($config['produccion_sin_stock_web'] ?? null, array(true, 't', 1, '1'), true) ? 'checked' : ''; ?>> Producir sin stock</label><?php cfg_info("Marcada: en Insumos > Realizar producción se puede grabar aunque algún insumo no alcance en su bodega; ese stock queda en negativo (se corrige con una entrada o un inventario).\nSin marcar: si no alcanza, no deja grabar la producción."); ?></div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>

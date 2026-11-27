@@ -143,7 +143,7 @@
 				solicitud_id: deliverySolicitudId || (deliverySolicitudId = nuevoTokenDelivery()),
 				delivery: entregaPantalla(), id_lprecio: Number($('#cboLista').val()), id_cliente: cliente ? cliente.id_cliente : 0,
 				descuento: totales().descuento,
-				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [], sushi: l.sushi || null }; })
+				detalle: $.map(carro, function (l) { return { id_producto: l.id_producto, cantidad: l.cantidad, agregados: l.agregados, extras: l.extras || [], nota: l.nota, notas_agregados: l.notas_agregados || {}, menu: l.menu || [], sushi: l.sushi || null }; })
 			};
 			var terminar = function () { guardandoDelivery = false; renderCarro(); };
 			enviarConAutorizacion(function (aut) {
@@ -175,6 +175,7 @@
 						if (!p) { faltan.push(it.id_producto); return; }
 						lineas.push({ id_producto: Number(it.id_producto), nombre: p.nombre, precio: p.precio, cantidad: Number(it.cantidad),
 							agregados: $.grep((it.agregados || []).map(Number), function (a) { return !!agregado(a); }), nota: it.nota || '',
+							extras: $.grep((it.extras || []).map(Number), function (a) { return !!agregado(a); }),   // v1.35.0
 							notas_agregados: it.notas_agregados && typeof it.notas_agregados === 'object' ? it.notas_agregados : {} });
 					});
 					if (faltan.length || !lineas.length) {

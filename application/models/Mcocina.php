@@ -57,6 +57,9 @@ class Mcocina extends CI_Model
 		$destinoProducto = 'COALESCE(NULLIF(p.id_dimpresion, 0), NULLIF(f.id_dimpresion, 0), 0)';
 		// v1.30.0: un producto con "Imprimir también en otro destino" se ve en los dos (ej. COCINA y PARRILLA)
 		$conDestino2 = $db->field_exists('id_dimpresion2_web', 'producto');
+		// v1.45.0: la fila de una promo (normal o de sushi) tiene sus propias marcas; como la del menú, no va a cocina
+		$sinPromoC = $db->field_exists('es_promo_web', 'detalle_cotizacion') ? ' AND d.es_promo_web IS NOT TRUE AND d.es_promo_sushi_web IS NOT TRUE' : '';
+		$sinPromoV = $db->field_exists('es_promo_web', 'detalle_venta') ? ' AND dv.es_promo_web IS NOT TRUE AND dv.es_promo_sushi_web IS NOT TRUE' : '';
 		$o2 = $conDestino2 ? ' OR COALESCE(p.id_dimpresion2_web, 0) = ' . $idDestino : '';
 		$filtroC = $idDestino > 0 ? ' AND (COALESCE(NULLIF(d.id_dimpresion, 0), ' . $destinoProducto . ') = ' . $idDestino . $o2 . ')' : '';
 		$filtroV = $idDestino > 0 ? ' AND (' . $destinoProducto . ' = ' . $idDestino . $o2 . ')' : '';
@@ -92,7 +95,7 @@ class Mcocina extends CI_Model
 			LEFT JOIN usuario u ON u.id_usuario = d.id_garzon
 			WHERE d.fecha_hora_impresion >= ? AND d.vigente IS NOT FALSE AND d.esanulado IS NOT TRUE AND d.eseliminado IS NOT TRUE
 				AND c.esanulado IS NOT TRUE AND c.eseliminado IS NOT TRUE
-				AND d.es_menu IS NOT TRUE AND d.imprimir IS NOT FALSE
+				AND d.es_menu IS NOT TRUE AND d.imprimir IS NOT FALSE $sinPromoC
 				AND NOT EXISTS (SELECT 1 FROM cocina_listo_web k WHERE k.origen = 'c' AND k.id_detalle = d.id_detalle_cotizacion)
 				$filtroC
 			ORDER BY d.fecha_hora_impresion, d.id_detalle_cotizacion", array($desde))->result();
@@ -113,7 +116,7 @@ class Mcocina extends CI_Model
 			LEFT JOIN familia f ON f.id_familia = p.id_familia
 			LEFT JOIN dimpresion dp ON dp.id_dimpresion = $destinoProducto
 			WHERE v.fecha_transaccion >= ? AND COALESCE(v.venta_directa, false) AND COALESCE(v.id_mesa, 0) = 0
-				AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' AND dv.es_menu IS NOT TRUE
+				AND COALESCE(v.mensaje_pedido, '') NOT LIKE 'ANULADA%' AND dv.es_menu IS NOT TRUE $sinPromoV
 				AND NOT EXISTS (SELECT 1 FROM cocina_listo_web k WHERE k.origen = 'v' AND k.id_detalle = dv.id_detalle_venta)
 				$filtroV
 			ORDER BY v.fecha_transaccion, dv.id_detalle_venta", array($desde))->result();

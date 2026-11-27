@@ -24,6 +24,13 @@ if ($copia) {
 	$pruebas['privilegios_test.php'] = array($base, 'COPIA');   // lo nuevo con un rol que no es gerencia (ver el archivo)
 	$pruebas['agregados_mesa_test.php'] = array($base, 'COPIA');   // v1.30.3: máximo de agregados, agregados unidos en la mesa, descuento 0
 	$pruebas['promo_sushi_opciones_test.php'] = array($base, 'COPIA');   // v1.32.0: promos de sushi: varios a la vez, salsas, máximos, precio por envoltorio, fija
+	$pruebas['anular_varias_test.php'] = array($base, 'COPIA');
+	$pruebas['recetas_unidades_test.php'] = array($base, 'COPIA');   // v1.34.0: kilos y gramos en insumos, recetas y producción   // v1.33.0: anular todas las ventas en espera y varias mesas a la vez
+	$pruebas['agregados_extras_categorias_test.php'] = array($base, 'COPIA');   // v1.35.0: agregados extra con costo y categorías de agregados
+	$pruebas['promos_test.php'] = array($base, 'COPIA');   // v1.36.0: promos normales (Carta > Promos)
+	$pruebas['receta_produccion_test.php'] = array($base, 'COPIA');   // v1.37.0: receta de producción completa, costos y producción
+	$pruebas['unidades_volumen_test.php'] = array($base, 'COPIA');   // v1.37.16: litros y mililitros en insumos, recetas y producción
+	$pruebas['tablas_union_test.php'] = array($base, 'COPIA');   // v1.41.0: tablas de agregados varios y promos (revisa la base con PRUEBA_PSQL)
 	if (is_file(__DIR__ . '/cocina_reservas_test.php')) $pruebas['cocina_reservas_test.php'] = array($base, 'COPIA');   // pantalla de cocina y reservas (rama de prueba)
 }
 

@@ -42,6 +42,15 @@ class PagoElectronico extends CI_Controller
 		}, true);
 	}
 
+	public function clavePrueba()
+	{
+		$this->output->set_header('Cache-Control: no-store');
+		$this->ejecutar(function () {
+			return array('api_key' => $this->Mpagoelectronico->clavePrueba(
+				(int)$this->input->post('id'), (string)$this->input->post('tipo')));
+		}, true);
+	}
+
 	/** Responde JSON; los errores salen como {error} con su código HTTP. */
 	private function ejecutar($accion, $soloPost = false)
 	{

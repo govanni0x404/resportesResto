@@ -1,14 +1,14 @@
 <script>
 // v1.24.12: secciones de la ficha del producto (Datos / Parámetros / Imagen). Siempre abre en Datos.
 function mostrarSeccionProducto(nombre) {
-    $('.prod-sec-btn').each(function () {
+    $('#modalNuevoProducto .prod-sec-btn').each(function () {   // v1.32.1: solo la ficha (Promos Sushi usa el mismo estilo)
         var on = $(this).data('seccion') === nombre;
         $(this).toggleClass('activo', on).attr('aria-selected', on ? 'true' : 'false');
     });
     $('#modalNuevoProducto .prod-seccion').each(function () { $(this).toggleClass('activa', $(this).data('seccion') === nombre); });
     $('#modalNuevoProducto .modal-body').scrollTop(0);
 }
-$(document).on('click', '.prod-sec-btn', function () { mostrarSeccionProducto($(this).data('seccion')); });
+$(document).on('click', '#modalNuevoProducto .prod-sec-btn', function () { mostrarSeccionProducto($(this).data('seccion')); });
 $(document).on('show.bs.modal', '#modalNuevoProducto', function (e) { if (e.target === this) mostrarSeccionProducto('datos'); });
 
 var base_url = "<?php echo base_url(); ?>";
@@ -221,7 +221,6 @@ function ListadoCartaDeProductos() {
         ListadoDestinoDeImpresion(rowData[0].nombre_dimpresion, rowData[0].id_dimpresion);
         ListadoDeBodega(rowData[0].nombre_bodega, rowData[0].id_bodega);
         ListadoDeImpuestosIva(rowData[0].iva, rowData[0].impto_iva);
-        ListadoDeImpuestosAdicional(rowData[0].impto_ila);   // v1.20.0
         ListadoDeMenu(rowData[0].id_menu || rowData[0].menu);
         ListadoDeReceta(rowData[0].receta, rowData[0].id_receta);
         
@@ -229,6 +228,8 @@ function ListadoCartaDeProductos() {
 
         $('#ckVigente').prop('checked', rowData[0].vigente == 'SI');
         $('#ckConAgregado').prop('checked', rowData[0].con_agregado == 'SI');
+        $('#ckConVariosAgregados').prop('checked', rowData[0].varios_agregados == 'SI');   // v1.44.0
+        conAgregadoEnBase = rowData[0].con_agregado == 'SI' || rowData[0].varios_agregados == 'SI';   // v1.34.1
         $('#ckVentaPublico').prop('checked', rowData[0].venta_publico == 'SI');
         $('#ckPermitirFraccion').prop('checked', rowData[0].permite_porcion == 'SI');
         $('#ckVentaPorStock').prop('checked', rowData[0].venta_segun_stock == 'SI');
@@ -240,7 +241,7 @@ function ListadoCartaDeProductos() {
         $('#ckPermiteCortesia').prop('checked', rowData[0].permite_cortesia == 'SI');
         $('#ckFavorito').prop('checked', rowData[0].favorito == 'SI');
         
-        if (rowData[0].con_agregado == 'SI') {
+        if (rowData[0].con_agregado == 'SI' || rowData[0].varios_agregados == 'SI') {
             $("#btnAgregados").attr("disabled", false);
         } else {
             $("#btnAgregados").attr("disabled", true);
@@ -270,7 +271,6 @@ function crearNuevoProducto() {
     ListadoDestinoDeImpresion("CAJA");
     ListadoDeBodega("BODEGA PRINCIPAL");
     ListadoDeImpuestosIva("IVA 19%");
-    ListadoDeImpuestosAdicional(null);   // v1.20.0: producto nuevo, sin ILA
     ListadoDeMenu("");
     ListadoDeReceta("");
     
@@ -279,6 +279,8 @@ function crearNuevoProducto() {
     $('#ckPermitirVentaSiempre').prop('checked', false);
     $('#ckVentaDirecta').prop('checked', false);
     $('#ckConAgregado').prop('checked', false);
+    $('#ckConVariosAgregados').prop('checked', false);   // v1.44.0: parte apagado
+    conAgregadoEnBase = false;   // v1.34.1
     $('#ckPermitirFraccion').prop('checked', false);
     $('#ckVentaPorStock').prop('checked', false);
     $('#ckElaboracionLocal').prop('checked', false);
@@ -299,10 +301,14 @@ function crearNuevoProducto() {
     });
 }
 
-$('#ckConAgregado').on('change', function() {
+// v1.34.1: delegado. Este archivo se carga antes que la ventana (productos/modals.php), así que el enlace directo no
+// encontraba la casilla y marcar "Con Agregado" nunca habilitaba el botón Agregados del producto.
+// v1.44.0 (pedido del usuario): "Con Agregado" (1 a 1) y "Con Varios Agregados" son excluyentes: marcar uno desmarca el otro
+$(document).on('change', '#ckConAgregado, #ckConVariosAgregados', function() {
     var idProducto = $('#txtID').val();
+    if (this.checked) $(this.id === 'ckConAgregado' ? '#ckConVariosAgregados' : '#ckConAgregado').prop('checked', false);
     
-    if ($('#ckConAgregado').prop('checked') && idProducto && idProducto != "") {
+    if (($('#ckConAgregado').prop('checked') || $('#ckConVariosAgregados').prop('checked')) && idProducto && idProducto != "") {
         $("#btnAgregados").attr("disabled", false);
     } else {
         $("#btnAgregados").attr("disabled", true);
@@ -468,7 +474,7 @@ function GrabarProducto() {
         return;
     }
 
-    debeAbrirAgregados = $('#ckConAgregado').is(":checked");
+    debeAbrirAgregados = $('#ckConAgregado').is(":checked") || $('#ckConVariosAgregados').is(":checked");
     console.log("¿Debe abrir agregados?:", debeAbrirAgregados);
 
     // Preparar datos del producto
@@ -478,8 +484,9 @@ function GrabarProducto() {
         'cbarra': $('#txtCbarra').val(),
         'cbarra_auto': cbarraSugerido !== null && $.trim($('#txtCbarra').val()) === cbarraSugerido ? 1 : 0,
         'impto_iva': $('#cboImpuestoIva').val(),
-        'impto_ila': $('#cboImpuestoIla').val() || 0,   // v1.20.0: el ILA elegido (antes siempre 1 = exento)
-        'ila_en_formulario': 1,
+        // v1.34.1 (pedido del usuario): el impuesto adicional (ILA) ya no va en la Carta. Al editar se conserva el que tenga
+        // el producto; uno nuevo queda "sin ILA" (Productos::grabarNuevoProducto)
+        'impto_ila': 0,
         'id_familia': $('#cboFamilia').val(),
         'id_umedida': $('#cboUmedida').val(),
         'precio_bruto': 0,
@@ -492,6 +499,7 @@ function GrabarProducto() {
         'stock_minimo': 0,
         'cbarra_balanza': 0,
         'con_agregado': $('#ckConAgregado').is(":checked") ? 1 : 0,
+        'varios_agregados_web': $('#ckConVariosAgregados').is(":checked") ? 1 : 0,   // v1.44.0
         'venta_publico': $('#ckVentaPublico').is(":checked") ? 1 : 0,
         'descripcion_corta': "",
         'permite_porcion': $('#ckPermitirFraccion').is(":checked") ? 1 : 0,

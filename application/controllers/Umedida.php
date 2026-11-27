@@ -35,6 +35,16 @@ class Umedida extends CI_Controller
     echo json_encode($this->MuMedida->ListadoDeUmedida());
   }
 
+  /** v1.34.0: unidades con su equivalencia, para convertir en recetas, insumos y producción. */
+  public function equivalencias()
+  {
+    if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+      redirect(base_url());
+    }
+    header('Content-Type: application/json');
+    echo json_encode($this->MuMedida->equivalencias());
+  }
+
   public function grabarNuevaUmedida()
   {
     if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
@@ -49,6 +59,15 @@ class Umedida extends CI_Controller
     $miData = array(
       'nombre_umedida' => $d['nombre_umedida'],
     );
+    // v1.34.0: a cuánto equivale (para convertir kilos y gramos en recetas y producción). 'auto' = según el nombre;
+    // 'ninguna' = sin equivalencia. Solo si la migración 20261124130000 ya creó las columnas.
+    if ($this->MuMedida->conEquivalencias()) {
+      $eq = isset($d['equivalencia']) ? (string)$d['equivalencia'] : 'auto';
+      if ($eq === 'auto') $eq = MuMedida::equivalenciaPorNombre($d['nombre_umedida']);
+      $e = isset(MuMedida::EQUIVALENCIAS[$eq]) ? MuMedida::EQUIVALENCIAS[$eq] : array(null, null);
+      $miData['tipo_web'] = $e[0];
+      $miData['factor_web'] = $e[1];
+    }
     $r = $this->MuMedida->grabarNuevaUmedida($id, $miData);
     if ($r && isset($r['id_umedida'])) {
       echo json_encode(array(

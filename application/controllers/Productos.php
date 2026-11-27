@@ -20,7 +20,10 @@ class Productos extends CI_Controller
 			//'modulosDisponibles' => json_decode($this->Mroles->modulosDisponibles($this->session->userdata('id_rol')), true)
 		);
 		$this->load->view('menuTop.php', $data);
-				$this->load->view('productos/productos.php');
+				// v1.36.0: el botón Promos Sushi solo con Configuraciones > Promos de sushi > "Usar promos de sushi"
+				$this->load->model('Mcaja');
+				$sushiCfg = $this->Mcaja->opcionesSushi();
+				$this->load->view('productos/productos.php', array('promosSushi' => !empty($sushiCfg['activas'])));
 				$this->load->view('menuFooter.php');
 				$this->load->view('productos/funciones.php');
 				$this->load->view('productos/jsProductos.php');
@@ -33,6 +36,7 @@ class Productos extends CI_Controller
 				$this->load->view('productos/jsReceta.php');
 				$this->load->view('productos/jsImagen.php');
 				$this->load->view('productos/promoSushi.php');   // v1.25.0
+				$this->load->view('productos/promos.php');   // v1.36.0: promos normales
 				$this->load->view('recetas/jsNewFamiliaReceta.php');
 				$this->load->view('recetas/jsNewSeccion.php');
 	}
@@ -257,6 +261,16 @@ class Productos extends CI_Controller
 				$miData['id_dimpresion2_web'] = $d2 === (int)$producto['id_dimpresion'] ? 0 : $d2;   // el mismo destino no se imprime dos veces
 			}
 		}
+		// v1.44.0 (pedido del usuario): "Con Varios Agregados" (producto.varios_agregados_web), aparte de "Con Agregado" (1 a 1);
+		// son excluyentes: con varios, con_agregado queda en false. Solo si la pantalla lo mandó y la columna existe.
+		if (array_key_exists('varios_agregados_web', $producto)) {
+			$this->load->helper('tenant');
+			if (get_tenant_db($this)->field_exists('varios_agregados_web', 'producto')) {
+				$varios = (string)$producto['varios_agregados_web'] === '1';
+				$miData['varios_agregados_web'] = $varios ? 't' : 'f';
+				if ($varios) $miData['con_agregado'] = 'f';
+			}
+		}
 		// Favorito de la Caja: solo si llegó del formulario y la base ya tiene la columna (migración 20261110190000)
 		if (isset($producto['favorito']) && $this->Mproductos->tieneColumnaFavorito()) {
 			$miData['favorito'] = ((string)$producto['favorito'] === '1') ? 'true' : 'false';
@@ -284,6 +298,16 @@ class Productos extends CI_Controller
 			$miData['valor_ila'] = (float)$imp->valor;
 		} elseif ($id > 0) {
 			unset($miData['impto_ila'], $miData['valor_ila']);
+		} else {
+			// v1.34.1: la Carta ya no tiene el ILA: un producto nuevo queda con el impuesto "sin ILA" (valor 0)
+			$this->load->helper('tenant');
+			$sinIla = get_tenant_db($this)->query("SELECT id_impuesto FROM impuesto WHERE COALESCE(valor, 0) = 0 ORDER BY (nombre_impuesto ILIKE '%EXENTO%') DESC, id_impuesto LIMIT 1")->row();
+			if (!$sinIla) {
+				echo json_encode(['success' => false, 'error' => 'No hay un impuesto "sin ILA" (valor 0) en la tabla de impuestos']);
+				return;
+			}
+			$miData['impto_ila'] = (int)$sinIla->id_impuesto;
+			$miData['valor_ila'] = 0;
 		}
 		unset($producto['ila_en_formulario']);
 
@@ -472,6 +496,28 @@ class Productos extends CI_Controller
 		echo json_encode($r);
 	}
 
+	/**
+	 * v1.35.1 (pedidos del usuario): extras con cobro y categorías de agregados en la ventana Agregados del producto.
+	 * accion: (ninguna) = leer las opciones; extras (casilla del producto); campo (cantidad o valor de una fila).
+	 */
+	public function opcionesAgregados()
+	{
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) {
+			set_status_header(401);
+			echo json_encode(array('ok' => false, 'error' => 'Sesión expirada'));
+			return;
+		}
+		$id = (int)$this->input->post('id_producto');
+		switch ((string)$this->input->post('accion')) {
+			case 'extras': $r = $this->Mproductos->grabarExtrasProducto($id, (string)$this->input->post('valor') === '1'); break;
+			case 'varios': $r = $this->Mproductos->grabarVariosAgregados($id, (string)$this->input->post('valor') === '1'); break;   // v1.43.0
+			case 'campo': $r = $this->Mproductos->campoAgregado((int)$this->input->post('id_agregado'), $id, (string)$this->input->post('campo'), $this->input->post('valor')); break;
+			default: $r = $this->Mproductos->opcionesAgregados($id);
+		}
+		if (isset($r['error'])) set_status_header(400);
+		echo json_encode($r);
+	}
+
 	/** v1.30.2: casilla "Sale en su destino" de un agregado ya ingresado (tabla de agregados del producto). */
 	public function destinoPropioAgregado()
 	{
@@ -521,6 +567,8 @@ class Productos extends CI_Controller
 			'id_dimpresion_agregado' => 0,
 		);
 		$r = $this->Mproductos->grabarAgregados($id, $miData);
+		// v1.34.1: el producto queda "Con Agregado" en cuanto tiene uno
+		if (is_array($r) && !isset($r['error'])) $this->Mproductos->marcarConAgregado((int)$miData['id_producto_maestro']);
 		echo json_encode($r);
 	}
 
@@ -1003,6 +1051,26 @@ class Productos extends CI_Controller
 		echo json_encode($r);
 	}
 
+	/** v1.36.0: promos normales (Carta > Promos). Sin id: la lista; con id: una promo. */
+	public function promos()
+	{
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) { set_status_header(401); echo json_encode(array('error' => 'Sesión expirada')); return; }
+		$this->load->model('Mpromos');
+		$id = (int)$this->input->get_post('id');
+		$r = $id > 0 ? $this->Mpromos->promo($id) : $this->Mpromos->datos();
+		if (isset($r['error'])) set_status_header(400);
+		echo json_encode($r);
+	}
+
+	public function grabarPromo()
+	{
+		if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) { set_status_header(401); echo json_encode(array('error' => 'Sesión expirada')); return; }
+		$this->load->model('Mpromos');
+		$r = $this->Mpromos->grabar($this->input->post());
+		if (isset($r['error'])) set_status_header(400);
+		echo json_encode($r);
+	}
+
 	public function obtenerPromosSushi()
 	{
 		$this->respuestaSushi(function ($m) { return $m->datos(); });
@@ -1045,6 +1113,18 @@ class Productos extends CI_Controller
 	public function valorOpcionSushi()
 	{
 		$this->respuestaSushi(function ($m, $in) { return $m->valorOpcion((int)$in->post('id_opcion'), $in->post('valor')); });
+	}
+
+	/** v1.32.1: un límite de lo que el cliente puede elegir (desde la pestaña de esa sección) */
+	public function limitePromoSushi()
+	{
+		$this->respuestaSushi(function ($m, $in) { return $m->guardarLimite((int)$in->post('id_promo'), (string)$in->post('tipo'), $in->post('valor')); });
+	}
+
+	/** v1.32.1: quitar "fija" a una promo */
+	public function quitarFijaSushi()
+	{
+		$this->respuestaSushi(function ($m, $in) { return $m->quitarFija((int)$in->post('id_promo')); });
 	}
 
 	/** v1.32.0: precio de la promo con ese envoltorio */

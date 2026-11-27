@@ -337,12 +337,16 @@
 
         var obj = $.parseJSON(datos);
         var tbl = '';
+        // v1.38.0: la lista elegida arriba en el filtro sale primera y destacada (las demás se pueden cambiar igual)
+        var elegida = $('#ckTodasLasListasDePrecios').is(':checked') ? 0 : Number($('#cboListaDePrecios').val()) || 0;
+        if (elegida) obj.sort(function (a, b) { return (Number(b.id_lprecio) === elegida) - (Number(a.id_lprecio) === elegida); });
 
         $.each(obj, function(index, v) {
 
-            tbl += "<tr>";
+            var esElegida = elegida && Number(v.id_lprecio) === elegida;
+            tbl += "<tr" + (esElegida ? " class='lp-elegida'" : "") + ">";
             tbl += "<td style='display:none'>" + v.id_detalle_lprecio + "</td>";
-            tbl += "<td>" + escaparHtml(v.nombre_lprecio) + "</td>";
+            tbl += "<td>" + escaparHtml(v.nombre_lprecio) + (esElegida ? "<span class='lp-etq-elegida'>Lista elegida</span>" : "") + "</td>";
 
             // PRECIO
             tbl += `
@@ -448,4 +452,53 @@
         showAppAlert('error', "Error al grabar precios");
     });
 }
+
+// ---- v1.38.0 (pedido del usuario): copiar los precios de una lista a otra ----
+function abrirCopiarPrecios() {
+    var listas = $('#cboListaDePrecios option').filter(function () { return Number(this.value) > 0; });
+    if (listas.length < 2) { showAppAlert('error', 'Se necesitan al menos 2 listas de precios para copiar'); return; }
+    var ops = listas.map(function () { return '<option value="' + this.value + '">' + $('<div>').text($(this).text()).html() + '</option>'; }).get().join('');
+    $('#cpOrigen').html(ops);
+    $('#cpDestino').html(ops);
+    var actual = $('#cboListaDePrecios').val();
+    if (Number(actual) > 0) $('#cpOrigen').val(actual);
+    $('#cpDestino').val($('#cpDestino option').filter(function () { return this.value !== $('#cpOrigen').val(); }).first().val());
+    $('#cpFamilia').html('<option value="0">Todas las familias</option>' + $('#cboFamilias option').filter(function () { return Number(this.value) > 0; })
+        .map(function () { return '<option value="' + this.value + '">' + $('<div>').text($(this).text()).html() + '</option>'; }).get().join(''));
+    $('#cpAjuste').val('0');
+    $('#cpSoloSinPrecio').prop('checked', false);
+    resumenCopiarPrecios();
+    $('#ModalCopiarPrecios').modal('show');
+}
+function resumenCopiarPrecios() {
+    var o = $('#cpOrigen option:selected').text(), d = $('#cpDestino option:selected').text(), a = Number($('#cpAjuste').val()) || 0;
+    var f = Number($('#cpFamilia').val()) ? $('#cpFamilia option:selected').text() : '';
+    var ej = Math.round(1000 * (1 + a / 100));
+    $('#cpResumenPrecios').html($('#cpOrigen').val() === $('#cpDestino').val() ? '<span class="text-danger">Elige dos listas distintas.</span>'
+        : 'Los precios de <b>' + $('<div>').text(o).html() + '</b> pasan a <b>' + $('<div>').text(d).html() + '</b>'
+            + (a ? (a > 0 ? ', <b>' + a + '% más caros</b>' : ', <b>' + Math.abs(a) + '% más baratos</b>') + ' (ej. $1.000 → $' + ej.toLocaleString('es-CL') + ')' : ', iguales')
+            + (f ? ', solo de la familia <b>' + $('<div>').text(f).html() + '</b>' : '')
+            + ($('#cpSoloSinPrecio').is(':checked') ? ', solo donde no tienen precio' : '') + '.'
+            + '<br><small>Los productos sin precio en la lista de origen no se tocan.</small>');
+}
+$(document).on('change input', '#cpOrigen, #cpDestino, #cpAjuste, #cpFamilia, #cpSoloSinPrecio', resumenCopiarPrecios);
+$(document).on('click', '#btnCopiarPrecios', function () {
+    var d = { origen: $('#cpOrigen').val(), destino: $('#cpDestino').val(), ajuste: $('#cpAjuste').val() || 0,
+        id_familia: $('#cpFamilia').val() || 0, solo_sin_precio: $('#cpSoloSinPrecio').is(':checked') ? 1 : 0 };
+    if (d.origen === d.destino) { toastr.warning('Elige dos listas distintas'); return; }
+    var destino = $('#cpDestino option:selected').text();
+    confirmarSistema('¿Copiar los precios?', 'Se van a cambiar los precios de ' + destino + (d.solo_sin_precio ? ' (solo donde no tienen precio)' : '') + '.', 'Sí, copiar', function () {
+        var $b = $('#btnCopiarPrecios').prop('disabled', true);
+        $.ajax({ url: base_url + 'index.php/ListaDePrecios/copiarPrecios', type: 'POST', dataType: 'json', data: d }).done(function (r) {
+            $('#ModalCopiarPrecios').modal('hide');
+            setTimeout(function () {
+                swal({ title: '¡Precios copiados!', type: 'success', confirmButtonText: 'Aceptar',
+                    text: destino + ': ' + r.actualizados + (r.actualizados === 1 ? ' precio cambiado' : ' precios cambiados')
+                        + (r.nuevos ? ' y ' + r.nuevos + (r.nuevos === 1 ? ' producto agregado' : ' productos agregados') + ' a la lista' : '') + '.' });
+            }, 400);
+            if ($('#btnFiltrar').length) $('#btnFiltrar').click();
+        }).fail(function (x) { showAppAlert('error', (x.responseJSON && x.responseJSON.error) || 'No se pudieron copiar los precios'); })
+            .always(function () { $b.prop('disabled', false); });
+    });
+});
 </script>

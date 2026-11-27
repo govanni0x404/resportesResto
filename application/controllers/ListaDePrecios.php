@@ -96,4 +96,14 @@ class ListaDePrecios extends CI_Controller
         }
         echo json_encode($respuesta);
     }
+
+    /** v1.38.0: copiar los precios de una lista a otra (botón "Copiar precios"). */
+    public function copiarPrecios()
+    {
+        if (strlen((string)$this->session->userdata('nombre_usuario')) == 0) { set_status_header(401); echo json_encode(array('error' => 'Sesión expirada')); return; }
+        $r = $this->MlistaDePrecios->copiarPrecios($this->input->post('origen'), $this->input->post('destino'), $this->input->post('ajuste'),
+            $this->input->post('id_familia'), (string)$this->input->post('solo_sin_precio') === '1');
+        if (isset($r['error'])) set_status_header(400);
+        echo json_encode($r);
+    }
 }

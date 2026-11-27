@@ -272,7 +272,38 @@ class MapiMovil extends CI_Model
 				$porMenu[$idP]['categorias'][$idC]['opciones'][] = array('id' => (int)$r->id_detalle_categoria_menu, 'id_producto' => (int)$r->id_producto,
 					'nombre' => $r->nombre_producto, 'adicional' => max(0, (int)$r->adicional));
 			}
+			// v1.41.0: las promos normales ya no son menús (su producto tiene id_menu = 0): no salen aquí, van abajo
 			foreach ($porMenu as $mn) { $mn['categorias'] = array_values($mn['categorias']); $menus[] = $mn; }
+		}
+		// v1.41.0: promos normales (promo_web + promo_producto_web, migración 20261126120000) con la misma forma de menú que
+		// arma la Caja (Mcaja::promosNormales): fija = una categoría por producto con su cantidad obligatoria; "elige N" = una
+		// categoría con todos. La opción es id_promo_producto_web, que es lo que valida la Caja al recibir el pedido.
+		$cp = $this->columnas($db, array('promo_web', 'promo_producto_web'));
+		if (isset($cp['promo_web'], $cp['promo_producto_web'])) {
+			$elegir = isset($cp['promo_web']['elegir']) ? 'COALESCE(w.elegir, 0)' : '0';
+			$rows = $db->query("SELECT w.id_producto AS id_promo, $elegir AS elegir, p.nombre_producto AS nombre_promo, pp.id_promo_producto_web,
+					pp.id_producto, pp.cantidad, pd.nombre_producto
+				FROM promo_web w
+				JOIN producto p ON p.id_producto = w.id_producto AND p.vigente IS TRUE
+				JOIN promo_producto_web pp ON pp.id_producto_promo = w.id_producto AND pp.vigente IS TRUE
+				JOIN producto pd ON pd.id_producto = pp.id_producto AND pd.vigente IS TRUE
+				ORDER BY w.id_producto, pp.orden, pp.id_promo_producto_web");
+			$porPromo = array();
+			foreach (($rows ? $rows->result() : array()) as $r) {
+				$idP = (int)$r->id_promo;
+				if (!isset($idsProductos[$idP])) continue;
+				$n = (int)$r->elegir;
+				if (!isset($porPromo[$idP])) $porPromo[$idP] = array('id_producto' => $idP, 'id_menu' => 0, 'nombre' => $r->nombre_promo, 'categorias' => array());
+				$op = array('id' => (int)$r->id_promo_producto_web, 'id_producto' => (int)$r->id_producto, 'nombre' => $r->nombre_producto, 'adicional' => 0);
+				if ($n > 0) {
+					if (!isset($porPromo[$idP]['categorias'][0])) $porPromo[$idP]['categorias'][0] = array('id' => -$idP, 'nombre' => 'ELIGE ' . $n, 'min' => $n, 'max' => $n, 'estricto' => true, 'opciones' => array());
+					$porPromo[$idP]['categorias'][0]['opciones'][] = $op;
+				} else {
+					$q = max(1, (int)$r->cantidad);
+					$porPromo[$idP]['categorias'][] = array('id' => $op['id'], 'nombre' => $r->nombre_producto, 'min' => $q, 'max' => $q, 'estricto' => true, 'opciones' => array($op));
+				}
+			}
+			foreach ($porPromo as $mn) { $mn['categorias'] = array_values($mn['categorias']); $menus[] = $mn; }
 		}
 
 		$db->close();

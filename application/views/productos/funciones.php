@@ -490,6 +490,11 @@ function llenarFamiliaReceta(id_familia_receta) {
         }); //fin each
 
         $("#cboGrupoReceta").html(tbl);
+        // v1.39.9 (pedido del usuario): en una receta nueva se elige GENERAL por defecto
+        if (!Number(id_familia_receta)) {
+            var $gen = $('#cboGrupoReceta option').filter(function () { return $.trim($(this).text()).toUpperCase() === 'GENERAL'; }).first();
+            if ($gen.length) $('#cboGrupoReceta').val($gen.val()).trigger('change.select2');
+        }
         $("#cboGrupoReceta").select2();
     });
 }
@@ -511,6 +516,11 @@ function llenarSeccionReceta(id_seccion) {
         }); //fin each
 
         $("#cboSeccionReceta").html(tbl);
+        // v1.39.9 (pedido del usuario): en una receta nueva se elige GENERAL por defecto
+        if (!Number(id_seccion)) {
+            var $gen = $('#cboSeccionReceta option').filter(function () { return $.trim($(this).text()).toUpperCase() === 'GENERAL'; }).first();
+            if ($gen.length) $('#cboSeccionReceta').val($gen.val()).trigger('change.select2');
+        }
         $("#cboSeccionReceta").select2();
     });
 }
@@ -522,19 +532,7 @@ function llenarCboInsumos(id_insumo) {
         var obj = jQuery.parseJSON(datos); // lo convierto a un objeto a json
         tbl = "";
         tbl = "<option selected value = 0>Seleccione El Insumo</option>";
-        $.each(obj, function(index, v) { // recorro el array
-            if (v.id_insumo == id_insumo) {
-                tbl = tbl + '<option selected value="' + v.id_insumo + '" cbarra="' + v.cbarra +
-                    '" nombreInsumo="' + v.nombre_insumo + '" esReceta="' + v.esreceta + '" umedida="' +
-                    v.nombre_umedida + '" costoPP="' + v.costo_neto_ppp + '">' + v.cbarra + '/' + v
-                    .nombre_insumo + '</option>';
-            } else {
-                tbl = tbl + '<option value="' + v.id_insumo + '" cbarra="' + v.cbarra +
-                    '"  nombreInsumo="' + v.nombre_insumo + '" esReceta="' + v.esreceta +
-                    '" umedida="' + v.nombre_umedida + '" costoPP="' + v.costo_neto_ppp + '">' + v
-                    .cbarra + '/' + v.nombre_insumo + '</option>';
-            }
-        }); //fin each
+        $.each(obj, function(index, v) { tbl = tbl + recOpcionInsumo(v, v.id_insumo == id_insumo); });   // v1.34.0
 
         $("#cboCodBarraInsumoReceta").html(tbl);
         $("#cboCodBarraInsumoReceta").select2();

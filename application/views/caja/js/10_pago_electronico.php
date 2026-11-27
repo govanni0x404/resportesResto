@@ -9,18 +9,20 @@
 		//  4. Aprobado: se registra la venta (Caja::vender con pago_electronico_tx). Rechazado: se avisa y se puede
 		//     cobrar de otra forma. Sin confirmar (se canceló la espera, se cortó la conexión): queda arriba, en la barra de
 		//     cobros sin terminar, con Cancelar, Volver a enviar y Aprobar.
-		var pagoPos = { maquina: null, pendientes: [], usuario: '', cobrando: null, ocupado: false };
+		var pagoPos = { maquina: null, formas: [], pendientes: [], usuario: '', cobrando: null, ocupado: false };
 
 		function cargarPagoElectronico() {
 			return $.ajax({ url: base + 'pagoElectronico', dataType: 'json', cache: false, global: false }).done(function (r) {
 				pagoPos.maquina = r.maquina || null;
+				pagoPos.formas = r.formas_electronicas || [];
 				pagoPos.pendientes = r.pendientes || [];
 				pagoPos.usuario = r.usuario || '';
 				pintarPendientesPos();
 			});
 		}
 		function esFormaMaquina(id) {
-			return !!(pagoPos.maquina && pagoPos.maquina.formas_pago.indexOf(Number(id)) >= 0);
+			// v1.39.10 (pedido del usuario): sin máquina asignada a esta caja, las tarjetas se cobran como antes (a mano)
+			return !!pagoPos.maquina && pagoPos.formas.indexOf(Number(id)) >= 0;
 		}
 		function montoEnMaquina(lista) {
 			var suma = 0;
@@ -130,7 +132,16 @@
 		 */
 		function cobrarEnMaquina(venta, monto, ctx) {
 			var m = pagoPos.maquina;
-			if (!m || pagoPos.cobrando) return;
+			if (pagoPos.cobrando) return;
+			if (!m) {
+				avisoHtml('Falta asignar una máquina POS', 'Asigna una máquina vigente a esta caja en <b>Herramientas &rsaquo; Control de cajas</b>.', 'warning');
+				return;
+			}
+			var credito = esCreditoPos(venta.pagos);
+			if (m.tipo === 'HAULMER' && credito && esDebitoPos(venta.pagos)) {
+				avisoHtml('TUU requiere un tipo de tarjeta por cobro', 'Elige débito o crédito para el monto que se envía a la máquina.', 'warning');
+				return;
+			}
 			if (!ctx.replay && pagoPos.pendientes.length) {
 				avisoHtml('Hay un cobro con tarjeta sin terminar', 'Arriba de la venta quedó un cobro de <b>' + fmt(pagoPos.pendientes[0].monto) + '</b> sin terminar ('
 					+ esc(pagoPos.pendientes[0].descripcion) + ').<br>Resuélvelo (Cancelar, Volver a enviar o Aprobar) antes de cobrar otra venta con tarjeta.', 'warning');
@@ -152,23 +163,30 @@
 				return;
 			}
 			PagoPos.status(m).then(function (s) {
-				if (s.red || s.status !== 200) { fallarAntes(esc(PagoPos.sinPrograma(m))); return; }
+				if (s.red || s.status !== 200) { fallarAntes(esc(s.mensaje || PagoPos.sinPrograma(m))); return; }
 				var dif = PagoPos.comparar(m, s.json);
 				if (dif.length) {
-					fallarAntes('Estos datos de <b>Mantención &rsaquo; Pago electrónico</b> no son iguales a los del programa de pago:<br><br>'
+					fallarAntes('Estos datos de <b>Pago electrónico</b> (menú) no son iguales a los del programa de pago:<br><br>'
 						+ $.map(dif, function (x) { return '&bull; ' + esc(x); }).join('<br>'));
 					return;
 				}
 				var desc = descripcionVenta(venta);
-				postJson('pagoElectronicoIniciar', { monto: monto, descripcion: desc, venta: venta }).done(function (r) {
+				postJson('pagoElectronicoIniciar', { monto: monto, descripcion: desc, venta: venta, id_maquina: m.id }).done(function (r) {
 					// La venta (con su token) quedó guardada en el cobro: la próxima venta lleva otro token
 					if (!ctx.replay) tokenCobro = null;
 					pagoPos.pendientes.push({ tx_id: r.tx_id, tx_programa: r.tx_id, monto: monto, estado: 'enviando', descripcion: desc, fecha: '', mensaje: '' });
-					enviarAMaquina(m, r.tx_id, monto, esCreditoPos(venta.pagos), venta, ctx);
+					enviarAMaquina(r.maquina, r.tx_id, monto, credito, venta, ctx);
 				}).fail(function (xhr) {
 					fallarAntes(esc((xhr.responseJSON && xhr.responseJSON.error) || 'No se pudo registrar el cobro. Revisa la conexión.'));
 				});
 			});
+		}
+
+		function esDebitoPos(lista) {
+			return $.grep(lista || [], function (p) {
+				var f = catalogo ? fpago(p.id_fpago) : null;
+				return esFormaMaquina(p.id_fpago) && f && /D[EÉ]BITO/i.test(f.nombre);
+			}).length > 0;
 		}
 
 		function enviarAMaquina(m, txId, monto, credito, venta, ctx) {
@@ -182,12 +200,13 @@
 				if (res.resultado === 'red') {
 					res = { resultado: 'pendiente', mensaje: r.dejado ? 'Se dejó de esperar la respuesta de la máquina.' : 'Se cortó la conexión con el programa de pago mientras cobraba.' };
 				}
-				pagoPos.cobrando = null;
-				ocultarBloqueoPos();
-				enviando = false;
-				actualizarResumenPago();
+				mostrarBloqueoPos(monto, 'Guardando el resultado…', '', false);
 				var j = r.json || null;
 				informarCobro(txId, res.resultado, res.mensaje, j, res.codigo).always(function () {
+					pagoPos.cobrando = null;
+					ocultarBloqueoPos();
+					enviando = false;
+					actualizarResumenPago();
 					alTerminarCobro(res, txId, venta, ctx);
 				});
 			};
@@ -222,17 +241,23 @@
 					if (modoDelivery) salirDelivery();
 					else if (!ctx.idMesa) limpiarVenta();
 				}
-				avisoHtml('Cobro sin confirmar', esc(res.mensaje) + '<br><br>La venta quedó <b>arriba</b>, en cobros sin terminar. Revisa la máquina: si el pago salió aprobado usa <b>Aprobar</b>; si no, <b>Volver a enviar</b> o <b>Cancelar</b>.', 'warning');
+				// v1.39.11 (pedido del usuario): sin el texto técnico del programa de pago; se explica dónde quedó y qué hacer
+				avisoHtml('Cobro sin confirmar', 'La máquina no confirmó si el pago se hizo.<br><br>La venta quedó <b>arriba</b>, en <b>cobros sin terminar</b>. '
+					+ 'Ahí usa <b>Consultar estado</b> para saber si se aprobó; si ves el comprobante aprobado, <b>Aprobar</b>; si el cliente no pagó, <b>Cancelar</b>.'
+					// v1.39.12 (pedido del usuario): la máquina tarda en informar el pago aprobado
+					+ '<br><br><i class="fa fa-clock-o"></i> <b>Ojo:</b> la máquina puede tardar <b>unos segundos</b> en informar el pago. Si al consultar dice que '
+					+ 'aún no confirma, espera un momento y vuelve a presionar <b>Consultar estado</b>.', 'warning');
 			}
 		}
 
 		/** Venta registrada desde la barra de pendientes: sale el documento (y la comanda de la venta directa). */
 		function ventaPendienteRegistrada(r, ctx) {
-			cargarPagoElectronico();
 			toastr.success((r.documento || 'Venta') + (r.folio ? ' N° ' + r.folio : '') + ' · ' + fmt(r.total), 'Venta registrada', { timeOut: 6000 });
 			if (r.dte && !r.dte.ok) toastr.warning(r.dte.mensaje || '', 'Pendiente de envío al SII: reenvíalo desde Ventas', { timeOut: 15000, closeButton: true });
 			var comandaVenta = imprimeComanda() && !ctx.idMesa ? r.comanda_id : null;
-			var listo = (imprimeTicket() || comandaVenta) ? bloquearImpresion('Imprimiendo…') : function () {};
+			var listoImp = (imprimeTicket() || comandaVenta) ? bloquearImpresion('Imprimiendo…') : function () {};
+			// v1.39.4: la barra de cobros se recarga después de imprimir, no al mismo tiempo
+			var listo = function () { listoImp(); setTimeout(cargarPagoElectronico, 300); };
 			var conComanda = function () { if (comandaVenta) imprimirComanda(comandaVenta, 'Comanda', null, listo); else listo(); };
 			if (imprimeTicket()) imprimirTicket(r.id_venta, conComanda);
 			else conComanda();
@@ -249,16 +274,16 @@
 			$.each(pagoPos.pendientes, function (i, p) {
 				var aprobado = p.estado === 'aprobado';
 				h += '<div class="pe-pendiente' + (aprobado ? ' aprobado' : '') + '" data-tx="' + esc(p.tx_id) + '">'
-					+ '<i class="fa ' + (aprobado ? 'fa-check-circle' : 'fa-exclamation-triangle') + ' pe-ico" aria-hidden="true"></i>'
+					+ '<i class="fa ' + (aprobado ? 'fa-check-circle' : 'fa-clock-o') + ' pe-ico" aria-hidden="true"></i>'
 					+ '<div class="pe-info"><b>' + (aprobado ? 'Pago aprobado: falta registrar la venta' : 'Cobro con tarjeta sin terminar') + '</b>'
 					+ '<small>' + esc(p.descripcion || 'Venta') + (p.fecha ? ' · ' + esc(p.fecha) : '') + (p.usuario ? ' · ' + esc(p.usuario) : '') + '</small>'
-					+ (p.mensaje ? '<small>' + esc(p.mensaje) + '</small>' : '') + '</div>'
+					+ (p.mensaje ? '<small class="pe-detalle" title="' + esc(p.mensaje) + '"><i class="fa fa-info-circle"></i> Detalle de la máquina</small>' : '') + '</div>'   // v1.39.11: el texto técnico en el (i)
 					+ '<div class="pe-monto">' + fmt(p.monto) + '</div>'
 					+ '<div class="pe-acc">'
 					+ (aprobado
 						? '<button type="button" class="btn btn-success btn-sm pe-registrar"><i class="fa fa-check"></i> Registrar venta</button>'
 						: '<button type="button" class="btn btn-success btn-sm pe-aprobar" title="La máquina aprobó el pago (revisa el comprobante): se registra la venta"><i class="fa fa-check"></i> Aprobar</button>'
-							+ '<button type="button" class="btn btn-primary btn-sm pe-reenviar" title="Revisa la máquina y, si no se cobró, vuelve a enviar el cobro"><i class="fa fa-repeat"></i> Volver a enviar</button>')
+							+ '<button type="button" class="btn btn-primary btn-sm pe-reenviar" title="Pregunta a la máquina si el pago se aprobó; si no se cobró, ofrece volver a enviarlo"><i class="fa fa-search"></i> Consultar estado</button>')
 					+ '<button type="button" class="btn btn-default btn-sm pe-cancelar"><i class="fa fa-times"></i> Cancelar</button>'
 					+ '</div></div>';
 			});
@@ -350,7 +375,8 @@
 				}
 				if (c.resultado === 'pendiente') {
 					avisoHtml('La máquina aún no confirma', esc(c.mensaje || 'El cobro sigue sin confirmar en la máquina.')
-						+ '<br><br>Espera unos segundos y vuelve a intentar. Si ves el comprobante aprobado usa <b>Aprobar</b>; si el cliente no pagó, <b>Cancelar</b>.', 'warning');
+						+ '<br><br>La máquina puede tardar <b>unos segundos</b> en informar el pago: espera un momento y vuelve a presionar <b>Consultar estado</b>. '
+						+ 'Si ves el comprobante aprobado usa <b>Aprobar</b>; si el cliente no pagó, <b>Cancelar</b>.', 'warning');
 					return;
 				}
 				// Transbank no usa nuestro número de cobro: si el programa nunca respondió, no se sabe si se cobró
@@ -359,13 +385,22 @@
 						+ 'Revisa la máquina: si el pago salió aprobado usa <b>Aprobar</b>; si no, <b>Cancelar</b> y vuelve a cobrar la venta.', 'warning');
 					return;
 				}
+				// v1.39.11: "Consultar estado": si la máquina no lo cobró, recién ahí se ofrece volver a enviarlo
+				var porQue = c.resultado === 'rechazado' ? 'La máquina dice que <b>no se aprobó</b>' + (c.mensaje ? ' (' + esc(c.mensaje) + ')' : '') + '.'
+					: c.resultado === 'noexiste' ? 'La máquina <b>no tiene registrado</b> este cobro: no se cobró.' : 'La máquina <b>no cobró</b> este pago' + (c.mensaje ? ' (' + esc(c.mensaje) + ')' : '') + '.';
+				preguntar('El pago no se hizo', porQue + '<br><br>¿Volver a enviar el cobro de <b>' + fmt(p.monto) + '</b> a la máquina?', 'Volver a enviar', function () {
 				conVentaPos(p, function (venta) {
-					informarCobro(p.tx_id, 'cancelado', 'Se volvió a enviar con otro cobro', null, '').always(function () {
+					if (montoEnMaquina(venta.pagos) !== p.monto) {
+						avisoHtml('Cambió la configuración de las tarjetas', 'Revisa el estado en la máquina y resuelve el cobro antes de iniciar otro.', 'warning');
+						return;
+					}
+					informarCobro(p.tx_id, 'cancelado', 'Se volvió a enviar con otro cobro', null, '').done(function () {
 						pagoPos.pendientes = $.grep(pagoPos.pendientes, function (x) { return x.tx_id !== p.tx_id; });
 						pintarPendientesPos();
 						cobrarEnMaquina(venta, p.monto, { replay: true, idMesa: venta.id_mesa || 0 });
-					});
+					}).fail(error);
 				});
+				}, 'info');
 			});
 		});
 

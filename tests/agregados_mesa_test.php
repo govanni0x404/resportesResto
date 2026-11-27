@@ -54,13 +54,14 @@ foreach ($extras as $k => $e) {
 	pedir(BASE . '/Agregados/grabarNuevoAgregado', array('prod' => array('id_agregado' => $idEx, 'id_producto' => (int)$e['id_producto'],
 		'cantidad' => 1, 'vigente' => 'true', 'id_producto_maestro' => $idPrin, 'valor' => 100 * ($k + 1), 'usar_destino_impresion' => 'false')));
 }
+pedir(BASE . '/Productos/opcionesAgregados', array('id_producto' => $idPrin, 'accion' => 'varios', 'valor' => 1));   // v1.44.0: Con Varios Agregados
 list($c, $b) = pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => 2));
 revisar('Carta > Agregados: guardar "máximo 2 agregados"', $c === 200 && (json($b)['maximo'] ?? 0) === 2, "código $c: " . substr($b, 0, 200));
 list(, $b) = pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin));
 $mx = json($b);
 revisar('al reabrir dice máximo 2 y cuenta sus agregados', ($mx['maximo'] ?? 0) === 2 && ($mx['agregados'] ?? 0) >= 3, substr($b, 0, 200));
 list($c, $b) = pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => -5));
-revisar('un máximo negativo queda en 0 (sin límite)', (json($b)['maximo'] ?? -1) === 0, substr($b, 0, 200));
+revisar('un máximo negativo queda sin límite (-1)', (json($b)['maximo'] ?? 0) === -1, substr($b, 0, 200));
 pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => 2));
 
 list(, $b) = pedir(BASE . '/Caja/catalogo?id_lprecio=1');
@@ -107,8 +108,12 @@ foreach ($d['lineas'] ?? array() as $l) {
 revisar('la mesa tiene el producto y su segundo agregado', $padre && $hijo);
 revisar('el segundo agregado queda unido a su producto (no es un producto aparte)', $padre && $hijo && (int)$hijo['menu_de'] === (int)$padre['id_detalle'],
 	json_encode(array($padre['id_detalle'] ?? null, $hijo['menu_de'] ?? null)));
-revisar('el mensaje del producto y el del agregado vienen separados', ($padre['nota_producto'] ?? '') === 'SIN SAL' && ($padre['nota_agregado'] ?? '') === 'PICANTE',
-	json_encode(array($padre['nota'] ?? null, $padre['nota_producto'] ?? null, $padre['nota_agregado'] ?? null)));
+// v1.42.0: con varios agregados el 1.º también va en su fila: el mensaje del producto en el producto y el del agregado en el agregado
+$hijo1 = null;
+foreach ($d['lineas'] ?? array() as $l) if ((int)$l['id_producto'] === (int)$extras[0]['id_producto']) $hijo1 = $l;
+revisar('el mensaje del producto y el del agregado vienen separados', ($padre['nota_producto'] ?? '') === 'SIN SAL' && ($hijo1['nota'] ?? '') === 'PICANTE'
+	&& $hijo1 && (int)$hijo1['menu_de'] === (int)$padre['id_detalle'],
+	json_encode(array($padre['nota'] ?? null, $padre['nota_producto'] ?? null, $hijo1['nota'] ?? null)));
 
 list($c, , $b) = postJson(BASE . '/Caja/anularLineaMesa', array('id_mesa' => $mesa, 'id_detalle' => (int)$padre['id_detalle'], 'cantidad' => 1, 'motivo' => 'Prueba automática', 'autorizacion' => $aut));
 $r = json($b);
@@ -130,6 +135,35 @@ if ($c === 403 || ($c >= 400 && stripos($b, 'clave') !== false)) {
 list($c, , $b) = postJson(BASE . '/Caja/anularPedidoMesa', array('id_mesa' => $mesa, 'motivo' => 'Prueba automática', 'autorizacion' => $aut));
 revisar('anular el pedido completo libera la mesa', $c === 200 || $c === 403, "código $c: " . substr($b, 0, 200));
 
+echo "Permite varios agregados y 0 es 0 (v1.43.0):\n";
+pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => -1));
+list($c, $b) = pedir(BASE . '/Productos/opcionesAgregados', array('id_producto' => $idPrin, 'accion' => 'varios', 'valor' => 0));
+list(, $b2) = pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin));
+revisar('apagar "Con Varios Agregados" y al reabrir sale apagada', $c === 200 && (json($b2)['varios'] ?? true) === false, substr($b . $b2, 0, 200));
+list(, $b) = pedir(BASE . '/Caja/catalogo?id_lprecio=1');
+$pc = null; foreach (json($b)['productos'] ?? array() as $p) if ((int)$p['id_producto'] === $idPrin) $pc = $p;
+revisar('sin Con Varios Agregados (1 a 1) la Caja recibe máximo 1', ($pc['max_agregados'] ?? null) === 1, json_encode($pc['max_agregados'] ?? null));
+list($c, , $b) = postJson(BASE . '/Caja/enviarMesa', array('id_mesa' => $mesa, 'id_lprecio' => 1, 'observacion' => '', 'detalle' => array($linea(array($ags[0], $ags[1])))));
+revisar('sin la casilla, 2 agregados se rechazan', $c === 400 && strpos($b, 'hasta 1') !== false, "código $c: " . substr($b, 0, 200));
+list($c, , $b) = postJson(BASE . '/Caja/enviarMesa', array('id_mesa' => $mesa, 'id_lprecio' => 1, 'observacion' => '', 'detalle' => array($linea(array($ags[1])))));
+revisar('sin la casilla, 1 agregado se envía (en id_agregado, como siempre)', $c === 200, "código $c: " . substr($b, 0, 200));
+postJson(BASE . '/Caja/anularPedidoMesa', array('id_mesa' => $mesa, 'motivo' => 'Prueba automática', 'autorizacion' => $aut));
+pedir(BASE . '/Productos/opcionesAgregados', array('id_producto' => $idPrin, 'accion' => 'varios', 'valor' => 1));
+list(, $b) = pedir(BASE . '/Productos/ListadoCartaDeProductos', array());
+$fila = null; foreach ((json($b)['aaData'] ?? json($b)) as $x) if ((int)($x['id_producto'] ?? 0) === $idPrin) $fila = $x;
+revisar('Con Varios Agregados y Con Agregado (1 a 1) son excluyentes: al marcar varios, Con Agregado queda en NO',
+	($fila['varios_agregados'] ?? '') === 'SI' && ($fila['con_agregado'] ?? '') === 'NO', json_encode(array($fila['varios_agregados'] ?? null, $fila['con_agregado'] ?? null)));
+pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => 0));
+list(, $b) = pedir(BASE . '/Caja/catalogo?id_lprecio=1');
+$pc = null; foreach (json($b)['productos'] ?? array() as $p) if ((int)$p['id_producto'] === $idPrin) $pc = $p;
+revisar('con varios, máximo 0 = ninguno (0 es 0): la Caja recibe 0', ($pc['max_agregados'] ?? null) === 0, json_encode($pc['max_agregados'] ?? null));
+list($c, , $b) = postJson(BASE . '/Caja/enviarMesa', array('id_mesa' => $mesa, 'id_lprecio' => 1, 'observacion' => '', 'detalle' => array($linea(array($ags[1])))));
+revisar('con máximo 0, un agregado se rechaza', $c === 400 && strpos($b, 'no lleva agregados') !== false, "código $c: " . substr($b, 0, 200));
+pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => -1));
+list(, $b) = pedir(BASE . '/Caja/catalogo?id_lprecio=1');
+$pc = null; foreach (json($b)['productos'] ?? array() as $p) if ((int)$p['id_producto'] === $idPrin) $pc = $p;
+revisar('vacío / ∞ = sin límite: la Caja recibe -1', ($pc['max_agregados'] ?? null) === -1, json_encode($pc['max_agregados'] ?? null));
+
 echo "Descuento máximo 0:\n";
 pedir(BASE . '/Configuraciones/guardar', array('por_maximodescuento' => '0'));
 list(, $b) = pedir(BASE . '/Caja/catalogo?id_lprecio=1');
@@ -149,5 +183,5 @@ pedir(BASE . '/Configuraciones/guardar', array('por_maximodescuento' => '100'));
 list(, $b) = pedir(BASE . '/Caja/catalogo?id_lprecio=1');
 revisar('con 100 queda sin límite', (json($b)['config']['por_maximo_descuento'] ?? null) === 100);
 
-pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => 0));
+pedir(BASE . '/Productos/maxAgregados', array('id_producto' => $idPrin, 'maximo' => -1));   // v1.43.0: sin límite (0 es 0)
 terminar('agregados en la mesa');

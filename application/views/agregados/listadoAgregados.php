@@ -103,6 +103,13 @@
         className: "text-left",
         visible: false
       },
+      // v1.35.1: categoría del producto agregado (se ve si está activado en Configuraciones)
+      {
+        mData: "categoria",
+        className: "text-left",
+        visible: !!(window.agOpcGlobal && agOpcGlobal.categorias),
+        render: function (v) { return v ? $('<div>').text(v).html() : '<span class="text-muted">Sin categoría</span>'; }
+      },
 
       ],
       'language': {

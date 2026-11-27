@@ -38,6 +38,7 @@
 				if (l.enviada) return null;
 				var menuL = l.menu && l.menu.length ? menuDe(l.id_producto) : null;   // v1.24.0
 				return { id_producto: l.id_producto, nombre: l.nombre, precio: l.precio, cantidad: l.cantidad, agregados: (l.agregados || []).slice(),
+					extras: (l.extras || []).slice(),   // v1.35.0
 					nota: l.nota || '', notas_agregados: l.notas_agregados || {}, menu: (l.menu || []).slice(), sushi: l.sushi || null,
 					opciones: $.map(l.agregados || [], function (id) { var a = agregado(id); return a ? a.nombre : null; })
 						.concat($.map(menuL ? l.menu : [], function (e) { var o = opcionMenu(menuL, e.id); return o ? o.nombre : null; })).join(', ') };
@@ -118,6 +119,11 @@
 			$('#esperasAviso').prop('hidden', vacia || !esperas.length).find('span')
 				.text(mesa ? 'Estás atendiendo una mesa: ciérrala para cargar una venta en espera.'
 					: 'Para cargar una venta en espera, la venta actual debe estar vacía (cóbrala, déjala en espera o vacíala).');
+			// v1.33.0: Anular todas (solo con la casilla de Configuraciones y desde 2 ventas en espera)
+			var totalEsperas = 0;
+			$.each(esperas, function (i, e) { totalEsperas += e.total; });
+			$('#esperasTodas').prop('hidden', !(catalogo && catalogo.config && catalogo.config.anular_todas_esperas) || esperas.length < 2);
+			$('#esperasTodasTexto').text(esperas.length + ' ventas en espera · ' + fmt(totalEsperas));
 			var $l = $('#esperasLista').empty();
 			if (!esperas.length) {
 				$l.html('<div class="esp-vacio"><i class="fa fa-clock-o"></i>No hay ventas en espera</div>');
@@ -141,6 +147,7 @@
 		}
 		function verListaEsperas() {
 			esperaAnulando = null;
+			$('#btnAnularEsperaConfirmar').html('<i class="fa fa-ban"></i> Anular venta');
 			$('#esperasVistaAnular').prop('hidden', true);
 			$('#esperasVistaLista').prop('hidden', false);
 			$('#esperasTitulo').html('<i class="fa fa-clock-o"></i> Ventas en espera');
@@ -165,6 +172,23 @@
 			$('#esperasTitulo').html('<i class="fa fa-ban"></i> Anular venta en espera');
 			setTimeout(function () { $('#anularEsperaMotivo').focus(); }, 50);
 		}
+		// v1.33.0: anular todas las de la lista con una sola justificación
+		function verAnularTodas() {
+			if (!esperas.length) return;
+			var total = 0;
+			$.each(esperas, function (i, e) { total += e.total; });
+			esperaAnulando = { todas: true, ids: $.map(esperas, function (e) { return e.id; }), cantidad: esperas.length, total: total };
+			$('#anularEsperaDetalle').html('<b>Se anulan ' + esperas.length + ' ventas en espera</b> · ' + fmt(total) + '<ul>'
+				+ $.map(esperas, function (e) { return '<li>' + esc(e.nombre) + ' · ' + fmt(e.total) + ' <small class="text-muted">(' + esc(e.fecha + ' · Caja N° ' + e.id_caja) + ')</small></li>'; }).join('')
+				+ '</ul>');
+			$('#anularEsperaMotivo').val('');
+			$('#btnAnularEsperaConfirmar').html('<i class="fa fa-ban"></i> Anular las ' + esperas.length);
+			$('#esperasVistaLista').prop('hidden', true);
+			$('#esperasVistaAnular').prop('hidden', false);
+			$('#esperasTitulo').html('<i class="fa fa-ban"></i> Anular todas las ventas en espera');
+			setTimeout(function () { $('#anularEsperaMotivo').focus(); }, 50);
+		}
+		$('#btnAnularEsperasTodas').on('click', verAnularTodas);
 		$('#esperasLista').on('click', '.esp-cargar', function () {
 			cargarEspera(Number($(this).closest('.esp-item').data('id')), $(this));
 		}).on('click', '.esp-anular', function () {
@@ -181,6 +205,22 @@
 				return;
 			}
 			var $b = $('#btnAnularEsperaConfirmar').prop('disabled', true);
+			if (e.todas) {
+				// v1.33.0: todas de una vez; la clave (si Configuraciones la pide) se pide una sola vez
+				enviarConAutorizacion(function (aut) {
+					return postJson('anularEsperasTodas', { ids: e.ids, motivo: motivo, autorizacion: aut });
+				}, function (r) {
+					$b.prop('disabled', false);
+					toastr.success(r.anuladas === 1 ? 'Se anuló 1 venta en espera (' + fmt(r.monto) + ')' : 'Se anularon ' + r.anuladas + ' ventas en espera (' + fmt(r.monto) + ')');
+					if (r.saltadas) toastr.info(r.saltadas === 1 ? '1 ya no estaba en espera (otra caja la cargó o anuló)' : r.saltadas + ' ya no estaban en espera (otra caja las cargó o anuló)');
+					verListaEsperas();
+					cargarEsperas(true).always(renderEsperas);
+				}, function () {
+					$b.prop('disabled', false);
+					cargarEsperas(true);
+				});
+				return;
+			}
 			// Si Configuraciones pide clave de administrador para anular, se pide aquí también (misma ventana de autorización)
 			enviarConAutorizacion(function (aut) {
 				return postJson('anularEspera', { id: e.id, motivo: motivo, autorizacion: aut });
@@ -216,6 +256,7 @@
 		function aplicarVentaEspera(d) {
 			carro = $.map(d.lineas || [], function (l) {
 				return { id_producto: l.id_producto, nombre: l.nombre, precio: l.precio, cantidad: l.cantidad, agregados: (l.agregados || []).slice(), nota: l.nota || '',
+					extras: $.isArray(l.extras) ? l.extras.map(Number) : [],   // v1.35.0
 					notas_agregados: l.notas_agregados && typeof l.notas_agregados === 'object' ? l.notas_agregados : {},
 					menu: $.isArray(l.menu) ? l.menu : [], sushi: l.sushi && $.isArray(l.sushi.grupos) ? l.sushi : null };   // v1.24.0 / v1.25.0
 			});

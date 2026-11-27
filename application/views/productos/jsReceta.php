@@ -1,3 +1,4 @@
+<?php $this->load->view('recetas/jsUnidadesReceta.php'); /* v1.34.0 */ ?>
 <script>
 	var tableInsumoReceta = $("#tableInsumoReceta").on("draw.dt", function() {
 		$(this).find(".dataTables_empty").parents('tbody').empty();
@@ -82,15 +83,10 @@
 			$('#esSubreceta').val(esreceta);
 			$('#idInsumoReceta').val(id_insumo);
 			$('#unMedidaInsumoReceta').val(nombre_umedida);
-			$('#costoInsumoReceta').val(costo_neto_ppp);
+			$('#costoInsumoReceta').val(recDosDecimales(costo_neto_ppp));   // v1.37.13: 0.50 (con su cero)
 			$('#cBarraI').val(cBarra);
 		}
-	});
-
-	$("#cantidadInsumoReceta").on('keyup', function() {
-		cantidad = $("#cantidadInsumoReceta").val();
-		costo_unitario = $('#costoInsumoReceta').val();
-		$('#costoTotalInsumoReceta').val(cantidad * costo_unitario);
+		recPintarUnidades();   // v1.34.0
 	});
 
 	$("#btnAgregarInsumoTabla").on('click', function() {
@@ -162,14 +158,14 @@
 						case 5: // cantidad
 							var row = $(this);
 							if (row.find('input[type="text"]').val()) {
-								cantidad = row.find('input[type="text"]').val().replace(/,./g, '');
+								cantidad = String(recNumero(row.find('input[type="text"]').val()));   // v1.39.6: "0,5" = medio
 							}
 							break;
 						case 7: //precio un
-							costo_pp = $(this).html().replace(/,./g, '');
+							costo_pp = $(this).attr('data-costo') !== undefined ? $(this).attr('data-costo') : String(recNumero($(this).html()));
 							break;
 						case 8: //total
-							costo_total = $(this).html().replace(/,./g, '');
+							costo_total = String(recNumero($(this).html()));   // v1.39.6: antes /,./ borraba la coma y el número siguiente
 
 							detalleReceta.push({
 								'id_detalle_receta': id_detalle_receta,
@@ -197,6 +193,7 @@
 						});
 						return;
 					}
+					recMensajeGrabada(nombre_receta);   // v1.37.16: confirmación al medio con el resumen
 					$('#modalReceta').modal('hide');
 					if (typeof ListadoDeReceta === 'function') {
 						ListadoDeReceta(nombre_receta);
@@ -204,10 +201,6 @@
 					if (typeof tableRecetas !== 'undefined') {
 						tableRecetas.ajax.reload();
 					}
-					showAppAlert('success', "Se registro Exitosamente La Receta!", {
-						duration: 4000,
-						image: base_url + 'assets/img/success.gif'
-					});
 				})
 				.fail(function() {
 					showAppAlert('error',"- Se produjo un error al realizar el proceso, favor contacte a su administrador", {
@@ -224,9 +217,10 @@
 		var id_insumo = $('#idInsumoReceta').val();
 		var nombre_insumo = $('#nombreInsumoReceta').val();
 		var subreceta = $('#esSubreceta').val();
-		var cantidad_insumo = $('#cantidadInsumoReceta').val();
+		// v1.34.0: la cantidad se guarda en la unidad de receta del insumo (si se escribió en kilos, se pasa a gramos)
+		var cantidad_insumo = $.trim($('#cantidadInsumoReceta').val()) === '' ? '' : recCantidadEnReceta();
 		var uMedida = $('#unMedidaInsumoReceta').val();
-		var costoInsumo = $('#costoInsumoReceta').val();
+		var costoInsumo = recCostoElegido();   // v1.37.12: con todos sus decimales
 		var costoTotal = $('#costoTotalInsumoReceta').val();
 		var errorexiste = 0;
 		//RECORRE LA TABLA EN BUSCA DEL PRODUCTO EN CASO DE QUE YA ESTE, SI ESTA NO DEJA AGREGAR
@@ -248,7 +242,12 @@
             	duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
             });
-		} else if (cantidad_insumo == '') {
+		} else if (cantidad_insumo === null) {
+			showAppAlert('error',"- No se puede convertir esa unidad a la del insumo", {
+            	duration: 5000,
+                image: base_url+ 'assets/img/errorGif.gif'
+            });
+		} else if (cantidad_insumo === '' || !(cantidad_insumo > 0)) {
 			showAppAlert('error',"- Ingrese una cantidad", {
             	duration: 5000,
                 image: base_url+ 'assets/img/errorGif.gif'
@@ -281,9 +280,10 @@
 		tbl = tbl + "<td class='text-left'>" + cbarra + "</td>";
 		tbl = tbl + "<td class='text-left'>" + nombre_insumo + "</td>";
 		tbl = tbl + "<td class='text-left'>" + subreceta + "</td>";
-		tbl = tbl + "<td style='vertical-align:middle; height:50px;' class='text-left'> <a  onclick='aumentarCantidad(" + rnd + ")' href='#'  class='btn_cantidad'><i class='fa fa-plus-square' style='font-size: 18px;'></i></a>   <input style='width:70px; margin-right:4px' class='text-right' onpaste='return false;' ondrop='return false;' autocomplete='off' onkeyup='actualizarCantidadTXT(" + rnd + ")'  id='txt" + rnd + "' type='text' pattern='\d*' maxlength='5' style='width: 100px;  margin: 10px;' class='input-sm' name='' onkeypress='validate(event)' value='" + cantidad_insumo + "'><a  onclick='disminuirCantidad(" + rnd + ")' href='#' class='btn_cantidad'><i class='fa fa-minus-square' style='font-size: 18px;'></i></a></td>";
+		tbl = tbl + "<td style='vertical-align:middle; height:50px;' class='text-left'> <a  onclick='aumentarCantidad(" + rnd + ")' href='#'  class='btn_cantidad'><i class='fa fa-plus-square' style='font-size: 18px;'></i></a>   <input style='width:70px; margin-right:4px' class='text-right' onpaste='return false;' ondrop='return false;' autocomplete='off' onkeyup='actualizarCantidadTXT(" + rnd + ")' onblur='calcularDatos(" + rnd + ", true)'  id='txt" + rnd + "' type='text' pattern='\d*' maxlength='10' style='width: 100px;  margin: 10px;' class='input-sm' name='' onkeypress='validate(event)' value='" + cantidad_insumo + "'><a  onclick='disminuirCantidad(" + rnd + ")' href='#' class='btn_cantidad'><i class='fa fa-minus-square' style='font-size: 18px;'></i></a></td>";
 		tbl = tbl + "<td style='vertical-align:middle;' class='text-left'>" + uMedida + "</td>";
-		tbl = tbl + "<td style='vertical-align:middle;' class='text-right'>" + costoInsumo + "</td>";
+		// v1.37.12: el costo se ve con 2 decimales y el exacto queda en data-costo para el cálculo
+		tbl = tbl + "<td style='vertical-align:middle;' class='text-right' data-costo='" + (Number(costoInsumo) || 0) + "'>" + recDosDecimales(costoInsumo) + "</td>";
 		tbl = tbl + "<td style='vertical-align:middle;' class='text-right montoTotal'>" + costoTotal + "</td>";
 		tbl = tbl + "<td style='vertical-align:middle;' class='text-center'><a  onclick='removeRow(" + rnd + ")' href='#' class='btn btn-danger btn-icon'><i class='fa fa-trash-o'></i></a></td>";
 		tbl = tbl + "</tr>";
@@ -312,24 +312,24 @@
 	}
 
 	function aumentarCantidad(rnd) {
-		var cantidad = parseFloat($('#txt' + rnd).val());
+		var cantidad = recNumero($('#txt' + rnd).val());   // v1.39.6
 		if (isNaN(cantidad) || cantidad == null || cantidad == "") {
 			$('#txt' + rnd).val(0.1);
 			cantidad = 0.1;
 		}
-		cantidad++;
+		cantidad = Math.round((cantidad + 1) * 1000) / 1000;
 		$('#txt' + rnd).val(cantidad);
 		calcularDatos(rnd);
 
 	}
 
 	function disminuirCantidad(rnd) {
-		var cantidad = parseFloat($('#txt' + rnd).val());
+		var cantidad = recNumero($('#txt' + rnd).val());   // v1.39.6
 		if (isNaN(cantidad) || cantidad == null || cantidad == "") {
 			$('#txt' + rnd).val(0.1);
 			cantidad = 0.1;
 		}
-		cantidad--;
+		cantidad = Math.round((cantidad - 1) * 1000) / 1000;
 		if (cantidad < 0.1) {
 			cantidad = 0.1;
 		}
@@ -337,16 +337,17 @@
 		calcularDatos(rnd);
 	}
 
-	function calcularDatos(rnd) {
-		var costoUn = parseFloat($('#' + rnd).children('td')[7].innerHTML.replace(/,./g, ''));
-		var cantidad = parseFloat($('#txt' + rnd).val());
-
-		if (isNaN(cantidad) || cantidad == null || cantidad == "" || parseFloat(cantidad) < 0) {
-			$('#txt' + rnd).val(0.1); //monto minimo
-			cantidad = 0.1;
+	function calcularDatos(rnd, alSalir) {
+		var td7 = $('#' + rnd).children('td').eq(7), costoUn = td7.attr('data-costo') !== undefined ? Number(td7.attr('data-costo')) : recNumero(td7.html());   // v1.37.12
+		// v1.39.6: mientras se escribe no se cambia lo escrito (antes, al borrar ponía 0.1 y "100" quedaba "0.1100");
+		// "0,5" con coma vale medio. Vacío o inválido cuenta 0 en el total; al salir del campo queda en 0.1 como mínimo.
+		var cantidad = recNumero($('#txt' + rnd).val());
+		if (!(cantidad > 0)) {
+			cantidad = 0;
+			if (alSalir) { $('#txt' + rnd).val(0.1); cantidad = 0.1; }
 		}
-		var totalLinea = costoUn * cantidad;
-		$('#' + rnd).children('td')[8].innerHTML = Math.round(totalLinea);
+		var totalLinea = (Number(costoUn) || 0) * cantidad;
+		$('#' + rnd).children('td')[8].innerHTML = recDosDecimales(totalLinea);   // v1.37.12: 2 decimales, como el servidor
 	}
 
 	function actualizarCantidadTXT(rnd) {
